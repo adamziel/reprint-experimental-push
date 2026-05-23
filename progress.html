@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reprint Push Progress</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #d7dce2;
+      --paper: #ffffff;
+      --soft: #f5f7f9;
+      --green: #1f7a4d;
+      --blue: #1d5d9b;
+      --amber: #9a6400;
+      --red: #a33a31;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.5;
+    }
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 24px;
+      margin-bottom: 28px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+      letter-spacing: 0;
+    }
+    p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 760px;
+      overflow-wrap: anywhere;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.86rem;
+      color: var(--muted);
+      background: var(--soft);
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 28px;
+      align-items: start;
+    }
+    .section {
+      margin-bottom: 28px;
+    }
+    .lane {
+      border-top: 1px solid var(--line);
+      padding: 16px 0;
+    }
+    .lane-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    .lane strong {
+      font-size: 0.98rem;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .lane span {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .bar {
+      width: 100%;
+      height: 10px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      overflow: hidden;
+    }
+    .fill {
+      height: 100%;
+      background: var(--blue);
+    }
+    .fill.green {
+      background: var(--green);
+    }
+    .fill.amber {
+      background: var(--amber);
+    }
+    .fill.red {
+      background: var(--red);
+    }
+    .note {
+      margin-top: 8px;
+      font-size: 0.92rem;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      padding: 18px;
+      background: var(--soft);
+    }
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+    li + li {
+      margin-top: 8px;
+    }
+    a {
+      color: var(--blue);
+    }
+    @media (max-width: 760px) {
+      main {
+        width: min(calc(100% - 24px), 1120px);
+        padding-top: 22px;
+      }
+      h1 {
+        font-size: 1.9rem;
+      }
+      .meta {
+        display: grid;
+        grid-template-columns: 1fr;
+        justify-items: start;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .lane-head {
+        align-items: baseline;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Reprint Push Progress</h1>
+      <p>Experimental one-way push-back from a pulled local WordPress site to the live source site, optimized first for no data loss.</p>
+      <div class="meta" aria-label="Project status">
+        <span class="pill">Public repo initialized</span>
+        <span class="pill">Snapshot planner tests active</span>
+        <span class="pill">Real WP executor pending</span>
+      </div>
+    </header>
+    <div class="grid">
+      <section class="section" aria-labelledby="lanes">
+        <h2 id="lanes">Work Lanes</h2>
+        <div class="lane">
+          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span>25%</span></div>
+          <div class="bar" aria-label="No data loss merge invariants 25 percent"><div class="fill green" style="width:25%"></div></div>
+          <div class="note">Three-way base/local/remote planner, conflict stop policy, and preconditioned apply tests are in place.</div>
+        </div>
+        <div class="lane">
+          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span>12%</span></div>
+          <div class="bar" aria-label="No data loss recovery boundaries 12 percent"><div class="fill green" style="width:12%"></div></div>
+          <div class="note">Atomic staging is modeled; durable journals and kill-process recovery tests are not implemented yet.</div>
+        </div>
+        <div class="lane">
+          <div class="lane-head"><strong>Reliable executor</strong><span>10%</span></div>
+          <div class="bar" aria-label="Reliable executor 10 percent"><div class="fill amber" style="width:10%"></div></div>
+          <div class="note">Plan/apply contract exists for JSON snapshots. Real Reprint protocol extension and WordPress mutation executor are pending.</div>
+        </div>
+        <div class="lane">
+          <div class="lane-head"><strong>Fast path</strong><span>8%</span></div>
+          <div class="bar" aria-label="Fast path 8 percent"><div class="fill" style="width:8%"></div></div>
+          <div class="note">Resource-level planning avoids whole-site replacement. Chunking, streaming, and parallel upload strategy remain open.</div>
+        </div>
+        <div class="lane">
+          <div class="lane-head"><strong>Independent audit and critique</strong><span>15%</span></div>
+          <div class="bar" aria-label="Independent audit and critique 15 percent"><div class="fill red" style="width:15%"></div></div>
+          <div class="note">Source notes and hard rejections are documented. Dedicated tmux lane prompts are queued next.</div>
+        </div>
+      </section>
+      <aside class="panel" aria-labelledby="evidence">
+        <h2 id="evidence">Latest Evidence</h2>
+        <ul>
+          <li><a href="docs/scenario-matrix.md">Scenario matrix</a> covers unchanged remote, changed remote, conflicts, plugin data, atomic installs, drift, and injected failure.</li>
+          <li><a href="docs/approach-scorecard.md">Approach scorecard</a> ranks three-way guarded push and ForkPress-style merge highest.</li>
+          <li><a href="docs/source-notes.md">Source notes</a> connect the design to Reprint, ZS-Sync, and ForkPress.</li>
+        </ul>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>
