@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Baseline Evidence Pass
 
-- `npm test` passed with 19 Node test scenarios covering the deterministic JSON
+- `npm test` passed with 25 Node test scenarios covering the deterministic JSON
   snapshot planner and applicator. Evidence:
   [test/push-planner.test.js](../test/push-planner.test.js) and
   [test/performance-model.test.js](../test/performance-model.test.js).

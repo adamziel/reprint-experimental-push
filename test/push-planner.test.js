@@ -43,6 +43,24 @@ function captureError(fn) {
   assert.fail('Expected function to throw');
 }
 
+function mutationFor(plan, resourceKey) {
+  return plan.mutations.find((mutation) => mutation.resourceKey === resourceKey);
+}
+
+function decisionFor(plan, resourceKey) {
+  return plan.decisions.find((decision) => decision.resourceKey === resourceKey);
+}
+
+function assertEveryMutationHasLiveRemotePrecondition(plan) {
+  for (const mutation of plan.mutations) {
+    const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
+    assert.ok(precondition, `missing precondition for ${mutation.id}`);
+    assert.equal(precondition.resourceKey, mutation.resourceKey);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(precondition.checkedAgainst, 'live-remote');
+  }
+}
+
 test('plans and applies local changes when remote still matches the pull base', () => {
   const base = baseSite();
   const local = baseSite();
@@ -85,6 +103,136 @@ test('combines non-overlapping local and remote changes', () => {
   assert.equal(plan.status, 'ready');
   assert.equal(result.site.files['wp-content/themes/theme/style.css'], 'body { color: black; }');
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Remote title');
+});
+
+test('plans local deletions only behind live remote preconditions', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.db.wp_posts['ID:1'];
+
+  const plan = planFor(base, local, baseSite());
+  const fileDelete = mutationFor(plan, 'file:index.php');
+  const rowDelete = mutationFor(plan, 'row:["wp_posts","ID:1"]');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(fileDelete.action, 'delete');
+  assert.equal(fileDelete.changeKind, 'delete');
+  assert.equal(rowDelete.action, 'delete');
+  assert.equal(rowDelete.changeKind, 'delete');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
+});
+
+test('stops a local deletion when the remote edited the same resource', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete local.db.wp_posts['ID:1'];
+  remote.db.wp_posts['ID:1'].post_title = 'Remote secret editorial update';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(JSON.stringify(conflict).includes('Remote secret editorial update'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote secret editorial update');
+});
+
+test('stops file type swaps that would hide remote-only descendants', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = 'local replacement file';
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/uploads/gallery/remote-only.jpg'] = 'remote image bytes';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery');
+  assert.equal(conflict.relatedResourceKey, 'file:wp-content/uploads/gallery/remote-only.jpg');
+  assert.equal(conflict.change.localChange, 'type-change');
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.equal(JSON.stringify(conflict).includes('remote image bytes'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote image bytes');
+});
+
+test('recognizes matching independent edits as already in sync', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+
+  const plan = planFor(base, local, remote);
+  const decision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decision.decision, 'already-in-sync');
+  assert.equal(decision.change.localChange, 'update');
+  assert.equal(decision.change.remoteChange, 'update');
+});
+
+test('preserves remote-only plugin changes', () => {
+  const base = baseSite();
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* forms 1.1 */';
+
+  const plan = planFor(base, baseSite(), remote);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const fileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginDecision.change.remoteChange, 'update');
+  assert.equal(fileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.plugins.forms.active, false);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.1 */');
+});
+
+test('remote-only plugin removal blocks stale local dependency assumptions', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  local.pushIntents = [
+    {
+      id: 'update-forms-settings',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: ['row:["wp_options","option_name:forms_settings"]'],
+      dependencies: { plugins: ['forms'] },
+    },
+  ];
+
+  const plan = planFor(base, local, remote);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(plan.blockers[0].class, 'missing-plugin-dependency');
+  assert.equal(plan.blockers[0].plugin, 'forms');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
 
 test('refuses direct conflicts and preserves the remote snapshot', () => {
