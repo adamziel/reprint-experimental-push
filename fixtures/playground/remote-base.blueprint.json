@@ -1,0 +1,25 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "meta": {
+    "title": "Reprint Push Remote Base",
+    "description": "Source WordPress site at the moment a local pull was taken.",
+    "author": "Reprint Push Lab"
+  },
+  "preferredVersions": {
+    "php": "8.3",
+    "wp": "latest"
+  },
+  "steps": [
+    {
+      "step": "setSiteOptions",
+      "options": {
+        "blogname": "Reprint Push Remote Base",
+        "reprint_push_fixture": "remote-base"
+      }
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; wp_insert_post(array('post_title'=>'Shared base post','post_content'=>'Base content from source','post_status'=>'publish','post_author'=>1)); update_option('reprint_push_plugin_payload', array('owner'=>'forms','mode'=>'base'));"
+    }
+  ]
+}
