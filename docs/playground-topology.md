@@ -12,9 +12,10 @@ This avoids opening any local network ports and keeps the test state disposable.
 | Local edited | `fixtures/playground/local-edited.blueprint.json` | Represents the pulled local site after local edits. |
 | Remote changed | `fixtures/playground/remote-changed.blueprint.json` | Represents the live source site after independent remote edits. |
 
-The blueprints use `runPHP` to create WordPress posts/options with stable
-fixture markers. They are intentionally small because the first goal is to
-prove topology bootstrapping, not the final transport.
+The blueprints use `runPHP` to create WordPress posts, plugin-owned options,
+and upload files with stable fixture markers. They are intentionally small
+because this topology proves snapshot extraction and planning, not the final
+transport.
 
 ## Smoke Command
 
@@ -28,17 +29,30 @@ The script runs each blueprint with:
 npx --yes @wp-playground/cli@latest run-blueprint --blueprint=<file>
 ```
 
-It does not start a server. Future executor tests can build from the same
-fixtures by adding mounted Reprint plugins, source snapshot export, local edit
-capture, and guarded push apply.
+It does not start a server.
+
+## Snapshot Planning Command
+
+```bash
+npm run test:playground
+```
+
+The script mounts this repository into each Playground runtime, runs
+`scripts/playground/export-site-snapshot.php`, and passes the exported
+WordPress posts/options/files through the JSON push planner. It currently
+asserts:
+
+- the shared post is a real WordPress row conflict;
+- the shared upload file is a file conflict;
+- the `reprint_push_plugin_payload` option is a plugin-data conflict;
+- local-only post and file resources become guarded mutations;
+- remote-only post and file resources are preserved as remote decisions.
 
 ## Next Proofs Needed
 
 - Mount the Reprint exporter/importer or experimental push plugin into the
   Playground runtime.
-- Export base/local/remote snapshots from actual WordPress state instead of
-  hand-authored JSON fixtures.
-- Execute a push dry-run against the remote-changed Playground state.
+- Execute a push dry-run through a Reprint HTTP endpoint rather than an in-process
+  Node planner.
 - Revalidate live remote hashes immediately before apply.
 - Assert WordPress-visible content and options after apply.
-

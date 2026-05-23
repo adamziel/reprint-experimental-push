@@ -25,6 +25,12 @@ transport must satisfy.
 npm test
 ```
 
+Run the no-server WordPress Playground extraction/planning smoke:
+
+```bash
+npm run test:playground
+```
+
 The lab CLI works on three snapshots:
 
 ```bash
@@ -66,4 +72,3 @@ See [docs/source-notes.md](docs/source-notes.md) and
 
 The public status page lives at [progress.html](progress.html). It is designed
 to be served through GitHub Pages from this repository.
-

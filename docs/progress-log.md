@@ -23,6 +23,11 @@ linked implementation artifacts.
   WordPress Playground blueprints for remote base, local edited, and remote
   changed fixture states. Evidence:
   [docs/playground-topology.md](playground-topology.md).
+- `npm run test:playground` passed. It mounts this repository into three
+  Playground runtimes, exports real WordPress posts/options/files with
+  [scripts/playground/export-site-snapshot.php](../scripts/playground/export-site-snapshot.php),
+  and asserts the planner sees the expected row, file, and plugin-data
+  conflicts plus local-only mutations and remote-only preservation.
 - Protocol, executor, fast-path, objective-audit, and critic documents have
   landed from supervised lanes. Evidence: [docs/protocol.md](protocol.md),
   [docs/executor.md](executor.md), [docs/fast-paths.md](fast-paths.md),
@@ -35,9 +40,9 @@ linked implementation artifacts.
 
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
-| Merge invariants | 25% | Planner/apply tests; [scenario matrix](scenario-matrix.md) | Real WordPress resource extraction, SQL/file semantics, live-site mutation checks |
+| Merge invariants | 32% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner in [playground topology](playground-topology.md) | SQL/file mutation semantics, live-site mutation checks |
 | Recovery boundaries | 14% | Journal/recovery artifacts in [src/apply.js](../src/apply.js) and tests | Durable on-disk journal, process-kill tests, storage-level recovery proof |
-| Reliable executor and protocol | 12% | [protocol](protocol.md), [executor](executor.md), and protocol fixtures | Implemented Reprint protocol extension, real WordPress executor, remote audit records |
+| Reliable executor and protocol | 14% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, and Playground snapshot extraction | Implemented Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
 
@@ -48,8 +53,8 @@ linked implementation artifacts.
 - Durable recovery journal: pending until journal files or equivalent recovery
   artifacts survive process failure and classify the target as old, new, or
   blocked.
-- WordPress integration: Playground base/local/remote fixtures now smoke-test,
-  but push behavior is pending until snapshots are extracted from those sites,
-  mutations are applied, and WordPress-visible results are verified.
+- WordPress integration: Playground base/local/remote fixtures now smoke-test
+  and export planner snapshots, but push behavior is pending until mutations are
+  applied to a source site and WordPress-visible results are verified.
 - Plugin validators or drivers: pending until plugin-specific semantics are
   implemented and tested against real plugin-owned data.

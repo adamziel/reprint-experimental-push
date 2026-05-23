@@ -19,7 +19,7 @@
     },
     {
       "step": "runPHP",
-      "code": "<?php require_once '/wordpress/wp-load.php'; wp_insert_post(array('post_title'=>'Shared base post','post_content'=>'Base content from source','post_status'=>'publish','post_author'=>1)); update_option('reprint_push_plugin_payload', array('owner'=>'forms','mode'=>'base'));"
+      "code": "<?php require_once '/wordpress/wp-load.php'; $post_id = wp_insert_post(array('import_id'=>1001,'post_title'=>'Shared base post','post_name'=>'shared-base-post','post_content'=>'Base content from source','post_status'=>'publish','post_author'=>1)); add_post_meta($post_id, 'reprint_push_fixture', 'shared', true); $dir = WP_CONTENT_DIR . '/uploads/reprint-push'; wp_mkdir_p($dir); file_put_contents($dir . '/shared.txt', 'base upload content'); update_option('reprint_push_plugin_payload', array('owner'=>'forms','mode'=>'base','version'=>1));"
     }
   ]
 }
