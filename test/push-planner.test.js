@@ -34,6 +34,15 @@ function planFor(base, local, remote) {
   return createPushPlan({ base, local, remote, now: fixedNow });
 }
 
+function captureError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected function to throw');
+}
+
 test('plans and applies local changes when remote still matches the pull base', () => {
   const base = baseSite();
   const local = baseSite();
@@ -202,3 +211,128 @@ test('injected failure before commit returns no partially mutated remote state',
   assert.equal(JSON.stringify(remote), before);
 });
 
+test('injected failure before mutation leaves the old remote with a journal artifact', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failBeforeMutation: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
+  assert.equal(error.details.recovery.artifacts.journal.entries.length, 2);
+});
+
+test('injected failure after staging leaves the old remote with staged rollback artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failAfterStaging: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_STAGING');
+  const journal = error.details.recovery.artifacts.journal;
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(journal.status, 'staged');
+  assert.deepEqual(journal.entries.map((entry) => entry.status), ['staged', 'staged']);
+  assert.ok(journal.entries.every((entry) => entry.beforeValue && entry.afterValue));
+});
+
+test('injected failure after dependency validation leaves the old remote with validated artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['wp-content/plugins/payments/payments.php'] = '<?php /* payments */';
+  local.files['wp-content/plugins/commerce/commerce.php'] = '<?php /* commerce */';
+  local.plugins.payments = { version: '2.1.0', active: true };
+  local.plugins.commerce = { version: '1.0.0', active: true, requires: ['payments'] };
+  local.pushIntents = [
+    {
+      id: 'install-commerce-stack',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: [
+        'file:wp-content/plugins/payments/payments.php',
+        'file:wp-content/plugins/commerce/commerce.php',
+        'plugin:payments',
+        'plugin:commerce',
+      ],
+      dependencies: { plugins: ['payments'] },
+    },
+  ];
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failAfterDependencyValidation: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
+});
+
+test('replaying a completed plan does not duplicate inserts or reapply stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  const replay = applyPlan(result.site, plan, { journal: result.journal });
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.deepEqual(Object.keys(replay.site.db.wp_posts).sort(), ['ID:1', 'ID:2']);
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+
+  const changedAfterCompletion = JSON.parse(JSON.stringify(result.site));
+  changedAfterCompletion.db.wp_posts['ID:2'].post_title = 'Remote edited after push';
+  const error = captureError(() => applyPlan(changedAfterCompletion, plan, { journal: result.journal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assert.equal(changedAfterCompletion.db.wp_posts['ID:2'].post_title, 'Remote edited after push');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+});
+
+test('partial remote mutation is a blocked recovery state with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, { mutateRemote: true, failDuringCommitAtMutation: 1 }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(remote.files['index.php'], '<?php echo "local";');
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Base post');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'blocked');
+  assert.equal(error.details.recovery.artifacts.journal.entries[0].status, 'applied');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+
+  const retryError = captureError(() =>
+    applyPlan(remote, plan, { journal: error.details.recovery.artifacts.journal }));
+
+  assert.equal(retryError.code, 'RECOVERY_BLOCKED');
+  assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+});
