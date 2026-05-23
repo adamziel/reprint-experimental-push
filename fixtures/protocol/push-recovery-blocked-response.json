@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "code": "RECOVERY_BLOCKED",
+  "message": "Recovery cannot prove a safe finish or rollback for batch-1.",
+  "details": {
+    "dry_run_id": "dry_01j00000000000000000000000",
+    "batch_id": "batch-1",
+    "resources": [
+      {
+        "resource_key": "file:index.php",
+        "before_hash": "sha256:base-index",
+        "planned_hash": "sha256:local-index",
+        "actual_hash": "sha256:unexpected-live-index",
+        "artifact_refs": ["artifact://reprint-push/batch-1/index.php.staged"]
+      }
+    ]
+  },
+  "journal_cursor": "journal:dry_01j00000000000000000000000:3"
+}

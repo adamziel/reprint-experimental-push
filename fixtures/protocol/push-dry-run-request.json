@@ -1,0 +1,44 @@
+{
+  "push_session": "psh_01j00000000000000000000000",
+  "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+  "remote_snapshot_id": "snap_01j00000000000000000000000",
+  "summary": {
+    "mutations": 2,
+    "conflicts": 0,
+    "atomic_groups": 0
+  },
+  "preconditions": [
+    {
+      "resource_key": "file:index.php",
+      "expected_remote_hash": "sha256:base-index",
+      "base_hash": "sha256:base-index",
+      "local_hash": "sha256:local-index"
+    },
+    {
+      "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+      "expected_remote_hash": "sha256:base-post-1",
+      "base_hash": "sha256:base-post-1",
+      "local_hash": "sha256:local-post-1"
+    }
+  ],
+  "mutations": [
+    {
+      "mutation_id": "mutation-1",
+      "resource_key": "file:index.php",
+      "action": "put",
+      "body_hash": "sha256:local-index",
+      "body_ref": "upload:body-1",
+      "atomic_group_id": null
+    },
+    {
+      "mutation_id": "mutation-2",
+      "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+      "action": "put",
+      "body_hash": "sha256:local-post-1",
+      "body_ref": "inline:row-1",
+      "atomic_group_id": null
+    }
+  ],
+  "atomic_groups": []
+}

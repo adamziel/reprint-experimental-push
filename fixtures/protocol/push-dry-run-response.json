@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "dry_run_id": "dry_01j00000000000000000000000",
+  "status": "ready",
+  "accepted_until": "2026-05-24T00:20:00Z",
+  "server_checks": [
+    "auth-scope",
+    "plan-schema",
+    "resource-addressability",
+    "atomic-group-closure",
+    "remote-precondition-readable",
+    "journal-writable"
+  ],
+  "apply_requirements": {
+    "must_revalidate": true,
+    "must_use_dry_run_id": true,
+    "max_batch_mutations": 100
+  },
+  "journal_cursor": "journal:dry_01j00000000000000000000000:1"
+}
