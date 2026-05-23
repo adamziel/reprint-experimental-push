@@ -1,0 +1,165 @@
+# Fast Paths
+
+Fast is fourth priority for push. A fast path is acceptable only when a crash,
+retry, concurrent remote edit, or partial upload still leaves the source site in
+one of the known states: unchanged, fully changed, or blocked with durable
+recovery evidence. Anything that makes the final state ambiguous is not a fast
+path for this project.
+
+## Safe Speedups
+
+| Area | Safe fast path | Required guardrail |
+| --- | --- | --- |
+| File hashing | Cache strong file hashes keyed by a local fingerprint such as size, mtime, inode, permissions, and previous digest. Stream only uncached or fingerprint-changed files, and keep per-chunk hashes for large files. | Size, mtime, or inode can only skip a rehash when they match a cached strong digest. The apply precondition remains the remote resource hash. |
+| Chunk upload | Upload large file bodies to plan-scoped staging objects in digest-addressed chunks, then assemble or publish the file with one compare-and-swap finalize step. | Chunk writes must not mutate the live path. Each chunk needs a checksum, idempotency key, and durable journal entry before the sender advances. |
+| Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
+| Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, and strong hash so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
+| Compression | Compress transport frames for JSON, SQL batches, manifests, and text files. Skip already-compressed file types and keep the canonical hash over the uncompressed resource value. | Content encoding is transport metadata. It must not change the hash used for conflict detection or compare-and-swap. |
+| Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
+| Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
+
+## File Hashing
+
+Use a two-level model:
+
+1. A resource hash covers the canonical file value used by the planner and
+   apply precondition.
+2. Chunk hashes cover upload parts and resumability.
+
+For large files, the local side can cache chunk hashes and a Merkle-style root
+or full-file digest. The remote can return an index entry with size and strong
+hash to avoid downloading the remote body during planning. That still does not
+authorize apply. The finalize request must say, in effect: publish this staged
+file only if `file:path` still has `remoteBeforeHash`.
+
+Reject mtime-only, size-only, or path-only equality. They are useful cache
+lookups, not data-loss guards.
+
+## Chunk Upload
+
+Chunk upload should be staged under a tuple like:
+
+```text
+plan id + resource key + local hash + chunk index + chunk digest
+```
+
+This makes chunk PUT retries idempotent and lets a resumed client ask which
+chunks are already present. The live file path changes only at finalize time.
+If the resource is part of a plugin install or another atomic group, finalize
+publishes into group staging and the group commit publishes all files, rows,
+plugin metadata, and activation state together.
+
+Useful defaults for the first production prototype:
+
+- 4 MiB to 16 MiB chunks.
+- 2 to 4 concurrent uploads per remote site.
+- A maximum in-flight byte budget, not just a request count.
+- A chunk journal that is fsynced or remote-acknowledged before more chunks are
+  considered complete.
+
+## Database Row Batching
+
+Batch rows for throughput, but keep conflict semantics per row. A safe batch
+has:
+
+- Table name and stable ordered primary keys.
+- Operation shape, such as insert, update, or delete.
+- One expected remote hash per row.
+- One idempotency key for the batch.
+- A transaction boundary or recovery record that proves whether the batch
+  committed.
+
+For normal independent rows, each batch can be an atomic unit. For plugin
+installs, plugin upgrades, and other coupled changes, row batches are only
+staging operations. The atomic group commit is the visibility boundary.
+
+Reject blind `REPLACE INTO`, unordered SQL replay, and batches that use one
+table-level timestamp as a substitute for per-row preconditions.
+
+## Remote Indexes
+
+Remote indexes should make planning cheaper by listing resource metadata and
+strong hashes without body transfer. A useful index entry has:
+
+- Resource key and type.
+- Strong hash over the canonical resource value.
+- Size or row byte estimate.
+- Remote generation or scanner cursor.
+- Plugin owner when known.
+- Deleted/tombstone state.
+
+Indexes can be stale, incomplete, or invalidated by a live edit. Treat them as
+planning evidence. The apply phase still reads the current remote hash or uses a
+server-side compare-and-swap predicate before mutation.
+
+## Compression
+
+Compression belongs to the transport layer. Hashing and conflict detection
+should use canonical uncompressed values. Good candidates are JSON manifests,
+row batches, text assets, and SQL-like payloads. Poor candidates are zip files,
+images, video, gzip streams, and already-compressed plugin packages.
+
+The receiver should record both the canonical digest and the encoded payload
+digest. The canonical digest protects correctness; the encoded digest protects
+wire/storage integrity.
+
+## Parallelism And Backpressure
+
+Parallelism should improve utilization without hiding failure order. Suggested
+initial limits:
+
+| Lane | Starting limit | Notes |
+| --- | ---: | --- |
+| Remote index scans | 1 per site | Keep cursor semantics simple. |
+| Local file hashing | 2 workers | Usually CPU and disk bound. |
+| Chunk uploads | 2 to 4 requests | Also capped by in-flight bytes. |
+| Database batches | 1 to 2 per table | Avoid lock storms on busy sites. |
+| Atomic group commits | 1 per site | Preserve a simple recovery story. |
+
+Backpressure should be driven by concrete budgets: in-flight bytes, queued row
+count, remote error rate, latency, staging disk usage, and journal lag. When a
+budget is hit, upstream producers pause. They do not drop evidence, skip hashes,
+or mark work complete before durable acknowledgement.
+
+## Fast Paths To Reject
+
+- Publishing chunks directly into the live file path.
+- Skipping apply preconditions because the dry-run plan was just generated.
+- Treating a remote index generation as permission to mutate.
+- Using mtime, size, row count, or table checksum instead of strong resource
+  hashes for conflict checks.
+- Splitting a plugin install so files publish before database rows, dependency
+  checks, plugin metadata, and activation state are ready.
+- Activating or upgrading a plugin before validators and dependency
+  preconditions pass.
+- Replaying SQL dumps or bulk `REPLACE` statements without row-level
+  compare-and-swap predicates.
+- Retrying non-idempotent mutations without a plan id, resource key, and batch
+  idempotency key.
+- Compressing payloads and then comparing compressed bytes as the canonical
+  resource hash.
+- Raising concurrency without an in-flight byte budget and durable progress
+  journal.
+- Reporting success when staged bytes, staged rows, or an atomic group commit
+  are still unacknowledged.
+
+## Benchmark Shape
+
+Benchmarks need to model the expensive paths that can break safety, not only
+tiny row updates:
+
+- A multi-hundred-MiB or larger upload with chunk hashing, resumable staging,
+  bounded parallel upload, compression skip, and final compare-and-swap publish.
+- A plugin install with many files, plugin metadata, dependency checks,
+  thousands of database rows, row batching, and one atomic visibility boundary.
+- A mixed remote-index planning pass that avoids body fetches but still
+  revalidates preconditions during apply.
+- Backpressure scenarios where the remote slows down, staging disk fills, or
+  journal fsync falls behind.
+- Failure injection before and after every durable boundary: chunk ack, batch
+  commit, group staging finalize, and atomic group commit.
+
+The deterministic model in `scripts/bench/performance-model.js` captures these
+benchmark shapes without touching a live site. It should stay aligned with the
+planner invariants: speedups can reduce bytes, round trips, and duplicate work,
+but cannot remove preconditions or split atomic groups.
