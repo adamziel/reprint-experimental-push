@@ -1,0 +1,13 @@
+{
+  "ok": false,
+  "code": "PRECONDITION_FAILED",
+  "message": "Remote changed since dry-run for file:index.php.",
+  "details": {
+    "dry_run_id": "dry_01j00000000000000000000000",
+    "batch_id": "batch-1",
+    "resource_key": "file:index.php",
+    "expected_hash": "sha256:base-index",
+    "actual_hash": "sha256:remote-edited-index"
+  },
+  "journal_cursor": "journal:dry_01j00000000000000000000000:2"
+}

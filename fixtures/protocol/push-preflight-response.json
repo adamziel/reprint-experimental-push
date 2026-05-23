@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "push_protocol_version": 1,
+  "push_protocol_min_version": 1,
+  "push_session": "psh_01j00000000000000000000000",
+  "expires_at": "2026-05-24T00:10:00Z",
+  "site": {
+    "site_id": "remote-example",
+    "home_url_hash": "sha256:4c5b2d3a9e6f0a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0000",
+    "wp_version": "6.9.0",
+    "table_prefix": "wp_",
+    "multisite": false
+  },
+  "capabilities": {
+    "hash_listing": true,
+    "dry_run": true,
+    "apply": true,
+    "journal": true,
+    "recovery": true,
+    "db_transactions": true,
+    "file_staging": true,
+    "maintenance_mode": true
+  },
+  "limits": {
+    "max_request_bytes": 8388608,
+    "max_batch_mutations": 100,
+    "max_batch_bytes": 4194304,
+    "max_execution_seconds": 20
+  },
+  "journal": {
+    "store": "database",
+    "namespace": "reprint_push",
+    "retention_days": 30
+  }
+}

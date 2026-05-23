@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "dry_run_id": "dry_01j00000000000000000000000",
+  "batch_id": "batch-1",
+  "state": "committed",
+  "proof": "all-final-hashes-match-plan",
+  "actions": ["inspected-live-hashes", "finalized-journal"],
+  "next": null
+}

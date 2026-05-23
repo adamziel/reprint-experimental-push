@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "dry_run_id": "dry_01j00000000000000000000000",
+  "batch_id": "batch-1",
+  "status": "committed",
+  "applied_mutations": ["mutation-1", "mutation-2"],
+  "final_hashes": [
+    {
+      "resource_key": "file:index.php",
+      "hash": "sha256:local-index"
+    },
+    {
+      "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+      "hash": "sha256:local-post-1"
+    }
+  ],
+  "journal_cursor": "journal:dry_01j00000000000000000000000:2"
+}
