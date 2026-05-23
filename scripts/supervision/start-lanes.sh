@@ -34,6 +34,6 @@ for lane in "${lanes[@]}"; do
   fi
 
   tmux new-session -d -s "$session" \
-    "cd '$worktree' && codex exec -C '$worktree' -a never -s danger-full-access --search -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
+    "cd '$worktree' && codex exec -C '$worktree' --dangerously-bypass-approvals-and-sandbox --search -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
   printf '%s\n' "started: $session -> $worktree"
 done
