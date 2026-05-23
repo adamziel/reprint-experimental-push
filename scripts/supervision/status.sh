@@ -13,9 +13,8 @@ git -C "$repo" worktree list
 if [ -d "$lanes_root" ]; then
   printf '\n%s\n' "lane git state:"
   for worktree in "$lanes_root"/*; do
-    [ -d "$worktree/.git" ] || continue
+    git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1 || continue
     printf '\n## %s\n' "$(basename "$worktree")"
     git -C "$worktree" status --short --branch
   done
 fi
-

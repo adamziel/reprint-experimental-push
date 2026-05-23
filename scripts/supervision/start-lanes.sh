@@ -22,7 +22,7 @@ for lane in "${lanes[@]}"; do
   prompt="$repo/supervision/lanes/$lane.md"
   output="$worktree/.lane-output/final.md"
 
-  if [ ! -d "$worktree/.git" ]; then
+  if ! git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git -C "$repo" worktree add -B "$branch" "$worktree" HEAD
   fi
 
@@ -37,4 +37,3 @@ for lane in "${lanes[@]}"; do
     "cd '$worktree' && codex exec -C '$worktree' -a never -s danger-full-access --search -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
   printf '%s\n' "started: $session -> $worktree"
 done
-
