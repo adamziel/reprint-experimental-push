@@ -4,6 +4,17 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Summary Refresh
+
+- Last update: 2026-05-25 00:42 CEST.
+- Public page: [progress.html](../progress.html) now shows the current timestamp,
+  a shorter evidence-led summary, and unchanged pending gates.
+- Evidence links stay centered on the linked docs: planner and recovery notes,
+  Playground topology, protocol, and the existing supervisor feedback trail.
+- Status stays conservative: production auth, durable journal storage,
+  Docker/full Playground integration, WordPress graph identity mapping, and
+  plugin drivers remain unproven.
+
 ## 2026-05-25 - Current Supervisor Snapshot
 
 - Last update: 2026-05-25 00:27 CEST.

@@ -474,16 +474,15 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is still lab/model scope: 89 Node tests pass after supervised lane merges covering planner invariants, recovery replay/failure states, fast-path guardrails, protocol binding, and audit updates. Eight recent fast-mode outputs were integrated; the graph HTTP lane remains active and unmerged. Production push remains blocked.</p>
-        <time class="update-stamp" datetime="2026-05-25T00:27:00+02:00">Last updated: May 25, 2026, 00:27 CEST</time>
+        <p class="lead">Current proof is still lab/model scope: 89 Node tests pass, the public progress page stays evidence-led, and the main blockers are still production auth, durable journal storage, Docker/full Playground integration, graph identity mapping, and plugin drivers.</p>
+        <time class="update-stamp" datetime="2026-05-25T00:42:54+02:00">Last updated: May 25, 2026, 00:42 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">89 Node tests passing</span>
-          <span class="pill">Packaged plugin route passing</span>
+          <span class="pill">Packaged route lab proof only</span>
           <span class="pill">Scoped creds required</span>
           <span class="pill">Graph refs guarded</span>
           <span class="pill">Recovery states covered</span>
-          <span class="pill">8 worker outputs integrated</span>
-          <span class="pill">Graph HTTP smoke pending</span>
+          <span class="pill">Public summary kept concise</span>
           <span class="pill">Production push blocked</span>
         </div>
       </div>
@@ -500,11 +499,11 @@
       </div>
       <div class="metric">
         <strong>Flat</strong>
-        <span>production readiness</span>
+        <span>production readiness trend</span>
       </div>
       <div class="metric">
         <strong>0</strong>
-        <span>production gates proven</span>
+        <span>production gates proven here</span>
       </div>
       <div class="metric">
         <strong>4</strong>
@@ -554,10 +553,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence landed.</span></li>
-            <li><strong>Not going well</strong><span>Production auth, journal, leases, graph mapping, integration, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>Eight worker outputs were integrated; production readiness stayed blocked.</span></li>
-            <li><strong>Next nudge</strong><span>Get the graph HTTP smoke green, then prove production auth and journal storage.</span></li>
+            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence remain linked and stable.</span></li>
+            <li><strong>Not going well</strong><span>Production auth, durable journal storage, Docker/full Playground integration, graph mapping, and plugin drivers remain unproven.</span></li>
+            <li><strong>Progress change</strong><span>The public page was refreshed with a current timestamp and a shorter summary.</span></li>
+            <li><strong>Next nudge</strong><span>Prove one production-shaped executor or journal edge before raising any readiness claim.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -597,11 +596,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth and graph safety remain pending.</p>
+              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth, durable storage, and graph safety remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, and WordPress graph identity are still pending.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, Docker integration, and WordPress graph identity are still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>
