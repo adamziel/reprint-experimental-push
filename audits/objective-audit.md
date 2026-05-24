@@ -4,6 +4,15 @@
 
 The project is **not releasable as a production WordPress push path**.
 
+Derived release requirements from the objective:
+
+1. One-way pull from the base, then one-way push back to the live source.
+2. No silent data loss across the live WordPress graph, including related and plugin-owned data.
+3. Recovery that survives crashes, retries, replay, stale claims, and duplicate requests without dropping or duplicating writes.
+4. Auth, session, lease, fencing, durable journal, storage, and graph-identity checks enforced at the release boundary.
+5. Evidence for the real remote/local topology, not only lab-backed or fixture-scoped route shapes.
+6. A measured, documented speed claim, or an explicit refusal to make one.
+
 The repository now has meaningful lab evidence: three-way JSON snapshot
 planning, fixture-scoped Playground apply paths, authenticated local Playground
 routes, DB journal/idempotency slices, process-kill and stale-claim smokes,
