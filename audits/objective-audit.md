@@ -22,13 +22,16 @@ required command. The benchmark code lists blockers such as missing durable
 chunk receipts, missing live remote preconditions, missing durable journal
 integrity, missing graph-identity evidence, missing recovery evidence, and
 non-production storage or row-apply capabilities. That is a useful refusal
-mechanism, but it is not yet a gate that can stop a release on its own.
+mechanism, but it is still only a guardrail. It does not create the required
+release boundary, so the repo can still present a green default test run while
+the strongest claims remain skipped.
 
 The honest release claim is narrower: this repository is an executable safety
 model and local Playground lab for push invariants. It does **not** yet prove
 production no-data-loss, production reliability, or measured speed.
 It also does not yet have one enforced release gate that makes those claims
-non-optional before a public or production push.
+non-optional before a public or production push, so the release bar is still
+procedural rather than enforced.
 
 ## Evidence Standard
 
@@ -349,7 +352,9 @@ invocation and can be skipped while `npm test` remains green.
     claims stay manual and easy to skip. The blocker is specific: without one
     required command or CI job that fails when auth, storage, recovery,
     plugin, and performance gates are omitted, release readiness is still a
-    manual judgment, not an enforced property.
+    manual judgment, not an enforced property. The missing evidence is not
+    another opt-in smoke; it is a single mandatory command that composes the
+    existing ones into release-proof order.
 
 16. **The highest-value missing edge case is a real crash matrix on the live
     write boundaries.** The current smoke suite can show one process-kill path
@@ -386,7 +391,8 @@ invocation and can be skipped while `npm test` remains green.
     not enforce a benchmark environment that can fail release automatically.
     Until a production-shaped benchmark runs the executor end to end with a
     non-bypassable threshold, "fast" remains blocked as a release claim, not
-    merely unproven.
+    merely unproven. The current benchmark harness is therefore a refusal
+    filter, not a release authorization.
 
 ## Test Verdict
 
@@ -445,7 +451,8 @@ proof gates:
    and plugin smokes remain manual opt-ins. The repository cannot yet claim
    that release evidence is enforced. Release readiness remains a manual
    judgment call until that aggregator exists, and that missing aggregator is
-   the current top release blocker.
+   the current top release blocker. The gate must fail if any mandatory smoke
+   is omitted, not merely document that it could have been run.
 8. Runtime benchmarks for large uploads and large DB changes with concrete
    throughput, memory, retry, and recovery measurements.
 
