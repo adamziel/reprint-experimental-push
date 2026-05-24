@@ -140,8 +140,14 @@ evidence, forged ready plans missing dependency mutation/`atomicGroups`/
 dependency requirements, and row-only plugin-owned data bypass attempts. The
 row-only bypass rejects with `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`. The lab
 keeps an exact fixture plugin file/resource allowlist and blocks arbitrary
-plugin files, direct `active_plugins` row mutation, custom-table apply, and
-arbitrary plugin-owned data. Failure injection classifies before-commit as
+plugin files, direct `active_plugins` row mutation, custom tables outside the
+exact forms lab driver, and arbitrary plugin-owned data. The exact
+`wp_reprint_push_forms_lab` driver `fixture-forms-lab-table` is fixture-only:
+owner `forms`, positive `id:N`, explicit policy, unchanged active
+`reprint-push-forms-fixture` evidence, precondition hashes, exact PHP
+table/column/payload validation, delete blocked, idempotent replay with zero
+fresh mutation work, and redacted hash-only journal/recovery evidence. Failure
+injection classifies before-commit as
 old-remote and during-publish/activation failure as blocked/non-complete
 recovery evidence; it does not prove rollback.
 

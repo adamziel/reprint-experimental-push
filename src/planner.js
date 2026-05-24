@@ -17,6 +17,7 @@ const SUPPORTED_PLUGIN_DATA_DRIVERS = new Set([
   'wp-term-meta',
   'wp-usermeta',
   'wp-user-meta',
+  'fixture-forms-lab-table',
 ]);
 
 export function createPushPlan({ base, local, remote, now = new Date() }) {
@@ -103,6 +104,25 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           });
           continue;
         }
+        if (localValue === ABSENT && !support.supportsDelete) {
+          addPluginOwnedResourceBlocker(plan, {
+            resource,
+            owner,
+            support: {
+              ...support,
+              supported: false,
+              className: 'unsupported-plugin-owned-resource',
+              reason: 'Plugin-owned resource driver does not support delete mutations.',
+            },
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+          continue;
+        }
       }
 
       const mutation = {
@@ -118,6 +138,16 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         change,
         atomicGroupId: intentByResource.get(resource.key) || null,
       };
+      if (isPluginOwnedDataResource(resource, owner)) {
+        const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+        mutation.pluginOwnedResource = {
+          pluginOwner: owner,
+          driver: support.driver,
+          policySource: support.policySource,
+          supportsDelete: support.supportsDelete,
+          driverEvidence: support.driverEvidence,
+        };
+      }
       plan.mutations.push(mutation);
       plan.preconditions.push({
         mutationId: mutation.id,
@@ -222,7 +252,8 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
       }
 
       const supported = candidates.find((entry) =>
-        SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver));
+        SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver)
+        && pluginOwnedPolicyEntryMatchesResource(entry, resource, owner));
       if (!supported) {
         return {
           supported: false,
@@ -232,10 +263,37 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      if (supported.driver === 'fixture-forms-lab-table') {
+        const driverEvidence = fixtureFormsLabTableDriverEvidence({
+          resource,
+          owner,
+          base,
+          local,
+          remote,
+        });
+        if (!driverEvidence.supported) {
+          return {
+            supported: false,
+            className: 'unsupported-plugin-owned-resource',
+            driver: supported.driver,
+            policySource: supported.source,
+            reason: driverEvidence.reason,
+          };
+        }
+        return {
+          supported: true,
+          driver: supported.driver,
+          policySource: supported.source,
+          supportsDelete: false,
+          driverEvidence,
+        };
+      }
+
       return {
         supported: true,
         driver: supported.driver,
         policySource: supported.source,
+        supportsDelete: supported.supportsDelete === true,
       };
     },
   };
@@ -295,7 +353,58 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
     resourceKey: entry.resourceKey || entry.key || entry.resource?.key || null,
     pluginOwner: entry.pluginOwner || entry.owner || entry.plugin || null,
     driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
+    supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
     source,
+  };
+}
+
+function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
+  if (entry.driver !== 'fixture-forms-lab-table') {
+    return true;
+  }
+  return resource.type === 'row'
+    && resource.table === 'wp_reprint_push_forms_lab'
+    && /^id:\d+$/.test(resource.id)
+    && owner === 'forms'
+    && entry.pluginOwner === 'forms';
+}
+
+function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
+  if (
+    resource.type !== 'row'
+    || resource.table !== 'wp_reprint_push_forms_lab'
+    || !/^id:[1-9]\d*$/.test(resource.id)
+    || owner !== 'forms'
+  ) {
+    return { supported: false, reason: 'Fixture forms lab table driver only supports positive id rows owned by forms.' };
+  }
+
+  const plugin = 'reprint-push-forms-fixture';
+  const pluginResource = { type: 'plugin', name: plugin, key: `plugin:${plugin}` };
+  const basePlugin = getResource(base, pluginResource);
+  const remotePlugin = getResource(remote, pluginResource);
+  const baseHash = resourceHash(base, pluginResource);
+  const remoteHash = resourceHash(remote, pluginResource);
+  if (
+    basePlugin !== ABSENT
+    && remotePlugin !== ABSENT
+    && basePlugin?.active === true
+    && remotePlugin?.active === true
+    && baseHash === remoteHash
+  ) {
+    return {
+      supported: true,
+      source: 'live-remote',
+      plugin,
+      resourceKey: pluginResource.key,
+      baseHash,
+      remoteHash,
+    };
+  }
+
+  return {
+    supported: false,
+    reason: 'Fixture forms lab table driver requires unchanged active reprint-push-forms-fixture evidence.',
   };
 }
 

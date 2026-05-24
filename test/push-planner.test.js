@@ -405,6 +405,242 @@ test('blocks unknown plugin-owned custom table rows without leaking values', () 
   assert.equal(blockerJson.includes('local-private-entry'), false);
 });
 
+test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'local-semantic';
+  const remote = JSON.parse(JSON.stringify(base));
+
+  const withoutPolicy = planFor(base, local, remote);
+  assert.equal(withoutPolicy.status, 'blocked');
+  assert.equal(withoutPolicy.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(withoutPolicy.blockers[0].resourceKey, resourceKey);
+
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+  const ready = planFor(base, local, remote);
+  assert.equal(ready.status, 'ready');
+  const mutation = mutationFor(ready, resourceKey);
+  assert.equal(mutation.pluginOwnedResource.driver, 'fixture-forms-lab-table');
+  assert.equal(mutation.pluginOwnedResource.driverEvidence.source, 'live-remote');
+  assert.equal(mutation.pluginOwnedResource.driverEvidence.resourceKey, 'plugin:reprint-push-forms-fixture');
+  assert.equal(mutation.pluginOwnedResource.driverEvidence.baseHash, mutation.pluginOwnedResource.driverEvidence.remoteHash);
+
+  const inactiveRemote = JSON.parse(JSON.stringify(remote));
+  inactiveRemote.plugins['reprint-push-forms-fixture'].active = false;
+  const inactivePlan = planFor(base, local, inactiveRemote);
+  assert.equal(inactivePlan.status, 'blocked');
+  assert.equal(inactivePlan.blockers[0].class, 'unsupported-plugin-owned-resource');
+
+  const changedPluginRemote = JSON.parse(JSON.stringify(remote));
+  changedPluginRemote.plugins['reprint-push-forms-fixture'].version = '1.0.1';
+  const changedPluginPlan = planFor(base, local, changedPluginRemote);
+  assert.equal(changedPluginPlan.status, 'blocked');
+  assert.equal(changedPluginPlan.blockers[0].class, 'unsupported-plugin-owned-resource');
+});
+
+test('fixture forms lab table delete remains blocked without driver delete opt-in', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.db.wp_reprint_push_forms_lab['id:1'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+  const plan = planFor(base, local, JSON.parse(JSON.stringify(base)));
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.blockers[0].class, 'unsupported-plugin-owned-resource');
+});
+
+test('executor rejects forged ready custom table plans without valid fixture driver evidence', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'local-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+  const ready = planFor(base, local, JSON.parse(JSON.stringify(base)));
+  const forged = tamperReadyPlan(ready, (plan) => {
+    delete mutationFor(plan, resourceKey).pluginOwnedResource.driverEvidence;
+  });
+  const remote = JSON.parse(JSON.stringify(base));
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(JSON.stringify(error.details).includes('local-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('base-secret'), false);
+
+  const forgedHash = tamperReadyPlan(ready, (plan) => {
+    const mutation = mutationFor(plan, resourceKey);
+    mutation.pluginOwnedResource.driverEvidence.baseHash = 'x'.repeat(64);
+    mutation.pluginOwnedResource.driverEvidence.remoteHash = 'x'.repeat(64);
+  });
+  const forgedHashRemote = JSON.parse(JSON.stringify(base));
+  const forgedHashBefore = JSON.stringify(forgedHashRemote);
+  const forgedHashError = captureError(() => applyPlan(forgedHashRemote, forgedHash));
+  assert.ok(forgedHashError instanceof PushPlanError);
+  assert.equal(forgedHashError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(JSON.stringify(forgedHashRemote), forgedHashBefore);
+
+  const stalePluginRemote = JSON.parse(JSON.stringify(base));
+  stalePluginRemote.plugins['reprint-push-forms-fixture'].version = '1.0.1';
+  const stalePluginBefore = JSON.stringify(stalePluginRemote);
+  const stalePluginError = captureError(() => applyPlan(stalePluginRemote, ready));
+  assert.ok(stalePluginError instanceof PushPlanError);
+  assert.equal(stalePluginError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(JSON.stringify(stalePluginRemote), stalePluginBefore);
+});
+
+test('fixture forms lab table journal redacts raw payload values', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'local-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+
+  const result = applyPlan(JSON.parse(JSON.stringify(base)), planFor(base, local, JSON.parse(JSON.stringify(base))));
+  const journalJson = JSON.stringify(result.journal);
+
+  assert.equal(journalJson.includes('local-secret'), false);
+  assert.equal(journalJson.includes('base-secret'), false);
+  assert.equal(result.journal.entries[0].beforeHash.length, 64);
+  assert.equal(result.journal.entries[0].afterHash.length, 64);
+});
+
+test('fixture forms lab table blocked recovery redacts raw remote payload values', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'local-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+  const remote = JSON.parse(JSON.stringify(base));
+  const plan = planFor(base, local, remote);
+  const error = captureError(() => applyPlan(remote, plan, {
+    mutateRemote: true,
+    failDuringCommitAtMutation: 1,
+  }));
+  const detailsJson = JSON.stringify(error.details);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(detailsJson.includes('base-secret'), false);
+  assert.equal(detailsJson.includes('local-secret'), false);
+  assert.equal(detailsJson.includes('forms'), true);
+  assert.equal(
+    error.details.recovery.artifacts.remote.db.wp_reprint_push_forms_lab['id:1'].__redacted,
+    true,
+  );
+});
+
+test('fixture forms lab table conflicts and stale preconditions preserve remote', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'local';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'remote';
+
+  const conflictPlan = planFor(base, local, remote);
+  assert.equal(conflictPlan.status, 'conflict');
+  assert.equal(conflictPlan.conflicts[0].class, 'plugin-data-conflict');
+  assert.equal(conflictPlan.conflicts[0].resourceKey, resourceKey);
+
+  const ready = planFor(base, local, JSON.parse(JSON.stringify(base)));
+  const staleRemote = JSON.parse(JSON.stringify(base));
+  staleRemote.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'stale-remote';
+  const before = JSON.stringify(staleRemote);
+  const error = captureError(() => applyPlan(staleRemote, ready));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(staleRemote), before);
+});
+
 test('classifies divergent plugin-owned data rows as redacted plugin data conflicts', () => {
   const base = baseSite();
   base.db.wp_postmeta = {

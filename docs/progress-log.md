@@ -261,22 +261,28 @@ linked implementation artifacts.
 
 - A verified fixture-scoped plugin-owned data slice now covers nested
   `reprint_push_forms_fixture` option data, fixture-marked parent posts with
-  `_reprint_push_forms_schema` postmeta, detection-only
-  `wp_reprint_push_forms_lab` custom-table rows, and
+  `_reprint_push_forms_schema` postmeta, exact
+  `wp_reprint_push_forms_lab` custom-table rows through driver
+  `fixture-forms-lab-table`, and detection-only
   `reprint-push-forms-fixture` plugin metadata.
 - Snapshot/apply is intentionally allowlist-based. Safe apply covers only the
-  allowlisted option and the allowlisted postmeta key when the parent post is
-  fixture-marked. Custom-table rows and plugin metadata are exported/detected
-  but not applied.
+  allowlisted option, the allowlisted postmeta key when the parent post is
+  fixture-marked, and the exact forms lab table driver with owner `forms`,
+  positive `id:N`, explicit policy, unchanged active
+  `reprint-push-forms-fixture` evidence, precondition hashes, exact PHP
+  table/column/payload validation, delete blocked, idempotent replay with zero
+  fresh mutation work, and redacted hash-only journal/recovery evidence. Plugin
+  metadata is exported/detected but not applied.
 - The planner requires an explicit row driver policy for plugin-owned rows.
   Unknown plugin-owned custom-table rows block as
   `unsupported-plugin-owned-resource`. Conflict evidence exposes hashes and
   resource evidence, not raw plugin values.
-- The smokes now verify eight exact ready mutations and assert detection-only
-  resources are not ready mutations. Caveat: this is still not a claim about
-  arbitrary production plugin semantics; real plugin activation, custom-table
-  drivers, recovery, auth/session/nonce proof, and production source mutation
-  remain pending.
+- The smokes verify eight exact ready mutations for the base apply path, one
+  exact forms lab table mutation in `npm run test:playground:forms-lab-table`,
+  and detection-only plugin metadata is not a ready mutation. Caveat: this is
+  still not a claim about arbitrary production plugin semantics; real plugin
+  activation, generic custom-table drivers, recovery, auth/session/nonce proof,
+  and production source mutation remain pending.
 
 ## 2026-05-24 - Playground Fixture Plugin Install Atomicity Slice
 
@@ -302,21 +308,22 @@ linked implementation artifacts.
 - Executor-side validation now runs in JavaScript and PHP before mutation or
   preconditions where relevant. The lab keeps an exact fixture plugin file
   allowlist; arbitrary plugin files, direct `active_plugins` row mutation,
-  custom-table apply, and arbitrary plugin-owned data remain blocked.
+  custom tables outside the exact forms lab driver, and arbitrary plugin-owned
+  data remain blocked.
 - Failure injection remains classification evidence, not rollback. A
   before-commit failure preserves the old remote. During-publish and activation
   failures classify blocked recovery and prevent fresh retry mutation work.
 - Caveat: this is hard-coded Playground fixture plugin install atomicity
   evidence only. It is not arbitrary production plugin installation/update,
   production activation support, production rollback, plugin semantic drivers,
-  custom-table drivers, arbitrary plugin-owned data safety, or production
+  generic custom-table drivers, arbitrary plugin-owned data safety, or production
   durability/auth proof.
 
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
-| Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling, detection-only custom-table/plugin metadata, and `npm run test:playground:plugin-atomic-install` fixture plugin install atomicity evidence | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
+| Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling, the exact `wp_reprint_push_forms_lab` driver through `npm run test:playground:forms-lab-table`, detection-only plugin metadata, and `npm run test:playground:plugin-atomic-install` fixture plugin install atomicity evidence | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
 | Recovery boundaries | 22% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization` | Production DB table journal durability, production WordPress crash-boundary proof, all-old stale-claim safe retry, auto-repair policy |
 | Reliable executor and protocol | 22% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, authenticated local Playground source-site mutation slice under `/authenticated/*`, and DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key` | Production Reprint protocol extension, production Reprint auth/HMAC/TLS/session/nonce proof, real exporter credential binding, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
@@ -360,7 +367,13 @@ linked implementation artifacts.
   durable production audit/recovery records.
 - Plugin validators or drivers: pending until plugin-specific semantics are
   implemented and tested against real plugin-owned data. Current evidence is
-  limited to allowlisted fixture option/postmeta apply, detection-only
-  custom-table and plugin metadata export, and hard-coded fixture plugin install
-  atomicity; it is not arbitrary production plugin installation/update,
-  activation, rollback, custom-table driver, or plugin-owned data safety proof.
+  limited to allowlisted fixture option/postmeta apply, the exact
+  `wp_reprint_push_forms_lab` driver `fixture-forms-lab-table`, detection-only
+  plugin metadata export, and hard-coded fixture plugin install atomicity. The
+  forms lab driver is owner `forms`, positive `id:N`, explicit policy,
+  unchanged active `reprint-push-forms-fixture` evidence, precondition hashes,
+  exact PHP table/column/payload validation, delete blocked, idempotent replay
+  with zero fresh mutation work, and redacted hash-only journal/recovery
+  evidence. It is not arbitrary production plugin installation/update,
+  activation, rollback, generic custom-table driver, or plugin-owned data safety
+  proof.

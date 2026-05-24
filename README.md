@@ -67,6 +67,12 @@ Run the fixture plugin install atomicity smoke:
 npm run test:playground:plugin-atomic-install
 ```
 
+Run the fixture-only forms lab custom-table semantic driver smoke:
+
+```bash
+npm run test:playground:forms-lab-table
+```
+
 Run the lab recovery inspection harness:
 
 ```bash
@@ -92,12 +98,17 @@ receipts fail before mutation with `RECEIPT_MISMATCH`, stale apply fails with
 `PRECONDITION_FAILED`, and non-ready conflict plans fail with `PLAN_NOT_READY`.
 The verified plugin-owned data slice is narrow: blueprints include the
 `reprint_push_forms_fixture` option, fixture-marked parent posts with
-`_reprint_push_forms_schema` postmeta, detection-only
+`_reprint_push_forms_schema` postmeta, fixture-only
 `wp_reprint_push_forms_lab` custom-table rows, and
-`reprint-push-forms-fixture` plugin metadata. Apply is allowed only for
-allowlisted fixture option/postmeta resources; custom-table rows and plugin
-metadata are exported and can block as `unsupported-plugin-owned-resource`, but
-are not applied.
+`reprint-push-forms-fixture` plugin metadata. Apply is allowed for allowlisted
+fixture option/postmeta resources and for the exact forms lab custom-table
+semantic driver only: table `wp_reprint_push_forms_lab`, driver
+`fixture-forms-lab-table`, owner `forms`, positive `id:N` rows, explicit
+snapshot policy, unchanged active `reprint-push-forms-fixture` evidence,
+matching precondition hashes, exact PHP table/column/payload validation, and
+delete blocked. Unknown custom tables, arbitrary plugin-owned data, direct
+`active_plugins` mutation, and production plugin semantic drivers remain
+blocked or unproven.
 This remains a lab harness, not production Reprint HTTP source mutation support.
 Its receipts are hash-bound to plan, mutation, precondition, and resource
 evidence, and its journal checks are fixture-scoped lab audit evidence, not a
@@ -177,9 +188,11 @@ mutation. The same harness also verifies the DB-native claim path: a unique
 same-key/same-body first applies produce exactly one fresh mutation executor,
 and the duplicate request returns safe in-progress/retry/replay behavior without
 running mutations. Concurrent same-key/different-body applies reject the loser
-with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation. This DB journal is separate
-from the legacy `wp_options` lab journal read by `GET /journal`; both are
-fixture-scoped evidence.
+with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation. Stale precondition failures
+are journaled as rejected terminal results, and same key/body replay returns the
+same rejection with `idempotency.replayed: true` and no fresh mutation work.
+This DB journal is separate from the legacy `wp_options` lab journal read by
+`GET /journal`; both are fixture-scoped evidence.
 
 The `test:playground:db-journal-process-kill` script runs a local-only
 Playground process-kill smoke over a host-mounted WordPress directory. It sends
@@ -226,14 +239,29 @@ omit dependency mutation, `atomicGroups`, or dependency requirements, stale
 live-remote dependency evidence, and row-only plugin-owned data bypass attempts.
 Executor-side validation runs in both JavaScript and PHP before mutation or
 preconditions where relevant. Arbitrary plugin files, direct `active_plugins`
-row mutation, custom-table apply, and arbitrary plugin-owned data remain
-blocked. Failure injection proves a before-commit failure preserves the old
-remote, while during-publish and activation failures classify blocked recovery
-instead of proving rollback.
+row mutation, arbitrary plugin-owned data, and custom tables outside the exact
+forms lab driver remain blocked. Failure injection proves a before-commit
+failure preserves the old remote, while during-publish and activation failures
+classify blocked recovery instead of proving rollback.
 The row-only bypass case rejects with `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`;
 this is not arbitrary production plugin install/update/activation, and it
-provides no production rollback, no custom-table/plugin semantic drivers, and
-no arbitrary plugin-owned data safety.
+provides no production rollback, no generic custom-table/plugin semantic
+drivers, and no arbitrary plugin-owned data safety.
+
+The `test:playground:forms-lab-table` script verifies the one custom-table
+semantic driver currently allowed in the lab. The positive path mutates a cloned
+exported local snapshot row for `wp_reprint_push_forms_lab`, plans exactly one
+ready mutation with driver `fixture-forms-lab-table`, applies it to a real base
+Playground target, reads it back through the snapshot exporter, and verifies
+idempotent replay with zero fresh mutation work. Negative proof covers missing
+driver evidence and a forged `wp-option` driver on the custom table before
+mutation. The JavaScript model also rejects forged non-hex/stale plugin evidence,
+keeps divergent local/remote rows as redacted `plugin-data-conflict`, preserves
+the target on stale preconditions, and redacts forms-lab row values from
+hash-only journal/recovery evidence. This is exact fixture evidence only: no
+generic custom-table support, no arbitrary plugin-owned data safety, no
+production plugin semantic driver, and no production rollback, transaction, or
+durability guarantee.
 
 The `test:playground:recovery` script exercises the lab-only failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The

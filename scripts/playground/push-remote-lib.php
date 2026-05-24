@@ -805,10 +805,20 @@ function reprint_push_protocol_validate_mutations_and_preconditions(
     array $precondition_entries
 ): void {
     $mutation_ids = [];
+    $current_snapshot = reprint_push_export_snapshot();
 
     foreach ($mutations as $mutation) {
         reprint_push_protocol_validate_mutation_shape($mutation);
         reprint_push_assert_supported_apply_resource($mutation['resource']);
+        try {
+            reprint_push_assert_supported_plugin_owned_mutation($mutation, $current_snapshot);
+        } catch (Throwable $error) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_PLAN',
+                'message' => $error->getMessage(),
+            ]);
+        }
 
         $mutation_id = (string) $mutation['id'];
         if (isset($mutation_ids[$mutation_id])) {

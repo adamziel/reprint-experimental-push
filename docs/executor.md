@@ -178,8 +178,14 @@ relevant. Forged ready plans that omit the dependency mutation, omit
 evidence, or try a row-only plugin-owned data bypass reject before mutation.
 The row-only bypass is classified as `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`.
 This is exact fixture plugin allowlist evidence only; arbitrary plugin files,
-direct `active_plugins` row mutation, custom-table apply, and arbitrary
-plugin-owned data remain blocked.
+direct `active_plugins` row mutation, custom tables outside the exact forms lab
+driver, and arbitrary plugin-owned data remain blocked. The one current
+custom-table exception is the fixture-only `wp_reprint_push_forms_lab` semantic
+driver `fixture-forms-lab-table`: owner `forms`, positive `id:N`, explicit
+policy, unchanged active `reprint-push-forms-fixture` evidence, live
+precondition hashes, exact PHP table/column/payload validation, delete blocked,
+idempotent replay with zero fresh mutation work, and redacted hash-only
+journal/recovery evidence.
 
 ### 7. Apply Batches
 

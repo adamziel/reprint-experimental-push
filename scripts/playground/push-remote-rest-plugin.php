@@ -465,6 +465,21 @@ function reprint_push_lab_rest_apply_with_db_journal(
             return reprint_push_lab_rest_json_response($replay_result);
         }
 
+        $terminal = reprint_push_lab_db_journal_terminal_row_for_key($context['idempotencyKeyHash']);
+        if (is_array($terminal)
+            && (string) ($terminal['event'] ?? '') === 'apply-rejected'
+            && (string) ($terminal['request_hash'] ?? '') === $context['requestHash']
+        ) {
+            $replay_result = reprint_push_lab_db_journal_replay_rejected_result($terminal);
+            $replay_entry = reprint_push_lab_db_journal_append_event('apply-replayed', $context + [
+                'appliedCount' => 0,
+                'result' => $replay_result,
+                'resourceHashEvidence' => reprint_push_lab_db_journal_resource_hash_evidence($replay_result),
+            ]);
+            $replay_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($replay_entry);
+            return reprint_push_lab_rest_json_response($replay_result);
+        }
+
         if (reprint_push_lab_db_journal_key_has_different_request($context['idempotencyKeyHash'], $context['requestHash'])) {
             return reprint_push_lab_rest_json_response(
                 reprint_push_lab_rest_idempotency_conflict_result($context)

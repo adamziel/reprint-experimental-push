@@ -75,3 +75,24 @@ test('snapshot apply gate allows only named lab plugin file paths', { skip: !has
     /outside fixture uploads or named lab plugins/,
   );
 });
+
+test('snapshot apply gate allows only exact forms lab custom table rows', { skip: !hasPhp }, () => {
+  assertSupported({
+    type: 'row',
+    table: 'wp_reprint_push_forms_lab',
+    id: 'id:1',
+  });
+
+  assertRejected(
+    { type: 'row', table: 'wp_reprint_push_forms_lab', id: 'id:0' },
+    /Unsupported row id/,
+  );
+  assertRejected(
+    { type: 'row', table: 'wp_reprint_push_forms_lab_extra', id: 'id:1' },
+    /Unsupported apply table/,
+  );
+  assertRejected(
+    { type: 'row', table: 'wp_forms_entries', id: 'entry_id:9' },
+    /Unsupported apply table/,
+  );
+});

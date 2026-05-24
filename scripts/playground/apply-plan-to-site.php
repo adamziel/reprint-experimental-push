@@ -53,6 +53,7 @@ try {
     foreach ($mutations as $mutation) {
         reprint_push_validate_mutation_shape($mutation);
         reprint_push_assert_supported_apply_resource($mutation['resource']);
+        reprint_push_assert_supported_plugin_owned_mutation($mutation, $before);
 
         $mutation_id = (string) $mutation['id'];
         if (!array_key_exists($mutation_id, $preconditions)) {

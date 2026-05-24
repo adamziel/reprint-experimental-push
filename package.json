@@ -13,6 +13,7 @@
     "test:playground:plan": "node ./scripts/playground/plan-from-blueprints.mjs",
     "test:playground:apply": "node ./scripts/playground/apply-ready-plan.mjs",
     "test:playground:push-protocol": "node ./scripts/playground/push-protocol-smoke.mjs",
+    "test:playground:forms-lab-table": "node ./scripts/playground/forms-lab-table-driver-smoke.mjs",
     "test:playground:http-push": "node ./scripts/playground/http-push-smoke.mjs",
     "test:playground:authenticated-http-push": "node ./scripts/playground/authenticated-http-push-smoke.mjs",
     "test:playground:plugin-atomic-install": "node ./scripts/playground/plugin-atomic-install-smoke.mjs",

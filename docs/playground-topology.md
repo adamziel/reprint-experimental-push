@@ -13,7 +13,7 @@ This avoids opening any local network ports and keeps the test state disposable.
 | Remote changed | `fixtures/playground/remote-changed.blueprint.json` | Represents the live source site after independent remote edits. |
 
 The blueprints use `runPHP` to create WordPress posts, plugin-owned options,
-fixture-marked plugin-owned postmeta, detection-only plugin-owned custom-table
+fixture-marked plugin-owned postmeta, fixture-only plugin-owned custom-table
 rows, plugin metadata, and upload files with stable fixture markers. The
 plugin-owned forms fixture covers the `reprint_push_forms_fixture` option,
 `_reprint_push_forms_schema` postmeta, `wp_reprint_push_forms_lab` custom-table
@@ -53,8 +53,11 @@ and runs a fixture-scoped protocol smoke. It currently asserts:
   plugin-owned fixture data;
 - `_reprint_push_forms_schema` postmeta is exported only for fixture-marked
   parent posts;
-- `wp_reprint_push_forms_lab` rows and `reprint-push-forms-fixture` plugin
-  metadata are detected but not applied;
+- `wp_reprint_push_forms_lab` rows are fixture-only semantic-driver resources:
+  owner `forms`, driver `fixture-forms-lab-table`, positive `id:N`, explicit
+  policy, unchanged active `reprint-push-forms-fixture` evidence, matching
+  precondition hashes, and delete blocked;
+- `reprint-push-forms-fixture` plugin metadata is detected but not applied;
 - unknown plugin-owned custom-table rows block as
   `unsupported-plugin-owned-resource`;
 - local-only post and file resources become guarded mutations;
@@ -80,6 +83,34 @@ Playground source and read back through WordPress. It does not prove the
 production Reprint HTTP transport, a live source-site mutation endpoint,
 durable remote journaling, authentication, or plugin-specific semantic merge
 drivers.
+
+## Fixture Forms Lab Custom-Table Driver
+
+```bash
+npm run test:playground:forms-lab-table
+```
+
+This focused smoke is the only custom-table apply proof in the repository. It
+mutates a cloned exported local snapshot row for `wp_reprint_push_forms_lab`,
+plans exactly one ready row mutation using driver `fixture-forms-lab-table`,
+applies it to a fresh base Playground source, reads the row back through the
+snapshot exporter, and verifies replay performs zero fresh mutation work.
+
+The driver is exact by design: table `wp_reprint_push_forms_lab`, physical table
+`$wpdb->prefix . 'reprint_push_forms_lab'`, owner `forms`, positive `id:N`
+primary keys, known columns only, object payloads with `payload.owner ===
+"forms"`, fixture slug/marker validation, unchanged active
+`reprint-push-forms-fixture` evidence, and matching row preconditions. PHP
+validates the table name through a prefix-safe helper before interpolating it
+into prepared SQL. Deletes are not implemented and remain blocked.
+
+Negative proof covers missing driver evidence, forged generic `wp-option`
+driver evidence on the custom table, forged/stale JavaScript plugin evidence,
+divergent local/remote rows as `plugin-data-conflict`, stale precondition
+preservation, and redacted hash-only forms-lab journal/recovery evidence. This
+does not prove generic custom-table support, arbitrary plugin-owned data safety,
+a production plugin semantic driver, production rollback, production
+transactionality, or production durability.
 
 ## Fixture-Scoped Protocol Smoke
 
@@ -328,8 +359,8 @@ Validation exists on both executor sides used by this repository:
 mutation, and `scripts/playground/push-remote-lib.php` validates the submitted
 plan in PHP before mutation/preconditions where relevant. The snapshot/apply
 library enforces an exact fixture plugin allowlist. Arbitrary plugin files,
-direct `active_plugins` row mutation, custom-table apply, and arbitrary
-plugin-owned data remain blocked.
+direct `active_plugins` row mutation, custom tables outside the exact forms lab
+driver, and arbitrary plugin-owned data remain blocked.
 
 Failure injection is deliberately classified, not rolled back. A failure before
 the group commit preserves the old remote. A failure during group publish and a
@@ -338,7 +369,7 @@ evidence; they do not prove production rollback.
 
 This is fixture plugin install atomicity evidence only. It is not arbitrary
 production plugin installation, update, activation, semantic driver,
-custom-table driver, arbitrary plugin-owned data safety, production rollback,
+generic custom-table driver, arbitrary plugin-owned data safety, production rollback,
 or production durability/auth proof.
 
 ## Lab Recovery Harness
@@ -405,5 +436,5 @@ forbidden-key/fixture-string based rather than a full allowlist schema.
   claiming durable production recovery.
   The JSONL lab journal has per-append `fsync` evidence, but no production
   WordPress crash boundary.
-- Add real plugin activation, custom-table driver, recovery, and auth proof
-  before making claims about arbitrary production plugin-owned data.
+- Add real plugin activation, generic custom-table driver, recovery, and auth
+  proof before making claims about arbitrary production plugin-owned data.

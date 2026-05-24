@@ -38,6 +38,7 @@ export function applyPlan(remote, plan, options = {}) {
     );
   }
 
+  validateSupportedPluginOwnedMutations(remote, plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
   const hasPreviousJournal = Boolean(options.journal);
@@ -142,6 +143,88 @@ export function applyPlan(remote, plan, options = {}) {
   };
 }
 
+function validateSupportedPluginOwnedMutations(remote, plan) {
+  for (const mutation of plan.mutations || []) {
+    const plannedValue = deserializeResourceValue(mutation.value);
+    const remoteValue = getResource(remote, mutation.resource);
+    const owner = pluginOwnedOwner(plannedValue) || pluginOwnedOwner(remoteValue);
+    if (!owner) {
+      continue;
+    }
+
+    const driver = mutation.pluginOwnedResource?.driver || null;
+    const supported = mutation.pluginOwnedResource?.pluginOwner === owner
+      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue);
+    if (!supported) {
+      throw new PushPlanError(
+        'UNSUPPORTED_PLUGIN_OWNED_RESOURCE',
+        `Refusing to apply unsupported plugin-owned resource ${mutation.resourceKey}.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          pluginOwner: owner,
+          driver,
+        },
+      );
+    }
+  }
+}
+
+function pluginOwnedOwner(value) {
+  if (!value || value === ABSENT || typeof value !== 'object') {
+    return null;
+  }
+  return value.__pluginOwner || null;
+}
+
+function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue) {
+  if (driver === 'wp-option') {
+    return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options';
+  }
+  if (driver === 'wp-postmeta' || driver === 'wp-post-meta') {
+    return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_postmeta';
+  }
+  if (driver === 'wp-termmeta' || driver === 'wp-term-meta') {
+    return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_termmeta';
+  }
+  if (driver === 'wp-usermeta' || driver === 'wp-user-meta') {
+    return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_usermeta';
+  }
+  if (driver === 'fixture-forms-lab-table') {
+    return owner === 'forms'
+      && mutation.resource?.type === 'row'
+      && mutation.resource.table === 'wp_reprint_push_forms_lab'
+      && /^id:[1-9]\d*$/.test(mutation.resource.id || '')
+      && plannedValue !== ABSENT
+      && mutation.action !== 'delete'
+      && validFixtureFormsLabTableEvidence(mutation.pluginOwnedResource?.driverEvidence, remote);
+  }
+  return false;
+}
+
+function validFixtureFormsLabTableEvidence(evidence, remote) {
+  if (!evidence || evidence.plugin !== 'reprint-push-forms-fixture' || evidence.resourceKey !== 'plugin:reprint-push-forms-fixture') {
+    return false;
+  }
+  if (evidence.source === 'live-remote') {
+    const pluginResource = {
+      type: 'plugin',
+      name: 'reprint-push-forms-fixture',
+      key: 'plugin:reprint-push-forms-fixture',
+    };
+    const plugin = getResource(remote, pluginResource);
+    return typeof evidence.baseHash === 'string'
+      && /^[a-f0-9]{64}$/.test(evidence.baseHash)
+      && typeof evidence.remoteHash === 'string'
+      && /^[a-f0-9]{64}$/.test(evidence.remoteHash)
+      && evidence.baseHash === evidence.remoteHash
+      && plugin !== ABSENT
+      && plugin?.active === true
+      && resourceHash(remote, pluginResource) === evidence.remoteHash;
+  }
+  return false;
+}
+
 function prepareJournal(remote, plan, previousJournal) {
   if (previousJournal) {
     const journal = deepClone(previousJournal);
@@ -179,12 +262,23 @@ function prepareJournal(remote, plan, previousJournal) {
         action: mutation.action,
         status: 'pending',
         beforeHash: resourceHash(remote, mutation.resource),
-        beforeValue: serializeResourceValue(beforeValue),
+        beforeValue: journalValueEvidence(mutation, serializeResourceValue(beforeValue)),
         afterHash: digest(afterValue),
-        afterValue: deepClone(mutation.value),
+        afterValue: journalValueEvidence(mutation, deepClone(mutation.value)),
       };
     }),
   };
+}
+
+function journalValueEvidence(mutation, value) {
+  if (mutation.pluginOwnedResource?.driver === 'fixture-forms-lab-table') {
+    return {
+      redacted: true,
+      reason: 'fixture-plugin-owned-resource',
+      resourceKey: mutation.resourceKey,
+    };
+  }
+  return value;
 }
 
 function replayCompletedPlan(remote, plan, journal) {
@@ -360,11 +454,33 @@ function recoveryBlocked(remote, plan, journal, reason, details = {}) {
         planId: plan.id,
         artifacts: {
           journal,
-          remote: deepClone(remote),
+          remote: sanitizeRecoveryRemote(remote, plan),
         },
       },
     },
   );
+}
+
+function sanitizeRecoveryRemote(remote, plan) {
+  const sanitized = deepClone(remote);
+  for (const mutation of plan.mutations || []) {
+    if (mutation.pluginOwnedResource?.driver !== 'fixture-forms-lab-table') {
+      continue;
+    }
+    if (mutation.resource?.type !== 'row' || mutation.resource.table !== 'wp_reprint_push_forms_lab') {
+      continue;
+    }
+    const row = sanitized.db?.wp_reprint_push_forms_lab?.[mutation.resource.id];
+    if (!row || typeof row !== 'object') {
+      continue;
+    }
+    sanitized.db.wp_reprint_push_forms_lab[mutation.resource.id] = {
+      __redacted: true,
+      resourceKey: mutation.resourceKey,
+      hash: resourceHash(remote, mutation.resource),
+    };
+  }
+  return sanitized;
 }
 
 function validatePreconditions(remote, plan) {
