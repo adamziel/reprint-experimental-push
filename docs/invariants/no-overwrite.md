@@ -29,6 +29,8 @@ the live remote immediately before apply.
   produce `already-in-sync` decisions, not mutations.
 - Matching independent file type swaps that land on the same hash; these also
   produce `already-in-sync` decisions, not mutations.
+- Remote-only plugin changes remain preserved even when those matching
+  independent edits or file type swaps are also present elsewhere in the plan.
 - Plugin installs or data updates whose declared dependencies are already on
   the expected post-apply remote, or are installed by the same plan.
 - Plugin metadata or plugin file mutations only when the rest of that plugin's

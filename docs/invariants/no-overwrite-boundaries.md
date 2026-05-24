@@ -12,6 +12,8 @@ This note is the short form of the planner policy in
   swaps that end on the same hash.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
+- Remote-only plugin drift stays preserved when the local plan also contains
+  unrelated matching independent edits or file type swaps.
 - Plugin-context and plugin-owned data mutations only when their required live
   remote plugin context still matches the pull base or the local side
   independently matches the live remote context.
