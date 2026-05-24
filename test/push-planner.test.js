@@ -2154,6 +2154,39 @@ test('blocks plugin-owned data when the live remote removed the owner plugin', (
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks plugin-owned option deletions when the live remote removed the owner plugin', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = baseSite();
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.ownerContext.some((context) => context.resourceKey === 'plugin:forms'), true);
+  assert.equal(blocker.ownerContext.some((context) => context.resourceKey === 'file:wp-content/plugins/forms/forms.php'), true);
+  assert.equal(blockerJson.includes('local-advanced'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('preserves remote-only plugin removals while matching independent delete, edit, and type swap stay already in sync', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
