@@ -40,6 +40,18 @@ Acceptance criteria for the reliable executor:
   committed.
 - It refuses to run against a remote that only has read-only export HMAC scope.
 
+Executor gates:
+
+| Gate | Next remote call allowed | Pass condition | Fail action |
+| --- | --- | --- | --- |
+| Base loaded | `push_preflight` | Base manifest, coverage hash, remote site identity, and resource hashes are present and match the selected remote. | Stop and require a fresh pull. |
+| Preflight accepted | `push_snapshot_hashes` | Push-scoped HMAC credential, active session, journal support, hash listing, idempotency, and required storage guards are advertised. | Stop before planning. |
+| Remote listing complete | `push_plan_dry_run` | All requested scopes are complete, blocked resources are absent or irrelevant, and the coverage hash is persisted. | Mark blocked; do not upload a ready plan. |
+| Local plan ready | `push_plan_dry_run` | Every mutation has base, local, and live remote hashes plus a storage guard or semantic driver. | Report conflict or blocker. |
+| Dry-run ready | `push_batch_apply` | Remote accepted the same canonical plan hash and returned a ready dry-run receipt. | Stop unless status is `ready`. |
+| Apply ambiguous | `push_journal` | Any timeout, closed connection, process restart, or `RECOVERY_REQUIRED` happens before a committed receipt is persisted. | Inspect journal before retrying. |
+| Journal complete | none | Every planned batch is committed and final hashes match the plan. | Mark the local attempt complete. |
+
 ## State Machine
 
 ```text
@@ -71,6 +83,17 @@ push resumes from the last safe state:
 - If dry-run was accepted, inspect its journal before applying.
 - If a batch response was lost, retry with the same idempotency key.
 - If the server reports `RECOVERY_REQUIRED`, inspect then recover.
+
+Resume decisions are conservative:
+
+| Persisted state | First action on restart | Reason |
+| --- | --- | --- |
+| `preflight` only | Re-run preflight. | Sessions expire and carry no liveness proof. |
+| Complete remote hashes, no dry-run | Re-list remote hashes, then rebuild the plan. | Hash listings are snapshots, not locks. |
+| Dry-run ready, no apply receipts | Call `push_journal`, then apply only if the dry-run is still ready and no batch is open. | A prior process may have applied after persisting the dry-run. |
+| Batch request persisted, no response | Call `push_journal` before replay. | The HTTP response may have been lost after mutation. |
+| `PRECONDITION_FAILED` persisted | Start a new attempt from fresh remote hashes. | Editing the old batch would break idempotency and stale liveness evidence. |
+| `RECOVERY_REQUIRED` persisted | Call `push_journal`, then `push_recover` according to recovery policy. | Recovery needs journal artifacts and live hashes, not local guesses. |
 
 ## Mapping To Existing Reprint Pull
 
@@ -449,6 +472,47 @@ Port rules:
 - The runner calls `http://remote-wp/` and `http://local-wp/` by service name.
 - Do not use ngrok, cloudflared tunnels, localtunnel, serveo, localhost.run,
   Tailscale Funnel, or equivalent remote tunnel services.
+
+Minimal Compose shape:
+
+```yaml
+services:
+  remote-db:
+    image: mariadb:11
+    networks: [reprint-push]
+  remote-wp:
+    image: wordpress:php8.3-apache
+    depends_on: [remote-db]
+    networks: [reprint-push]
+    volumes:
+      - ./plugins/reprint-push:/var/www/html/wp-content/plugins/reprint-push:ro
+  local-db:
+    image: mariadb:11
+    networks: [reprint-push]
+  local-wp:
+    image: wordpress:php8.3-apache
+    depends_on: [local-db]
+    networks: [reprint-push]
+  runner:
+    image: node:22-bookworm
+    working_dir: /workspace
+    networks: [reprint-push]
+    volumes:
+      - .:/workspace
+    command: ["sleep", "infinity"]
+  proxy-8080:
+    image: caddy:2
+    networks: [reprint-push]
+    ports:
+      - "127.0.0.1:8080:8080"
+
+networks:
+  reprint-push: {}
+```
+
+The sketch intentionally omits public ports on both WordPress containers. The
+runner and optional proxy are the only cross-service entry points; the proxy is
+local-only and exists only for inspection.
 
 Test sequence:
 

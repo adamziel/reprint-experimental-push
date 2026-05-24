@@ -43,6 +43,27 @@ The production contract is:
 - A server that cannot prove whether interrupted resources are old, new, or
   blocked must return recovery evidence instead of reporting success.
 
+Production implementations must treat the six push endpoints as a single
+stateful protocol:
+
+| Endpoint | Production duty | Target writes allowed |
+| --- | --- | --- |
+| `push_preflight` | Authenticate a push-capable credential, bind the request to the pulled base identity, negotiate capabilities, and mint a short-lived session. | No |
+| `push_snapshot_hashes` | Return a complete, cursorable live remote hash listing plus coverage proof for the requested scopes. | No |
+| `push_plan_dry_run` | Validate a canonical client plan, record its eligibility in the journal/idempotency store, and return a dry-run receipt. | No |
+| `push_batch_apply` | Revalidate the accepted dry-run, revalidate live preconditions, write a journal entry, run storage-boundary guards, and apply only legal batches. | Yes |
+| `push_journal` | Report dry-run, apply, idempotency, and recovery state so the executor can resolve ambiguous responses. | No |
+| `push_recover` | Inspect, finish, roll back, or block an interrupted batch according to journal artifacts and live hashes. | Only in `auto`, `finish`, or `rollback` modes |
+
+Remote liveness is checked at apply time, not at dry-run time. A conforming
+apply performs two separate checks: first, a batch-level live hash check before
+staging; second, a mutation-local storage-boundary check immediately before the
+row, option, file, plugin, theme, or semantic driver write. A mismatch before
+any batch mutation returns `PRECONDITION_FAILED` without target writes. A
+mismatch after staging or after an earlier mutation must be represented in the
+journal and resolved as committed, rolled back, or blocked; it must not be
+reported as an ordinary success.
+
 ## Existing Pull Pipeline Mapping
 
 Current Reprint pull is stage-oriented and resumable:

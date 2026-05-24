@@ -31,3 +31,13 @@ Failure and recovery examples:
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
 request bodies and should verify idempotency with byte-identical replays.
+
+Dry-run and apply are intentionally separate fixtures. A test must not treat
+`push-dry-run-response.json` as permission to skip the live preconditions in
+`push-apply-batch-request.json`; apply revalidates the remote and can still
+return `push-precondition-failed-response.json`.
+
+Recovery examples use `mode: "auto"` for a mutating repair attempt. A pure
+inspection call uses the same `push_recover` endpoint with `mode: "inspect"`
+and omits the mutating recovery idempotency key unless the implementation
+requires idempotency for all recovery requests.
