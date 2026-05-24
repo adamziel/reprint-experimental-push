@@ -1197,6 +1197,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.ok(
+    rejectedById.get('compressed-file-hash-completes-large-upload').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-file-hash-completes-large-upload').violates.includes('file-hashing'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-file-hash-completes-large-upload').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-file-hash-completes-large-upload').violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-file-hash-completes-large-upload').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
     rejectedById
       .get('index-and-compressed-buffer-completes-plugin-install')
       .violates.includes('atomic-groups'),

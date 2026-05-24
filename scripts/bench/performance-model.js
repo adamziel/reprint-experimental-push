@@ -609,6 +609,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-file-hash-completes-large-upload',
+    proposal: 'treat a compressed file-hash cache as proof that a large upload already finished',
+    rejectedBecause: 'a compressed hash cache can reduce rehash work, but it cannot prove chunk receipts or the guarded publish record survived failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'file-hashing', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-chunk-receipts-completes-plugin-update',
     proposal: 'treat a fresh remote index plus compressed chunk receipts as proof that a plugin update already finished',
     rejectedBecause: 'chunk receipts can prove staged upload progress, but compression and planning evidence cannot prove dependency checks, row receipts, or the atomic-group commit survived failure',
