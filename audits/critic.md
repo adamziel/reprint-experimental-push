@@ -23,6 +23,7 @@ the system reports a plausible success.
 | Recovery claims stop at classification | After a partial apply, the system can label the remote `old-remote`, `fully-updated-remote`, or `blocked-recovery`, but cannot complete a production repair across every boundary. | The recovery docs intentionally stop at lab evidence. They do not prove durable production journals, kill-at-every-boundary replay, or repair across DB, filesystem, plugin activation, and stale-claim lease boundaries. | Production push must survive real crashes, not just classify them after the fact. |
 | Storage boundary proof is still fixture-bounded | A remote changes after dry-run but before a MySQL update, file publish, schema write, activation side effect, or plugin publish. | The guarded write proof is limited to specific Playground fixtures and a narrow set of file/database operations. It does not cover arbitrary production inserts, deletes, schema changes, plugin activation writes, or generic compare-and-swap semantics. | Partial success at a narrow fixture boundary is not proof that arbitrary production writes are safe. |
 | Coverage gaps can hide unknown remote state | The remote contains mu-plugin settings, WooCommerce HPOS data, Action Scheduler queues, custom tables, generated assets, or multisite data outside the scanner scope. | The design says unknown coverage should block, but no completed production coverage manifest exists that binds every affected surface into the apply evidence. | If the planner cannot prove it saw the resource, it cannot safely mutate it. |
+| Delete/restore can silently resurrect intent | An operator deletes content for legal, moderation, or editorial reasons, then a later push retries a stale local plan or "takes local" after the remote has already been intentionally removed. | The current plan blocks direct conflicts, but it does not yet prove tombstone preservation, retention windows, or reviewed restore artifacts that bind the delete intent to the exact remote snapshot and retry. | Without a tombstone-backed restore policy, a retry can turn a deliberate remote deletion into an accidental resurrection that looks like a successful sync. |
 
 ## What Reprint, ZS-Sync, And ForkPress Actually Contribute
 
@@ -79,7 +80,8 @@ or an operator-facing success message that is stronger than the proof.
 8. Build a durable production journal with kill-at-every-boundary tests across
    DB, filesystem, plugin activation, and stale-claim recovery.
 9. Add tombstone and resurrection policy for delete/restore cases so a retry
-   cannot silently revive intentionally deleted remote content.
+   cannot silently revive intentionally deleted remote content, and bind
+   reviewed restore/delete actions to fresh live evidence.
 10. Publish production audit/redaction schemas and a release gate that runs the
     full safety-critical suite before the project can use production-grade
     wording.
