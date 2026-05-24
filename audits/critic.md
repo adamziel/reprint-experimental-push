@@ -889,6 +889,11 @@ would reasonably read as equivalent.
 - Comparisons to Reprint, ZS-Sync, and ForkPress remain source-note evidence
   only; they cannot be upgraded into proof of production push support without a
   repo-specific live mutation path.
+- A production claim must also fail closed on five specific live scenarios:
+  remote drift between dry-run and apply, create-time identity remapping,
+  plugin-owned state outside the declared allowlist, partial file/DB/plugin
+  side effects, and stale manual-review artifacts that outlive the snapshot
+  they approved.
 - A manual review artifact is only acceptable when the remote snapshot,
   reviewed scope, and hashes still match at apply time; otherwise the artifact
   must stay audit-only and be rejected before any write.
@@ -969,6 +974,16 @@ Before any production-grade push claim, the project needs all of these:
     widened into unrelated rows, files, relationship-bearing records, or
     plugin-owned surfaces, or any create path that can renumber, alias, or
     reassign target identity without a live remap proof.
+
+Addendum: each of these conditions must be independently testable in the
+release suite. A passing route-shape smoke is not sufficient if any one of the
+following still lacks proof:
+
+- live remote drift detected only after a write starts;
+- create-time remap or aliasing that changes the target identity;
+- plugin-owned state outside the allowlist that remains writable;
+- partial file, DB, or plugin side effects that cannot be fenced or audited;
+- stale manual-review artifacts that can be replayed as current authority.
 
 The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
