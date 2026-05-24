@@ -776,6 +776,9 @@ would reasonably read as equivalent.
   stability, or plugin ownership safety without a live revalidation proof.
 - A route that only looks production-shaped is not evidence of production
   safety, reliability, or retry correctness.
+- A route-shape smoke, packaged-plugin mount, or `finalMatchesLocal` result
+  must never be treated as proof of live remote safety, identity stability,
+  plugin-owned side-effect safety, or durable recovery.
 - Comparisons to Reprint, ZS-Sync, and ForkPress remain source-note evidence
   only; they cannot be upgraded into proof of production push support without a
   repo-specific live mutation path.
@@ -847,10 +850,12 @@ Before any production-grade push claim, the project needs all of these:
 13. Measured large-file and large-table benchmarks through the guarded
     executor path intended for release.
 14. A documented release gate that fails closed on stale manual-review
-    artifacts, unknown plugin ownership, route-shape-only evidence, fixture
-    replay alone, `finalMatchesLocal` alone, any claim that only restates the
-    lab route shape, or any create path that can renumber, alias, or reassign
-    target identity without a live remap proof.
+    artifacts, live remote drift, identity remapping on create, unknown plugin
+    ownership, plugin-owned state outside allowlists, partial file/DB/plugin
+    side effects, route-shape-only evidence, fixture replay alone,
+    `finalMatchesLocal` alone, any claim that only restates the lab route
+    shape, or any create path that can renumber, alias, or reassign target
+    identity without a live remap proof.
 
 The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
