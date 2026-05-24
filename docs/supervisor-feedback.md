@@ -7,8 +7,8 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-25 00:53 CEST - Supervisor Snapshot
 
-- Going well: `89` Node tests still pass, and the planner, recovery,
-  fast-path, protocol, critic, and objective-audit evidence still line up.
+- Going well: `89` Node tests still pass, and planner, recovery, fast-path,
+  protocol, critic, and audit evidence still line up.
 - Not going well: production auth/session storage, durable journal ownership,
   leases, full graph identity mapping, Docker/full Playground integration, and
   general plugin drivers remain unproven.

@@ -22,7 +22,7 @@ linked implementation artifacts.
   auth/session/journal internals and graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and links to the detailed evidence. In this lane, that page updates live
-  only after merge to `main`.
+  only after merge to `main`, so this copy is advisory until then.
 
 <details>
 <summary>Earlier progress entries</summary>
