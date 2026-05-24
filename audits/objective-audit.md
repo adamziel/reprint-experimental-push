@@ -83,8 +83,8 @@ these release requirements:
 
 | ID | Requirement |
 | --- | --- |
-| R1 | Persist a complete pull-base manifest with stable resource identities, hashes, ownership hints, schema fingerprints, and protocol metadata. |
-| R2 | Read the current live remote state before planning and compare base, local, and remote in a three-way plan. |
+| R1 | Persist a complete one-way pull base manifest with stable resource identities, hashes, ownership hints, schema fingerprints, and protocol metadata. |
+| R2 | Read the current live remote state before planning and compare base, local, and remote in a three-way plan before any one-way push back to the live source. |
 | R3 | Preserve remote-only changes by default, including deletes, plugin state, files, rows, and related resources. |
 | R4 | Stop on local/remote conflicts with durable, redacted evidence that an operator can inspect. |
 | R5 | Apply every mutation only behind a live precondition that is rechecked immediately before the write. |
@@ -99,6 +99,10 @@ these release requirements:
 | R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
 | R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard. |
 | R16 | Provide a release test suite that actually runs the safety, recovery, auth, storage, plugin, and performance gates intended to support public claims. |
+
+The most important release requirement is not one individual check; it is the
+end-to-end enforcement of the full safety matrix before any live-source push is
+allowed. Without that, the remaining proof stays advisory.
 
 ## Evidence Table
 
@@ -119,7 +123,7 @@ these release requirements:
 | R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
 | R15 speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, backpressure triggers, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, and no memory ceiling or throughput target is measured against a real push path. | Yes for any speed claim |
-| R16 release suite | `npm test` passed with 89 tests, 0 failures, and 0 skips. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow or release aggregator was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol. That means auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes all remain opt-in rather than release-gated. | Yes |
+| R16 release suite | `npm test` passed with 89 tests, 0 failures, and 0 skips. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow or release aggregator was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol. That means auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes all remain opt-in rather than release-gated. The release claim is therefore manual and fragile even when individual scripts pass. | Yes |
 
 ## Test Audit
 
