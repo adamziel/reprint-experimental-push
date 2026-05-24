@@ -39,12 +39,18 @@ assert.equal(sharedPostKey, postKeyByTitle(snapshots.remote, 'Shared base post')
 assert.equal(plan.status, 'conflict');
 assertConflict(plan, sharedPostKey, 'row-conflict');
 assertConflict(plan, 'file:wp-content/uploads/reprint-push/shared.txt', 'file-conflict');
+assertConflict(plan, 'row:["wp_options","option_name:reprint_push_forms_fixture"]', 'plugin-data-conflict');
 assertConflict(plan, 'row:["wp_options","option_name:reprint_push_plugin_payload"]', 'plugin-data-conflict');
+assertConflict(plan, 'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]', 'plugin-data-conflict');
 
 assertMutation(plan, postKeyByTitle(snapshots.local, 'Local-only draft'), 'create');
+assertMutation(plan, 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]', 'create');
 assertMutation(plan, 'file:wp-content/uploads/reprint-push/local-only.txt', 'create');
 
 assertDecision(plan, postKeyByTitle(snapshots.remote, 'Remote-only announcement'), 'keep-remote');
+assertDecision(plan, 'plugin:reprint-push-forms-fixture', 'keep-remote');
+assertDecision(plan, 'row:["wp_postmeta","post_id:3001:meta_key:_reprint_push_forms_schema"]', 'keep-remote');
+assertDecision(plan, 'row:["wp_reprint_push_forms_lab","id:1"]', 'keep-remote');
 assertDecision(plan, 'file:wp-content/uploads/reprint-push/remote-only.txt', 'keep-remote');
 
 console.log(JSON.stringify({

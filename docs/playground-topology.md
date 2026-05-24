@@ -13,9 +13,13 @@ This avoids opening any local network ports and keeps the test state disposable.
 | Remote changed | `fixtures/playground/remote-changed.blueprint.json` | Represents the live source site after independent remote edits. |
 
 The blueprints use `runPHP` to create WordPress posts, plugin-owned options,
-and upload files with stable fixture markers. They are intentionally small
-because this topology proves snapshot extraction and planning, not the final
-transport.
+fixture-marked plugin-owned postmeta, detection-only plugin-owned custom-table
+rows, plugin metadata, and upload files with stable fixture markers. The
+plugin-owned forms fixture covers the `reprint_push_forms_fixture` option,
+`_reprint_push_forms_schema` postmeta, `wp_reprint_push_forms_lab` custom-table
+rows, and `reprint-push-forms-fixture` plugin metadata. They are intentionally
+small because this topology proves snapshot extraction and planning, not the
+final transport.
 
 ## Smoke Command
 
@@ -45,6 +49,14 @@ and runs a fixture-scoped protocol smoke. It currently asserts:
 - the shared post is a real WordPress row conflict;
 - the shared upload file is a file conflict;
 - the `reprint_push_plugin_payload` option is a plugin-data conflict;
+- the nested `reprint_push_forms_fixture` option is treated as allowlisted
+  plugin-owned fixture data;
+- `_reprint_push_forms_schema` postmeta is exported only for fixture-marked
+  parent posts;
+- `wp_reprint_push_forms_lab` rows and `reprint-push-forms-fixture` plugin
+  metadata are detected but not applied;
+- unknown plugin-owned custom-table rows block as
+  `unsupported-plugin-owned-resource`;
 - local-only post and file resources become guarded mutations;
 - remote-only post and file resources are preserved as remote decisions.
 
@@ -83,7 +95,7 @@ The smoke verifies:
   `applied: 0`;
 - same-process WordPress readback proves dry-run leaves the source fixture
   unchanged;
-- apply with a supplied dry-run receipt applies the five expected fixture
+- apply with a supplied dry-run receipt applies the eight expected fixture
   mutations and verifies the resulting hashes and WordPress-visible surface;
 - apply without a supplied receipt fails with `MISSING_DRY_RUN_RECEIPT` before
   mutation;
@@ -121,7 +133,7 @@ The lab REST surface is mounted under the namespace `reprint-push-lab/v1` with:
 
 The HTTP-style harness verifies namespace discovery, snapshot export, journal
 readback, read-only dry-run, `MISSING_DRY_RUN_RECEIPT` before mutation when a
-receipt is missing, dry-run receipt creation, ready apply success with five
+receipt is missing, dry-run receipt creation, ready apply success with eight
 fixture mutations, `RECEIPT_MISMATCH` before mutation when the receipt is
 tampered, stale remote refusal with `PRECONDITION_FAILED`, and conflict refusal
 with `PLAN_NOT_READY` for row, file, and plugin-data classes.
@@ -140,3 +152,5 @@ mutation safety.
 - Revalidate live remote hashes immediately before production apply.
 - Add production-grade receipt expiry, signing/auth binding, and durable audit
   storage around the accepted remote snapshot.
+- Add real plugin activation, custom-table driver, recovery, and auth proof
+  before making claims about arbitrary production plugin-owned data.

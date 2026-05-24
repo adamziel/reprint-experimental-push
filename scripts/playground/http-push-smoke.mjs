@@ -40,7 +40,7 @@ const readyPlan = createPushPlan({
 assert.equal(readyPlan.status, 'ready');
 assert.equal(readyPlan.summary.conflicts, 0);
 assert.equal(readyPlan.summary.blockers, 0);
-assert.equal(readyPlan.mutations.length, 5, 'expected ready plan mutation count');
+assertReadyPlanResources(readyPlan);
 assertTargetHashes(readyPlan, snapshots.base, 'expectedHash', 'ready preconditions');
 
 const conflictPlan = createPushPlan({
@@ -51,6 +51,7 @@ const conflictPlan = createPushPlan({
 });
 
 assert.equal(conflictPlan.status, 'conflict');
+assertConflictEvidence(conflictPlan);
 
 const summary = {
   transport: {
@@ -108,7 +109,7 @@ await withPlaygroundServer('ready-base', path.join(repoRoot, fixtures.base), asy
   assert.equal(dryRun.body.applied, 0);
   assert.equal(dryRun.body.receipt?.mode, 'dry-run');
   assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
-  assert.equal(dryRun.body.verifiedPreconditions.length, 5);
+  assert.equal(dryRun.body.verifiedPreconditions.length, readyPlan.mutations.length);
   assertJournalEvent(dryRun.body, 'dry-run-recorded');
   await assertJournalContains(server, 'dry-run-recorded');
   const dryRunAfter = await getSnapshot(server);
@@ -137,8 +138,8 @@ await withPlaygroundServer('ready-base', path.join(repoRoot, fixtures.base), asy
   assert.equal(apply.status, 200);
   assert.equal(apply.body.ok, true);
   assert.equal(apply.body.mode, 'apply');
-  assert.equal(apply.body.applied, 5);
-  assert.equal(apply.body.verifiedKeys.length, 5);
+  assert.equal(apply.body.applied, readyPlan.mutations.length);
+  assert.equal(apply.body.verifiedKeys.length, readyPlan.mutations.length);
   assert.deepEqual(
     apply.body.verifiedKeys,
     readyPlan.mutations.map((mutation) => mutation.resourceKey),
@@ -214,11 +215,13 @@ await withPlaygroundServer('conflict-base', path.join(repoRoot, fixtures.base), 
   const conflictDryRun = await postLab(server, '/dry-run', { plan: conflictPlan });
   await assertPlanNotReadyNoMutation(server, conflictDryRun, conflictDryRunBefore.body.snapshot, 'conflict dry-run');
   assertConflictClasses(conflictDryRun.body);
+  assertConflictEvidence(conflictDryRun.body.audit, { expectDetectionDecisions: false });
 
   const conflictApplyBefore = await getSnapshot(server);
   const conflictApply = await postLab(server, '/apply', { plan: conflictPlan, receipt: readyReceipt });
   await assertPlanNotReadyNoMutation(server, conflictApply, conflictApplyBefore.body.snapshot, 'conflict apply');
   assertConflictClasses(conflictApply.body);
+  assertConflictEvidence(conflictApply.body.audit, { expectDetectionDecisions: false });
 
   summary.conflict = {
     dryRun: {
@@ -631,6 +634,59 @@ function visibleSurface(snapshot) {
   };
 }
 
+function assertReadyPlanResources(plan) {
+  const expectedReadyKeys = [
+    'file:wp-content/uploads/reprint-push/local-only.txt',
+    'file:wp-content/uploads/reprint-push/shared.txt',
+    'row:["wp_options","option_name:reprint_push_forms_fixture"]',
+    'row:["wp_options","option_name:reprint_push_plugin_payload"]',
+    'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_posts","ID:1001"]',
+    'row:["wp_posts","ID:2001"]',
+  ];
+  const readyKeys = plan.mutations.map((mutation) => mutation.resourceKey).sort();
+  assert.deepEqual(readyKeys, [...expectedReadyKeys].sort(), 'ready mutations should match fixture-scoped resources');
+  assertNoReadyMutation(plan, 'plugin:reprint-push-forms-fixture');
+  assertNoReadyMutation(plan, 'row:["wp_reprint_push_forms_lab","id:1"]');
+}
+
+function assertNoReadyMutation(plan, resourceKey) {
+  assert.ok(
+    !plan.mutations.some((mutation) => mutation.resourceKey === resourceKey),
+    `${resourceKey} must remain detection-only in ready plans`,
+  );
+}
+
+function assertConflictEvidence(audit, { expectDetectionDecisions = true } = {}) {
+  assertEvidenceEntry(
+    audit.conflicts,
+    'row:["wp_options","option_name:reprint_push_forms_fixture"]',
+    'plugin-data-conflict',
+  );
+  assertEvidenceEntry(
+    audit.conflicts,
+    'row:["wp_options","option_name:reprint_push_plugin_payload"]',
+    'plugin-data-conflict',
+  );
+  assertEvidenceEntry(
+    audit.conflicts,
+    'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
+    'plugin-data-conflict',
+  );
+  if (!expectDetectionDecisions) {
+    return;
+  }
+  assertEvidenceEntry(audit.decisions, 'plugin:reprint-push-forms-fixture', 'keep-remote');
+  assertEvidenceEntry(audit.decisions, 'row:["wp_reprint_push_forms_lab","id:1"]', 'keep-remote');
+}
+
+function assertEvidenceEntry(entries = [], resourceKey, expectedClassOrDecision) {
+  const entry = entries.find((item) => item.resourceKey === resourceKey);
+  assert.ok(entry, `missing audit evidence for ${resourceKey}`);
+  assert.equal(entry.class ?? entry.decision, expectedClassOrDecision);
+}
+
 function assertTargetHashes(plan, snapshot, preconditionHashField, label) {
   for (const precondition of plan.preconditions) {
     assert.equal(
@@ -671,6 +727,114 @@ function assertAppliedFixtureValues(snapshot) {
     mode: 'local-edited',
     owner: 'forms',
     version: 2,
+  });
+
+  const formsFixture = snapshot.db.wp_options['option_name:reprint_push_forms_fixture'];
+  assert.equal(formsFixture.__pluginOwner, 'forms');
+  assert.deepEqual(formsFixture.option_value, {
+    enabled: true,
+    flags: {
+      captcha: true,
+      honeypot: true,
+    },
+    forms: {
+      contact: {
+        active: true,
+        fields: ['email', 'message', 'phone'],
+        limits: {
+          daily: '40',
+          perIp: '4',
+        },
+        title: 'Contact the studio',
+        version: '2',
+      },
+      newsletter: {
+        active: true,
+        fields: ['email', 'source'],
+        segments: ['general', 'product', 'local'],
+        title: 'Newsletter',
+        version: '1',
+      },
+    },
+    owner: 'forms',
+    revision: '002-local',
+    routing: {
+      notify: ['local-admin@example.test', 'ops@example.test'],
+      storeSubmissions: true,
+    },
+  });
+
+  const sharedSchema = snapshot.db.wp_postmeta['post_id:1001:meta_key:_reprint_push_forms_schema'];
+  assert.equal(sharedSchema.__pluginOwner, 'forms');
+  assert.deepEqual(sharedSchema.meta_value, {
+    fields: [
+      {
+        enabled: true,
+        key: 'email',
+        label: 'Email address',
+        type: 'email',
+      },
+      {
+        enabled: true,
+        key: 'message',
+        label: 'Project brief',
+        type: 'textarea',
+      },
+      {
+        enabled: false,
+        key: 'phone',
+        label: 'Phone',
+        type: 'tel',
+      },
+    ],
+    form: 'contact',
+    notifications: {
+      admin: true,
+      copyToSender: true,
+    },
+    owner: 'forms',
+    required: ['email', 'message', 'phone'],
+    schemaVersion: '2-local',
+  });
+
+  const localOnlySchema = snapshot.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  assert.equal(localOnlySchema.__pluginOwner, 'forms');
+  assert.deepEqual(localOnlySchema.meta_value, {
+    fields: [
+      {
+        enabled: true,
+        key: 'email',
+        label: 'Email',
+        type: 'email',
+      },
+      {
+        choices: ['small', 'medium', 'large'],
+        enabled: true,
+        key: 'budget',
+        label: 'Budget',
+        type: 'select',
+      },
+    ],
+    form: 'intake',
+    notifications: {
+      admin: false,
+      copyToSender: true,
+    },
+    owner: 'forms',
+    required: ['email'],
+    schemaVersion: '1-local-only',
+  });
+
+  const customTableRow = snapshot.db.wp_reprint_push_forms_lab['id:1'];
+  assert.equal(customTableRow.__pluginOwner, 'forms');
+  assert.deepEqual(customTableRow.payload, {
+    mode: 'base',
+    owner: 'forms',
+    rules: {
+      maxAttachments: '2',
+      requireConsent: true,
+    },
+    version: '1',
   });
 }
 

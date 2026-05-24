@@ -9,6 +9,16 @@ import {
   serializeResourceValue,
 } from './resources.js';
 
+const SUPPORTED_PLUGIN_DATA_DRIVERS = new Set([
+  'wp-option',
+  'wp-postmeta',
+  'wp-post-meta',
+  'wp-termmeta',
+  'wp-term-meta',
+  'wp-usermeta',
+  'wp-user-meta',
+]);
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -33,6 +43,12 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
   const resources = enumerateResources(base, local, remote);
   const intents = Array.isArray(local?.pushIntents) ? local.pushIntents : [];
   const intentByResource = mapIntentsByResource(intents);
+  const pluginOwnedResourcePolicy = buildPluginOwnedResourcePolicy({
+    base,
+    local,
+    remote,
+    intents,
+  });
 
   for (const resource of resources) {
     const baseValue = getResource(base, resource);
@@ -71,6 +87,24 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
 
     if (localHash !== baseHash && remoteHash === baseHash) {
+      if (isPluginOwnedDataResource(resource, owner)) {
+        const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+        if (!support.supported) {
+          addPluginOwnedResourceBlocker(plan, {
+            resource,
+            owner,
+            support,
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+          continue;
+        }
+      }
+
       const mutation = {
         id: `mutation-${plan.mutations.length + 1}`,
         resource,
@@ -125,7 +159,13 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
 
   addFileTopologyConflicts(plan, resources, base, local, remote);
   plan.atomicGroups = intents.map((intent) => buildAtomicGroup(intent, plan, base, remote));
-  plan.blockers.push(...plan.atomicGroups.flatMap((group) => group.blockers));
+  const existingBlockerIds = new Set(plan.blockers.map((blocker) => blocker.id));
+  for (const blocker of plan.atomicGroups.flatMap((group) => group.blockers)) {
+    if (!existingBlockerIds.has(blocker.id)) {
+      existingBlockerIds.add(blocker.id);
+      plan.blockers.push(blocker);
+    }
+  }
   enforceMutationPreconditionInvariant(plan);
 
   plan.summary.mutations = plan.mutations.length;
@@ -152,6 +192,113 @@ function mapIntentsByResource(intents) {
   return map;
 }
 
+function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
+  const entries = [
+    ...pluginOwnedPolicyEntriesFromSnapshot(base, 'base-snapshot'),
+    ...pluginOwnedPolicyEntriesFromSnapshot(local, 'local-snapshot'),
+    ...pluginOwnedPolicyEntriesFromSnapshot(remote, 'remote-snapshot'),
+    ...intents.flatMap((intent) => pluginOwnedPolicyEntriesFromIntent(intent)),
+  ];
+
+  return {
+    supportFor(resource, owner) {
+      const candidates = entries.filter((entry) =>
+        entry.resourceKey === resource.key && entry.pluginOwner === owner);
+
+      if (candidates.length === 0) {
+        return {
+          supported: false,
+          className: 'unsupported-plugin-owned-resource',
+        };
+      }
+
+      const withDriver = candidates.find((entry) => entry.driver);
+      if (!withDriver) {
+        return {
+          supported: false,
+          className: 'missing-plugin-driver',
+          policySource: candidates[0].source,
+        };
+      }
+
+      const supported = candidates.find((entry) =>
+        SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver));
+      if (!supported) {
+        return {
+          supported: false,
+          className: 'unsupported-plugin-owned-resource',
+          driver: withDriver.driver,
+          policySource: withDriver.source,
+        };
+      }
+
+      return {
+        supported: true,
+        driver: supported.driver,
+        policySource: supported.source,
+      };
+    },
+  };
+}
+
+function pluginOwnedPolicyEntriesFromSnapshot(snapshot, source) {
+  return normalizePluginOwnedPolicy(snapshot?.meta?.pushPolicy, source)
+    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.resourcePolicy, source))
+    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.pluginOwnedResources, source));
+}
+
+function pluginOwnedPolicyEntriesFromIntent(intent) {
+  const source = `push-intent:${intent.id || 'unlabeled'}`;
+  return normalizePluginOwnedPolicy(intent.resourcePolicy, source)
+    .concat(normalizePluginOwnedPolicy(intent.pushPolicy, source))
+    .concat(normalizePluginOwnedPolicy(intent.pluginOwnedResources, source));
+}
+
+function normalizePluginOwnedPolicy(policy, source) {
+  if (!policy || typeof policy !== 'object') {
+    return [];
+  }
+
+  const pluginOwnedResources = policy.pluginOwnedResources || policy;
+  const allowedResources = normalizeAllowedResources(
+    pluginOwnedResources.allowedResources
+      || pluginOwnedResources.allowed
+      || pluginOwnedResources.resources,
+  );
+
+  return allowedResources
+    .map((entry) => normalizePluginOwnedPolicyEntry(entry, source))
+    .filter((entry) => entry.resourceKey && entry.pluginOwner);
+}
+
+function normalizeAllowedResources(allowedResources) {
+  if (Array.isArray(allowedResources)) {
+    return allowedResources;
+  }
+  if (!allowedResources || typeof allowedResources !== 'object') {
+    return [];
+  }
+  return Object.entries(allowedResources).map(([resourceKey, entry]) => ({
+    ...(entry && typeof entry === 'object' ? entry : {}),
+    resourceKey,
+  }));
+}
+
+function normalizePluginOwnedPolicyEntry(entry, source) {
+  if (typeof entry === 'string') {
+    return { resourceKey: entry, source };
+  }
+  if (!entry || typeof entry !== 'object') {
+    return { source };
+  }
+  return {
+    resourceKey: entry.resourceKey || entry.key || entry.resource?.key || null,
+    pluginOwner: entry.pluginOwner || entry.owner || entry.plugin || null,
+    driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
+    source,
+  };
+}
+
 function buildAtomicGroup(intent, plan, base, remote) {
   const groupResourceKeys = new Set(intent.resources || []);
   const mutationIds = plan.mutations
@@ -160,7 +307,7 @@ function buildAtomicGroup(intent, plan, base, remote) {
   const conflicts = plan.conflicts
     .filter((conflict) => (intent.resources || []).includes(conflict.resourceKey))
     .map((conflict) => conflict.id);
-  const blockers = [];
+  const blockers = plan.blockers.filter((blocker) => groupResourceKeys.has(blocker.resourceKey));
   const requiredPlugins = normalizePluginDependencies(intent.dependencies?.plugins || []);
 
   requiredPlugins.forEach((dependency, index) => {
@@ -538,6 +685,50 @@ function conflictClass(resource, owner) {
     return 'plugin-conflict';
   }
   return 'row-conflict';
+}
+
+function isPluginOwnedDataResource(resource, owner) {
+  return resource.type === 'row' && Boolean(owner);
+}
+
+function addPluginOwnedResourceBlocker(plan, {
+  resource,
+  owner,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  const className = support.className || 'unsupported-plugin-owned-resource';
+  const reason = className === 'missing-plugin-driver'
+    ? `Plugin-owned resource ${resource.key} is missing explicit driver metadata for plugin ${owner}.`
+    : `Plugin-owned resource ${resource.key} is not covered by a supported resource driver policy for plugin ${owner}.`;
+
+  plan.blockers.push({
+    id: `blocker-plugin-owned-resource-${plan.blockers.length + 1}`,
+    class: className,
+    resource,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver || null,
+    policySource: support.policySource || null,
+    reason,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
 }
 
 function addConflict(plan, {

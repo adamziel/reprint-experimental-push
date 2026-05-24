@@ -33,6 +33,7 @@ assert.equal(plan.status, 'ready');
 assert.equal(plan.summary.conflicts, 0);
 assert.equal(plan.summary.blockers, 0);
 assert.ok(plan.mutations.length > 0, 'expected ready plan mutations');
+assertReadyPlanResources(plan);
 assertPhpStableHashMatchesJsForUnicode();
 
 const tmpDir = path.join(repoRoot, '.tmp');
@@ -81,6 +82,8 @@ assert.deepEqual(pluginPayload.option_value, {
   owner: 'forms',
   version: 2,
 });
+
+assertAppliedPluginValues(after);
 
 console.log(JSON.stringify({
   status: plan.status,
@@ -199,6 +202,140 @@ function planWithMismatchedPreconditionResource(sourcePlan) {
     path: 'wp-content/uploads/reprint-push/other.txt',
   };
   return planCopy;
+}
+
+function assertReadyPlanResources(plan) {
+  const expectedReadyKeys = [
+    'file:wp-content/uploads/reprint-push/local-only.txt',
+    'file:wp-content/uploads/reprint-push/shared.txt',
+    'row:["wp_options","option_name:reprint_push_forms_fixture"]',
+    'row:["wp_options","option_name:reprint_push_plugin_payload"]',
+    'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_posts","ID:1001"]',
+    'row:["wp_posts","ID:2001"]',
+  ];
+  const readyKeys = plan.mutations.map((mutation) => mutation.resourceKey).sort();
+  assert.deepEqual(readyKeys, [...expectedReadyKeys].sort(), 'ready mutations should match fixture-scoped resources');
+  assertNoReadyMutation(plan, 'plugin:reprint-push-forms-fixture');
+  assertNoReadyMutation(plan, 'row:["wp_reprint_push_forms_lab","id:1"]');
+}
+
+function assertNoReadyMutation(plan, resourceKey) {
+  assert.ok(
+    !plan.mutations.some((mutation) => mutation.resourceKey === resourceKey),
+    `${resourceKey} must remain detection-only in ready plans`,
+  );
+}
+
+function assertAppliedPluginValues(snapshot) {
+  const formsFixture = snapshot.db.wp_options['option_name:reprint_push_forms_fixture'];
+  assert.equal(formsFixture.__pluginOwner, 'forms');
+  assert.deepEqual(formsFixture.option_value, {
+    enabled: true,
+    flags: {
+      captcha: true,
+      honeypot: true,
+    },
+    forms: {
+      contact: {
+        active: true,
+        fields: ['email', 'message', 'phone'],
+        limits: {
+          daily: '40',
+          perIp: '4',
+        },
+        title: 'Contact the studio',
+        version: '2',
+      },
+      newsletter: {
+        active: true,
+        fields: ['email', 'source'],
+        segments: ['general', 'product', 'local'],
+        title: 'Newsletter',
+        version: '1',
+      },
+    },
+    owner: 'forms',
+    revision: '002-local',
+    routing: {
+      notify: ['local-admin@example.test', 'ops@example.test'],
+      storeSubmissions: true,
+    },
+  });
+
+  const sharedSchema = snapshot.db.wp_postmeta['post_id:1001:meta_key:_reprint_push_forms_schema'];
+  assert.equal(sharedSchema.__pluginOwner, 'forms');
+  assert.deepEqual(sharedSchema.meta_value, {
+    fields: [
+      {
+        enabled: true,
+        key: 'email',
+        label: 'Email address',
+        type: 'email',
+      },
+      {
+        enabled: true,
+        key: 'message',
+        label: 'Project brief',
+        type: 'textarea',
+      },
+      {
+        enabled: false,
+        key: 'phone',
+        label: 'Phone',
+        type: 'tel',
+      },
+    ],
+    form: 'contact',
+    notifications: {
+      admin: true,
+      copyToSender: true,
+    },
+    owner: 'forms',
+    required: ['email', 'message', 'phone'],
+    schemaVersion: '2-local',
+  });
+
+  const localOnlySchema = snapshot.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  assert.equal(localOnlySchema.__pluginOwner, 'forms');
+  assert.deepEqual(localOnlySchema.meta_value, {
+    fields: [
+      {
+        enabled: true,
+        key: 'email',
+        label: 'Email',
+        type: 'email',
+      },
+      {
+        choices: ['small', 'medium', 'large'],
+        enabled: true,
+        key: 'budget',
+        label: 'Budget',
+        type: 'select',
+      },
+    ],
+    form: 'intake',
+    notifications: {
+      admin: false,
+      copyToSender: true,
+    },
+    owner: 'forms',
+    required: ['email'],
+    schemaVersion: '1-local-only',
+  });
+
+  const customTableRow = snapshot.db.wp_reprint_push_forms_lab['id:1'];
+  assert.equal(customTableRow.__pluginOwner, 'forms');
+  assert.deepEqual(customTableRow.payload, {
+    mode: 'base',
+    owner: 'forms',
+    rules: {
+      maxAttachments: '2',
+      requireConsent: true,
+    },
+    version: '1',
+  });
 }
 
 function assertPhpStableHashMatchesJsForUnicode() {

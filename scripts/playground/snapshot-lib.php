@@ -3,8 +3,8 @@
  * Shared snapshot helpers for the Playground push lab.
  *
  * These helpers intentionally cover only the fixture surface used by the lab:
- * marked posts, one plugin-owned option, and upload files under
- * wp-content/uploads/reprint-push.
+ * marked posts, allowlisted plugin-owned options/postmeta, detection-only lab
+ * plugin/table metadata, and upload files under wp-content/uploads/reprint-push.
  */
 
 function reprint_push_export_snapshot(): array
@@ -24,10 +24,12 @@ function reprint_push_export_snapshot(): array
         'db' => [
             'wp_posts' => [],
             'wp_options' => [],
+            'wp_postmeta' => [],
+            'wp_reprint_push_forms_lab' => [],
         ],
     ];
 
-    foreach (['reprint_push_plugin_payload'] as $option_name) {
+    foreach (reprint_push_allowed_plugin_option_names() as $option_name) {
         $value = get_option($option_name, null);
         if ($value === null) {
             continue;
@@ -35,10 +37,8 @@ function reprint_push_export_snapshot(): array
         $row = [
             'option_name' => $option_name,
             'option_value' => reprint_push_normalize_snapshot_value($value),
+            '__pluginOwner' => 'forms',
         ];
-        if ($option_name === 'reprint_push_plugin_payload') {
-            $row['__pluginOwner'] = 'forms';
-        }
         $snapshot['db']['wp_options']['option_name:' . $option_name] = $row;
     }
 
@@ -58,16 +58,125 @@ function reprint_push_export_snapshot(): array
         $snapshot['db']['wp_posts']['ID:' . $post['ID']] = $post;
     }
 
+    reprint_push_export_fixture_postmeta($snapshot);
+    reprint_push_export_fixture_plugin_metadata($snapshot);
+    reprint_push_export_fixture_custom_table($snapshot);
+    reprint_push_add_fixture_plugin_owned_policy($snapshot);
+
     $fixture_root = WP_CONTENT_DIR . '/uploads/reprint-push';
     if (is_dir($fixture_root)) {
         reprint_push_export_fixture_files($snapshot, $fixture_root, 'wp-content/uploads/reprint-push');
     }
 
     ksort($snapshot['files']);
+    ksort($snapshot['plugins']);
     ksort($snapshot['db']['wp_posts']);
     ksort($snapshot['db']['wp_options']);
+    ksort($snapshot['db']['wp_postmeta']);
+    ksort($snapshot['db']['wp_reprint_push_forms_lab']);
 
     return $snapshot;
+}
+
+function reprint_push_export_fixture_postmeta(array &$snapshot): void
+{
+    foreach (array_keys($snapshot['db']['wp_posts']) as $post_row_id) {
+        $post_id = reprint_push_numeric_id($post_row_id, 'ID');
+        $value = get_post_meta($post_id, reprint_push_forms_schema_meta_key(), true);
+        if ($value === '') {
+            continue;
+        }
+        $snapshot['db']['wp_postmeta'][reprint_push_postmeta_row_id($post_id, reprint_push_forms_schema_meta_key())] = [
+            'post_id' => $post_id,
+            'meta_key' => reprint_push_forms_schema_meta_key(),
+            'meta_value' => reprint_push_normalize_snapshot_value($value),
+            '__pluginOwner' => 'forms',
+        ];
+    }
+}
+
+function reprint_push_export_fixture_plugin_metadata(array &$snapshot): void
+{
+    $plugin_basename = 'reprint-push-forms-fixture/reprint-push-forms-fixture.php';
+    $plugin_file = WP_PLUGIN_DIR . '/' . $plugin_basename;
+    if (!is_file($plugin_file)) {
+        return;
+    }
+
+    if (!function_exists('get_plugin_data')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    $plugin_data = get_plugin_data($plugin_file, false, false);
+    $active_plugins = get_option('active_plugins', []);
+    $snapshot['plugins']['reprint-push-forms-fixture'] = [
+        'name' => (string) ($plugin_data['Name'] ?: 'Reprint Push Forms Fixture'),
+        'version' => (string) ($plugin_data['Version'] ?: ''),
+        'pluginFile' => $plugin_basename,
+        'active' => in_array($plugin_basename, is_array($active_plugins) ? $active_plugins : [], true),
+        '__pluginOwner' => 'forms',
+    ];
+}
+
+function reprint_push_export_fixture_custom_table(array &$snapshot): void
+{
+    global $wpdb;
+
+    $table_name = $wpdb->prefix . 'reprint_push_forms_lab';
+    $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+    if ($exists !== $table_name) {
+        return;
+    }
+
+    $rows = $wpdb->get_results(
+        "SELECT id, form_slug, payload_json, updated_marker FROM {$table_name} ORDER BY id ASC",
+        ARRAY_A
+    );
+
+    foreach ($rows as $row) {
+        $payload = json_decode((string) $row['payload_json'], true);
+        $snapshot['db']['wp_reprint_push_forms_lab']['id:' . (int) $row['id']] = [
+            'id' => (int) $row['id'],
+            'form_slug' => (string) $row['form_slug'],
+            'payload' => json_last_error() === JSON_ERROR_NONE
+                ? reprint_push_normalize_snapshot_value($payload)
+                : (string) $row['payload_json'],
+            'updated_marker' => (string) $row['updated_marker'],
+            '__pluginOwner' => 'forms',
+        ];
+    }
+}
+
+function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
+{
+    $allowed_resources = [];
+    foreach (array_keys($snapshot['db']['wp_options']) as $row_id) {
+        $option_name = reprint_push_option_name($row_id);
+        if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
+            continue;
+        }
+        $allowed_resources[] = [
+            'resourceKey' => 'row:' . wp_json_encode(['wp_options', $row_id], JSON_UNESCAPED_SLASHES),
+            'pluginOwner' => 'forms',
+            'driver' => 'wp-option',
+        ];
+    }
+    foreach (array_keys($snapshot['db']['wp_postmeta']) as $row_id) {
+        reprint_push_parse_postmeta_row_id($row_id);
+        $allowed_resources[] = [
+            'resourceKey' => 'row:' . wp_json_encode(['wp_postmeta', $row_id], JSON_UNESCAPED_SLASHES),
+            'pluginOwner' => 'forms',
+            'driver' => 'wp-postmeta',
+        ];
+    }
+
+    usort($allowed_resources, static function (array $left, array $right): int {
+        return strcmp((string) $left['resourceKey'], (string) $right['resourceKey']);
+    });
+
+    $snapshot['meta']['pluginOwnedResources'] = [
+        'allowedResources' => $allowed_resources,
+    ];
 }
 
 function reprint_push_export_fixture_files(array &$snapshot, string $root, string $relative_root): void
@@ -182,9 +291,13 @@ function reprint_push_assert_supported_apply_resource(array $resource): void
         }
         if ($table === 'wp_options') {
             $option_name = reprint_push_option_name($id);
-            if ($option_name !== 'reprint_push_plugin_payload') {
+            if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
                 throw new RuntimeException('Unsupported option for fixture apply: ' . $option_name);
             }
+            return;
+        }
+        if ($table === 'wp_postmeta') {
+            reprint_push_parse_postmeta_row_id($id);
             return;
         }
         throw new RuntimeException('Unsupported apply table: ' . $table);
@@ -227,6 +340,10 @@ function reprint_push_apply_row_resource(string $table, string $id, bool $is_del
     }
     if ($table === 'wp_options') {
         reprint_push_apply_option_row($id, $is_delete, $value);
+        return;
+    }
+    if ($table === 'wp_postmeta') {
+        reprint_push_apply_postmeta_row($id, $is_delete, $value);
         return;
     }
     throw new RuntimeException('Unsupported table: ' . $table);
@@ -280,12 +397,13 @@ function reprint_push_apply_post_row(string $id, bool $is_delete, $value): void
 
     $fixture = $post_data['post_name'] === 'local-only-draft' ? 'local-only' : 'shared';
     update_post_meta($post_id, 'reprint_push_fixture', $fixture);
+    reprint_push_flush_deferred_postmeta_for_post($post_id);
 }
 
 function reprint_push_apply_option_row(string $id, bool $is_delete, $value): void
 {
     $option_name = reprint_push_option_name($id);
-    if ($option_name !== 'reprint_push_plugin_payload') {
+    if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
         throw new RuntimeException('Refusing to mutate non-fixture option: ' . $option_name);
     }
 
@@ -297,6 +415,84 @@ function reprint_push_apply_option_row(string $id, bool $is_delete, $value): voi
         throw new RuntimeException('Option row payload must include option_value');
     }
     update_option($option_name, $value['option_value']);
+}
+
+function reprint_push_apply_postmeta_row(string $id, bool $is_delete, $value): void
+{
+    [$post_id, $meta_key] = reprint_push_parse_postmeta_row_id($id);
+    $post = get_post($post_id);
+
+    if ($post && !reprint_push_is_fixture_post($post_id)) {
+        throw new RuntimeException('Refusing to mutate postmeta for non-fixture post: ' . $id);
+    }
+
+    if ($is_delete) {
+        if ($post) {
+            delete_post_meta($post_id, $meta_key);
+        }
+        return;
+    }
+
+    if (!$post) {
+        reprint_push_defer_postmeta_row($id, $post_id, $meta_key, $value);
+        return;
+    }
+
+    if (!reprint_push_is_fixture_post($post_id)) {
+        throw new RuntimeException('Refusing to mutate postmeta without fixture-marked parent post: ' . $id);
+    }
+    reprint_push_update_fixture_postmeta($id, $post_id, $meta_key, $value);
+}
+
+function reprint_push_update_fixture_postmeta(string $id, int $post_id, string $meta_key, $value): void
+{
+    if (!is_array($value) || !array_key_exists('meta_value', $value)) {
+        throw new RuntimeException('Postmeta row payload must include meta_value');
+    }
+    if ((int) ($value['post_id'] ?? 0) !== $post_id || (string) ($value['meta_key'] ?? '') !== $meta_key) {
+        throw new RuntimeException('Postmeta row payload does not match row id: ' . $id);
+    }
+
+    update_post_meta($post_id, $meta_key, $value['meta_value']);
+}
+
+function reprint_push_defer_postmeta_row(string $id, int $post_id, string $meta_key, $value): void
+{
+    if (!is_array($value) || !array_key_exists('meta_value', $value)) {
+        throw new RuntimeException('Postmeta row payload must include meta_value');
+    }
+    if ((int) ($value['post_id'] ?? 0) !== $post_id || (string) ($value['meta_key'] ?? '') !== $meta_key) {
+        throw new RuntimeException('Postmeta row payload does not match row id: ' . $id);
+    }
+
+    $rows =& reprint_push_deferred_postmeta_rows();
+    $rows[$id] = [
+        'post_id' => $post_id,
+        'meta_key' => $meta_key,
+        'value' => $value,
+    ];
+}
+
+function reprint_push_flush_deferred_postmeta_for_post(int $post_id): void
+{
+    if (!reprint_push_is_fixture_post($post_id)) {
+        return;
+    }
+
+    $rows =& reprint_push_deferred_postmeta_rows();
+    foreach ($rows as $id => $row) {
+        if ((int) $row['post_id'] !== $post_id) {
+            continue;
+        }
+        reprint_push_update_fixture_postmeta((string) $id, $post_id, (string) $row['meta_key'], $row['value']);
+        unset($rows[$id]);
+    }
+}
+
+function &reprint_push_deferred_postmeta_rows(): array
+{
+    static $rows = [];
+    return $rows;
 }
 
 function reprint_push_is_fixture_post(int $post_id): bool
@@ -339,6 +535,37 @@ function reprint_push_option_name(string $id): string
         throw new RuntimeException('Unsupported option id: ' . $id);
     }
     return substr($id, strlen($expected));
+}
+
+function reprint_push_allowed_plugin_option_names(): array
+{
+    return [
+        'reprint_push_plugin_payload',
+        'reprint_push_forms_fixture',
+    ];
+}
+
+function reprint_push_forms_schema_meta_key(): string
+{
+    return '_reprint_push_forms_schema';
+}
+
+function reprint_push_postmeta_row_id(int $post_id, string $meta_key): string
+{
+    return 'post_id:' . $post_id . ':meta_key:' . $meta_key;
+}
+
+function reprint_push_parse_postmeta_row_id(string $id): array
+{
+    if (!preg_match('/^post_id:(\d+):meta_key:(.+)$/', $id, $matches)) {
+        throw new RuntimeException('Unsupported postmeta id: ' . $id);
+    }
+    $post_id = (int) $matches[1];
+    $meta_key = $matches[2];
+    if ($post_id <= 0 || $meta_key !== reprint_push_forms_schema_meta_key()) {
+        throw new RuntimeException('Unsupported postmeta id: ' . $id);
+    }
+    return [$post_id, $meta_key];
 }
 
 function reprint_push_stable_json($value): string

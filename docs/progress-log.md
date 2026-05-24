@@ -44,10 +44,9 @@ linked implementation artifacts.
   then it created a separate ready plan with `remote=base`, applied it inside a
   fresh Playground source site, and verified WordPress-visible posts, options,
   and files after the apply.
-- The apply leg reported `status: ready`, `applied: 5`, verified the shared and
-  local-only upload files, the plugin-owned option, the edited shared post, and
-  the local-only post, then read back a `remote-base` Playground snapshot with
-  two posts, one option, and two files.
+- The apply leg reports `status: ready` and verifies the exact ready mutations,
+  including shared and local-only upload files, plugin-owned options, edited
+  shared/local-only posts, and the allowlisted forms fixture resources.
 - This target remains lab-scoped. It does not claim production Reprint HTTP
   source mutation support; the real HTTP transport/source mutation endpoint is
   still a pending proof gate.
@@ -60,7 +59,7 @@ linked implementation artifacts.
   `scripts/playground/push-remote-lib.php` files into no-server Playground.
 - The smoke proves dry-run is read-only by same-process WordPress before/after
   readback, applies a ready fixture plan with a supplied dry-run receipt,
-  verifies five fixture mutations and hashes, rejects missing receipts with
+  verifies eight fixture mutations and hashes, rejects missing receipts with
   `MISSING_DRY_RUN_RECEIPT`, rejects tampered receipts with
   `RECEIPT_MISMATCH`, rejects stale apply with `PRECONDITION_FAILED`, and
   preserves the drifted remote fixture.
@@ -83,7 +82,7 @@ linked implementation artifacts.
   `POST /apply`. The script verifies namespace discovery, snapshot readback,
   journal readback, dry-run read-only behavior, missing receipt refusal with
   `428 MISSING_DRY_RUN_RECEIPT`, dry-run receipt creation, and successful apply
-  of the five expected fixture mutations.
+  of the eight expected fixture mutations.
 - Negative HTTP-style cases are also covered: tampered receipts fail with
   `409 RECEIPT_MISMATCH`, stale remote state fails with
   `412 PRECONDITION_FAILED`, and conflict dry-run/apply fail with
@@ -96,11 +95,32 @@ linked implementation artifacts.
   outside `npm run test:playground` because it starts real servers and takes
   around two minutes.
 
+## 2026-05-24 - Plugin-Owned Forms Fixture Slice
+
+- A verified fixture-scoped plugin-owned data slice now covers nested
+  `reprint_push_forms_fixture` option data, fixture-marked parent posts with
+  `_reprint_push_forms_schema` postmeta, detection-only
+  `wp_reprint_push_forms_lab` custom-table rows, and
+  `reprint-push-forms-fixture` plugin metadata.
+- Snapshot/apply is intentionally allowlist-based. Safe apply covers only the
+  allowlisted option and the allowlisted postmeta key when the parent post is
+  fixture-marked. Custom-table rows and plugin metadata are exported/detected
+  but not applied.
+- The planner requires an explicit row driver policy for plugin-owned rows.
+  Unknown plugin-owned custom-table rows block as
+  `unsupported-plugin-owned-resource`. Conflict evidence exposes hashes and
+  resource evidence, not raw plugin values.
+- The smokes now verify eight exact ready mutations and assert detection-only
+  resources are not ready mutations. Caveat: this is still not a claim about
+  arbitrary production plugin semantics; real plugin activation, custom-table
+  drivers, recovery, auth/session/nonce proof, and production source mutation
+  remain pending.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
-| Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md) | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks |
+| Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling and detection-only custom-table/plugin metadata | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
 | Recovery boundaries | 14% | In-memory lab journal/recovery evidence in [src/apply.js](../src/apply.js) and tests | Durable on-disk journal, process-kill tests, storage-level recovery proof |
 | Reliable executor and protocol | 20% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, and standalone local-only REST lab harness | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
@@ -121,4 +141,6 @@ linked implementation artifacts.
   Production push behavior remains pending until mutations flow through the
   intended authenticated source endpoint and are verified there.
 - Plugin validators or drivers: pending until plugin-specific semantics are
-  implemented and tested against real plugin-owned data.
+  implemented and tested against real plugin-owned data. Current evidence is
+  limited to allowlisted fixture option/postmeta apply plus detection-only
+  custom-table and plugin metadata export.

@@ -75,7 +75,7 @@ try {
         }
     }
 
-    foreach ($mutations as $mutation) {
+    foreach (reprint_push_order_apply_mutations($mutations) as $mutation) {
         reprint_push_apply_resource($mutation['resource'], $mutation['value']);
     }
 
@@ -183,4 +183,30 @@ function reprint_push_assert_precondition_binds_to_mutation(array $precondition,
     if (reprint_push_stable_json($precondition['resource']) !== reprint_push_stable_json($mutation['resource'])) {
         throw new RuntimeException('Precondition resource does not match mutation: ' . (string) $mutation['id']);
     }
+}
+
+function reprint_push_order_apply_mutations(array $mutations): array
+{
+    $ordered = $mutations;
+    usort($ordered, static function (array $left, array $right): int {
+        return reprint_push_apply_mutation_priority($left) <=> reprint_push_apply_mutation_priority($right);
+    });
+    return $ordered;
+}
+
+function reprint_push_apply_mutation_priority(array $mutation): int
+{
+    $resource = $mutation['resource'] ?? [];
+    if (($resource['type'] ?? null) !== 'row') {
+        return 10;
+    }
+
+    $table = (string) ($resource['table'] ?? '');
+    if ($table === 'wp_posts') {
+        return 20;
+    }
+    if ($table === 'wp_postmeta') {
+        return !empty($mutation['value']['absent']) ? 15 : 30;
+    }
+    return 40;
 }

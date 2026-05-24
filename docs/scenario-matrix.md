@@ -15,6 +15,10 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Remote-only plugin removal invalidates a stale local dependency | Plan is `blocked`; stale local plugin state cannot satisfy the dependency. | `remote-only plugin removal blocks stale local dependency assumptions` |
 | Remote and local changed the same row differently | Plan is `conflict`; apply refuses; remote remains unchanged. | `refuses direct conflicts and preserves the remote snapshot` |
 | Conflict is in plugin-owned data | Conflict is classified as `plugin-data-conflict`. | `classifies plugin-owned data conflicts separately from generic rows` |
+| Plugin-owned forms option is allowlisted fixture data | Nested `reprint_push_forms_fixture` data can be planned and applied only through the explicit fixture allowlist. | `npm run test:playground` / Playground plugin-owned forms fixture smokes |
+| Plugin-owned forms postmeta is allowlisted fixture data | `_reprint_push_forms_schema` postmeta can be applied only when attached to fixture-marked parent posts. | `npm run test:playground` / Playground plugin-owned forms fixture smokes |
+| Plugin-owned custom-table rows have no driver | `wp_reprint_push_forms_lab` rows are exported/detected but not ready mutations; unknown plugin-owned rows block as `unsupported-plugin-owned-resource`. | `npm run test:playground` / planner plugin-owned row policy smokes |
+| Plugin metadata is detection-only | `reprint-push-forms-fixture` metadata is exported/detected but not applied as a ready mutation. | `npm run test:playground` / Playground plugin-owned forms fixture smokes |
 | Atomic plugin install is missing dependency | Plan is `blocked`; apply refuses. | `blocks an atomic plugin install when dependencies are absent` |
 | Plugin install and dependency are included together | All files, plugin metadata, and options apply as one atomic group. | `applies an atomic plugin install when dependencies are included in the same plan` |
 | Plugin dependency mutation is outside the atomic group | Plan is `blocked`; apply refuses. | `blocks an atomic plugin bundle when its dependency mutation is outside the group` |
@@ -23,13 +27,13 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Plugin dependency hash metadata does not match remote | Plan is `blocked`; apply refuses. | `blocks an atomic bundle when dependency hash metadata does not match remote` |
 | Remote changes after dry-run | Apply rejects with `PRECONDITION_FAILED`. | `rejects apply when the remote changed after dry-run planning` |
 | Playground fixture protocol dry-run | Dry-run verifies ready-plan preconditions, applies nothing, and same-process WordPress readback stays unchanged. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
-| Playground fixture protocol ready apply | Apply with a supplied dry-run receipt writes the five expected fixture mutations and verifies hashes/readback. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
+| Playground fixture protocol ready apply | Apply with a supplied dry-run receipt writes the eight expected fixture mutations and verifies hashes/readback. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol missing receipt | Apply without a supplied dry-run receipt rejects with `MISSING_DRY_RUN_RECEIPT` before mutation. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol tampered receipt | Apply with a mismatched receipt rejects with `RECEIPT_MISMATCH` before mutation. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol stale apply | Stale apply rejects with `PRECONDITION_FAILED` and preserves the changed remote fixture. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol non-ready plan | Conflict dry-run and apply reject with `PLAN_NOT_READY` and report row, file, and plugin-data conflict classes. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground local REST namespace | Disposable Playground servers expose `reprint-push-lab/v1` with `GET /snapshot`, `GET /journal`, `POST /dry-run`, and `POST /apply` over real local HTTP. | `npm run test:playground:http-push` |
-| Playground local REST ready apply | Dry-run is read-only, returns a receipt, and receipt-backed apply writes the five expected fixture mutations. | `npm run test:playground:http-push` |
+| Playground local REST ready apply | Dry-run is read-only, returns a receipt, and receipt-backed apply writes the eight expected fixture mutations. | `npm run test:playground:http-push` |
 | Playground local REST receipt/stale/conflict refusals | Missing receipt rejects with `428 MISSING_DRY_RUN_RECEIPT`, tampered receipt with `409 RECEIPT_MISMATCH`, stale remote with `412 PRECONDITION_FAILED`, and conflict plans with `409 PLAN_NOT_READY` for row, file, and plugin-data classes. | `npm run test:playground:http-push` |
 | Failure happens while staging mutations | No partially mutated remote state is returned or committed. | `injected failure before commit returns no partially mutated remote state` |
 
@@ -43,7 +47,10 @@ The first executable matrix lives in `test/push-planner.test.js`.
 - Database transaction boundaries on MySQL and SQLite.
 - Remote plugin activation/update with dependency and recovery checks.
 - Object-cache, cron, generated files, and maintenance-mode interactions.
-- Plugin validator and merge-driver contracts with real plugin fixtures.
+- Plugin validator and merge-driver contracts with real plugin fixtures; the
+  current forms slice is fixture/allowlist-scoped and does not prove arbitrary
+  production plugin-owned options, postmeta, custom tables, or activation
+  semantics.
 - Kill-process recovery tests around every durable boundary.
 
 ## Invariant Policy

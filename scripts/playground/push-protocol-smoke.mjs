@@ -45,6 +45,7 @@ assert.equal(readyPlan.status, 'ready');
 assert.equal(readyPlan.summary.conflicts, 0);
 assert.equal(readyPlan.summary.blockers, 0);
 assert.ok(readyPlan.mutations.length > 0, 'expected ready plan mutations');
+assertReadyPlanResources(readyPlan);
 
 const readyPlanPath = writeJson('push-protocol-ready-plan.json', readyPlan);
 
@@ -181,6 +182,7 @@ const conflictPlan = createPushPlan({
 });
 
 assert.equal(conflictPlan.status, 'conflict');
+assertConflictEvidence(conflictPlan);
 const conflictPlanPath = writeJson('push-protocol-conflict-plan.json', conflictPlan);
 
 const conflictDryRun = runEndpoint({
@@ -192,6 +194,7 @@ const conflictDryRun = runEndpoint({
 
 assertPlanNotReady(conflictDryRun, snapshots.base, 'conflict dry-run');
 assertConflictClasses(conflictDryRun.result);
+assertConflictEvidence(conflictDryRun.result.audit, { expectDetectionDecisions: false });
 
 const conflictApply = runEndpoint({
   name: 'conflict apply',
@@ -203,6 +206,7 @@ const conflictApply = runEndpoint({
 
 assertPlanNotReady(conflictApply, snapshots.base, 'conflict apply');
 assertConflictClasses(conflictApply.result);
+assertConflictEvidence(conflictApply.result.audit, { expectDetectionDecisions: false });
 
 console.log(JSON.stringify({
   snapshots: Object.fromEntries(
@@ -421,6 +425,59 @@ function visibleSurface(snapshot) {
   };
 }
 
+function assertReadyPlanResources(plan) {
+  const expectedReadyKeys = [
+    'file:wp-content/uploads/reprint-push/local-only.txt',
+    'file:wp-content/uploads/reprint-push/shared.txt',
+    'row:["wp_options","option_name:reprint_push_forms_fixture"]',
+    'row:["wp_options","option_name:reprint_push_plugin_payload"]',
+    'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_posts","ID:1001"]',
+    'row:["wp_posts","ID:2001"]',
+  ];
+  const readyKeys = plan.mutations.map((mutation) => mutation.resourceKey).sort();
+  assert.deepEqual(readyKeys, [...expectedReadyKeys].sort(), 'ready mutations should match fixture-scoped resources');
+  assertNoReadyMutation(plan, 'plugin:reprint-push-forms-fixture');
+  assertNoReadyMutation(plan, 'row:["wp_reprint_push_forms_lab","id:1"]');
+}
+
+function assertNoReadyMutation(plan, resourceKey) {
+  assert.ok(
+    !plan.mutations.some((mutation) => mutation.resourceKey === resourceKey),
+    `${resourceKey} must remain detection-only in ready plans`,
+  );
+}
+
+function assertConflictEvidence(audit, { expectDetectionDecisions = true } = {}) {
+  assertEvidenceEntry(
+    audit.conflicts,
+    'row:["wp_options","option_name:reprint_push_forms_fixture"]',
+    'plugin-data-conflict',
+  );
+  assertEvidenceEntry(
+    audit.conflicts,
+    'row:["wp_options","option_name:reprint_push_plugin_payload"]',
+    'plugin-data-conflict',
+  );
+  assertEvidenceEntry(
+    audit.conflicts,
+    'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
+    'plugin-data-conflict',
+  );
+  if (!expectDetectionDecisions) {
+    return;
+  }
+  assertEvidenceEntry(audit.decisions, 'plugin:reprint-push-forms-fixture', 'keep-remote');
+  assertEvidenceEntry(audit.decisions, 'row:["wp_reprint_push_forms_lab","id:1"]', 'keep-remote');
+}
+
+function assertEvidenceEntry(entries = [], resourceKey, expectedClassOrDecision) {
+  const entry = entries.find((item) => item.resourceKey === resourceKey);
+  assert.ok(entry, `missing audit evidence for ${resourceKey}`);
+  assert.equal(entry.class ?? entry.decision, expectedClassOrDecision);
+}
+
 function assertAppliedFixtureValues(snapshot) {
   assert.equal(snapshot.meta.fixture, 'remote-base');
 
@@ -441,6 +498,114 @@ function assertAppliedFixtureValues(snapshot) {
     mode: 'local-edited',
     owner: 'forms',
     version: 2,
+  });
+
+  const formsFixture = snapshot.db.wp_options['option_name:reprint_push_forms_fixture'];
+  assert.equal(formsFixture.__pluginOwner, 'forms');
+  assert.deepEqual(formsFixture.option_value, {
+    enabled: true,
+    flags: {
+      captcha: true,
+      honeypot: true,
+    },
+    forms: {
+      contact: {
+        active: true,
+        fields: ['email', 'message', 'phone'],
+        limits: {
+          daily: '40',
+          perIp: '4',
+        },
+        title: 'Contact the studio',
+        version: '2',
+      },
+      newsletter: {
+        active: true,
+        fields: ['email', 'source'],
+        segments: ['general', 'product', 'local'],
+        title: 'Newsletter',
+        version: '1',
+      },
+    },
+    owner: 'forms',
+    revision: '002-local',
+    routing: {
+      notify: ['local-admin@example.test', 'ops@example.test'],
+      storeSubmissions: true,
+    },
+  });
+
+  const sharedSchema = snapshot.db.wp_postmeta['post_id:1001:meta_key:_reprint_push_forms_schema'];
+  assert.equal(sharedSchema.__pluginOwner, 'forms');
+  assert.deepEqual(sharedSchema.meta_value, {
+    fields: [
+      {
+        enabled: true,
+        key: 'email',
+        label: 'Email address',
+        type: 'email',
+      },
+      {
+        enabled: true,
+        key: 'message',
+        label: 'Project brief',
+        type: 'textarea',
+      },
+      {
+        enabled: false,
+        key: 'phone',
+        label: 'Phone',
+        type: 'tel',
+      },
+    ],
+    form: 'contact',
+    notifications: {
+      admin: true,
+      copyToSender: true,
+    },
+    owner: 'forms',
+    required: ['email', 'message', 'phone'],
+    schemaVersion: '2-local',
+  });
+
+  const localOnlySchema = snapshot.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  assert.equal(localOnlySchema.__pluginOwner, 'forms');
+  assert.deepEqual(localOnlySchema.meta_value, {
+    fields: [
+      {
+        enabled: true,
+        key: 'email',
+        label: 'Email',
+        type: 'email',
+      },
+      {
+        choices: ['small', 'medium', 'large'],
+        enabled: true,
+        key: 'budget',
+        label: 'Budget',
+        type: 'select',
+      },
+    ],
+    form: 'intake',
+    notifications: {
+      admin: false,
+      copyToSender: true,
+    },
+    owner: 'forms',
+    required: ['email'],
+    schemaVersion: '1-local-only',
+  });
+
+  const customTableRow = snapshot.db.wp_reprint_push_forms_lab['id:1'];
+  assert.equal(customTableRow.__pluginOwner, 'forms');
+  assert.deepEqual(customTableRow.payload, {
+    mode: 'base',
+    owner: 'forms',
+    rules: {
+      maxAttachments: '2',
+      requireConsent: true,
+    },
+    version: '1',
   });
 }
 

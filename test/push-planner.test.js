@@ -56,6 +56,18 @@ function pluginResource(name) {
   return { type: 'plugin', name, key: `plugin:${name}` };
 }
 
+function allowedPluginOwnedResource(resourceKey, pluginOwner, driver = 'wp-option') {
+  return { pluginOwner, resourceKey, driver };
+}
+
+function pluginOwnedResourcePolicy(...allowedResources) {
+  return {
+    pluginOwnedResources: {
+      allowedResources,
+    },
+  };
+}
+
 function assertEveryMutationHasLiveRemotePrecondition(plan) {
   for (const mutation of plan.mutations) {
     const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
@@ -227,6 +239,9 @@ test('remote-only plugin removal blocks stale local dependency assumptions', () 
       requireAtomic: true,
       resources: ['row:["wp_options","option_name:forms_settings"]'],
       dependencies: { plugins: ['forms'] },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource('row:["wp_options","option_name:forms_settings"]', 'forms'),
+      ),
     },
   ];
 
@@ -267,6 +282,150 @@ test('classifies plugin-owned data conflicts separately from generic rows', () =
   assert.equal(plan.status, 'conflict');
   assert.equal(plan.conflicts[0].class, 'plugin-data-conflict');
   assert.equal(plan.conflicts[0].pluginOwner, 'forms');
+});
+
+test('allows plugin-owned option rows only with explicit snapshot driver policy', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+
+  const blockedPlan = planFor(base, local, baseSite());
+  assert.equal(blockedPlan.status, 'blocked');
+  assert.equal(blockedPlan.summary.mutations, 0);
+  assert.equal(blockedPlan.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(blockedPlan.blockers[0].pluginOwner, 'forms');
+  assert.equal(blockedPlan.blockers[0].resourceKey, resourceKey);
+
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const readyPlan = planFor(base, local, baseSite());
+
+  assert.equal(readyPlan.status, 'ready');
+  assert.equal(mutationFor(readyPlan, resourceKey).changeKind, 'update');
+});
+
+test('allows plugin-owned postmeta-like rows with explicit push intent policy', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:7': {
+      meta_id: 7,
+      post_id: 1,
+      meta_key: '_forms_payload',
+      meta_value: { state: 'base' },
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = baseSite();
+  local.db.wp_postmeta = {
+    'meta_id:7': {
+      meta_id: 7,
+      post_id: 1,
+      meta_key: '_forms_payload',
+      meta_value: { state: 'local' },
+      __pluginOwner: 'forms',
+    },
+  };
+  local.pushIntents = [
+    {
+      id: 'update-forms-postmeta',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'wp-postmeta'),
+      ),
+    },
+  ];
+  const remote = baseSite();
+  remote.db.wp_postmeta = {
+    'meta_id:7': {
+      meta_id: 7,
+      post_id: 1,
+      meta_key: '_forms_payload',
+      meta_value: { state: 'base' },
+      __pluginOwner: 'forms',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, resourceKey).atomicGroupId, 'update-forms-postmeta');
+  assert.equal(plan.atomicGroups[0].status, 'ready');
+});
+
+test('blocks unknown plugin-owned custom table rows without leaking values', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  const local = baseSite();
+  local.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'local-private-entry', __pluginOwner: 'forms' },
+  };
+  const remote = baseSite();
+  remote.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blockerJson.includes('base-private-entry'), false);
+  assert.equal(blockerJson.includes('local-private-entry'), false);
+});
+
+test('classifies divergent plugin-owned data rows as redacted plugin data conflicts', () => {
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:7': {
+      meta_id: 7,
+      post_id: 1,
+      meta_key: '_forms_payload',
+      meta_value: 'base-private-meta',
+      __pluginOwner: 'forms',
+    },
+  };
+  base.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-private-option';
+  remote.db.wp_options['option_name:forms_settings'].option_value.mode = 'remote-private-option';
+  local.db.wp_postmeta['meta_id:7'].meta_value = 'local-private-meta';
+  remote.db.wp_postmeta['meta_id:7'].meta_value = 'remote-private-meta';
+  local.db.wp_forms_entries['entry_id:9'].payload = 'local-private-entry';
+  remote.db.wp_forms_entries['entry_id:9'].payload = 'remote-private-entry';
+
+  const plan = planFor(base, local, remote);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.conflicts, 3);
+  assert.deepEqual(
+    plan.conflicts.map((conflict) => [conflict.resourceKey, conflict.class, conflict.pluginOwner]),
+    [
+      ['row:["wp_forms_entries","entry_id:9"]', 'plugin-data-conflict', 'forms'],
+      ['row:["wp_options","option_name:forms_settings"]', 'plugin-data-conflict', 'forms'],
+      ['row:["wp_postmeta","meta_id:7"]', 'plugin-data-conflict', 'forms'],
+    ],
+  );
+  const conflictsJson = JSON.stringify(plan.conflicts);
+  assert.equal(conflictsJson.includes('local-private-option'), false);
+  assert.equal(conflictsJson.includes('remote-private-meta'), false);
+  assert.equal(conflictsJson.includes('local-private-entry'), false);
 });
 
 test('blocks an atomic plugin install when dependencies are absent', () => {
@@ -328,6 +487,9 @@ test('applies an atomic plugin install when dependencies are included in the sam
           },
         ],
       },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource('row:["wp_options","option_name:commerce_settings"]', 'commerce'),
+      ),
     },
   ];
 
@@ -397,6 +559,9 @@ test('blocks a dependent atomic bundle when a remote dependency changed since ba
           },
         ],
       },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource('row:["wp_options","option_name:commerce_settings"]', 'commerce'),
+      ),
     },
   ];
   const remote = baseSite();
@@ -431,6 +596,9 @@ test('blocks an atomic bundle with an incompatible plugin dependency version ran
       dependencies: {
         plugins: [{ name: 'payments', versionRange: '>=3.0.0 <4.0.0' }],
       },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource('row:["wp_options","option_name:commerce_settings"]', 'commerce'),
+      ),
     },
   ];
   const remote = baseSite();
@@ -465,6 +633,9 @@ test('blocks an atomic bundle when dependency hash metadata does not match remot
       dependencies: {
         plugins: [{ name: 'payments', hash: 'sha256:not-the-remote-plugin-hash' }],
       },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource('row:["wp_options","option_name:commerce_settings"]', 'commerce'),
+      ),
     },
   ];
   const remote = baseSite();

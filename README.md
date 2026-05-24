@@ -44,10 +44,18 @@ fresh Playground source site, and verifies WordPress-visible posts, options, and
 files after apply. The Playground protocol smoke also exercises a fixture-scoped
 dry-run/apply endpoint: dry-run is read-only by same-process before/after
 readback, apply requires a supplied dry-run receipt before it can mutate the
-five expected fixture resources, and the endpoint verifies hashes after apply.
+eight expected fixture resources, and the endpoint verifies hashes after apply.
 Missing receipts fail before mutation with `MISSING_DRY_RUN_RECEIPT`, tampered
 receipts fail before mutation with `RECEIPT_MISMATCH`, stale apply fails with
 `PRECONDITION_FAILED`, and non-ready conflict plans fail with `PLAN_NOT_READY`.
+The verified plugin-owned data slice is narrow: blueprints include the
+`reprint_push_forms_fixture` option, fixture-marked parent posts with
+`_reprint_push_forms_schema` postmeta, detection-only
+`wp_reprint_push_forms_lab` custom-table rows, and
+`reprint-push-forms-fixture` plugin metadata. Apply is allowed only for
+allowlisted fixture option/postmeta resources; custom-table rows and plugin
+metadata are exported and can block as `unsupported-plugin-owned-resource`, but
+are not applied.
 This remains a lab harness, not production Reprint HTTP source mutation support.
 Its receipts are hash-bound to plan, mutation, precondition, and resource
 evidence, and its journal checks are fixture-scoped lab audit evidence, not a
@@ -57,7 +65,7 @@ The `test:playground:http-push` script starts disposable Playground servers
 bound only to `127.0.0.1` and verifies a local-only REST lab namespace,
 `reprint-push-lab/v1`, with `GET /snapshot`, `GET /journal`, `POST /dry-run`,
 and `POST /apply`. It covers namespace discovery, snapshots, journal readback,
-read-only dry-run, required dry-run receipts, five-mutation apply success,
+read-only dry-run, required dry-run receipts, eight-mutation apply success,
 tampered receipt refusal, stale remote refusal, and row/file/plugin-data
 conflict classes. It is intentionally standalone because it starts real HTTP
 servers and takes around two minutes; it is not included in `test:playground`.
