@@ -128,6 +128,17 @@ function assertEveryMutationHasLiveRemotePrecondition(plan) {
   }
 }
 
+function assertAcceptableRecoveryState(recoveryState) {
+  assert.ok(recoveryState, 'missing recovery state');
+  assert.ok(
+    ['old-remote', 'fully-updated-remote', 'blocked-recovery'].includes(recoveryState.status),
+    `unexpected recovery state ${recoveryState.status}`,
+  );
+  if (recoveryState.status === 'blocked-recovery') {
+    assert.ok(recoveryState.artifacts?.journal, 'blocked recovery must carry journal artifacts');
+  }
+}
+
 test('plans and applies local changes when remote still matches the pull base', () => {
   const base = baseSite();
   const local = baseSite();
@@ -1584,6 +1595,7 @@ test('injected failure before mutation leaves the old remote with a journal arti
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
   assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
   assert.equal(error.details.recovery.status, 'old-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
   assert.equal(error.details.recovery.artifacts.journal.entries.length, 2);
@@ -1604,6 +1616,7 @@ test('injected failure after staging leaves the old remote with staged rollback 
   assert.equal(error.code, 'INJECTED_FAILURE_AFTER_STAGING');
   const journal = error.details.recovery.artifacts.journal;
   assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
   assert.equal(error.details.recovery.status, 'old-remote');
   assert.equal(journal.status, 'staged');
   assert.deepEqual(journal.entries.map((entry) => entry.status), ['staged', 'staged']);
@@ -1640,6 +1653,7 @@ test('injected failure after dependency validation leaves the old remote with va
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
   assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
   assert.equal(error.details.recovery.status, 'old-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
 });
@@ -2126,6 +2140,7 @@ test('durable recovery stays within old remote, fully updated remote, or blocked
 
     assert.ok(error instanceof PushPlanError, scenario.label);
     assert.equal(JSON.stringify(remote), before, scenario.label);
+    assertAcceptableRecoveryState(error.details.recovery);
     assert.equal(error.details.recovery.status, scenario.expectedRecoveryStatus, scenario.label);
     assert.ok(error.details.recovery.artifacts.journal, scenario.label);
   }
@@ -2136,12 +2151,14 @@ test('durable recovery stays within old remote, fully updated remote, or blocked
   assert.equal(replay.appliedMutations, 0);
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assertAcceptableRecoveryState(replay.recoveryState);
 
   const blockedRemote = JSON.parse(JSON.stringify(completed.site));
   blockedRemote.db.wp_posts['ID:1'].post_title = 'Drifted after completion';
   const blocked = captureError(() => applyPlan(blockedRemote, plan, { journal: completed.journal }));
 
   assert.ok(blocked instanceof PushPlanError);
+  assertAcceptableRecoveryState(blocked.details.recovery);
   assert.equal(blocked.details.recovery.status, 'blocked-recovery');
   assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
   assert.equal(blocked.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Drifted after completion');
