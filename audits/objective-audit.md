@@ -70,9 +70,9 @@ gates were exercised.
 
 | Area | Directly observed proof | Still insufficient | Next proof required |
 | --- | --- | --- | --- |
-| No-overwrite planner | Unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. | These are JSON-model resources plus fixture policy, not WordPress graph semantics. The tests cannot prove post/postmeta/attachment/taxonomy/menu/plugin relationships are complete or safe. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
-| Recovery and idempotency | Unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Playground smoke source covers DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. The production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. The current suite can demonstrate blocked recovery states, but it does not prove that a live source site survives crash/retry cycles without data loss or duplicate mutation at each guarded boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
-| Speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and benchmark evidence gates. They also block unsupported production throughput claims until live measurements exist. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no benchmark evidence yet proves the claim at the production boundary. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, memory/runtime measurements, and an explicit pass/fail threshold for production throughput claims. |
+| No-overwrite planner | Executable proof: unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. Lab/fixture proof: the Playground and route smokes exercise the same planner shape against fixtures. Docs-only proof: README and audit text describe graph safety intentions. | These proofs are still mostly JSON-model resources plus fixture policy, not WordPress graph semantics. They do not prove post/postmeta/attachment/taxonomy/menu/plugin relationships are complete, nor do they prove arbitrary plugin-owned data is safe. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
+| Recovery and idempotency | Executable proof: unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Lab/fixture proof: Playground smokes cover DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. Lab/fixture proof: the production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. Docs-only proof: script names and comments describe durability intent. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. The current suite can demonstrate blocked recovery states, but it does not prove that a live source site survives crash/retry cycles without data loss or duplicate mutation at each guarded boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
+| Speed | Executable proof: `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and benchmark evidence gates. Lab/fixture proof: the benchmark harness can express production-claim blockers. Docs-only proof: scripts and audit text explain why the claim is blocked. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no benchmark evidence yet proves the claim at the production boundary. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, memory/runtime measurements, and an explicit pass/fail threshold for production throughput claims. |
 
 ## Explicit Requirements From The Objective
 
@@ -138,24 +138,24 @@ Evidence classes used below:
 `npm test` passed during this audit:
 
 - 89 passing tests.
-- Planner no-overwrite invariants for simplified JSON snapshots, including
+- Executable proof for planner no-overwrite invariants on simplified JSON snapshots, including
   deletion preconditions, delete/update conflicts, directory-descendant
   topology conflicts, and file type swap conflicts.
-- Plugin-owned resource blocking, stale owner-plugin context blocking, and the
+- Executable proof for plugin-owned resource blocking, stale owner-plugin context blocking, and the
   exact forms lab driver checks in the JavaScript model.
-- Atomic dependency metadata and forged-plan rejection in the model executor.
-- JSON-model recovery journal classification, append/`fsync` calls, missing
+- Executable proof for atomic dependency metadata and forged-plan rejection in the model executor.
+- Executable proof for JSON-model recovery journal classification, append/`fsync` calls, missing
   target blocking, and corrupt/truncated journal blocking.
-- Snapshot apply gates for named lab plugin resources, named lab plugin file paths, and exact forms lab custom-table rows when PHP is available.
-- A deterministic performance model, not measured performance.
+- Lab/fixture proof for snapshot apply gates on named lab plugin resources, named lab plugin file paths, and exact forms lab custom-table rows when PHP is available.
+- Executable proof for a deterministic performance model, not measured performance.
 
-This is useful evidence. It does not exercise a production source site, a
-production push endpoint, real production credentials, production DB/file
-durability, real concurrent WordPress traffic, or arbitrary plugin data.
-It also does not prove no-data-loss at the WordPress graph boundary: the
-default suite can show that selected modeled resources are preserved, but not
-that a live posts/postmeta/attachment/taxonomy/plugin graph survives a failed
-push without silent loss or duplication.
+This is useful evidence, but it is not production proof. It does not exercise a
+production source site, a production push endpoint, real production
+credentials, production DB/file durability, real concurrent WordPress traffic,
+or arbitrary plugin data. It also does not prove no-data-loss at the WordPress
+graph boundary: the default suite can show that selected modeled resources are
+preserved, but not that a live posts/postmeta/attachment/taxonomy/plugin graph
+survives a failed push without silent loss or duplication.
 In release terms, the default suite is a safety filter, not a production-safe
 proof. It can justify blocking bad changes; it cannot justify shipping the
 live-source no-data-loss, reliability, or speed claims by itself.
