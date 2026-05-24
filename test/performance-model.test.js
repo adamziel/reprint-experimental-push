@@ -828,6 +828,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('compressed-package-cache-skips-plugin-preconditions')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('compressed-package-cache-skips-plugin-preconditions')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('compressed-package-cache-skips-plugin-preconditions')
+      .violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-package-cache-skips-plugin-preconditions').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-upload-queue-completes-plugin-install')
       .violates.includes('remote-index-planning-only'),
   );
@@ -1220,6 +1239,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-package-hash-completes-plugin-install',
     'index-and-package-hash-completes-plugin-update',
     'index-and-package-hash-skips-plugin-validators',
+    'compressed-package-cache-skips-plugin-preconditions',
     'index-and-compressed-upload-queue-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-plugin-update',
     'index-and-compressed-row-batch-completes-plugin-update',
@@ -1327,6 +1347,7 @@ test('rejected fast paths keep unsafe shortcuts out of the safe families', () =>
   assert.equal(rejectedById.get('cross-group-row-batch').rejectedGate, 'group');
   assert.equal(rejectedById.get('remote-index-authorizes-mutation').rejectedGate, 'live');
   assert.equal(rejectedById.get('compressed-canonical-hash').rejectedGate, 'live');
+  assert.equal(rejectedById.get('compressed-package-cache-skips-plugin-preconditions').rejectedGate, 'group');
   assert.equal(rejectedById.get('parallelize-atomic-group-commit').rejectedGate, 'group');
   assert.equal(rejectedById.get('backpressure-drops-evidence').rejectedGate, 'recovery');
 
