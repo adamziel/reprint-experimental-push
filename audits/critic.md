@@ -467,6 +467,9 @@ would reasonably read as equivalent.
   Playground, fixture, or lab internals.
 - The live remote is revalidated immediately before apply, and any drift
   causes a fail-close before the first write.
+- The release gate fails closed if the reviewed snapshot, coverage hash, or
+  retry scope is stale, even when the route name, package name, or lab smoke
+  output still looks correct.
 - Every mutation surface in scope has a coverage manifest entry, or the push
   hard-blocks before apply.
 - Every plugin-owned resource in scope has a declared contract, or the push
@@ -488,6 +491,9 @@ would reasonably read as equivalent.
   never treated as production proof unless the same path also proves live
   remote revalidation, stale-approval rejection, and safe retry from a fresh
   snapshot.
+- Route-shape matches, package mounting, and fixture replay remain comparison
+  evidence only; they cannot be used to claim remote preservation, identity
+  stability, or plugin ownership safety without a live revalidation proof.
 - Every production journal boundary has crash evidence for old, new, or
   blocked classification.
 - The release suite runs auth, storage, recovery, plugin, graph, redaction,
