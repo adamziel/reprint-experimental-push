@@ -4,6 +4,18 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Visibility Timestamp Refresh
+
+- Updated [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 00:53:14 CEST`) so the public page stays visibly dated.
+- The public summary remains conservative: 89 Node tests still pass, while
+  production push, durable recovery, Docker/Playground integration, and plugin
+  drivers stay pending until proven.
+- Evidence links remain the public page plus the existing owned docs:
+  [progress.html](../progress.html), [docs/playground-topology.md](playground-topology.md),
+  [docs/protocol.md](protocol.md), [docs/executor.md](executor.md), and
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md).
+
 ## 2026-05-25 - Timestamp Sync Refresh
 
 - Updated [progress.html](../progress.html) to the actual current `date`
