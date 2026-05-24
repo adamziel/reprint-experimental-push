@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:39 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
+## 2026-05-25 00:39 CEST - Supervised Lane Merge Refresh
 
 - Going well: `89` Node tests pass after supervised lane merges. Matching
   delete/edit, recovery replay/failure states, fast-path rejection guardrails,
@@ -17,13 +17,14 @@ changed, what is helping, what is not helping, and the next nudge.
 - Not going well: production auth/session storage, durable journal ownership,
   leases, full graph identity mapping, Docker/full Playground integration, and
   general plugin drivers remain unproven.
-- Progress change: eight fast-mode worker outputs were integrated across the
-  last two passes; production readiness stayed blocked.
+- Progress change: the newest merges clarified the gap instead of closing it;
+  production readiness stayed blocked because the proof is still lab/model
+  scope.
 - Active supervision: same-plan graph remains active and unmerged. Completed
   replacement sessions were stopped after review; stale progress-publisher
   output was rejected instead of merged.
-- Next nudge: keep workers focused on production-backed auth/journal proof and
-  graph identity mapping.
+- Next nudge: keep workers on production-backed auth/session/journal proof and
+  graph identity mapping, with fresh evidence for each boundary.
 
 | Lane | Nudge |
 | --- | --- |
