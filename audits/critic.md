@@ -21,6 +21,10 @@ policy. ForkPress shows the reliability bar, but only as a comparison point
 until this repo proves the same lifecycle. Any claim beyond that would be an
 inference, not direct evidence, and no route-shape or packaged-plugin smoke
 should be read as proof of live source-site safety.
+None of the source notes prove that stale manual-review artifacts are rejected
+before write, that retries after live remote drift start from a fresh
+snapshot, or that a fixture replay remains safe when identity or plugin-owned
+state changes on the live remote.
 
 The current design also still has five unproven failure classes that matter for
 production push safety: live remote drift between dry-run and apply, create-time
@@ -153,6 +157,9 @@ evidence for all of these, not just a plausible design:
 - A reviewed manual-resolution artifact is not success on its own; the retry
   must preserve the remote, bind to the exact stale snapshot that was
   reviewed, and force a fresh plan before any write.
+- A stale manual-review artifact is never current authority; it may stay
+  auditable, but it cannot authorize a retry after remote drift or after a
+  partial approval has already been recorded.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
 - A release gate that runs the full safety-critical suite before any
@@ -262,11 +269,17 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - Any stale manual-review artifact, stale live-remote snapshot, or lab-backed
   endpoint evidence must fail the release gate before production wording is
   allowed.
+- A stale manual-review artifact that once matched the plan hash must still be
+  rejected if the live remote snapshot, coverage hash, or retry scope has
+  changed.
 - The release suite runs the production-shaped auth, storage, recovery,
   plugin, graph, and audit checks together, not as isolated smoke tests.
 - The gate fails closed if a retry would reuse stale manual-review artifacts,
   stale approval hashes, route-shape-only evidence, or a packaged-plugin
   mount mistaken for production write-path proof.
+- A manual resolution is only acceptable when the remote is preserved for
+  audit and the retry path proves it re-planned from fresh evidence; the
+  manual choice itself is not production proof.
 - The claim text explicitly says what is proven and what remains lab-only.
 - The release notes and branch status comments never cite route shape, fixture
   smokes, or packaged-plugin mounting as production safety proof.
