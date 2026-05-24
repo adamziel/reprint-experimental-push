@@ -161,6 +161,10 @@ evidence for all of these, not just a plausible design:
   hashes still does not prove the write path is the production executor, that
   stale review artifacts are rejected before mutation, or that the retry path
   preserves the remote after drift.
+- A successful route-shape or packaged-plugin smoke must never be cited as
+  evidence that live remote drift was handled safely; if the source changed
+  after review, the only valid proof is a fresh live snapshot, a rejected stale
+  approval, and a retry that starts from the new evidence.
 - A route that reports `finalMatchesLocal`, committed replay, or packaged
   plugin success on a fixture must still prove fresh live-remote
   revalidation; those results do not prove create-time identity remapping,
@@ -220,6 +224,10 @@ production-grade push support:
   must fail closed before mutation.
 - Retry proof: if a retry is allowed after drift, the next run must start from
   a fresh snapshot and a fresh plan, not from the old approval record.
+- Smoke-proof boundary: route-shape, packaged-plugin, and `finalMatchesLocal`
+  smokes are compatibility checks only; they cannot be used to claim
+  production write safety, stale-approval validity, or remote-preserving retry
+  behavior.
 - Identity safety: create paths must either reserve stable identities or
   block; a retry may not renumber or remap identities from stale local
   assumptions.
