@@ -6,6 +6,8 @@ import path from 'node:path';
 import { applyPlan, PushPlanError } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
 import {
+  appendRecoveryClaimOpened,
+  appendStaleClaimAdvanced,
   assertJournalRecordHasNoRawValues,
   openRecoveryJournal,
   readRecoveryJournal,
@@ -1718,6 +1720,93 @@ test('retrying an old-remote journal appends durable retry state without duplica
   assert.ok(persisted.records.some((record) => record.type === 'journal-retry-opened'));
   assert.equal(inspection.status, 'fully-updated-remote');
   assert.deepEqual(inspection.counts, { old: 0, new: 2, blockedUnknown: 0 });
+});
+
+test('stale recovery claim fences an old worker before target mutation', () => {
+  const base = baseSite();
+  const staleLocal = baseSite();
+  staleLocal.files['index.php'] = '<?php echo "STALE_LOCAL";';
+  staleLocal.db.wp_posts['ID:1'].post_title = 'STALE_LOCAL_TITLE';
+  const remote = baseSite();
+  const plan = planFor(base, staleLocal, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const staleThresholdMs = 1000;
+  const previousClaimAgeMs = 5000;
+  const workerAClaim = 'worker-a-stale-claim-proof';
+  const workerBClaim = 'worker-b-stale-claim-proof';
+  const workerA = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: workerAClaim,
+  });
+  appendRecoveryClaimOpened(workerA, {
+    plan,
+    current: remote,
+    claimId: workerAClaim,
+    staleThresholdMs,
+  });
+
+  let workerBAdvanced = false;
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: workerA,
+      mutateRemote: true,
+      beforeMutation({ mutationIndex }) {
+        assert.equal(mutationIndex, 1);
+        const workerB = openRecoveryJournal(journalPath, {
+          now: new Date(fixedNow.getTime() + previousClaimAgeMs),
+          claimId: workerBClaim,
+        });
+        appendStaleClaimAdvanced(workerB, {
+          plan,
+          current: remote,
+          previousClaimId: workerAClaim,
+          claimId: workerBClaim,
+          staleThresholdMs,
+          previousClaimAgeMs,
+        });
+        workerB.close();
+        remote.files['index.php'] = '<?php echo "FRESH_RETRY";';
+        workerBAdvanced = true;
+      },
+    }));
+  workerA.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
+  const journalText = fs.readFileSync(journalPath, 'utf8');
+
+  assert.ok(workerBAdvanced);
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_CLAIM_STALE');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(remote.files['index.php'], '<?php echo "FRESH_RETRY";');
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Base post');
+  assert.equal(journalText.includes('STALE_LOCAL'), false);
+  assert.equal(journalText.includes('FRESH_RETRY'), false);
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.deepEqual(
+    persisted.records.map((record) => record.type),
+    [
+      'recovery-claim-opened',
+      'journal-opened',
+      'target-planned',
+      'target-planned',
+      'apply-staged',
+      'dependencies-validated',
+      'apply-committing',
+      'stale-claim-advanced',
+    ],
+  );
+  assert.equal(persisted.records.some((record) => record.type === 'mutation-observed'), false);
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.deepEqual(inspection.counts, { old: 1, new: 0, blockedUnknown: 1 });
+  assert.equal(inspection.claim.status, 'advanced');
+  assert.equal(inspection.claim.staleThresholdMs, staleThresholdMs);
+  assert.equal(inspection.claim.previousClaimAgeMs, previousClaimAgeMs);
+  for (const record of persisted.records) {
+    assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
+  }
 });
 
 test('replaying a completed plan does not duplicate inserts or reapply stale local data', () => {
