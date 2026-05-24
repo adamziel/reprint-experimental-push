@@ -496,6 +496,10 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   fixture. Those results only show compatibility with the lab path that was
   exercised; they do not prove the live source mutation path is safe against
   remote drift, identity remapping, or plugin-owned side effects.
+- A source-note comparison to Reprint, ZS-Sync, or ForkPress is not current
+  production proof, even if the notes describe a similar transport, scan, or
+  merge vocabulary; the repo still needs its own live mutation evidence on the
+  same request path.
 - Reprint, ZS-Sync, and ForkPress source notes are comparison evidence only;
   they do not transfer safety proof to this repository by resemblance alone.
   Their notes can justify transport shape, scanner shape, or reliability
