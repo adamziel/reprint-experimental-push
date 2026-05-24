@@ -40,11 +40,11 @@ refuses an unsupported throughput claim by listing blockers such as missing
 durable chunk receipts, missing live remote preconditions, missing durable
 journal integrity, missing graph-identity evidence, missing recovery evidence,
 and non-production storage or row-apply capabilities. That is useful refusal
-logic, but it is not a release gate. It does not prevent a green default run
-from skipping the strongest checks, so the repo can still look healthy while
-the objective remains unproven. The current test story is therefore strongest
-as a blocker generator, not as release-grade proof of no data loss,
-reliability, or speed.
+logic, but it is not a release gate. `npm test` and `npm run test:playground`
+remain green even when the strongest checks are skipped, so the repo can look
+healthy while the objective remains unproven. The current test story is
+therefore strongest as a blocker generator, not as release-grade proof of no
+data loss, reliability, or speed.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -61,11 +61,12 @@ does not define one required release command that chains the stronger checks.
 and a set of opt-in smokes such as `test:playground:authenticated-http-push`,
 `test:playground:db-journal-idempotency`, `test:playground:storage-guarded-db-write`,
 `test:playground:storage-guarded-file-write`, `test:playground:production-shaped-push`,
-and `test:playground:production-plugin-package`. That means a green default run
-can still omit auth/session, durable journal, lease/fencing, graph-identity,
-plugin-data-driver, real topology, crash-boundary, and benchmark evidence.
-The missing artifact is not another optional smoke. It is a required gate that
-fails closed unless those checks all run in the same release path.
+and `test:playground:production-plugin-package`. Those commands are evidence
+sources, not a release gate. A green default run can still omit auth/session,
+durable journal, lease/fencing, graph-identity, plugin-data-driver, real
+topology, crash-boundary, and benchmark evidence. The missing artifact is not
+another optional smoke. It is a required gate that fails closed unless those
+checks all run in the same release path.
 
 The honest release claim is narrower: this repository is an executable safety
 model and local Playground lab for push invariants. It does **not** yet prove
