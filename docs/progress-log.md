@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:49:46 CEST.
+- Last update: 2026-05-25 01:50:18 CEST.
 - Status: Lab/model evidence still holds.
 - Trend: the visible page, this log, and the newest supervisor note stay aligned; no production evidence moved.
 - Supervision: the same-plan graph worker remains active and unmerged.
