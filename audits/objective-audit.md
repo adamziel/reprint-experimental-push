@@ -56,6 +56,18 @@ request, and stale claim or lease expiry on the production-backed path, the
 no-data-loss claim remains blocked even if the model and fixtures keep
 passing.
 
+The current test story also fails a simpler release-bar test: the repository
+does not define one required release command that chains the stronger checks.
+`package.json` exposes `npm test`, the bundled lab chain `npm run test:playground`,
+and a set of opt-in smokes such as `test:playground:authenticated-http-push`,
+`test:playground:db-journal-idempotency`, `test:playground:storage-guarded-db-write`,
+`test:playground:storage-guarded-file-write`, `test:playground:production-shaped-push`,
+and `test:playground:production-plugin-package`. That means a green default run
+can still omit auth/session, durable journal, lease/fencing, graph-identity,
+plugin-data-driver, real topology, crash-boundary, and benchmark evidence.
+The missing artifact is not another optional smoke. It is a required gate that
+fails closed unless those checks all run in the same release path.
+
 The honest release claim is narrower: this repository is an executable safety
 model and local Playground lab for push invariants. It does **not** yet prove
 production no-data-loss, production reliability, or measured speed.
