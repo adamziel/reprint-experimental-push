@@ -149,7 +149,7 @@ evidence for all of these, not just a plausible design:
   reviewer identity, chosen action, and fresh revalidation data.
 - Rejected retries must stay auditable, but they must not be allowed to
   execute from the old approval record, and a partial approval must never be
-  widened to unrelated rows or files on retry.
+  widened to unrelated rows, files, or plugin-owned surfaces on retry.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
 - A release gate that runs the full safety-critical suite before any
