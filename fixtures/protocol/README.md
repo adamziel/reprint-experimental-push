@@ -51,8 +51,16 @@ timeouts or crashes:
 - `push-recovery-response.json` shows the proof-oriented repair path.
 - `push-recovery-blocked-response.json` shows the case where the server cannot
   prove that finish or rollback is safe.
+- `push-recovery-request.json` also covers the read-only `mode: "inspect"`
+  call used to read evidence before any mutating recovery mode.
 
 Recovery examples use `mode: "auto"` for a mutating repair attempt. A pure
 inspection call uses the same `push_recover` endpoint with `mode: "inspect"`
 and omits the mutating recovery idempotency key unless the implementation
 requires idempotency for all recovery requests.
+
+The fixtures are intentionally paired so tests can verify the full sequence:
+preflight, remote snapshot hash listing, dry-run upload, batched apply,
+journal inspection, and recovery. They should be treated as wire-contract
+examples only; the production executor must still revalidate the live remote
+between dry-run and every apply batch.

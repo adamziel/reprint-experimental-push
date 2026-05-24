@@ -59,7 +59,9 @@ same mutation is safe. Apply must therefore treat the dry-run receipt as
 evidence only and re-run the live preconditions before every write.
 
 Remote liveness is checked at apply time, not at dry-run time. A conforming
-apply performs two checks and must refresh live evidence before every batch:
+apply performs two checks and must refresh live evidence before every batch.
+It may reuse the dry-run receipt as an eligibility proof, but it must not reuse
+dry-run live hashes as apply-time truth:
 
 1. A batch-level live hash check before staging, based on a fresh live remote
    read or hash listing.
@@ -135,6 +137,10 @@ The pull-to-push handoff is linear:
 4. Push snapshot listing records the current remote hash view.
 5. Push dry-run uploads the canonical plan built from base, local, and live remote.
 6. Push apply mutates only when live revalidation still matches the plan.
+
+The remote snapshot listing is the planning view, not the write lock. Any
+remote change after snapshot listing, dry-run, or journal inspection must be
+considered live until apply revalidates the batch at the storage boundary.
 
 ## Authentication
 

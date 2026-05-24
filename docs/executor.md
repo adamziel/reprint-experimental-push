@@ -611,7 +611,8 @@ Port rules:
 ### Playground Topology
 
 Use Playground when the test environment needs a disposable local-only pair of
-sites. Keep the same one-remote, one-local shape:
+sites. Keep the same one-remote, one-local shape and represent live remote
+drift with a third disposable snapshot:
 
 | Site | Blueprint role | Purpose |
 | --- | --- | --- |
@@ -624,7 +625,8 @@ manifest, imports it into the local site, applies local edits, and then compares
 the local plan against the drift site for `PRECONDITION_FAILED` and recovery
 coverage. The remote and local sites must stay distinct throughout the test:
 the remote is never repurposed as the edited site, and the edited site never
-becomes the source of truth.
+becomes the source of truth. The drift site exists only to prove that a live
+remote can change after dry-run and before apply.
 In the Docker topology, the runner calls `http://remote-wp/` and
 `http://local-wp/` by service name, and the environment must not use ngrok,
 cloudflared tunnels, localtunnel, serveo, localhost.run, Tailscale Funnel, or
@@ -736,6 +738,8 @@ Recommended usage:
 - Run signed preflight/dry-run/apply plus authenticated snapshot, journal, and
   recovery inspect through the production route names even when the backing
   implementation is a Playground fixture.
+- Treat `remote-changed` as the authoritative live-remote liveness witness:
+  if it diverges after dry-run, the executor must revalidate before apply.
 
 Playground is best for protocol, planner, and recovery fixtures. Docker with
 MySQL/MariaDB remains necessary for transaction and lock behavior that differs
