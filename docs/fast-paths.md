@@ -262,7 +262,9 @@ through the existing live-precondition `applyPlan` model. The workload includes:
   chunk receipts exist.
 - A required `install-commerce-stack` atomic group with a plugin file, plugin
   metadata, dependency evidence for an existing `payments` plugin, and
-  plugin-owned `wp_postmeta` row payloads.
+  plugin-owned `wp_postmeta` row payloads. Those rows point only at stable
+  `wp_posts` identities that are present and unchanged in base and live remote;
+  the benchmark does not exercise identity remapping or stale graph references.
 - A success path with restart-inspectable `fully-updated-remote` journal
   evidence.
 - A pre-commit failure probe that leaves the remote unchanged and inspects as
@@ -295,11 +297,14 @@ unless the production claim gate passes. The current gate blocks with:
   compare-and-swap executor yet.
 
 That means the measured evidence is useful for guarded-executor cost and safety
-shape, not production throughput. The next proof needed is a production-shaped
-executor that returns storage-backed receipts for chunk staging, commits
-plugin-owned row batches with per-row hashes inside a bounded batch primitive,
-and exposes one atomic group commit record that recovery can inspect after a
-lost response or process failure.
+shape, not production throughput. It also remains deliberately narrow on
+WordPress graph identity: the report records stable post targets under
+`evidence.wordpressGraphIdentity`, and the production claim gate fails closed if
+those stable-reference checks are missing or false. The next proof needed is a
+production-shaped executor that returns storage-backed receipts for chunk
+staging, commits plugin-owned row batches with per-row hashes inside a bounded
+batch primitive, and exposes one atomic group commit record that recovery can
+inspect after a lost response or process failure.
 
 The model exposes three contract lists that tests should keep current:
 

@@ -42,6 +42,14 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.chunkReceipts.canonicalVisibleBeforePublish, false);
   assert.equal(report.evidence.preconditions.liveRemoteMutationPreconditions, report.shape.mutations);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
+  assert.ok(report.shape.graphIdentityTargetCount > 0);
+  assert.equal(report.evidence.wordpressGraphIdentity.postmetaReferences, report.shape.rowCount);
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.stableRemotePostTargets,
+    report.shape.graphIdentityTargetCount,
+  );
+  assert.equal(report.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity, true);
+  assert.equal(report.evidence.wordpressGraphIdentity.graphIdentityBlockers, 0);
   assert.equal(report.evidence.journal.allJournalsIntegrityOk, true);
   assert.equal(report.evidence.redaction.durableJournalsContainNoRawValues, true);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
@@ -68,6 +76,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-durable-chunk-receipts'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-live-remote-preconditions'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-partial-commit-recovery-evidence'));
+  assert.ok(!report.claims.productionThroughput.blockers.includes('wordpress-graph-identity-evidence-not-proven'));
 
   assert.throws(
     () => smallBenchmark({ claimProductionThroughput: true }),
@@ -93,5 +102,11 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   missingRecovery.evidence.recovery.partialCommitBlocksRecovery = false;
   assert.ok(
     productionThroughputBlockers(missingRecovery).includes('missing-partial-commit-recovery-evidence'),
+  );
+
+  const missingGraphIdentity = clone(report);
+  missingGraphIdentity.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity = false;
+  assert.ok(
+    productionThroughputBlockers(missingGraphIdentity).includes('wordpress-graph-identity-evidence-not-proven'),
   );
 });
