@@ -287,16 +287,17 @@ invocation and can be skipped while `npm test` remains green.
 ### Test Gaps That Block Release Claims
 
 1. **The strongest evidence is not wired into a release gate.** There is no
-   CI workflow or release wrapper in the repository. The default `npm test`
-   command does not run any Playground smoke, and the shorter
-   `npm run test:playground` path stops at plan/apply/protocol even though the
-   repo already exposes separate commands for auth, HTTP, DB journal, storage
-   guards, process kill, stale claim, plugin atomic, forms lab, authenticated
-   CLI, production-shaped route/package, mid-apply drift, and recovery. That
-   means the strongest proof is still manual opt-in, not release-gated. There
-   is no single enforced command that fails closed when mandatory auth,
-   storage, recovery, plugin, graph, performance, and crash-boundary checks
-   are skipped.
+   checked-in CI workflow or release wrapper in the repository, and
+   `package.json` does not define a top-level command that chains the stronger
+   proof steps. The default `npm test` command does not run any Playground
+   smoke, and the shorter `npm run test:playground` path stops at
+   plan/apply/protocol even though the repo already exposes separate commands
+   for auth, HTTP, DB journal, storage guards, process kill, stale claim,
+   plugin atomic, forms lab, authenticated CLI, production-shaped
+   route/package, mid-apply drift, and recovery. That means the strongest
+   proof is still manual opt-in, not release-gated. There is no single
+   enforced command that fails closed when mandatory auth, storage, recovery,
+   plugin, graph, performance, and crash-boundary checks are skipped.
    A release claim cannot rely on tests that only pass when somebody remembers
    to run the right scripts, and the current suite therefore cannot function as
    the final release gate for the objective.
@@ -495,11 +496,16 @@ opt-in scripts:
 - `npm run test:playground:db-journal-stale-claim-all-old`
 - `npm run test:playground:production-shaped-push`
 - `npm run test:playground:production-plugin-package`
+- `package.json` does not define a top-level `release` or `verify:release`
+  command that chains the stronger proof steps.
 
 That is not a release gate. It is a menu of optional proofs. The release
 blocker is the absence of one top-level command or CI workflow that chains the
 required auth, storage, recovery, plugin, graph, and performance checks in a
 fixed order and fails if any mandatory step is absent or only lab-backed.
+No checked-in CI workflow was found in the repository tree, so there is no
+automated backstop that would fail a release when the stronger gates are
+skipped.
 
 ## Required Release Gates
 
