@@ -53,6 +53,8 @@ Failure and recovery examples:
   recovery path.
 - `push-flow.json` shows the ordered push stages from preflight through
   inspect-first recovery and makes the dry-run/apply split explicit.
+- `push-topology.json` shows the one-remote, one-local, one-drift-witness
+  proof shape and the sandbox-only `8080` browser ingress rule.
 - `push-auth-headers.json` shows the required authentication header families
   and versioned canonical push signature parts for dry-run, apply, and mutating
   recovery requests.

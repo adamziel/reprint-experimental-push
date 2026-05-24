@@ -28,6 +28,9 @@ after independent drift, and `runner` is the only actor allowed to compare,
 upload, inspect, and recover. That role split is the same for Docker and
 Playground. Browser-visible inspection must use only the sandbox-provided
 `8080` ingress through a local-only proxy, and remote tunnels are disallowed.
+The proof is only valid when `remote-base` and `remote-changed` are the same
+remote identity observed at two different times, because that is what
+demonstrates apply-time revalidation instead of replaying dry-run evidence.
 
 Push is split into a read-only planning phase and a write phase:
 
@@ -192,6 +195,18 @@ The pull exporter/importer handoff is one-way:
 5. push dry-run uploads the canonical plan derived from base, local, and live
 6. push apply revalidates the live remote before every batch and at the storage boundary
 7. push journal and push recover inspect read durable evidence only
+
+The pull package stays immutable throughout this handoff:
+
+- exporter/importer creates the persisted merge base and coverage proof
+- push preflight binds that immutable base to the live remote identity and a
+  short-lived session
+- push snapshot hashes are planning evidence only
+- push dry-run uploads the canonical plan as eligibility evidence only
+- push batch apply revalidates live state before every batch and again at the
+  storage boundary
+- push journal and push recover inspect read evidence before any mutating
+  recovery mode can proceed
 
 The production test topology is the same in Docker and Playground, only the
 packaging differs:

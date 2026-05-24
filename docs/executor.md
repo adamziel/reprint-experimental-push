@@ -320,6 +320,15 @@ The production test topology must keep those roles separated and observable:
 - `runner` is the only process allowed to run preflight, snapshot listing,
   dry-run, apply, journal inspection, and recovery.
 
+The Docker and Playground proofs use the same logical identity split:
+
+- `remote-base` is the source-site identity that produced the persisted pull
+  base package.
+- `remote-changed` is the same remote identity observed later after drift.
+- `local-edited` is the imported local clone derived from that pull base.
+- the runner must keep browser-visible inspection behind the sandbox-provided
+  `8080` ingress and never use a remote tunnel.
+
 For Docker, keep the three site roles on one private network and expose only
 the sandbox-provided `8080` ingress through a local-only proxy when a browser
 needs to inspect state. For Playground, use the same role split with separate
@@ -398,6 +407,8 @@ corrupt, or from a different remote identity, push planning stops before
 preflight can become a mutation path. If the remote drifts between dry-run
 and apply, the executor must discard the old listing and repopulate live proof
 before resuming.
+It may only read the package back as immutable provenance when building the
+push session, remote hash listing, and dry-run plan.
 
 The recovery proof still follows the same order on replay: inspect the journal
 first, inspect live hashes second, and only then decide whether the safe next
