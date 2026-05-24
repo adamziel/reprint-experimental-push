@@ -279,6 +279,60 @@ test('preserves remote-only plugin changes', () => {
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.1 */');
 });
 
+test('blocks plugin-owned data when owner plugin files changed only on remote', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = baseSite();
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.ownerContext[0].resourceKey, 'file:wp-content/plugins/forms/forms.php');
+  assert.equal(blocker.ownerContext[0].change.remoteChange, 'update');
+  assert.equal(blockerJson.includes('remote-private-forms-code'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
+test('allows plugin-owned data when owner plugin context independently matches remote', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* forms 1.1 shared */';
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = baseSite();
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* forms 1.1 shared */';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'already-in-sync');
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+});
+
 test('remote-only plugin removal blocks stale local dependency assumptions', () => {
   const base = baseSite();
   const local = baseSite();
