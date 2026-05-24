@@ -2110,3 +2110,76 @@ test('durable recovery stays within old remote, fully updated remote, or blocked
   assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
   assert.equal(blocked.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Drifted after completion');
 });
+
+test('failure before mutation leaves old remote and a recovery artifact', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failBeforeMutation: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
+});
+
+test('failure after staging leaves old remote and a recovery artifact', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failAfterStaging: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_STAGING');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'staged');
+});
+
+test('failure after dependency validation leaves old remote and a recovery artifact', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failAfterDependencyValidation: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
+});
+
+test('replaying a completed plan returns the fully updated remote without reapplying mutations', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const completedSnapshot = JSON.stringify(completed.site);
+
+  const replay = applyPlan(completed.site, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(completed.site), completedSnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+});
