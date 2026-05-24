@@ -54,11 +54,15 @@ A release claim still needs retained run artifacts for the full long smoke set
 and, more importantly, proof at the production-backed Reprint source-mutation
 boundary.
 
-| Area | Directly observed proof | Still insufficient | Release blocker |
+The default suite passed locally on 2026-05-25, but it is still mostly model
+proof plus fixture-scoped lab evidence. Passing it does not close the
+production release gap.
+
+| Area | Directly observed proof | Still insufficient | Next proof required |
 | --- | --- | --- | --- |
 | No-overwrite planner | Unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. | These are JSON-model resources plus fixture policy, not WordPress graph semantics. The tests cannot prove post/postmeta/attachment/taxonomy/menu/plugin relationships are complete or safe. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
 | Recovery and idempotency | Unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Playground smoke source covers DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. The production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
-| Speed | `test/performance-model.test.js` proves a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and rejected unsafe fast paths. | No bytes move. No large table mutates. No memory ceiling, throughput target, retry cursor, or live benchmark exists. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, and memory/runtime measurements. |
+| Speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, and no memory ceiling or throughput target is measured against a real push path. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, and memory/runtime measurements. |
 
 ## Explicit Requirements From The Objective
 
