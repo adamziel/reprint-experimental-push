@@ -7,11 +7,10 @@ linked implementation artifacts.
 ## 2026-05-25 - Status Signal Tightening
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 01:30:54 CEST`) and kept the visible last-updated stamp in the
+  (`2026-05-25 01:32:24 CEST`) and kept the visible last-updated stamp in the
   header.
-- Tightened the public lead so it states that no production push proof has been
-  added yet, while keeping the pending gates and evidence links visible on the
-  first screen.
+- Kept the public lead conservative so it still names the pending gates and
+  evidence links on the first screen without adding any new proof claims.
 - Evidence links remain [progress.html](../progress.html),
   [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
   [docs/recovery/apply-journal.md](recovery/apply-journal.md),
