@@ -105,6 +105,19 @@ The same shape is what the Docker and Playground proofs must implement:
 | `remote-changed` | Same remote site observed later after drift | Same Playground site after a later mutation | Proves apply revalidates live state instead of replaying dry-run evidence. |
 | `runner` | Client container or host process | Client process | Signs requests, uploads plans, reads journals, and drives recovery. |
 
+The executor proof is only complete when both packaging modes show the same
+remote identity twice:
+
+- `remote-base` and `remote-changed` must be the same remote site observed at
+  two different times
+- `local-edited` must remain a separate imported clone
+- `runner` must remain the only actor that can compare, upload, inspect, and
+  recover
+- `push_batch_apply` must still revalidate fresh live evidence before every
+  batch and at the storage boundary after dry-run succeeds
+- mutating requests must remain at least as strict as the current Reprint HMAC
+  floor plus the push session and canonical push signature
+
 The pull/export/import handoff is the provenance boundary that push consumes:
 
 - exporter scans the merge base and coverage evidence
@@ -387,6 +400,11 @@ The production test topology must keep those roles separated and observable:
   exists specifically to prove that dry-run and apply are separate.
 - `runner` is the only process allowed to run preflight, snapshot listing,
   dry-run, apply, journal inspection, and recovery.
+
+That topology is valid only if `remote-base` and `remote-changed` are the same
+remote identity observed at two different times. If they are different sites,
+the proof no longer demonstrates apply-time revalidation; it only demonstrates
+two unrelated environments.
 
 The Docker and Playground proofs use the same logical identity split:
 

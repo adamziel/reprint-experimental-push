@@ -82,12 +82,24 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology.networking.ingress_port, 8080);
   assert.equal(contract.topology.networking.proxy_policy, 'local-only');
   assert.equal(contract.topology.networking.tunnels, 'disallowed');
+  assert.equal(contract.topology.docker.proof[0], 'one private network');
+  assert.ok(
+    contract.topology.docker.proof.includes(
+      'remote-base and remote-changed are the same remote identity at different times',
+    ),
+  );
+  assert.ok(
+    contract.topology.playground.proof.includes(
+      'separate disposable blueprints',
+    ),
+  );
   assert.equal(contract.topology.docker.remote_base, 'remote-base');
   assert.equal(contract.topology.docker.local_edited, 'local-edited');
   assert.equal(contract.topology.docker.remote_changed, 'remote-changed');
   assert.equal(contract.topology.playground.remote_base, 'remote-base');
   assert.equal(contract.topology.playground.local_edited, 'local-edited');
   assert.equal(contract.topology.playground.remote_changed, 'remote-changed');
+  assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
   assert.equal(contract.proofs.auth.includes('existing HMAC family'), true);
   assert.equal(contract.proofs.session_journal.includes('inspect-first recovery path'), true);
   assert.equal(contract.required_invariants[0], 'dry-run and apply are separate remote operations');

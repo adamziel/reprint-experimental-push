@@ -242,6 +242,18 @@ packaging differs:
 - `remote-base` and `remote-changed` are two observations of the same remote
   identity at different times, which is what proves live revalidation.
 
+This same proof must hold in both packaging modes:
+
+- one remote identity is observed twice, first as `remote-base` and later as
+  `remote-changed`
+- one local edited site stays separate from the live remote
+- the runner is the only actor allowed to compare, upload, inspect, or
+  recover
+- dry-run and apply remain separate remote calls, and apply must revalidate
+  fresh live evidence before every batch and again at the storage boundary
+- mutating push requests require at least the current Reprint HMAC floor plus
+  the short-lived push session and canonical push signature
+
 For Docker, keep the three site roles on one private network and expose only
 browser-visible inspection through the sandbox-provided `8080` ingress via a
 local-only proxy. For Playground, use separate disposable blueprints for the
