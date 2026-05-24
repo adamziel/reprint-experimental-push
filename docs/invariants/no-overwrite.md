@@ -8,7 +8,10 @@ the live remote immediately before apply.
 
 - Local creates, updates, deletions, and file type changes when the same remote
   resource still hashes exactly like the pull base and the file topology check
-  proves no live remote ancestor or descendant would be hidden.
+  proves no live remote ancestor or descendant would be hidden. A local delete
+  or type swap can only proceed automatically when any affected remote
+  descendant is also an unchanged base resource that is being deleted in the
+  same plan.
 - Independent local changes while other remote-only resources changed.
 - Remote-only plugin metadata and file changes are preserved while unrelated
   local mutations on other resources are still eligible for planning.
@@ -95,10 +98,10 @@ the resource key, the live remote hash observed during planning, and the
 - WordPress graph mutations that reference a graph target absent from the live
   remote. Creating new target identities and rewriting relationship rows in the
   same plan remains blocked until an identity-map/rewrite proof exists.
-- File topology conflicts where applying a local file or type change would
-  require overwriting, removing, or hiding a live remote ancestor or descendant.
-  The conflicting file mutation and its precondition must be suppressed rather
-  than left as an apply candidate.
+- File topology conflicts where applying a local file deletion or type swap
+  would require overwriting, removing, or hiding a live remote ancestor or
+  descendant. The conflicting file mutation and its precondition must be
+  suppressed rather than left as an apply candidate.
 - Atomic groups with missing plugin dependencies after considering the expected
   post-apply remote state and planned plugin mutations.
 - Any internally generated mutation that lacks a matching live remote
