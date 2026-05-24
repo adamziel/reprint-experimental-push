@@ -177,7 +177,9 @@ evidence for all of these, not just a plausible design:
   that a stale approval was rejected before write.
 - Manual resolution is only acceptable if the remote is preserved for audit,
   the stale approval stays readable but unusable, and the retry starts from a
-  fresh snapshot and fresh plan after a live revalidation failure.
+  fresh snapshot and fresh plan after a live revalidation failure, and the
+  rejected artifact cannot be widened to a different row, file, or
+  plugin-owned surface.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
   outputs are compatibility evidence only; they are never sufficient by
   themselves to claim production mutation safety, credential isolation, or
@@ -267,7 +269,8 @@ repo-specific evidence, not in lab shape or source-note comparison language:
 - False reliability claims are not allowed: a route-shape smoke, packaged
   plugin mount, or `finalMatchesLocal` result cannot be summarized as
   production-safe, retry-safe, or durable unless the live write path, fresh
-  snapshot, and stale-artifact rejection have all been proven.
+  snapshot, and stale-artifact rejection have all been proven on the same
+  request path. Live-looking hashes do not change that standard.
 
 ## Release Gate Checklist
 
@@ -479,6 +482,8 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   proof, and they do not prove live-remote drift safety, create-time identity
   stability, or plugin-owned state safety even when the endpoint name looks
   correct.
+- A route-shaped response with live-looking hashes still does not prove the
+  production executor is in the path.
 - A lab route that looks production-shaped is not production proof, even if it
   returns live hashes, mounts as a plugin, or replays successfully on a
   fixture. Those results only show compatibility with the lab path that was
@@ -516,7 +521,7 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A stale manual-review artifact may stay readable for audit, but once the
   live remote hash or snapshot timestamp changes it is no longer current
   authority and cannot be widened to a different row, file, or plugin-owned
-  surface.
+  surface, even if a later route-shape or packaged-plugin smoke still passes.
 - Any reviewed approval artifact must bind to the exact base, local, remote,
   and coverage hashes that were reviewed. If any of those hashes change, the
   old artifact remains audit evidence only and cannot authorize a retry.
