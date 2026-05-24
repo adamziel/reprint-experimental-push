@@ -19,7 +19,8 @@ source-mutation boundary for this repository. Reprint shows transport stages,
 not live mutation safety. ZS-Sync shows bounded change discovery, not write
 policy. ForkPress shows the reliability bar, but only as a comparison point
 until this repo proves the same lifecycle. Any claim beyond that would be an
-inference, not direct evidence.
+inference, not direct evidence, and no route-shape or packaged-plugin smoke
+should be read as proof of live source-site safety.
 
 The current design also still has five unproven failure classes that matter for
 production push safety: live remote drift between dry-run and apply, create-time
@@ -226,6 +227,8 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   mutation safety.
 - The release suite runs the production-shaped auth, storage, recovery,
   plugin, graph, and audit checks together, not as isolated smoke tests.
+- The gate fails closed if a retry would reuse stale manual-review artifacts,
+  stale approval hashes, or route-shape-only evidence.
 - The claim text explicitly says what is proven and what remains lab-only.
 - The release notes and branch status comments never cite route shape, fixture
   smokes, or packaged-plugin mounting as production safety proof.
