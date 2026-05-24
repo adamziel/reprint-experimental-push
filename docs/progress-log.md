@@ -6,26 +6,24 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 00:27 CEST.
+- Last update: 2026-05-25 00:43 CEST.
 - Status: `89` Node tests pass after supervised lane merges.
-- New proof: planner coverage checks matching independent delete/edit cases;
-  recovery has a concise acceptable-state contract; fast-path docs and tests
-  now pin benchmark workloads to hashing, chunking, row batching, and rejected
-  shortcuts; protocol docs tighten journal and recovery semantics; critic and
-  objective audits reflect the evidence.
+- New proof: no new production gate opened. The latest refresh was a scan-
+  level update to keep the supervisor copy dated, short, and merge-gated.
 - Trend: no-data-loss, recovery, fast-path, reliable-executor, and audit lanes
-  improved inside lab/model scope. Production readiness is still blocked.
-- Supervision: next-proof fast-path, critic, and reliable-executor outputs were
-  reviewed and integrated. The same-plan graph worker remains active and
-  unmerged; the stale progress-publisher output was rejected because it used a
-  future timestamp and heavy screenshot assets.
+  remain improved inside lab/model scope. Production readiness is still
+  blocked.
+- Supervision: the same-plan graph worker remains active and unmerged; the
+  progress publisher lane now needs a lane-copy note that the page goes live
+  only after merge to `main`.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
   and arbitrary plugin drivers remain unproven.
 - Next nudge: keep production gates blocked until a worker proves production
   auth/session/journal internals and graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update
-  date and keeps details behind links.
+  date, keeps details behind links, and notes that lane copies become live only
+  after merge to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>

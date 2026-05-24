@@ -1,9 +1,30 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:43 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 00:43 CEST - Lane Copy Refresh
+
+- Going well: the current proof still holds at `89` Node tests, and the
+  supervisor surface stays concise enough to scan quickly.
+- Not going well: production auth/session storage, durable journal ownership,
+  leases, full graph identity mapping, Docker/full Playground integration, and
+  general plugin drivers are still unproven.
+- Progress change: no new production gate opened since the last update; the
+  visible status only needed a timestamp and wording refresh.
+- Next nudge: keep the graph HTTP lane focused on a real smoke, and keep the
+  executor/recovery lanes on production-backed auth and journal evidence.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Finish the same-plan graph HTTP smoke before merge. |
+| Recovery | Move replay/failure proof into production journal storage. |
+| Reliable executor | Prove production auth/session cleanup and journal rows. |
+| Fast paths | Run the guarded benchmark against a real large site. |
+| Audit and critic | Re-audit current proof while implementation lanes run. |
+| Progress publisher | Keep Pages dated, concise, and merge-gated in lane copies. |
 
 ## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
 
