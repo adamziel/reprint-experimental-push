@@ -1,9 +1,39 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 23:04 CEST
+Last updated: 2026-05-24 23:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-24 23:24 CEST - Scoped Credential And Graph Safety Refresh
+
+- Going well: `82` Node tests pass. Packaged push now rejects unprovisioned
+  alternate credentials and unscoped administrator Application Passwords, then
+  applies seven graph-safe mutations.
+- Also merged: stale WordPress graph references block instead of guessing,
+  stale recovery claims fence old workers before mutation, and guarded
+  benchmark tests fail closed on unsupported production speed claims.
+- Not going well: the route is still lab-backed. Production auth/session
+  storage, durable journal ownership, leases, full graph identity mapping, and
+  general plugin drivers remain unproven.
+- Progress change: no-data-loss, recovery, fast-path, and reliable-executor
+  lanes all moved up inside lab/model evidence; production readiness stayed
+  blocked.
+- Next nudge: replace lab auth/session/journal internals with production
+  storage, then prove graph identity mapping without excluding blocked edges
+  from route smokes.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Prove real post/postmeta/attachment/taxonomy identity mapping. |
+| Recovery | Move stale-claim fencing from model to production journal storage. |
+| Reliable executor | Replace scoped lab credentials with production push credentials. |
+| Fast paths | Run the guarded benchmark against a real large Playground/Docker site. |
+| Audit and critic | Re-audit after production-backed auth and journal rows land. |
+| Progress publisher | Keep Pages dated, concise, and explicit about blocked production gates. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 23:04 CEST - Auth Bootstrap And Redaction Refresh
 
@@ -28,9 +58,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Measure chunking without weakening receipts or preconditions. |
 | Audit and critic | Re-audit the next production-backed mutation slice, not just route shape. |
 | Progress publisher | Keep Pages concise and dated after each proof change. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 22:45 CEST - Hardening Merge Refresh
 

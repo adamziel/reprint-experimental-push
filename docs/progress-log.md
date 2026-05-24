@@ -6,35 +6,23 @@ linked implementation artifacts.
 
 ## 2026-05-24 23:08 CEST - Current Verification Snapshot
 
-- Status: `npm test` passed with `77` Node tests. The production-shaped and
-  packaged-plugin smokes passed against `/wp-json/reprint/v1/push/*`.
-  Evidence: [package.json](../package.json),
-  [production-shaped route smoke](../scripts/playground/production-shaped-route-smoke.mjs),
-  [packaged plugin smoke](../scripts/playground/production-plugin-package-smoke.mjs),
-  [plugin wrapper](../plugins/reprint-push/reprint-push.php), and
-  [planner tests](../test/push-planner.test.js).
-- Current lab/model proof: packaged activation disables the public lab
-  namespace and packaged auth bootstrap (`authBootstrapDisabled: true`),
-  requires explicitly provisioned credentials, rejects an unprovisioned
-  alternate credential path with `401`, cleans `2` expired signed-store
-  artifacts (`sessionsDeleted: 1`, `noncesDeleted: 1`), applies `8` fixture
-  mutations, ends with `finalMatchesLocal: true`, and redacts raw dependency
-  payload values in push plans.
-- Static-page check: [responsive report](progress-assets/responsive-20260524-2308/report.json),
-  [desktop screenshot](progress-assets/responsive-20260524-2308/desktop.png),
-  [tablet screenshot](progress-assets/responsive-20260524-2308/tablet.png),
-  and [mobile screenshot](progress-assets/responsive-20260524-2308/mobile.png)
-  show no horizontal overflow warnings.
-- Production readiness remains flat: package/auth-bootstrap hardening,
-  signed-store cleanup, and dependency payload redaction are lab/model
-  evidence, not production push support. The packaged endpoint still uses
-  lab-backed internals.
-- Blocker: production credential lifecycle, durable journal storage,
-  leases/fencing, WordPress graph identity, and arbitrary plugin drivers remain
+- Status: `82` Node tests pass. The production-shaped, packaged-plugin, and
+  authenticated HTTP smokes pass against graph-safe route fixtures.
+- New proof: push routes now accept only explicitly provisioned push-scoped
+  Application Password entries. The packaged smoke rejects both an
+  unprovisioned alternate credential and an unscoped administrator Application
+  Password with `401`, then applies seven graph-safe mutations.
+- Also merged: stale WordPress graph references are blocked, stale recovery
+  claims fence old workers before mutation, and guarded executor benchmark
+  evidence refuses production throughput claims when proof is missing.
+- Trend: no-data-loss, recovery, fast-path, and reliable-executor evidence all
+  moved up in lab/model scope. Production readiness is still blocked.
+- Blocker: production credential lifecycle, durable storage, leases/fencing,
+  full WordPress graph identity mapping, and arbitrary plugin drivers remain
   unproven.
 - Next nudge: replace lab-backed auth/session/journal internals with
-  production lifecycle and durable journal guarantees under the packaged
-  plugin.
+  production lifecycle and durable journal guarantees, then prove graph identity
+  mapping instead of dropping blocked graph edges from route smokes.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and keeps details behind links.
 

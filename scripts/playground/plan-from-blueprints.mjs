@@ -44,7 +44,7 @@ assertConflict(plan, 'row:["wp_options","option_name:reprint_push_plugin_payload
 assertConflict(plan, 'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]', 'plugin-data-conflict');
 
 assertMutation(plan, postKeyByTitle(snapshots.local, 'Local-only draft'), 'create');
-assertMutation(plan, 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]', 'create');
+assertBlocker(plan, 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]', 'stale-wordpress-graph-identity');
 assertMutation(plan, 'file:wp-content/uploads/reprint-push/local-only.txt', 'create');
 
 assertDecision(plan, postKeyByTitle(snapshots.remote, 'Remote-only announcement'), 'keep-remote');
@@ -70,6 +70,10 @@ console.log(JSON.stringify({
   conflicts: plan.conflicts.map((conflict) => ({
     resourceKey: conflict.resourceKey,
     class: conflict.class,
+  })),
+  blockers: plan.blockers.map((blocker) => ({
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
   })),
 }, null, 2));
 
@@ -123,6 +127,12 @@ function assertMutation(plan, resourceKey, changeKind) {
   const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
   assert.ok(precondition, `missing precondition ${mutation.id}`);
   assert.equal(precondition.checkedAgainst, 'live-remote');
+}
+
+function assertBlocker(plan, resourceKey, className) {
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  assert.ok(blocker, `missing blocker ${resourceKey}`);
+  assert.equal(blocker.class, className);
 }
 
 function assertDecision(plan, resourceKey, decision) {
