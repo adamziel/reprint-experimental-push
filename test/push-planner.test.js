@@ -663,6 +663,29 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   assert.equal(remote.plugins.forms.active, false);
 });
 
+test('keeps remote-only plugin changes while recognizing a matching independent row deletion', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete local.db.wp_posts['ID:1'];
+  delete remote.db.wp_posts['ID:1'];
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const deleteDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(deleteDecision.change.localChange, 'delete');
+  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('keeps remote-only plugin changes while recognizing matching independent deletions and type swaps', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
