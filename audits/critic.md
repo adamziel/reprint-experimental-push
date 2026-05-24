@@ -135,6 +135,8 @@ or an operator-facing success message that is stronger than the proof.
 13. Prove the claimed reliability wording against live source mutation, not
     against fixture replay, route-shape smoke tests, or model-only recovery
     classification.
+14. Keep route-shape and packaged-plugin smokes explicitly labeled as
+    lab-backed evidence only, with no production-readiness inference attached.
 
 If any one of these remains unproved, the correct claim stays limited to
 fixture-scoped or lab-backed push evidence.
@@ -160,6 +162,8 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   target as old, new, or blocked after a crash.
 - Every partial side effect path is either rolled back, fenced, or preserved
   for audit and retry with no false success claim.
+- Every route-shape or packaged-plugin smoke remains labeled as lab evidence
+  only and cannot be used as proof of production mutation safety.
 - The release suite runs the production-shaped auth, storage, recovery,
   plugin, graph, and audit checks together, not as isolated smoke tests.
 - The claim text explicitly says what is proven and what remains lab-only.
