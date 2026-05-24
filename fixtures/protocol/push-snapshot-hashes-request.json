@@ -1,0 +1,15 @@
+{
+  "push_session": "psh_01j00000000000000000000000",
+  "cursor": null,
+  "scope": {
+    "files": ["wp-content/plugins", "wp-content/themes", "wp-content/uploads"],
+    "tables": ["wp_options", "wp_posts", "wp_postmeta"],
+    "plugins": true,
+    "themes": true
+  },
+  "batch_size": 1000,
+  "include_absent_for_base_keys": [
+    "file:wp-content/plugins/forms/forms.php",
+    "row:[\"wp_posts\",\"ID:1\"]"
+  ]
+}

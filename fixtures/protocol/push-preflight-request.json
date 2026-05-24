@@ -1,0 +1,16 @@
+{
+  "client_protocol_version": 1,
+  "client_min_protocol_version": 1,
+  "requested_scopes": ["files", "database", "plugins", "themes"],
+  "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+  "base_manifest_hash": "sha256:base-manifest",
+  "base_coverage_hash": "sha256:base-coverage",
+  "remote_site_id": "remote-example",
+  "local_site_id": "local-dev-site",
+  "client_features": [
+    "canonical-push-hmac",
+    "dry-run-plan-upload",
+    "mutation-batches",
+    "journal-recovery"
+  ]
+}

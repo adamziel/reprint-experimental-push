@@ -54,6 +54,26 @@ The base manifest is bound into every push through:
 If the remote cannot recognize the site identity or the plan cannot prove which
 base it was built from, `push_preflight` or `push_plan_dry_run` must reject.
 
+## Protocol Sequence
+
+The push extension is a seven-step protocol. Only the apply and mutating
+recovery steps may change target resources.
+
+| Step | Endpoint | Mutates target resources | Liveness role |
+| --- | --- | --- | --- |
+| 1 | `push_preflight` | No | Authenticates the client, checks capability, and mints a short-lived push session. |
+| 2 | `push_snapshot_hashes` | No | Lists the current live remote hashes and scanner coverage for planning. |
+| 3 | local planner | No | Builds a three-way plan from pull base, local site, and live remote hashes. |
+| 4 | `push_plan_dry_run` | No | Validates that the uploaded plan is eligible to attempt and records a dry-run journal entry. |
+| 5 | `push_batch_apply` | Yes | Revalidates live preconditions, then revalidates each target at the storage boundary before writing. |
+| 6 | `push_journal` | No | Lets the executor resolve lost responses, crashes, and ambiguous apply states. |
+| 7 | `push_recover` | Mode-dependent | Finishes, rolls back, or blocks only when journal artifacts and live hashes prove the action. |
+
+`snapshot_id`, `coverage_hash`, and `dry_run_id` are evidence and request
+bindings. They are not remote locks. A remote edit between any non-mutating
+step and apply must be detected by apply revalidation and must preserve the
+remote edit unless an explicit, newly planned mutation covers it.
+
 ## Authentication
 
 All push endpoints require authentication at least as strict as current Reprint
@@ -666,13 +686,21 @@ Required apply behavior:
 1. Load the accepted dry-run by `dry_run_id`.
 2. Reject if the dry-run expired, was superseded, or belongs to another push
    session.
-3. Revalidate every batch precondition against the live remote.
-4. Revalidate atomic group dependencies and plugin/theme validators.
-5. Open a journal entry before staging.
-6. Stage all file and database changes for the batch.
-7. Revalidate each target at its storage boundary immediately before write.
-8. Commit the batch atomically when possible.
-9. Record final hashes for every mutated resource.
+3. Verify the batch body is an allowed, ordered subset of the accepted plan.
+4. Revalidate every batch precondition against the live remote.
+5. Revalidate atomic group dependencies and plugin/theme validators.
+6. Open a journal entry before staging.
+7. Stage all file and database changes for the batch.
+8. Revalidate each target at its storage boundary immediately before write.
+9. Commit the batch atomically when possible.
+10. Record final hashes for every mutated resource.
+
+The server must compare the apply request to the dry-run plan by canonical
+`plan_hash`, `dry_run_receipt_hash`, mutation IDs, resource keys, body hashes,
+precondition hashes, storage guards, and atomic group membership. An apply
+request may be smaller than the full dry-run only when it is the next legal
+batch. It may not introduce new resources, downgrade guards, omit required
+preconditions, or reorder an atomic group that was not declared splittable.
 
 Production storage-boundary guards must be coupled to the write primitive:
 
@@ -822,6 +850,13 @@ The journal is append-only for audit events. A compact current-state index may
 exist for lookup speed, but recovery decisions must be reconstructable from the
 append-only records and artifacts.
 
+`push_journal` is the required first step after an apply timeout, process crash,
+lost HTTP response, or `RECOVERY_REQUIRED` result. It is read-only: it may
+advance cursors or mark an inspection timestamp, but it must not mutate target
+resources or finalize recovery. Artifact bodies are not returned unless the
+server explicitly supports artifact export and the caller requests it; the
+default journal response is hash-only.
+
 ### `push_recover`
 
 Purpose: resume or repair an interrupted dry-run or batch.
@@ -873,6 +908,12 @@ Response body:
 Recovery must never invent success. If the server cannot prove a safe action, it
 returns `RECOVERY_BLOCKED` with the resource keys, observed hashes, and artifact
 references needed for manual repair.
+
+`push_recover` uses the same idempotency rules as apply. Mutating modes
+(`auto`, `finish`, and `rollback`) require canonical push HMAC, a fresh
+idempotency key, and live revalidation before any target resource is changed.
+`inspect` is read-only and may share the authentication rules used by
+`push_journal`, but it must still be bound to the push session and dry-run.
 
 ## Planner Contract
 
