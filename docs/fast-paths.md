@@ -103,6 +103,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A local fingerprint plus a cached digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
 - Chunk upload cannot treat a visible staging object as completion, because the finalize step still needs durable receipts and a guarded publish boundary.
 - Chunk upload cannot treat a matching chunk digest as completion, because the receiver still needs durable acknowledgement.
+- A fresh remote index plus a compressed queue still cannot skip large-upload resume decisions, because compressed backpressure state cannot prove which chunk acknowledgements survived a crash or whether the guarded publish record still exists.
 - Database row batching cannot widen a batch across plugin owners or atomic groups, because recovery needs one stable commit boundary per coupled set of rows.
 - Remote indexes cannot become a lock, because the listing is only planning evidence and may be stale by the time apply runs.
 - Compression cannot hash compressed bytes as canonical state, because transport encoding must not change the compare-and-swap value.

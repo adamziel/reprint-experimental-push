@@ -216,6 +216,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(
     model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'index-and-compressed-queue-skips-large-upload-resume',
+    ),
+    'model rejects treating a compressed queue plus a fresh remote index as a way to skip large-upload resume decisions',
+  );
+  assert.ok(
+    model.rejectedFastPaths.some(
       (rejection) => rejection.id === 'fingerprint-and-cached-digest-completes-large-upload',
     ),
     'model rejects treating a local fingerprint plus a cached digest as large-upload completion',
