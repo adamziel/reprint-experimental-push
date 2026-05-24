@@ -2600,6 +2600,29 @@ test('combines local ordinary changes while preserving remote-only plugin change
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
+test('stops stale local plugin file edits when the remote removed that plugin', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* stale local forms code */';
+  const remote = baseSite();
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(conflict.class, 'plugin-data-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/plugins/forms/forms.php');
+  assert.equal(conflict.pluginOwner, 'forms');
+  assert.equal(conflict.change.localChange, 'update');
+  assert.equal(conflict.change.remoteChange, 'delete');
+  assert.equal(JSON.stringify(plan).includes('stale local forms code'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('keeps remote-only plugin changes while planning a safe local deletion behind live preconditions', () => {
   const base = baseSite();
   const local = baseSite();
