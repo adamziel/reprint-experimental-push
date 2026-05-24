@@ -474,15 +474,16 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is still lab/model scope: 85 Node tests pass after supervised lane merges covering planner invariants, recovery terminal states, fast-path guardrails, protocol binding, and audit updates. Four fast-mode workers are active; production push remains blocked by auth, journal, leases, graph mapping, integration, and plugin-driver proof.</p>
-        <time class="update-stamp" datetime="2026-05-25T00:10:00+02:00">Last updated: May 25, 2026, 00:10 CEST</time>
+        <p class="lead">Current proof is still lab/model scope: 89 Node tests pass after supervised lane merges covering planner invariants, recovery replay/failure states, fast-path guardrails, protocol binding, and audit updates. Four fast-mode workers launched; three are integrated and one graph worker remains active. Production push remains blocked.</p>
+        <time class="update-stamp" datetime="2026-05-25T00:14:00+02:00">Last updated: May 25, 2026, 00:14 CEST</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">85 Node tests passing</span>
+          <span class="pill">89 Node tests passing</span>
           <span class="pill">Packaged plugin route passing</span>
           <span class="pill">Scoped creds required</span>
           <span class="pill">Graph refs guarded</span>
           <span class="pill">Recovery states covered</span>
-          <span class="pill">4 fast-mode workers active</span>
+          <span class="pill">4 workers launched</span>
+          <span class="pill">1 graph worker active</span>
           <span class="pill">Production push blocked</span>
         </div>
       </div>
@@ -494,7 +495,7 @@
 
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
-        <strong>85</strong>
+        <strong>89</strong>
         <span>passing Node tests</span>
       </div>
       <div class="metric">
@@ -527,19 +528,19 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">29%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 29 percent"><div class="fill green" style="width:29%"></div></div>
-          <p class="note">Terminal stale-claim states are covered in the model. Gap: production journal durability.</p>
+          <p class="note">Replay and failure-state coverage is sharper in the model. Gap: production journal durability.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">42%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 42 percent"><div class="fill amber" style="width:42%"></div></div>
-          <p class="note">Packaged route and signature binding evidence improved. Gap: production auth, journal, and leases.</p>
+          <p class="note">Protocol/executor docs now name the production push flow. Gap: production auth, journal, and leases.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">19%</span></div>
           <div class="bar" aria-label="Fast path and chunking 19 percent"><div class="fill" style="width:19%"></div></div>
-          <p class="note">Guarded benchmark evidence exists and rejects unsupported production speed claims. Gap: real large-site runtime benchmark.</p>
+          <p class="note">Rejected fast paths now name the broken safety gate. Gap: real large-site runtime benchmark.</p>
         </div>
 
         <div class="lane">
@@ -553,10 +554,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>85 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence landed.</span></li>
+            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence landed.</span></li>
             <li><strong>Not going well</strong><span>Production auth, journal, leases, graph mapping, integration, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>Lab/model evidence moved up across five lanes; production readiness stayed blocked.</span></li>
-            <li><strong>Next nudge</strong><span>Review active lane outputs, then prove production auth and journal storage.</span></li>
+            <li><strong>Progress change</strong><span>Three new fast-mode lane outputs were integrated; production readiness stayed blocked.</span></li>
+            <li><strong>Next nudge</strong><span>Review the active graph worker, then prove production auth and journal storage.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
