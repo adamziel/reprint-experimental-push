@@ -123,6 +123,28 @@ deployment, nonce/replay store cleanup, production session handling, real
 exporter credential binding, durable production audit records, and full
 production push.
 
+### Current Fixture Plugin Atomicity Lab
+
+`npm run test:playground:plugin-atomic-install` is protocol-shape evidence for
+a hard-coded local Playground fixture plugin install, not production plugin
+installation support. Through the local lab REST path it proves that a ready
+plan can carry a dependency plugin, dependent plugin, exact fixture plugin
+files, plugin resources, and allowlisted plugin-owned option data in one atomic
+group; apply activates both fixture plugins and replay performs zero fresh
+mutation work.
+
+Negative protocol evidence covers missing dependency, dependency outside the
+group, incompatible version, hash mismatch, activation requirement mismatch,
+remote dependency drift, stale preconditions, stale live-remote dependency
+evidence, forged ready plans missing dependency mutation/`atomicGroups`/
+dependency requirements, and row-only plugin-owned data bypass attempts. The
+row-only bypass rejects with `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`. The lab
+keeps an exact fixture plugin file/resource allowlist and blocks arbitrary
+plugin files, direct `active_plugins` row mutation, custom-table apply, and
+arbitrary plugin-owned data. Failure injection classifies before-commit as
+old-remote and during-publish/activation failure as blocked/non-complete
+recovery evidence; it does not prove rollback.
+
 ## Resource Model
 
 A push resource is the smallest unit that can be compared and guarded by a

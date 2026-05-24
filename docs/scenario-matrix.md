@@ -53,6 +53,12 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground DB process-kill persistence | A real `SIGKILL` during an in-flight DB-journaled REST apply leaves persisted DB `idempotency-opened`/`apply-started` rows after host-mounted Playground restart without a false `apply-committed`. | `npm run test:playground:db-journal-process-kill` |
 | Playground DB process-kill recovery block | After hard kill/restart, DB planned evidence plus live target hashes classify mixed old/new state, recovery inspection returns non-mutating `RECOVERY_BLOCKED`, and retry does not overwrite the partial state without relying on the legacy option journal. | `npm run test:playground:db-journal-process-kill` |
 | Playground DB missing-commit finalization | A lab hook leaves all live target hashes at planned after hashes with DB mutation evidence but no `apply-committed`; same key/body returns `BATCH_RECOVERY_FINALIZED` with zero fresh mutation work, while same key/different body conflicts before finalization. | `npm run test:playground:db-journal-missing-commit-finalization` |
+| Fixture plugin install atomic positive path | Base/remote lack fixture plugins; local includes dependency and dependent fixture plugins in one atomic group; apply activates both, writes exact fixture plugin files/resources and allowlisted option data, and replay does zero fresh mutation work. | `npm run test:playground:plugin-atomic-install` |
+| Fixture plugin install dependency negatives | Missing dependency, dependency outside group, incompatible version, hash mismatch, activation requirement mismatch, remote dependency drift, and stale precondition reject before mutation or preserve the target. | `npm run test:playground:plugin-atomic-install` |
+| Fixture plugin install forged ready plans | Forged ready plans omitting the dependency mutation, `atomicGroups`, dependency requirements, or live dependency evidence reject with executor-side validation before mutation. | `npm run test:playground:plugin-atomic-install` |
+| Fixture plugin row-only plugin-owned data bypass | A row-only dependent plugin-owned option plan cannot bypass the atomic dependency requirement and rejects with `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`. | `npm run test:playground:plugin-atomic-install` |
+| Exact fixture plugin allowlist | The lab accepts only the named fixture plugin files/resources and allowlisted plugin-owned option; arbitrary plugin files, direct `active_plugins` row mutation, custom-table apply, and arbitrary plugin-owned data remain blocked. | `npm run test:playground:plugin-atomic-install` / `scripts/playground/snapshot-lib.php` |
+| Fixture plugin install failure injection | Before-commit failure preserves the old remote; during-publish and activation failures classify blocked recovery/no fresh retry mutation work instead of proving rollback. | `npm run test:playground:plugin-atomic-install` |
 | Playground lab injected recovery failure | Fail-after-2 returns `LAB_INJECTED_APPLY_FAILURE` after two successful whole-resource mutations, records planned recovery entries and hash-only current state, and inspection reports `blocked-recovery` with `2 new` and `6 old` targets. | `npm run test:playground:recovery` |
 | Playground lab retry after partial apply | Retry over the partial lab state refuses with `PRECONDITION_FAILED` instead of applying over the blocked recovery state. | `npm run test:playground:recovery` |
 | File-backed JSONL recovery journal opens and restarts | Append-only JSONL records use monotonic sequences, include `fsync` evidence after each append, and can be read after restart-style inspection. | `npm run test:recovery:file-journal` |
@@ -76,12 +82,13 @@ The first executable matrix lives in `test/push-planner.test.js`.
   production push.
 - File body streaming with large upload chunks.
 - Database transaction boundaries on MySQL and SQLite.
-- Remote plugin activation/update with dependency and recovery checks.
+- Production plugin activation/update with dependency and recovery checks.
 - Object-cache, cron, generated files, and maintenance-mode interactions.
 - Plugin validator and merge-driver contracts with real plugin fixtures; the
-  current forms slice is fixture/allowlist-scoped and does not prove arbitrary
-  production plugin-owned options, postmeta, custom tables, or activation
-  semantics.
+  current forms slice and fixture plugin install atomicity slice are
+  fixture/allowlist-scoped and do not prove arbitrary production plugin-owned
+  options, postmeta, custom tables, production plugin installation/update,
+  production activation semantics, or production rollback.
 - Production DB-table journal and kill-process recovery tests around every
   durable WordPress boundary. The current DB journal/idempotency/process-kill
   plus missing-commit finalization slice is fixture-scoped local Playground

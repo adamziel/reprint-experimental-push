@@ -3,8 +3,8 @@
  * Guardedly apply a ready Reprint Push Lab plan to a Playground site.
  *
  * This entrypoint is intentionally fixture-scoped. It only supports the
- * resources exported by snapshot-lib.php: marked posts, the lab plugin option,
- * and files under wp-content/uploads/reprint-push.
+ * resources exported by snapshot-lib.php: marked posts, allowlisted lab
+ * plugin-owned rows, named lab plugins, and fixture upload files.
  */
 
 if (!defined('ABSPATH')) {
@@ -61,6 +61,8 @@ try {
         reprint_push_validate_precondition_shape($preconditions[$mutation_id]);
         reprint_push_assert_precondition_binds_to_mutation($preconditions[$mutation_id], $mutation);
     }
+
+    reprint_push_validate_fixture_atomic_group_dependencies($plan, $before, $mutations);
 
     foreach ($precondition_entries as $precondition) {
         reprint_push_validate_precondition_shape($precondition);
@@ -197,16 +199,22 @@ function reprint_push_order_apply_mutations(array $mutations): array
 function reprint_push_apply_mutation_priority(array $mutation): int
 {
     $resource = $mutation['resource'] ?? [];
+    if (($resource['type'] ?? null) === 'plugin') {
+        return !empty($mutation['value']['absent']) ? 10 : 30;
+    }
+    if (($resource['type'] ?? null) === 'file') {
+        return 20;
+    }
     if (($resource['type'] ?? null) !== 'row') {
-        return 10;
+        return 40;
     }
 
     $table = (string) ($resource['table'] ?? '');
     if ($table === 'wp_posts') {
-        return 20;
+        return 50;
     }
     if ($table === 'wp_postmeta') {
-        return !empty($mutation['value']['absent']) ? 15 : 30;
+        return !empty($mutation['value']['absent']) ? 45 : 60;
     }
-    return 40;
+    return 70;
 }

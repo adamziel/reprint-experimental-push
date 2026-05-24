@@ -1,0 +1,77 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const snapshotLib = path.join(repoRoot, 'scripts/playground/snapshot-lib.php');
+const hasPhp = spawnSync('php', ['-v'], { encoding: 'utf8' }).status === 0;
+
+function assertSupported(resource) {
+  const result = runSupportCheck(resource);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, 'supported');
+}
+
+function assertRejected(resource, pattern) {
+  const result = runSupportCheck(resource);
+  assert.notEqual(result.status, 0, 'resource should be rejected');
+  assert.match(result.stderr, pattern);
+}
+
+function runSupportCheck(resource) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'require $argv[1];',
+      '$resource = json_decode($argv[2], true);',
+      'try {',
+      'reprint_push_assert_supported_apply_resource($resource);',
+      'echo "supported";',
+      '} catch (Throwable $error) {',
+      'fwrite(STDERR, $error->getMessage());',
+      'exit(2);',
+      '}',
+    ].join(' '),
+    snapshotLib,
+    JSON.stringify(resource),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
+test('snapshot apply gate allows only named lab plugin resources', { skip: !hasPhp }, () => {
+  assertSupported({ type: 'plugin', name: 'reprint-push-forms-fixture' });
+  assertSupported({ type: 'plugin', name: 'reprint-push-atomic-dependency-fixture' });
+
+  assertRejected(
+    { type: 'plugin', name: 'akismet' },
+    /Unsupported fixture plugin: akismet/,
+  );
+});
+
+test('snapshot apply gate allows only named lab plugin file paths', { skip: !hasPhp }, () => {
+  assertSupported({
+    type: 'file',
+    path: 'wp-content/plugins/reprint-push-atomic-dependent-fixture/reprint-push-atomic-dependent-fixture.php',
+  });
+  assertSupported({
+    type: 'file',
+    path: 'wp-content/uploads/reprint-push/shared.txt',
+  });
+
+  assertRejected(
+    { type: 'file', path: 'wp-content/plugins/akismet/akismet.php' },
+    /outside fixture uploads or named lab plugins/,
+  );
+  assertRejected(
+    { type: 'file', path: 'wp-content/plugins/reprint-push-atomic-dependent-fixture/includes/bootstrap.php' },
+    /outside fixture uploads or named lab plugins/,
+  );
+  assertRejected(
+    { type: 'file', path: 'wp-content/plugins/reprint-push-forms-fixture/../akismet.php' },
+    /outside fixture uploads or named lab plugins/,
+  );
+});

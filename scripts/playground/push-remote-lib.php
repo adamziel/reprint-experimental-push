@@ -132,6 +132,7 @@ function reprint_push_protocol_run_payload(
     }
 
     $current = reprint_push_export_snapshot();
+    reprint_push_protocol_validate_fixture_atomic_dependencies($plan, $current, $mutations, $journal_context + $plan_evidence);
     $verified_preconditions = reprint_push_protocol_verify_preconditions(
         $current,
         $precondition_entries,
@@ -842,6 +843,30 @@ function reprint_push_protocol_validate_mutations_and_preconditions(
             ]);
         }
         reprint_push_assert_supported_apply_resource($precondition['resource']);
+    }
+}
+
+function reprint_push_protocol_validate_fixture_atomic_dependencies(
+    array $plan,
+    array $snapshot,
+    array $mutations,
+    array $journal_context = []
+): void {
+    try {
+        reprint_push_validate_fixture_atomic_group_dependencies($plan, $snapshot, $mutations);
+    } catch (Throwable $error) {
+        $journal_entry = reprint_push_protocol_append_journal_event('atomic-dependency-invalid', $journal_context + [
+            'planId' => $plan['id'] ?? null,
+            'reasonHash' => hash('sha256', $error->getMessage()),
+        ]);
+
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'ATOMIC_GROUP_DEPENDENCY_INVALID',
+            'message' => $error->getMessage(),
+            'journal' => reprint_push_protocol_journal_evidence($journal_entry),
+            'currentSnapshot' => $snapshot,
+        ]);
     }
 }
 

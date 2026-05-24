@@ -151,3 +151,18 @@ than deeply asserting every observed hash, and production auth, live source
 mutation, and full push remain pending. Redaction is checked through forbidden
 keys and fixture values, not by a formal sanitizer for arbitrary future journal
 messages.
+
+## Current Fixture Plugin Atomicity Failure Evidence
+
+`npm run test:playground:plugin-atomic-install` adds fixture plugin install
+failure classification on top of the local REST/DB journal shape. The
+before-commit lab hook fails before the atomic group publishes any target
+mutation; recovery reports `old-remote`, the target surface is unchanged, and
+retry with the same key/body performs zero fresh mutation work.
+
+The during-publish hook and fixture activation failure intentionally do not
+claim rollback. They classify the result as blocked recovery or otherwise
+non-fully-updated, preserve the observed partial target on retry, and report no
+fresh retry mutation work. This is hard-coded Playground fixture evidence for
+classification after plugin publish/activation failure, not production rollback
+or production plugin recovery.

@@ -278,11 +278,45 @@ linked implementation artifacts.
   drivers, recovery, auth/session/nonce proof, and production source mutation
   remain pending.
 
+## 2026-05-24 - Playground Fixture Plugin Install Atomicity Slice
+
+- `npm run test:playground:plugin-atomic-install` is the standalone local-only
+  Playground REST smoke for hard-coded fixture plugin install atomicity.
+- Positive proof: the base/remote fixture lacks the atomic fixture plugins; the
+  local fixture includes `reprint-push-atomic-dependency-fixture`,
+  `reprint-push-atomic-dependent-fixture`, and
+  `reprint_push_atomic_fixture_data` in the same atomic group. Apply activates
+  both fixture plugins, writes only the exact fixture plugin file/resource
+  allowlist plus allowlisted plugin-owned option data, and WordPress-visible
+  readback verifies versions, activation state, plugin files, and option data.
+  Replay with the same idempotency key/body returns
+  `BATCH_ALREADY_COMMITTED`, performs zero fresh mutation work, and adds no
+  fresh mutation events.
+- Negative proof: missing dependency, dependency outside group, incompatible
+  version, hash mismatch, activation requirement mismatch, remote dependency
+  drift, stale precondition, stale live-remote dependency evidence, forged
+  ready plans omitting dependency mutation/`atomicGroups`/dependency
+  requirements, and row-only plugin-owned data bypass attempts all reject
+  before mutation or preserve/classify safely. The row-only bypass is rejected
+  as `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`.
+- Executor-side validation now runs in JavaScript and PHP before mutation or
+  preconditions where relevant. The lab keeps an exact fixture plugin file
+  allowlist; arbitrary plugin files, direct `active_plugins` row mutation,
+  custom-table apply, and arbitrary plugin-owned data remain blocked.
+- Failure injection remains classification evidence, not rollback. A
+  before-commit failure preserves the old remote. During-publish and activation
+  failures classify blocked recovery and prevent fresh retry mutation work.
+- Caveat: this is hard-coded Playground fixture plugin install atomicity
+  evidence only. It is not arbitrary production plugin installation/update,
+  production activation support, production rollback, plugin semantic drivers,
+  custom-table drivers, arbitrary plugin-owned data safety, or production
+  durability/auth proof.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
-| Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling and detection-only custom-table/plugin metadata | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
+| Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling, detection-only custom-table/plugin metadata, and `npm run test:playground:plugin-atomic-install` fixture plugin install atomicity evidence | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
 | Recovery boundaries | 22% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization` | Production DB table journal durability, production WordPress crash-boundary proof, all-old stale-claim safe retry, auto-repair policy |
 | Reliable executor and protocol | 22% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, authenticated local Playground source-site mutation slice under `/authenticated/*`, and DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key` | Production Reprint protocol extension, production Reprint auth/HMAC/TLS/session/nonce proof, real exporter credential binding, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
@@ -315,11 +349,18 @@ linked implementation artifacts.
   verify a standalone local-only REST lab namespace over real HTTP, and verify
   authenticated local Playground source-site mutation under `/authenticated/*`
   with auth-bound receipts, `manage_options`, idempotency, stale refusal, and
-  fresh authenticated snapshot readback. Production push behavior remains
-  pending until mutations flow through the intended production source endpoint
-  with production Reprint auth, HMAC/TLS/session/nonce handling, real exporter
-  credential binding, and durable production audit/recovery records.
+  fresh authenticated snapshot readback. The fixture plugin install atomicity
+  smoke adds hard-coded Playground evidence for exact allowlisted fixture plugin
+  file/resource writes, dependency/dependent activation in one atomic group,
+  row-only bypass rejection, forged ready-plan rejection, stale dependency
+  evidence rejection, and blocked recovery classification after publish or
+  activation failure. Production push behavior remains pending until mutations
+  flow through the intended production source endpoint with production Reprint
+  auth, HMAC/TLS/session/nonce handling, real exporter credential binding, and
+  durable production audit/recovery records.
 - Plugin validators or drivers: pending until plugin-specific semantics are
   implemented and tested against real plugin-owned data. Current evidence is
-  limited to allowlisted fixture option/postmeta apply plus detection-only
-  custom-table and plugin metadata export.
+  limited to allowlisted fixture option/postmeta apply, detection-only
+  custom-table and plugin metadata export, and hard-coded fixture plugin install
+  atomicity; it is not arbitrary production plugin installation/update,
+  activation, rollback, custom-table driver, or plugin-owned data safety proof.

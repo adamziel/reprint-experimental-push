@@ -3,8 +3,9 @@
  * Shared snapshot helpers for the Playground push lab.
  *
  * These helpers intentionally cover only the fixture surface used by the lab:
- * marked posts, allowlisted plugin-owned options/postmeta, detection-only lab
- * plugin/table metadata, and upload files under wp-content/uploads/reprint-push.
+ * marked posts, allowlisted plugin-owned options/postmeta, fixture-scoped lab
+ * plugin/table metadata, named lab plugin files, and upload files under
+ * wp-content/uploads/reprint-push.
  */
 
 function reprint_push_export_snapshot(): array
@@ -29,7 +30,7 @@ function reprint_push_export_snapshot(): array
         ],
     ];
 
-    foreach (reprint_push_allowed_plugin_option_names() as $option_name) {
+    foreach (reprint_push_allowed_plugin_options() as $option_name => $plugin_owner) {
         $value = get_option($option_name, null);
         if ($value === null) {
             continue;
@@ -37,7 +38,7 @@ function reprint_push_export_snapshot(): array
         $row = [
             'option_name' => $option_name,
             'option_value' => reprint_push_normalize_snapshot_value($value),
-            '__pluginOwner' => 'forms',
+            '__pluginOwner' => $plugin_owner,
         ];
         $snapshot['db']['wp_options']['option_name:' . $option_name] = $row;
     }
@@ -97,25 +98,33 @@ function reprint_push_export_fixture_postmeta(array &$snapshot): void
 
 function reprint_push_export_fixture_plugin_metadata(array &$snapshot): void
 {
-    $plugin_basename = 'reprint-push-forms-fixture/reprint-push-forms-fixture.php';
-    $plugin_file = WP_PLUGIN_DIR . '/' . $plugin_basename;
-    if (!is_file($plugin_file)) {
-        return;
-    }
-
     if (!function_exists('get_plugin_data')) {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
     }
 
-    $plugin_data = get_plugin_data($plugin_file, false, false);
     $active_plugins = get_option('active_plugins', []);
-    $snapshot['plugins']['reprint-push-forms-fixture'] = [
-        'name' => (string) ($plugin_data['Name'] ?: 'Reprint Push Forms Fixture'),
-        'version' => (string) ($plugin_data['Version'] ?: ''),
-        'pluginFile' => $plugin_basename,
-        'active' => in_array($plugin_basename, is_array($active_plugins) ? $active_plugins : [], true),
-        '__pluginOwner' => 'forms',
-    ];
+    $active_plugins = is_array($active_plugins) ? $active_plugins : [];
+
+    foreach (reprint_push_allowed_fixture_plugins() as $slug => $plugin) {
+        $plugin_basename = $slug . '/' . $slug . '.php';
+        $plugin_file = WP_PLUGIN_DIR . '/' . $plugin_basename;
+        if (!is_file($plugin_file)) {
+            continue;
+        }
+
+        $plugin_data = get_plugin_data($plugin_file, false, false);
+        $snapshot['plugins'][$slug] = [
+            'name' => (string) ($plugin_data['Name'] ?: $plugin['name']),
+            'version' => (string) ($plugin_data['Version'] ?: ''),
+            'pluginFile' => $plugin_basename,
+            'active' => in_array($plugin_basename, $active_plugins, true),
+            '__pluginOwner' => $plugin['owner'],
+        ];
+
+        foreach (reprint_push_allowed_fixture_plugin_file_paths($slug) as $relative_path) {
+            reprint_push_export_fixture_file($snapshot, WP_CONTENT_DIR . substr($relative_path, strlen('wp-content')), $relative_path);
+        }
+    }
 }
 
 function reprint_push_export_fixture_custom_table(array &$snapshot): void
@@ -157,7 +166,7 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
         }
         $allowed_resources[] = [
             'resourceKey' => 'row:' . wp_json_encode(['wp_options', $row_id], JSON_UNESCAPED_SLASHES),
-            'pluginOwner' => 'forms',
+            'pluginOwner' => reprint_push_allowed_plugin_options()[$option_name] ?? 'forms',
             'driver' => 'wp-option',
         ];
     }
@@ -193,6 +202,14 @@ function reprint_push_export_fixture_files(array &$snapshot, string $root, strin
         $relative = $relative_root . substr($path, strlen($root));
         $snapshot['files'][str_replace(DIRECTORY_SEPARATOR, '/', $relative)] = file_get_contents($path);
     }
+}
+
+function reprint_push_export_fixture_file(array &$snapshot, string $absolute_path, string $relative_path): void
+{
+    if (!is_file($absolute_path)) {
+        return;
+    }
+    $snapshot['files'][$relative_path] = file_get_contents($absolute_path);
 }
 
 function reprint_push_normalize_snapshot_value($value)
@@ -268,6 +285,10 @@ function reprint_push_apply_resource(array $resource, array $payload): void
         reprint_push_apply_row_resource((string) $resource['table'], (string) $resource['id'], $is_delete, $value);
         return;
     }
+    if ($type === 'plugin') {
+        reprint_push_apply_plugin_resource((string) $resource['name'], $is_delete, $value);
+        return;
+    }
 
     throw new RuntimeException('Unsupported apply resource type: ' . (string) $type);
 }
@@ -277,9 +298,13 @@ function reprint_push_assert_supported_apply_resource(array $resource): void
     $type = $resource['type'] ?? null;
     if ($type === 'file') {
         $path = (string) ($resource['path'] ?? '');
-        if (!reprint_push_is_fixture_upload_path($path)) {
-            throw new RuntimeException('Refusing to apply file outside fixture uploads: ' . $path);
+        if (!reprint_push_is_fixture_upload_path($path) && !reprint_push_is_fixture_plugin_file_path($path)) {
+            throw new RuntimeException('Refusing to apply file outside fixture uploads or named lab plugins: ' . $path);
         }
+        return;
+    }
+    if ($type === 'plugin') {
+        reprint_push_assert_fixture_plugin_slug((string) ($resource['name'] ?? ''));
         return;
     }
     if ($type === 'row') {
@@ -307,8 +332,8 @@ function reprint_push_assert_supported_apply_resource(array $resource): void
 
 function reprint_push_apply_file_resource(string $relative_path, bool $is_delete, $value): void
 {
-    if (!reprint_push_is_fixture_upload_path($relative_path)) {
-        throw new RuntimeException('Refusing to write outside fixture uploads: ' . $relative_path);
+    if (!reprint_push_is_fixture_upload_path($relative_path) && !reprint_push_is_fixture_plugin_file_path($relative_path)) {
+        throw new RuntimeException('Refusing to write outside fixture files: ' . $relative_path);
     }
 
     $absolute_path = WP_CONTENT_DIR . substr($relative_path, strlen('wp-content'));
@@ -347,6 +372,46 @@ function reprint_push_apply_row_resource(string $table, string $id, bool $is_del
         return;
     }
     throw new RuntimeException('Unsupported table: ' . $table);
+}
+
+function reprint_push_apply_plugin_resource(string $slug, bool $is_delete, $value): void
+{
+    reprint_push_assert_fixture_plugin_slug($slug);
+    $plugin_basename = $slug . '/' . $slug . '.php';
+
+    if (!function_exists('activate_plugin')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    if ($is_delete) {
+        deactivate_plugins([$plugin_basename], true);
+        reprint_push_delete_fixture_plugin_dir($slug);
+        return;
+    }
+
+    if (!is_array($value)) {
+        throw new RuntimeException('Plugin resource payload must be an object');
+    }
+    if ((string) ($value['pluginFile'] ?? '') !== $plugin_basename) {
+        throw new RuntimeException('Plugin resource payload does not match fixture plugin basename: ' . $slug);
+    }
+    $plugin_owner = reprint_push_allowed_fixture_plugins()[$slug]['owner'] ?? null;
+    if (isset($value['__pluginOwner']) && (string) $value['__pluginOwner'] !== (string) $plugin_owner) {
+        throw new RuntimeException('Plugin resource payload owner does not match fixture plugin: ' . $slug);
+    }
+    if (!is_file(WP_PLUGIN_DIR . '/' . $plugin_basename)) {
+        throw new RuntimeException('Plugin main file is missing for fixture plugin: ' . $slug);
+    }
+
+    if (!empty($value['active'])) {
+        $result = activate_plugin($plugin_basename);
+        if (is_wp_error($result)) {
+            throw new RuntimeException('Could not activate fixture plugin ' . $slug . ': ' . $result->get_error_message());
+        }
+        return;
+    }
+
+    deactivate_plugins([$plugin_basename], true);
 }
 
 function reprint_push_apply_post_row(string $id, bool $is_delete, $value): void
@@ -539,10 +604,488 @@ function reprint_push_option_name(string $id): string
 
 function reprint_push_allowed_plugin_option_names(): array
 {
+    return array_keys(reprint_push_allowed_plugin_options());
+}
+
+function reprint_push_allowed_plugin_options(): array
+{
     return [
-        'reprint_push_plugin_payload',
-        'reprint_push_forms_fixture',
+        'reprint_push_plugin_payload' => 'forms',
+        'reprint_push_forms_fixture' => 'forms',
+        'reprint_push_atomic_fixture_data' => 'reprint-push-atomic-dependent-fixture',
     ];
+}
+
+function reprint_push_allowed_fixture_plugins(): array
+{
+    return [
+        'reprint-push-forms-fixture' => [
+            'name' => 'Reprint Push Forms Fixture',
+            'owner' => 'forms',
+        ],
+        'reprint-push-atomic-dependency-fixture' => [
+            'name' => 'Reprint Push Atomic Dependency Fixture',
+            'owner' => 'reprint-push-atomic-dependency-fixture',
+        ],
+        'reprint-push-atomic-dependent-fixture' => [
+            'name' => 'Reprint Push Atomic Dependent Fixture',
+            'owner' => 'reprint-push-atomic-dependent-fixture',
+        ],
+        'reprint-push-atomic-failing-fixture' => [
+            'name' => 'Reprint Push Atomic Failing Fixture',
+            'owner' => 'reprint-push-atomic-failing-fixture',
+        ],
+    ];
+}
+
+function reprint_push_fixture_plugin_dependency_closure(): array
+{
+    return [
+        'reprint-push-atomic-dependent-fixture' => ['reprint-push-atomic-dependency-fixture'],
+        'reprint-push-atomic-failing-fixture' => ['reprint-push-atomic-dependency-fixture'],
+    ];
+}
+
+function reprint_push_fixture_plugin_owned_row_dependencies(): array
+{
+    return [
+        'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]' => 'reprint-push-atomic-dependent-fixture',
+    ];
+}
+
+function reprint_push_assert_fixture_plugin_slug(string $slug): void
+{
+    if (!array_key_exists($slug, reprint_push_allowed_fixture_plugins())) {
+        throw new RuntimeException('Unsupported fixture plugin: ' . $slug);
+    }
+}
+
+function reprint_push_is_fixture_plugin_file_path(string $relative_path): bool
+{
+    return in_array($relative_path, reprint_push_allowed_fixture_plugin_file_paths(), true);
+}
+
+function reprint_push_allowed_fixture_plugin_file_paths(?string $slug = null): array
+{
+    $paths = [];
+    foreach (array_keys(reprint_push_allowed_fixture_plugins()) as $plugin_slug) {
+        if ($slug !== null && $slug !== $plugin_slug) {
+            continue;
+        }
+        $paths[] = 'wp-content/plugins/' . $plugin_slug . '/' . $plugin_slug . '.php';
+    }
+    return $paths;
+}
+
+function reprint_push_delete_fixture_plugin_dir(string $slug): void
+{
+    reprint_push_assert_fixture_plugin_slug($slug);
+    $dir = WP_PLUGIN_DIR . '/' . $slug;
+    if (!is_dir($dir)) {
+        return;
+    }
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+    foreach ($iterator as $file_info) {
+        if ($file_info->isDir()) {
+            if (!rmdir($file_info->getPathname())) {
+                throw new RuntimeException('Could not remove fixture plugin directory: ' . $file_info->getPathname());
+            }
+            continue;
+        }
+        if (!unlink($file_info->getPathname())) {
+            throw new RuntimeException('Could not remove fixture plugin file: ' . $file_info->getPathname());
+        }
+    }
+    if (!rmdir($dir)) {
+        throw new RuntimeException('Could not remove fixture plugin directory: ' . $dir);
+    }
+}
+
+function reprint_push_validate_fixture_atomic_group_dependencies(array $plan, array $snapshot, array $mutations): void
+{
+    $groups = isset($plan['atomicGroups']) && is_array($plan['atomicGroups']) ? $plan['atomicGroups'] : [];
+    reprint_push_validate_fixture_plugin_dependency_coverage($snapshot, $mutations, $groups);
+
+    $mutations_by_resource = [];
+    foreach ($mutations as $mutation) {
+        if (!is_array($mutation)) {
+            continue;
+        }
+        $mutations_by_resource[(string) ($mutation['resourceKey'] ?? '')] = $mutation;
+    }
+
+    foreach ($groups as $group) {
+        if (!is_array($group)) {
+            continue;
+        }
+        $group_id = (string) ($group['id'] ?? '');
+        $group_mutation_ids = [];
+        foreach (($group['mutationIds'] ?? []) as $mutation_id) {
+            $group_mutation_ids[(string) $mutation_id] = true;
+        }
+        foreach ($mutations as $mutation) {
+            if ((string) ($mutation['atomicGroupId'] ?? '') === $group_id) {
+                $group_mutation_ids[(string) ($mutation['id'] ?? '')] = true;
+            }
+        }
+
+        foreach (reprint_push_atomic_group_dependency_requirements($group) as $requirement) {
+            $plugin = (string) ($requirement['plugin'] ?? '');
+            if ($plugin === '') {
+                throw new RuntimeException('Atomic group ' . $group_id . ' declares a plugin dependency without a plugin name.');
+            }
+            reprint_push_assert_fixture_plugin_slug($plugin);
+
+            $resource = ['type' => 'plugin', 'name' => $plugin];
+            $resource_key = 'plugin:' . $plugin;
+            $mutation = $mutations_by_resource[$resource_key] ?? null;
+
+            if (is_array($mutation) && empty($group_mutation_ids[(string) ($mutation['id'] ?? '')])) {
+                throw new RuntimeException('Atomic group ' . $group_id . ' depends on plugin ' . $plugin . ', but its mutation is outside the group.');
+            }
+
+            if (is_array($mutation)) {
+                $planned = reprint_push_planned_resource_value($mutation['value'] ?? []);
+                if (($planned['exists'] ?? false) !== true) {
+                    throw new RuntimeException('Atomic group ' . $group_id . ' would remove plugin dependency ' . $plugin . '.');
+                }
+                reprint_push_validate_atomic_plugin_dependency_value(
+                    $group_id,
+                    $plugin,
+                    $requirement,
+                    $planned['value'],
+                    reprint_push_hash_snapshot_value($planned['value']),
+                    'same-atomic-group'
+                );
+                continue;
+            }
+
+            $current = reprint_push_get_resource($snapshot, $resource);
+            if (($current['exists'] ?? false) !== true) {
+                throw new RuntimeException('Atomic group ' . $group_id . ' is missing plugin dependency ' . $plugin . '.');
+            }
+
+            $actual_hash = reprint_push_hash_resource($snapshot, $resource);
+            $evidence_hash = reprint_push_atomic_dependency_evidence_hash($requirement);
+            if ($evidence_hash === null) {
+                throw new RuntimeException('Atomic group ' . $group_id . ' has no live-remote hash evidence for plugin dependency ' . $plugin . '.');
+            }
+            if ($actual_hash !== $evidence_hash) {
+                throw new RuntimeException(
+                    'Atomic group ' . $group_id . ' has stale live-remote evidence for plugin dependency ' . $plugin
+                    . ': expected ' . $evidence_hash . ', got ' . $actual_hash . '.'
+                );
+            }
+
+            reprint_push_validate_atomic_plugin_dependency_value(
+                $group_id,
+                $plugin,
+                $requirement,
+                $current['value'],
+                $actual_hash,
+                'live-remote'
+            );
+        }
+    }
+}
+
+function reprint_push_validate_fixture_plugin_dependency_coverage(array $snapshot, array $mutations, array $groups): void
+{
+    foreach ($mutations as $mutation) {
+        if (!is_array($mutation)) {
+            continue;
+        }
+
+        $required_plugins = reprint_push_fixture_plugin_dependencies_required_for_mutation($snapshot, $mutation);
+        if (count($required_plugins) === 0) {
+            continue;
+        }
+
+        $declared_dependencies = [];
+        $groups_covering_mutation = [];
+        foreach ($groups as $group) {
+            if (!is_array($group) || !reprint_push_atomic_group_covers_mutation($group, $mutation)) {
+                continue;
+            }
+
+            $groups_covering_mutation[] = (string) ($group['id'] ?? '');
+            foreach (reprint_push_atomic_group_dependency_requirements($group) as $requirement) {
+                $plugin = (string) ($requirement['plugin'] ?? '');
+                if ($plugin !== '') {
+                    $declared_dependencies[$plugin] = true;
+                }
+            }
+        }
+
+        foreach ($required_plugins as $plugin) {
+            if (isset($declared_dependencies[$plugin])) {
+                continue;
+            }
+
+            throw new RuntimeException(
+                'Mutation ' . (string) ($mutation['id'] ?? '')
+                . ' for ' . (string) ($mutation['resourceKey'] ?? '')
+                . ' requires an atomic group dependency requirement for ' . $plugin . '.'
+            );
+        }
+    }
+}
+
+function reprint_push_fixture_plugin_dependencies_required_for_mutation(array $snapshot, array $mutation): array
+{
+    $resource = isset($mutation['resource']) && is_array($mutation['resource']) ? $mutation['resource'] : [];
+    $plugin = reprint_push_fixture_plugin_owner_for_mutation($snapshot, $mutation);
+    $dependencies = reprint_push_fixture_plugin_dependency_closure()[$plugin] ?? [];
+    if (count($dependencies) === 0) {
+        return [];
+    }
+
+    if (($resource['type'] ?? null) === 'row') {
+        return $dependencies;
+    }
+
+    $planned = reprint_push_planned_resource_value(isset($mutation['value']) && is_array($mutation['value']) ? $mutation['value'] : []);
+    if (($planned['exists'] ?? false) !== true) {
+        return [];
+    }
+
+    $is_install = !array_key_exists($plugin, $snapshot['plugins'] ?? []);
+    $value = $planned['value'];
+    $is_activation = is_array($value) && !empty($value['active']);
+    return ($is_install || $is_activation) ? $dependencies : [];
+}
+
+function reprint_push_fixture_plugin_owner_for_mutation(array $snapshot, array $mutation): ?string
+{
+    $resource = isset($mutation['resource']) && is_array($mutation['resource']) ? $mutation['resource'] : [];
+    if (($resource['type'] ?? null) === 'plugin') {
+        return (string) ($resource['name'] ?? '');
+    }
+
+    if (($resource['type'] ?? null) !== 'row') {
+        return null;
+    }
+
+    $planned = reprint_push_planned_resource_value(isset($mutation['value']) && is_array($mutation['value']) ? $mutation['value'] : []);
+    $planned_owner = reprint_push_fixture_dependency_owner_from_value($planned['value'] ?? null);
+    if ($planned_owner !== null) {
+        return $planned_owner;
+    }
+
+    $current = reprint_push_get_resource($snapshot, $resource);
+    $current_owner = reprint_push_fixture_dependency_owner_from_value($current['value'] ?? null);
+    if ($current_owner !== null) {
+        return $current_owner;
+    }
+
+    $resource_key = (string) ($mutation['resourceKey'] ?? '');
+    $row_dependencies = reprint_push_fixture_plugin_owned_row_dependencies();
+    return isset($row_dependencies[$resource_key]) ? (string) $row_dependencies[$resource_key] : null;
+}
+
+function reprint_push_fixture_dependency_owner_from_value($value): ?string
+{
+    if (!is_array($value) || !isset($value['__pluginOwner'])) {
+        return null;
+    }
+    $owner = (string) $value['__pluginOwner'];
+    return array_key_exists($owner, reprint_push_fixture_plugin_dependency_closure()) ? $owner : null;
+}
+
+function reprint_push_atomic_group_covers_mutation(array $group, array $mutation): bool
+{
+    $group_id = (string) ($group['id'] ?? '');
+    if ($group_id !== '' && (string) ($mutation['atomicGroupId'] ?? '') === $group_id) {
+        return true;
+    }
+
+    $mutation_id = (string) ($mutation['id'] ?? '');
+    foreach (($group['mutationIds'] ?? []) as $group_mutation_id) {
+        if ((string) $group_mutation_id === $mutation_id) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_atomic_group_dependency_requirements(array $group): array
+{
+    $requirements = [];
+    $seen = [];
+
+    foreach (($group['dependencyRequirements'] ?? []) as $requirement) {
+        if (is_string($requirement)) {
+            $normalized = ['plugin' => $requirement];
+        } elseif (is_array($requirement)) {
+            $normalized = $requirement;
+            $normalized['plugin'] = (string) ($requirement['plugin'] ?? $requirement['name'] ?? $requirement['slug'] ?? '');
+        } else {
+            $normalized = ['plugin' => ''];
+        }
+        $requirements[] = $normalized;
+        if (($normalized['plugin'] ?? '') !== '') {
+            $seen[(string) $normalized['plugin']] = true;
+        }
+    }
+
+    $dependency_plugins = $group['dependencies']['plugins'] ?? [];
+    if (!is_array($dependency_plugins)) {
+        return $requirements;
+    }
+    foreach ($dependency_plugins as $plugin) {
+        if (is_string($plugin)) {
+            $name = $plugin;
+            $normalized = ['plugin' => $name];
+        } elseif (is_array($plugin)) {
+            $name = (string) ($plugin['name'] ?? $plugin['plugin'] ?? $plugin['slug'] ?? '');
+            $normalized = $plugin;
+            $normalized['plugin'] = $name;
+        } else {
+            $name = '';
+            $normalized = ['plugin' => ''];
+        }
+        if ($name !== '' && isset($seen[$name])) {
+            continue;
+        }
+        $requirements[] = $normalized;
+        if ($name !== '') {
+            $seen[$name] = true;
+        }
+    }
+
+    return $requirements;
+}
+
+function reprint_push_planned_resource_value(array $payload): array
+{
+    if (!empty($payload['absent'])) {
+        return ['exists' => false, 'value' => null];
+    }
+    return ['exists' => true, 'value' => $payload['value'] ?? null];
+}
+
+function reprint_push_hash_snapshot_value($value): string
+{
+    return hash('sha256', reprint_push_stable_json($value));
+}
+
+function reprint_push_atomic_dependency_evidence_hash(array $requirement): ?string
+{
+    foreach (['remoteHash', 'hash', 'expectedHash'] as $key) {
+        if (isset($requirement[$key]) && is_string($requirement[$key]) && $requirement[$key] !== '') {
+            return $requirement[$key];
+        }
+    }
+    if (isset($requirement['evidence']) && is_array($requirement['evidence'])) {
+        foreach (['remoteHash', 'hash', 'expectedHash'] as $key) {
+            if (isset($requirement['evidence'][$key]) && is_string($requirement['evidence'][$key]) && $requirement['evidence'][$key] !== '') {
+                return $requirement['evidence'][$key];
+            }
+        }
+    }
+    return null;
+}
+
+function reprint_push_validate_atomic_plugin_dependency_value(
+    string $group_id,
+    string $plugin,
+    array $requirement,
+    $value,
+    string $hash,
+    string $source
+): void {
+    if (isset($requirement['expectedHash']) && is_string($requirement['expectedHash']) && $requirement['expectedHash'] !== '' && $requirement['expectedHash'] !== $hash) {
+        throw new RuntimeException('Atomic group ' . $group_id . ' requires plugin ' . $plugin . ' at hash ' . $requirement['expectedHash'] . ', but ' . $source . ' has ' . $hash . '.');
+    }
+
+    $actual_version = is_array($value) && isset($value['version']) ? (string) $value['version'] : null;
+    $expected_version = isset($requirement['expectedVersion']) && is_string($requirement['expectedVersion']) && $requirement['expectedVersion'] !== ''
+        ? $requirement['expectedVersion']
+        : null;
+    $version_range = isset($requirement['versionRange']) && is_string($requirement['versionRange']) && $requirement['versionRange'] !== ''
+        ? $requirement['versionRange']
+        : null;
+
+    if (($expected_version !== null || $version_range !== null) && $actual_version === null) {
+        throw new RuntimeException('Atomic group ' . $group_id . ' requires a versioned plugin dependency ' . $plugin . ', but ' . $source . ' has no version metadata.');
+    }
+    if ($expected_version !== null && $actual_version !== $expected_version) {
+        throw new RuntimeException('Atomic group ' . $group_id . ' requires plugin ' . $plugin . ' version ' . $expected_version . ', but ' . $source . ' has ' . (string) $actual_version . '.');
+    }
+    if ($version_range !== null && !reprint_push_satisfies_version_range((string) $actual_version, $version_range)) {
+        throw new RuntimeException('Atomic group ' . $group_id . ' requires plugin ' . $plugin . ' version ' . $version_range . ', but ' . $source . ' has ' . (string) $actual_version . '.');
+    }
+    if (isset($requirement['active']) && is_bool($requirement['active'])) {
+        $actual_active = is_array($value) && !empty($value['active']);
+        if ($actual_active !== $requirement['active']) {
+            throw new RuntimeException('Atomic group ' . $group_id . ' requires plugin ' . $plugin . ' active=' . ($requirement['active'] ? 'true' : 'false') . ', but ' . $source . ' has active=' . ($actual_active ? 'true' : 'false') . '.');
+        }
+    }
+}
+
+function reprint_push_satisfies_version_range(string $version, string $range): bool
+{
+    $comparators = preg_split('/\s+/', trim($range));
+    if (!is_array($comparators) || count($comparators) === 0) {
+        return false;
+    }
+    foreach ($comparators as $comparator) {
+        if ($comparator === '') {
+            continue;
+        }
+        if (!preg_match('/^(>=|>|<=|<|=)?(.+)$/', $comparator, $matches)) {
+            return false;
+        }
+        $operator = $matches[1] !== '' ? $matches[1] : '=';
+        $comparison = reprint_push_compare_versions($version, $matches[2]);
+        if ($comparison === null || !reprint_push_version_comparator_satisfied($comparison, $operator)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function reprint_push_compare_versions(string $left, string $right): ?int
+{
+    $left = preg_replace('/^v/i', '', $left);
+    $right = preg_replace('/^v/i', '', $right);
+    if (!is_string($left) || !is_string($right) || !preg_match('/^\d+(\.\d+)*$/', $left) || !preg_match('/^\d+(\.\d+)*$/', $right)) {
+        return null;
+    }
+    $left_parts = array_map('intval', explode('.', $left));
+    $right_parts = array_map('intval', explode('.', $right));
+    $length = max(count($left_parts), count($right_parts));
+    for ($index = 0; $index < $length; $index++) {
+        $left_part = $left_parts[$index] ?? 0;
+        $right_part = $right_parts[$index] ?? 0;
+        if ($left_part === $right_part) {
+            continue;
+        }
+        return $left_part > $right_part ? 1 : -1;
+    }
+    return 0;
+}
+
+function reprint_push_version_comparator_satisfied(int $comparison, string $operator): bool
+{
+    if ($operator === '>') {
+        return $comparison > 0;
+    }
+    if ($operator === '>=') {
+        return $comparison >= 0;
+    }
+    if ($operator === '<') {
+        return $comparison < 0;
+    }
+    if ($operator === '<=') {
+        return $comparison <= 0;
+    }
+    return $comparison === 0;
 }
 
 function reprint_push_forms_schema_meta_key(): string

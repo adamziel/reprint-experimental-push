@@ -61,6 +61,12 @@ Run the DB-backed missing-commit finalization smoke:
 npm run test:playground:db-journal-missing-commit-finalization
 ```
 
+Run the fixture plugin install atomicity smoke:
+
+```bash
+npm run test:playground:plugin-atomic-install
+```
+
 Run the lab recovery inspection harness:
 
 ```bash
@@ -206,6 +212,24 @@ production Reprint auth. No production TLS deployment, nonce/replay store
 cleanup, production session handling, production Application Password
 integration, real exporter credential binding, durable production audit records,
 or full production push exists yet.
+
+The `test:playground:plugin-atomic-install` script verifies a hard-coded
+Playground fixture plugin install atomicity slice through the local lab REST
+surface. The base/remote fixture lacks the atomic fixture plugins, while the
+local fixture includes a dependency plugin and a dependent plugin in the same
+atomic group. Apply activates both, writes only the exact fixture plugin files,
+plugin resources, and allowlisted plugin-owned option data, and replay performs
+zero fresh mutation work. Negative proof covers missing dependency, dependency
+outside the group, incompatible version, hash mismatch, activation requirement
+mismatch, remote dependency drift, stale preconditions, forged ready plans that
+omit dependency mutation, `atomicGroups`, or dependency requirements, stale
+live-remote dependency evidence, and row-only plugin-owned data bypass attempts.
+Executor-side validation runs in both JavaScript and PHP before mutation or
+preconditions where relevant. Arbitrary plugin files, direct `active_plugins`
+row mutation, custom-table apply, and arbitrary plugin-owned data remain
+blocked. Failure injection proves a before-commit failure preserves the old
+remote, while during-publish and activation failures classify blocked recovery
+instead of proving rollback.
 
 The `test:playground:recovery` script exercises the lab-only failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The

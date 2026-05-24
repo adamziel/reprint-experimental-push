@@ -170,6 +170,17 @@ Upload the plan to `push_plan_dry_run`. The remote validates:
 The remote may return `ready`, `blocked`, `conflict`, or `invalid`. The executor
 must persist the response and stop unless it is `ready`.
 
+Current lab note: `npm run test:playground:plugin-atomic-install` proves a
+hard-coded fixture plugin install atomicity path where JavaScript and PHP both
+validate fixture atomic dependency closure before mutation/preconditions where
+relevant. Forged ready plans that omit the dependency mutation, omit
+`atomicGroups`, omit dependency requirements, use stale live-remote dependency
+evidence, or try a row-only plugin-owned data bypass reject before mutation.
+The row-only bypass is classified as `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`.
+This is exact fixture plugin allowlist evidence only; arbitrary plugin files,
+direct `active_plugins` row mutation, custom-table apply, and arbitrary
+plugin-owned data remain blocked.
+
 ### 7. Apply Batches
 
 Split mutations into batches within remote limits. Atomic groups must not be

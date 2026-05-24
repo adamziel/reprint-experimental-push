@@ -68,6 +68,24 @@ function pluginOwnedResourcePolicy(...allowedResources) {
   };
 }
 
+const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
+const atomicDependentPlugin = 'reprint-push-atomic-dependent-fixture';
+
+function pluginMainFile(name) {
+  return `wp-content/plugins/${name}/${name}.php`;
+}
+
+function tamperReadyPlan(plan, mutate) {
+  const copy = JSON.parse(JSON.stringify(plan));
+  mutate(copy);
+  copy.status = 'ready';
+  copy.blockers = [];
+  copy.conflicts = [];
+  copy.summary.blockers = 0;
+  copy.summary.conflicts = 0;
+  return copy;
+}
+
 function assertEveryMutationHasLiveRemotePrecondition(plan) {
   for (const mutation of plan.mutations) {
     const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
@@ -431,19 +449,19 @@ test('classifies divergent plugin-owned data rows as redacted plugin data confli
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
-  local.files['wp-content/plugins/commerce/commerce.php'] = '<?php /* commerce */';
-  local.plugins.commerce = { version: '1.0.0', active: true, requires: ['payments'] };
+  local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent */';
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
   local.pushIntents = [
     {
-      id: 'install-commerce',
+      id: 'install-atomic-dependent-fixture',
       kind: 'plugin-install',
-      label: 'Install commerce plugin',
+      label: 'Install atomic dependent fixture',
       requireAtomic: true,
       resources: [
-        'file:wp-content/plugins/commerce/commerce.php',
-        'plugin:commerce',
+        `file:${pluginMainFile(atomicDependentPlugin)}`,
+        `plugin:${atomicDependentPlugin}`,
       ],
-      dependencies: { plugins: ['payments'] },
+      dependencies: { plugins: [atomicDependencyPlugin] },
     },
   ];
 
@@ -457,38 +475,41 @@ test('blocks an atomic plugin install when dependencies are absent', () => {
 test('applies an atomic plugin install when dependencies are included in the same plan', () => {
   const base = baseSite();
   const local = baseSite();
-  local.files['wp-content/plugins/payments/payments.php'] = '<?php /* payments */';
-  local.files['wp-content/plugins/commerce/commerce.php'] = '<?php /* commerce */';
-  local.plugins.payments = { version: '2.1.0', active: true };
-  local.plugins.commerce = { version: '1.0.0', active: true, requires: ['payments'] };
-  local.db.wp_options['option_name:commerce_settings'] = {
-    option_name: 'commerce_settings',
-    option_value: { currency: 'USD' },
-    __pluginOwner: 'commerce',
+  local.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* dependency */';
+  local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent */';
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'installed' },
+    __pluginOwner: atomicDependentPlugin,
   };
   local.pushIntents = [
     {
-      id: 'install-commerce-stack',
+      id: 'install-atomic-fixture-stack',
       kind: 'plugin-install',
       requireAtomic: true,
       resources: [
-        'file:wp-content/plugins/payments/payments.php',
-        'file:wp-content/plugins/commerce/commerce.php',
-        'plugin:payments',
-        'plugin:commerce',
-        'row:["wp_options","option_name:commerce_settings"]',
+        `file:${pluginMainFile(atomicDependencyPlugin)}`,
+        `file:${pluginMainFile(atomicDependentPlugin)}`,
+        `plugin:${atomicDependencyPlugin}`,
+        `plugin:${atomicDependentPlugin}`,
+        'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
       ],
       dependencies: {
         plugins: [
           {
-            name: 'payments',
+            name: atomicDependencyPlugin,
             version: '2.1.0',
-            hash: resourceHash(local, pluginResource('payments')),
+            hash: resourceHash(local, pluginResource(atomicDependencyPlugin)),
           },
         ],
       },
       resourcePolicy: pluginOwnedResourcePolicy(
-        allowedPluginOwnedResource('row:["wp_options","option_name:commerce_settings"]', 'commerce'),
+        allowedPluginOwnedResource(
+          'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+          atomicDependentPlugin,
+        ),
       ),
     },
   ];
@@ -498,156 +519,391 @@ test('applies an atomic plugin install when dependencies are included in the sam
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.atomicGroups[0].status, 'ready');
-  assert.equal(result.site.plugins.commerce.version, '1.0.0');
-  assert.equal(result.site.plugins.payments.version, '2.1.0');
-  assert.equal(result.site.db.wp_options['option_name:commerce_settings'].option_value.currency, 'USD');
+  assert.equal(result.site.plugins[atomicDependentPlugin].version, '1.0.0');
+  assert.equal(result.site.plugins[atomicDependencyPlugin].version, '2.1.0');
+  assert.equal(
+    result.site.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value.mode,
+    'installed',
+  );
+});
+
+test('executor rejects forged ready atomic plugin plans before mutation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* dependency */';
+  local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent */';
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
+  local.pushIntents = [
+    {
+      id: 'install-atomic-fixture-stack',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: [
+        `file:${pluginMainFile(atomicDependencyPlugin)}`,
+        `file:${pluginMainFile(atomicDependentPlugin)}`,
+        `plugin:${atomicDependencyPlugin}`,
+        `plugin:${atomicDependentPlugin}`,
+      ],
+      dependencies: {
+        plugins: [{ name: atomicDependencyPlugin, expectedVersion: '2.1.0', active: true }],
+      },
+    },
+  ];
+
+  const ready = planFor(base, local, baseSite());
+  assert.equal(ready.status, 'ready');
+  const dependencyMutationId = mutationFor(ready, `plugin:${atomicDependencyPlugin}`).id;
+
+  const cases = [
+    {
+      name: 'missing dependency closure',
+      code: 'ATOMIC_GROUP_DEPENDENCY_MISSING',
+      plan: tamperReadyPlan(ready, (plan) => {
+        plan.mutations = plan.mutations.filter((mutation) => mutation.resourceKey !== `plugin:${atomicDependencyPlugin}`);
+        plan.preconditions = plan.preconditions.filter((entry) => entry.mutationId !== dependencyMutationId);
+        plan.atomicGroups[0].mutationIds = plan.atomicGroups[0].mutationIds.filter((id) => id !== dependencyMutationId);
+      }),
+    },
+    {
+      name: 'dependency outside group',
+      code: 'ATOMIC_GROUP_DEPENDENCY_OUTSIDE_GROUP',
+      plan: tamperReadyPlan(ready, (plan) => {
+        mutationFor(plan, `plugin:${atomicDependencyPlugin}`).atomicGroupId = null;
+        plan.atomicGroups[0].mutationIds = plan.atomicGroups[0].mutationIds.filter((id) => id !== dependencyMutationId);
+      }),
+    },
+    {
+      name: 'dependent fixture without atomic group evidence',
+      code: 'ATOMIC_GROUP_DEPENDENCY_UNDECLARED',
+      plan: tamperReadyPlan(ready, (plan) => {
+        delete plan.atomicGroups;
+        plan.summary.atomicGroups = 0;
+      }),
+    },
+    {
+      name: 'dependent fixture without dependency requirement evidence',
+      code: 'ATOMIC_GROUP_DEPENDENCY_UNDECLARED',
+      plan: tamperReadyPlan(ready, (plan) => {
+        delete plan.atomicGroups[0].dependencies;
+        delete plan.atomicGroups[0].dependencyRequirements;
+      }),
+    },
+    {
+      name: 'incompatible dependency version',
+      code: 'ATOMIC_GROUP_DEPENDENCY_VERSION_MISMATCH',
+      plan: tamperReadyPlan(ready, (plan) => {
+        plan.atomicGroups[0].dependencyRequirements[0].expectedVersion = '9.9.9';
+      }),
+    },
+    {
+      name: 'dependency hash mismatch',
+      code: 'ATOMIC_GROUP_DEPENDENCY_HASH_MISMATCH',
+      plan: tamperReadyPlan(ready, (plan) => {
+        plan.atomicGroups[0].dependencyRequirements[0].expectedHash = '0'.repeat(64);
+      }),
+    },
+    {
+      name: 'bad active requirement',
+      code: 'ATOMIC_GROUP_DEPENDENCY_ACTIVE_MISMATCH',
+      plan: tamperReadyPlan(ready, (plan) => {
+        plan.atomicGroups[0].dependencyRequirements[0].active = false;
+      }),
+    },
+  ];
+
+  for (const testCase of cases) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, testCase.plan));
+    assert.ok(error instanceof PushPlanError, testCase.name);
+    assert.equal(error.code, testCase.code, testCase.name);
+    assert.equal(JSON.stringify(remote), before, testCase.name);
+  }
+});
+
+test('executor rejects forged ready atomic plan when live dependency evidence is stale', () => {
+  const base = baseSite();
+  base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  const local = baseSite();
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'local' },
+    __pluginOwner: atomicDependentPlugin,
+  };
+  local.pushIntents = [
+    {
+      id: 'update-atomic-dependent-fixture',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: ['row:["wp_options","option_name:reprint_push_atomic_fixture_data"]'],
+      dependencies: {
+        plugins: [{ name: atomicDependencyPlugin, expectedVersion: '2.1.0', active: true }],
+      },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(
+          'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+          atomicDependentPlugin,
+        ),
+      ),
+    },
+  ];
+  const remote = baseSite();
+  remote.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  const plan = planFor(base, local, remote);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.atomicGroups[0].dependencyRequirements[0].source, 'live-remote');
+
+  remote.plugins[atomicDependencyPlugin] = { version: '2.2.0', active: true };
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'ATOMIC_GROUP_DEPENDENCY_STALE');
+  assert.equal(JSON.stringify(remote), before);
+});
+
+test('executor rejects row-only forged ready dependent fixture data plans before mutation', () => {
+  const resourceKey = 'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]';
+  const base = baseSite();
+  base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  base.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'remote' },
+    __pluginOwner: atomicDependentPlugin,
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value = { mode: 'local' };
+  local.pushIntents = [
+    {
+      id: 'update-atomic-dependent-fixture',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      dependencies: {
+        plugins: [{ name: atomicDependencyPlugin, expectedVersion: '2.1.0', active: true }],
+      },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, atomicDependentPlugin),
+      ),
+    },
+  ];
+  const remote = JSON.parse(JSON.stringify(base));
+  const ready = planFor(base, local, remote);
+  assert.equal(ready.status, 'ready');
+  assert.deepEqual(ready.mutations.map((mutation) => mutation.resourceKey), [resourceKey]);
+  assert.equal(ready.atomicGroups[0].dependencyRequirements[0].source, 'live-remote');
+
+  const forged = tamperReadyPlan(ready, (plan) => {
+    delete plan.atomicGroups;
+    plan.summary.atomicGroups = 0;
+  });
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'ATOMIC_GROUP_DEPENDENCY_UNDECLARED');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(
+    remote.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value.mode,
+    'remote',
+  );
 });
 
 test('blocks an atomic plugin bundle when its dependency mutation is outside the group', () => {
   const base = baseSite();
   const local = baseSite();
-  local.plugins.payments = { version: '2.1.0', active: true };
-  local.plugins.commerce = { version: '1.0.0', active: true, requires: ['payments'] };
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
   local.pushIntents = [
     {
-      id: 'install-payments',
+      id: 'install-atomic-dependency-fixture',
       kind: 'plugin-install',
       requireAtomic: true,
-      resources: ['plugin:payments'],
+      resources: [`plugin:${atomicDependencyPlugin}`],
     },
     {
-      id: 'install-commerce',
+      id: 'install-atomic-dependent-fixture',
       kind: 'plugin-install',
       requireAtomic: true,
-      resources: ['plugin:commerce'],
-      dependencies: { plugins: ['payments'] },
+      resources: [`plugin:${atomicDependentPlugin}`],
+      dependencies: { plugins: [atomicDependencyPlugin] },
     },
   ];
 
   const plan = planFor(base, local, baseSite());
-  const commerceGroup = plan.atomicGroups.find((group) => group.id === 'install-commerce');
+  const dependentGroup = plan.atomicGroups.find((group) => group.id === 'install-atomic-dependent-fixture');
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(commerceGroup.status, 'blocked');
-  assert.equal(commerceGroup.blockers[0].class, 'plugin-dependency-outside-atomic-group');
-  assert.equal(commerceGroup.blockers[0].plugin, 'payments');
+  assert.equal(dependentGroup.status, 'blocked');
+  assert.equal(dependentGroup.blockers[0].class, 'plugin-dependency-outside-atomic-group');
+  assert.equal(dependentGroup.blockers[0].plugin, atomicDependencyPlugin);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
 test('blocks a dependent atomic bundle when a remote dependency changed since base', () => {
   const base = baseSite();
-  base.plugins.payments = { version: '2.1.0', active: true };
+  base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
   const local = baseSite();
-  local.plugins.payments = { version: '2.1.0', active: true };
-  local.db.wp_options['option_name:commerce_settings'] = {
-    option_name: 'commerce_settings',
-    option_value: { currency: 'USD' },
-    __pluginOwner: 'commerce',
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'local' },
+    __pluginOwner: atomicDependentPlugin,
   };
   local.pushIntents = [
     {
-      id: 'update-commerce-settings',
+      id: 'update-atomic-dependent-fixture',
       kind: 'plugin-data-update',
       requireAtomic: true,
-      resources: ['row:["wp_options","option_name:commerce_settings"]'],
+      resources: ['row:["wp_options","option_name:reprint_push_atomic_fixture_data"]'],
       dependencies: {
         plugins: [
           {
-            name: 'payments',
+            name: atomicDependencyPlugin,
             version: '2.1.0',
-            hash: resourceHash(base, pluginResource('payments')),
+            hash: resourceHash(base, pluginResource(atomicDependencyPlugin)),
           },
         ],
       },
       resourcePolicy: pluginOwnedResourcePolicy(
-        allowedPluginOwnedResource('row:["wp_options","option_name:commerce_settings"]', 'commerce'),
+        allowedPluginOwnedResource(
+          'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+          atomicDependentPlugin,
+        ),
       ),
     },
   ];
   const remote = baseSite();
-  remote.plugins.payments = { version: '2.2.0', active: true };
+  remote.plugins[atomicDependencyPlugin] = { version: '2.2.0', active: true };
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
 
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'remote-plugin-dependency-drift');
-  assert.equal(blocker.plugin, 'payments');
-  assert.equal(decisionFor(plan, 'plugin:payments').decision, 'keep-remote');
+  assert.equal(blocker.plugin, atomicDependencyPlugin);
+  assert.equal(decisionFor(plan, `plugin:${atomicDependencyPlugin}`).decision, 'keep-remote');
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('blocks an atomic bundle with an incompatible plugin dependency version range', () => {
   const base = baseSite();
-  base.plugins.payments = { version: '2.1.0', active: true };
+  base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
   const local = baseSite();
-  local.plugins.payments = { version: '2.1.0', active: true };
-  local.db.wp_options['option_name:commerce_settings'] = {
-    option_name: 'commerce_settings',
-    option_value: { currency: 'USD' },
-    __pluginOwner: 'commerce',
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'local' },
+    __pluginOwner: atomicDependentPlugin,
   };
   local.pushIntents = [
     {
-      id: 'update-commerce-settings',
+      id: 'update-atomic-dependent-fixture',
       kind: 'plugin-data-update',
       requireAtomic: true,
-      resources: ['row:["wp_options","option_name:commerce_settings"]'],
+      resources: ['row:["wp_options","option_name:reprint_push_atomic_fixture_data"]'],
       dependencies: {
-        plugins: [{ name: 'payments', versionRange: '>=3.0.0 <4.0.0' }],
+        plugins: [{ name: atomicDependencyPlugin, versionRange: '>=3.0.0 <4.0.0' }],
       },
       resourcePolicy: pluginOwnedResourcePolicy(
-        allowedPluginOwnedResource('row:["wp_options","option_name:commerce_settings"]', 'commerce'),
+        allowedPluginOwnedResource(
+          'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+          atomicDependentPlugin,
+        ),
       ),
     },
   ];
   const remote = baseSite();
-  remote.plugins.payments = { version: '2.1.0', active: true };
+  remote.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
 
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'incompatible-plugin-dependency-version-range');
-  assert.equal(blocker.plugin, 'payments');
+  assert.equal(blocker.plugin, atomicDependencyPlugin);
   assert.match(blocker.reason, />=3\.0\.0 <4\.0\.0/);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('blocks an atomic bundle when dependency hash metadata does not match remote', () => {
   const base = baseSite();
-  base.plugins.payments = { version: '2.1.0', active: true };
+  base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
   const local = baseSite();
-  local.plugins.payments = { version: '2.1.0', active: true };
-  local.db.wp_options['option_name:commerce_settings'] = {
-    option_name: 'commerce_settings',
-    option_value: { currency: 'USD' },
-    __pluginOwner: 'commerce',
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'local' },
+    __pluginOwner: atomicDependentPlugin,
   };
   local.pushIntents = [
     {
-      id: 'update-commerce-settings',
+      id: 'update-atomic-dependent-fixture',
       kind: 'plugin-data-update',
       requireAtomic: true,
-      resources: ['row:["wp_options","option_name:commerce_settings"]'],
+      resources: ['row:["wp_options","option_name:reprint_push_atomic_fixture_data"]'],
       dependencies: {
-        plugins: [{ name: 'payments', hash: 'sha256:not-the-remote-plugin-hash' }],
+        plugins: [{ name: atomicDependencyPlugin, hash: 'sha256:not-the-remote-plugin-hash' }],
       },
       resourcePolicy: pluginOwnedResourcePolicy(
-        allowedPluginOwnedResource('row:["wp_options","option_name:commerce_settings"]', 'commerce'),
+        allowedPluginOwnedResource(
+          'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+          atomicDependentPlugin,
+        ),
       ),
     },
   ];
   const remote = baseSite();
-  remote.plugins.payments = { version: '2.1.0', active: true };
+  remote.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
 
   assert.equal(plan.status, 'blocked');
   assert.equal(blocker.class, 'plugin-dependency-hash-mismatch');
-  assert.equal(blocker.plugin, 'payments');
+  assert.equal(blocker.plugin, atomicDependencyPlugin);
   assert.equal(blocker.expectedHash, 'sha256:not-the-remote-plugin-hash');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks an atomic bundle when dependency activation does not match requirement', () => {
+  const resourceKey = 'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]';
+  const base = baseSite();
+  base.plugins[atomicDependencyPlugin] = { version: '1.0.0', active: false };
+  const local = baseSite();
+  local.plugins[atomicDependencyPlugin] = { version: '1.0.0', active: false };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'local' },
+    __pluginOwner: atomicDependentPlugin,
+  };
+  local.pushIntents = [
+    {
+      id: 'update-atomic-dependent-fixture',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      dependencies: {
+        plugins: [{ name: atomicDependencyPlugin, active: true }],
+      },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, atomicDependentPlugin),
+      ),
+    },
+  ];
+  const remote = baseSite();
+  remote.plugins[atomicDependencyPlugin] = { version: '1.0.0', active: false };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'incompatible-plugin-dependency-activation');
+  assert.equal(blocker.plugin, atomicDependencyPlugin);
+  assert.equal(blocker.expectedActive, true);
+  assert.equal(blocker.actualActive, false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
@@ -725,22 +981,22 @@ test('injected failure after staging leaves the old remote with staged rollback 
 test('injected failure after dependency validation leaves the old remote with validated artifacts', () => {
   const base = baseSite();
   const local = baseSite();
-  local.files['wp-content/plugins/payments/payments.php'] = '<?php /* payments */';
-  local.files['wp-content/plugins/commerce/commerce.php'] = '<?php /* commerce */';
-  local.plugins.payments = { version: '2.1.0', active: true };
-  local.plugins.commerce = { version: '1.0.0', active: true, requires: ['payments'] };
+  local.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* dependency */';
+  local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent */';
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
   local.pushIntents = [
     {
-      id: 'install-commerce-stack',
+      id: 'install-atomic-fixture-stack',
       kind: 'plugin-install',
       requireAtomic: true,
       resources: [
-        'file:wp-content/plugins/payments/payments.php',
-        'file:wp-content/plugins/commerce/commerce.php',
-        'plugin:payments',
-        'plugin:commerce',
+        `file:${pluginMainFile(atomicDependencyPlugin)}`,
+        `file:${pluginMainFile(atomicDependentPlugin)}`,
+        `plugin:${atomicDependencyPlugin}`,
+        `plugin:${atomicDependentPlugin}`,
       ],
-      dependencies: { plugins: ['payments'] },
+      dependencies: { plugins: [atomicDependencyPlugin] },
     },
   ];
   const remote = baseSite();

@@ -15,6 +15,7 @@
     "test:playground:push-protocol": "node ./scripts/playground/push-protocol-smoke.mjs",
     "test:playground:http-push": "node ./scripts/playground/http-push-smoke.mjs",
     "test:playground:authenticated-http-push": "node ./scripts/playground/authenticated-http-push-smoke.mjs",
+    "test:playground:plugin-atomic-install": "node ./scripts/playground/plugin-atomic-install-smoke.mjs",
     "test:playground:db-journal-idempotency": "node ./scripts/playground/db-journal-idempotency-smoke.mjs",
     "test:playground:db-journal-process-kill": "node ./scripts/playground/db-journal-process-kill-smoke.mjs",
     "test:playground:db-journal-missing-commit-finalization": "node ./scripts/playground/db-journal-missing-commit-finalization-smoke.mjs",

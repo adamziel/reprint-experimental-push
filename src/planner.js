@@ -346,9 +346,44 @@ function buildAtomicGroup(intent, plan, base, remote) {
       versionRange: dependency.versionRange,
       expectedHash: dependency.expectedHash,
       active: dependency.active,
+      ...pluginDependencyEvidence(dependency, intent, plan, base, remote),
     })),
     status: conflicts.length > 0 ? 'conflict' : blockers.length > 0 ? 'blocked' : 'ready',
     blockers,
+  };
+}
+
+function pluginDependencyEvidence(dependency, intent, plan, base, remote) {
+  if (!dependency.name) {
+    return { source: 'invalid' };
+  }
+
+  const plugin = dependency.name;
+  const pluginResource = { type: 'plugin', name: plugin, key: `plugin:${plugin}` };
+  const sameGroupMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === pluginResource.key && mutation.atomicGroupId === intent.id);
+  if (sameGroupMutation) {
+    const plannedValue = deserializeResourceValue(sameGroupMutation.value);
+    return {
+      source: 'same-atomic-group',
+      mutationId: sameGroupMutation.id,
+      resourceKey: pluginResource.key,
+      plannedHash: plannedValue === ABSENT ? resourceHash({ plugins: {} }, pluginResource) : digestPluginValue(plannedValue),
+    };
+  }
+
+  if (!hasPlugin(remote, plugin)) {
+    return {
+      source: 'missing-live-remote',
+      resourceKey: pluginResource.key,
+    };
+  }
+
+  return {
+    source: 'live-remote',
+    resourceKey: pluginResource.key,
+    baseHash: resourceHash(base, pluginResource),
+    remoteHash: resourceHash(remote, pluginResource),
   };
 }
 

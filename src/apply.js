@@ -1,4 +1,4 @@
-import { deepClone, digest } from './stable-json.js';
+import { ABSENT, deepClone, digest } from './stable-json.js';
 import {
   deserializeResourceValue,
   getResource,
@@ -9,6 +9,16 @@ import {
 } from './resources.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
+const FIXTURE_PLUGIN_DEPENDENCIES = new Map([
+  ['reprint-push-atomic-dependent-fixture', ['reprint-push-atomic-dependency-fixture']],
+  ['reprint-push-atomic-failing-fixture', ['reprint-push-atomic-dependency-fixture']],
+]);
+const FIXTURE_PLUGIN_OWNED_ROW_DEPENDENCIES = new Map([
+  [
+    'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+    'reprint-push-atomic-dependent-fixture',
+  ],
+]);
 
 export class PushPlanError extends Error {
   constructor(code, message, details = {}) {
@@ -27,6 +37,8 @@ export function applyPlan(remote, plan, options = {}) {
       { status: plan.status },
     );
   }
+
+  validateAtomicGroupDependencyPlan(remote, plan);
 
   const hasPreviousJournal = Boolean(options.journal);
   let journal = prepareJournal(remote, plan, options.journal);
@@ -372,6 +384,264 @@ function validatePreconditions(remote, plan) {
   }
 }
 
+function validateAtomicGroupDependencyPlan(remote, plan) {
+  const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
+  const mutationByResource = new Map(mutations.map((mutation) => [mutation.resourceKey, mutation]));
+  const groups = Array.isArray(plan.atomicGroups) ? plan.atomicGroups : [];
+
+  validateFixturePluginDependencyCoverage(remote, mutations, groups);
+
+  for (const group of groups) {
+    const groupId = group.id;
+    const groupMutationIds = new Set(group.mutationIds || []);
+    for (const mutation of mutations) {
+      if (mutation.atomicGroupId === groupId) {
+        groupMutationIds.add(mutation.id);
+      }
+    }
+
+    for (const requirement of normalizeAtomicGroupDependencyRequirements(group)) {
+      const plugin = requirement.plugin;
+      if (!plugin) {
+        throw new PushPlanError(
+          'ATOMIC_GROUP_DEPENDENCY_INVALID',
+          `Atomic group ${groupId} declares a plugin dependency without a plugin name.`,
+          { groupId },
+        );
+      }
+
+      const resource = { type: 'plugin', name: plugin, key: `plugin:${plugin}` };
+      const mutation = mutationByResource.get(resource.key);
+      if (mutation && !groupMutationIds.has(mutation.id)) {
+        throw new PushPlanError(
+          'ATOMIC_GROUP_DEPENDENCY_OUTSIDE_GROUP',
+          `Atomic group ${groupId} depends on plugin ${plugin}, but its mutation is outside the group.`,
+          { groupId, plugin, mutationId: mutation.id },
+        );
+      }
+
+      if (mutation) {
+        const plannedValue = deserializeResourceValue(mutation.value);
+        if (plannedValue === ABSENT) {
+          throw new PushPlanError(
+            'ATOMIC_GROUP_DEPENDENCY_MISSING',
+            `Atomic group ${groupId} would remove plugin dependency ${plugin}.`,
+            { groupId, plugin, source: 'same-atomic-group' },
+          );
+        }
+        validateAtomicPluginDependencyValue({
+          groupId,
+          plugin,
+          requirement,
+          value: plannedValue,
+          hash: resourceHash({ plugins: { [plugin]: plannedValue } }, resource),
+          source: 'same-atomic-group',
+        });
+        continue;
+      }
+
+      if (!hasPlugin(remote, plugin)) {
+        throw new PushPlanError(
+          'ATOMIC_GROUP_DEPENDENCY_MISSING',
+          `Atomic group ${groupId} is missing plugin dependency ${plugin}.`,
+          { groupId, plugin, source: 'live-remote' },
+        );
+      }
+
+      const actualHash = resourceHash(remote, resource);
+      const evidenceHash = requirement.remoteHash || requirement.hash || requirement.expectedHash || null;
+      if (!evidenceHash) {
+        throw new PushPlanError(
+          'ATOMIC_GROUP_DEPENDENCY_EVIDENCE_MISSING',
+          `Atomic group ${groupId} has no live-remote hash evidence for plugin dependency ${plugin}.`,
+          { groupId, plugin, actualHash },
+        );
+      }
+      if (actualHash !== evidenceHash) {
+        throw new PushPlanError(
+          'ATOMIC_GROUP_DEPENDENCY_STALE',
+          `Atomic group ${groupId} has stale live-remote evidence for plugin dependency ${plugin}.`,
+          { groupId, plugin, expectedHash: evidenceHash, actualHash },
+        );
+      }
+
+      validateAtomicPluginDependencyValue({
+        groupId,
+        plugin,
+        requirement,
+        value: getResource(remote, resource),
+        hash: actualHash,
+        source: 'live-remote',
+      });
+    }
+  }
+}
+
+function validateFixturePluginDependencyCoverage(remote, mutations, groups) {
+  for (const mutation of mutations) {
+    const requiredPlugins = fixturePluginDependenciesRequiredForMutation(remote, mutation);
+    if (requiredPlugins.length === 0) {
+      continue;
+    }
+
+    const groupsCoveringMutation = groups.filter((group) => groupCoversMutation(group, mutation));
+    for (const dependency of requiredPlugins) {
+      const hasDeclaredDependency = groupsCoveringMutation.some((group) =>
+        normalizeAtomicGroupDependencyRequirements(group).some((requirement) => requirement.plugin === dependency));
+      if (hasDeclaredDependency) {
+        continue;
+      }
+
+      throw new PushPlanError(
+        'ATOMIC_GROUP_DEPENDENCY_UNDECLARED',
+        `Mutation ${mutation.id} for ${mutation.resourceKey} requires an atomic group dependency requirement for ${dependency}.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          plugin: fixturePluginOwnerForMutation(remote, mutation),
+          dependency,
+          groupIds: groupsCoveringMutation.map((group) => group.id),
+        },
+      );
+    }
+  }
+}
+
+function fixturePluginDependenciesRequiredForMutation(remote, mutation) {
+  const plugin = fixturePluginOwnerForMutation(remote, mutation);
+  const dependencies = FIXTURE_PLUGIN_DEPENDENCIES.get(plugin) || [];
+  if (dependencies.length === 0) {
+    return [];
+  }
+
+  if (mutation?.resource?.type === 'row') {
+    return dependencies;
+  }
+
+  const plannedValue = deserializeResourceValue(mutation.value);
+  if (plannedValue === ABSENT) {
+    return [];
+  }
+
+  const isInstall = !hasPlugin(remote, plugin);
+  const isActivation = Boolean(plannedValue?.active);
+  return isInstall || isActivation ? dependencies : [];
+}
+
+function fixturePluginOwnerForMutation(remote, mutation) {
+  if (mutation?.resource?.type === 'plugin') {
+    return mutation.resource.name;
+  }
+
+  if (mutation?.resource?.type !== 'row') {
+    return null;
+  }
+
+  const plannedValue = deserializeResourceValue(mutation.value);
+  const plannedOwner = fixturePluginOwnerFromValue(plannedValue);
+  if (plannedOwner) {
+    return plannedOwner;
+  }
+
+  const remoteOwner = fixturePluginOwnerFromValue(getResource(remote, mutation.resource));
+  if (remoteOwner) {
+    return remoteOwner;
+  }
+
+  return FIXTURE_PLUGIN_OWNED_ROW_DEPENDENCIES.get(mutation.resourceKey) || null;
+}
+
+function fixturePluginOwnerFromValue(value) {
+  if (!value || value === ABSENT || typeof value !== 'object') {
+    return null;
+  }
+  const owner = value.__pluginOwner;
+  return FIXTURE_PLUGIN_DEPENDENCIES.has(owner) ? owner : null;
+}
+
+function groupCoversMutation(group, mutation) {
+  if (!group || typeof group !== 'object') {
+    return false;
+  }
+  if (mutation.atomicGroupId && group.id === mutation.atomicGroupId) {
+    return true;
+  }
+  return Array.isArray(group.mutationIds) && group.mutationIds.includes(mutation.id);
+}
+
+function normalizeAtomicGroupDependencyRequirements(group) {
+  const requirements = [];
+  const seen = new Set();
+
+  for (const requirement of group.dependencyRequirements || []) {
+    const normalized = typeof requirement === 'string'
+      ? { plugin: requirement }
+      : { ...requirement, plugin: requirement?.plugin || requirement?.name || requirement?.slug };
+    requirements.push(normalized);
+    if (normalized.plugin) {
+      seen.add(normalized.plugin);
+    }
+  }
+
+  for (const plugin of group.dependencies?.plugins || []) {
+    const name = typeof plugin === 'string' ? plugin : plugin?.name || plugin?.plugin || plugin?.slug;
+    if (name && !seen.has(name)) {
+      requirements.push(typeof plugin === 'string' ? { plugin: name } : { ...plugin, plugin: name });
+      seen.add(name);
+    }
+  }
+
+  return requirements;
+}
+
+function validateAtomicPluginDependencyValue({ groupId, plugin, requirement, value, hash, source }) {
+  if (requirement.expectedHash && requirement.expectedHash !== hash) {
+    throw new PushPlanError(
+      'ATOMIC_GROUP_DEPENDENCY_HASH_MISMATCH',
+      `Atomic group ${groupId} requires plugin ${plugin} at hash ${requirement.expectedHash}, but ${source} has ${hash}.`,
+      { groupId, plugin, expectedHash: requirement.expectedHash, actualHash: hash, source },
+    );
+  }
+
+  const actualVersion = value?.version;
+  if ((requirement.expectedVersion || requirement.versionRange) && typeof actualVersion !== 'string') {
+    throw new PushPlanError(
+      'ATOMIC_GROUP_DEPENDENCY_VERSION_MISSING',
+      `Atomic group ${groupId} requires a versioned plugin dependency ${plugin}, but ${source} has no version metadata.`,
+      { groupId, plugin, source },
+    );
+  }
+
+  if (requirement.expectedVersion && actualVersion !== requirement.expectedVersion) {
+    throw new PushPlanError(
+      'ATOMIC_GROUP_DEPENDENCY_VERSION_MISMATCH',
+      `Atomic group ${groupId} requires plugin ${plugin} version ${requirement.expectedVersion}, but ${source} has ${actualVersion}.`,
+      { groupId, plugin, expectedVersion: requirement.expectedVersion, actualVersion, source },
+    );
+  }
+
+  if (requirement.versionRange) {
+    const rangeResult = satisfiesVersionRange(actualVersion, requirement.versionRange);
+    if (rangeResult.unsupported || !rangeResult.satisfied) {
+      throw new PushPlanError(
+        rangeResult.unsupported
+          ? 'ATOMIC_GROUP_DEPENDENCY_VERSION_RANGE_UNSUPPORTED'
+          : 'ATOMIC_GROUP_DEPENDENCY_VERSION_RANGE_MISMATCH',
+        `Atomic group ${groupId} requires plugin ${plugin} version ${requirement.versionRange}, but ${source} has ${actualVersion}.`,
+        { groupId, plugin, versionRange: requirement.versionRange, actualVersion, source },
+      );
+    }
+  }
+
+  if (typeof requirement.active === 'boolean' && Boolean(value?.active) !== requirement.active) {
+    throw new PushPlanError(
+      'ATOMIC_GROUP_DEPENDENCY_ACTIVE_MISMATCH',
+      `Atomic group ${groupId} requires plugin ${plugin} active=${requirement.active}, but ${source} has active=${Boolean(value?.active)}.`,
+      { groupId, plugin, expectedActive: requirement.active, actualActive: Boolean(value?.active), source },
+    );
+  }
+}
+
 function validateAtomicGroups(staged, plan) {
   for (const group of plan.atomicGroups || []) {
     for (const plugin of group.dependencies?.plugins || []) {
@@ -384,4 +654,69 @@ function validateAtomicGroups(staged, plan) {
       }
     }
   }
+}
+
+function satisfiesVersionRange(version, range) {
+  const comparators = String(range).trim().split(/\s+/).filter(Boolean);
+  if (comparators.length === 0) {
+    return { supported: false, unsupported: true, satisfied: false };
+  }
+
+  for (const comparator of comparators) {
+    const match = comparator.match(/^(>=|>|<=|<|=)?(.+)$/);
+    if (!match) {
+      return { supported: false, unsupported: true, satisfied: false };
+    }
+    const operator = match[1] || '=';
+    const expected = match[2];
+    const comparison = compareVersions(version, expected);
+    if (comparison === null || !comparatorSatisfied(comparison, operator)) {
+      return comparison === null
+        ? { supported: false, unsupported: true, satisfied: false }
+        : { supported: true, unsupported: false, satisfied: false };
+    }
+  }
+
+  return { supported: true, unsupported: false, satisfied: true };
+}
+
+function comparatorSatisfied(comparison, operator) {
+  if (operator === '>') {
+    return comparison > 0;
+  }
+  if (operator === '>=') {
+    return comparison >= 0;
+  }
+  if (operator === '<') {
+    return comparison < 0;
+  }
+  if (operator === '<=') {
+    return comparison <= 0;
+  }
+  return comparison === 0;
+}
+
+function compareVersions(left, right) {
+  const leftParts = parseVersion(left);
+  const rightParts = parseVersion(right);
+  if (!leftParts || !rightParts) {
+    return null;
+  }
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index++) {
+    const leftPart = leftParts[index] || 0;
+    const rightPart = rightParts[index] || 0;
+    if (leftPart !== rightPart) {
+      return leftPart > rightPart ? 1 : -1;
+    }
+  }
+  return 0;
+}
+
+function parseVersion(version) {
+  const normalized = String(version).replace(/^v/i, '');
+  if (!/^\d+(\.\d+)*$/.test(normalized)) {
+    return null;
+  }
+  return normalized.split('.').map((part) => Number.parseInt(part, 10));
 }

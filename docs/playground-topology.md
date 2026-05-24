@@ -290,6 +290,57 @@ mutation/full push remains pending. Redaction checks are key-based plus
 fixture-value smoke checks, not a formal sanitizer for arbitrary future
 messages.
 
+## Fixture Plugin Install Atomicity Lab
+
+```bash
+npm run test:playground:plugin-atomic-install
+```
+
+This standalone local-only REST smoke verifies a hard-coded Playground fixture
+plugin install atomicity slice. The base and remote fixture snapshots lack the
+atomic fixture plugins. The local fixture contains
+`reprint-push-atomic-dependency-fixture` and
+`reprint-push-atomic-dependent-fixture`, plus the allowlisted
+`reprint_push_atomic_fixture_data` option, in one atomic install group.
+
+The positive path proves:
+
+- dry-run is read-only and returns a receipt;
+- apply installs and activates both fixture plugins in the same atomic group;
+- apply writes only the exact fixture plugin file allowlist, the matching
+  plugin resources, and the allowlisted plugin-owned option data;
+- WordPress-visible snapshot readback verifies the plugin versions, activation
+  state, plugin files, and option payload; and
+- replay with the same idempotency key/body returns `BATCH_ALREADY_COMMITTED`,
+  performs zero fresh mutation work, and adds no fresh mutation events.
+
+Negative proof covers missing dependency, dependency mutation outside the
+atomic group, incompatible version, dependency hash mismatch, activation
+requirement mismatch, remote dependency drift, stale apply preconditions, stale
+live-remote dependency evidence, forged ready plans that omit the dependency
+mutation, omit `atomicGroups`, or omit dependency requirements, and row-only
+plugin-owned data bypass attempts. The planner/executor rejects the forged
+row-only case with `ATOMIC_GROUP_DEPENDENCY_UNDECLARED` before it can treat
+dependent plugin-owned option data as an independent safe row.
+
+Validation exists on both executor sides used by this repository:
+`src/apply.js` validates atomic dependency closure in JavaScript before staged
+mutation, and `scripts/playground/push-remote-lib.php` validates the submitted
+plan in PHP before mutation/preconditions where relevant. The snapshot/apply
+library enforces an exact fixture plugin allowlist. Arbitrary plugin files,
+direct `active_plugins` row mutation, custom-table apply, and arbitrary
+plugin-owned data remain blocked.
+
+Failure injection is deliberately classified, not rolled back. A failure before
+the group commit preserves the old remote. A failure during group publish and a
+fixture activation failure return blocked recovery/no fresh retry mutation
+evidence; they do not prove production rollback.
+
+This is fixture plugin install atomicity evidence only. It is not arbitrary
+production plugin installation, update, activation, semantic driver,
+custom-table driver, arbitrary plugin-owned data safety, production rollback,
+or production durability/auth proof.
+
 ## Lab Recovery Harness
 
 ```bash

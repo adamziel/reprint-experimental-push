@@ -399,13 +399,14 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Experimental push-back from a pulled local WordPress site to the live source site. The current implementation is a JSON-snapshot safety model plus lab-scoped Playground apply, protocol-smoke, local-only REST and authenticated source-site mutation harnesses, DB journal/idempotency/process-kill/finalization evidence, file-backed JSONL recovery journal evidence, and allowlisted plugin-owned fixture data, not a production WordPress transport.</p>
+        <p class="lead">Experimental push-back from a pulled local WordPress site to the live source site. The current implementation is a JSON-snapshot safety model plus lab-scoped Playground apply, protocol-smoke, local-only REST and authenticated source-site mutation harnesses, DB journal/idempotency/process-kill/finalization evidence, file-backed JSONL recovery journal evidence, allowlisted plugin-owned fixture data, and hard-coded fixture plugin install atomicity evidence, not a production WordPress transport.</p>
         <div class="meta" aria-label="Project status">
           <span class="pill">Last updated: May 24, 2026</span>
           <span class="pill">42 lab tests passing</span>
           <span class="pill">Playground REST and recovery labs passing</span>
           <span class="pill">Authenticated Playground mutation lab passing</span>
           <span class="pill">DB recovery labs passing</span>
+          <span class="pill">Fixture plugin atomic install smoke added</span>
           <span class="pill">JSONL file journal lab passing</span>
           <span class="pill">Reprint HTTP mutation pending</span>
         </div>
@@ -427,7 +428,7 @@
       </div>
       <div class="metric">
         <strong>1</strong>
-        <span>Playground integration for snapshot planning, guarded apply, fixture-scoped protocol smoke, local REST/recovery lab checks, authenticated local source-site mutation, DB idempotency/process-kill/finalization, and allowlisted plugin-owned forms data</span>
+        <span>Playground integration for snapshot planning, guarded apply, fixture-scoped protocol smoke, local REST/recovery lab checks, authenticated local source-site mutation, DB idempotency/process-kill/finalization, allowlisted plugin-owned forms data, and fixture plugin install atomicity</span>
       </div>
       <div class="metric">
         <strong>4</strong>
@@ -445,13 +446,13 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">35%</span></div>
           <div class="bar" aria-label="No data loss merge invariants 35 percent"><div class="fill green" style="width:35%"></div></div>
-          <p class="note">Three-way base/local/remote planning, conflict stops, plugin-owned conflict classification, compare-and-swap preconditions, atomic plugin-intent checks, stale dependency blocking, dependency version ranges, and dependency hash checks are covered by tests. Playground proves planner outcomes from real WordPress rows, options, files, allowlisted forms option/postmeta, and detection-only plugin resources, then applies eight exact ready mutations with WordPress-visible readback.</p>
+          <p class="note">Three-way base/local/remote planning, conflict stops, plugin-owned conflict classification, compare-and-swap preconditions, atomic plugin-intent checks, stale dependency blocking, dependency version ranges, and dependency hash checks are covered by tests. Playground proves planner outcomes from real WordPress rows, options, files, allowlisted forms option/postmeta, and detection-only plugin resources, then applies eight exact ready mutations with WordPress-visible readback. The fixture plugin install smoke adds hard-coded local Playground proof for dependency/dependent plugins in one atomic group, exact fixture plugin file/resource writes, allowlisted option data, replay with zero fresh mutation work, and forged/row-only bypass rejection.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">22%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 22 percent"><div class="fill green" style="width:22%"></div></div>
-          <p class="note">The applicator returns in-memory lab journal/recovery evidence, npm run test:playground:recovery verifies LAB_INJECTED_APPLY_FAILURE after fail-after-2, blocked-recovery inspection, 2 new and 6 old targets, and PRECONDITION_FAILED on retry, npm run test:playground:db-journal-idempotency verifies fixture-scoped DB apply/replay/conflict events plus mutation-prepared/mutation-applied hash evidence, npm run test:playground:db-journal-process-kill verifies DB-only RECOVERY_BLOCKED after local Playground SIGKILL/restart without false commit, npm run test:playground:db-journal-missing-commit-finalization verifies BATCH_RECOVERY_FINALIZED with zero fresh mutation work, and npm run test:recovery:file-journal verifies append-only JSONL recovery evidence. This remains lab evidence only: no production DB journal durability, storage fsync proof, rollback, exactly-once production writes, full MySQL/InnoDB behavior, or auto-repair.</p>
+          <p class="note">The applicator returns in-memory lab journal/recovery evidence, npm run test:playground:recovery verifies LAB_INJECTED_APPLY_FAILURE after fail-after-2, blocked-recovery inspection, 2 new and 6 old targets, and PRECONDITION_FAILED on retry, npm run test:playground:db-journal-idempotency verifies fixture-scoped DB apply/replay/conflict events plus mutation-prepared/mutation-applied hash evidence, npm run test:playground:db-journal-process-kill verifies DB-only RECOVERY_BLOCKED after local Playground SIGKILL/restart without false commit, npm run test:playground:db-journal-missing-commit-finalization verifies BATCH_RECOVERY_FINALIZED with zero fresh mutation work, npm run test:playground:plugin-atomic-install verifies old-remote preservation before group commit and blocked recovery classification during publish/activation failure, and npm run test:recovery:file-journal verifies append-only JSONL recovery evidence. This remains lab evidence only: no production DB journal durability, storage fsync proof, rollback, exactly-once production writes, full MySQL/InnoDB behavior, arbitrary plugin install safety, or auto-repair.</p>
         </div>
 
         <div class="lane">
@@ -481,7 +482,7 @@
             <li><a href="docs/scenario-matrix.md">Scenario matrix</a> maps the current test coverage and remaining integration scenarios.</li>
             <li><a href="docs/approach-scorecard.md">Approach scorecard</a> ranks guarded three-way push and ForkPress-style merge highest.</li>
             <li><a href="docs/protocol.md">Protocol sketch</a> defines proposed push preflight, hashes, dry-run, apply, journal, and recovery endpoints.</li>
-            <li><a href="docs/playground-topology.md">Playground topology</a> exports base/local/remote WordPress snapshots, asserts planner outcomes, and documents guarded apply, fixture-scoped protocol smoke, allowlisted forms fixture data, standalone local REST/recovery lab harnesses, authenticated local source-site mutation under /authenticated/*, DB journal/idempotency/process-kill/finalization labs, and the JSONL file journal lab.</li>
+            <li><a href="docs/playground-topology.md">Playground topology</a> exports base/local/remote WordPress snapshots, asserts planner outcomes, and documents guarded apply, fixture-scoped protocol smoke, allowlisted forms fixture data, fixture plugin install atomicity, standalone local REST/recovery lab harnesses, authenticated local source-site mutation under /authenticated/*, DB journal/idempotency/process-kill/finalization labs, and the JSONL file journal lab.</li>
             <li><a href="docs/progress-log.md">Progress log</a> records dated status entries and links to evidence.</li>
           </ul>
         </section>
@@ -491,8 +492,8 @@
           <div class="proof-list">
             <div class="proof-item"><span class="status">Pending</span><p>Production Reprint HTTP source mutation endpoint for files, rows, and plugin state on a live source site, including production auth, HMAC/TLS/session/nonce/replay proof and real exporter credential binding.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Production DB-table recovery journal with crash/kill-process, storage-level durability, stale-claim retry coverage, and WordPress commit-boundary tests.</p></div>
-            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply, protocol smoke, local REST checks, authenticated /authenticated/* checks, DB idempotency/process-kill/finalization, recovery inspection, and JSONL file journal checks verify read-only dry-run, signed lab preflight/dry-run/apply, raw request body content hashes, canonical query/path/method/session/idempotency signature binding, nonce replay rejection before idempotency replay, required receipt-backed apply, Basic-auth-shaped Application Password credentials for bootstrapped users, manage_options, Playground fallback verifier caveat, forged reprint_push_lab_auth rejection, AUTH_RECEIPT_MISMATCH and AUTH_RECEIPT_EXPIRED rejection, mandatory apply idempotency keys, DB-native unique claim opening keyed by claim_key_hash in SQLite, concurrent duplicate first-apply handling, missing/tampered receipt refusal, stale rejection, conflict refusal, BATCH_ALREADY_COMMITTED replay, BATCH_RECOVERY_FINALIZED finalization, IDEMPOTENCY_KEY_CONFLICT refusal, the current eight exact ready mutations, local SIGKILL/restart persistence through host-mount storage without false commit, DB-only RECOVERY_BLOCKED after hard kill, blocked-recovery after fail-after-2, mutation-prepared/mutation-applied hash-only evidence, PRECONDITION_FAILED/retry refusal, per-append fsync evidence, and fixture-scoped lab journal/audit records.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Plugin-specific validators or drivers that prove safe semantic merges before applying arbitrary production plugin-owned data; current forms evidence is fixture/allowlist-scoped.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply, protocol smoke, local REST checks, authenticated /authenticated/* checks, DB idempotency/process-kill/finalization, fixture plugin install atomicity, recovery inspection, and JSONL file journal checks verify read-only dry-run, signed lab preflight/dry-run/apply, raw request body content hashes, canonical query/path/method/session/idempotency signature binding, nonce replay rejection before idempotency replay, required receipt-backed apply, Basic-auth-shaped Application Password credentials for bootstrapped users, manage_options, Playground fallback verifier caveat, forged reprint_push_lab_auth rejection, AUTH_RECEIPT_MISMATCH and AUTH_RECEIPT_EXPIRED rejection, mandatory apply idempotency keys, DB-native unique claim opening keyed by claim_key_hash in SQLite, concurrent duplicate first-apply handling, missing/tampered receipt refusal, stale rejection, conflict refusal, BATCH_ALREADY_COMMITTED replay, BATCH_RECOVERY_FINALIZED finalization, IDEMPOTENCY_KEY_CONFLICT refusal, fixture dependency/dependent plugin activation in one atomic group, exact fixture plugin file/resource writes, row-only plugin-owned bypass rejection with ATOMIC_GROUP_DEPENDENCY_UNDECLARED, arbitrary plugin files/direct active_plugins row/custom-table apply blocked, local SIGKILL/restart persistence through host-mount storage without false commit, DB-only RECOVERY_BLOCKED after hard kill, blocked-recovery after fail-after-2, blocked recovery classification after fixture plugin publish/activation failure, mutation-prepared/mutation-applied hash-only evidence, PRECONDITION_FAILED/retry refusal, per-append fsync evidence, and fixture-scoped lab journal/audit records.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Plugin-specific validators or drivers that prove safe semantic merges before applying arbitrary production plugin-owned data; current forms and fixture plugin install evidence is fixture/allowlist-scoped.</p></div>
           </div>
         </section>
 
@@ -500,11 +501,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>The implemented path is lab-scoped. Playground apply, protocol smoke, local REST/recovery checks, authenticated local source-site mutation, DB idempotency/process-kill/finalization checks, JSONL file journal checks, and allowlisted plugin-owned forms fixtures are passing, while production Reprint HTTP mutation and production Reprint auth remain proof gates.</p>
+              <p>The implemented path is lab-scoped. Playground apply, protocol smoke, local REST/recovery checks, authenticated local source-site mutation, DB idempotency/process-kill/finalization checks, fixture plugin install atomicity, JSONL file journal checks, and allowlisted plugin-owned forms fixtures are passing, while production Reprint HTTP mutation and production Reprint auth remain proof gates.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Pull base, local edits, and live remote snapshots feed a guarded plan. Playground apply, fixture protocol smoke, local REST checks, authenticated local source mutation, DB idempotency, DB recovery finalization, recovery inspection, and JSONL journal checks are verified in the lab and production Reprint HTTP mutation is still pending.</desc>
+              <desc id="map-desc">Pull base, local edits, and live remote snapshots feed a guarded plan. Playground apply, fixture protocol smoke, local REST checks, authenticated local source mutation, DB idempotency, DB recovery finalization, fixture plugin install atomicity, recovery inspection, and JSONL journal checks are verified in the lab and production Reprint HTTP mutation is still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>

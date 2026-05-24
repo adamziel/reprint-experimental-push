@@ -368,7 +368,7 @@ function reprint_push_lab_rest_dry_run(WP_REST_Request $request): WP_REST_Respon
 
 function reprint_push_lab_rest_apply(WP_REST_Request $request): WP_REST_Response
 {
-    return reprint_push_lab_rest_apply_with_db_journal($request);
+    return reprint_push_lab_rest_apply_with_db_journal($request, true);
 }
 
 function reprint_push_lab_rest_recovery_inspect(WP_REST_Request $request): WP_REST_Response
@@ -670,8 +670,13 @@ function reprint_push_lab_rest_validate_apply_for_db_journal(array $plan, ?array
     $receipt = reprint_push_protocol_extract_receipt($receipt_payload);
     reprint_push_protocol_assert_receipt_binds_to_plan($receipt, $plan, $plan_evidence, $mutations, $precondition_entries);
 
+    $current = reprint_push_export_snapshot();
+    reprint_push_protocol_validate_fixture_atomic_dependencies($plan, $current, $mutations, $context + $plan_evidence + [
+        'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+    ]);
+
     $verified_preconditions = reprint_push_protocol_verify_preconditions(
-        reprint_push_export_snapshot(),
+        $current,
         $precondition_entries,
         $context + $plan_evidence + ['receiptHash' => (string) ($receipt['receiptHash'] ?? '')]
     );
@@ -845,6 +850,9 @@ function reprint_push_lab_rest_validate_plan_receipt_for_missing_commit(array $p
 
     $receipt = reprint_push_protocol_extract_receipt($receipt_payload);
     reprint_push_protocol_assert_receipt_binds_to_plan($receipt, $plan, $plan_evidence, $mutations, $precondition_entries);
+    reprint_push_protocol_validate_fixture_atomic_dependencies($plan, reprint_push_export_snapshot(), $mutations, $plan_evidence + [
+        'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+    ]);
 
     return [
         'mutations' => $mutations,
@@ -2132,6 +2140,7 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'RECEIPT_MISMATCH':
         case 'AUTH_RECEIPT_MISMATCH':
         case 'AUTH_RECEIPT_EXPIRED':
+        case 'ATOMIC_GROUP_DEPENDENCY_INVALID':
             return 409;
         default:
             return 500;
