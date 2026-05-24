@@ -37,6 +37,12 @@ Run the standalone local-only HTTP REST lab harness:
 npm run test:playground:http-push
 ```
 
+Run the DB-backed journal/idempotency REST lab harness:
+
+```bash
+npm run test:playground:db-journal-idempotency
+```
+
 Run the lab recovery inspection harness:
 
 ```bash
@@ -82,6 +88,21 @@ eight ready mutations, tampered receipt refusal, stale remote refusal, and
 row/file/plugin-data conflict classes. It is intentionally standalone because it
 starts real HTTP servers and takes around two minutes; it is not included in
 `test:playground`.
+
+The `test:playground:db-journal-idempotency` script verifies a separate
+DB-native lab journal for `POST /apply`. Apply now requires
+`X-Reprint-Push-Idempotency-Key`; a missing key returns
+`400 MISSING_IDEMPOTENCY_KEY` before mutation. The table
+`wp_reprint_push_lab_push_journal` records DB-native events including
+`idempotency-opened`, `apply-started`, per-mutation `mutation-applied`,
+`apply-committed`, replay evidence, and conflict evidence. Same key plus same
+body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`, no
+fresh mutation work, no extra mutation events, and an unchanged snapshot. Same
+key plus a different body returns `409 IDEMPOTENCY_KEY_CONFLICT` before
+mutation. This DB journal is separate from the legacy `wp_options` lab journal
+read by `GET /journal`; both are fixture-scoped evidence. The DB slice is not
+production durability or process-kill proof, and it does not yet prove the race
+case for duplicate first applies under concurrency.
 
 The `test:playground:recovery` script exercises the lab-only failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The

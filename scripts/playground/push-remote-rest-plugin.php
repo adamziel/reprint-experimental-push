@@ -21,6 +21,7 @@ if (!is_file($reprint_push_lab_dir . '/snapshot-lib.php') && is_file('/workspace
 
 require_once $reprint_push_lab_dir . '/snapshot-lib.php';
 require_once $reprint_push_lab_dir . '/push-remote-lib.php';
+require_once $reprint_push_lab_dir . '/push-db-journal-lib.php';
 
 const REPRINT_PUSH_LAB_REST_NAMESPACE = 'reprint-push-lab/v1';
 
@@ -66,6 +67,27 @@ function reprint_push_lab_rest_register_routes(): void
             ],
         ],
     ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/db-journal', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_db_journal',
+        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+        'args' => [
+            'limit' => [
+                'type' => 'integer',
+                'default' => 20,
+                'minimum' => 1,
+                'maximum' => 80,
+                'sanitize_callback' => 'absint',
+            ],
+        ],
+    ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/db-journal/schema', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_db_journal_schema',
+        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+    ]);
 }
 
 function reprint_push_lab_rest_public_lab_permission(): bool
@@ -80,7 +102,7 @@ function reprint_push_lab_rest_dry_run(WP_REST_Request $request): WP_REST_Respon
 
 function reprint_push_lab_rest_apply(WP_REST_Request $request): WP_REST_Response
 {
-    return reprint_push_lab_rest_protocol_response('apply', $request);
+    return reprint_push_lab_rest_apply_with_db_journal($request);
 }
 
 function reprint_push_lab_rest_recovery_inspect(WP_REST_Request $request): WP_REST_Response
@@ -138,6 +160,162 @@ function reprint_push_lab_rest_protocol_response(string $mode, WP_REST_Request $
     }
 
     return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_apply_with_db_journal(WP_REST_Request $request): WP_REST_Response
+{
+    $context = null;
+    $received_entry = null;
+
+    try {
+        $idempotency_key = trim((string) $request->get_header('x-reprint-push-idempotency-key'));
+        if ($idempotency_key === '') {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'MISSING_IDEMPOTENCY_KEY',
+                'message' => 'POST /apply requires X-Reprint-Push-Idempotency-Key for the DB journal idempotency path.',
+                'mode' => 'apply',
+            ]);
+        }
+
+        $payload = reprint_push_lab_rest_json_payload($request);
+        $context = reprint_push_lab_rest_db_journal_context($payload, $idempotency_key);
+        $committed = reprint_push_lab_db_journal_committed_row_for_key($context['idempotencyKeyHash']);
+
+        if (is_array($committed) && (string) ($committed['request_hash'] ?? '') === $context['requestHash']) {
+            $replay_result = reprint_push_lab_db_journal_replay_result($committed);
+            $replay_entry = reprint_push_lab_db_journal_append_event('apply-replayed', $context + [
+                'appliedCount' => 0,
+                'result' => $replay_result,
+                'resourceHashEvidence' => reprint_push_lab_db_journal_resource_hash_evidence($replay_result),
+            ]);
+            $replay_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($replay_entry);
+            return reprint_push_lab_rest_json_response($replay_result);
+        }
+
+        if (reprint_push_lab_db_journal_key_has_different_request($context['idempotencyKeyHash'], $context['requestHash'])) {
+            $conflict_result = [
+                'ok' => false,
+                'code' => 'IDEMPOTENCY_KEY_CONFLICT',
+                'message' => 'Idempotency key was already used for a different canonical apply request.',
+                'mode' => 'apply',
+                'idempotency' => [
+                    'replayed' => false,
+                    'conflict' => true,
+                    'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+                    'requestHash' => $context['requestHash'],
+                ],
+            ];
+            $conflict_entry = reprint_push_lab_db_journal_append_event('idempotency-key-conflict', $context + [
+                'errorCode' => 'IDEMPOTENCY_KEY_CONFLICT',
+                'result' => $conflict_result,
+            ]);
+            $conflict_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($conflict_entry);
+            return reprint_push_lab_rest_json_response($conflict_result);
+        }
+
+        $opened_entry = reprint_push_lab_db_journal_append_event('idempotency-opened', $context);
+        $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
+        $receipt = reprint_push_lab_rest_receipt_payload($payload);
+        $mutations = reprint_push_lab_rest_plan_mutations_for_db_journal($plan);
+
+        $started_entry = reprint_push_lab_db_journal_append_event('apply-started', $context + [
+            'resourceHashEvidence' => [
+                'openedCursor' => 'db-journal:' . (int) ($opened_entry['sequence'] ?? 0),
+                'mutationCount' => count($mutations),
+                'resourceKeys' => array_values(array_map(
+                    static fn (array $mutation): string => (string) ($mutation['resourceKey'] ?? ''),
+                    $mutations
+                )),
+            ],
+        ]);
+
+        $result = reprint_push_protocol_run_payload('apply', $plan, $receipt, [
+            'transport' => 'wordpress-rest',
+            'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+            'requestHash' => $context['requestHash'],
+            'dbJournalCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+        ], reprint_push_lab_rest_lab_options($payload));
+
+        $result['idempotency'] = [
+            'replayed' => false,
+            'freshMutationWork' => true,
+            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+            'requestHash' => $context['requestHash'],
+        ];
+        $after_snapshot = reprint_push_export_snapshot();
+        foreach ($mutations as $index => $mutation) {
+            $observed_hash = reprint_push_hash_resource($after_snapshot, $mutation['resource']);
+            reprint_push_lab_db_journal_append_event('mutation-applied', $context + [
+                'appliedCount' => $index + 1,
+                'resourceHashEvidence' => reprint_push_lab_db_journal_mutation_evidence($mutation, $observed_hash),
+            ]);
+        }
+        $committed_entry = reprint_push_lab_db_journal_append_event('apply-committed', $context + [
+            'appliedCount' => (int) ($result['applied'] ?? 0),
+            'result' => reprint_push_lab_db_journal_compact_result($result),
+            'resourceHashEvidence' => reprint_push_lab_db_journal_resource_hash_evidence($result),
+        ]);
+        $result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($committed_entry);
+    } catch (Reprint_Push_Protocol_Error $error) {
+        $result = $error->result;
+        if (is_array($context)) {
+            $rejected_entry = reprint_push_lab_db_journal_append_event('apply-rejected', $context + [
+                'appliedCount' => (int) ($result['applied'] ?? 0),
+                'errorCode' => (string) ($result['code'] ?? 'PUSH_PROTOCOL_ERROR'),
+                'result' => reprint_push_lab_db_journal_compact_result($result),
+                'resourceHashEvidence' => reprint_push_lab_db_journal_resource_hash_evidence($result),
+            ]);
+            $result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($rejected_entry);
+        }
+    } catch (Throwable $error) {
+        $result = [
+            'ok' => false,
+            'code' => 'PUSH_PROTOCOL_ERROR',
+            'message' => $error->getMessage(),
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+        ];
+        if (is_array($context)) {
+            $error_entry = reprint_push_lab_db_journal_append_event('apply-rejected', $context + [
+                'errorCode' => 'PUSH_PROTOCOL_ERROR',
+                'result' => reprint_push_lab_db_journal_compact_result($result),
+            ]);
+            $result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($error_entry);
+        }
+    }
+
+    return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_db_journal_context(array $payload, string $idempotency_key): array
+{
+    return [
+        'idempotencyKeyHash' => reprint_push_lab_db_journal_key_hash($idempotency_key),
+        'requestHash' => reprint_push_lab_db_journal_request_hash($payload),
+        'planHash' => reprint_push_lab_db_journal_plan_hash_from_payload($payload),
+        'receiptHash' => reprint_push_lab_db_journal_receipt_hash_from_payload($payload),
+        'planFingerprint' => reprint_push_lab_db_journal_plan_fingerprint_from_payload($payload),
+        'mutationCount' => reprint_push_lab_db_journal_mutation_count_from_payload($payload),
+    ];
+}
+
+function reprint_push_lab_rest_plan_mutations_for_db_journal(array $plan): array
+{
+    if (!isset($plan['mutations'])) {
+        return [];
+    }
+    if (!is_array($plan['mutations'])) {
+        return [];
+    }
+    return array_values(array_filter($plan['mutations'], static function ($mutation): bool {
+        return is_array($mutation)
+            && isset($mutation['resource'])
+            && is_array($mutation['resource']);
+    }));
 }
 
 function reprint_push_lab_rest_json_payload(WP_REST_Request $request): array
@@ -227,6 +405,37 @@ function reprint_push_lab_rest_journal(WP_REST_Request $request): WP_REST_Respon
     ]);
 }
 
+function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Response
+{
+    $limit = max(1, min(80, (int) $request->get_param('limit')));
+    return reprint_push_lab_rest_json_response([
+        'ok' => true,
+        'dbJournal' => reprint_push_lab_db_journal_summary($limit),
+    ]);
+}
+
+function reprint_push_lab_rest_db_journal_schema(WP_REST_Request $request): WP_REST_Response
+{
+    return reprint_push_lab_rest_json_response([
+        'ok' => true,
+        'dbJournalSchema' => reprint_push_lab_db_journal_schema(),
+    ]);
+}
+
+function reprint_push_lab_rest_db_journal_evidence(array $entry): array
+{
+    return [
+        'table' => reprint_push_lab_db_journal_table_name(),
+        'cursor' => 'db-journal:' . (int) ($entry['sequence'] ?? 0),
+        'event' => (string) ($entry['event'] ?? ''),
+        'sequence' => (int) ($entry['sequence'] ?? 0),
+        'idempotencyKeyHash' => (string) ($entry['idempotencyKeyHash'] ?? ''),
+        'requestHash' => (string) ($entry['requestHash'] ?? ''),
+        'resultHash' => (string) ($entry['resultHash'] ?? ''),
+        'scope' => 'local Playground fixture only',
+    ];
+}
+
 function reprint_push_lab_rest_json_response(array $result): WP_REST_Response
 {
     $result['lab'] = reprint_push_lab_rest_lab_notice();
@@ -252,6 +461,10 @@ function reprint_push_lab_rest_status_for_result(array $result): int
     }
 
     switch ((string) ($result['code'] ?? '')) {
+        case 'MISSING_IDEMPOTENCY_KEY':
+            return 400;
+        case 'IDEMPOTENCY_KEY_CONFLICT':
+            return 409;
         case 'MISSING_DRY_RUN_RECEIPT':
             return 428;
         case 'INVALID_ARGUMENT':

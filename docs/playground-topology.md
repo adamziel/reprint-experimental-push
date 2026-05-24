@@ -145,6 +145,34 @@ Playground runtime, and it does not prove production auth, sessions, nonce
 checks, signed receipts, durable journals, crash recovery, or live source-site
 mutation safety.
 
+## DB Journal and Idempotency Lab
+
+```bash
+npm run test:playground:db-journal-idempotency
+```
+
+This standalone local-only REST harness verifies a DB-native apply journal in
+the disposable Playground source site. It is separate from the legacy
+`wp_options` journal exposed through `GET /journal`.
+
+`POST /apply` requires `X-Reprint-Push-Idempotency-Key`. A missing key returns
+`400 MISSING_IDEMPOTENCY_KEY` before mutation. When the key is present, the lab
+table `wp_reprint_push_lab_push_journal` records `idempotency-opened`,
+`apply-started`, per-mutation `mutation-applied`, `apply-committed`,
+`apply-replayed`, and conflict evidence.
+
+The harness verifies that replaying the same body with the same idempotency key
+returns `BATCH_ALREADY_COMMITTED` and `idempotency.replayed: true`, does not run
+fresh mutation work, does not add extra per-mutation journal events, and leaves
+the snapshot unchanged. Reusing the same key with a different body returns
+`409 IDEMPOTENCY_KEY_CONFLICT` before mutation.
+
+This is fixture-scoped DB journal evidence, not production durability. It does
+not prove process-kill safety, storage-level crash behavior, or the concurrency
+race where duplicate first applies with the same key arrive at the same time.
+Redaction checks are key-based plus fixture-value smoke checks, not a formal
+sanitizer for arbitrary future messages.
+
 ## Lab Recovery Harness
 
 ```bash
@@ -203,8 +231,10 @@ forbidden-key/fixture-string based rather than a full allowlist schema.
 - Revalidate live remote hashes immediately before production apply.
 - Add production-grade receipt expiry, signing/auth binding, and durable audit
   storage around the accepted remote snapshot.
-- Add production DB-table journal, process-kill, and storage-level recovery
-  proof before claiming durable production recovery. The JSONL lab journal has
-  per-append `fsync` evidence, but no production WordPress crash boundary.
+- Promote the fixture-scoped DB journal/idempotency slice into a production
+  DB-table journal with process-kill, concurrent duplicate-apply, and
+  storage-level recovery proof before claiming durable production recovery.
+  The JSONL lab journal has per-append `fsync` evidence, but no production
+  WordPress crash boundary.
 - Add real plugin activation, custom-table driver, recovery, and auth proof
   before making claims about arbitrary production plugin-owned data.

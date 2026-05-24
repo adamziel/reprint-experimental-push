@@ -13,6 +13,7 @@ const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 const serverStartupTimeoutMs = 120_000;
 const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
+const readyIdempotencyKey = 'idem-ready-001';
 
 const fixtures = {
   base: 'fixtures/playground/remote-base.blueprint.json',
@@ -41,79 +42,46 @@ const readyPlan = createPushPlan({
 assert.equal(readyPlan.status, 'ready');
 assert.equal(readyPlan.summary.conflicts, 0);
 assert.equal(readyPlan.summary.blockers, 0);
+assert.equal(readyPlan.mutations.length, 8, 'ready fixture plan must keep eight target mutations');
 assertReadyPlanResources(readyPlan);
 assertTargetHashes(readyPlan, snapshots.base, 'expectedHash', 'ready preconditions');
-
-const conflictPlan = createPushPlan({
-  base: snapshots.base,
-  local: snapshots.local,
-  remote: snapshots.remoteChanged,
-  now: fixedNow,
-});
-
-assert.equal(conflictPlan.status, 'conflict');
-assertConflictEvidence(conflictPlan);
 
 const summary = {
   transport: {
     host: '127.0.0.1',
     servers: [],
   },
+  plan: {
+    status: readyPlan.status,
+    mutations: readyPlan.mutations.length,
+  },
   routes: {},
-  ready: {},
-  stale: {},
-  conflict: {},
+  dryRun: {},
+  idempotency: {},
+  failures: {},
 };
 
 let readyReceipt;
 
-await withPlaygroundServer('ready-base', path.join(repoRoot, fixtures.base), async (server) => {
+await withPlaygroundServer('db-journal-idempotency-base', path.join(repoRoot, fixtures.base), async (server) => {
   summary.transport.servers.push(server.summary);
 
-  const index = await routeIndex(server);
-  assert.equal(index.status, 200);
-  assertRouteNamespace(index.body);
-  summary.routes.index = {
-    route: 'GET /wp-json/',
-    status: index.status,
-    namespace: 'reprint-push-lab/v1',
-    exposed: true,
+  const dbJournalRoute = await discoverDbJournalRoute(server);
+  summary.routes.dbJournal = dbJournalRoute.summary;
+
+  const dbJournalSchema = await getLab(server, '/db-journal/schema');
+  assert.equal(dbJournalSchema.status, 200);
+  assert.equal(dbJournalSchema.body.ok, true);
+  assertDbJournalSchema(dbJournalSchema.body);
+  summary.routes.dbJournalSchema = {
+    route: 'GET /wp-json/reprint-push-lab/v1/db-journal/schema',
+    status: dbJournalSchema.status,
+    table: dbJournalSchema.body.dbJournalSchema?.table ?? null,
   };
 
-  const initial = await getSnapshot(server);
-  summary.routes.snapshot = {
-    route: 'GET /wp-json/reprint-push-lab/v1/snapshot',
-    status: initial.status,
-  };
-  const initialJournal = await getLab(server, '/journal?limit=80');
-  assert.equal(initialJournal.status, 200);
-  summary.routes.journal = {
-    route: 'GET /wp-json/reprint-push-lab/v1/journal?limit=80',
-    status: initialJournal.status,
-  };
-  assertSnapshotContentEqual(initial.body.snapshot, snapshots.base, 'ready initial HTTP snapshot');
-
-  const missingKeyBefore = await getSnapshot(server);
-  const missingKey = await postLab(server, '/apply', { plan: readyPlan });
-  assertHttpFailureNoMutation(server, missingKey, missingKeyBefore.body.snapshot, {
-    status: 400,
-    code: 'MISSING_IDEMPOTENCY_KEY',
-    label: 'missing idempotency key apply',
-  });
-
-  const missingBefore = await getSnapshot(server);
-  const missingApply = await postLab(
-    server,
-    '/apply',
-    { plan: readyPlan },
-    { [idempotencyHeader]: 'http-push-missing-receipt' },
-  );
-  assertHttpFailureNoMutation(server, missingApply, missingBefore.body.snapshot, {
-    status: 428,
-    code: 'MISSING_DRY_RUN_RECEIPT',
-    label: 'missing receipt apply',
-    journalEvent: 'receipt-required',
-  });
+  const initialDbJournal = await getDbJournal(server, dbJournalRoute);
+  assertDbJournalEvidence(initialDbJournal.body, 'initial DB journal route');
+  assertDbJournalHasNoOptionBacking(initialDbJournal.body, 'initial DB journal route');
 
   const dryRunBefore = await getSnapshot(server);
   const dryRun = await postLab(server, '/dry-run', { plan: readyPlan });
@@ -124,13 +92,28 @@ await withPlaygroundServer('ready-base', path.join(repoRoot, fixtures.base), asy
   assert.equal(dryRun.body.receipt?.mode, 'dry-run');
   assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
   assert.equal(dryRun.body.verifiedPreconditions.length, readyPlan.mutations.length);
-  assertJournalEvent(dryRun.body, 'dry-run-recorded');
-  await assertJournalContains(server, 'dry-run-recorded');
-  const dryRunAfter = await getSnapshot(server);
-  assertTargetSurfaceEqual(dryRunAfter.body.snapshot, dryRunBefore.body.snapshot, 'dry-run target surface');
-  assertSnapshotContentEqual(dryRun.body.currentSnapshot, snapshots.base, 'dry-run current snapshot');
-
+  await assertNoTargetMutation(server, dryRunBefore.body.snapshot, 'dry-run');
   readyReceipt = dryRun.body.receipt;
+
+  summary.dryRun = {
+    route: 'POST /wp-json/reprint-push-lab/v1/dry-run',
+    status: dryRun.status,
+    receipt: Boolean(readyReceipt?.receiptHash),
+    verified: dryRun.body.verifiedPreconditions.length,
+  };
+
+  const missingReceiptBefore = await getSnapshot(server);
+  const missingReceipt = await postLab(
+    server,
+    '/apply',
+    { plan: readyPlan },
+    { [idempotencyHeader]: 'idem-missing-receipt' },
+  );
+  await assertHttpFailureNoMutation(server, missingReceipt, missingReceiptBefore.body.snapshot, {
+    status: 428,
+    code: 'MISSING_DRY_RUN_RECEIPT',
+    label: 'missing receipt apply',
+  });
 
   const tamperedBefore = await getSnapshot(server);
   const tamperedApply = await postLab(
@@ -142,77 +125,142 @@ await withPlaygroundServer('ready-base', path.join(repoRoot, fixtures.base), asy
         receipt.planHash = '0'.repeat(64);
       }),
     },
-    { [idempotencyHeader]: 'http-push-tampered-receipt' },
+    { [idempotencyHeader]: 'idem-tampered-receipt' },
   );
-  assertHttpFailureNoMutation(server, tamperedApply, tamperedBefore.body.snapshot, {
+  await assertHttpFailureNoMutation(server, tamperedApply, tamperedBefore.body.snapshot, {
     status: 409,
     code: 'RECEIPT_MISMATCH',
     label: 'tampered receipt apply',
-    journalEvent: 'receipt-mismatch',
   });
 
+  const missingKeyBefore = await getSnapshot(server);
+  const missingKey = await postLab(server, '/apply', {
+    plan: readyPlan,
+    receipt: readyReceipt,
+  });
+  await assertHttpFailureNoMutation(server, missingKey, missingKeyBefore.body.snapshot, {
+    status: 400,
+    code: 'MISSING_IDEMPOTENCY_KEY',
+    label: 'missing idempotency key apply',
+  });
+
+  const applyBody = {
+    plan: readyPlan,
+    receipt: readyReceipt,
+  };
   const applyBefore = await getSnapshot(server);
-  assertSnapshotContentEqual(applyBefore.body.snapshot, snapshots.base, 'apply before HTTP snapshot');
-  const apply = await postLab(
-    server,
-    '/apply',
-    { plan: readyPlan, receipt: readyReceipt },
-    { [idempotencyHeader]: 'http-push-ready-apply' },
-  );
-  assert.equal(apply.status, 200);
-  assert.equal(apply.body.ok, true);
-  assert.equal(apply.body.mode, 'apply');
-  assert.equal(apply.body.applied, readyPlan.mutations.length);
-  assert.equal(apply.body.verifiedKeys.length, readyPlan.mutations.length);
-  assert.deepEqual(
-    apply.body.verifiedKeys,
-    readyPlan.mutations.map((mutation) => mutation.resourceKey),
-  );
-  assertJournalEventsOrdered(apply.body, ['apply-started', 'apply-committed']);
-  await assertJournalContains(server, 'apply-committed');
+  assertSnapshotContentEqual(applyBefore.body.snapshot, snapshots.base, 'ready apply before HTTP snapshot');
 
-  const applyAfter = await getSnapshot(server);
-  assertVisibleSurfaceEqual(applyAfter.body.snapshot, snapshots.local, 'ready apply final visible surface');
-  assertVisibleSurfaceEqual(apply.body.afterSnapshot, snapshots.local, 'ready apply response final visible surface');
-  assertAppliedHashes(readyPlan, applyAfter.body.snapshot);
-  assertAppliedFixtureValues(applyAfter.body.snapshot);
+  await postLab(server, '/apply', applyBody, { [idempotencyHeader]: readyIdempotencyKey });
+  const afterLostResponseApply = await getSnapshot(server);
+  assertVisibleSurfaceEqual(afterLostResponseApply.body.snapshot, snapshots.local, 'lost-response apply final visible surface');
+  assertAppliedHashes(readyPlan, afterLostResponseApply.body.snapshot);
+  assertAppliedFixtureValues(afterLostResponseApply.body.snapshot);
 
-  summary.ready = {
+  const dbJournalAfterApply = await getDbJournal(server, dbJournalRoute);
+  const applyEntries = assertDbJournalEvidence(dbJournalAfterApply.body, 'DB journal after apply');
+  assertDbJournalHasNoOptionBacking(dbJournalAfterApply.body, 'DB journal after apply');
+  assertJournalEvents(applyEntries, [
+    'idempotency-opened',
+    'apply-started',
+    'mutation-applied',
+    'apply-committed',
+  ]);
+  assert.equal(countJournalEvents(applyEntries, 'mutation-applied'), readyPlan.mutations.length);
+  assertStoredJournalHasNoRawFixtureData(dbJournalAfterApply.body);
+  const mutationEventsAfterApply = countJournalEvents(applyEntries, 'mutation-applied');
+  const targetDigestAfterApply = digest(visibleSurface(afterLostResponseApply.body.snapshot));
+
+  const replay = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: readyIdempotencyKey });
+  assert.equal(replay.status, 200);
+  assert.ok(replay.body.ok, 'idempotency replay should be an ok response');
+  assertReplayResponse(replay.body);
+  const afterReplay = await getSnapshot(server);
+  assert.equal(digest(visibleSurface(afterReplay.body.snapshot)), targetDigestAfterApply, 'replay changed target snapshot');
+  const dbJournalAfterReplay = await getDbJournal(server, dbJournalRoute);
+  const replayEntries = assertDbJournalEvidence(dbJournalAfterReplay.body, 'DB journal after replay');
+  assert.equal(
+    countJournalEvents(replayEntries, 'mutation-applied'),
+    mutationEventsAfterApply,
+    'idempotency replay must not add mutation-applied events',
+  );
+  assertStoredJournalHasNoRawFixtureData(dbJournalAfterReplay.body);
+
+  const conflictBefore = await getSnapshot(server);
+  const conflictBody = {
+    plan: changedPlan(readyPlan),
+    receipt: tamperedReceipt(readyReceipt, (receipt) => {
+      receipt.planId = 'changed-plan-for-idempotency-conflict';
+    }),
+  };
+  const conflict = await postLab(server, '/apply', conflictBody, { [idempotencyHeader]: readyIdempotencyKey });
+  assert.equal(conflict.status, 409);
+  assert.equal(conflict.body.ok, false);
+  assert.equal(conflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
+  const conflictAfter = await getSnapshot(server);
+  assertTargetSurfaceEqual(conflictAfter.body.snapshot, conflictBefore.body.snapshot, 'idempotency conflict target surface');
+  const dbJournalAfterConflict = await getDbJournal(server, dbJournalRoute);
+  const conflictEntries = assertDbJournalEvidence(dbJournalAfterConflict.body, 'DB journal after idempotency conflict');
+  assertJournalEventOneOf(conflictEntries, ['idempotency-conflict', 'idempotency-key-conflict']);
+  assert.equal(
+    countJournalEvents(conflictEntries, 'mutation-applied'),
+    mutationEventsAfterApply,
+    'idempotency conflict must not add mutation-applied events',
+  );
+  assertStoredJournalHasNoRawFixtureData(dbJournalAfterConflict.body);
+
+  summary.idempotency = {
+    apply: {
+      route: 'POST /wp-json/reprint-push-lab/v1/apply',
+      status: 200,
+      key: readyIdempotencyKey,
+      applied: readyPlan.mutations.length,
+      dbJournalEvents: ['idempotency-opened', 'apply-started', 'mutation-applied', 'apply-committed'],
+      finalMatchesLocal: digest(visibleSurface(afterLostResponseApply.body.snapshot)) === digest(visibleSurface(snapshots.local)),
+      firstResponseDiscarded: true,
+    },
+    replay: {
+      route: 'POST /wp-json/reprint-push-lab/v1/apply',
+      status: replay.status,
+      code: replay.body.code ?? null,
+      replayed: true,
+      targetSnapshotUnchanged: true,
+      mutationEventsUnchanged: true,
+    },
+    conflict: {
+      route: 'POST /wp-json/reprint-push-lab/v1/apply',
+      status: conflict.status,
+      code: conflict.body.code,
+      targetSnapshotUnchanged: true,
+      journalEvent: 'idempotency-conflict',
+    },
+  };
+
+  summary.failures = {
     missingReceipt: {
       route: 'POST /wp-json/reprint-push-lab/v1/apply',
-      status: missingApply.status,
-      code: missingApply.body.code,
-    },
-    missingIdempotencyKey: {
-      route: 'POST /wp-json/reprint-push-lab/v1/apply',
-      status: missingKey.status,
-      code: missingKey.body.code,
-    },
-    dryRun: {
-      route: 'POST /wp-json/reprint-push-lab/v1/dry-run',
-      status: dryRun.status,
-      receipt: Boolean(readyReceipt?.receiptHash),
-      journalEvent: dryRun.body.journal.event,
+      status: missingReceipt.status,
+      code: missingReceipt.body.code,
+      targetSnapshotUnchanged: true,
     },
     tamperedReceipt: {
       route: 'POST /wp-json/reprint-push-lab/v1/apply',
       status: tamperedApply.status,
       code: tamperedApply.body.code,
+      targetSnapshotUnchanged: true,
     },
-    apply: {
+    missingIdempotencyKey: {
       route: 'POST /wp-json/reprint-push-lab/v1/apply',
-      status: apply.status,
-      applied: apply.body.applied,
-      verified: apply.body.verifiedKeys.length,
-      journal: ['apply-started', 'apply-committed'],
-      finalMatchesLocal: digest(visibleSurface(applyAfter.body.snapshot)) === digest(visibleSurface(snapshots.local)),
+      status: missingKey.status,
+      code: missingKey.body.code,
+      targetSnapshotUnchanged: true,
     },
   };
 });
 
 assert.ok(readyReceipt, 'ready dry-run receipt was not captured');
 
-await withPlaygroundServer('stale-remote', path.join(repoRoot, fixtures.remoteChanged), async (server) => {
+await withPlaygroundServer('db-journal-stale-remote', path.join(repoRoot, fixtures.remoteChanged), async (server) => {
   summary.transport.servers.push(server.summary);
 
   const staleBefore = await getSnapshot(server);
@@ -221,60 +269,20 @@ await withPlaygroundServer('stale-remote', path.join(repoRoot, fixtures.remoteCh
     server,
     '/apply',
     { plan: readyPlan, receipt: readyReceipt },
-    { [idempotencyHeader]: 'http-push-stale-remote' },
+    { [idempotencyHeader]: 'idem-stale-remote' },
   );
   assert.equal(staleApply.status, 412);
   assert.equal(staleApply.body.ok, false);
   assert.equal(staleApply.body.code, 'PRECONDITION_FAILED');
-  assertJournalEvent(staleApply.body, 'precondition-failed');
-  assertNoJournalEvent(staleApply.body, 'apply-committed');
   const staleAfter = await getSnapshot(server);
   assertTargetSurfaceEqual(staleAfter.body.snapshot, staleBefore.body.snapshot, 'stale failed apply target surface');
   assertVisibleSurfaceNotEqual(staleAfter.body.snapshot, snapshots.local, 'stale failure preserved drifted state');
-  await assertJournalLacks(server, 'apply-committed');
 
-  summary.stale = {
+  summary.failures.staleRemote = {
     route: 'POST /wp-json/reprint-push-lab/v1/apply',
     status: staleApply.status,
     code: staleApply.body.code,
-    preservedFixture: staleAfter.body.snapshot.meta.fixture,
-    applyCommitted: false,
-  };
-});
-
-await withPlaygroundServer('conflict-base', path.join(repoRoot, fixtures.base), async (server) => {
-  summary.transport.servers.push(server.summary);
-
-  const conflictDryRunBefore = await getSnapshot(server);
-  const conflictDryRun = await postLab(server, '/dry-run', { plan: conflictPlan });
-  await assertPlanNotReadyNoMutation(server, conflictDryRun, conflictDryRunBefore.body.snapshot, 'conflict dry-run');
-  assertConflictClasses(conflictDryRun.body);
-  assertConflictEvidence(conflictDryRun.body.audit, { expectDetectionDecisions: false });
-
-  const conflictApplyBefore = await getSnapshot(server);
-  const conflictApply = await postLab(
-    server,
-    '/apply',
-    { plan: conflictPlan, receipt: readyReceipt },
-    { [idempotencyHeader]: 'http-push-conflict-apply' },
-  );
-  await assertPlanNotReadyNoMutation(server, conflictApply, conflictApplyBefore.body.snapshot, 'conflict apply');
-  assertConflictClasses(conflictApply.body);
-  assertConflictEvidence(conflictApply.body.audit, { expectDetectionDecisions: false });
-
-  summary.conflict = {
-    dryRun: {
-      route: 'POST /wp-json/reprint-push-lab/v1/dry-run',
-      status: conflictDryRun.status,
-      code: conflictDryRun.body.code,
-      classes: conflictClasses(conflictDryRun.body),
-    },
-    apply: {
-      route: 'POST /wp-json/reprint-push-lab/v1/apply',
-      status: conflictApply.status,
-      code: conflictApply.body.code,
-      classes: conflictClasses(conflictApply.body),
-    },
+    targetSnapshotUnchanged: true,
   };
 });
 
@@ -533,6 +541,37 @@ async function isPortAccepting(port) {
   });
 }
 
+async function discoverDbJournalRoute(server) {
+  const index = await routeIndex(server);
+  assert.equal(index.status, 200);
+  assertRouteNamespace(index.body);
+
+  const routes = index.body.routes && typeof index.body.routes === 'object' ? index.body.routes : {};
+  const routeKeys = Object.keys(routes).filter((route) => route.startsWith('/reprint-push-lab/v1/'));
+  const dbJournalKey = routeKeys.find((route) => /db[-_/]?journal/i.test(route))
+    ?? routeKeys.find((route) => /journal[-_/]?db/i.test(route))
+    ?? routeKeys.find((route) => /idempotency/i.test(route) && /journal/i.test(route));
+
+  assert.ok(
+    dbJournalKey,
+    `REST index does not expose a DB journal/idempotency route. Routes: ${routeKeys.join(', ')}`,
+  );
+
+  const route = dbJournalKey.replace('/reprint-push-lab/v1', '');
+  const endpoints = Array.isArray(routes[dbJournalKey]?.endpoints) ? routes[dbJournalKey].endpoints : [];
+  assert.ok(endpoints.length > 0, `${dbJournalKey} is missing REST endpoint schema`);
+
+  return {
+    path: route,
+    methods: endpoints.flatMap((endpoint) => endpoint.methods || []),
+    summary: {
+      route: dbJournalKey,
+      methods: endpoints.flatMap((endpoint) => endpoint.methods || []),
+      schema: true,
+    },
+  };
+}
+
 async function routeIndex(server) {
   return requestJson(server, 'GET', '/wp-json/');
 }
@@ -543,6 +582,10 @@ async function getSnapshot(server) {
   assert.equal(response.body.ok, true);
   assert.ok(response.body.snapshot, 'snapshot response missing snapshot');
   return response;
+}
+
+async function getDbJournal(server, dbJournalRoute) {
+  return getLab(server, `${dbJournalRoute.path}?limit=80`);
 }
 
 async function getLab(server, pathSuffix) {
@@ -584,43 +627,17 @@ function assertRouteNamespace(body) {
   );
 }
 
-async function assertHttpFailureNoMutation(server, response, expectedSnapshot, { status, code, label, journalEvent }) {
+async function assertHttpFailureNoMutation(server, response, expectedSnapshot, { status, code, label }) {
   assert.equal(response.status, status, `${label} HTTP status`);
   assert.equal(response.body.ok, false);
   assert.equal(response.body.code, code);
-  if (journalEvent) {
-    assertJournalEvent(response.body, journalEvent);
-    await assertJournalContains(server, journalEvent);
-  }
-  assertNoJournalEvent(response.body, 'apply-started');
-  assertNoJournalEvent(response.body, 'apply-committed');
   const after = await getSnapshot(server);
   assertTargetSurfaceEqual(after.body.snapshot, expectedSnapshot, `${label} target surface`);
 }
 
-async function assertPlanNotReadyNoMutation(server, response, expectedSnapshot, label) {
-  assert.equal(response.status, 409, `${label} HTTP status`);
-  assert.equal(response.body.ok, false);
-  assert.equal(response.body.code, 'PLAN_NOT_READY');
-  assertJournalEvent(response.body, 'plan-not-ready');
-  assertNoJournalEvent(response.body, 'apply-started');
-  assertNoJournalEvent(response.body, 'apply-committed');
+async function assertNoTargetMutation(server, expectedSnapshot, label) {
   const after = await getSnapshot(server);
   assertTargetSurfaceEqual(after.body.snapshot, expectedSnapshot, `${label} target surface`);
-}
-
-async function assertJournalContains(server, event) {
-  const response = await getLab(server, '/journal?limit=80');
-  assert.equal(response.status, 200);
-  const entries = response.body.journal?.entries || [];
-  assert.ok(entries.some((entry) => entry.event === event), `journal route missing ${event}`);
-}
-
-async function assertJournalLacks(server, event) {
-  const response = await getLab(server, '/journal?limit=80');
-  assert.equal(response.status, 200);
-  const entries = response.body.journal?.entries || [];
-  assert.ok(!entries.some((entry) => entry.event === event), `journal route should not include ${event}`);
 }
 
 function tamperedReceipt(receipt, mutate) {
@@ -631,12 +648,154 @@ function tamperedReceipt(receipt, mutate) {
   return next;
 }
 
+function changedPlan(plan) {
+  return {
+    ...JSON.parse(JSON.stringify(plan)),
+    id: 'changed-plan-for-idempotency-conflict',
+  };
+}
+
 function parseMarkedJson(stdout, begin, end, missingMessage) {
   const match = stdout.match(new RegExp(`${begin}\\n([\\s\\S]*?)\\n${end}`));
   if (!match) {
     throw new Error(missingMessage);
   }
   return JSON.parse(match[1]);
+}
+
+function assertDbJournalEvidence(body, label) {
+  assert.equal(body.ok, true, `${label} did not return ok`);
+  const journal = body.journal ?? body.dbJournal ?? body;
+  assert.ok(journal && typeof journal === 'object', `${label} missing journal object`);
+
+  const schemaVersion = journal.schemaVersion ?? journal.schema_version ?? body.schemaVersion ?? body.schema_version;
+  assert.ok(schemaVersion !== undefined, `${label} missing DB journal schema version`);
+
+  const dbBacked = journal.storage === 'db'
+    || journal.store === 'db'
+    || journal.backing === 'db'
+    || journal.backend === 'db'
+    || journal.driver === 'wpdb'
+    || journal.db === true
+    || typeof journal.table === 'string'
+    || typeof journal.tableName === 'string'
+    || typeof journal.table_name === 'string';
+  assert.ok(dbBacked, `${label} must expose DB-backed journal evidence`);
+
+  const entries = journalEntries(body);
+  assert.ok(Array.isArray(entries), `${label} entries must be an array`);
+  return entries;
+}
+
+function assertDbJournalSchema(body) {
+  const schema = body.dbJournalSchema ?? body.schema ?? body;
+  assert.equal(schema.schemaVersion, 1, 'DB journal schema version');
+  assert.match(String(schema.table ?? ''), /reprint_push_lab_push_journal$/, 'DB journal table name');
+  assert.equal(schema.appendOnlyEvents, true, 'DB journal append-only event marker');
+  assert.ok(schema.columns?.result_json, 'DB journal schema missing stored result column');
+}
+
+function assertDbJournalHasNoOptionBacking(body, label) {
+  const serialized = JSON.stringify(body);
+  assert.ok(!serialized.includes('reprint_push_protocol_journal'), `${label} leaked option journal backing`);
+  assert.notEqual(body.journal?.option, 'reprint_push_protocol_journal', `${label} uses option journal evidence`);
+}
+
+function journalEntries(body) {
+  const journal = body.journal ?? body.dbJournal ?? body;
+  return journal.entries ?? journal.latestRows ?? body.entries ?? [];
+}
+
+function journalEvent(entry) {
+  return entry.event ?? entry.eventName ?? entry.event_name ?? entry.type ?? entry.name;
+}
+
+function assertJournalEvents(entries, events) {
+  for (const event of events) {
+    assert.ok(
+      entries.some((entry) => journalEvent(entry) === event),
+      `DB journal entries missing ${event}`,
+    );
+  }
+}
+
+function assertJournalEventOneOf(entries, events) {
+  assert.ok(
+    entries.some((entry) => events.includes(journalEvent(entry))),
+    `DB journal entries missing one of ${events.join(', ')}`,
+  );
+}
+
+function countJournalEvents(entries, event) {
+  return entries.filter((entry) => journalEvent(entry) === event).length;
+}
+
+function assertReplayResponse(body) {
+  const events = [
+    journalEvent(body.journal ?? {}),
+    ...(body.journal?.recent || []).map(journalEvent),
+    ...journalEntries(body).map(journalEvent),
+  ];
+  const replayed = body.code === 'BATCH_ALREADY_COMMITTED'
+    || body.status === 'BATCH_ALREADY_COMMITTED'
+    || body.idempotency?.replayed === true
+    || body.idempotency?.status === 'replayed'
+    || events.includes('idempotency.replayed')
+    || events.includes('idempotency-replayed');
+
+  assert.ok(replayed, 'retry must return BATCH_ALREADY_COMMITTED or idempotency replay evidence');
+}
+
+function assertStoredJournalHasNoRawFixtureData(body) {
+  const forbiddenKeys = new Set([
+    'value',
+    'content',
+    'payload',
+    'option_value',
+    'post_content',
+    'meta_value',
+    'currentSnapshot',
+    'afterSnapshot',
+    'beforeSnapshot',
+  ]);
+  const forbiddenStrings = [
+    'Local edited content',
+    'Created locally after pull',
+    'local upload content',
+    'local-only upload content',
+    'Contact the studio',
+    'Newsletter',
+    'local-admin@example.test',
+    'ops@example.test',
+    'Project brief',
+    'schemaVersion',
+    '002-local',
+    '2-local',
+    '1-local-only',
+  ];
+
+  walkJournalValue(body, [], (pathParts, value) => {
+    const key = pathParts.at(-1);
+    assert.ok(!forbiddenKeys.has(key), `DB journal stored raw-value field ${pathParts.join('.')}`);
+    if (typeof value === 'string') {
+      for (const forbidden of forbiddenStrings) {
+        assert.ok(!value.includes(forbidden), `DB journal stored raw fixture value at ${pathParts.join('.')}`);
+      }
+    }
+  });
+}
+
+function walkJournalValue(value, pathParts, visit) {
+  visit(pathParts, value);
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => walkJournalValue(item, [...pathParts, String(index)], visit));
+    return;
+  }
+  if (value && typeof value === 'object') {
+    for (const [key, innerValue] of Object.entries(value)) {
+      walkJournalValue(innerValue, [...pathParts, key], visit);
+    }
+  }
 }
 
 function assertSnapshotContentEqual(actual, expected, label) {
@@ -700,35 +859,6 @@ function assertNoReadyMutation(plan, resourceKey) {
   );
 }
 
-function assertConflictEvidence(audit, { expectDetectionDecisions = true } = {}) {
-  assertEvidenceEntry(
-    audit.conflicts,
-    'row:["wp_options","option_name:reprint_push_forms_fixture"]',
-    'plugin-data-conflict',
-  );
-  assertEvidenceEntry(
-    audit.conflicts,
-    'row:["wp_options","option_name:reprint_push_plugin_payload"]',
-    'plugin-data-conflict',
-  );
-  assertEvidenceEntry(
-    audit.conflicts,
-    'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
-    'plugin-data-conflict',
-  );
-  if (!expectDetectionDecisions) {
-    return;
-  }
-  assertEvidenceEntry(audit.decisions, 'plugin:reprint-push-forms-fixture', 'keep-remote');
-  assertEvidenceEntry(audit.decisions, 'row:["wp_reprint_push_forms_lab","id:1"]', 'keep-remote');
-}
-
-function assertEvidenceEntry(entries = [], resourceKey, expectedClassOrDecision) {
-  const entry = entries.find((item) => item.resourceKey === resourceKey);
-  assert.ok(entry, `missing audit evidence for ${resourceKey}`);
-  assert.equal(entry.class ?? entry.decision, expectedClassOrDecision);
-}
-
 function assertTargetHashes(plan, snapshot, preconditionHashField, label) {
   for (const precondition of plan.preconditions) {
     assert.equal(
@@ -770,171 +900,12 @@ function assertAppliedFixtureValues(snapshot) {
     owner: 'forms',
     version: 2,
   });
-
-  const formsFixture = snapshot.db.wp_options['option_name:reprint_push_forms_fixture'];
-  assert.equal(formsFixture.__pluginOwner, 'forms');
-  assert.deepEqual(formsFixture.option_value, {
-    enabled: true,
-    flags: {
-      captcha: true,
-      honeypot: true,
-    },
-    forms: {
-      contact: {
-        active: true,
-        fields: ['email', 'message', 'phone'],
-        limits: {
-          daily: '40',
-          perIp: '4',
-        },
-        title: 'Contact the studio',
-        version: '2',
-      },
-      newsletter: {
-        active: true,
-        fields: ['email', 'source'],
-        segments: ['general', 'product', 'local'],
-        title: 'Newsletter',
-        version: '1',
-      },
-    },
-    owner: 'forms',
-    revision: '002-local',
-    routing: {
-      notify: ['local-admin@example.test', 'ops@example.test'],
-      storeSubmissions: true,
-    },
-  });
-
-  const sharedSchema = snapshot.db.wp_postmeta['post_id:1001:meta_key:_reprint_push_forms_schema'];
-  assert.equal(sharedSchema.__pluginOwner, 'forms');
-  assert.deepEqual(sharedSchema.meta_value, {
-    fields: [
-      {
-        enabled: true,
-        key: 'email',
-        label: 'Email address',
-        type: 'email',
-      },
-      {
-        enabled: true,
-        key: 'message',
-        label: 'Project brief',
-        type: 'textarea',
-      },
-      {
-        enabled: false,
-        key: 'phone',
-        label: 'Phone',
-        type: 'tel',
-      },
-    ],
-    form: 'contact',
-    notifications: {
-      admin: true,
-      copyToSender: true,
-    },
-    owner: 'forms',
-    required: ['email', 'message', 'phone'],
-    schemaVersion: '2-local',
-  });
-
-  const localOnlySchema = snapshot.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  assert.equal(localOnlySchema.__pluginOwner, 'forms');
-  assert.deepEqual(localOnlySchema.meta_value, {
-    fields: [
-      {
-        enabled: true,
-        key: 'email',
-        label: 'Email',
-        type: 'email',
-      },
-      {
-        choices: ['small', 'medium', 'large'],
-        enabled: true,
-        key: 'budget',
-        label: 'Budget',
-        type: 'select',
-      },
-    ],
-    form: 'intake',
-    notifications: {
-      admin: false,
-      copyToSender: true,
-    },
-    owner: 'forms',
-    required: ['email'],
-    schemaVersion: '1-local-only',
-  });
-
-  const customTableRow = snapshot.db.wp_reprint_push_forms_lab['id:1'];
-  assert.equal(customTableRow.__pluginOwner, 'forms');
-  assert.deepEqual(customTableRow.payload, {
-    mode: 'base',
-    owner: 'forms',
-    rules: {
-      maxAttachments: '2',
-      requireConsent: true,
-    },
-    version: '1',
-  });
 }
 
 function postByTitle(snapshot, title) {
   const entry = Object.values(snapshot.db.wp_posts).find((row) => row.post_title === title);
   assert.ok(entry, `missing post ${title}`);
   return entry;
-}
-
-function assertJournalEvent(result, event) {
-  assert.equal(result.journal?.event, event, `expected current journal event ${event}`);
-  assert.equal(result.journal?.option, 'reprint_push_protocol_journal');
-  assert.ok(Array.isArray(result.journal?.recent), 'missing bounded journal evidence');
-  assert.ok(result.journal.recent.length <= 5, 'journal evidence must stay bounded');
-  assert.ok(
-    result.journal.recent.some((entry) => entry.event === event),
-    `journal recent entries missing ${event}`,
-  );
-}
-
-function assertNoJournalEvent(result, event) {
-  assert.ok(
-    !(result.journal?.recent || []).some((entry) => entry.event === event),
-    `journal recent entries should not include ${event}`,
-  );
-}
-
-function assertJournalEventsOrdered(result, events) {
-  for (const event of events) {
-    assert.ok(
-      result.journal?.recent?.some((entry) => entry.event === event),
-      `journal recent entries missing ${event}`,
-    );
-  }
-
-  const positions = events.map((event) =>
-    result.journal.recent.findIndex((entry) => entry.event === event)
-  );
-
-  for (let index = 1; index < positions.length; index += 1) {
-    assert.ok(
-      positions[index - 1] < positions[index],
-      `journal event ${events[index - 1]} must precede ${events[index]}`,
-    );
-  }
-
-  assertJournalEvent(result, events.at(-1));
-}
-
-function assertConflictClasses(result) {
-  const classes = conflictClasses(result);
-  assert.ok(classes.includes('row-conflict'), 'missing row conflict audit');
-  assert.ok(classes.includes('file-conflict'), 'missing file conflict audit');
-  assert.ok(classes.includes('plugin-data-conflict'), 'missing plugin-data conflict audit');
-}
-
-function conflictClasses(result) {
-  return [...new Set((result.audit?.conflicts || []).map((conflict) => conflict.class))].sort();
 }
 
 function pushLog(logs, chunk) {

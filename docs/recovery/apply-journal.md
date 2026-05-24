@@ -4,9 +4,10 @@ The current recovery slices are lab evidence, not production durable recovery.
 The Playground lab uses a bounded option journal to classify a failed apply
 without storing raw before/after values. The JSON-model lab also has a
 file-backed append-only JSONL journal with monotonic sequences and `fsync`
-evidence after each append. These slices are not production WordPress recovery:
-they do not replace a DB table journal, do not include process-kill tests, and
-do not auto-repair a partial remote.
+evidence after each append. A newer local-only Playground REST slice adds a
+fixture-scoped DB table journal for apply idempotency. These slices are not
+production WordPress recovery: they do not prove production durability, do not
+include process-kill tests, and do not auto-repair a partial remote.
 
 The production design target is a durable artifact that separates a safe retry
 from an unsafe partial push. A failed apply must leave the system classifiable
@@ -86,3 +87,28 @@ paths must be unique or reset intentionally because opening a plan recovery
 journal defaults to `truncate`. The raw-value guard is based on forbidden keys
 and fixture strings, not a complete allowlist schema for every production
 record shape.
+
+## Current DB Journal Idempotency Evidence
+
+`npm run test:playground:db-journal-idempotency` verifies a fixture-scoped
+DB-native apply journal over the local-only Playground REST path. This DB
+journal is separate from the bounded `wp_options` lab journal exposed through
+legacy `GET /journal`; `/journal` still exists for the option-backed evidence.
+
+`POST /apply` requires `X-Reprint-Push-Idempotency-Key`. A missing key returns
+`400 MISSING_IDEMPOTENCY_KEY` before mutation. With a key, the table
+`wp_reprint_push_lab_push_journal` records `idempotency-opened`,
+`apply-started`, per-mutation `mutation-applied`, `apply-committed`,
+`apply-replayed`, and conflict evidence.
+
+The verified replay behavior is idempotent for the fixture batch: same key plus
+same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`,
+does no fresh mutation work, adds no extra per-mutation events, and leaves the
+snapshot unchanged. Same key plus a different body returns
+`409 IDEMPOTENCY_KEY_CONFLICT` before mutation.
+
+This is useful DB-table shape evidence, but it is not production durable
+recovery. It does not prove process-kill safety, storage-level crash behavior,
+or the concurrency race for duplicate first applies with the same idempotency
+key. Redaction is checked through forbidden keys and fixture values, not by a
+formal sanitizer for arbitrary future journal messages.

@@ -13,6 +13,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 const serverStartupTimeoutMs = 120_000;
+const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
 
 const fixtures = {
   base: 'fixtures/playground/remote-base.blueprint.json',
@@ -140,11 +141,16 @@ await withPlaygroundServer('recovery-rest-base', path.join(repoRoot, fixtures.ba
   assert.equal(dryRunResponse.body.mode, 'dry-run');
   assert.ok(dryRunResponse.body.receipt?.receiptHash, 'REST dry-run receipt hash missing');
 
-  const failApply = await postLab(server, '/apply', {
-    plan: readyPlan,
-    receipt: dryRunResponse.body.receipt,
-    labFailAfterMutations: 2,
-  });
+  const failApply = await postLab(
+    server,
+    '/apply',
+    {
+      plan: readyPlan,
+      receipt: dryRunResponse.body.receipt,
+      labFailAfterMutations: 2,
+    },
+    { [idempotencyHeader]: 'recovery-rest-fail-after-2' },
+  );
   assert.equal(failApply.status, 500);
   assertFailedLabApply({ status: 1, result: failApply.body }, 'REST fail-after-2 apply');
   await assertJournalContains(server, 'apply-failed');
@@ -606,15 +612,16 @@ async function getLab(server, pathSuffix) {
   return requestJson(server, 'GET', `/wp-json/reprint-push-lab/v1${pathSuffix}`);
 }
 
-async function postLab(server, pathSuffix, body) {
-  return requestJson(server, 'POST', `/wp-json/reprint-push-lab/v1${pathSuffix}`, body);
+async function postLab(server, pathSuffix, body, headers = {}) {
+  return requestJson(server, 'POST', `/wp-json/reprint-push-lab/v1${pathSuffix}`, body, headers);
 }
 
-async function requestJson(server, method, pathname, body = undefined) {
+async function requestJson(server, method, pathname, body = undefined, headers = {}) {
   const response = await fetch(`${server.baseUrl}${pathname}`, {
     method,
-    headers: body === undefined ? undefined : {
+    headers: body === undefined ? headers : {
       'content-type': 'application/json',
+      ...headers,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });

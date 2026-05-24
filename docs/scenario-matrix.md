@@ -35,6 +35,10 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground local REST namespace | Disposable Playground servers expose `reprint-push-lab/v1` with `GET /snapshot`, `GET /journal`, `POST /dry-run`, and `POST /apply` over real local HTTP. | `npm run test:playground:http-push` |
 | Playground local REST ready apply | Dry-run is read-only, returns a receipt, and receipt-backed apply writes the eight expected fixture mutations. | `npm run test:playground:http-push` |
 | Playground local REST receipt/stale/conflict refusals | Missing receipt rejects with `428 MISSING_DRY_RUN_RECEIPT`, tampered receipt with `409 RECEIPT_MISMATCH`, stale remote with `412 PRECONDITION_FAILED`, and conflict plans with `409 PLAN_NOT_READY` for row, file, and plugin-data classes. | `npm run test:playground:http-push` |
+| Playground DB journal requires idempotency key | `POST /apply` without `X-Reprint-Push-Idempotency-Key` rejects with `400 MISSING_IDEMPOTENCY_KEY` before mutation. | `npm run test:playground:db-journal-idempotency` |
+| Playground DB journal records apply boundaries | `wp_reprint_push_lab_push_journal` records `idempotency-opened`, `apply-started`, per-mutation `mutation-applied`, `apply-committed`, replay, and conflict evidence separately from the legacy `wp_options` `/journal` evidence. | `npm run test:playground:db-journal-idempotency` |
+| Playground DB idempotency replay | Same key plus same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`, no fresh mutation work, no extra mutation events, and an unchanged snapshot. | `npm run test:playground:db-journal-idempotency` |
+| Playground DB idempotency conflict | Same key plus a different body rejects with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation. | `npm run test:playground:db-journal-idempotency` |
 | Playground lab injected recovery failure | Fail-after-2 returns `LAB_INJECTED_APPLY_FAILURE` after two successful whole-resource mutations, records planned recovery entries and hash-only current state, and inspection reports `blocked-recovery` with `2 new` and `6 old` targets. | `npm run test:playground:recovery` |
 | Playground lab retry after partial apply | Retry over the partial lab state refuses with `PRECONDITION_FAILED` instead of applying over the blocked recovery state. | `npm run test:playground:recovery` |
 | File-backed JSONL recovery journal opens and restarts | Append-only JSONL records use monotonic sequences, include `fsync` evidence after each append, and can be read after restart-style inspection. | `npm run test:recovery:file-journal` |
@@ -60,9 +64,11 @@ The first executable matrix lives in `test/push-planner.test.js`.
   production plugin-owned options, postmeta, custom tables, or activation
   semantics.
 - Production DB-table journal and kill-process recovery tests around every
-  durable WordPress boundary. The current JSONL journal has per-append `fsync`
-  evidence in the JSON-model lab, and the Playground recovery harness is
-  injected lab failure inspection only.
+  durable WordPress boundary. The current DB journal/idempotency slice is
+  fixture-scoped local Playground evidence only, with no process-kill proof and
+  no concurrency/race proof for duplicate first applies. The JSONL journal has
+  per-append `fsync` evidence in the JSON-model lab, and the Playground recovery
+  harness is injected lab failure inspection only.
 
 ## Invariant Policy
 

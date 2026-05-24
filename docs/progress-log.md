@@ -134,6 +134,27 @@ linked implementation artifacts.
   outside `npm run test:playground` because it starts real servers and takes
   around two minutes.
 
+## 2026-05-24 - DB Journal Idempotency Slice
+
+- `npm run test:playground:db-journal-idempotency` passed as a standalone
+  local-only Playground REST harness for DB-native apply journal and
+  idempotency behavior.
+- `POST /apply` now requires `X-Reprint-Push-Idempotency-Key`; missing keys
+  return `400 MISSING_IDEMPOTENCY_KEY` before mutation.
+- The table `wp_reprint_push_lab_push_journal` records DB-native events:
+  `idempotency-opened`, `apply-started`, per-mutation `mutation-applied`,
+  `apply-committed`, `apply-replayed`, and conflict evidence.
+- Same key plus same body returns `BATCH_ALREADY_COMMITTED` with
+  `idempotency.replayed: true`, performs no fresh mutation work, writes no
+  extra per-mutation events, and leaves the snapshot unchanged. Same key plus a
+  different body returns `409 IDEMPOTENCY_KEY_CONFLICT` before mutation.
+- This DB journal is separate from the legacy `wp_options` lab journal read by
+  `GET /journal`; the legacy `/journal` route still exists. Caveats remain:
+  fixture-scoped local Playground evidence only, no production durability or
+  process-kill proof, no concurrency/race proof for duplicate first applies,
+  and redaction checks are key-based plus fixture-value smoke checks rather
+  than a full sanitizer for arbitrary future messages.
+
 ## 2026-05-24 - Plugin-Owned Forms Fixture Slice
 
 - A verified fixture-scoped plugin-owned data slice now covers nested
@@ -160,8 +181,8 @@ linked implementation artifacts.
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
 | Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling and detection-only custom-table/plugin metadata | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
-| Recovery boundaries | 20% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection | Production DB table journal, process-kill tests, production WordPress crash-boundary proof, auto-repair policy |
-| Reliable executor and protocol | 20% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, and standalone local-only REST lab harness | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
+| Recovery boundaries | 20% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal` | Production DB table journal durability, process-kill tests, production WordPress crash-boundary proof, concurrent duplicate first-apply proof, auto-repair policy |
+| Reliable executor and protocol | 20% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, and DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key` | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
 
@@ -174,9 +195,11 @@ linked implementation artifacts.
   journal or equivalent source-site artifact survives process failure and
   classifies the target as old, new, or blocked across WordPress write
   boundaries. The current JSONL lab slice has per-append `fsync` evidence and
-  restart-style classification, and the Playground fail-after lab slice
-  classifies old/new/blocked-recovery after injected PHP failure, but neither
-  proves process-kill safety or production repair.
+  restart-style classification, the Playground fail-after lab slice classifies
+  old/new/blocked-recovery after injected PHP failure, and the DB idempotency
+  slice records fixture-scoped apply/replay/conflict events in
+  `wp_reprint_push_lab_push_journal`, but none proves process-kill safety,
+  concurrent duplicate first-apply behavior, or production repair.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test,
   export planner snapshots, run guarded apply into a fresh Playground source,
   exercise a lab-only fixture protocol endpoint with WordPress-visible readback,
