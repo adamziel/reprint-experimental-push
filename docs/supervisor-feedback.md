@@ -1,9 +1,36 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 23:24 CEST
+Last updated: 2026-05-25 00:07 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 00:07 CEST - Supervised Lane Merge Refresh
+
+- Going well: `85` Node tests pass after supervised lane merges. Matching
+  delete/edit, recovery terminal states, fast-path guardrails, protocol binding,
+  critic, and objective-audit evidence all landed.
+- Not going well: production auth/session storage, durable journal ownership,
+  leases, full graph identity mapping, Docker/full Playground integration, and
+  general plugin drivers remain unproven.
+- Progress change: lab/model evidence improved across five lanes; production
+  readiness stayed blocked.
+- Active supervision: one fast-mode same-plan graph worker is isolated in its
+  lane and is not merged yet.
+- Next nudge: keep workers focused on production-backed auth/journal proof and
+  graph identity mapping.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Review same-plan graph output; then prove real WP identity mapping. |
+| Recovery | Move stale-claim fencing from model to production journal storage. |
+| Reliable executor | Replace scoped lab credentials with production push credentials. |
+| Fast paths | Run guarded benchmark proof against a real large site. |
+| Audit and critic | Re-audit after production-backed auth and journal rows land. |
+| Progress publisher | Keep Pages dated, concise, and explicit about blocked gates. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 23:24 CEST - Scoped Credential And Graph Safety Refresh
 
@@ -31,9 +58,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Run the guarded benchmark against a real large Playground/Docker site. |
 | Audit and critic | Re-audit after production-backed auth and journal rows land. |
 | Progress publisher | Keep Pages dated, concise, and explicit about blocked production gates. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 23:04 CEST - Auth Bootstrap And Redaction Refresh
 
