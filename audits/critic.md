@@ -13,7 +13,7 @@ side effect, stale retry, or graph rewrite can silently lose remote state while
 the system reports a plausible success.
 
 The comparison against Reprint, ZS-Sync, and ForkPress is intentionally
-conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages, not live mutation safety. ZS-Sync shows bounded change discovery, not write policy. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety, remote-preserving retry, or production write-path durability.
+conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages, not live mutation safety. ZS-Sync shows bounded change discovery, not write policy. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety, remote-preserving retry, manual-review artifact expiry, or production write-path durability.
 No source note proves that a stale manual-review artifact can survive a live
 drift and still authorize apply, so any retry claim has to be backed by a
 fresh snapshot, a fresh plan, and a rejected old artifact that remains
@@ -134,8 +134,9 @@ evidence for all of these, not just a plausible design:
 - The source notes for Reprint, ZS-Sync, and ForkPress are treated as
   conservative design input only. They do not prove live remote drift
   rejection, stable identity reservation for creates, plugin-owned state
-  revalidation, durable recovery, remote-preserving retry after drift, or a
-  production write boundary in this repo.
+  revalidation, durable recovery, remote-preserving retry after drift, stale
+  manual-review artifact rejection, or a production write boundary in this
+  repo.
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
