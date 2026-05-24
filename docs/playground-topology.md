@@ -375,15 +375,39 @@ after hashes, appends the missing commit row, returns
 `BATCH_RECOVERY_FINALIZED`, and performs zero fresh mutation work; later replay
 returns `BATCH_ALREADY_COMMITTED`.
 
+```bash
+npm run test:playground:db-journal-stale-claim-all-old
+```
+
+The all-old stale-claim smoke is a deterministic local Playground
+SQLite/host-mount lab slice. Its first request writes `idempotency-opened`,
+`apply-started`, and `stale-claim-abandoned`, then stops before any
+`mutation-prepared`, `mutation-applied`, `mutation-precondition-failed`,
+`apply-committed`, `apply-rejected`, or target mutation. Same key plus a
+different body still returns `409 IDEMPOTENCY_KEY_CONFLICT`. Exact same
+key/body retry validates matching abandonment evidence for the started row,
+validated started targets, zero mutation evidence, and live hashes still at old
+values before appending a derived unique `stale-claim-retry-started`, applying
+one fresh mutation set, committing, and replaying later as
+`BATCH_ALREADY_COMMITTED`.
+
+The stale-claim smoke also proves the retry-claim guard in a single-state
+setup: when the derived stale retry claim already exists before retry
+`apply-started` or mutation, a later exact retry returns
+`IDEMPOTENCY_KEY_IN_PROGRESS` and does not mutate. A retry `apply-started`
+without matching abandonment evidence blocks with `RECOVERY_BLOCKED` instead
+of reusing the older abandonment marker.
+
 These smokes intentionally stay local Playground SQLite/host-mount evidence:
 they do not prove production durability, storage-level `fsync`, rollback,
 exactly-once production writes, arbitrary plugin data safety, or full
-MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
-conservative/not fully solved, tests mostly count mutation evidence rows rather
-than deeply asserting every observed hash, and production auth/live source
-mutation/full push remains pending. Redaction checks are key-based plus
-fixture-value smoke checks, not a formal sanitizer for arbitrary future
-messages.
+MySQL/InnoDB behavior. The stale-claim slice does not prove production
+stale-claim leases, fencing, claim expiry, cross-process/shared-DB lock
+behavior, arbitrary production repair, or production retry policy. Tests mostly
+count mutation evidence rows rather than deeply asserting every observed hash,
+and production auth/live source mutation/full push remains pending. Redaction
+checks are key-based plus fixture-value smoke checks, not a formal sanitizer
+for arbitrary future messages.
 
 ## Fixture Plugin Install Atomicity Lab
 
@@ -505,8 +529,8 @@ forbidden-key/fixture-string based rather than a full allowlist schema.
   storage around the accepted remote snapshot.
 - Promote the fixture-scoped DB journal/idempotency slice into a production
   DB-table journal with production storage-level recovery proof,
-  stale-claim retry coverage, and WordPress commit-boundary coverage before
-  claiming durable production recovery.
+  stale-claim leases/fencing/claim expiry, and WordPress commit-boundary
+  coverage before claiming durable production recovery.
   The JSONL lab journal has per-append `fsync` evidence, but no production
   WordPress crash boundary.
 - Add real plugin activation, generic custom-table driver, recovery, and auth

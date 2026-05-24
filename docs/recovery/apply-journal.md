@@ -7,8 +7,9 @@ file-backed append-only JSONL journal with monotonic sequences and `fsync`
 evidence after each append. A newer local-only Playground REST slice adds a
 fixture-scoped DB table journal for apply idempotency, concurrent duplicate
 claiming, DB-only process-kill recovery blocking, and DB-only missing-commit
-finalization. These slices are not production WordPress recovery: they do not
-prove production durability and do not auto-repair a partial remote.
+finalization, plus an all-old stale-claim safe retry lab slice. These slices
+are not production WordPress recovery: they do not prove production durability
+and do not auto-repair a partial remote.
 
 The production design target is a durable artifact that separates a safe retry
 from an unsafe partial push. A failed apply must leave the system classifiable
@@ -201,18 +202,43 @@ after hash, appends the missing commit row, returns
 `BATCH_RECOVERY_FINALIZED`, reports `fully-updated-remote`, and performs zero
 fresh mutation work. A later replay returns `BATCH_ALREADY_COMMITTED`.
 
+`npm run test:playground:db-journal-stale-claim-all-old` verifies a
+deterministic all-old stale-claim retry path in the local Playground
+SQLite/host-mount lab. The first request uses a lab hook that writes
+`idempotency-opened`, `apply-started`, and `stale-claim-abandoned`, then stops
+without mutation rows, terminal rows, or target mutation. Same key plus a
+different body still returns `409 IDEMPOTENCY_KEY_CONFLICT` before retry logic.
+Exact same key/body retry may run fresh mutation work only when the journal has
+explicit abandonment evidence tied to the started row being retried, the
+started recovery targets validate against the request, there is no
+`mutation-prepared`, `mutation-applied`, or `mutation-precondition-failed`
+evidence for that key/request, and every live target hash remains at the
+planned old value. The retry appends a derived unique
+`stale-claim-retry-started`, performs exactly one fresh mutation set, commits,
+and later replays as `BATCH_ALREADY_COMMITTED`.
+
+The same smoke proves a deterministic retry-claim guard without relying on
+multiple Playground workers. If the derived stale retry claim already exists
+before retry `apply-started` or mutation, a later exact retry returns
+`IDEMPOTENCY_KEY_IN_PROGRESS`, appends only hash-only in-progress evidence, and
+does not mutate. It also proves the retry-start negative: a retry
+`apply-started` without matching abandonment evidence blocks with
+`RECOVERY_BLOCKED` instead of reusing an older `stale-claim-abandoned` row.
+
 This is useful DB-table shape and fixture storage-boundary evidence, but it is
 still local Playground SQLite/host-mount lab evidence, not production durable
 recovery, production source mutation, or storage-level crash proof. It does not
 prove storage `fsync`, rollback, transactions, locking, exactly-once
 production writes, generic MySQL/InnoDB or filesystem compare-and-swap
 behavior, arbitrary plugin data safety, arbitrary file safety, create/delete
-guarding, or storage guarding for plugin activation. The all-old stale-claim
-safe retry case remains conservative/not fully solved, tests mostly count
-mutation evidence rows rather than deeply asserting every observed hash, and
-production auth, live source mutation, and full push remain pending. Redaction
-is checked through forbidden keys and fixture values, not by a formal sanitizer
-for arbitrary future journal messages.
+guarding, or storage guarding for plugin activation. The stale-claim lab slice
+does not prove production stale-claim leases, fencing, claim expiry,
+cross-process/shared-DB lock behavior, arbitrary production repair, or a
+production retry policy. Tests mostly count mutation evidence rows rather than
+deeply asserting every observed hash, and production auth, live source
+mutation, and full push remain pending. Redaction is checked through forbidden
+keys and fixture values, not by a formal sanitizer for arbitrary future journal
+messages.
 
 ## Current Fixture Plugin Atomicity Failure Evidence
 

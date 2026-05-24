@@ -519,6 +519,26 @@ function reprint_push_lab_rest_apply_with_db_journal(
                 return reprint_push_lab_rest_json_response($replay_result);
             }
 
+            $stale_claim_retry = reprint_push_lab_rest_maybe_prepare_stale_claim_retry($payload, $context, $claim_entry);
+            if (is_array($stale_claim_retry)) {
+                if (isset($stale_claim_retry['result']) && is_array($stale_claim_retry['result'])) {
+                    return reprint_push_lab_rest_json_response($stale_claim_retry['result']);
+                }
+                $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
+                $receipt = reprint_push_lab_rest_receipt_payload($payload);
+                $accepted = reprint_push_lab_rest_validate_apply_for_db_journal($plan, $receipt, $context);
+                $result = reprint_push_lab_rest_run_db_journal_apply(
+                    $payload,
+                    $context,
+                    $claim_entry,
+                    $plan,
+                    $receipt,
+                    $accepted,
+                    $stale_claim_retry
+                );
+                return reprint_push_lab_rest_json_response($result);
+            }
+
             $missing_commit_result = reprint_push_lab_rest_maybe_finalize_missing_commit($payload, $context, $claim_entry);
             if (is_array($missing_commit_result)) {
                 return reprint_push_lab_rest_json_response($missing_commit_result);
@@ -558,78 +578,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
             $receipt = reprint_push_lab_rest_receipt_payload($payload);
             $accepted = reprint_push_lab_rest_validate_apply_for_db_journal($plan, $receipt, $context);
         }
-        $mutations = $accepted['mutations'];
-
-        $started_entry = reprint_push_lab_db_journal_append_event('apply-started', $context + [
-            'resourceHashEvidence' => [
-                'openedCursor' => 'db-journal:' . (int) ($opened_entry['sequence'] ?? 0),
-                'mutationCount' => count($mutations),
-                'acceptedPlanEvidence' => [
-                    'planHash' => $accepted['planEvidence']['planHash'] ?? '',
-                    'receiptHash' => (string) ($accepted['receipt']['receiptHash'] ?? ''),
-                    'preconditionSetHash' => $accepted['planEvidence']['preconditionSetHash'] ?? '',
-                    'mutationSetHash' => $accepted['planEvidence']['mutationSetHash'] ?? '',
-                ],
-                'verifiedPreconditions' => reprint_push_lab_db_journal_sanitize_value($accepted['verifiedPreconditions']),
-                'recoveryTargets' => $accepted['recoveryTargets'],
-                'plannedMutations' => reprint_push_lab_db_journal_planned_mutation_evidence($mutations, $accepted['preconditions']),
-                'resourceKeys' => array_values(array_map(
-                    static fn (array $mutation): string => (string) ($mutation['resourceKey'] ?? ''),
-                    $mutations
-                )),
-            ],
-        ]);
-
-        $options = reprint_push_lab_rest_lab_options($payload);
-        $options['mutationEventCallback'] = reprint_push_lab_rest_compose_mutation_callbacks([
-            reprint_push_lab_rest_db_journal_mutation_callback($context, $started_entry),
-            reprint_push_lab_rest_lab_drift_after_prepared_callback($options),
-            reprint_push_lab_rest_lab_drift_before_storage_write_callback($options),
-        ]);
-        $result = reprint_push_protocol_run_payload('apply', $plan, $receipt, [
-            'transport' => 'wordpress-rest',
-            'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
-            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
-            'requestHash' => $context['requestHash'],
-            'dbJournalCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
-        ], $options);
-
-        $result['idempotency'] = [
-            'replayed' => false,
-            'freshMutationWork' => true,
-            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
-            'requestHash' => $context['requestHash'],
-        ];
-        if (reprint_push_lab_rest_should_simulate_missing_db_commit($payload)) {
-            $result = [
-                'ok' => false,
-                'code' => 'LAB_SIMULATED_MISSING_DB_COMMIT',
-                'message' => 'Lab-only hook stopped after target hashes reached planned after hashes and before DB apply-committed was written.',
-                'mode' => 'apply',
-                'applied' => (int) ($result['applied'] ?? count($mutations)),
-                'idempotency' => [
-                    'replayed' => false,
-                    'freshMutationWork' => true,
-                    'idempotencyKeyHash' => $context['idempotencyKeyHash'],
-                    'requestHash' => $context['requestHash'],
-                    'missingCommitSimulated' => true,
-                ],
-                'recovery' => [
-                    'required' => true,
-                    'state' => 'missing-db-commit-simulated',
-                    'scope' => 'lab-only deterministic missing-commit hook; no production durability claim',
-                ],
-                'dbJournal' => reprint_push_lab_rest_db_journal_evidence($started_entry),
-            ];
-            return reprint_push_lab_rest_json_response($result);
-        }
-
-        $committed_entry = reprint_push_lab_db_journal_append_event('apply-committed', $context + [
-            'appliedCount' => (int) ($result['applied'] ?? 0),
-            'result' => reprint_push_lab_db_journal_compact_result($result),
-            'resourceHashEvidence' => reprint_push_lab_db_journal_resource_hash_evidence($result),
-        ]);
-        $result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($committed_entry);
+        $result = reprint_push_lab_rest_run_db_journal_apply($payload, $context, $opened_entry, $plan, $receipt, $accepted);
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
         if (is_array($context)) {
@@ -712,6 +661,188 @@ function reprint_push_lab_rest_validate_apply_for_db_journal(array $plan, ?array
         'verifiedPreconditions' => $verified_preconditions,
         'recoveryTargets' => reprint_push_lab_rest_recovery_targets_for_db_journal($mutations, $precondition_entries),
     ];
+}
+
+function reprint_push_lab_rest_run_db_journal_apply(
+    array $payload,
+    array $context,
+    array $claim_entry,
+    array $plan,
+    ?array $receipt,
+    array $accepted,
+    ?array $stale_claim_retry = null
+): array {
+    $mutations = $accepted['mutations'];
+    $started_evidence = [
+        'openedCursor' => 'db-journal:' . (int) ($claim_entry['sequence'] ?? 0),
+        'mutationCount' => count($mutations),
+        'acceptedPlanEvidence' => [
+            'planHash' => $accepted['planEvidence']['planHash'] ?? '',
+            'receiptHash' => (string) ($accepted['receipt']['receiptHash'] ?? ''),
+            'preconditionSetHash' => $accepted['planEvidence']['preconditionSetHash'] ?? '',
+            'mutationSetHash' => $accepted['planEvidence']['mutationSetHash'] ?? '',
+        ],
+        'verifiedPreconditions' => reprint_push_lab_db_journal_sanitize_value($accepted['verifiedPreconditions']),
+        'recoveryTargets' => $accepted['recoveryTargets'],
+        'plannedMutations' => reprint_push_lab_db_journal_planned_mutation_evidence($mutations, $accepted['preconditions']),
+        'resourceKeys' => array_values(array_map(
+            static fn (array $mutation): string => (string) ($mutation['resourceKey'] ?? ''),
+            $mutations
+        )),
+    ];
+    if (is_array($stale_claim_retry)) {
+        $started_evidence['staleClaimRetry'] = [
+            'accepted' => true,
+            'abandonedCursor' => 'db-journal:' . (int) ($stale_claim_retry['abandonedSequence'] ?? 0),
+            'retryStartedCursor' => 'db-journal:' . (int) ($stale_claim_retry['retryStartedSequence'] ?? 0),
+            'previousStartedCursor' => 'db-journal:' . (int) ($stale_claim_retry['previousStartedSequence'] ?? 0),
+            'counts' => $stale_claim_retry['counts'] ?? null,
+        ];
+    }
+
+    $started_entry = reprint_push_lab_db_journal_append_event('apply-started', $context + [
+        'resourceHashEvidence' => $started_evidence,
+    ]);
+
+    if (reprint_push_lab_rest_should_simulate_stale_claim_all_old($payload) && !is_array($stale_claim_retry)) {
+        $abandoned_result = [
+            'ok' => false,
+            'code' => 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+            'message' => 'Lab-only hook stopped after durable claim/start evidence and before any mutation execution.',
+            'mode' => 'apply',
+            'applied' => 0,
+            'idempotency' => [
+                'replayed' => false,
+                'freshMutationWork' => false,
+                'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+                'requestHash' => $context['requestHash'],
+                'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+                'startedSequence' => (int) ($started_entry['sequence'] ?? 0),
+                'staleClaimAbandoned' => true,
+            ],
+            'recovery' => [
+                'required' => true,
+                'state' => 'stale-claim-all-old-simulated',
+                'scope' => 'lab-only deterministic stale-claim hook; no production durability claim',
+                'counts' => [
+                    'old' => count($mutations),
+                    'new' => 0,
+                    'blockedUnknown' => 0,
+                    'total' => count($mutations),
+                ],
+            ],
+            'dbJournal' => reprint_push_lab_rest_db_journal_evidence($started_entry),
+        ];
+        $abandoned_entry = reprint_push_lab_db_journal_append_event('stale-claim-abandoned', $context + [
+            'appliedCount' => 0,
+            'errorCode' => 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+            'result' => reprint_push_lab_db_journal_compact_result($abandoned_result),
+            'resourceHashEvidence' => [
+                'claimCursor' => 'db-journal:' . (int) ($claim_entry['sequence'] ?? 0),
+                'startedCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+                'requestHash' => $context['requestHash'],
+                'planHash' => $context['planHash'],
+                'receiptHash' => $context['receiptHash'],
+                'plannedTargetCount' => count($mutations),
+                'targetSetHash' => reprint_push_lab_rest_target_set_hash($accepted['recoveryTargets']),
+            ],
+        ]);
+        $abandoned_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($abandoned_entry);
+        return $abandoned_result;
+    }
+
+    if (is_array($stale_claim_retry) && reprint_push_lab_rest_should_simulate_stale_retry_after_started($payload)) {
+        return [
+            'ok' => false,
+            'code' => 'LAB_SIMULATED_STALE_RETRY_AFTER_STARTED',
+            'message' => 'Lab-only hook stopped a stale retry after its retry apply-started row and before any mutation execution.',
+            'mode' => 'apply',
+            'applied' => 0,
+            'idempotency' => [
+                'replayed' => false,
+                'freshMutationWork' => false,
+                'staleClaimRetry' => true,
+                'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+                'requestHash' => $context['requestHash'],
+                'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+                'abandonedSequence' => (int) ($stale_claim_retry['abandonedSequence'] ?? 0),
+                'previousStartedSequence' => (int) ($stale_claim_retry['previousStartedSequence'] ?? 0),
+                'retryStartedSequence' => (int) ($stale_claim_retry['retryStartedSequence'] ?? 0),
+                'startedSequence' => (int) ($started_entry['sequence'] ?? 0),
+                'recoveryCounts' => $stale_claim_retry['counts'] ?? null,
+            ],
+            'recovery' => [
+                'required' => true,
+                'state' => 'stale-retry-started-simulated',
+                'scope' => 'lab-only deterministic stale retry hook; no production durability claim',
+                'counts' => $stale_claim_retry['counts'] ?? null,
+            ],
+            'dbJournal' => reprint_push_lab_rest_db_journal_evidence($started_entry),
+        ];
+    }
+
+    $options = reprint_push_lab_rest_lab_options($payload);
+    $options['mutationEventCallback'] = reprint_push_lab_rest_compose_mutation_callbacks([
+        reprint_push_lab_rest_db_journal_mutation_callback($context, $started_entry),
+        reprint_push_lab_rest_lab_drift_after_prepared_callback($options),
+        reprint_push_lab_rest_lab_drift_before_storage_write_callback($options),
+    ]);
+    $result = reprint_push_protocol_run_payload('apply', $plan, $receipt, [
+        'transport' => 'wordpress-rest',
+        'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+        'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+        'requestHash' => $context['requestHash'],
+        'dbJournalCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+    ], $options);
+
+    $result['idempotency'] = [
+        'replayed' => false,
+        'freshMutationWork' => true,
+        'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+        'requestHash' => $context['requestHash'],
+    ];
+    if (is_array($stale_claim_retry)) {
+        $result['idempotency'] += [
+            'staleClaimRetry' => true,
+            'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+            'abandonedSequence' => (int) ($stale_claim_retry['abandonedSequence'] ?? 0),
+            'previousStartedSequence' => (int) ($stale_claim_retry['previousStartedSequence'] ?? 0),
+            'retryStartedSequence' => (int) ($stale_claim_retry['retryStartedSequence'] ?? 0),
+            'startedSequence' => (int) ($started_entry['sequence'] ?? 0),
+            'recoveryCounts' => $stale_claim_retry['counts'] ?? null,
+        ];
+    }
+    if (reprint_push_lab_rest_should_simulate_missing_db_commit($payload)) {
+        $result = [
+            'ok' => false,
+            'code' => 'LAB_SIMULATED_MISSING_DB_COMMIT',
+            'message' => 'Lab-only hook stopped after target hashes reached planned after hashes and before DB apply-committed was written.',
+            'mode' => 'apply',
+            'applied' => (int) ($result['applied'] ?? count($mutations)),
+            'idempotency' => [
+                'replayed' => false,
+                'freshMutationWork' => true,
+                'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+                'requestHash' => $context['requestHash'],
+                'missingCommitSimulated' => true,
+            ],
+            'recovery' => [
+                'required' => true,
+                'state' => 'missing-db-commit-simulated',
+                'scope' => 'lab-only deterministic missing-commit hook; no production durability claim',
+            ],
+            'dbJournal' => reprint_push_lab_rest_db_journal_evidence($started_entry),
+        ];
+        return $result;
+    }
+
+    $committed_entry = reprint_push_lab_db_journal_append_event('apply-committed', $context + [
+        'appliedCount' => (int) ($result['applied'] ?? 0),
+        'result' => reprint_push_lab_db_journal_compact_result($result),
+        'resourceHashEvidence' => reprint_push_lab_db_journal_resource_hash_evidence($result),
+    ]);
+    $result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($committed_entry);
+    return $result;
 }
 
 function reprint_push_lab_rest_db_journal_mutation_callback(array $context, array $started_entry): callable
@@ -1092,6 +1223,219 @@ function reprint_push_lab_rest_latest_db_row_for_key_event(string $idempotency_k
     return null;
 }
 
+function reprint_push_lab_rest_maybe_prepare_stale_claim_retry(array $payload, array $context, array $claim_entry): ?array
+{
+    $started_entry = reprint_push_lab_rest_latest_db_row_for_key_event(
+        $context['idempotencyKeyHash'],
+        $context['requestHash'],
+        'apply-started'
+    );
+    if (!is_array($started_entry)) {
+        return null;
+    }
+
+    $abandoned_entry = reprint_push_lab_rest_abandoned_entry_for_started_entry(
+        $context['idempotencyKeyHash'],
+        $context['requestHash'],
+        $started_entry
+    );
+    if (!is_array($abandoned_entry)) {
+        return null;
+    }
+
+    $mutation_counts = reprint_push_lab_rest_mutation_event_counts_for_key_request(
+        $context['idempotencyKeyHash'],
+        $context['requestHash']
+    );
+    if (($mutation_counts['prepared'] + $mutation_counts['applied'] + $mutation_counts['preconditionFailed']) > 0) {
+        return null;
+    }
+
+    $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
+    $receipt_payload = reprint_push_lab_rest_receipt_payload($payload);
+    $validated = reprint_push_lab_rest_validate_plan_receipt_for_missing_commit($plan, $receipt_payload);
+    $planned_targets = reprint_push_lab_rest_planned_targets_from_started_entry($started_entry);
+    $target_validation = reprint_push_lab_rest_validate_started_targets($planned_targets, $validated['recoveryTargets']);
+    if (($target_validation['ok'] ?? false) !== true) {
+        return null;
+    }
+
+    $recovery = reprint_push_lab_rest_missing_commit_recovery_from_targets(
+        $planned_targets,
+        $validated['planEvidence'],
+        $validated['receipt']
+    );
+    if (($recovery['state'] ?? '') !== 'old-remote') {
+        return null;
+    }
+
+    $counts = isset($recovery['counts']) && is_array($recovery['counts'])
+        ? $recovery['counts']
+        : ['old' => 0, 'new' => 0, 'blockedUnknown' => 0, 'total' => 0];
+    if ((int) ($counts['old'] ?? 0) < 1
+        || (int) ($counts['old'] ?? 0) !== (int) ($counts['total'] ?? 0)
+        || (int) ($counts['new'] ?? 0) !== 0
+        || (int) ($counts['blockedUnknown'] ?? 0) !== 0
+    ) {
+        return null;
+    }
+
+    $retry_result = [
+        'ok' => true,
+        'mode' => 'apply',
+        'code' => 'STALE_CLAIM_RETRY_STARTED',
+        'idempotency' => [
+            'replayed' => false,
+            'freshMutationWork' => true,
+            'staleClaimRetry' => true,
+            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+            'requestHash' => $context['requestHash'],
+            'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+            'abandonedSequence' => (int) ($abandoned_entry['sequence'] ?? 0),
+            'previousStartedSequence' => (int) ($started_entry['sequence'] ?? 0),
+            'recoveryCounts' => $counts,
+        ],
+        'recovery' => [
+            'state' => 'old-remote',
+            'counts' => $counts,
+        ],
+    ];
+    $retry_context = [
+        'appliedCount' => 0,
+        'result' => reprint_push_lab_db_journal_compact_result($retry_result),
+        'abandonedSequence' => (int) ($abandoned_entry['sequence'] ?? 0),
+        'previousStartedSequence' => (int) ($started_entry['sequence'] ?? 0),
+        'resourceHashEvidence' => [
+            'staleClaimRetry' => true,
+            'claimCursor' => 'db-journal:' . (int) ($claim_entry['sequence'] ?? 0),
+            'abandonedCursor' => 'db-journal:' . (int) ($abandoned_entry['sequence'] ?? 0),
+            'previousStartedCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+            'requestHash' => $context['requestHash'],
+            'planHash' => $context['planHash'],
+            'receiptHash' => $context['receiptHash'],
+            'recoveryState' => 'old-remote',
+            'recoveryCounts' => $counts,
+            'mutationEventCounts' => $mutation_counts,
+            'startedTargetSetHash' => reprint_push_lab_rest_target_set_hash($planned_targets),
+            'requestTargetSetHash' => reprint_push_lab_rest_target_set_hash($validated['recoveryTargets']),
+            'currentHashSetHash' => reprint_push_lab_rest_current_hash_set_hash($recovery),
+        ],
+    ];
+    $retry_claim = reprint_push_lab_db_journal_try_open_stale_retry($context, $retry_context);
+    if (($retry_claim['opened'] ?? false) !== true) {
+        $retry_claim_entry = is_array($retry_claim['entry'] ?? null) ? $retry_claim['entry'] : [];
+        $blocked_result = [
+            'ok' => false,
+            'code' => 'IDEMPOTENCY_KEY_IN_PROGRESS',
+            'message' => 'A stale-claim retry executor is already in progress for this idempotency key and canonical request.',
+            'mode' => 'apply',
+            'idempotency' => [
+                'replayed' => false,
+                'conflict' => false,
+                'inProgress' => true,
+                'freshMutationWork' => false,
+                'staleClaimRetry' => false,
+                'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+                'requestHash' => $context['requestHash'],
+                'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+                'abandonedSequence' => (int) ($abandoned_entry['sequence'] ?? 0),
+                'previousStartedSequence' => (int) ($started_entry['sequence'] ?? 0),
+                'retryClaimSequence' => (int) ($retry_claim_entry['sequence'] ?? 0),
+            ],
+        ];
+        $blocked_entry = reprint_push_lab_db_journal_append_event('stale-claim-retry-in-progress', $context + [
+            'appliedCount' => 0,
+            'errorCode' => 'IDEMPOTENCY_KEY_IN_PROGRESS',
+            'result' => reprint_push_lab_db_journal_compact_result($blocked_result),
+            'resourceHashEvidence' => [
+                'staleClaimRetry' => false,
+                'claimCursor' => 'db-journal:' . (int) ($claim_entry['sequence'] ?? 0),
+                'abandonedCursor' => 'db-journal:' . (int) ($abandoned_entry['sequence'] ?? 0),
+                'previousStartedCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+                'retryClaimCursor' => 'db-journal:' . (int) ($retry_claim_entry['sequence'] ?? 0),
+                'requestHash' => $context['requestHash'],
+                'planHash' => $context['planHash'],
+                'receiptHash' => $context['receiptHash'],
+                'retryClaimHash' => (string) ($retry_claim['retryClaimHash'] ?? ''),
+            ],
+        ]);
+        $blocked_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($blocked_entry);
+        return ['result' => $blocked_result];
+    }
+
+    $retry_entry = $retry_claim['entry'];
+    if (reprint_push_lab_rest_should_simulate_stale_retry_after_claim($payload)) {
+        $claim_result = [
+            'ok' => false,
+            'code' => 'LAB_SIMULATED_STALE_RETRY_AFTER_CLAIM',
+            'message' => 'Lab-only hook stopped a stale retry after its durable retry claim and before retry apply-started.',
+            'mode' => 'apply',
+            'applied' => 0,
+            'idempotency' => [
+                'replayed' => false,
+                'freshMutationWork' => false,
+                'staleClaimRetry' => true,
+                'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+                'requestHash' => $context['requestHash'],
+                'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+                'abandonedSequence' => (int) ($abandoned_entry['sequence'] ?? 0),
+                'previousStartedSequence' => (int) ($started_entry['sequence'] ?? 0),
+                'retryStartedSequence' => (int) ($retry_entry['sequence'] ?? 0),
+                'recoveryCounts' => $counts,
+            ],
+            'recovery' => [
+                'required' => true,
+                'state' => 'stale-retry-claim-simulated',
+                'scope' => 'lab-only deterministic stale retry claim hook; no production durability claim',
+                'counts' => $counts,
+            ],
+            'dbJournal' => reprint_push_lab_rest_db_journal_evidence($retry_entry),
+        ];
+        return ['result' => $claim_result];
+    }
+
+    reprint_push_lab_rest_delay_after_stale_retry_claim($payload);
+
+    return [
+        'abandonedSequence' => (int) ($abandoned_entry['sequence'] ?? 0),
+        'previousStartedSequence' => (int) ($started_entry['sequence'] ?? 0),
+        'retryStartedSequence' => (int) ($retry_entry['sequence'] ?? 0),
+        'counts' => $counts,
+    ];
+}
+
+function reprint_push_lab_rest_abandoned_entry_for_started_entry(
+    string $idempotency_key_hash,
+    string $request_hash,
+    array $started_entry
+): ?array {
+    $started_sequence = (int) ($started_entry['sequence'] ?? 0);
+    if ($started_sequence < 1) {
+        return null;
+    }
+    $expected_started_cursor = 'db-journal:' . $started_sequence;
+
+    $rows = array_reverse(reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash));
+    foreach ($rows as $row) {
+        if ((string) ($row['event'] ?? '') !== 'stale-claim-abandoned') {
+            continue;
+        }
+        if ((string) ($row['request_hash'] ?? '') !== $request_hash) {
+            continue;
+        }
+        $public_row = reprint_push_lab_db_journal_public_row($row);
+        $evidence = isset($public_row['resourceHashEvidence']) && is_array($public_row['resourceHashEvidence'])
+            ? $public_row['resourceHashEvidence']
+            : [];
+        if ((string) ($evidence['startedCursor'] ?? '') !== $expected_started_cursor) {
+            continue;
+        }
+        return $public_row;
+    }
+
+    return null;
+}
+
 function reprint_push_lab_rest_planned_targets_from_started_entry(array $started_entry): array
 {
     $evidence = isset($started_entry['resourceHashEvidence']) && is_array($started_entry['resourceHashEvidence'])
@@ -1131,6 +1475,71 @@ function reprint_push_lab_rest_validate_started_targets(array $started_targets, 
     }
 
     return ['ok' => true];
+}
+
+function reprint_push_lab_rest_mutation_event_counts_for_key_request(string $idempotency_key_hash, string $request_hash): array
+{
+    $counts = [
+        'prepared' => 0,
+        'applied' => 0,
+        'preconditionFailed' => 0,
+    ];
+    foreach (reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash) as $row) {
+        if ((string) ($row['request_hash'] ?? '') !== $request_hash) {
+            continue;
+        }
+        switch ((string) ($row['event'] ?? '')) {
+            case 'mutation-prepared':
+                $counts['prepared']++;
+                break;
+            case 'mutation-applied':
+                $counts['applied']++;
+                break;
+            case 'mutation-precondition-failed':
+                $counts['preconditionFailed']++;
+                break;
+        }
+    }
+    return $counts;
+}
+
+function reprint_push_lab_rest_target_set_hash(array $targets): string
+{
+    $compact_targets = [];
+    foreach (array_values($targets) as $index => $target) {
+        if (!is_array($target)) {
+            continue;
+        }
+        $compact_targets[] = [
+            'index' => (int) ($target['index'] ?? $index),
+            'mutationIdHash' => hash('sha256', (string) ($target['mutationId'] ?? '')),
+            'resourceKeyHash' => hash('sha256', (string) ($target['resourceKey'] ?? '')),
+            'resourceHash' => hash('sha256', reprint_push_stable_json($target['resource'] ?? null)),
+            'beforeHash' => (string) ($target['beforeHash'] ?? $target['expectedOldHash'] ?? ''),
+            'afterHash' => (string) ($target['afterHash'] ?? $target['expectedNewHash'] ?? ''),
+        ];
+    }
+    return hash('sha256', reprint_push_stable_json($compact_targets));
+}
+
+function reprint_push_lab_rest_current_hash_set_hash(array $recovery): string
+{
+    $hashes = isset($recovery['currentHashes']) && is_array($recovery['currentHashes'])
+        ? $recovery['currentHashes']
+        : [];
+    $compact_hashes = [];
+    foreach (array_values($hashes) as $index => $hash_evidence) {
+        if (!is_array($hash_evidence)) {
+            continue;
+        }
+        $compact_hashes[] = [
+            'index' => (int) ($hash_evidence['index'] ?? $index),
+            'mutationIdHash' => hash('sha256', (string) ($hash_evidence['mutationId'] ?? '')),
+            'resourceKeyHash' => hash('sha256', (string) ($hash_evidence['resourceKey'] ?? '')),
+            'hash' => (string) ($hash_evidence['hash'] ?? ''),
+        ];
+    }
+    return hash('sha256', reprint_push_stable_json($compact_hashes));
 }
 
 function reprint_push_lab_rest_missing_commit_recovery_from_targets(
@@ -2215,18 +2624,62 @@ function reprint_push_lab_rest_should_simulate_missing_db_commit(array $payload)
         || $payload['labSimulateMissingDbCommit'] === '1';
 }
 
+function reprint_push_lab_rest_should_simulate_stale_claim_all_old(array $payload): bool
+{
+    if (!array_key_exists('labSimulateStaleClaimAllOld', $payload)) {
+        return false;
+    }
+    return $payload['labSimulateStaleClaimAllOld'] === true
+        || $payload['labSimulateStaleClaimAllOld'] === 1
+        || $payload['labSimulateStaleClaimAllOld'] === '1';
+}
+
+function reprint_push_lab_rest_should_simulate_stale_retry_after_started(array $payload): bool
+{
+    if (!array_key_exists('labSimulateStaleRetryAfterStarted', $payload)) {
+        return false;
+    }
+    return $payload['labSimulateStaleRetryAfterStarted'] === true
+        || $payload['labSimulateStaleRetryAfterStarted'] === 1
+        || $payload['labSimulateStaleRetryAfterStarted'] === '1';
+}
+
+function reprint_push_lab_rest_should_simulate_stale_retry_after_claim(array $payload): bool
+{
+    if (!array_key_exists('labSimulateStaleRetryAfterClaim', $payload)) {
+        return false;
+    }
+    return $payload['labSimulateStaleRetryAfterClaim'] === true
+        || $payload['labSimulateStaleRetryAfterClaim'] === 1
+        || $payload['labSimulateStaleRetryAfterClaim'] === '1';
+}
+
+function reprint_push_lab_rest_delay_after_stale_retry_claim(array $payload): void
+{
+    if (!array_key_exists('labDelayAfterStaleRetryClaimMs', $payload)) {
+        return;
+    }
+
+    reprint_push_lab_rest_delay_from_payload($payload, 'labDelayAfterStaleRetryClaimMs');
+}
+
 function reprint_push_lab_rest_delay_after_idempotency_open(array $payload): void
 {
     if (!array_key_exists('labDelayAfterIdempotencyOpenMs', $payload)) {
         return;
     }
 
-    $delay = $payload['labDelayAfterIdempotencyOpenMs'];
+    reprint_push_lab_rest_delay_from_payload($payload, 'labDelayAfterIdempotencyOpenMs');
+}
+
+function reprint_push_lab_rest_delay_from_payload(array $payload, string $key): void
+{
+    $delay = $payload[$key];
     if (!is_int($delay) && !(is_string($delay) && preg_match('/^\d+$/', $delay))) {
         reprint_push_protocol_fail([
             'ok' => false,
             'code' => 'INVALID_ARGUMENT',
-            'message' => 'labDelayAfterIdempotencyOpenMs must be a non-negative integer when supplied.',
+            'message' => $key . ' must be a non-negative integer when supplied.',
         ]);
     }
 

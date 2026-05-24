@@ -252,10 +252,37 @@ linked implementation artifacts.
 - Residual risks remain explicit: this is Playground/local DB lab evidence only
   and not proof of production durability, storage `fsync`, rollback,
   exactly-once production writes, arbitrary plugin data safety, or full
-  MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
-  conservative/not fully solved, tests mostly count mutation evidence rows
-  rather than deeply asserting every observed hash, and production auth, live
-  source mutation, and full push remain pending.
+  MySQL/InnoDB behavior. Tests mostly count mutation evidence rows rather than
+  deeply asserting every observed hash, and production auth, live source
+  mutation, and full push remain pending.
+
+## 2026-05-24 - DB Journal All-Old Stale-Claim Retry Smoke
+
+- `npm run test:playground:db-journal-stale-claim-all-old` passed as a
+  local-only Playground SQLite/host-mount lab smoke for deterministic all-old
+  stale-claim safe retry.
+- The first lab hook writes `idempotency-opened`, `apply-started`, and
+  `stale-claim-abandoned`, then returns
+  `LAB_SIMULATED_STALE_CLAIM_ALL_OLD` with no mutation rows, no terminal row,
+  and no target mutation.
+- Same idempotency key with a different body still returns
+  `409 IDEMPOTENCY_KEY_CONFLICT` before retry work.
+- Exact same key/body retry requires abandonment evidence tied to the started
+  row being retried, validated started targets, zero mutation evidence, and all
+  live target hashes at old values. It then appends the derived unique
+  `stale-claim-retry-started`, performs exactly one fresh mutation set,
+  commits, and later replays as `BATCH_ALREADY_COMMITTED`.
+- The smoke also proves the derived retry-claim guard: when that retry claim
+  already exists before retry `apply-started` or mutation, a later exact retry
+  returns `IDEMPOTENCY_KEY_IN_PROGRESS` and does not mutate.
+- The retry-start negative proves a retry `apply-started` without matching
+  abandonment evidence blocks with `RECOVERY_BLOCKED` instead of reusing older
+  abandonment evidence.
+- Residual risks remain explicit: this is lab evidence only, not production
+  DB durability, storage `fsync`, rollback, exactly-once production writes,
+  MySQL/InnoDB behavior, cross-process/shared-DB lock proof, stale-claim
+  leases/fencing/claim expiry, arbitrary production repair, or production retry
+  policy.
 
 ## 2026-05-24 - Plugin-Owned Forms Fixture Slice
 
@@ -425,7 +452,7 @@ linked implementation artifacts.
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
 | Merge invariants | 38% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling, the exact `wp_reprint_push_forms_lab` driver through `npm run test:playground:forms-lab-table`, detection-only plugin metadata, JIT pre-write drift rejection through `npm run test:playground:mid-apply-drift`, fixture DB update storage-boundary stale-at-write rejection through `npm run test:playground:storage-guarded-db-write`, existing fixture upload-file update storage-boundary stale-at-write rejection through `npm run test:playground:storage-guarded-file-write`, and `npm run test:playground:plugin-atomic-install` fixture plugin install atomicity/staged-proof evidence | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production storage-level CAS/locking, production plugin semantics |
-| Recovery boundaries | 24% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization`; rejected JIT replay with no fresh mutation work through `npm run test:playground:mid-apply-drift`; storage-boundary stale-at-write replay/recovery evidence through `npm run test:playground:storage-guarded-db-write`; storage-boundary existing fixture upload-file stale-at-write replay/recovery evidence through `npm run test:playground:storage-guarded-file-write` | Production DB table journal durability, production WordPress crash-boundary proof, storage-level `fsync`, all-old stale-claim safe retry, auto-repair policy |
+| Recovery boundaries | 24% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization`; all-old stale-claim safe retry lab through `npm run test:playground:db-journal-stale-claim-all-old`; rejected JIT replay with no fresh mutation work through `npm run test:playground:mid-apply-drift`; storage-boundary stale-at-write replay/recovery evidence through `npm run test:playground:storage-guarded-db-write`; storage-boundary existing fixture upload-file stale-at-write replay/recovery evidence through `npm run test:playground:storage-guarded-file-write` | Production DB table journal durability, production WordPress crash-boundary proof, storage-level `fsync`, production stale-claim leases/fencing/claim expiry, auto-repair policy |
 | Reliable executor and protocol | 25% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, authenticated local Playground source-site mutation slice under `/authenticated/*`, DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key`, per-mutation pre-write hash evidence, and hash-only `storageGuard` evidence for lab fixture DB update and an existing fixture upload-file update write | Production Reprint protocol extension, production Reprint auth/HMAC/TLS/session/nonce proof, real exporter credential binding, real WordPress mutation executor, remote audit records, production storage-level compare-and-swap/locking |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
@@ -448,6 +475,11 @@ linked implementation artifacts.
   hashes returns `RECOVERY_BLOCKED`. The missing-commit finalization smoke
   proves `BATCH_RECOVERY_FINALIZED` for same key/body when all live target
   hashes already match planned after hashes and `apply-committed` is missing.
+  The all-old stale-claim retry smoke proves a lab-only safe retry when
+  explicit abandonment evidence, validated started targets, zero mutation
+  evidence, and all-old live hashes allow a derived unique retry claim to run
+  exactly one fresh mutation set; it also proves retry-claim in-progress and
+  retry-start-without-abandonment blocking negatives.
   The JIT drift smoke proves a mid-apply `PRECONDITION_FAILED` rejection is
   replayed without fresh mutation work rather than finalized as a commit. The
   storage-boundary guarded DB write smoke proves fixture update-only stale
@@ -458,7 +490,9 @@ linked implementation artifacts.
   fresh replay mutation work. This still does not prove production durability,
   storage `fsync`, rollback, exactly-once production writes, arbitrary plugin
   data safety, arbitrary file safety, full MySQL/InnoDB or filesystem CAS
-  behavior, all-old stale-claim safe retry, or production repair.
+  behavior, production stale-claim leases/fencing/claim expiry, cross-process
+  shared-DB lock proof, arbitrary production repair, or production retry
+  policy.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test,
   export planner snapshots, run guarded apply into a fresh Playground source,
   exercise a lab-only fixture protocol endpoint with WordPress-visible readback,

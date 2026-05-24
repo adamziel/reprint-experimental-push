@@ -62,6 +62,8 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground DB process-kill persistence | A real `SIGKILL` during an in-flight DB-journaled REST apply leaves persisted DB `idempotency-opened`/`apply-started` rows after host-mounted Playground restart without a false `apply-committed`. | `npm run test:playground:db-journal-process-kill` |
 | Playground DB process-kill recovery block | After hard kill/restart, DB planned evidence plus live target hashes classify mixed old/new state, recovery inspection returns non-mutating `RECOVERY_BLOCKED`, and retry does not overwrite the partial state without relying on the legacy option journal. | `npm run test:playground:db-journal-process-kill` |
 | Playground DB missing-commit finalization | A lab hook leaves all live target hashes at planned after hashes with DB mutation evidence but no `apply-committed`; same key/body returns `BATCH_RECOVERY_FINALIZED` with zero fresh mutation work, while same key/different body conflicts before finalization. | `npm run test:playground:db-journal-missing-commit-finalization` |
+| Playground DB all-old stale-claim retry | A lab hook writes `idempotency-opened`, `apply-started`, and `stale-claim-abandoned` with no mutation or terminal rows; same key/different body conflicts, while exact same key/body retry requires matching abandonment evidence, validated started targets, zero mutation evidence, and all live target hashes at old values before appending derived `stale-claim-retry-started`, performing one fresh mutation set, committing, and replaying later as `BATCH_ALREADY_COMMITTED`. | `npm run test:playground:db-journal-stale-claim-all-old` |
+| Playground DB stale retry guard and retry-start negative | If the derived stale retry claim already exists before retry `apply-started`/mutation, a later exact retry returns `IDEMPOTENCY_KEY_IN_PROGRESS` and does not mutate; if a retry `apply-started` exists without matching abandonment evidence, later retry blocks with `RECOVERY_BLOCKED` instead of reusing older abandonment evidence. | `npm run test:playground:db-journal-stale-claim-all-old` |
 | Fixture plugin install atomic positive path | Base/remote lack fixture plugins; local includes dependency and dependent fixture plugins in one atomic group; apply activates both, writes exact fixture plugin files/resources and allowlisted option data, and replay does zero fresh mutation work. | `npm run test:playground:plugin-atomic-install` |
 | Fixture plugin install dependency negatives | Missing dependency, dependency outside group, incompatible version, hash mismatch, activation requirement mismatch, remote dependency drift, and stale precondition reject before mutation or preserve the target. | `npm run test:playground:plugin-atomic-install` |
 | Fixture plugin install forged ready plans | Forged ready plans omitting the dependency mutation, `atomicGroups`, dependency requirements, or live dependency evidence reject with executor-side validation before mutation. | `npm run test:playground:plugin-atomic-install` |
@@ -115,14 +117,17 @@ The first executable matrix lives in `test/push-planner.test.js`.
   production activation semantics, or production rollback.
 - Production DB-table journal and kill-process recovery tests around every
   durable WordPress boundary. The current DB journal/idempotency/process-kill
-  plus missing-commit finalization slice is fixture-scoped local Playground
-  SQLite/host-mount evidence only, not production durability, storage `fsync`,
-  rollback, exactly-once production writes, arbitrary plugin data safety, or
-  full MySQL/InnoDB behavior. All-old stale-claim safe retry remains
-  conservative/not fully solved, observed-hash assertions are still shallow in
-  places, production auth/live source mutation/full push remains pending. The
-  JSONL journal has per-append `fsync` evidence in the JSON-model lab, and the
-  Playground recovery harness is injected lab failure inspection only.
+  plus missing-commit finalization and all-old stale-claim retry slices are
+  fixture-scoped local Playground SQLite/host-mount evidence only, not
+  production durability, storage `fsync`, rollback, exactly-once production
+  writes, arbitrary plugin data safety, or full MySQL/InnoDB behavior. The
+  stale-claim slice does not solve production stale-claim leases, fencing,
+  claim expiry, cross-process/shared-DB lock proof, arbitrary production
+  repair, or production retry policy; observed-hash assertions are still
+  shallow in places, and production auth/live source mutation/full push remains
+  pending. The JSONL journal has per-append `fsync` evidence in the JSON-model
+  lab, and the Playground recovery harness is injected lab failure inspection
+  only.
 
 ## Invariant Policy
 

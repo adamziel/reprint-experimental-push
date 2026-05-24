@@ -79,6 +79,12 @@ Run the DB-backed missing-commit finalization smoke:
 npm run test:playground:db-journal-missing-commit-finalization
 ```
 
+Run the DB-backed all-old stale-claim retry smoke:
+
+```bash
+npm run test:playground:db-journal-stale-claim-all-old
+```
+
 Run the fixture plugin install atomicity smoke:
 
 ```bash
@@ -285,18 +291,34 @@ same body sees all live target hashes already at the planned after hashes,
 returns `BATCH_RECOVERY_FINALIZED`, appends the missing commit row, and performs
 zero fresh mutation work; a later replay returns `BATCH_ALREADY_COMMITTED`.
 
+The `test:playground:db-journal-stale-claim-all-old` script verifies a
+local-only Playground SQLite/host-mount stale-claim retry slice. A deterministic
+lab hook writes `idempotency-opened`, `apply-started`, and
+`stale-claim-abandoned`, then stops with no mutation rows, no terminal row, and
+no target mutation. Same key plus a different body still returns
+`IDEMPOTENCY_KEY_CONFLICT`. Exact same key/body retry requires explicit
+abandonment evidence tied to the validated started targets, zero mutation
+evidence, and all live target hashes still at the old values. It then appends a
+derived unique `stale-claim-retry-started`, performs one fresh mutation set,
+commits, and later replays as `BATCH_ALREADY_COMMITTED`. The smoke also proves
+that an already-open derived stale retry claim returns
+`IDEMPOTENCY_KEY_IN_PROGRESS` before retry `apply-started`/mutation, and that a
+retry `apply-started` without matching abandonment evidence blocks with
+`RECOVERY_BLOCKED` instead of reusing older abandonment evidence.
+
 These DB journal smokes are local Playground SQLite/host-mount lab evidence
 only, not production durability. They do not prove storage fsync, rollback,
 exactly-once production writes, arbitrary plugin data safety, or full
-MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
-conservative/not fully solved, tests mostly count mutation evidence rows rather
-than deeply asserting every observed hash, and production auth, live source
-mutation, and the full push path remain pending. The authenticated Playground
-slice is authenticated local Playground source-site mutation evidence, not
-production Reprint auth. No production TLS deployment, nonce/replay store
-cleanup, production session handling, production Application Password
-integration, real exporter credential binding, durable production audit records,
-or full production push exists yet.
+MySQL/InnoDB behavior. The stale-claim slice does not prove production stale
+claim leases, fencing, claim expiry, cross-process/shared-DB locking, arbitrary
+production repair, or production retry policy. Tests mostly count mutation
+evidence rows rather than deeply asserting every observed hash, and production
+auth, live source mutation, and the full push path remain pending. The
+authenticated Playground slice is authenticated local Playground source-site
+mutation evidence, not production Reprint auth. No production TLS deployment,
+nonce/replay store cleanup, production session handling, production Application
+Password integration, real exporter credential binding, durable production
+audit records, or full production push exists yet.
 
 The `test:playground:plugin-atomic-install` script verifies a hard-coded
 Playground fixture plugin install atomicity slice through the local lab REST

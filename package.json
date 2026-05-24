@@ -23,6 +23,7 @@
     "test:playground:mid-apply-drift": "node ./scripts/playground/mid-apply-drift-smoke.mjs",
     "test:playground:db-journal-process-kill": "node ./scripts/playground/db-journal-process-kill-smoke.mjs",
     "test:playground:db-journal-missing-commit-finalization": "node ./scripts/playground/db-journal-missing-commit-finalization-smoke.mjs",
+    "test:playground:db-journal-stale-claim-all-old": "node ./scripts/playground/db-journal-stale-claim-all-old-smoke.mjs",
     "test:playground:recovery": "node ./scripts/playground/recovery-smoke.mjs",
     "test:recovery:file-journal": "node ./scripts/recovery/file-journal-restart-smoke.mjs",
     "plan": "node ./bin/reprint-push-lab.js plan",

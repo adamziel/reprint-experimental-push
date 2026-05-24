@@ -97,7 +97,7 @@ function reprint_push_lab_db_journal_schema(): array
             'result_json' => 'sanitized compact result JSON; no raw payload/content/snapshots/option journal',
             'resource_hash_evidence_json' => 'sanitized DB-native resource/hash evidence only',
             'error_code' => 'compact error code for rejected/conflict events',
-            'claim_key_hash' => 'nullable unique idempotency claim hash; only idempotency-opened rows set it',
+            'claim_key_hash' => 'nullable unique idempotency/retry claim hash; idempotency-opened and lab retry-claim rows set it',
             'lab_scope' => 'fixture scope marker',
             'created_at' => 'UTC event timestamp',
             'updated_at' => 'UTC event timestamp',
@@ -203,6 +203,66 @@ function reprint_push_lab_db_journal_try_open_idempotency(array $context): array
     }
 
     throw new RuntimeException('Could not open push lab DB idempotency claim.');
+}
+
+function reprint_push_lab_db_journal_stale_retry_claim_hash(
+    string $idempotency_key_hash,
+    string $request_hash,
+    int $abandoned_sequence,
+    int $previous_started_sequence
+): string {
+    return hash('sha256', reprint_push_stable_json([
+        'claim' => 'stale-claim-retry',
+        'idempotencyKeyHash' => $idempotency_key_hash,
+        'requestHash' => $request_hash,
+        'abandonedSequence' => $abandoned_sequence,
+        'previousStartedSequence' => $previous_started_sequence,
+    ]));
+}
+
+function reprint_push_lab_db_journal_try_open_stale_retry(array $context, array $retry_context): array
+{
+    global $wpdb;
+
+    $idempotency_key_hash = (string) ($context['idempotencyKeyHash'] ?? '');
+    $request_hash = (string) ($context['requestHash'] ?? '');
+    $abandoned_sequence = (int) ($retry_context['abandonedSequence'] ?? 0);
+    $previous_started_sequence = (int) ($retry_context['previousStartedSequence'] ?? 0);
+    if ($idempotency_key_hash === '' || $request_hash === '' || $abandoned_sequence < 1 || $previous_started_sequence < 1) {
+        throw new RuntimeException('Cannot open stale retry claim without key/request and source sequence evidence.');
+    }
+
+    $retry_claim_hash = reprint_push_lab_db_journal_stale_retry_claim_hash(
+        $idempotency_key_hash,
+        $request_hash,
+        $abandoned_sequence,
+        $previous_started_sequence
+    );
+    $entry = reprint_push_lab_db_journal_insert_event(
+        'stale-claim-retry-started',
+        $context + $retry_context,
+        $retry_claim_hash,
+        false
+    );
+    if (is_array($entry)) {
+        return [
+            'opened' => true,
+            'entry' => $entry,
+            'retryClaimHash' => $retry_claim_hash,
+        ];
+    }
+
+    $claim_row = reprint_push_lab_db_journal_claim_row_for_key($retry_claim_hash);
+    if (is_array($claim_row)) {
+        return [
+            'opened' => false,
+            'entry' => $claim_row,
+            'retryClaimHash' => $retry_claim_hash,
+            'lastError' => (string) $wpdb->last_error,
+        ];
+    }
+
+    throw new RuntimeException('Could not open push lab DB stale retry claim.');
 }
 
 function reprint_push_lab_db_journal_insert_event(
