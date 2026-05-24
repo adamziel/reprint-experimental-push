@@ -12,7 +12,7 @@ edited locally, and the user asks to push changes back to the original source.
 Responsibilities:
 
 - Load the saved pull base manifest and verify it belongs to the remote.
-- Run `push_preflight` and negotiate protocol, limits, and auth scope.
+- Run `push_preflight` and negotiate protocol, limits, auth scope, and push session.
 - List the live remote hashes with `push_snapshot_hashes`.
 - Verify the remote coverage manifest is complete for the requested push scope.
 - Build a three-way plan from base, local, and live remote.
@@ -30,7 +30,8 @@ the storage-boundary guard.
 Acceptance criteria for the reliable executor:
 
 - It never calls `push_batch_apply` without a persisted pull base, completed
-  remote hash listing, ready local plan, and accepted dry-run receipt.
+  remote hash listing, ready local plan, accepted dry-run receipt, and active
+  push session.
 - It treats `dry_run_id`, `snapshot_id`, and `coverage_hash` as evidence, not as
   locks.
 - It reuses idempotency keys only with byte-identical request bodies.
@@ -496,7 +497,7 @@ Stop conditions:
 The executor may offer conflict artifacts for review, but it must not auto-merge
 plugin-owned data unless a plugin driver returns a deterministic resolution.
 
-## Docker Test Topology
+## Test Topology
 
 The minimum integration topology has one remote WordPress site, one local
 WordPress site, and a runner. No remote tunneling service is used.
@@ -520,6 +521,23 @@ Port rules:
 - The runner calls `http://remote-wp/` and `http://local-wp/` by service name.
 - Do not use ngrok, cloudflared tunnels, localtunnel, serveo, localhost.run,
   Tailscale Funnel, or equivalent remote tunnel services.
+
+### Playground Topology
+
+Use WordPress Playground when Docker or WP-CLI is unavailable in the sandbox.
+Model the same one-remote, one-local shape with two disposable blueprints:
+
+| Site | Blueprint | Role |
+| --- | --- | --- |
+| Remote base | `fixtures/playground/remote-base.blueprint.json` | Pulled source base and push source of truth. |
+| Local edited | `fixtures/playground/local-edited.blueprint.json` | Pulled local site after local edits. |
+| Remote changed | `fixtures/playground/remote-changed.blueprint.json` | Live remote after independent edits. |
+
+The runner executes the blueprints without opening a network port, exports the
+base manifest from `remote-base`, builds the local plan from `local-edited`,
+and uses `remote-changed` as the liveness drift case for
+`PRECONDITION_FAILED` and recovery coverage. This proves the one-remote,
+one-local shape without external network exposure.
 
 Minimal Compose shape:
 
