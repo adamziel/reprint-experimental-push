@@ -238,6 +238,13 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - Every route-shape, packaged-plugin, or `finalMatchesLocal` smoke remains
   labeled as lab evidence only and cannot be used as proof of production
   mutation safety or live-remote drift handling.
+- Every production-readiness statement in docs, PRs, branch status, review
+  comments, or release notes is backed by the live production path, fresh
+  remote evidence, and a current reviewed artifact; route shape, fixture
+  replay, and packaged-plugin smoke results never qualify on their own.
+- Any stale manual-review artifact, stale live-remote snapshot, or lab-backed
+  endpoint evidence must fail the release gate before production wording is
+  allowed.
 - The release suite runs the production-shaped auth, storage, recovery,
   plugin, graph, and audit checks together, not as isolated smoke tests.
 - The gate fails closed if a retry would reuse stale manual-review artifacts,
