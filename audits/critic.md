@@ -17,6 +17,7 @@ the stale approval was rejected before mutation.
 
 The comparison against Reprint, ZS-Sync, and ForkPress is intentionally
 conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages and resumability, not live mutation safety, production write semantics, or a mutation executor that survives drift. ZS-Sync shows bounded change discovery, not a write policy, create-time identity discipline, or ownership revalidation at apply time. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle with live remote preservation, reviewed-resolution artifacts, and crash classification that survives partial apply. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety, remote-preserving retry, manual-review artifact expiry, or production write-path durability. A packaged-plugin mount only proves the route can be loaded in that packaging shape; it does not prove the write path is the production executor rather than a lab-backed stand-in, and it does not prove that the exercised route is free of fixture-only storage, lab-only auth, or copied lab internals. If the same ingress returns a plausible hash from a fixture or copied-lab path, the missing proof is still the live mutation boundary, not the HTTP shape. A production claim also cannot rely on “manual resolution will handle it later” unless the remote is preserved, the stale artifact is still auditable but unusable, the retry starts from fresh live evidence, and the old approval cannot be widened to a different row, file, or plugin-owned surface. A stale approval created from a lab-backed route-shape or `finalMatchesLocal` smoke still counts as stale, not current authority. The source notes therefore justify the comparison language, but they do not justify any production-readiness inference about this repo's write path, retry path, or approval lifecycle. Put differently: the notes can justify a design direction, but they do not justify a production claim without repo-specific live write proof.
+The source-note comparison has one more hard limit: Reprint's resumable transport proves a staged delivery shape, not a safe source overwrite boundary; ZS-Sync's scanners prove bounded discovery, not a conflict policy for writes; and ForkPress's reviewed merge language proves the right reliability vocabulary, not that this repository has the same live-remote executor or crash-safe mutation boundary. None of those notes prove that plugin-owned state outside the allowlist is blocked, that a create can reserve stable identity on the live remote, or that a partial file/DB/plugin write leaves an audit trail instead of a false success.
 No source note proves that a stale manual-review artifact can survive a live
 drift and still authorize apply, so any retry claim has to be backed by a
 fresh snapshot, a fresh plan, and a rejected old artifact that remains
@@ -45,6 +46,11 @@ missing proof is concrete: either the write is rejected before mutation, or the
 remote-preserving retry path is fully auditable and replay-safe. Until each
 class has that proof or a hard block, a success message is stronger than the
 evidence.
+The same warning applies to plugin data traps that are easy to miss in review:
+plugin-owned options, custom tables, generated files, activation hooks, cron,
+and cache entries can all mutate outside the main post/page row plan. If any
+plugin-owned surface can change without a declared contract, a fixture result
+or route-shape smoke is not proof that the push preserved remote state.
 
 ## Blocking Gaps
 
@@ -327,7 +333,9 @@ or an operator-facing success message that is stronger than the proof.
 1. Ship a real production push endpoint whose implementation does not route to
    Playground or lab internals, and prove the live write path still works when
    the remote drifts between dry-run and apply, including the case where a
-   stale approval exists but must be rejected before write.
+   stale approval exists but must be rejected before write. The proof must
+   show the remote stayed auditable, the stale record became unusable, and the
+   retry started from fresh live evidence.
 2. Separate lab credentials from production push credentials and prove
    production lifecycle behavior: issuance, scoping, rotation, revocation,
    replay rejection, and audit retention.
@@ -338,14 +346,18 @@ or an operator-facing success message that is stronger than the proof.
 4. Define plugin-owned resource contracts for tables, files, options, cron,
    cache, activation hooks, and generated side effects, with rollback or
    block behavior for unknown ownership and for ownership changes discovered
-   immediately before apply.
+   immediately before apply. Missing proof: a plugin-owned option or custom
+   table changed on the remote after review and the apply rejected before any
+   write instead of silently reusing stale assumptions.
 5. Add graph identity mapping, including stable allocation for new objects, or
    broaden the hard block policy so every relationship-bearing WordPress row
    class that can silently rewire identity is either rewritten safely or
    rejected.
 6. Add a replay-safe identity reservation model for creates, or hard-block any
    create path that can be renumbered, aliased, or reassigned by the live
-   remote after planning.
+   remote after planning. Missing proof: a freshly created attachment, term, or
+   plugin record cannot be remapped by a concurrent remote write into a
+   different identity while the push still reports success.
 7. Add reviewed conflict-resolution artifacts that preserve base/local/remote
    evidence, reviewer identity, chosen action, and fresh revalidation data.
    The approval must bind to a specific live snapshot and expire on any remote
@@ -355,7 +367,8 @@ or an operator-facing success message that is stronger than the proof.
 8. Extend storage-boundary checks to production write primitives, including
    inserts, deletes, schema changes, file publish/unlink, plugin activation
    side effects, and any write path that can expose mixed old/new state after a
-   partial write.
+   partial write. The proof must cover file-only, DB-only, and plugin-only
+   failures separately, not just a happy-path combined commit.
 9. Build a durable production journal with kill-at-every-boundary tests across
    DB, filesystem, plugin activation, and stale-claim recovery.
 10. Add tombstone and resurrection policy for delete/restore cases so a retry
