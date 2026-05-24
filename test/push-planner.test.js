@@ -1283,6 +1283,28 @@ test('replays a completed plan without reapplying mutations', () => {
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
 });
 
+test('replaying a completed plan twice stays inert and keeps the fully updated remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const firstReplay = applyPlan(completed.site, plan, { journal: completed.journal });
+  const beforeSecondReplay = JSON.stringify(firstReplay.site);
+
+  const secondReplay = applyPlan(firstReplay.site, plan, { journal: firstReplay.journal });
+
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(JSON.stringify(firstReplay.site), beforeSecondReplay);
+  assert.equal(JSON.stringify(secondReplay.site), beforeSecondReplay);
+  assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(secondReplay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('replaying a completed plan with drift blocks recovery and keeps artifacts', () => {
   const base = baseSite();
   const local = baseSite();
