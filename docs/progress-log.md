@@ -6,6 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Timestamp Sync Refresh
 
+- Updated [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:06:13 CEST`) and kept the public summary concise.
+- The public page still treats WordPress executor, durable recovery journal,
+  Docker/Playground integration, and plugin drivers as pending until proven.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/playground-topology.md](playground-topology.md),
+  [docs/protocol.md](protocol.md), [docs/executor.md](executor.md), and
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md).
+
+## 2026-05-25 - Timestamp Sync Refresh
+
 - Updated [progress.html](../progress.html) to the current `date` output
   (`2026-05-25 01:05:50 CEST`) and kept the public summary concise.
 - The page still treats WordPress executor, durable recovery journal, Docker/
