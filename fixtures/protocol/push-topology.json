@@ -1,0 +1,56 @@
+{
+  "topology_id": "push-topology-one-remote-one-local",
+  "purpose": "production-shaped push executor proof",
+  "roles": {
+    "remote_base": {
+      "kind": "source-site",
+      "role": "pulled merge base and persisted push provenance",
+      "examples": {
+        "docker": "remote-wp",
+        "playground": "playground-remote"
+      }
+    },
+    "local_edited": {
+      "kind": "edited-clone",
+      "role": "local plan source after user edits",
+      "examples": {
+        "docker": "local-wp",
+        "playground": "playground-local"
+      }
+    },
+    "remote_changed": {
+      "kind": "live-drift-witness",
+      "role": "independent live remote used to prove apply-time revalidation",
+      "examples": {
+        "docker": "remote-changed",
+        "playground": "remote-changed"
+      }
+    },
+    "runner": {
+      "kind": "executor",
+      "role": "the only process allowed to compare, upload, inspect, and recover",
+      "examples": {
+        "docker": "runner",
+        "playground": "local test process"
+      }
+    }
+  },
+  "docker": {
+    "shape": [
+      "remote-wp pulls first and seeds the merge base",
+      "local-wp is restored from that base and edited independently",
+      "runner calls preflight, hash listing, dry-run, apply, journal, and recovery against remote-wp",
+      "remote-db and local-db remain isolated so live drift does not contaminate the local edit history",
+      "use only the sandbox-provided 8080 ingress through a local-only proxy when browser-visible inspection is needed"
+    ]
+  },
+  "playground": {
+    "shape": [
+      "remote-base seeds the pull base and push identity evidence",
+      "local-edited is the imported site after local changes",
+      "remote-changed is the independent live remote that forces stale-apply rejection and recovery",
+      "the runner keeps the three blueprints isolated and does not open a public tunnel",
+      "use only the sandbox-provided 8080 ingress through a local-only proxy when browser-visible inspection is needed"
+    ]
+  }
+}

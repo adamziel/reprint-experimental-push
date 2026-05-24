@@ -21,6 +21,7 @@ The normal sequence is:
 13. `push-recovery-response.json`
 14. `push-recovery-inspect-request.json`
 15. `push-recovery-inspect-response.json`
+16. `push-topology.json`
 
 Failure and recovery examples:
 
@@ -41,6 +42,8 @@ Failure and recovery examples:
 - `push-auth-headers.json` shows the required authentication header families
   and versioned canonical push signature parts for dry-run, apply, and mutating
   recovery requests.
+- `push-topology.json` gives a machine-readable one-remote, one-local proof
+  shape for Docker and Playground test harnesses.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
@@ -124,3 +127,6 @@ persisted pull base package. For Playground verification, mirror it with one
 process. In both cases, keep the live drift state separate from the planning
 remote so stale-apply tests prove a fresh revalidation boundary instead of a
 reused dry-run receipt.
+
+The same topology is captured in `push-topology.json` so focused tests can
+assert the intended role split without re-encoding prose assumptions.
