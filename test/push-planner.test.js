@@ -1098,6 +1098,46 @@ test('keeps remote-only plugin changes while local delete, matching edit, and ma
   );
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent edit and type swap stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  remote.plugins.forms = { version: '1.2.0', active: true };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code v1.2 */';
+
+  const plan = planFor(base, local, remote);
+  const deletion = mutationFor(plan, 'file:index.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const editDecision = decisionFor(plan, 'file:wp-content/themes/theme/style.css');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deletion.action, 'delete');
+  assert.equal(deletion.changeKind, 'delete');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.plugins.forms.version, '1.2.0');
+  assert.equal(result.site.plugins.forms.active, true);
+  assert.equal(
+    result.site.files['wp-content/plugins/forms/forms.php'],
+    '<?php /* remote-private-forms-code v1.2 */',
+  );
+});
+
 test('keeps remote-only plugin changes while matching independent row delete, edit, and type swap stay already in sync', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
