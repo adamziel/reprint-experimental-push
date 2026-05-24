@@ -367,25 +367,32 @@ invocation and can be skipped while `npm test` remains green.
    production executor, nor do they prove leases, fencing, or exactly-once
    behavior on a live source site. Passing them only proves that some failure
    states are detected; it does not prove the live write path is restart-safe.
-6. **This audit is not a release checklist.** The current scripts prove slices
+
+6. **The strongest route proof is still lab-backed.** The production-shaped
+   smoke and plugin package smoke are the best route-shaped evidence in the
+   repo, but both still report `labBacked: true` and rely on temporary
+   Playground plumbing. They are necessary protocol evidence, not proof of
+   live source mutation.
+
+7. **This audit is not a release checklist.** The current scripts prove slices
    of the safety matrix, but they do not compose into one required gate that a
    release must pass.
 
-7. **Speed evidence is modeled, not measured for release.**
+8. **Speed evidence is modeled, not measured for release.**
    The benchmark tests are useful because they reject unsupported speed claims
    and encode guardrails, but they do not move bytes through a production
    executor, measure a live source site, or establish a release throughput or
    memory threshold on a documented environment. The suite can block a false
    "fast" claim, but it cannot authorize a real one.
 
-8. **No test exercises the complete production-backed path.** The
+9. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
    still lab-backed. There is no single test that starts with a Reprint pull
    base, edits a local WordPress site, fetches a live source snapshot through
    production Reprint internals, performs authenticated production dry-run,
    applies production mutations, and then verifies the live source site.
 
-8. **No-data-loss proof is resource-narrow.** The tests are strongest for
+10. **No-data-loss proof is resource-narrow.** The tests are strongest for
    simplified resources and named fixtures. They do not prove semantic
    no-loss behavior for WordPress data graphs such as posts plus postmeta plus
    attachments plus taxonomy relationships, or for arbitrary plugin tables and
@@ -393,13 +400,13 @@ invocation and can be skipped while `npm test` remains green.
    preserved in a lab run, but not that a live source site keeps every related
    object intact after a failed or retried production push.
 
-9. **Storage safety is partial.** The DB guard smoke covers existing fixture
+11. **Storage safety is partial.** The DB guard smoke covers existing fixture
    row updates only. The file guard smoke covers accepted fixture upload
    update/create/delete paths. There is no production storage proof for
    arbitrary files, plugin file publish, DB inserts/deletes, schema changes,
    activation side effects, transactions, locks, rollback, or target `fsync`.
 
-10. **Crash recovery coverage is sparse relative to the claim.** The process
+12. **Crash recovery coverage is sparse relative to the claim.** The process
    kill smoke is valuable but covers one local Playground path. There is no
    kill-at-every-boundary matrix across DB writes, file writes, plugin
    activation, journal writes, finalization, stale claims, and replay. The
@@ -407,17 +414,17 @@ invocation and can be skipped while `npm test` remains green.
    classified, but not that the production executor restarts without losing or
    duplicating live source changes.
 
-11. **Reliability assertions often count events rather than prove every hash
-   transition.** Several smokes verify expected event names, counts, and coarse
-   replay behavior. Release-grade recovery needs deeper assertions that each
-   journaled before/after/observed hash corresponds to the live storage state
-   at every recovery boundary.
+13. **Reliability assertions often count events rather than prove every hash
+    transition.** Several smokes verify expected event names, counts, and coarse
+    replay behavior. Release-grade recovery needs deeper assertions that each
+    journaled before/after/observed hash corresponds to the live storage state
+    at every recovery boundary.
 
-12. **Auth is lab-auth, not production-auth.** The authenticated and
-   production-shaped Playground tests are good protocol-shape evidence, but the
-   fallback Application Password verifier and lab HMAC/session store do not
-   prove production credentials, TLS, secret scoping, nonce cleanup, replay
-   retention, or source-site authorization.
+14. **Auth is lab-auth, not production-auth.** The authenticated and
+    production-shaped Playground tests are good protocol-shape evidence, but the
+    fallback Application Password verifier and lab HMAC/session store do not
+    prove production credentials, TLS, secret scoping, nonce cleanup, replay
+    retention, or source-site authorization.
 
 13. **Plugin safety is intentionally hard-coded.** The tests prove that the lab
    blocks arbitrary plugin data and allows exact fixtures. That is the right
