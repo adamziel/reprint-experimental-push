@@ -1956,6 +1956,42 @@ test('completed replay on a fresh durable journal persists a restart-inspectable
   }
 });
 
+test('completed replay on an existing durable journal keeps replay evidence append-only', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'seeded',
+    observedHash: 'seed',
+    artifactRefs: {},
+  });
+
+  const replay = applyPlan(completed.site, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.deepEqual(
+    persisted.records.map((record) => record.type),
+    ['journal-opened', 'journal-replayed'],
+  );
+  assert.equal(persisted.records[1].state, 'fully-updated-remote');
+  assert.equal(persisted.records.some((record) => record.type === 'target-planned'), false);
+});
+
 test('replaying a completed plan requires a complete matching journal envelope', () => {
   const base = baseSite();
   const local = baseSite();
