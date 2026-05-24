@@ -35,10 +35,10 @@ the safe list even when they improve a throughput metric.
 
 | Area | Safe fast path | Required guardrail |
 | --- | --- | --- |
-| File hashing | Cache strong file hashes keyed by a local fingerprint such as size, mtime, inode, permissions, and previous digest. Stream only uncached or fingerprint-changed files, and keep per-chunk hashes for large files. | Size, mtime, or inode can only skip a rehash when they match a cached strong digest. The apply precondition remains the remote resource hash. |
+| File hashing | Cache strong file hashes behind a local fingerprint such as size, mtime, inode, mode, and the previous digest. Stream only uncached or fingerprint-changed files, and keep per-chunk hashes for large files so resume can skip work safely. | Size, mtime, or inode can only skip a rehash when they match a cached strong digest. The apply precondition remains the live remote resource hash. |
 | Chunk upload | Upload large file bodies to plan-scoped staging objects in digest-addressed chunks, then assemble or publish the file with one compare-and-swap finalize step. | Chunk writes must not mutate the live path. Each chunk needs a checksum, idempotency key, and durable journal entry before the sender advances. |
-| Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
-| Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, and strong hash so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
+| Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order with one precondition per row. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
+| Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, and strong hash so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
 | Compression | Compress transport frames for JSON, SQL batches, manifests, and text files. Skip already-compressed file types and keep the canonical hash over the uncompressed resource value. | Content encoding is transport metadata. It must not change the hash used for conflict detection or compare-and-swap. |
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
@@ -233,6 +233,21 @@ validators, and the final durable commit record.
   state into a summary that cannot identify the affected resources after a
   crash.
 
+The reject list is not just theoretical. It blocks the tempting shortcuts that
+break the no-data-loss contract:
+
+- File hashing cannot fall back to mtime-only, size-only, or path-only equality.
+- Chunk upload cannot publish directly to the live file path or accept a chunk
+  without a matching durable receipt.
+- Database row batching cannot use blind `REPLACE` or reorder rows across
+  plugin owners or atomic groups.
+- Remote indexes cannot authorize apply writes, even when the listing is fresh.
+- Compression cannot change the canonical hash by hashing encoded bytes.
+- Parallelism cannot cross the atomic-group barrier just because the work is
+  independent on paper.
+- Backpressure cannot erase evidence, mark work complete, or hide which bytes
+  and rows are still pending.
+
 ## Benchmark Shape
 
 Benchmarks need to model the expensive paths that can break safety, not only
@@ -245,6 +260,7 @@ tiny row updates:
 - A mixed remote-index planning pass that avoids body fetches but still
   revalidates preconditions during apply.
 - Backpressure scenarios where the remote slows down, staging disk fills, or
+  journal lag forces the sender to pause instead of guessing which work landed.
   journal fsync falls behind.
 - Failure injection before and after every durable boundary: chunk ack, batch
   commit, group staging finalize, and atomic group commit.
