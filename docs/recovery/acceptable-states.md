@@ -28,3 +28,5 @@ Durable journals should carry the evidence needed to inspect or resume after a c
 - enough metadata to classify the remote as old, fully updated, or blocked
 
 JSON test fixtures and lab-only evidence are useful for proving the model, but they are not a substitute for durable journal storage with crash-safe writes, fsync or equivalent persistence, and recovery inspection on restart.
+
+For production recovery, the journal itself is the source of truth for replay and inspection. A JSON snapshot can document the model, but it does not satisfy the no-data-loss contract unless the persisted journal records the boundary and recovery artifacts that classify the remote state.
