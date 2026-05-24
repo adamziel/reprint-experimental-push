@@ -463,6 +463,9 @@ mu-plugin, theme, upload derivative, generated artifact, custom table, and
 multisite scope that push can affect.
 That leaves room for plugin-owned state outside the scanner allowlist, such as
 runtime-only registries or migration-owned rows that only appear during apply.
+It also leaves room for identity remapping failures: a scan can name the right
+object class and still miss that create-time IDs, aliases, or cross-table
+references changed after the inventory was recorded.
 
 Required change: use ZS-Sync-style scanning as planning input only. A ready
 push must block on unknown or incomplete coverage.
@@ -493,6 +496,9 @@ partial apply.
 Manual resolution also needs explicit scope fencing: a partial approval for
 one object or file must not be treated as permission to apply unrelated rows,
 relationships, or plugin state on retry.
+Manual review is not production proof unless the remote is preserved for audit,
+the reviewed scope still matches the live hashes at apply time, and the retry
+path can prove it rejected stale scope before any write.
 
 Required change: adopt the ForkPress-grade lifecycle before making
 ForkPress-grade claims. Manual resolution is acceptable only when the remote
@@ -537,6 +543,9 @@ would reasonably read as equivalent.
 - Route-shape matches, package mounting, and fixture replay remain comparison
   evidence only; they cannot be used to claim remote preservation, identity
   stability, or plugin ownership safety without a live revalidation proof.
+- A manual review artifact is only acceptable when the remote snapshot,
+  reviewed scope, and hashes still match at apply time; otherwise the artifact
+  must stay audit-only and be rejected before any write.
 - Every production journal boundary has crash evidence for old, new, or
   blocked classification.
 - The release suite runs auth, storage, recovery, plugin, graph, redaction,
@@ -596,7 +605,9 @@ Before any production-grade push claim, the project needs all of these:
     executor path intended for release.
 14. A documented release gate that fails closed on stale manual-review
     artifacts, unknown plugin ownership, route-shape-only evidence, fixture
-    replay alone, or any claim that only restates the lab route shape.
+    replay alone, any claim that only restates the lab route shape, or any
+    create path that can renumber, alias, or reassign target identity without
+    a live remap proof.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
