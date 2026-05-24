@@ -230,6 +230,8 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A lab route that looks production-shaped is not production proof, even if it
   returns live hashes, mounts as a plugin, or replays successfully on a
   fixture.
+- Reprint, ZS-Sync, and ForkPress source notes are comparison evidence only;
+  they do not transfer safety proof to this repository by resemblance alone.
 - The live remote is revalidated immediately before apply, and any stale
   retry starts from a fresh snapshot rather than reusing old approval or stale
   manual-review artifacts.
