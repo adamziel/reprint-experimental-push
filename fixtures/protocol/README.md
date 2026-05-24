@@ -47,13 +47,14 @@ Failure and recovery examples:
 - `push-pull-mapping.json` shows how the persisted pull base package becomes
   immutable provenance for push preflight, snapshot listing, dry-run upload,
   batched apply, journal inspection, and recovery.
+- `push-flow.json` shows the ordered push stages from preflight through
+  inspect-first recovery and makes the dry-run/apply split explicit.
 - `push-auth-headers.json` shows the required authentication header families
   and versioned canonical push signature parts for dry-run, apply, and mutating
   recovery requests.
 - `push-topology.json` gives a machine-readable one-remote, one-local proof
-  shape for Docker and Playground test harnesses.
-- `push-flow.json` gives a machine-readable stage order for preflight,
-  snapshot listing, dry-run, apply, journal inspection, and recovery.
+  shape for Docker and Playground test harnesses, including the same remote site
+  after independent drift between dry-run and apply.
 - `push-recovery-decision.json` gives the inspect-first recovery decision
   matrix that keeps `inspect` read-only and requires fresh live proof before
   any mutating recovery mode.
@@ -154,6 +155,17 @@ The fixture topology encodes the exact proof order the executor must preserve:
 4. `push_batch_apply` revalidates the live remote again before every batch and at the storage boundary.
 5. `push_journal` resolves lost responses and crash ambiguity without authorizing a write.
 6. `push_recover inspect` reads evidence first, and mutating recovery modes only proceed when the journal and live hashes prove the action.
+
+The pull handoff is equally explicit:
+
+- exporter and importer create the immutable base package that push preflight
+  binds to the live remote identity
+- push snapshot hashes list live remote state for planning only
+- push dry-run uploads the canonical plan as eligibility evidence only
+- push batch apply revalidates the live remote before every batch and at the
+  storage boundary
+- push journal and push recover inspect read durable evidence before any
+  mutating recovery mode can proceed
 
 The auth proof is intentionally strict:
 

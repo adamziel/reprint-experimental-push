@@ -33,6 +33,8 @@ test('push protocol fixture captures the production stage order and recovery rul
   assert.equal(flow.stages[6].mode, 'auto|finish|rollback');
   assert.ok(flow.stages[0].outputs.includes('base manifest binding'));
   assert.ok(flow.stages[5].outputs.includes('journal and live-hash proof'));
+  assert.ok(flow.stages[4].outputs.includes('open or committed claim evidence'));
+  assert.ok(flow.stages[6].outputs.includes('mutating recovery proof'));
   assert.deepEqual(flow.required_invariants, [
     'dry-run and apply are separate remote operations',
     'apply must revalidate the live remote before every batch and at the storage boundary',
@@ -87,6 +89,8 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
   assert.ok(topology.playground.shape.some((line) => line.includes('fresh snapshot listing')));
   assert.ok(topology.docker.shape.some((line) => line.includes('remote-base pulls first and seeds the merge base')));
   assert.ok(topology.playground.evidence.some((line) => line.includes('remote-changed is the same remote site observed later')));
+  assert.equal(topology.roles.remote_changed.examples.playground, 'remote-changed');
+  assert.ok(topology.playground.shape.some((line) => line.includes('remote-changed')));
 });
 
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
@@ -98,6 +102,10 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
     mapping.push_pipeline.batch_apply,
     'revalidates the live remote before every batch and again at the storage boundary before any write',
   );
+  assert.equal(
+    mapping.push_pipeline.recover,
+    'inspects, finishes, rolls back, or blocks using journal evidence and fresh live hashes, with inspect first',
+  );
   assert.equal(mapping.session_binding.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(mapping.session_binding.remote_site_id, 'remote-example');
   assert.deepEqual(mapping.session_binding.requested_scope, ['files', 'database', 'plugins', 'themes']);
@@ -106,6 +114,7 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
   assert.ok(mapping.required_invariants.includes('preflight binds the push session to the stored pull base, requested scope, and live remote identity'));
   assert.ok(mapping.required_invariants.includes('remote hash listing is planning evidence and never an apply lock'));
   assert.ok(mapping.required_invariants.includes('mutating recovery requires inspect evidence before finish or rollback'));
+  assert.ok(mapping.required_invariants.includes('dry-run is eligibility only and apply revalidates the live remote again'));
 });
 
 test('push recovery inspect fixture distinguishes safe evidence from blocked recovery', () => {
