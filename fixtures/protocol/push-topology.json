@@ -39,7 +39,9 @@
     "shape": [
       "remote-wp pulls first and seeds the merge base",
       "local-wp is restored from that base and edited independently",
-      "runner calls preflight, hash listing, dry-run, apply, journal, and recovery against the remote site as it drifts",
+      "runner calls push_preflight, push_snapshot_hashes, push_plan_dry_run, push_batch_apply, push_journal, and push_recover against the same remote site as it drifts",
+      "push_plan_dry_run is only an eligibility receipt; push_batch_apply must revalidate live remote state before every batch and again at the storage boundary",
+      "push_journal and push_recover inspect are read-only evidence readers, while mutating recovery modes require fresh live proof",
       "remote-db and local-db remain isolated so live drift does not contaminate the local edit history",
       "use only the sandbox-provided 8080 ingress through a local-only proxy when browser-visible inspection is needed"
     ]
@@ -49,6 +51,7 @@
       "remote-base seeds the pull base and push identity evidence",
       "local-edited is the imported site after local changes",
       "remote-changed is the same remote site after it drifts independently and forces stale-apply rejection and recovery",
+      "the runner proves dry-run and apply are separate by taking a fresh snapshot listing, uploading a dry-run plan, then applying only after live revalidation succeeds",
       "the runner keeps the three blueprints isolated and does not open a public tunnel",
       "use only the sandbox-provided 8080 ingress through a local-only proxy when browser-visible inspection is needed"
     ]

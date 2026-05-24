@@ -126,6 +126,15 @@ That topology is the minimal production-shaped test setup because it keeps the
 planning remote and the drift remote separate while the runner remains the
 only process that can compare, upload, and recover.
 
+The fixture topology encodes the exact proof order the executor must preserve:
+
+1. `push_preflight` authenticates a push-scoped session against the live remote.
+2. `push_snapshot_hashes` records the current remote comparison set and coverage.
+3. `push_plan_dry_run` uploads the canonical plan without mutating anything.
+4. `push_batch_apply` revalidates the live remote again before every batch and at the storage boundary.
+5. `push_journal` resolves lost responses and crash ambiguity without authorizing a write.
+6. `push_recover inspect` reads evidence first, and mutating recovery modes only proceed when the journal and live hashes prove the action.
+
 Docker harnesses should wire this as one private network with a remote site
 pair, a local site pair, and one runner container. Playground harnesses
 should mirror the same role split with separate disposable blueprints for the
