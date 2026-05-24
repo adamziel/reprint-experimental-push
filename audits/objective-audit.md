@@ -160,7 +160,7 @@ gates were exercised.
 The objective is to push local changes back to the original WordPress source
 site after a pull, while that source may still be live and may have changed.
 The pull base is one-way and the push back to the source is one-way. The
-priorities are no data loss, no data loss, reliable, and fast. That implies
+priorities are no data loss, reliable, and fast. That implies
 these release requirements:
 
 | ID | Requirement |
@@ -459,7 +459,7 @@ invocation and can be skipped while `npm test` remains green.
    the measured end-to-end run, documented environment, and release threshold
    that would clear those blockers.
 
-4. **No test proves the no-data-loss claim across the whole WordPress graph.**
+5. **No test proves the no-data-loss claim across the whole WordPress graph.**
    The current evidence can preserve selected posts, options, files, postmeta,
    and one custom table in fixtures. It does not prove that attachments,
    taxonomy links, menus, users, plugin tables, or plugin-owned serialized
@@ -467,38 +467,38 @@ invocation and can be skipped while `npm test` remains green.
    Until a live-source graph matrix exists, every no-data-loss statement is a
    blocked claim, not a proven one.
 
-5. **Reliability evidence is narrower than the claim.**
+6. **Reliability evidence is narrower than the claim.**
    The recovery and idempotency smokes classify events and replay fixture
    results, but they do not prove crash survival at every guarded boundary in a
    production executor, nor do they prove leases, fencing, or exactly-once
    behavior on a live source site. Passing them only proves that some failure
    states are detected; it does not prove the live write path is restart-safe.
 
-6. **The strongest route proof is still lab-backed.** The production-shaped
+7. **The strongest route proof is still lab-backed.** The production-shaped
    smoke and plugin package smoke are the best route-shaped evidence in the
    repo, but both still report `labBacked: true` and rely on temporary
    Playground plumbing. They are necessary protocol evidence, not proof of
    live source mutation.
 
-7. **This audit is not a release checklist.** The current scripts prove slices
+8. **This audit is not a release checklist.** The current scripts prove slices
    of the safety matrix, but they do not compose into one required gate that a
    release must pass.
 
-8. **Speed evidence is modeled, not measured for release.**
+9. **Speed evidence is modeled, not measured for release.**
    The benchmark tests are useful because they reject unsupported speed claims
    and encode guardrails, but they do not move bytes through a production
    executor, measure a live source site, or establish a release throughput or
    memory threshold on a documented environment. The suite can block a false
    "fast" claim, but it cannot authorize a real one.
 
-9. **No test exercises the complete production-backed path.** The
+10. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
    still lab-backed. There is no single test that starts with a Reprint pull
    base, edits a local WordPress site, fetches a live source snapshot through
    production Reprint internals, performs authenticated production dry-run,
    applies production mutations, and then verifies the live source site.
 
-10. **No-data-loss proof is resource-narrow.** The tests are strongest for
+11. **No-data-loss proof is resource-narrow.** The tests are strongest for
    simplified resources and named fixtures. They do not prove semantic
    no-loss behavior for WordPress data graphs such as posts plus postmeta plus
    attachments plus taxonomy relationships, or for arbitrary plugin tables and
@@ -506,7 +506,7 @@ invocation and can be skipped while `npm test` remains green.
    preserved in a lab run, but not that a live source site keeps every related
    object intact after a failed or retried production push.
 
-11. **Storage safety is partial.** The DB guard smoke covers existing fixture
+12. **Storage safety is partial.** The DB guard smoke covers existing fixture
    row updates only. The file guard smoke covers accepted fixture upload
    update/create/delete paths. There is no production storage proof for
    arbitrary files, plugin file publish, DB inserts/deletes, schema changes,
