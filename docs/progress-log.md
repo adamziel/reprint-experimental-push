@@ -6,8 +6,8 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:42:22 CEST.
-- Status: Node tests still pass.
+- Last update: 2026-05-25 01:42:59 CEST.
+- Status: Lab evidence still holds.
 - Trend: the visible page, this log, and the newest supervisor note still agree; no production evidence moved.
 - Supervision: the same-plan graph worker remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers remain unproven.
