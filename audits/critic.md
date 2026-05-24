@@ -242,6 +242,10 @@ evidence for all of these, not just a plausible design:
 Use this checklist before any doc, PR, or status comment says the project has
 production-grade push support:
 
+- Route shape, packaged-plugin mounting, and `finalMatchesLocal` are
+  compatibility checks only. They do not prove production safety, because they
+  can succeed while the live remote has drifted, the write path is still
+  lab-backed, or stale manual-review artifacts are being reused.
 - Production push endpoint: the exercised write path must be the real
   production-backed source mutation path, not a Playground proxy, route-shape
   stand-in, or copied lab executor.
@@ -291,6 +295,9 @@ production-grade push support:
 A future production claim is still blocked until the repo can show all of the
 following on the live push path, not on a fixture or route-shape smoke:
 
+- Route shape, packaged-plugin mounting, and `finalMatchesLocal` remain
+  compatibility checks only. They are never enough to establish production
+  safety if the live remote was not revalidated against the same write path.
 - A live production executor path that is not a Playground proxy, copied lab
   helper, or fixture-backed stand-in.
 - A fresh remote re-read immediately before the first guarded write, with stale
