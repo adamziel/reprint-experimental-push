@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:40:18 CEST.
+- Last update: 2026-05-25 01:40:58 CEST.
 - Status: Node tests still pass.
 - Trend: the visible page, this log, and the newest supervisor note still agree; the blocker set did not change.
 - Supervision: the same-plan graph worker remains active and unmerged.
