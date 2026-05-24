@@ -45,6 +45,9 @@ remain green even when the strongest checks are skipped, so the repo can look
 healthy while the objective remains unproven. The current test story is
 therefore strongest as a blocker generator, not as release-grade proof of no
 data loss, reliability, or speed.
+The next actionable gap is a required `verify:release`-style command that
+fails closed on `labBacked: true`, fixture-only scope, or missing live-topology
+evidence instead of leaving those checks as optional scripts.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -470,7 +473,8 @@ invocation and can be skipped while `npm test` remains green.
    replay behavior, and plugin packaging in the lab. They still report
    `labBacked: true`, so they are not proof that the live source mutation path
    runs against production auth, storage, journaling, crash boundaries, or
-   graph semantics.
+   graph semantics. A release gate must reject those lab-backed successes
+   rather than treating them as final evidence.
 
 4. **Speed is the clearest unreleased claim, and the benchmark code already
    agrees.** `test/guarded-executor-benchmark.test.js` exercises the benchmark
@@ -513,7 +517,9 @@ invocation and can be skipped while `npm test` remains green.
    and encode guardrails, but they do not move bytes through a production
    executor, measure a live source site, or establish a release throughput or
    memory threshold on a documented environment. The suite can block a false
-   "fast" claim, but it cannot authorize a real one.
+   "fast" claim, but it cannot authorize a real one. Until the release gate
+   requires a measured run, speed remains the weakest claim and an explicit
+   blocker.
 
 10. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
