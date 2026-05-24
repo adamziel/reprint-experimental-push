@@ -612,6 +612,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-upload-queue-completes-large-upload').rejectedGate,
     'recovery',
   );
+  assert.ok(
+    rejectedById.get('compressed-receipts-replace-durable-progress').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-receipts-replace-durable-progress').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-receipts-replace-durable-progress').violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-receipts-replace-durable-progress').rejectedGate,
+    'recovery',
+  );
   assert.ok(rejectedById.get('unbounded-parallelism').violates.includes('backpressure'));
   assert.ok(rejectedById.get('digest-as-authority').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compression-skips-precondition').violates.includes('live-preconditions'));
@@ -1181,6 +1194,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-file-hash-completes-plugin-update',
     'archive-hash-skips-chunk-receipts',
     'compressed-upload-queue-completes-large-upload',
+    'compressed-receipts-replace-durable-progress',
     'index-and-table-checksum-skips-batch-preconditions',
     'full-digest-completes-chunk-resume',
     'manifest-hash-completes-large-upload',

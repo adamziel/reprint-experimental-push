@@ -443,6 +443,9 @@ under load:
 - compressed-upload-queue-completes-large-upload is rejected because a drained
   compressed queue can still hide missing chunk receipts or the guarded
   publish record.
+- compressed-receipts-replace-durable-progress is rejected because compressing
+  receipts can hide the per-chunk or per-row evidence needed to classify partial
+  failure.
 - compressed-queue-drains-completes-work is rejected because a drained queue
   can still hide missing chunk or batch acknowledgements.
 - remote-index-plus-compressed-row-batch-completes-plugin-update is rejected

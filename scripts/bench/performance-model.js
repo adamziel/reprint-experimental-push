@@ -420,6 +420,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-receipts-replace-durable-progress',
+    proposal: 'compress chunk or batch receipts into a summary and treat the summary as the durable record',
+    rejectedBecause: 'a compressed summary can save space, but it can also erase the per-chunk or per-row evidence needed to classify partial failure after a crash or lost response',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'chunk-receipts', 'durable-progress', 'row-preconditions'],
+  },
+  {
     id: 'queue-empty-means-complete',
     proposal: 'advance an upstream producer because the queue is empty even though receipts are missing',
     rejectedBecause: 'an empty queue is not proof that the remote acknowledged the work',
