@@ -162,6 +162,12 @@ export function productionThroughputBlockers(report) {
   if (!report.evidence.redaction.durableJournalsContainNoRawValues) {
     blockers.push('durable-journal-redaction-not-proven');
   }
+  if (
+    !report.evidence.wordpressGraphIdentity?.allPostmetaReferencesUseStableRemoteIdentity
+    || report.evidence.wordpressGraphIdentity.graphIdentityBlockers !== 0
+  ) {
+    blockers.push('wordpress-graph-identity-evidence-not-proven');
+  }
   if (!report.evidence.recovery.successReplayInspectable) {
     blockers.push('missing-success-recovery-evidence');
   }
@@ -320,12 +326,14 @@ function buildBenchmarkSites(config, stagedFile) {
       [PAYMENTS_PLUGIN]: { version: '2.1.0', active: true },
     },
     db: {
+      wp_posts: benchmarkStablePosts(config.rowCount),
       wp_postmeta: {},
     },
   };
   const local = clone(base);
   const rowResourceKeys = [];
   const allowedResources = [];
+  const graphIdentityTargets = [];
 
   local.files[LARGE_UPLOAD_PATH] = stagedFile.descriptor;
   local.files[COMMERCE_MAIN_FILE] = fileDescriptor({
@@ -341,8 +349,11 @@ function buildBenchmarkSites(config, stagedFile) {
 
   for (let index = 1; index <= config.rowCount; index++) {
     const id = `meta_id:${index}`;
+    const postId = benchmarkPostIdForRow(index);
     const resourceKey = `row:${JSON.stringify(['wp_postmeta', id])}`;
+    const targetResourceKey = `row:${JSON.stringify(['wp_posts', `ID:${postId}`])}`;
     rowResourceKeys.push(resourceKey);
+    graphIdentityTargets.push(targetResourceKey);
     allowedResources.push({
       resourceKey,
       pluginOwner: COMMERCE_PLUGIN,
@@ -350,7 +361,7 @@ function buildBenchmarkSites(config, stagedFile) {
     });
     local.db.wp_postmeta[id] = {
       meta_id: index,
-      post_id: 10_000 + Math.floor(index / 8),
+      post_id: postId,
       meta_key: `_commerce_bench_${index}`,
       meta_value: deterministicRowPayload(index, config.rowPayloadBytes),
       __pluginOwner: COMMERCE_PLUGIN,
@@ -391,8 +402,27 @@ function buildBenchmarkSites(config, stagedFile) {
     local,
     remote: clone(base),
     rowResourceKeys,
+    graphIdentityTargets: [...new Set(graphIdentityTargets)],
     atomicGroupId: ATOMIC_GROUP_ID,
   };
+}
+
+function benchmarkStablePosts(rowCount) {
+  const posts = {};
+  for (let index = 1; index <= rowCount; index++) {
+    const postId = benchmarkPostIdForRow(index);
+    posts[`ID:${postId}`] ||= {
+      ID: postId,
+      post_title: `Benchmark catalog identity ${postId}`,
+      post_status: 'publish',
+      post_type: 'product',
+    };
+  }
+  return posts;
+}
+
+function benchmarkPostIdForRow(index) {
+  return 10_000 + Math.floor(index / 8);
 }
 
 function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtMutation = null }) {
@@ -489,6 +519,7 @@ function buildReport({
       chunkCount: stagedFile.chunkCount,
       rowCount: config.rowCount,
       rowPayloadBytes: config.rowPayloadBytes,
+      graphIdentityTargetCount: sites.graphIdentityTargets.length,
       mutations: mutationCount,
       atomicGroupId: sites.atomicGroupId,
       atomicGroupMutationCount: atomicGroup?.mutationIds.length || 0,
@@ -556,6 +587,13 @@ function buildReport({
       redaction: {
         durableJournalsContainNoRawValues,
       },
+      wordpressGraphIdentity: {
+        postmetaReferences: config.rowCount,
+        stableRemotePostTargets: sites.graphIdentityTargets.length,
+        allPostmetaReferencesUseStableRemoteIdentity: benchmarkGraphIdentityStable(sites),
+        graphIdentityBlockers: plan.blockers.filter((blocker) =>
+          blocker.class === 'stale-wordpress-graph-identity').length,
+      },
     },
     results: {
       appliedMutations: applyResult.appliedMutations,
@@ -575,6 +613,20 @@ function buildReport({
       labGuardedExecutorEvidence: true,
     },
   };
+}
+
+function benchmarkGraphIdentityStable(sites) {
+  return sites.graphIdentityTargets.every((targetResourceKey) => {
+    const [table, id] = JSON.parse(targetResourceKey.slice('row:'.length));
+    if (table !== 'wp_posts' || !id) {
+      return false;
+    }
+    const basePost = sites.base.db.wp_posts?.[id] || null;
+    const remotePost = sites.remote.db.wp_posts?.[id] || null;
+    return basePost
+      && remotePost
+      && JSON.stringify(basePost) === JSON.stringify(remotePost);
+  });
 }
 
 function assertBenchmarkPlan(plan, config) {
