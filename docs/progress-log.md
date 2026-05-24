@@ -36,13 +36,28 @@ linked implementation artifacts.
 - The page at [progress.html](../progress.html) reports this as a safety model,
   not a production WordPress transport.
 
+## 2026-05-24 - Playground Guarded Apply Target
+
+- `npm run test:playground` passed as a two-leg Playground harness: first it
+  exported real WordPress Playground snapshots and asserted conflict planning,
+  then it created a separate ready plan with `remote=base`, applied it inside a
+  fresh Playground source site, and verified WordPress-visible posts, options,
+  and files after the apply.
+- The apply leg reported `status: ready`, `applied: 5`, verified the shared and
+  local-only upload files, the plugin-owned option, the edited shared post, and
+  the local-only post, then read back a `remote-base` Playground snapshot with
+  two posts, one option, and two files.
+- This target remains lab-scoped. It does not claim production Reprint HTTP
+  source mutation support; the real HTTP transport/source mutation endpoint is
+  still a pending proof gate.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
-| Merge invariants | 32% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner in [playground topology](playground-topology.md) | SQL/file mutation semantics, live-site mutation checks |
+| Merge invariants | 32% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply harness in [playground topology](playground-topology.md) | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks |
 | Recovery boundaries | 14% | Journal/recovery artifacts in [src/apply.js](../src/apply.js) and tests | Durable on-disk journal, process-kill tests, storage-level recovery proof |
-| Reliable executor and protocol | 14% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, and Playground snapshot extraction | Implemented Reprint protocol extension, real WordPress mutation executor, remote audit records |
+| Reliable executor and protocol | 14% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, and guarded Playground apply | Implemented Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
 
@@ -54,7 +69,9 @@ linked implementation artifacts.
   artifacts survive process failure and classify the target as old, new, or
   blocked.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test
-  and export planner snapshots, but push behavior is pending until mutations are
-  applied to a source site and WordPress-visible results are verified.
+  and export planner snapshots. Guarded apply now runs into a fresh Playground
+  source with WordPress-visible readback; production push behavior remains
+  pending until mutations flow through the intended HTTP source endpoint and are
+  verified there.
 - Plugin validators or drivers: pending until plugin-specific semantics are
   implemented and tested against real plugin-owned data.

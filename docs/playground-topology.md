@@ -31,7 +31,7 @@ npx --yes @wp-playground/cli@latest run-blueprint --blueprint=<file>
 
 It does not start a server.
 
-## Snapshot Planning Command
+## Playground Harness Command
 
 ```bash
 npm run test:playground
@@ -48,11 +48,31 @@ asserts:
 - local-only post and file resources become guarded mutations;
 - remote-only post and file resources are preserved as remote decisions.
 
+## Guarded Apply Harness
+
+The apply leg for `npm run test:playground` uses the same no-server Playground
+boundary. It:
+
+- exports real WordPress snapshots from the base, local edited, and remote
+  changed fixtures;
+- keeps the conflict-planning assertions above;
+- builds a separate ready plan with `remote=base`, so local-only mutations are
+  safe to apply against an unchanged source fixture;
+- applies that ready plan inside a fresh Playground source site; and
+- verifies the result through WordPress-visible posts, options, and files, not by
+  trusting only the JSON applicator output.
+
+The guarantee is intentionally narrow: the harness proves that guarded lab
+mutations derived from real Playground snapshots can be applied to a disposable
+Playground source and read back through WordPress. It does not prove the
+production Reprint HTTP transport, a live source-site mutation endpoint,
+durable remote journaling, authentication, or plugin-specific semantic merge
+drivers.
+
 ## Next Proofs Needed
 
 - Mount the Reprint exporter/importer or experimental push plugin into the
   Playground runtime.
 - Execute a push dry-run through a Reprint HTTP endpoint rather than an in-process
   Node planner.
-- Revalidate live remote hashes immediately before apply.
-- Assert WordPress-visible content and options after apply.
+- Revalidate live remote hashes immediately before production apply.

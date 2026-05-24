@@ -25,11 +25,18 @@ transport must satisfy.
 npm test
 ```
 
-Run the no-server WordPress Playground extraction/planning smoke:
+Run the no-server WordPress Playground integration harness:
 
 ```bash
 npm run test:playground
 ```
+
+The Playground target is the lab proof for real WordPress fixture state. It
+exports snapshots from Playground sites, exercises conflict planning from those
+snapshots, creates a ready plan with `remote=base`, applies that plan inside a
+fresh Playground source site, and verifies WordPress-visible posts, options, and
+files after apply. This remains a lab harness, not production Reprint HTTP
+source mutation support.
 
 The lab CLI works on three snapshots:
 
