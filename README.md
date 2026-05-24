@@ -65,10 +65,11 @@ The `test:playground:http-push` script starts disposable Playground servers
 bound only to `127.0.0.1` and verifies a local-only REST lab namespace,
 `reprint-push-lab/v1`, with `GET /snapshot`, `GET /journal`, `POST /dry-run`,
 and `POST /apply`. It covers namespace discovery, snapshots, journal readback,
-read-only dry-run, required dry-run receipts, eight-mutation apply success,
-tampered receipt refusal, stale remote refusal, and row/file/plugin-data
-conflict classes. It is intentionally standalone because it starts real HTTP
-servers and takes around two minutes; it is not included in `test:playground`.
+read-only dry-run, required dry-run receipts, successful apply of the current
+eight ready mutations, tampered receipt refusal, stale remote refusal, and
+row/file/plugin-data conflict classes. It is intentionally standalone because it
+starts real HTTP servers and takes around two minutes; it is not included in
+`test:playground`.
 
 The lab CLI works on three snapshots:
 
