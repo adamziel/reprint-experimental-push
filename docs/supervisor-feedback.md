@@ -1,20 +1,20 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:17:44 CEST
+Last updated: 2026-05-25 01:18:28 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 01:17:44 CEST - Supervisor Snapshot
+## 2026-05-25 01:18:28 CEST - Supervisor Snapshot
 
-- Going well: the page still stays compact, and the detailed evidence links are
-  easy to find from the first screen.
-- Not going well: the visible page still repeats the same blocked gates in a
-  few places, which makes the scan noisier than it needs to be.
-- Progress change: no evidence delta; this pass is a readability cleanup and
-  status reconciliation.
-- Next nudge: let each lane name one proof gap, one next test, and one owner
-  without repeating the full blocker list.
+- Going well: the page stays compact, and the detailed evidence links are
+  visible on the first screen.
+- Not going well: the latest page copy still repeats the blocked gates more
+  than necessary, which slows the scan.
+- Progress change: no evidence delta; this pass is another readability cleanup
+  and status reconciliation.
+- Next nudge: each lane should name one proof gap, one next test, and one
+  owner in a single terse line.
 
 ## 2026-05-25 01:17:12 CEST - Supervisor Snapshot
 
@@ -46,9 +46,9 @@ changed, what is helping, what is not helping, and the next nudge.
 
 | Lane | Nudge |
 | --- | --- |
-| Invariants | Finish same-plan graph HTTP smoke before merge. |
-| Recovery | Move model replay/failure proof into production journal storage. |
-| Reliable executor | Turn protocol docs into production push credentials and journal rows. |
+| Invariants | Prove same-plan graph HTTP smoke on a real site. |
+| Recovery | Move replay/failure proof into production journal storage. |
+| Reliable executor | Turn protocol docs into push credentials and journal rows. |
 | Fast paths | Run guarded benchmark proof against a real large site. |
 | Audit and critic | Re-audit current proof while implementation lanes run. |
 | Progress publisher | Keep Pages dated, concise, and explicit about active lanes. |
