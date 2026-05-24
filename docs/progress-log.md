@@ -39,8 +39,74 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
 
+## 2026-05-24 - Progress Publisher Fresh Verification
+
+- `npm test` passed in this lane with `70` Node scenarios covering the
+  planner/applicator model, file-backed recovery journal inspection,
+  allowlisted plugin fixture gates, stale plugin owner context blocks, recovery
+  retry journal state, and the performance safety model. Evidence:
+  [package.json](../package.json),
+  [test/push-planner.test.js](../test/push-planner.test.js),
+  [test/recovery-journal.test.js](../test/recovery-journal.test.js), and
+  [test/performance-model.test.js](../test/performance-model.test.js).
+- `npm run test:playground` passed in this lane. The no-server Playground
+  harness verified the expected file, row, and plugin-owned conflict classes;
+  applied and read back the eight ready fixture mutations; and verified
+  receipt-required, receipt-mismatch, stale-precondition, and conflict-refusal
+  protocol behavior. Evidence:
+  [docs/playground-topology.md](playground-topology.md),
+  [scripts/playground/plan-from-blueprints.mjs](../scripts/playground/plan-from-blueprints.mjs),
+  [scripts/playground/apply-ready-plan.mjs](../scripts/playground/apply-ready-plan.mjs), and
+  [scripts/playground/push-protocol-smoke.mjs](../scripts/playground/push-protocol-smoke.mjs).
+- `npm run test:playground:authenticated-cli-push` passed in this lane. It
+  verified non-mutating authenticated CLI dry-run, an eight-mutation lab apply
+  with commit evidence, changed-source refusal before dry-run/apply, and
+  post-snapshot source drift refusal with the injected remote change preserved.
+  Evidence:
+  [scripts/playground/authenticated-cli-push-smoke.mjs](../scripts/playground/authenticated-cli-push-smoke.mjs),
+  [bin/reprint-push-lab.js](../bin/reprint-push-lab.js), and
+  [docs/playground-topology.md](playground-topology.md).
+- [progress.html](../progress.html) keeps a concise scan view with `70` Node
+  tests, flat production readiness, `0` production gates proven, and `4`
+  pending gates. No percentages were raised by this verification pass because
+  it confirmed existing lab evidence; it did not prove a production Reprint
+  push executor, production recovery journal, Docker/full-Playground
+  integration, or arbitrary plugin drivers.
+- Static UI verification passed with no heuristic warnings, no horizontal
+  overflow, and responsive screenshots captured for desktop, tablet, and
+  mobile. Evidence:
+  [screenshot report](progress-assets/screenshots/report.json),
+  [desktop screenshot](progress-assets/screenshots/desktop.png),
+  [tablet screenshot](progress-assets/screenshots/tablet.png), and
+  [mobile screenshot](progress-assets/screenshots/mobile.png).
+
 <details>
 <summary>Earlier progress entries</summary>
+
+## 2026-05-24 - Core Evidence Recheck
+
+- `npm test` passed in this lane with `55` Node scenarios. Evidence:
+  [package.json](../package.json),
+  [test/push-planner.test.js](../test/push-planner.test.js),
+  [test/recovery-journal.test.js](../test/recovery-journal.test.js), and
+  [test/performance-model.test.js](../test/performance-model.test.js).
+- `npm run test:playground` passed in this lane. The plan leg reported
+  conflict status with five expected conflicts across row, file, and
+  plugin-data classes; the guarded apply leg verified eight fixture mutations;
+  the protocol leg verified missing/tampered receipt refusal, stale
+  precondition refusal, conflict refusal, and eight verified ready mutations.
+  Evidence:
+  [scripts/playground/plan-from-blueprints.mjs](../scripts/playground/plan-from-blueprints.mjs),
+  [scripts/playground/apply-ready-plan.mjs](../scripts/playground/apply-ready-plan.mjs),
+  [scripts/playground/push-protocol-smoke.mjs](../scripts/playground/push-protocol-smoke.mjs), and
+  [docs/playground-topology.md](playground-topology.md).
+- `docker --version` failed with `command not found` in this sandbox. Docker
+  and full Playground integration remain pending rather than counted as proven
+  progress.
+- Percentages and proof gates remained unchanged. The verified slice was still
+  the deterministic Node model plus bundled no-server Playground fixtures; the
+  real WordPress push executor, production recovery journal, full Docker or
+  Playground integration, and arbitrary plugin drivers remained pending.
 
 ## 2026-05-24 - Integrated Feedback And Verification Refresh
 
