@@ -4,6 +4,12 @@
   "batch_id": "batch-1",
   "state": "committed",
   "proof": "all-final-hashes-match-plan",
+  "target_state_counts": {
+    "old": 0,
+    "new": 2,
+    "blocked": 0,
+    "unknown": 0
+  },
   "actions": ["inspected-live-hashes", "finalized-journal"],
   "next": null
 }

@@ -8,12 +8,15 @@ The core invariant is:
 
 1. Dry-run and apply are separate remote operations.
 2. Apply revalidates the live remote before every mutation batch and, in the
-   current lab apply path, re-hashes each target immediately before its write.
-   The accepted lab DB update slice then adds storage-boundary guarded SQL
-   updates for a narrow fixture row set, and the accepted lab file update slice
-   adds guarded compare-and-rename handling for existing fixture file updates.
+   production contract, immediately before each storage-boundary write. The
+   earlier snapshot and dry-run receipt are evidence, not locks.
 3. A failed or interrupted apply leaves a durable journal that lets recovery
    prove whether the remote is old, new, or blocked with artifacts.
+
+Push is intentionally conservative. A server that cannot prove complete
+coverage for the requested scopes, cannot bind the push to the pull base, or
+cannot guard a mutation at its storage boundary must refuse that part of the
+plan instead of accepting a best-effort overwrite.
 
 ## Existing Pull Pipeline Mapping
 
@@ -35,9 +38,21 @@ safety bar because it mutates the source site:
 | runtime setup | Push executor validates runtime-sensitive mutations such as plugin/theme activation, generated files, object cache, cron, and maintenance mode gates before apply. |
 
 The importer already persists pull state. Push requires the pull to persist a
-base manifest: resource keys, hashes, schema fingerprints, WordPress paths, and
-protocol metadata observed when the local site was created. That manifest is the
-merge base for later push planning.
+base manifest: remote identity, export protocol metadata, scanner coverage,
+resource keys, hashes, schema fingerprints, WordPress paths, table prefix,
+multisite mapping, and hash algorithm metadata observed when the local site was
+created. That manifest is the merge base for later push planning.
+
+The base manifest is bound into every push through:
+
+- `base_manifest_id`: stable local identifier for the pulled base.
+- `base_manifest_hash`: canonical hash of the base manifest.
+- `remote_site_id`: remote identity observed during pull.
+- `pull_protocol_version`: exporter/importer protocol used to create the base.
+- `base_coverage_hash`: canonical hash of the pull scanner coverage manifest.
+
+If the remote cannot recognize the site identity or the plan cannot prove which
+base it was built from, `push_preflight` or `push_plan_dry_run` must reject.
 
 ## Authentication
 
@@ -88,6 +103,60 @@ Rules:
 If a server supports only the current export HMAC and not the canonical push
 signature, it may serve pull endpoints and hash listing, but it must reject
 dry-run upload, apply, journal repair, and recovery mutation.
+
+## Identity, Idempotency, And Coverage
+
+### Site Identity
+
+Push must target the same remote that produced the local base. The remote
+identity is not the raw URL alone because domain names can change between pull
+and push. The server should expose a stable `site_id` plus hashed evidence:
+
+- canonical home/site URL hashes
+- WordPress install salt or generated Reprint site identity hash
+- table prefix and multisite mapping
+- exporter protocol and push protocol versions
+- scanner coverage hash from the pull base when available
+
+The executor may update stored remote URLs after an explicit user action, but it
+must not silently retarget a push to a different `site_id`.
+
+### Idempotency
+
+`X-Reprint-Push-Idempotency-Key` is required for `push_plan_dry_run`,
+`push_batch_apply`, and mutating recovery modes. The body may repeat the
+`idempotency_key`; if present, it must match the header. The remote stores a
+hash of the canonical request body and authenticated identity with each key.
+
+Server behavior:
+
+- Same key, same body, same authenticated identity: return the original result
+  or current in-progress journal state without fresh mutation work.
+- Same key, different body or different identity: reject with
+  `IDEMPOTENCY_KEY_CONFLICT` before mutation.
+- Lost response during apply: the executor inspects `push_journal` before
+  retrying and retries only with the same key and same body.
+
+### Snapshot Coverage
+
+`push_snapshot_hashes` returns a coverage manifest as well as resources. The
+coverage manifest describes what was scanned, which scanner or semantic driver
+owned each scope, which resources were excluded, and whether unknown plugin or
+environment-specific data forced a block.
+
+A coverage manifest includes:
+
+- `coverage_id` and `coverage_hash`
+- scanner version and hash algorithm
+- included roots, tables, plugins, themes, and multisite blog IDs
+- cursor completion proof for every requested scope
+- excluded generated/cache/runtime resources with policy reasons
+- blocked unknown resources that make the plan ineligible for apply
+
+Dry-run must reject a plan whose `remote_coverage_hash` does not match the
+accepted remote hash listing or whose requested mutations depend on resources
+outside covered scopes. Apply must still revalidate the live resources; coverage
+only proves the planner had a complete enough view to propose a plan.
 
 ### Current Playground Auth Lab
 
@@ -246,9 +315,17 @@ Every listed resource has:
 - `size_bytes` or `row_bytes` when known
 - `mtime` or database write watermark when known
 - `capabilities`: operations the server can safely perform for that resource
+- `storage_guard`: how the server can recheck and write the resource at the
+  storage boundary, such as `mysql-transaction-row-lock`,
+  `sqlite-immediate-guarded-update`, `filesystem-compare-rename`, or
+  `semantic-driver`
 
 The canonical resource hash must be independent of listing order, PHP array
 iteration order, SQL dump formatting, and host-specific absolute paths.
+
+Resources without a usable storage guard may be listed for conflict display,
+but they are not eligible for automatic mutation. The planner must preserve
+remote state or require a plugin/theme driver that can prove semantic safety.
 
 ## Endpoints
 
@@ -272,6 +349,9 @@ Request body:
   "client_min_protocol_version": 1,
   "requested_scopes": ["files", "database", "plugins", "themes"],
   "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+  "base_manifest_hash": "sha256:base-manifest",
+  "base_coverage_hash": "sha256:base-coverage",
+  "remote_site_id": "remote-example",
   "local_site_id": "local-dev-site",
   "client_features": [
     "canonical-push-hmac",
@@ -293,6 +373,7 @@ Response body:
   "expires_at": "2026-05-24T00:10:00Z",
   "site": {
     "site_id": "remote-example",
+    "identity_hash": "sha256:remote-identity",
     "home_url_hash": "sha256:...",
     "wp_version": "6.9.0",
     "table_prefix": "wp_",
@@ -306,7 +387,14 @@ Response body:
     "recovery": true,
     "db_transactions": true,
     "file_staging": true,
-    "maintenance_mode": true
+    "maintenance_mode": true,
+    "coverage_manifest": true,
+    "idempotency": true,
+    "storage_guards": [
+      "mysql-transaction-row-lock",
+      "sqlite-immediate-guarded-update",
+      "filesystem-compare-rename"
+    ]
   },
   "limits": {
     "max_request_bytes": 8388608,
@@ -318,12 +406,20 @@ Response body:
     "store": "database",
     "namespace": "reprint_push",
     "retention_days": 30
+  },
+  "auth": {
+    "required": ["export-hmac", "canonical-push-hmac"],
+    "idempotency_header": "X-Reprint-Push-Idempotency-Key",
+    "nonce_window_seconds": 300
   }
 }
 ```
 
 The preflight response is not liveness proof for apply. It only proves that a
-push session can start.
+push session can start. It must reject when the requested push scope needs a
+capability the remote cannot provide, when the supplied `remote_site_id` does
+not match the current site, or when the server cannot persist nonce/session and
+journal state for the session lifetime.
 
 ### `push_snapshot_hashes`
 
@@ -358,6 +454,26 @@ Response body:
   "ok": true,
   "snapshot_id": "snap_01j00000000000000000000000",
   "site_epoch": "epoch:remote-example:142",
+  "coverage": {
+    "coverage_id": "cov_01j00000000000000000000000",
+    "coverage_hash": "sha256:remote-coverage",
+    "scanner_version": "reprint-push-scanner/1",
+    "hash_algorithm": "sha256",
+    "complete": false,
+    "scopes": {
+      "files": ["wp-content/plugins", "wp-content/themes", "wp-content/uploads"],
+      "tables": ["wp_options", "wp_posts", "wp_postmeta"],
+      "plugins": "metadata-and-declared-drivers",
+      "themes": "metadata-and-declared-drivers"
+    },
+    "excluded": [
+      {
+        "resource_key": "runtime:transients",
+        "reason": "generated-cache"
+      }
+    ],
+    "blocked": []
+  },
   "cursor": "eyJwYWdlIjoyfQ==",
   "complete": false,
   "resources": [
@@ -369,14 +485,16 @@ Response body:
       "size_bytes": 4096,
       "mtime": 1779571200,
       "owner": "forms",
-      "capabilities": ["put", "delete", "stage"]
+      "capabilities": ["put", "delete", "stage"],
+      "storage_guard": "filesystem-compare-rename"
     },
     {
       "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
       "resource_type": "row",
       "hash": "sha256:f98a...",
       "owner": "core",
-      "capabilities": ["put", "delete", "transaction"]
+      "capabilities": ["put", "delete", "transaction"],
+      "storage_guard": "mysql-transaction-row-lock"
     }
   ]
 }
@@ -392,6 +510,10 @@ The server may also expose `push_snapshot_hashes` for a narrow set of resource
 keys during apply revalidation. That revalidation must read the live remote, not
 reuse the earlier dry-run listing.
 
+For paged listings, every page repeats the same `coverage_id` and the final page
+sets both response `complete` and `coverage.complete` to true. A client must not
+build a ready plan from an incomplete listing.
+
 ### `push_plan_dry_run`
 
 Purpose: upload the client-computed plan so the remote validates it without
@@ -404,9 +526,13 @@ Request body:
 ```json
 {
   "push_session": "psh_01j00000000000000000000000",
+  "idempotency_key": "idem_dry_01j00000000000000000000",
   "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "plan_hash": "sha256:plan",
   "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+  "base_manifest_hash": "sha256:base-manifest",
   "remote_snapshot_id": "snap_01j00000000000000000000000",
+  "remote_coverage_hash": "sha256:remote-coverage",
   "summary": {
     "mutations": 2,
     "conflicts": 0,
@@ -417,7 +543,8 @@ Request body:
       "resource_key": "file:index.php",
       "expected_remote_hash": "sha256:base-index",
       "base_hash": "sha256:base-index",
-      "local_hash": "sha256:local-index"
+      "local_hash": "sha256:local-index",
+      "storage_guard": "filesystem-compare-rename"
     }
   ],
   "mutations": [
@@ -427,6 +554,7 @@ Request body:
       "action": "put",
       "body_hash": "sha256:local-index",
       "body_ref": "upload:body-1",
+      "storage_guard": "filesystem-compare-rename",
       "atomic_group_id": null
     }
   ],
@@ -440,6 +568,7 @@ Response body:
 {
   "ok": true,
   "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "plan_hash": "sha256:plan",
   "dry_run_id": "dry_01j00000000000000000000000",
   "status": "ready",
   "accepted_until": "2026-05-24T00:20:00Z",
@@ -448,13 +577,25 @@ Response body:
     "plan-schema",
     "resource-addressability",
     "atomic-group-closure",
+    "coverage-complete",
+    "storage-guards-supported",
     "remote-precondition-readable",
     "journal-writable"
   ],
+  "coverage": {
+    "remote_coverage_hash": "sha256:remote-coverage",
+    "status": "accepted"
+  },
   "apply_requirements": {
     "must_revalidate": true,
+    "must_revalidate_at_storage_boundary": true,
     "must_use_dry_run_id": true,
     "max_batch_mutations": 100
+  },
+  "idempotency": {
+    "key": "idem_dry_01j00000000000000000000",
+    "replayed": false,
+    "request_hash": "sha256:dry-run-request"
   },
   "journal_cursor": "journal:dry_01j00000000000000000000000:1"
 }
@@ -471,6 +612,12 @@ Dry-run statuses:
 - `invalid`: malformed plan, bad hashes, unsupported resource type, or bad
   atomic group closure.
 
+Dry-run validates that the proposed plan is well-formed and eligible to attempt.
+It must not reserve resource values as if the remote were locked. Any remote
+change after dry-run and before apply is expected to be caught by apply
+revalidation and returned as `PRECONDITION_FAILED` or a more specific blocked
+state.
+
 ### `push_batch_apply`
 
 Purpose: apply one mutation batch from an accepted dry-run.
@@ -482,15 +629,19 @@ Request body:
 ```json
 {
   "push_session": "psh_01j00000000000000000000000",
+  "idempotency_key": "idem_apply_01j000000000000000000",
   "dry_run_id": "dry_01j00000000000000000000000",
   "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "plan_hash": "sha256:plan",
   "batch_id": "batch-1",
   "batch_index": 0,
   "last_batch": true,
+  "dry_run_receipt_hash": "sha256:dry-run-receipt",
   "preconditions": [
     {
       "resource_key": "file:index.php",
-      "expected_remote_hash": "sha256:base-index"
+      "expected_remote_hash": "sha256:base-index",
+      "storage_guard": "filesystem-compare-rename"
     }
   ],
   "mutations": [
@@ -499,6 +650,7 @@ Request body:
       "resource_key": "file:index.php",
       "action": "put",
       "body_hash": "sha256:local-index",
+      "storage_guard": "filesystem-compare-rename",
       "body": {
         "encoding": "base64",
         "data": "PD9waHAgZWNobyAibG9jYWwiOw=="
@@ -517,8 +669,21 @@ Required apply behavior:
 4. Revalidate atomic group dependencies and plugin/theme validators.
 5. Open a journal entry before staging.
 6. Stage all file and database changes for the batch.
-7. Commit the batch atomically when possible.
-8. Record final hashes for every mutated resource.
+7. Revalidate each target at its storage boundary immediately before write.
+8. Commit the batch atomically when possible.
+9. Record final hashes for every mutated resource.
+
+Production storage-boundary guards must be coupled to the write primitive:
+
+- Database updates use transactions and predicates or locks that compare the
+  expected stored value in the same boundary that performs the update.
+- File updates compare the live bytes or metadata immediately before a
+  same-directory temp-file rename, and deletes compare immediately before
+  unlink.
+- Semantic plugin/theme drivers must declare every side effect they can cause
+  and revalidate those resources before activation, migration, or generated
+  output is allowed.
+- If a guard cannot run for a target, that target is blocked before mutation.
 
 The current Playground/REST lab apply path also re-hashes the specific target
 resource immediately before calling the target write for each mutation. That
@@ -541,11 +706,26 @@ Response body:
   "dry_run_id": "dry_01j00000000000000000000000",
   "batch_id": "batch-1",
   "status": "committed",
+  "idempotency": {
+    "key": "idem_apply_01j000000000000000000",
+    "replayed": false,
+    "request_hash": "sha256:apply-request"
+  },
   "applied_mutations": ["mutation-1"],
   "final_hashes": [
     {
       "resource_key": "file:index.php",
       "hash": "sha256:local-index"
+    }
+  ],
+  "storage_guards": [
+    {
+      "mutation_id": "mutation-1",
+      "resource_key": "file:index.php",
+      "guard": "filesystem-compare-rename",
+      "expected_hash": "sha256:base-index",
+      "observed_hash": "sha256:base-index",
+      "outcome": "applied"
     }
   ],
   "journal_cursor": "journal:dry_01j00000000000000000000000:2"
@@ -561,9 +741,10 @@ Failure responses use stable error codes:
 - `BATCH_ALREADY_COMMITTED`: idempotency replay; return the original result.
 - `RECOVERY_REQUIRED`: server cannot prove old or new state without recovery.
 
-If any precondition fails, no target resource in that batch may be mutated. If a
-failure occurs after staging begins, the journal must provide enough evidence
-for recovery to finish, roll back, or block explicitly.
+If any initial batch precondition fails before staging, no target resource in
+that batch may be mutated. If a storage-boundary guard or other failure occurs
+after staging or after earlier mutations, the journal must provide enough
+evidence for recovery to finish, roll back, or block explicitly.
 
 ### `push_journal`
 
@@ -593,7 +774,10 @@ Response body:
     {
       "journal_id": "jrnl_01j00000000000000000000000",
       "dry_run_id": "dry_01j00000000000000000000000",
+      "plan_id": "plan_2026-05-24T00:00:00Z_001",
       "batch_id": "batch-1",
+      "idempotency_key": "idem_apply_01j000000000000000000",
+      "request_hash": "sha256:apply-request",
       "state": "committed",
       "created_at": "2026-05-24T00:00:05Z",
       "updated_at": "2026-05-24T00:00:06Z",
@@ -603,6 +787,15 @@ Response body:
           "before_hash": "sha256:base-index",
           "staged_hash": "sha256:local-index",
           "after_hash": "sha256:local-index"
+        }
+      ],
+      "storage_guards": [
+        {
+          "resource_key": "file:index.php",
+          "guard": "filesystem-compare-rename",
+          "expected_hash": "sha256:base-index",
+          "observed_hash": "sha256:base-index",
+          "outcome": "applied"
         }
       ],
       "artifacts": []
@@ -639,6 +832,7 @@ Request body:
 ```json
 {
   "push_session": "psh_01j00000000000000000000000",
+  "idempotency_key": "idem_recover_01j0000000000000000",
   "dry_run_id": "dry_01j00000000000000000000000",
   "batch_id": "batch-1",
   "mode": "auto"
@@ -664,6 +858,12 @@ Response body:
   "batch_id": "batch-1",
   "state": "committed",
   "proof": "all-final-hashes-match-plan",
+  "target_state_counts": {
+    "old": 0,
+    "new": 1,
+    "blocked": 0,
+    "unknown": 0
+  },
   "actions": ["inspected-live-hashes", "finalized-journal"],
   "next": null
 }
@@ -689,6 +889,12 @@ Planner decisions:
 - Local equals remote: already in sync.
 - Local changed and remote changed differently: conflict.
 
+A reviewed conflict resolution is a new plan, not a flag on an old plan. The
+resolution artifact records the base hash, local hash, remote hash, chosen
+value hash, reviewer identity, and reason. The executor must fetch a fresh
+remote hash listing and rebuild the plan after the review. Apply never accepts a
+stale manual approval that bypasses current remote preconditions.
+
 Atomic groups are required for resource sets that must move together, including:
 
 - plugin/theme install, update, activation, or deletion
@@ -699,6 +905,12 @@ Atomic groups are required for resource sets that must move together, including:
 
 Every mutation candidate includes a remote precondition. A plan without
 preconditions is invalid for apply unless it contains no mutations.
+
+Environment-specific resources are denied by default, including `siteurl`,
+`home`, salts, secrets, SMTP credentials, local-only object-cache configuration,
+absolute paths, and runtime-only cron/cache/transient data. A semantic driver
+may transform or allow a resource only when it can prove the source-site value
+and side effects remain valid after push.
 
 ## Hashing Rules
 
@@ -748,6 +960,17 @@ Errors are JSON:
 
 Clients must treat unknown error codes as fatal and inspect the journal before
 retrying an apply batch.
+
+Stable production error codes include:
+
+- `AUTH_REQUIRED`, `AUTH_SCOPE_DENIED`, `SIGNATURE_INVALID`,
+  `NONCE_REPLAYED`
+- `SITE_IDENTITY_MISMATCH`, `BASE_MANIFEST_MISMATCH`
+- `COVERAGE_INCOMPLETE`, `RESOURCE_UNSUPPORTED`, `STORAGE_GUARD_UNSUPPORTED`
+- `PLAN_NOT_READY`, `PLAN_EXPIRED`, `PLAN_INVALID`
+- `PRECONDITION_FAILED`, `ATOMIC_GROUP_FAILED`, `VALIDATOR_FAILED`
+- `IDEMPOTENCY_KEY_CONFLICT`, `BATCH_ALREADY_COMMITTED`
+- `RECOVERY_REQUIRED`, `RECOVERY_BLOCKED`
 
 ## Compatibility
 

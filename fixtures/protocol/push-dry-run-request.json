@@ -1,8 +1,12 @@
 {
   "push_session": "psh_01j00000000000000000000000",
+  "idempotency_key": "idem_dry_01j00000000000000000000",
   "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "plan_hash": "sha256:plan",
   "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+  "base_manifest_hash": "sha256:base-manifest",
   "remote_snapshot_id": "snap_01j00000000000000000000000",
+  "remote_coverage_hash": "sha256:remote-coverage",
   "summary": {
     "mutations": 2,
     "conflicts": 0,
@@ -13,13 +17,15 @@
       "resource_key": "file:index.php",
       "expected_remote_hash": "sha256:base-index",
       "base_hash": "sha256:base-index",
-      "local_hash": "sha256:local-index"
+      "local_hash": "sha256:local-index",
+      "storage_guard": "filesystem-compare-rename"
     },
     {
       "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
       "expected_remote_hash": "sha256:base-post-1",
       "base_hash": "sha256:base-post-1",
-      "local_hash": "sha256:local-post-1"
+      "local_hash": "sha256:local-post-1",
+      "storage_guard": "mysql-transaction-row-lock"
     }
   ],
   "mutations": [
@@ -29,6 +35,7 @@
       "action": "put",
       "body_hash": "sha256:local-index",
       "body_ref": "upload:body-1",
+      "storage_guard": "filesystem-compare-rename",
       "atomic_group_id": null
     },
     {
@@ -37,6 +44,7 @@
       "action": "put",
       "body_hash": "sha256:local-post-1",
       "body_ref": "inline:row-1",
+      "storage_guard": "mysql-transaction-row-lock",
       "atomic_group_id": null
     }
   ],

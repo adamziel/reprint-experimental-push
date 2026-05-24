@@ -1,18 +1,23 @@
 {
   "push_session": "psh_01j00000000000000000000000",
+  "idempotency_key": "idem_apply_01j000000000000000000",
   "dry_run_id": "dry_01j00000000000000000000000",
   "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "plan_hash": "sha256:plan",
   "batch_id": "batch-1",
   "batch_index": 0,
   "last_batch": true,
+  "dry_run_receipt_hash": "sha256:dry-run-receipt",
   "preconditions": [
     {
       "resource_key": "file:index.php",
-      "expected_remote_hash": "sha256:base-index"
+      "expected_remote_hash": "sha256:base-index",
+      "storage_guard": "filesystem-compare-rename"
     },
     {
       "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
-      "expected_remote_hash": "sha256:base-post-1"
+      "expected_remote_hash": "sha256:base-post-1",
+      "storage_guard": "mysql-transaction-row-lock"
     }
   ],
   "mutations": [
@@ -21,6 +26,7 @@
       "resource_key": "file:index.php",
       "action": "put",
       "body_hash": "sha256:local-index",
+      "storage_guard": "filesystem-compare-rename",
       "body": {
         "encoding": "base64",
         "data": "PD9waHAgZWNobyAibG9jYWwiOw=="
@@ -31,6 +37,7 @@
       "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
       "action": "put",
       "body_hash": "sha256:local-post-1",
+      "storage_guard": "mysql-transaction-row-lock",
       "body": {
         "encoding": "json",
         "data": {

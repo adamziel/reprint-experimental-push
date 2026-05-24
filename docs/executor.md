@@ -14,6 +14,7 @@ Responsibilities:
 - Load the saved pull base manifest and verify it belongs to the remote.
 - Run `push_preflight` and negotiate protocol, limits, and auth scope.
 - List the live remote hashes with `push_snapshot_hashes`.
+- Verify the remote coverage manifest is complete for the requested push scope.
 - Build a three-way plan from base, local, and live remote.
 - Upload the plan with `push_plan_dry_run`.
 - Apply ready plans in bounded `push_batch_apply` calls.
@@ -22,6 +23,9 @@ Responsibilities:
 
 The executor must not mutate the remote during planning. It may fetch remote
 content for conflict display, but mutation starts only at `push_batch_apply`.
+Dry-run success is a permission and eligibility receipt, not a liveness lock.
+The executor must expect apply to fail if the remote changes between dry-run and
+the storage-boundary guard.
 
 ## State Machine
 
@@ -29,6 +33,7 @@ content for conflict display, but mutation starts only at `push_batch_apply`.
 idle
   -> preflight
   -> remote-hash-list
+  -> coverage-verified
   -> local-scan
   -> plan
   -> dry-run-upload
@@ -73,6 +78,21 @@ The push executor should not reuse the pull streaming SQL dump as a mutation
 format. SQL replay is too coarse for a live remote. It can reuse pull transport,
 budgeting, cursoring, multipart handling, and HMAC helpers.
 
+The pull importer must additionally persist a push base package:
+
+```text
+push-base/
+  base-manifest.json        remote identity, paths, table prefix, multisite map
+  base-coverage.json        pull scanner coverage and excluded resources
+  resources.jsonl           resource keys and base hashes
+  schema-fingerprints.json  normalized table/schema hashes
+  bodies/                   optional base bodies needed for merge drivers
+```
+
+The executor treats this package as read-only evidence. If it is missing,
+corrupt, or from a different remote identity, push planning stops before
+preflight can become a mutation path.
+
 ## Execution Flow
 
 ### 1. Load Base
@@ -80,13 +100,16 @@ budgeting, cursoring, multipart handling, and HMAC helpers.
 Read the manifest created by the successful pull:
 
 - remote URL and site identity
+- base manifest hash and scanner coverage hash
 - export protocol metadata
 - WordPress version, paths, table prefix, multisite state
 - resource keys and base hashes
 - optional base bodies for files/rows needed by merge drivers
 
 Abort if the base manifest is missing. A push without a base is a blind
-overwrite risk.
+overwrite risk. Abort if the manifest predates push-compatible scanner
+coverage; the user must pull again to create a base that can participate in
+three-way planning.
 
 ### 2. Preflight
 
@@ -94,13 +117,17 @@ Call `push_preflight` with the requested scopes. Store:
 
 - `push_session`
 - expiry
+- remote identity hash and server clock skew estimate
 - limits
 - journal capabilities
 - hash listing capabilities
 - database and filesystem mutation capabilities
+- storage guards and semantic driver versions
 
 Abort if push auth is not scoped for mutation or the server cannot write a
-journal.
+journal. Abort on `SITE_IDENTITY_MISMATCH`; the executor may ask the user to
+confirm a remote URL change, but confirmation must result in a fresh preflight
+against the same `site_id`.
 
 Current lab note: `npm run test:playground:authenticated-http-push` verifies a
 local Playground preflight at
@@ -125,8 +152,11 @@ auth or production Application Password integration.
 Call `push_snapshot_hashes` until complete. Include base resource keys so
 deletions on the remote are represented as absent resources.
 
-Store the full listing and its `snapshot_id`, but do not treat it as an apply
-lock. The remote remains live.
+Store the full listing, `snapshot_id`, `coverage_id`, and `coverage_hash`, but
+do not treat them as an apply lock. The remote remains live. If any requested
+scope has incomplete coverage, unknown plugin-owned data, unsupported custom
+tables, or unguarded resources that the local changes depend on, the executor
+marks the plan blocked instead of building a ready mutation.
 
 ### 4. Local Scan
 
@@ -154,14 +184,22 @@ Plan statuses:
 Ready means "ready for dry-run upload", not "guaranteed to apply". The apply
 stage still revalidates live remote hashes.
 
+Conflict resolution creates a new auditable plan. The executor records the
+base/local/remote hashes and reviewed choice, refreshes the remote hash listing,
+then replans. It must not attach a manual approval to an older dry-run receipt
+to skip current remote preconditions.
+
 ### 6. Dry-Run Upload
 
 Upload the plan to `push_plan_dry_run`. The remote validates:
 
 - auth scope
 - plan schema
+- base manifest and remote identity binding
+- remote coverage hash from the completed hash listing
 - resource addressability
 - every mutation has a precondition
+- every mutation has a supported storage guard or semantic driver
 - atomic group closure
 - plugin/theme validators
 - journal writeability
@@ -204,6 +242,11 @@ For each batch:
 The executor never assumes that a missing HTTP response means failure. It asks
 the journal.
 
+Apply requests are single-use by body hash and idempotency key. If a batch must
+be retried after `PRECONDITION_FAILED`, the executor discards the dry-run
+receipt, refreshes the remote hash listing, and replans. It never edits the
+batch body under the same idempotency key.
+
 ### 8. Journal Confirm
 
 After the last batch, call `push_journal` and verify:
@@ -221,24 +264,30 @@ The remote executor should apply each batch with this order:
 
 1. Authenticate and authorize.
 2. Load accepted dry-run and idempotency record.
-3. Recompute live hashes for every precondition.
-4. Reject without mutation on any mismatch.
-5. Open journal entry with before hashes and artifact references.
-6. Stage file writes under a private temp directory.
-7. Start database transaction or acquire the advertised write lock.
-8. Recheck rows under transaction locks where supported.
-9. Perform database mutations.
-10. Move staged files into place.
-11. Run plugin/theme validators and activation hooks that are part of the plan.
-12. Compute final hashes.
-13. Commit transaction or finalize the durable batch marker.
-14. Mark journal committed.
+3. Verify the request hash matches any prior idempotency claim.
+4. Recompute live hashes for every batch precondition.
+5. Reject without mutation on any mismatch.
+6. Open journal entry with before hashes and artifact references.
+7. Stage file writes under a private temp directory.
+8. Start database transaction or acquire the advertised write lock.
+9. Recheck each target at its storage boundary under the advertised guard.
+10. Perform database mutations.
+11. Move staged files into place through compare-and-rename/unlink guards.
+12. Run plugin/theme validators and activation hooks that are part of the plan.
+13. Compute final hashes.
+14. Commit transaction or finalize the durable batch marker.
+15. Mark journal committed.
 
 MySQL row mutations should use transactions and row locks when possible. SQLite
 sites should use `BEGIN IMMEDIATE` for database batches. File mutations should
 write temp files, fsync where available, then rename. File and database changes
 cannot be a single native transaction on typical WordPress hosts, so the journal
 and recovery artifacts are mandatory.
+
+If plugin/theme code can run during apply, the driver must declare side effects
+as resources in the same atomic group. Activation or migration hooks that may
+write undeclared options, tables, files, roles, cron, rewrite rules, or caches
+block the group until a semantic driver can validate them.
 
 ## Journal And Recovery
 
@@ -252,10 +301,11 @@ Journal entries include:
 
 - dry-run ID and plan ID
 - batch ID and idempotency key
-- authenticated client identity
+- canonical request hash and authenticated identity
 - before hashes
 - staged artifact hashes and locations
 - after hashes
+- storage guard observations
 - current state
 - error code and details
 
@@ -329,8 +379,11 @@ Test sequence:
 
 Suggested assertions:
 
+- Preflight rejects a read-only export secret and accepts only push-scoped HMAC.
+- Hash listing returns complete coverage or the plan is blocked.
 - Dry-run does not mutate remote files or database rows.
 - Apply revalidates live remote hashes.
+- Apply proves storage-boundary guards for one row and one file.
 - A direct conflict leaves the remote unchanged.
 - Atomic plugin install cannot partially apply.
 - Lost HTTP response is resolved by idempotency plus journal inspect.
@@ -354,6 +407,9 @@ Recommended usage:
 - Store the base manifest in the runner workspace.
 - Bind Playground servers to loopback or container-internal addresses.
 - Route browser access through the single local 8080 proxy if needed.
+- Run authenticated preflight, snapshot, dry-run, apply, journal, and recovery
+  calls through the production route names even when the backing implementation
+  is a Playground fixture.
 
 Playground is best for protocol, planner, and recovery fixtures. Docker with
 MySQL/MariaDB remains necessary for transaction and lock behavior that differs

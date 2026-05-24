@@ -4,6 +4,11 @@
   "dry_run_id": "dry_01j00000000000000000000000",
   "batch_id": "batch-1",
   "status": "committed",
+  "idempotency": {
+    "key": "idem_apply_01j000000000000000000",
+    "replayed": false,
+    "request_hash": "sha256:apply-request"
+  },
   "applied_mutations": ["mutation-1", "mutation-2"],
   "final_hashes": [
     {
@@ -13,6 +18,24 @@
     {
       "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
       "hash": "sha256:local-post-1"
+    }
+  ],
+  "storage_guards": [
+    {
+      "mutation_id": "mutation-1",
+      "resource_key": "file:index.php",
+      "guard": "filesystem-compare-rename",
+      "expected_hash": "sha256:base-index",
+      "observed_hash": "sha256:base-index",
+      "outcome": "applied"
+    },
+    {
+      "mutation_id": "mutation-2",
+      "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+      "guard": "mysql-transaction-row-lock",
+      "expected_hash": "sha256:base-post-1",
+      "observed_hash": "sha256:base-post-1",
+      "outcome": "applied"
     }
   ],
   "journal_cursor": "journal:dry_01j00000000000000000000000:2"
