@@ -18,6 +18,31 @@ coverage for the requested scopes, cannot bind the push to the pull base, or
 cannot guard a mutation at its storage boundary must refuse that part of the
 plan instead of accepting a best-effort overwrite.
 
+## Production Contract
+
+The extension adds mutating push endpoints to the existing Reprint source-site
+API. Pull remains the way a local site gets its merge base; push is allowed
+only when the local executor can prove that base, the current local state, and
+the current live remote state form a safe three-way plan.
+
+The production contract is:
+
+- `push_preflight`, `push_snapshot_hashes`, and `push_journal` are read-only for
+  target WordPress resources.
+- `push_plan_dry_run` uploads and validates a plan, but it must not write target
+  WordPress files, rows, options, schemas, plugins, themes, or runtime state.
+- `push_batch_apply` is the normal mutation path and only applies an accepted
+  dry-run plan in legal batches.
+- `push_recover` mutates only in `auto`, `finish`, or `rollback` modes, and
+  only after journal artifacts and live hashes prove the action.
+- Every ready mutation has a live remote precondition and an advertised storage
+  guard. A mutation without both is invalid.
+- Dry-run acceptance is never a lock. Apply revalidates the current remote
+  before staging and revalidates the target again at the storage boundary.
+- A server that cannot write a durable journal cannot accept dry-run or apply.
+- A server that cannot prove whether interrupted resources are old, new, or
+  blocked must return recovery evidence instead of reporting success.
+
 ## Existing Pull Pipeline Mapping
 
 Current Reprint pull is stage-oriented and resumable:
@@ -123,6 +148,24 @@ Rules:
 If a server supports only the current export HMAC and not the canonical push
 signature, it may serve pull endpoints and hash listing, but it must reject
 dry-run upload, apply, journal repair, and recovery mutation.
+
+Endpoint authentication requirements:
+
+| Endpoint | Target resource mutation | Minimum auth |
+| --- | --- | --- |
+| `push_preflight` | No | Current Reprint HMAC with push-capable credential scope. |
+| `push_snapshot_hashes` | No | Current Reprint HMAC and active push session. |
+| `push_plan_dry_run` | No | Current Reprint HMAC, canonical push HMAC, active push session, and idempotency key. |
+| `push_batch_apply` | Yes | Current Reprint HMAC, canonical push HMAC, active push session, and idempotency key. |
+| `push_journal` | No | Current Reprint HMAC and active push session; artifact export may require canonical push HMAC. |
+| `push_recover` `inspect` | No | Current Reprint HMAC and active push session. |
+| `push_recover` mutating modes | Yes | Current Reprint HMAC, canonical push HMAC, active push session, and idempotency key. |
+
+The canonical query string must be built from the actual received route and
+query parameters after URL decoding rules are fixed by the server. The endpoint
+name, method, query, body hash, session, and idempotency key are part of the
+signature so a signed dry-run body cannot be replayed as apply, against another
+route, or under another session.
 
 ## Identity, Idempotency, And Coverage
 

@@ -1,0 +1,25 @@
+{
+  "read_only_request_headers": {
+    "X-Auth-Content-Hash": "sha256:body",
+    "X-Auth-Nonce": "nonce_01j00000000000000000000000",
+    "X-Auth-Timestamp": "2026-05-24T00:00:00Z",
+    "X-Auth-Signature": "hmac-sha256:export-auth-signature"
+  },
+  "dry_run_apply_or_mutating_recovery_headers": {
+    "X-Auth-Content-Hash": "sha256:body",
+    "X-Auth-Nonce": "nonce_01j00000000000000000000001",
+    "X-Auth-Timestamp": "2026-05-24T00:00:05Z",
+    "X-Auth-Signature": "hmac-sha256:export-auth-signature",
+    "X-Reprint-Push-Session": "psh_01j00000000000000000000000",
+    "X-Reprint-Push-Idempotency-Key": "idem_apply_01j000000000000000000",
+    "X-Reprint-Push-Signature": "hmac-sha256:canonical-push-signature"
+  },
+  "canonical_push_signature_parts": [
+    "method",
+    "endpoint",
+    "canonical_query",
+    "content_hash",
+    "push_session",
+    "idempotency_key"
+  ]
+}
