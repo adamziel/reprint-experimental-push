@@ -238,6 +238,22 @@ objective needs.
 - `npm run test:playground` is bundled, but it stops after plan/apply/protocol
   and does not invoke the stronger auth, storage, recovery, plugin, graph, or
   benchmark smokes.
+- None of the existing commands fail the release if `labBacked: true`,
+  fixture-only scope, missing live-remote preconditions, missing journal
+  durability, missing graph-identity evidence, or missing benchmark evidence
+  are present in the strongest path.
+
+Actionable release gate requirement:
+
+1. Add one required command, such as `npm run verify:release`, that runs the
+   auth/session, durable journal, leases/fencing, graph identity,
+   plugin-data-driver, real topology, crash-boundary, and benchmark checks in
+   a fixed order.
+2. Make that command exit non-zero if any step reports `labBacked: true`,
+   fixture-only scope, skipped live-source proof, or an unsupported throughput
+   claim.
+3. Keep the optional smokes, but treat them as contributors to the required
+   gate rather than as substitute release evidence.
 - The stronger checks are available only as separate opt-ins such as
   `npm run test:playground:authenticated-http-push`,
   `npm run test:playground:db-journal-idempotency`,
