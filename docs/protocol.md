@@ -418,6 +418,10 @@ The journal fixture at
 [`fixtures/protocol/push-journal-open-response.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-journal-open-response.json)
 captures the fenced open-claim state, including claim generation and lease
 expiry, so tests can distinguish an open claim from a committed batch.
+The session proof fixture at
+[`fixtures/protocol/push-session-journal-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-session-journal-proof.json)
+captures the short-lived session, apply-time revalidation, and inspect-first
+recovery proof tuple used to reject stale dry-run evidence.
 The recovery decision fixture at
 [`fixtures/protocol/push-recovery-decision.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-decision.json)
 captures the inspect-first rule that keeps `push_recover` read-only until

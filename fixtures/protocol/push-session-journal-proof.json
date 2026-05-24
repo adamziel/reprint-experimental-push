@@ -27,6 +27,15 @@
       "journal inspection is read-only"
     ]
   },
+  "apply_revalidation": {
+    "before_each_batch": "fresh live hashes",
+    "at_storage_boundary": "fresh live hashes",
+    "rejected_if": [
+      "dry-run evidence is stale",
+      "live drift appears after the dry-run receipt",
+      "the journal cannot prove a safe finish or rollback"
+    ]
+  },
   "recovery": {
     "inspect_mode": "inspect",
     "mutates": false,

@@ -222,6 +222,13 @@ test('push session journal proof binds the minted session to fencing and inspect
   assert.equal(proof.live_evidence.same_remote_identity, true);
   assert.equal(proof.journal_fencing.claim_generation, 4);
   assert.equal(proof.journal_fencing.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.deepEqual(proof.apply_revalidation.rejected_if, [
+    'dry-run evidence is stale',
+    'live drift appears after the dry-run receipt',
+    'the journal cannot prove a safe finish or rollback',
+  ]);
+  assert.equal(proof.apply_revalidation.before_each_batch, 'fresh live hashes');
+  assert.equal(proof.apply_revalidation.at_storage_boundary, 'fresh live hashes');
   assert.deepEqual(proof.recovery.blocked_when, [
     'fresh live hashes do not match the journaled target',
     'the journal cannot prove a safe finish or rollback',
