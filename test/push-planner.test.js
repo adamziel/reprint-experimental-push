@@ -551,6 +551,40 @@ test('keeps remote-only plugin changes while recognizing matching independent de
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('keeps remote-only plugin changes while allowing unrelated local deletions', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.db.wp_posts['ID:1'];
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const fileDelete = mutationFor(plan, 'file:index.php');
+  const rowDelete = mutationFor(plan, 'row:["wp_posts","ID:1"]');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(fileDelete.action, 'delete');
+  assert.equal(rowDelete.action, 'delete');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(
+    decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision,
+    'keep-remote',
+  );
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(
+    result.site.files['wp-content/plugins/forms/forms.php'],
+    '<?php /* remote-private-forms-code */',
+  );
+});
+
 test('keeps remote-only plugin changes while recognizing a matching independent edit', () => {
   const base = baseSite();
   const local = baseSite();
