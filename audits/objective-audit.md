@@ -230,8 +230,9 @@ The repository currently has optional proof commands, not an enforced release
 gate. `package.json` confirms the split: the default suite is `npm test`, the
 bundled lab chain is `npm run test:playground`, and the stronger auth,
 journal, storage, recovery, plugin, and benchmark checks are only available
-as separate opt-ins. That means a green run can still omit the exact proof the
-objective needs.
+as separate opt-ins. There is no `npm run release`, `npm run verify`, or CI
+workflow that chains those checks into one required release path, so a green
+run can still omit the exact proof the objective needs.
 
 - `npm test` is the default automated suite, but it only covers the model and
   selected fixture logic.
@@ -239,8 +240,9 @@ objective needs.
   and does not invoke the stronger auth, storage, recovery, plugin, graph, or
   benchmark smokes.
 - The repository does not expose a single required release command such as
-  `npm run release` or `npm run verify`; the safety matrix is still assembled
-  manually from independent scripts.
+  `npm run release` or `npm run verify`, and no workflow file was found to
+  enforce one; the safety matrix is still assembled manually from independent
+  scripts.
 - The strongest checks remain opt-in entrypoints such as
   `test:playground:authenticated-http-push`,
   `test:playground:authenticated-cli-push`,
@@ -263,7 +265,8 @@ Actionable release gate requirement:
 2. Make that command exit non-zero if any step reports `labBacked: true`,
    fixture-only scope, skipped live-source proof, or an unsupported throughput
    claim.
-3. Keep the optional smokes, but treat them as contributors to the required
+3. Wire that command into CI or the release pipeline as the only accepted
+   release entrypoint, and keep the optional smokes as contributors to that
    gate rather than as substitute release evidence.
 - The stronger checks are available only as separate opt-ins such as
   `npm run test:playground:authenticated-http-push`,
