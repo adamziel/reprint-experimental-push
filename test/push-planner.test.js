@@ -1283,6 +1283,66 @@ test('replays a completed plan without reapplying mutations', () => {
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
 });
 
+test('accepts only the documented post-failure states for atomic apply recovery', () => {
+  const scenarios = [
+    {
+      name: 'failure before mutation',
+      options: { failBeforeMutation: true },
+      expectedStatus: 'old-remote',
+      expectedJournalStatus: 'opened',
+    },
+    {
+      name: 'failure after staging',
+      options: { failAfterStaging: true },
+      expectedStatus: 'old-remote',
+      expectedJournalStatus: 'staged',
+    },
+    {
+      name: 'failure after dependency validation',
+      options: { failAfterDependencyValidation: true },
+      expectedStatus: 'old-remote',
+      expectedJournalStatus: 'dependencies-validated',
+    },
+    {
+      name: 'completed replay',
+      expectedStatus: 'fully-updated-remote',
+      expectedJournalStatus: 'completed',
+      replay: true,
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    const base = baseSite();
+    const local = baseSite();
+    local.files['index.php'] = '<?php echo "local";';
+    local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+    const remote = baseSite();
+    const plan = planFor(base, local, remote);
+
+    if (scenario.replay) {
+      const completed = applyPlan(remote, plan);
+      const replayRemote = JSON.parse(JSON.stringify(completed.site));
+      const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+      assert.equal(replay.appliedMutations, 0, scenario.name);
+      assert.equal(replay.recoveryState.status, scenario.expectedStatus, scenario.name);
+      assert.equal(replay.journal.status, scenario.expectedJournalStatus, scenario.name);
+      assertRecoveryStateArtifacts(replay.recoveryState, scenario.expectedStatus);
+      assert.equal(replayRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally', scenario.name);
+      continue;
+    }
+
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, scenario.options));
+
+    assert.ok(error instanceof PushPlanError, scenario.name);
+    assert.equal(JSON.stringify(remote), before, scenario.name);
+    assert.equal(error.details.recovery.status, scenario.expectedStatus, scenario.name);
+    assert.equal(error.details.recovery.artifacts.journal.status, scenario.expectedJournalStatus, scenario.name);
+    assertRecoveryStateArtifacts(error.details.recovery, scenario.expectedStatus);
+  }
+});
+
 test('replaying a completed plan twice stays inert and keeps the fully updated remote', () => {
   const base = baseSite();
   const local = baseSite();
