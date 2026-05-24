@@ -162,7 +162,8 @@ The recommended integration test topology is one live remote site, one local
 edited site, and one runner. That is the minimum one-remote, one-local shape
 the protocol is expected to support. The remote remains the source of truth
 for the push protocol; the local site is the pull target that was edited after
-import.
+import. The runner owns the protocol flow and is the only process that talks
+to both sites.
 
 ### Docker Topology
 
@@ -613,8 +614,9 @@ sites. Keep the same one-remote, one-local shape:
 The runner launches the blueprints separately, exports the remote base
 manifest, imports it into the local site, applies local edits, and then compares
 the local plan against the drift site for `PRECONDITION_FAILED` and recovery
-coverage. This mirrors the Docker topology without requiring external network
-exposure.
+coverage. The remote and local sites must stay distinct throughout the test:
+the remote is never repurposed as the edited site, and the edited site never
+becomes the source of truth.
 In the Docker topology, the runner calls `http://remote-wp/` and
 `http://local-wp/` by service name, and the environment must not use ngrok,
 cloudflared tunnels, localtunnel, serveo, localhost.run, Tailscale Funnel, or
@@ -689,6 +691,8 @@ Suggested assertions:
 - A direct conflict leaves the remote unchanged.
 - Atomic plugin install cannot partially apply.
 - Lost HTTP response is resolved by idempotency plus journal inspect.
+- Recovery must start with `push_recover` in `inspect` mode and only then may
+  advance to `auto`, `finish`, or `rollback` when the journal proves the state.
 - Recovery can prove committed, rolled back, or blocked.
 
 Minimum topology matrix:
@@ -699,7 +703,7 @@ Minimum topology matrix:
 | Remote-only edit | Remote changed a different resource | Planner keeps remote edit and applies local non-conflicting edits. |
 | Direct conflict | Remote changed the same resource differently | Planner reports conflict; no dry-run apply path. |
 | Drift after dry-run | Remote changes a planned target before apply | Apply returns `PRECONDITION_FAILED`; remote edit survives. |
-| Lost apply response | Runner drops connection after request | Executor inspects journal, then replays or resumes by idempotency. |
+| Lost apply response | Runner drops connection after request | Executor inspects journal first, then replays or resumes by idempotency only if the journal shows the same request is still open. |
 | Interrupted batch | Server exits after staging or partial write | Recovery reports committed, rolled back, or blocked with resource evidence. |
 | Read-only credential | Export secret lacks push scope | Preflight or dry-run rejects before mutation. |
 

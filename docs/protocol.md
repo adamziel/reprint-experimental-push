@@ -49,7 +49,8 @@ Required behavior:
 - `push_recover` has a read-only `inspect` mode plus mutating `auto`,
   `finish`, and `rollback` modes. It inspects, finishes, rolls back, or
   blocks an interrupted batch only when journal artifacts and live hashes
-  prove the action.
+  prove the action. `inspect` may surface the evidence needed to decide the
+  next step, but it must not mutate the remote or imply recovery safety.
 
 Dry-run is an eligibility and planning receipt, not a liveness reservation.
 The remote may accept a dry-run plan and still reject later apply batches if
@@ -105,7 +106,7 @@ adds live-remote revalidation and mutation journaling.
 | runtime setup | Push apply validates runtime-sensitive mutations such as plugin/theme activation, generated files, object cache, cron, and maintenance mode gates before write. |
 
 The importer must persist a push base package so later pushes can prove the
-merge base:
+merge base. This package is read-only evidence for later push planning:
 
 - `base_manifest_id`
 - `base_manifest_hash`
@@ -113,10 +114,13 @@ merge base:
 - `remote_site_id`
 - `pull_protocol_version`
 - the resource keys, hashes, and optional bodies observed during the pull
+- the pull-time remote coverage hash and any scope-completion proof that
+  showed the base was complete enough for later mutation
 
 If the remote cannot recognize the site identity or the plan cannot prove
 which base it was built from, `push_preflight` or `push_plan_dry_run` must
-reject.
+reject. A later push may refresh live remote hashes, but it must not rewrite
+the stored pull base to make an old plan look current.
 
 ## Authentication
 

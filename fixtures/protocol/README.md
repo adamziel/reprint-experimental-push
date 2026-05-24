@@ -23,6 +23,9 @@ Failure and recovery examples:
 
 - `push-precondition-failed-response.json` shows apply-time liveness
   revalidation rejecting a stale target.
+- `push-journal-request.json` and `push-journal-response.json` show the
+  read-only inspection step used before any lost-response retry or recovery
+  decision.
 - `push-recovery-request.json` and `push-recovery-response.json` show a
   successful recovery finalization after a read-only inspect step.
 - `push-recovery-blocked-response.json` shows the evidence returned when the
