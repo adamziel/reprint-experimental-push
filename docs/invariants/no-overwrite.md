@@ -21,6 +21,9 @@ the live remote immediately before apply.
 - Remote-only plugin metadata or file changes do not block unrelated local file
   or row deletions when those deletions still satisfy the live remote hash
   check.
+- When a plan mixes a live-preconditioned deletion with matching independent
+  edits or type swaps, the matching resources stay `already-in-sync` and the
+  deletion remains the only automatic mutation.
 - Matching independent edits where local and remote changed a resource to the
   same hash, including deletions, file edits, and plugin context changes; these
   produce `already-in-sync` decisions, not mutations.
