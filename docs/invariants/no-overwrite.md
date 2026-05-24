@@ -127,6 +127,10 @@ the resource key, the live remote hash observed during planning, and the
   that live owner context.
 - Plugin-owned data changes when the live remote owner plugin files or metadata
   changed since the pull base and local does not match that live owner context.
+- Plugin-owned deletions when the owning plugin context is stale, even if the
+  rest of the plan only contains unrelated remote-only plugin drift. The
+  planner must preserve the remote plugin changes and stop on the stale
+  plugin-owned delete.
 - Unrelated remote-only plugin drift does not make a stale plugin-context
   mutation safe. If local touches the same plugin's files or plugin-owned data,
   stop.
