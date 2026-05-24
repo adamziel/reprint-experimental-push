@@ -236,6 +236,11 @@ The pull pipeline remains the source of truth for the base package:
 - push dry-run uploads the canonical three-way plan from base, local, and live
 - push apply revalidates the live remote before every batch and again at the
   storage boundary
+- push journal records claim ownership, claim generation, lease expiry, and
+  per-resource before/staged/after hashes without turning the persisted base
+  into a lock
+- push recover inspects that journal first and only mutates when fresh live
+  hashes and journal evidence prove the action
 
 | Pull stage | Push mapping |
 | --- | --- |
@@ -313,7 +318,7 @@ The pull-to-push handoff is linear and one-way:
    storage boundary before any write.
 7. Push journal and recovery inspect explain durable state transitions without
    granting authority to mutate.
-7. Push journal and recovery inspect resolve lost responses or interrupted
+8. Push journal and recovery inspect resolve lost responses or interrupted
    apply attempts without turning stale evidence into write authority.
 
 The existing pull exporter/importer pipeline remains the source of truth for the
