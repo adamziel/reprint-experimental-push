@@ -2147,6 +2147,38 @@ test('durable recovery stays within old remote, fully updated remote, or blocked
   assert.equal(blocked.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Drifted after completion');
 });
 
+test('atomic apply only accepts the documented recovery states', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const acceptedStatuses = new Set(['old-remote', 'fully-updated-remote', 'blocked-recovery']);
+
+  for (const options of [
+    { failBeforeMutation: true },
+    { failAfterStaging: true },
+    { failAfterDependencyValidation: true },
+  ]) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(acceptedStatuses.has(error.details.recovery.status), true);
+    assert.ok(error.details.recovery.artifacts.journal);
+    assert.equal(JSON.stringify(remote), before);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replay = applyPlan(completed.site, plan, { journal: completed.journal });
+  assert.equal(acceptedStatuses.has(replay.recoveryState.status), true);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+});
+
 test('failure before mutation leaves old remote and a recovery artifact', () => {
   const base = baseSite();
   const local = baseSite();
