@@ -626,6 +626,42 @@ test('keeps remote-only plugin changes while recognizing matching independent de
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete, type swap, and matching edit stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  delete local.files['wp-content/uploads/gallery/keep.txt'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/gallery');
+  const descendantDelete = mutationFor(plan, 'file:wp-content/uploads/gallery/keep.txt');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(descendantDelete.action, 'delete');
+  assert.equal(descendantDelete.changeKind, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+});
+
 test('keeps remote-only plugin changes while recognizing matching independent deletions, edits, and type swaps', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
