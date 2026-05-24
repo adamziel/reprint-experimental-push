@@ -46,6 +46,7 @@ the safe list even when they improve a throughput metric.
 Concrete failure modes stay rejected even when the throughput gain looks tempting:
 
 - A chunk upload that looks complete in staging but lacks a durable receipt is not complete.
+- A matching chunk digest still cannot stand in for the missing durable receipt during resume.
 - A plugin install that has finished file staging but not validator, metadata, and row receipts is still not visible.
 - A compressed payload can reduce wire bytes, but it cannot stand in for the canonical uncompressed hash.
 - A remote index cursor can guide planning, but it cannot authorize a live write.
@@ -72,6 +73,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a drained compressed queue still cannot prove apply is complete or that the live precondition survived failure.
 - File hashing cannot treat the previous digest alone as authority, because the local fingerprint only skips duplicate rehash work and the live remote compare still guards apply.
 - Chunk upload cannot treat a visible staging object as completion, because the finalize step still needs durable receipts and a guarded publish boundary.
+- Chunk upload cannot treat a matching chunk digest as completion, because the receiver still needs durable acknowledgement.
 - Database row batching cannot widen a batch across plugin owners or atomic groups, because recovery needs one stable commit boundary per coupled set of rows.
 - Remote indexes cannot become a lock, because the listing is only planning evidence and may be stale by the time apply runs.
 - Compression cannot hash compressed bytes as canonical state, because transport encoding must not change the compare-and-swap value.
@@ -372,6 +374,8 @@ validators, and the final durable commit record.
 - Skipping plugin dependency, metadata, or activation validators because a
   package hash was cached.
 - Treating a present staging object as a completed chunk without a matching
+  durable receipt.
+- Treating a matching chunk digest as proof that a chunk completed without a
   durable receipt.
 - Treating a full-file digest as enough proof to resume chunk work when chunk
   receipts are missing.

@@ -34,6 +34,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'large upload includes a compressible manifest alongside the archive',
   );
   assert.ok(
+    largeUpload.actions.some((action) => action.type === 'chunk-hash'),
+    'large upload models chunk hashing for resumable staging',
+  );
+  assert.ok(
     largeUpload.actions.some((action) => action.type === 'file-hash'),
     'large upload models file hashing',
   );
@@ -105,6 +109,7 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin install models remote planning indexes',
   );
   assert.ok(pluginInstall.actions.some((action) => action.type === 'file-hash'));
+  assert.ok(pluginInstall.actions.some((action) => action.type === 'chunk-hash'));
   assert.ok(pluginInstall.actions.some((action) => action.type === 'chunk-upload'));
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'backpressure-pause'),
@@ -485,6 +490,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('visible-staging-object-completes-chunk').violates.includes('durable-progress'),
+  );
+  assert.ok(
+    rejectedById.get('chunk-digest-completes-chunk').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('chunk-digest-completes-chunk').violates.includes('durable-progress'),
   );
   assert.ok(
     rejectedById.get('receipt-only-chunk-publish').violates.includes('atomic-file-publish'),
@@ -1015,6 +1026,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'backpressure-drops-evidence',
     'compressed-buffer-means-complete',
     'compressed-queue-drains-means-complete',
+    'chunk-digest-completes-chunk',
     'index-and-compressed-queue-completes-apply',
     'compressed-buffer-acknowledges-chunks',
     'queue-empty-means-complete',

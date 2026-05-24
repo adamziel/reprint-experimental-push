@@ -231,6 +231,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['durable-progress', 'chunk-receipts'],
   },
   {
+    id: 'chunk-digest-completes-chunk',
+    proposal: 'treat a matching chunk digest as enough proof that a chunk is complete without a durable receipt',
+    rejectedBecause: 'a chunk digest can identify the bytes, but it cannot prove the remote acknowledged them after failure',
+    rejectedGate: 'recovery',
+    violates: ['chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'receipt-only-chunk-publish',
     proposal: 'publish staged chunk bytes as soon as a receipt exists, without a guarded finalize step',
     rejectedBecause: 'a receipt proves staging progress, not that the live file can be made visible safely',
@@ -966,6 +973,19 @@ function scheduleFile(file, planId, limits) {
     const sizeBytes = Math.min(limits.chunkSizeBytes, file.sizeBytes - offsetBytes);
     const chunkDigest = `sha256:${file.resourceKey}:chunk:${chunkIndex}`;
     actions.push({
+      type: 'chunk-hash',
+      resourceKey: file.resourceKey,
+      chunkIndex,
+      chunkCount,
+      offsetBytes,
+      sizeBytes,
+      chunkDigest,
+      strongHashRequired: true,
+      canonicalVisible: false,
+      durableEvidence: 'chunk-hash-record',
+      idempotencyKey: `${planId}:${file.resourceKey}:${chunkIndex}:chunk-hash`,
+    });
+    actions.push({
       type: 'chunk-upload',
       planId,
       resourceKey: file.resourceKey,
@@ -1083,6 +1103,7 @@ function summarizeSchedules(schedules) {
 
 function summarizeActions(actions) {
   const totals = {
+    chunkHashes: 0,
     uploadChunks: 0,
     uploadBytes: 0,
     dbRows: 0,
@@ -1093,6 +1114,9 @@ function summarizeActions(actions) {
   };
 
   for (const action of actions) {
+    if (action.type === 'chunk-hash') {
+      totals.chunkHashes++;
+    }
     if (action.type === 'chunk-upload') {
       totals.uploadChunks++;
       totals.uploadBytes += action.sizeBytes;
