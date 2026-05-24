@@ -39,6 +39,11 @@ the live remote immediately before apply.
   remote. This is a narrow stale-reference guard, not a proof of general
   identity remapping.
 
+Automatic application is narrow. It is only allowed when the planner can prove
+the live remote still matches the exact resource being changed, or when local
+and remote independently converged to the same hash. Anything that would
+require guessing, rewriting, or overwriting a live remote resource must stop.
+
 Every automatic mutation must include a precondition tied to the mutation id,
 the resource key, the live remote hash observed during planning, and the
 `checkedAgainst: live-remote` marker.
@@ -80,6 +85,16 @@ the resource key, the live remote hash observed during planning, and the
   copy raw post content, postmeta values, term payloads, serialized blocks, menu
   payloads, GUID values, option values, or raw row contents.
 
+## Must Preserve Live Evidence
+
+- The remote hash observed during planning for every mutation that remains
+  eligible.
+- The unchanged remote resource behind a `keep-remote` decision.
+- The related remote resource named by a conflict or blocker.
+- The independent local mutation evidence for any plan that becomes conflicted,
+  so long as the mutation itself was still safe to compute before the stop
+  condition was discovered.
+
 ## Must Stop
 
 - Local and remote changed the same resource to different hashes.
@@ -110,6 +125,8 @@ the resource key, the live remote hash observed during planning, and the
   stale plugin-context mutation. If the local plan touches the same plugin's
   files or plugin-owned data, the planner must stop instead of assuming the
   remote plugin drift is harmless.
+- Local file deletions and type swaps when the remote resource changed since
+  pull and local does not independently match the live remote hash.
 - Atomic groups with missing plugin dependencies after considering the expected
   post-apply remote state and planned plugin mutations.
 - Any internally generated mutation that lacks a matching live remote

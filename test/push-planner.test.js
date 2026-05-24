@@ -194,6 +194,26 @@ test('plans local deletions only behind live remote preconditions', () => {
   assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
 });
 
+test('plans local file deletions only behind live remote preconditions', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, 'file:index.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.action, 'delete');
+  assert.equal(mutation.changeKind, 'delete');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(remote.files, 'index.php'), true);
+});
+
 test('stops a local deletion when the remote edited the same resource', () => {
   const base = baseSite();
   const local = baseSite();
@@ -270,6 +290,27 @@ test('stops file type swaps that would hide remote-only descendants', () => {
   assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote image bytes');
 });
 
+test('plans local file type swaps only behind live remote preconditions', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = 'base file bytes';
+  const local = baseSite();
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  const remote = baseSite();
+  remote.files['wp-content/uploads/cover'] = 'base file bytes';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, 'file:wp-content/uploads/cover');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.changeKind, 'type-change');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.deepEqual(result.site.files['wp-content/uploads/cover'], { type: 'directory' });
+});
+
 test('keeps independent mutation evidence while suppressing unsafe topology mutations', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
@@ -300,6 +341,24 @@ test('recognizes matching independent edits as already in sync', () => {
 
   const plan = planFor(base, local, remote);
   const decision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decision.decision, 'already-in-sync');
+  assert.equal(decision.change.localChange, 'update');
+  assert.equal(decision.change.remoteChange, 'update');
+});
+
+test('recognizes matching independent file edits as already in sync', () => {
+  const base = baseSite();
+  base.files['index.php'] = '<?php echo "base";';
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "shared";';
+  const remote = baseSite();
+  remote.files['index.php'] = '<?php echo "shared";';
+
+  const plan = planFor(base, local, remote);
+  const decision = decisionFor(plan, 'file:index.php');
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.mutations, 0);
@@ -402,39 +461,24 @@ test('preserves remote-only plugin changes', () => {
 
 test('preserves remote-only plugin removals', () => {
   const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local ordinary edit";';
   const remote = baseSite();
   delete remote.plugins.forms;
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
-  const plan = planFor(base, baseSite(), remote);
-  const pluginDecision = decisionFor(plan, 'plugin:forms');
-  const fileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
-
-  assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
-  assert.equal(pluginDecision.decision, 'keep-remote');
-  assert.equal(pluginDecision.change.remoteChange, 'delete');
-  assert.equal(fileDecision.decision, 'keep-remote');
-  assert.equal(fileDecision.change.remoteChange, 'delete');
-  assert.equal(Object.hasOwn(applyPlan(remote, plan).site.plugins, 'forms'), false);
-});
-
-test('preserves remote-only plugin changes while local deletes an ordinary file', () => {
-  const base = baseSite();
-  const local = baseSite();
-  delete local.files['index.php'];
-  const remote = baseSite();
-  remote.plugins.forms = { version: '1.1.0', active: false };
-  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
-
   const plan = planFor(base, local, remote);
-  const fileDelete = mutationFor(plan, 'file:index.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(fileDelete.action, 'delete');
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files['index.php'], '<?php echo "local ordinary edit";');
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
 test('combines local ordinary changes while preserving remote-only plugin changes', () => {
