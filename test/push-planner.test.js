@@ -345,6 +345,40 @@ test('stops file type swaps that would hide remote-only descendants', () => {
   assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote image bytes');
 });
 
+test('allows a file type swap when the descendant is deleted in the same plan from the unchanged base', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
+  const local = JSON.parse(JSON.stringify(base));
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  delete local.files['wp-content/uploads/gallery/keep.txt'];
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/gallery');
+  const descendantDelete = mutationFor(plan, 'file:wp-content/uploads/gallery/keep.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(descendantDelete.action, 'delete');
+  assert.equal(descendantDelete.changeKind, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.files['wp-content/uploads/gallery'], 'shared replacement file');
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/keep.txt'), false);
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.plugins.forms.active, false);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
 test('plans local file type swaps only behind live remote preconditions', () => {
   const base = baseSite();
   base.files['wp-content/uploads/cover'] = 'base file bytes';
