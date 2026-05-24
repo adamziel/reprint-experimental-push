@@ -6,6 +6,8 @@ lanes_root="${REPRINT_PUSH_LANES_DIR:-"$HOME/reprint-experimental-push-lanes"}"
 cycle="${1:-"cycle-$(date +%Y%m%d-%H%M%S)"}"
 base_ref="${REPRINT_PUSH_LANE_BASE:-origin/main}"
 tmux_socket_dir="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)"
+codex_fast_model="${CODEX_FAST_MODEL:-gpt-5.4-mini}"
+codex_fast_reasoning_effort="${CODEX_FAST_REASONING_EFFORT:-low}"
 
 lanes=(
   no-data-loss-invariants
@@ -60,6 +62,7 @@ for lane in "${lanes[@]}"; do
   mkdir -p "$worktree/.lane-output"
 
   tmux new-session -d -s "$session" \
-    "cd '$worktree' && codex exec -C '$worktree' --dangerously-bypass-approvals-and-sandbox -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
+    "cd '$worktree' && codex exec -m '$codex_fast_model' -c 'model_reasoning_effort=\"$codex_fast_reasoning_effort\"' -C '$worktree' --dangerously-bypass-approvals-and-sandbox -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
   printf '%s\n' "started: $session -> $worktree"
+  printf '%s\n' "fast mode: model=$codex_fast_model reasoning=$codex_fast_reasoning_effort"
 done

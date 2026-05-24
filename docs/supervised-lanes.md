@@ -12,6 +12,12 @@ Run:
 scripts/supervision/status.sh
 ```
 
+Run the accountability check when taking over supervision:
+
+```bash
+scripts/supervision/accountability.sh
+```
+
 Read it in this order:
 
 1. `tmux sessions` shows active lanes. A missing `rp-...` session means that
@@ -19,6 +25,9 @@ Read it in this order:
 2. `worktrees` shows each lane checkout and branch.
 3. `lane git state` shows whether a lane has committed work ahead of
    `origin/main`, is behind `origin/main`, or has uncommitted changes.
+4. `accountability.sh` reports active/idle `rp-*` panes, the fast-mode worker
+   defaults, and whether the main worktree has non-supervision implementation
+   drift.
 
 ## Active Cycle
 
@@ -27,6 +36,18 @@ Start a fresh supervised cycle from current `origin/main`:
 ```bash
 scripts/supervision/start-cycle.sh cycle-YYYYMMDD-label
 ```
+
+Lane launchers use Codex fast mode by default:
+
+```bash
+CODEX_FAST_MODEL=gpt-5.4-mini
+CODEX_FAST_REASONING_EFFORT=low
+```
+
+Override those environment variables only when a lane genuinely needs a
+stronger model. The supervisor should keep feature work in lanes; if
+`accountability.sh` reports non-supervision drift in `main`, stop local
+development and delegate that change to a worker lane.
 
 Start just the feedback supervisor:
 
