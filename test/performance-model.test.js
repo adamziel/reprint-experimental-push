@@ -759,6 +759,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.ok(
+    rejectedById.get('compressed-row-batch-skips-batch-receipts').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-row-batch-skips-batch-receipts').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-row-batch-skips-batch-receipts').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-row-batch-skips-batch-receipts').violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-row-batch-skips-batch-receipts').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
     rejectedById
       .get('index-and-compressed-row-batch-completes-plugin-update')
       .violates.includes('plugin-preconditions'),

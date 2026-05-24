@@ -490,6 +490,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-row-batch-skips-batch-receipts',
+    proposal: 'treat a compressed database batch as durable proof that every row in the batch reached the remote',
+    rejectedBecause: 'compression can lower queue pressure, but it cannot replace the per-row receipts and recovery record needed to classify partial batch failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'row-preconditions', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-row-batch-completes-plugin-install',
     proposal: 'treat a fresh remote index plus a compressed row batch as proof that a plugin install already finished',
     rejectedBecause: 'planning evidence and batch compression can reduce work, but they cannot prove per-row preconditions, dependency checks, or the atomic-group commit survived failure',

@@ -393,6 +393,9 @@ under load:
   because planning evidence and batch compression cannot prove row-level
   preconditions, dependency checks, or the atomic-group commit survived a
   failure.
+- compressed-row-batch-skips-batch-receipts is rejected because compression
+  can lower queue pressure, but it cannot replace per-row receipts or the
+  recovery record needed to classify a partial batch.
 - remote-index-plus-compressed-buffer-completes-chunk-resume is rejected because
   compressed buffers and planning evidence cannot prove which chunk receipts
   survived a crash or pause.
