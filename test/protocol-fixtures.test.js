@@ -47,19 +47,37 @@ test('push protocol fixture captures the production stage order and recovery rul
 test('push auth fixture requires push-scoped headers for mutating calls and keeps inspect read-only', () => {
   const preflight = readJson('fixtures/protocol/push-preflight-response.json');
   const headers = readJson('fixtures/protocol/push-auth-headers.json');
+  const snapshot = readJson('fixtures/protocol/push-snapshot-hashes-response.json');
   const journalOpen = readJson('fixtures/protocol/push-journal-open-response.json');
   const inspectRequest = readJson('fixtures/protocol/push-recovery-inspect-request.json');
+  const inspectResponse = readJson('fixtures/protocol/push-recovery-inspect-response.json');
+  const blockedInspect = readJson('fixtures/protocol/push-recovery-inspect-blocked-response.json');
+  const recoveryDecision = readJson('fixtures/protocol/push-recovery-decision.json');
 
   assert.equal(preflight.auth.required[0], 'export-hmac');
   assert.equal(preflight.auth.required[1], 'canonical-push-hmac');
   assert.equal(preflight.capabilities.journal, true);
   assert.equal(preflight.capabilities.recovery, true);
+  assert.equal(snapshot.complete, true);
+  assert.equal(snapshot.cursor, null);
+  assert.equal(snapshot.coverage.complete, true);
+  assert.equal(snapshot.coverage.coverage_hash, 'sha256:remote-coverage');
+  assert.equal(snapshot.resources.length, 3);
+  assert.ok(snapshot.resources.every((resource) => resource.storage_guard));
   assert.ok(headers.read_only_request_headers['X-Auth-Signature'].startsWith('hmac-sha256:'), 'read-only auth must stay HMAC-based');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Session'], 'mutating requests must carry a push session');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Idempotency-Key'], 'mutating requests must carry an idempotency key');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Signature'], 'mutating requests must carry a canonical push signature');
   assert.equal(inspectRequest.mode, 'inspect');
   assert.ok(!('idempotency_key' in inspectRequest), 'inspect must not require a mutating idempotency key');
+  assert.equal(inspectResponse.state, 'inspect');
+  assert.equal(inspectResponse.proof, 'journal-and-live-hashes-reviewed');
+  assert.ok(inspectResponse.actions.includes('inspected-journal'));
+  assert.ok(inspectResponse.actions.includes('inspected-live-hashes'));
+  assert.equal(blockedInspect.state, 'inspect');
+  assert.equal(blockedInspect.code, 'RECOVERY_BLOCKED');
+  assert.equal(recoveryDecision.inspect.mutates, false);
+  assert.equal(recoveryDecision.mutating_modes.finish.requires[1], 'fresh live hashes');
   assert.equal(journalOpen.entries[0].claim_generation, 4);
   assert.equal(journalOpen.entries[0].lease_expires_at, '2026-05-24T00:00:09Z');
   assert.equal(journalOpen.entries[0].resources[0].before_hash, 'sha256:base-index');
