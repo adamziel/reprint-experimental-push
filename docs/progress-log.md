@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:44:56 CEST.
+- Last update: 2026-05-25 01:45:35 CEST.
 - Status: Lab evidence still holds.
 - Trend: the visible page, this log, and the newest supervisor note still agree; no production evidence moved.
 - Supervision: the same-plan graph worker remains active and unmerged.
@@ -15,7 +15,7 @@ linked implementation artifacts.
 - Pending proof gates: production auth/session storage, durable journal ownership, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers.
 - Next nudge: keep production gates blocked until a worker proves production auth/session/journal internals and graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update date and links to the detailed evidence. In this lane, the page becomes live only after merge to `main`.
-- Refresh note: no evidence delta; the newest supervisor note is shorter, the visible surfaces stay aligned, and the public page still keeps detailed evidence in linked docs.
+- Refresh note: no evidence delta; the newest supervisor note is shorter, and the visible surfaces stay aligned.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
