@@ -4,14 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-24 - Current Supervisor Snapshot
+## 2026-05-24 22:41 CEST - Current Supervisor Snapshot
 
-- Status: `70` Node tests pass. Both
+- Status: fresh verification passed: `npm test` reports `70` tests, and both
   `npm run test:playground:production-shaped-push` and
   `npm run test:playground:production-plugin-package` pass against
   `/wp-json/reprint/v1/push/*`.
-- Trend: reliable executor moved from route-shape proof to packaged endpoint
-  proof; production readiness is still blocked.
+- Trend: reliable executor remains at packaged endpoint proof; production
+  readiness is flat since the 22:32 update.
 - Blocker: the packaged endpoint still uses lab auth and lab journal internals.
   Production credential lifecycle, nonce/session cleanup, durable storage,
   leases, and arbitrary plugin drivers are still unproven.
@@ -19,6 +19,8 @@ linked implementation artifacts.
   and durable journal guarantees under the packaged plugin.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
+- Lane note: this branch is not the integration worktree. The GitHub Pages copy
+  updates only after this lane is merged to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>

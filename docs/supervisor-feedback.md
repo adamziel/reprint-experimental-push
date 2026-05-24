@@ -1,9 +1,38 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 22:32 CEST
+Last updated: 2026-05-24 22:41 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-24 22:41 CEST - Evidence Hold
+
+- Going well: fresh verification passed: `npm test`, the production-shaped
+  route smoke, and the packaged-plugin smoke all pass. The package activates
+  `/wp-json/reprint/v1/push/*` and disables the public lab namespace.
+- Not going well: no new production-boundary proof landed after the package
+  slice. The route still depends on lab auth, lab sessions, and lab journal
+  internals.
+- Progress change: route/package evidence is steady; production readiness is
+  flat since 22:32 because credential lifecycle, nonce/session cleanup,
+  durable storage, leases, and arbitrary plugin drivers remain unproven.
+- Next nudge: keep reliable executor focused on replacing lab internals before
+  adding breadth: production auth cleanup, durable journal rows, replay/conflict
+  refusal, then recovery inspect under the packaged plugin.
+- Lane note: this is a lane worktree. The page update becomes live on GitHub
+  Pages only after this lane is merged to `main`.
+
+| Owner | Proof gap | Next test |
+| --- | --- | --- |
+| Invariants | Real WordPress graph identity. | Post/postmeta/attachment/taxonomy fixture with remote drift. |
+| Recovery | Production old/new/blocked durability. | Kill DB/file/journal boundaries with durable storage evidence. |
+| Reliable executor | Production auth/session/journal, not lab internals. | Swap package route internals for push-scoped auth, nonce cleanup, durable rows, replay, and conflict refusal. |
+| Fast paths | Runtime speed evidence. | Large upload/table benchmark with receipts, chunks, resume cursors, and memory ceiling. |
+| Audit and critic | Non-lab integration behavior. | Re-audit the first production-boundary mutation slice. |
+| Progress publisher | Published page drift. | After merge, verify Pages or keep the lane-only caveat visible. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 22:32 CEST - Package Nudge
 
@@ -27,9 +56,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Benchmark large chunks with receipts and resume cursors. |
 | Audit and critic | Re-audit this packaged endpoint before any readiness jump. |
 | Progress publisher | Keep the page dated, one-screen, and caveat-linked. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Current Nudge
 
