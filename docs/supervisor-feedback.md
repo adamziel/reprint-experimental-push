@@ -1,20 +1,20 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:33:38 CEST
+Last updated: 2026-05-25 01:34:11 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 01:33:38 CEST - Supervisor Snapshot
+## 2026-05-25 01:34:11 CEST - Supervisor Snapshot
 
-- Going well: the page, log, and newest note still agree, and the scan view stays short.
+- Going well: the page, log, and newest note still agree, and the scan view stays compact.
 - Not going well: production proof is still missing for auth, journal durability, leases, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; this pass only tightened the visible page wording and kept the scan view aligned.
+- Progress change: no evidence delta; this pass pruned repeated status language and tightened the visible nudges.
 - Next nudge: keep each lane to one proof gap, one next test, and one owner.
 
 | Lane | Next nudge |
 | --- | --- |
-| Invariants | Prove production graph identity on a real site. |
+| Invariants | Prove graph identity on a real site. |
 | Recovery | Prove durable journal writes under crash boundaries. |
 | Reliable executor | Prove auth, session, and lease behavior in production. |
 | Fast paths | Benchmark a real large site before claiming rollout speed. |
