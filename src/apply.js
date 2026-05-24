@@ -40,6 +40,7 @@ export function applyPlan(remote, plan, options = {}) {
 
   validateSupportedPluginOwnedMutations(remote, plan);
   validateAtomicGroupDependencyPlan(remote, plan);
+  validateWordPressGraphDependencies(plan);
 
   const durableJournal = getDurableJournalWriter(options);
   const hasPreviousJournal = Boolean(options.journal);
@@ -1094,6 +1095,71 @@ function validateAtomicGroupDependencyPlan(remote, plan) {
         hash: actualHash,
         source: 'live-remote',
       });
+    }
+  }
+}
+
+function validateWordPressGraphDependencies(plan) {
+  const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
+  const mutationIndexById = new Map(mutations.map((mutation, index) => [mutation.id, index]));
+  const mutationById = new Map(mutations.map((mutation) => [mutation.id, mutation]));
+
+  for (const mutation of mutations) {
+    const references = Array.isArray(mutation.wordpressGraphReferences) ? mutation.wordpressGraphReferences : [];
+    const declaredDependencies = Array.isArray(mutation.dependsOnMutationIds) ? mutation.dependsOnMutationIds : [];
+    const declaredDependencySet = new Set(declaredDependencies);
+
+    for (const reference of references) {
+      if (reference.resolutionPolicy !== 'same-plan-local-create') {
+        continue;
+      }
+
+      const targetMutationId = reference.dependency?.targetMutationId || null;
+      const targetResourceKey = reference.dependency?.targetResourceKey || reference.targetResourceKey || null;
+      if (!targetMutationId || !targetResourceKey) {
+        throw new PushPlanError(
+          'WORDPRESS_GRAPH_DEPENDENCY_INVALID',
+          `WordPress graph mutation ${mutation.id} has incomplete same-plan dependency evidence.`,
+          { mutationId: mutation.id, targetResourceKey },
+        );
+      }
+
+      if (!declaredDependencySet.has(targetMutationId)) {
+        throw new PushPlanError(
+          'WORDPRESS_GRAPH_DEPENDENCY_MISSING',
+          `WordPress graph mutation ${mutation.id} is missing dependency ${targetMutationId}.`,
+          { mutationId: mutation.id, targetMutationId, targetResourceKey },
+        );
+      }
+
+      const targetMutation = mutationById.get(targetMutationId);
+      if (!targetMutation || targetMutation.resourceKey !== targetResourceKey) {
+        throw new PushPlanError(
+          'WORDPRESS_GRAPH_DEPENDENCY_FORGED',
+          `WordPress graph mutation ${mutation.id} declares forged same-plan dependency evidence.`,
+          {
+            mutationId: mutation.id,
+            targetMutationId,
+            targetResourceKey,
+          },
+        );
+      }
+
+      if (targetMutation.changeKind !== 'create' || targetMutation.action !== 'put') {
+        throw new PushPlanError(
+          'WORDPRESS_GRAPH_DEPENDENCY_NOT_CREATE',
+          `WordPress graph mutation ${mutation.id} depends on ${targetMutationId}, but the target is not a create mutation.`,
+          { mutationId: mutation.id, targetMutationId, targetResourceKey },
+        );
+      }
+
+      if (mutationIndexById.get(targetMutationId) >= mutationIndexById.get(mutation.id)) {
+        throw new PushPlanError(
+          'WORDPRESS_GRAPH_DEPENDENCY_MISORDERED',
+          `WordPress graph mutation ${mutation.id} depends on ${targetMutationId}, but it is not ordered after the target mutation.`,
+          { mutationId: mutation.id, targetMutationId, targetResourceKey },
+        );
+      }
     }
   }
 }

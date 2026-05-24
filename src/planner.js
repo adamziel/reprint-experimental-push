@@ -192,7 +192,17 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         local,
         remote,
       });
-      if (!graphIdentitySupport.supported) {
+      const samePlanGraphDependencies = graphIdentitySupport.supported
+        ? []
+        : wordpressGraphSamePlanDependencies({
+          resource,
+          localValue,
+          resources,
+          base,
+          local,
+          remote,
+        });
+      if (!graphIdentitySupport.supported && samePlanGraphDependencies.length === 0) {
         addWordPressGraphIdentityBlocker(plan, {
           resource,
           support: graphIdentitySupport,
@@ -219,6 +229,17 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         change,
         atomicGroupId: intentByResource.get(resource.key) || null,
       };
+      if (samePlanGraphDependencies.length > 0) {
+        mutation.dependsOnMutationIds = [];
+        mutation.wordpressGraphReferences = samePlanGraphDependencies.map((dependency) => ({
+          ...dependency,
+          resolutionPolicy: 'same-plan-local-create',
+          dependency: {
+            targetResourceKey: dependency.targetResourceKey,
+            targetMutationId: null,
+          },
+        }));
+      }
       if (isPluginOwnedDataResource(resource, owner)) {
         const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
         mutation.pluginOwnedResource = {
@@ -269,6 +290,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
   }
 
   addFileTopologyConflicts(plan, resources, base, local, remote);
+  attachWordPressGraphDependencies(plan, resources, base, local, remote);
+  plan.mutations = orderMutationsWithDependencies(plan.mutations);
+  plan.preconditions = orderPreconditionsWithMutations(plan.preconditions, plan.mutations);
   plan.atomicGroups = intents.map((intent) => buildAtomicGroup(intent, plan, base, remote));
   const existingBlockerIds = new Set(plan.blockers.map((blocker) => blocker.id));
   for (const blocker of plan.atomicGroups.flatMap((group) => group.blockers)) {
@@ -1130,6 +1154,149 @@ function wordpressGraphReferenceEvidence(reference, resources, base, local, remo
       targetRemoteHash,
     ),
   };
+}
+
+function wordpressGraphSamePlanDependencies({
+  resource,
+  localValue,
+  resources,
+  base,
+  local,
+  remote,
+}) {
+  if (resource.type !== 'row' || localValue === ABSENT) {
+    return [];
+  }
+
+  return wordpressGraphReferences(resource, localValue)
+    .map((reference) => {
+      const target = resources.find((candidate) => candidate.key === reference.targetResourceKey)
+        || reference.targetResource;
+      const targetBaseValue = getResource(base, target);
+      const targetLocalValue = getResource(local, target);
+      const targetRemoteValue = getResource(remote, target);
+      const targetBaseHash = resourceHash(base, target);
+      const targetLocalHash = resourceHash(local, target);
+      const targetRemoteHash = resourceHash(remote, target);
+      const isSamePlanCreate = targetBaseValue === ABSENT
+        && targetRemoteValue === ABSENT
+        && targetLocalValue !== ABSENT;
+
+      if (!isSamePlanCreate) {
+        return null;
+      }
+
+      return {
+        relationshipKey: reference.relationshipKey,
+        relationshipType: reference.relationshipType,
+        sourceResourceKey: reference.sourceResourceKey,
+        sourceTable: reference.sourceTable,
+        sourceRowId: reference.sourceRowId,
+        targetTable: reference.targetTable,
+        targetId: reference.targetId,
+        targetResource: target,
+        targetResourceKey: reference.targetResourceKey,
+        targetBaseHash,
+        targetLocalHash,
+        targetRemoteHash,
+      };
+    })
+    .filter(Boolean);
+}
+
+function attachWordPressGraphDependencies(plan, resources, base, local, remote) {
+  const mutationByResourceKey = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+
+  for (const mutation of plan.mutations) {
+    const localValue = deserializeResourceValue(mutation.value);
+    const dependencies = wordpressGraphSamePlanDependencies({
+      resource: mutation.resource,
+      localValue,
+      resources,
+      base,
+      local,
+      remote,
+    });
+    if (dependencies.length === 0) {
+      continue;
+    }
+
+    const resolvedDependencies = [];
+    for (const dependency of dependencies) {
+      const targetMutation = mutationByResourceKey.get(dependency.targetResourceKey);
+      if (!targetMutation) {
+        continue;
+      }
+      if (targetMutation.changeKind !== 'create') {
+        continue;
+      }
+      resolvedDependencies.push({
+        ...dependency,
+        resolutionPolicy: 'same-plan-local-create',
+        dependency: {
+          targetResourceKey: dependency.targetResourceKey,
+          targetMutationId: targetMutation.id,
+        },
+      });
+    }
+
+    if (resolvedDependencies.length === 0) {
+      continue;
+    }
+
+    mutation.dependsOnMutationIds = [
+      ...new Set(resolvedDependencies.map((dependency) => dependency.dependency.targetMutationId)),
+    ];
+    mutation.wordpressGraphReferences = resolvedDependencies;
+  }
+}
+
+function orderMutationsWithDependencies(mutations) {
+  const originalOrder = new Map(mutations.map((mutation, index) => [mutation.id, index]));
+  const mutationById = new Map(mutations.map((mutation) => [mutation.id, mutation]));
+  const inDegree = new Map(mutations.map((mutation) => [mutation.id, 0]));
+  const dependentsById = new Map(mutations.map((mutation) => [mutation.id, []]));
+
+  for (const mutation of mutations) {
+    for (const dependencyId of mutation.dependsOnMutationIds || []) {
+      if (!mutationById.has(dependencyId)) {
+        continue;
+      }
+      inDegree.set(mutation.id, (inDegree.get(mutation.id) || 0) + 1);
+      dependentsById.get(dependencyId).push(mutation.id);
+    }
+  }
+
+  const queue = mutations
+    .filter((mutation) => (inDegree.get(mutation.id) || 0) === 0)
+    .sort((left, right) => originalOrder.get(left.id) - originalOrder.get(right.id));
+  const ordered = [];
+
+  while (queue.length > 0) {
+    const next = queue.shift();
+    ordered.push(next);
+    for (const dependentId of dependentsById.get(next.id) || []) {
+      const nextDegree = (inDegree.get(dependentId) || 0) - 1;
+      inDegree.set(dependentId, nextDegree);
+      if (nextDegree === 0) {
+        queue.push(mutationById.get(dependentId));
+        queue.sort((left, right) => originalOrder.get(left.id) - originalOrder.get(right.id));
+      }
+    }
+  }
+
+  if (ordered.length !== mutations.length) {
+    return mutations;
+  }
+
+  return ordered;
+}
+
+function orderPreconditionsWithMutations(preconditions, mutations) {
+  const orderByMutationId = new Map(mutations.map((mutation, index) => [mutation.id, index]));
+  return [...preconditions].sort((left, right) => {
+    return (orderByMutationId.get(left.mutationId) || 0) - (orderByMutationId.get(right.mutationId) || 0);
+  });
 }
 
 function wordpressGraphTargetResource({ sourceTable, targetSuffix, id }) {

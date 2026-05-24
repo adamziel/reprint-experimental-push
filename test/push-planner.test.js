@@ -958,11 +958,17 @@ test('classifies divergent plugin-owned data rows as redacted plugin data confli
   assert.equal(conflictsJson.includes('local-private-entry'), false);
 });
 
-test('blocks local postmeta references to stale remote-created post identity', () => {
+test('allows local postmeta references to same-plan created post with explicit dependency evidence', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const base = baseSite();
   const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'local-private-post-title',
+    post_content: 'local-private-post-body',
+    post_status: 'publish',
+  };
   local.db.wp_postmeta = {
     'meta_id:45': {
       meta_id: 45,
@@ -972,36 +978,77 @@ test('blocks local postmeta references to stale remote-created post identity', (
     },
   };
   const remote = baseSite();
-  remote.db.wp_posts['ID:2'] = {
-    ID: 2,
-    post_title: 'remote-private-post-title',
-    post_content: 'remote-private-post-body',
-    post_status: 'publish',
-  };
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers[0];
-  const reference = blocker.references[0];
-  const planJson = JSON.stringify(plan);
+  const mutation = mutationFor(plan, resourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
 
-  assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 0);
-  assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
-  assert.equal(reference.relationshipType, 'postmeta-post');
-  assert.equal(reference.sourceResourceKey, resourceKey);
-  assert.equal(reference.targetResourceKey, targetResourceKey);
-  assert.equal(reference.targetChange.remoteChange, 'create');
-  assert.equal(reference.targetRemoteHash.length, 64);
-  assert.equal(planJson.includes('local-private-meta-payload'), false);
-  assert.equal(planJson.includes('remote-private-post-title'), false);
-  assert.equal(planJson.includes('remote-private-post-body'), false);
-  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
-  assert.equal(remote.db.wp_posts['ID:2'].post_title, 'remote-private-post-title');
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(targetMutation.action, 'put');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.deepEqual(targetMutation.dependsOnMutationIds || [], []);
+  assert.deepEqual(mutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(mutation.wordpressGraphReferences[0].resolutionPolicy, 'same-plan-local-create');
+  assert.equal(mutation.wordpressGraphReferences[0].dependency.targetMutationId, targetMutation.id);
+  assert.equal(mutation.wordpressGraphReferences[0].dependency.targetResourceKey, targetResourceKey);
+  assert.equal(mutation.wordpressGraphReferences[0].targetResourceKey, targetResourceKey);
+  assert.equal(mutation.wordpressGraphReferences[0].relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(mutation.wordpressGraphReferences[0].relationshipType, 'postmeta-post');
+  const result = applyPlan(baseSite(), plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'local-private-post-title');
+  assert.equal(result.site.db.wp_postmeta['meta_id:45'].post_id, 2);
+  assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_key, '_local_graph_note');
+});
+
+test('rejects forged, missing, and misordered same-plan graph dependency evidence before mutation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'local-private-post-title',
+    post_content: 'local-private-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 2,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-meta-payload',
+    },
+  };
+  const remote = baseSite();
+  const ready = planFor(base, local, remote);
+  const mutation = mutationFor(ready, 'row:["wp_postmeta","meta_id:45"]');
+  const targetMutation = mutationFor(ready, 'row:["wp_posts","ID:2"]');
+  assert.equal(ready.status, 'ready');
+
+  const forged = tamperReadyPlan(ready, (plan) => {
+    const source = plan.mutations.find((entry) => entry.id === mutation.id);
+    source.dependsOnMutationIds = [targetMutation.id];
+    source.wordpressGraphReferences[0].dependency.targetResourceKey = 'row:["wp_posts","ID:999"]';
+  });
+  assert.throws(
+    () => applyPlan(baseSite(), forged),
+    (error) => error instanceof PushPlanError && error.code === 'WORDPRESS_GRAPH_DEPENDENCY_FORGED',
+  );
+
+  const missing = tamperReadyPlan(ready, (plan) => {
+    plan.mutations.find((entry) => entry.id === mutation.id).dependsOnMutationIds = [];
+  });
+  assert.throws(
+    () => applyPlan(baseSite(), missing),
+    (error) => error instanceof PushPlanError && error.code === 'WORDPRESS_GRAPH_DEPENDENCY_MISSING',
+  );
+
+  const misordered = tamperReadyPlan(ready, (plan) => {
+    plan.mutations = [mutation, targetMutation];
+  });
+  assert.throws(
+    () => applyPlan(baseSite(), misordered),
+    (error) => error instanceof PushPlanError && error.code === 'WORDPRESS_GRAPH_DEPENDENCY_MISORDERED',
+  );
 });
 
 test('blocks an atomic plugin install when dependencies are absent', () => {

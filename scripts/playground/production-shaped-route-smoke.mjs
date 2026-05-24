@@ -33,7 +33,7 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
-const routeLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+const routeLocalSnapshot = snapshots.local;
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-shaped-route-'));
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
@@ -619,15 +619,6 @@ function parseMarkedJson(stdout, begin, end, missingMessage) {
     throw new Error(missingMessage);
   }
   return JSON.parse(match[1]);
-}
-
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
-  return next;
 }
 
 function assertVisibleSurfaceEqual(actual, expected, label) {
