@@ -19,8 +19,8 @@ the live remote immediately before apply.
   matches the pull base on the live remote. Remote-only changes to unrelated
   plugin metadata or plugin files do not relax that precondition.
 - Matching independent edits where local and remote changed a resource to the
-  same hash, including deletions and file edits; these produce
-  `already-in-sync` decisions, not mutations.
+  same hash, including deletions, file edits, and plugin context changes; these
+  produce `already-in-sync` decisions, not mutations.
 - Matching independent file type swaps that land on the same hash; these also
   produce `already-in-sync` decisions, not mutations.
 - Plugin installs or data updates whose declared dependencies are already on

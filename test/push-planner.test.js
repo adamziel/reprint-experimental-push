@@ -437,6 +437,29 @@ test('recognizes matching independent file type swaps as already in sync', () =>
   assert.equal(decision.change.remoteChange, 'type-change');
 });
 
+test('recognizes matching independent plugin context edits as already in sync', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.plugins.forms = { version: '1.1.0', active: false };
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* forms 1.1 shared */';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* forms 1.1 shared */';
+
+  const plan = planFor(base, local, remote);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const fileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(pluginDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.change.localChange, 'update');
+  assert.equal(pluginDecision.change.remoteChange, 'update');
+  assert.equal(fileDecision.decision, 'already-in-sync');
+  assert.equal(fileDecision.change.localChange, 'update');
+  assert.equal(fileDecision.change.remoteChange, 'update');
+});
+
 test('preserves remote-only plugin changes', () => {
   const base = baseSite();
   const remote = baseSite();
