@@ -37,6 +37,12 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground local REST receipt/stale/conflict refusals | Missing receipt rejects with `428 MISSING_DRY_RUN_RECEIPT`, tampered receipt with `409 RECEIPT_MISMATCH`, stale remote with `412 PRECONDITION_FAILED`, and conflict plans with `409 PLAN_NOT_READY` for row, file, and plugin-data classes. | `npm run test:playground:http-push` |
 | Playground lab injected recovery failure | Fail-after-2 returns `LAB_INJECTED_APPLY_FAILURE` after two successful whole-resource mutations, records planned recovery entries and hash-only current state, and inspection reports `blocked-recovery` with `2 new` and `6 old` targets. | `npm run test:playground:recovery` |
 | Playground lab retry after partial apply | Retry over the partial lab state refuses with `PRECONDITION_FAILED` instead of applying over the blocked recovery state. | `npm run test:playground:recovery` |
+| File-backed JSONL recovery journal opens and restarts | Append-only JSONL records use monotonic sequences, include `fsync` evidence after each append, and can be read after restart-style inspection. | `npm run test:recovery:file-journal` |
+| File-backed JSONL old remote before mutation | A journal opened before any mutation inspects as `old-remote` instead of pretending success. | `npm run test:recovery:file-journal` |
+| File-backed JSONL partial apply recovery | Fail-after-2 inspects as `blocked-recovery` with `2 new`, `6 old`, and `0` unknown targets; retry refuses with `PRECONDITION_FAILED` and leaves the remote unchanged. | `npm run test:recovery:file-journal` |
+| File-backed JSONL completed replay | A completed replay applies `0` additional mutations and inspects as fully updated or already committed. | `npm run test:recovery:file-journal` |
+| File-backed JSONL drift outside recovery envelope | Current state outside journaled before/after hashes reports `blockedUnknown > 0` instead of reusing stale local data. | `npm run test:recovery:file-journal` |
+| File-backed JSONL raw-value guard | Journal files contain no raw fixture fields/data; prevention is forbidden-key/fixture-string based, not a full production allowlist schema. | `npm run test:recovery:file-journal` |
 | Failure happens while staging mutations | No partially mutated remote state is returned or committed. | `injected failure before commit returns no partially mutated remote state` |
 
 ## Remaining Missing Scenarios
@@ -53,9 +59,10 @@ The first executable matrix lives in `test/push-planner.test.js`.
   current forms slice is fixture/allowlist-scoped and does not prove arbitrary
   production plugin-owned options, postmeta, custom tables, or activation
   semantics.
-- Kill-process recovery tests around every durable boundary, including
-  `fsync`/storage-level proof. The current recovery harness is injected lab
-  failure inspection only.
+- Production DB-table journal and kill-process recovery tests around every
+  durable WordPress boundary. The current JSONL journal has per-append `fsync`
+  evidence in the JSON-model lab, and the Playground recovery harness is
+  injected lab failure inspection only.
 
 ## Invariant Policy
 

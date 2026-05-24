@@ -1,9 +1,12 @@
 # Apply Journal Recovery States
 
-The current recovery slice is lab evidence, not production durable recovery.
-It uses a bounded option journal in the Playground lab to classify a failed
-apply without storing raw before/after values. It is not process-kill safe, is
-not backed by `fsync`, and does not auto-repair a partial remote.
+The current recovery slices are lab evidence, not production durable recovery.
+The Playground lab uses a bounded option journal to classify a failed apply
+without storing raw before/after values. The JSON-model lab also has a
+file-backed append-only JSONL journal with monotonic sequences and `fsync`
+evidence after each append. These slices are not production WordPress recovery:
+they do not replace a DB table journal, do not include process-kill tests, and
+do not auto-repair a partial remote.
 
 The production design target is a durable artifact that separates a safe retry
 from an unsafe partial push. A failed apply must leave the system classifiable
@@ -38,7 +41,7 @@ Completed replay validates that current remote resources still match the
 journaled after hashes. If any resource drifted after completion, replay blocks
 instead of resurrecting stale local data.
 
-## Current Lab Evidence
+## Current Playground Lab Evidence
 
 `npm run test:playground:recovery` verifies the lab failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. In the
@@ -54,3 +57,32 @@ The journal records planned recovery entries, `mutation-applied`,
 is enough to prove the lab classification path, but it is still not a durable
 production journal, not process-kill/`fsync` proof, and not an automated repair
 mechanism.
+
+## Current File-Backed JSONL Evidence
+
+`npm run test:recovery:file-journal` verifies the JSON-model file-backed
+recovery journal in `src/recovery-journal.js` and restart-style inspection in
+`src/recovery-inspect.js`. The journal is append-only JSONL. Each record has a
+monotonic sequence number and carries `fsync` evidence, and the writer calls
+`fs.fsyncSync()` after each append.
+
+The smoke covers these restart-style states:
+
+- failure before mutation inspects as `old-remote`;
+- fail-after-2 inspects as `blocked-recovery` with `2 new`, `6 old`, and
+  `0` unknown targets;
+- retry over the partial remote refuses with `PRECONDITION_FAILED` and does not
+  change the remote;
+- completed replay applies `0` additional mutations and inspects as fully
+  updated or already committed;
+- drift outside the journaled before/after hashes reports
+  `blockedUnknown > 0`;
+- journal files contain no raw fixture fields/data.
+
+This is stronger than the earlier in-memory-only recovery model, but it is
+still JSON-model lab evidence. It is not the production WordPress DB table
+journal, not process-kill proof, and not a production repair policy. Journal
+paths must be unique or reset intentionally because opening a plan recovery
+journal defaults to `truncate`. The raw-value guard is based on forbidden keys
+and fixture strings, not a complete allowlist schema for every production
+record shape.

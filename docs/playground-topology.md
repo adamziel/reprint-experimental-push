@@ -170,6 +170,32 @@ This is lab recovery inspection only. It proves bounded journal evidence and
 classification after an injected apply failure, not production durable recovery,
 process-kill safety, `fsync` safety, or automatic repair.
 
+## File-Backed JSONL Recovery Journal
+
+```bash
+npm run test:recovery:file-journal
+```
+
+This standalone JSON-model smoke is separate from the WordPress Playground
+topology. It verifies `src/recovery-journal.js` append-only JSONL files with
+monotonic sequence numbers and `fsync` evidence after each append, plus
+restart-style inspection through `src/recovery-inspect.js` over the persisted
+journal and the current JSON snapshot.
+
+The smoke proves old-remote classification before mutation, fail-after-2
+`blocked-recovery` with `2 new`, `6 old`, and `0` unknown targets, retry
+refusal with `PRECONDITION_FAILED` and no remote change, completed replay with
+`0` additional mutations, and drift outside the journaled before/after envelope
+as `blockedUnknown > 0`. It also verifies that journal files do not contain raw
+fixture fields/data.
+
+This file-backed journal is lab evidence for the JSON safety model, not
+production WordPress recovery. It does not replace a production DB table
+journal, process-kill tests, source-site crash testing, or automatic repair.
+Journal paths must be unique or reset intentionally because opening a plan
+recovery journal defaults to `truncate`; raw-value prevention is
+forbidden-key/fixture-string based rather than a full allowlist schema.
+
 ## Next Proofs Needed
 
 - Replace the fixture-scoped PHP lab endpoint with a real Reprint push HTTP
@@ -177,7 +203,8 @@ process-kill safety, `fsync` safety, or automatic repair.
 - Revalidate live remote hashes immediately before production apply.
 - Add production-grade receipt expiry, signing/auth binding, and durable audit
   storage around the accepted remote snapshot.
-- Add process-kill and `fsync`-backed recovery proof before claiming durable
-  production recovery.
+- Add production DB-table journal, process-kill, and storage-level recovery
+  proof before claiming durable production recovery. The JSONL lab journal has
+  per-append `fsync` evidence, but no production WordPress crash boundary.
 - Add real plugin activation, custom-table driver, recovery, and auth proof
   before making claims about arbitrary production plugin-owned data.

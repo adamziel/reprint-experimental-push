@@ -43,6 +43,12 @@ Run the lab recovery inspection harness:
 npm run test:playground:recovery
 ```
 
+Run the file-backed JSON recovery journal restart smoke:
+
+```bash
+npm run test:recovery:file-journal
+```
+
 The Playground target is the lab proof for real WordPress fixture state. It
 exports snapshots from Playground sites, exercises conflict planning from those
 snapshots, creates a ready plan with `remote=base`, applies that plan inside a
@@ -85,6 +91,20 @@ successful whole-resource mutations, classifies the remote as
 inspection, and refuses retry with `PRECONDITION_FAILED`. This is bounded lab
 inspection over option-journal evidence with hashes only; it is not
 process-kill safe, `fsync` safe, durable production recovery, or auto-repair.
+
+The `test:recovery:file-journal` script verifies the JSON-model file-backed
+recovery journal. It writes append-only JSONL records with monotonic sequences,
+includes `fsync` evidence after each append, inspects persisted journal files
+after restart-style module reloads, verifies old-remote before mutation,
+`blocked-recovery` after fail-after-2 with `2 new` and `6 old` targets, retry
+refusal with `PRECONDITION_FAILED` and no remote change, completed replay with
+`0` additional mutations, drift outside before/after hashes as
+`blockedUnknown > 0`, and no raw fixture fields/data in journal files. This is
+still JSON-model lab evidence, not production WordPress recovery: it does not
+replace the DB table journal or process-kill tests, journal paths must be
+unique or reset intentionally because plan journal open defaults to `truncate`,
+and raw-value prevention is forbidden-key/fixture-string based rather than a
+complete allowlist schema.
 
 The lab CLI works on three snapshots:
 
