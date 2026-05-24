@@ -167,7 +167,8 @@ these release requirements:
 The most important release requirement is not one individual check; it is the
 end-to-end enforcement of the full safety matrix before any live-source push is
 allowed. Without that, the remaining proof stays advisory, even when several
-individual smokes pass.
+individual smokes pass. The repo currently does not enforce that matrix, so
+the release blocker is a missing required gate, not just a missing test case.
 
 ### Claim Audit
 
@@ -248,6 +249,7 @@ Actionable release-gate requirement:
 
 That means the repo can still look healthy while the exact proof needed for a
 release claim has not been run. For this objective, that is a release blocker,
+not a release caveat.
 not just a documentation gap.
 
 ### Test Verdict
@@ -675,3 +677,10 @@ The current suite is therefore good at rejecting regressions, but it is not
 yet good enough to justify the live-source production claims. The most
 actionable next step is not more wording; it is live evidence for each guarded
 write class, retained with hashes and crash state.
+
+Current bottom line:
+
+- the default suite is a proof filter, not a release gate
+- the lab smokes are useful evidence, but they remain opt-in and lab-backed
+- the repo cannot yet authorize a production no-data-loss, reliability, or
+  speed claim
