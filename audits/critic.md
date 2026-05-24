@@ -484,6 +484,10 @@ would reasonably read as equivalent.
   surfaces that drifted after the review.
 - Every partial apply path is either rolled back, fenced, or preserved for
   audit and retry without a false success claim.
+- A fixture replay, packaged-plugin smoke, or `finalMatchesLocal` result is
+  never treated as production proof unless the same path also proves live
+  remote revalidation, stale-approval rejection, and safe retry from a fresh
+  snapshot.
 - Every production journal boundary has crash evidence for old, new, or
   blocked classification.
 - The release suite runs auth, storage, recovery, plugin, graph, redaction,
@@ -541,6 +545,9 @@ Before any production-grade push claim, the project needs all of these:
     auth, storage, recovery, plugin, graph, redaction, and performance checks.
 13. Measured large-file and large-table benchmarks through the guarded
     executor path intended for release.
+14. A documented release gate that fails closed on stale manual-review
+    artifacts, unknown plugin ownership, route-shape-only evidence, fixture
+    replay alone, or any claim that only restates the lab route shape.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
