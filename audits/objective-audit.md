@@ -117,11 +117,7 @@ these release requirements:
 
 `npm test` passed during this audit:
 
-<<<<<<< HEAD
 - 89 passing tests.
-=======
-- 82 passing tests.
->>>>>>> 7bfe7f8 (Tighten objective audit evidence)
 - Planner no-overwrite invariants for simplified JSON snapshots, including
   deletion preconditions, delete/update conflicts, directory-descendant
   topology conflicts, and file type swap conflicts.
