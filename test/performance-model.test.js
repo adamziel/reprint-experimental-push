@@ -422,6 +422,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(rejectedById.get('fresh-dry-run-authorizes-apply').violates[0], 'live-preconditions');
   assert.equal(rejectedById.get('fresh-dry-run-authorizes-apply').rejectedGate, 'live');
   assert.ok(rejectedById.get('remote-index-authorizes-mutation').violates.includes('live-preconditions'));
+  assert.ok(
+    rejectedById.get('fingerprint-as-apply-authority').violates.includes('live-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('fingerprint-as-apply-authority').violates.includes('canonical-resource-hashes'),
+  );
+  assert.equal(rejectedById.get('fingerprint-as-apply-authority').rejectedGate, 'live');
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
   assert.equal(rejectedById.get('split-plugin-install').rejectedGate, 'group');
   assert.ok(
@@ -918,6 +925,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'fresh-index-empty-queue-completes-apply',
     'index-and-digest-completes-apply',
     'index-and-digest-completes-large-upload',
+    'fingerprint-as-apply-authority',
     'index-and-chunk-receipts-skip-file-compare',
     'index-and-chunk-receipts-skip-guarded-publish',
     'index-and-package-hash-completes-plugin-install',

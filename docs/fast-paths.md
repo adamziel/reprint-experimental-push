@@ -60,6 +60,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed row batch still cannot prove a plugin install finished, because per-row preconditions, dependency checks, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus durable chunk receipts still cannot skip the live file compare before publish.
 - A fresh remote index plus cached chunk receipts still cannot skip the guarded publish finalize for a large upload.
+- A local fingerprint match still cannot skip the live file compare before publish, because size, mtime, inode, or mode can only skip a rehash and cannot authorize the mutation boundary.
 - A fresh remote index plus a compressed upload queue still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove chunk resume is complete, because compressed pressure relief does not replace missing chunk acknowledgements.
 - A fresh remote index plus a cached file digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
@@ -74,6 +75,8 @@ fails in a different way:
 
 - File hashing cannot fall back to mtime-only, size-only, or path-only equality
   when that would skip a live remote hash check.
+- File hashing cannot treat a local fingerprint as apply authority when the
+  live remote compare is still required.
 - Chunk upload cannot treat a visible staging object or a matching digest as a
   substitute for the durable receipt and guarded finalize step.
 - Database row batching cannot merge rows across owners or atomic groups just to

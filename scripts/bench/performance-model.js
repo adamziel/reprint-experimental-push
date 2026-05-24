@@ -259,6 +259,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['strong-resource-hashes'],
   },
   {
+    id: 'fingerprint-as-apply-authority',
+    proposal: 'treat a local fingerprint match as enough proof to skip the live remote compare before publish',
+    rejectedBecause: 'fingerprints can skip rehashing, but they cannot authorize the mutation boundary or prove the remote has not changed',
+    rejectedGate: 'live',
+    violates: ['live-preconditions', 'canonical-resource-hashes'],
+  },
+  {
     id: 'digest-as-authority',
     proposal: 'treat a cached digest or index entry as a substitute for the live compare',
     rejectedBecause: 'a shortcut digest can skip work, but it cannot authorize the mutation boundary',
