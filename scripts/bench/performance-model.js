@@ -357,6 +357,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
   {
+    id: 'archive-hash-skips-chunk-receipts',
+    proposal: 'treat a matching archive hash as enough proof to skip missing chunk receipts during large-upload resume',
+    rejectedBecause: 'the archive hash can confirm the payload shape, but it cannot prove which chunk acknowledgements survived a crash or lost response',
+    rejectedGate: 'recovery',
+    violates: ['chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'backpressure-drops-evidence',
     proposal: 'summarize or drop queued precondition evidence when upload or journal queues are over budget',
     rejectedBecause: 'pressure handling must pause producers, not erase the evidence needed to classify recovery',
