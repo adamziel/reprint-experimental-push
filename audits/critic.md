@@ -260,6 +260,9 @@ repo-specific evidence, not in lab shape or source-note comparison language:
   coverage manifest or hard-blocked before apply.
 - A stale manual-review artifact is rejected before write, remains auditable
   for retry review, and cannot be reused after the remote changes.
+- A partial recovery replay cannot resurrect or widen the old manual-review
+  artifact; the replay must stay audit-only until a fresh live snapshot and
+  fresh plan have been recorded for the exact retry scope.
 - Route-shape smokes, packaged-plugin mounts, and fixture `finalMatchesLocal`
   results may appear in evidence, but they cannot be cited as production proof
   unless the same write path was exercised against a live remote after drift.
@@ -322,6 +325,9 @@ production-grade push support:
   remote before any retry or production wording can be claimed; a lab-shaped
   route, packaged-plugin mount, or `finalMatchesLocal` smoke cannot stand in
   for that rejection.
+- A partial recovery replay must fail closed if it tries to reuse the old
+  approval record, even when the replay is otherwise able to classify the
+  target as old, new, or blocked.
 - Production push endpoint: the exercised write path must be the real
   production-backed source mutation path, not a Playground proxy, route-shape
   stand-in, or copied lab executor.
@@ -609,6 +615,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A retry after remote drift must prove the old manual-review artifact was
   rejected before write and that the new apply started from a fresh live
   snapshot, not from reused approval or route-shape smoke results.
+- A partial recovery replay is audit evidence only until the fresh snapshot,
+  fresh plan, and retry scope are re-established; it cannot be treated as a
+  successful resurrection of the prior approval.
 - Rejected manual-review artifacts must remain readable for audit, but they
   cannot be widened, repurposed, or treated as current authority for a
   different retry scope.
