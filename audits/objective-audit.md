@@ -269,6 +269,10 @@ They do not yet prove the release claim:
 - no single command fails the build when those stronger checks are omitted
 - no release job proves the live-source push path under crash, replay, and
   lease-fencing failure modes
+- no current test proves that the live source can survive a guarded write at
+  every DB/file/plugin boundary without silent loss or duplication
+- no current benchmark proves throughput or memory on the real push path, so
+  speed remains a blocked claim rather than a measured release fact
 
 Bottom line:
 
