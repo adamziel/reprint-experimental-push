@@ -37,30 +37,19 @@ linked implementation artifacts.
   readers to the fuller history below.
 
 ## 2026-05-25 - Current Supervisor Snapshot
-
-- Updated [progress.html](../progress.html) with a fresh visible last-updated
-  stamp and a tighter summary of the current evidence boundary.
-- The public page now states the known pending gates directly: real WordPress
-  executor, recovery journal, Docker/Playground integration, and plugin
-  drivers remain unproven.
-- No new proof claims were added. The visible status remains constrained to
-  evidence already linked from the repository.
-
-## 2026-05-24 23:08 CEST - Current Verification Snapshot
-
-## 2026-05-24 - Current Supervisor Snapshot
-
-- Status: `82` Node tests pass. The production-shaped, packaged-plugin, and
-  authenticated HTTP smokes pass against graph-safe route fixtures.
-- New proof: push routes now accept only explicitly provisioned push-scoped
-  Application Password entries. The packaged smoke rejects both an
-  unprovisioned alternate credential and an unscoped administrator Application
-  Password with `401`, then applies seven graph-safe mutations.
-- Also merged: stale WordPress graph references are blocked, stale recovery
-  claims fence old workers before mutation, and guarded executor benchmark
-  evidence refuses production throughput claims when proof is missing.
-- Trend: no-data-loss, recovery, fast-path, and reliable-executor evidence all
-  moved up in lab/model scope. Production readiness is still blocked.
+- Last update: 2026-05-25 00:24 CEST.
+- Status: `89` Node tests pass after supervised lane merges.
+- New proof: planner coverage checks matching independent delete/edit cases;
+  recovery now has a concise acceptable-state contract; fast-path docs name
+  the approved shortcut families and broken safety gates; protocol docs tighten
+  journal and recovery semantics; critic and objective audits reflect the
+  evidence.
+- Trend: no-data-loss, recovery, fast-path, reliable-executor, and audit lanes
+  improved inside lab/model scope. Production readiness is still blocked.
+- Supervision: seven fast-mode workers are active in isolated lane worktrees:
+  same-plan graph, recovery, reliable executor, fast paths, independent
+  auditor, critic, and progress publisher. The same-plan graph worker remains
+  unmerged while it fixes the remaining HTTP smoke failure.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, and arbitrary plugin drivers remain
   unproven.
