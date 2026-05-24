@@ -4,16 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Summary Refresh
+## 2026-05-25 - Public Progress Refresh
 
-- Last update: 2026-05-25 00:42 CEST.
-- Public page: [progress.html](../progress.html) now shows the current timestamp,
-  a shorter evidence-led summary, and unchanged pending gates.
-- Evidence links stay centered on the linked docs: planner and recovery notes,
-  Playground topology, protocol, and the existing supervisor feedback trail.
-- Status stays conservative: production auth, durable journal storage,
-  Docker/full Playground integration, WordPress graph identity mapping, and
-  plugin drivers remain unproven.
+- [progress.html](../progress.html) now shows a visible last-updated stamp for
+  `2026-05-25 00:45 CEST` and keeps the public summary concise.
+- The page still treats production push, durable recovery, Docker/full
+  Playground integration, and general plugin drivers as pending. The newest
+  public view now points back to the existing evidence set instead of implying
+  new production proof.
+- Evidence links remain the owned page plus the established docs and smoke
+  paths: [progress.html](../progress.html),
+  [docs/playground-topology.md](playground-topology.md),
+  [docs/protocol.md](protocol.md),
+  [docs/executor.md](executor.md), and
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md).
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
