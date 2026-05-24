@@ -157,6 +157,10 @@ evidence for all of these, not just a plausible design:
   outputs are compatibility evidence only; they are never sufficient by
   themselves to claim production mutation safety, credential isolation, or
   remote-preserving retry semantics.
+- A packaged-plugin mount or route-shape smoke that returns live-looking
+  hashes still does not prove the write path is the production executor, that
+  stale review artifacts are rejected before mutation, or that the retry path
+  preserves the remote after drift.
 - A route that reports `finalMatchesLocal`, committed replay, or packaged
   plugin success on a fixture must still prove fresh live-remote
   revalidation; those results do not prove create-time identity remapping,
