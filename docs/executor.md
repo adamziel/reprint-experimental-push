@@ -93,6 +93,33 @@ The executor treats this package as read-only evidence. If it is missing,
 corrupt, or from a different remote identity, push planning stops before
 preflight can become a mutation path.
 
+## Durable Push State
+
+Each push attempt gets its own state directory next to the saved pull state.
+The directory is append-only except for a small current-state pointer:
+
+```text
+push-state/<attempt-id>/
+  base-ref.json                 copied hashes and identifiers from push-base
+  preflight-response.json       push session, capability, limits, auth scope
+  remote-hashes.jsonl           complete paged hash listing
+  remote-coverage.json          accepted coverage manifest
+  local-scan.jsonl              normalized local resource hashes
+  plan.json                     canonical plan uploaded to dry-run
+  dry-run-response.json         accepted, blocked, conflict, or invalid
+  batches/<batch-id>.json       exact apply request body for each batch
+  receipts/<batch-id>.json      apply responses and idempotency evidence
+  journal.jsonl                 inspected remote journal pages
+  recovery.jsonl                recovery inspections or repair attempts
+  state.json                    latest resumable executor state
+```
+
+The executor never rewrites an apply batch after assigning its idempotency key.
+If the remote returns `PRECONDITION_FAILED`, the executor creates a new push
+attempt after refreshing remote hashes and replanning. If the response is lost,
+the executor first calls `push_journal`; only a journal state that proves the
+same request is still open may be retried with the same key and body.
+
 ## Execution Flow
 
 ### 1. Load Base
@@ -246,6 +273,19 @@ Apply requests are single-use by body hash and idempotency key. If a batch must
 be retried after `PRECONDITION_FAILED`, the executor discards the dry-run
 receipt, refreshes the remote hash listing, and replans. It never edits the
 batch body under the same idempotency key.
+
+Retry policy:
+
+- `5xx`, network close, timeout before response body: inspect `push_journal`,
+  then retry only if the same request is open or absent.
+- `BATCH_ALREADY_COMMITTED`: persist the replay receipt and continue with the
+  next batch after journal confirmation.
+- `PRECONDITION_FAILED`: stop, preserve the remote, and replan from a fresh
+  hash listing.
+- `RECOVERY_REQUIRED`: call `push_journal`, then `push_recover` in `inspect`
+  or `auto` mode according to the user's recovery policy.
+- `IDEMPOTENCY_KEY_CONFLICT`: stop; this means the local state directory no
+  longer matches the remote idempotency record.
 
 ### 8. Journal Confirm
 
@@ -421,11 +461,12 @@ Protocol fixtures live under `fixtures/protocol/`.
 
 They are not complete site exports. They are wire-contract examples for:
 
-- preflight response shape
-- remote hash listing
+- preflight request and response shape
+- remote hash listing request and response
 - dry-run upload and receipt
 - apply batch request and response
-- journal and recovery states
+- journal inspect request and response
+- recovery request and committed or blocked recovery states
 
 Executable integration tests should use these fixtures as schema examples, then
 run against real Docker or Playground sites for filesystem and database

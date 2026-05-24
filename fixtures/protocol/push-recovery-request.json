@@ -1,0 +1,7 @@
+{
+  "push_session": "psh_01j00000000000000000000000",
+  "idempotency_key": "idem_recover_01j0000000000000000",
+  "dry_run_id": "dry_01j00000000000000000000000",
+  "batch_id": "batch-1",
+  "mode": "auto"
+}
