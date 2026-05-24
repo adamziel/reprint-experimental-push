@@ -1063,6 +1063,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('index-and-compressed-buffer-completes-plugin-activation')
+      .violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-buffer-completes-plugin-activation')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-buffer-completes-plugin-activation')
+      .violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-buffer-completes-plugin-activation').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-file-hash-completes-plugin-install')
       .violates.includes('file-hashing'),
   );
@@ -1190,6 +1209,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-buffer-completes-chunk-resume',
     'index-and-compressed-buffer-completes-plugin-update',
     'index-and-compressed-buffer-completes-plugin-install',
+    'index-and-compressed-buffer-completes-plugin-activation',
     'index-and-compressed-file-hash-completes-plugin-install',
     'index-and-compressed-file-hash-completes-plugin-update',
     'archive-hash-skips-chunk-receipts',
