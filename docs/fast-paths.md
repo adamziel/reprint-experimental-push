@@ -48,6 +48,13 @@ The safe version of a fast path is usually a "skip duplicate staging work" or
 point is where no-data-loss guarantees are easiest to lose, so it stays narrow,
 preconditioned, idempotent, and journaled.
 
+The seven areas below are the only fast-path families this lane is proposing:
+file hashing, chunk upload, database row batching, remote indexes,
+compression, parallelism limits, and backpressure. If a proposed speedup in
+one of those areas cannot explain its unchanged visibility boundary and its
+durable failure evidence, it belongs in the reject list instead of the safe
+list.
+
 Before a speedup moves from proposal to implementation, write down the proof
 obligation in the benchmark model:
 
