@@ -19,6 +19,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(largeUpload.totals.uploadBytes >= 1024 * MIB, 'large upload is at least 1 GiB');
   assert.ok(largeUpload.totals.uploadChunks > 100, 'large upload is chunked enough to exercise resumability');
   assert.ok(
+    largeUpload.actions.some(
+      (action) => action.type === 'compression-decision' && action.transportEncoding === 'zstd',
+    ),
+    'large upload models compression for a compressible large body',
+  );
+  assert.ok(
+    largeUpload.actions.some(
+      (action) => action.type === 'file-hash' && action.resourceKey.endsWith('catalog-manifest.json'),
+    ),
+    'large upload includes a compressible manifest alongside the archive',
+  );
+  assert.ok(
     largeUpload.actions.some((action) => action.type === 'file-hash'),
     'large upload models file hashing',
   );
@@ -408,6 +420,20 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('index-and-package-hash-completes-plugin-install').rejectedGate,
     'group',
   );
+  assert.ok(
+    rejectedById
+      .get('index-and-package-hash-skips-plugin-validators')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-package-hash-skips-plugin-validators')
+      .violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-package-hash-skips-plugin-validators').rejectedGate,
+    'group',
+  );
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
@@ -448,6 +474,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'fresh-index-empty-queue-completes-apply',
     'index-and-digest-completes-apply',
     'index-and-package-hash-completes-plugin-install',
+    'index-and-package-hash-skips-plugin-validators',
     'full-digest-completes-chunk-resume',
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);

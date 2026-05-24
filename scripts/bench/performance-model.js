@@ -399,6 +399,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'plugin-preconditions', 'atomic-groups'],
   },
   {
+    id: 'index-and-package-hash-skips-plugin-validators',
+    proposal: 'use a fresh remote index plus a cached package hash to skip dependency, metadata, and activation validators',
+    rejectedBecause: 'package identity can speed planning, but validators still need a live group-scoped commit barrier',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'plugin-preconditions', 'atomic-groups'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
@@ -459,10 +466,20 @@ function largeUploadWorkload() {
   return {
     id: 'large-media-upload',
     kind: 'large-upload',
-    description: 'A large archive upload that must be staged before a guarded publish.',
+    description: 'A large archive and manifest upload that must be staged before a guarded publish.',
     planId: 'plan-large-media-upload-v1',
     atomicGroup: null,
     files: [
+      {
+        resourceKey: 'file:wp-content/uploads/2026/05/catalog-manifest.json',
+        path: 'wp-content/uploads/2026/05/catalog-manifest.json',
+        sizeBytes: 256 * MIB,
+        mimeType: 'application/json',
+        compressible: true,
+        baseHash: 'sha256:base-catalog-manifest',
+        remoteBeforeHash: 'sha256:base-catalog-manifest',
+        localHash: 'sha256:local-catalog-manifest',
+      },
       {
         resourceKey: 'file:wp-content/uploads/2026/05/catalog-export.zip',
         path: 'wp-content/uploads/2026/05/catalog-export.zip',

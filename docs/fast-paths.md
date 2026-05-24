@@ -53,6 +53,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Backpressure must pause producers; it cannot claim success by draining evidence into memory.
 - Compressing buffered evidence can save memory, but it cannot stand in for a receipt or commit record.
 - A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
+- A fresh remote index plus a cached plugin package hash still cannot skip dependency checks, metadata writes, or the atomic-group barrier.
 
 The safe version of a fast path is usually a "skip duplicate staging work" or
 "stage earlier" optimization, not a "commit earlier" optimization. The commit
@@ -339,6 +340,8 @@ under load:
 - remote-index plus cached package hash is rejected because planning evidence
   and package identity cannot prove dependency checks, metadata writes, or the
   atomic-group commit.
+- remote-index plus cached package hash cannot skip plugin validators because
+  package identity is not a substitute for the live group-scoped commit barrier.
 - split plugin install is rejected because files, rows, metadata, dependency
   checks, and activation state must cross visibility together.
 - blind SQL replace is rejected because it removes per-row compare-and-swap
