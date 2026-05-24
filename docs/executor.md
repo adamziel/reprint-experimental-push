@@ -210,12 +210,12 @@ requires HMAC signatures on `/authenticated/preflight`,
 `X-Auth-Content-Hash` as SHA-256 over the raw request body bytes and rejects bad
 signatures before JSON parsing, receipt checks, idempotency lookup, journal
 write, or mutation. Dry-run/apply also bind `X-Reprint-Push-Signature` to the
-method, actual path, canonical query, content hash, lab session, and
-idempotency key. This is authenticated local Playground source-site mutation
-evidence only. Playground fallback caveat: the lab verifier validates stored
-hashed app-password entries and sets the current user because local Playground
-core did not establish `/wp-json/wp/v2/users/me`; it is not production Reprint
-auth or production Application Password integration.
+lab domain separator, method, actual path, canonical query, content hash, lab
+session, and idempotency key. This is authenticated local Playground
+source-site mutation evidence only. Playground fallback caveat: the lab
+verifier validates stored hashed app-password entries and sets the current user
+because local Playground core did not establish `/wp-json/wp/v2/users/me`; it
+is not production Reprint auth or production Application Password integration.
 
 Current production-shaped route note:
 `npm run test:playground:production-shaped-push` verifies signed
