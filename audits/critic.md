@@ -217,6 +217,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - Route-shape matches, packaged-plugin mounting, and `finalMatchesLocal`
   outputs remain lab evidence only; they do not count as production mutation
   proof even when the endpoint name looks correct.
+- A lab route that looks production-shaped is not production proof, even if it
+  returns live hashes, mounts as a plugin, or replays successfully on a
+  fixture.
 - The live remote is revalidated immediately before apply, and any stale
   retry starts from a fresh snapshot rather than reusing old approval or stale
   manual-review artifacts.
