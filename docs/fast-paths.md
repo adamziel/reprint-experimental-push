@@ -252,6 +252,55 @@ first-class fields. A benchmark that only proves fewer requests were made is not
 enough; it must also prove which chunks, row batches, and group members can be
 resumed after a failure.
 
+`scripts/bench/guarded-executor-benchmark.js` moves one step past the static
+model. It generates real file chunk buffers, writes them into benchmark staging,
+fsyncs one durable chunk receipt per chunk through the recovery journal, builds a
+planner/apply workload with row payload objects, and applies that workload
+through the existing live-precondition `applyPlan` model. The workload includes:
+
+- A large upload resource whose live file value is only changed after staged
+  chunk receipts exist.
+- A required `install-commerce-stack` atomic group with a plugin file, plugin
+  metadata, dependency evidence for an existing `payments` plugin, and
+  plugin-owned `wp_postmeta` row payloads.
+- A success path with restart-inspectable `fully-updated-remote` journal
+  evidence.
+- A pre-commit failure probe that leaves the remote unchanged and inspects as
+  `old-remote`.
+- A partial commit probe that mutates with `mutateRemote: true` and must inspect
+  as `blocked-recovery`, not success.
+
+The quick check is:
+
+```sh
+node scripts/bench/guarded-executor-benchmark.js --profile=ci
+```
+
+For a larger lab run:
+
+```sh
+node scripts/bench/guarded-executor-benchmark.js --profile=guardedLarge
+```
+
+The report's `throughput.productionThroughput` field is always `not-claimed`
+unless the production claim gate passes. The current gate blocks with:
+
+- `production-atomic-group-commit-not-measured`: the existing apply model can
+  stage and classify failures, but it has not measured a production storage
+  atomic commit where all group members cross visibility together.
+- `production-storage-receipts-not-measured`: chunk receipts are fsynced lab
+  journal records, not receipts from the production remote storage layer.
+- `production-row-batch-executor-not-measured`: row payloads move through
+  guarded per-row apply, but there is no measured production batch
+  compare-and-swap executor yet.
+
+That means the measured evidence is useful for guarded-executor cost and safety
+shape, not production throughput. The next proof needed is a production-shaped
+executor that returns storage-backed receipts for chunk staging, commits
+plugin-owned row batches with per-row hashes inside a bounded batch primitive,
+and exposes one atomic group commit record that recovery can inspect after a
+lost response or process failure.
+
 The model exposes three contract lists that tests should keep current:
 
 - `safeFastPaths` records each safe proposal's benefit, allowed shortcut,
