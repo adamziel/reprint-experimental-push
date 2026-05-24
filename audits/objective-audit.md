@@ -383,3 +383,24 @@ proof gates:
 Until these gates exist, public documentation should keep the claim scoped to:
 **lab evidence for push safety invariants, not production-safe live WordPress
 push.**
+
+## Weakest Current Claim
+
+The weakest surviving claim is the one that sounds simplest: that a live
+source WordPress site can be pushed back without data loss. Right now the repo
+only proves that selected fixtures survive selected lab paths. That is not
+enough.
+
+To make the claim release-grade, the next proof must be a kill matrix that
+covers every guarded write boundary on a real push path, with live before/after
+state and journal evidence for each case:
+
+- DB row update, insert, and delete
+- file create, update, and delete
+- plugin activation or package publish
+- finalization/commit record write
+- replay after restart or duplicate request
+- stale claim or lease expiry
+
+If any boundary is still only covered by a model or fixture smoke, the
+no-data-loss claim stays blocked.
