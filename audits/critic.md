@@ -308,6 +308,10 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   remote drift, identity remapping, or plugin-owned side effects.
 - Reprint, ZS-Sync, and ForkPress source notes are comparison evidence only;
   they do not transfer safety proof to this repository by resemblance alone.
+- No design claim may cite those notes as proof that this repo has already
+  matched their safety bars; the repo still needs its own live drift,
+  identity, plugin-ownership, and crash-recovery proof at the mutation
+  boundary.
 - The live remote is revalidated immediately before apply, and any stale
   retry starts from a fresh snapshot rather than reusing old approval or stale
   manual-review artifacts.
