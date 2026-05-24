@@ -1451,6 +1451,47 @@ test('durable retry after a pre-commit failure does not duplicate inserts or rev
   assert.equal(staleLocal.db.wp_posts['ID:2'].post_title, 'Stale local insert');
 });
 
+test('durable retry after dependency validation preserves the recovery artifact and stays idempotent', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+
+  const firstWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, { failAfterDependencyValidation: true, durableJournal: firstWriter }));
+  firstWriter.close();
+
+  assert.ok(firstError instanceof PushPlanError);
+  assert.equal(firstError.details.recovery.status, 'old-remote');
+  assert.equal(firstError.details.recovery.artifacts.journal.status, 'dependencies-validated');
+
+  const retryWriter = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retry = applyPlan(remote, plan, {
+    journal: firstError.details.recovery.artifacts.journal,
+    durableJournal: retryWriter,
+    mutateRemote: true,
+  });
+  retryWriter.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(retry.appliedMutations, 2);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(remote.files['index.php'], '<?php echo "local";');
+  assert.equal(remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(remote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.ok(persisted.records.some((record) => record.type === 'journal-retry-opened'));
+  assert.ok(
+    persisted.records.some((record) => record.type === 'dependencies-validated'),
+    'durable retry must preserve the validation boundary',
+  );
+});
+
 test('atomic apply recovery boundaries only land in old remote, fully updated remote, or blocked recovery with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
