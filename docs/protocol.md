@@ -361,6 +361,17 @@ and one runner. That shape is reused for both Docker and Playground.
 - `runner` is the only process allowed to compare, upload, inspect, and
   recover
 
+The topology is intentionally asymmetric:
+
+- `remote-base` seeds the persisted pull base package and the live source
+  identity
+- `local-edited` supplies the imported and edited local clone that becomes the
+  candidate plan
+- `remote-changed` proves dry-run and apply are separate remote operations by
+  drifting the same remote site after planning
+- `runner` is the only actor that may perform preflight, snapshot listing,
+  dry-run, apply, journal inspection, and recovery
+
 For Docker, keep the source and edited sites isolated on separate databases or
 volumes so drift is visible without contaminating the local edit history. No
 WordPress container should publish a public port. If browser-visible
@@ -371,6 +382,18 @@ For Playground, use separate disposable blueprints for `remote-base`,
 `local-edited`, and `remote-changed`, and keep the same `8080` ingress rule
 for any browser-visible inspection. The point of the topology is to prove that
 apply revalidates live state rather than replaying a stale dry-run receipt.
+
+The Docker and Playground proofs are the same at the protocol level:
+
+1. Pull seeds `remote-base` and persists the base package.
+2. Local editing mutates `local-edited` without mutating the live remote.
+3. `push_preflight` binds the saved base to the remote identity and session.
+4. `push_snapshot_hashes` records fresh live evidence for planning.
+5. `push_plan_dry_run` uploads the canonical plan as eligibility only.
+6. `push_batch_apply` revalidates the live remote before every batch and at
+   the storage boundary.
+7. `push_journal` and `push_recover inspect` explain ambiguity without
+   turning stale proof into authority.
 
 ## Authentication
 
@@ -393,6 +416,11 @@ Mutating push endpoints also require a push canonical signature:
 - `X-Reprint-Push-Signature`
 - `X-Reprint-Push-Session`
 - `X-Reprint-Push-Idempotency-Key`
+
+`push_snapshot_hashes` and `push_journal` remain read-only and therefore keep
+using the existing HMAC floor without the mutating push signature, but they
+still inherit the same nonce and freshness rules as other authenticated
+requests.
 
 The canonical signature is:
 

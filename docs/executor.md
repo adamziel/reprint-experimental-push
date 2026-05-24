@@ -53,6 +53,12 @@ The executor also treats the pushed session as bounded provenance:
 - any scope or identity change requires a fresh preflight rather than a reused
   session
 
+The executor should treat the remote snapshot hash listing as the planning
+boundary and the dry-run receipt as a one-way eligibility proof. Neither one
+is a lock. The only place where live remote liveness is rechecked for
+authority is `push_batch_apply`, and that call must refresh remote evidence
+before every batch and again at the storage boundary.
+
 Acceptance criteria for the reliable executor:
 
 - It never calls `push_batch_apply` without a persisted pull base, completed
@@ -260,6 +266,13 @@ The topology must stay small enough to prove one remote and one local site
 without hiding the freshness check. `remote-base` is the authoritative source,
 `local-edited` is the pulled-and-edited clone, and `remote-changed` is the same
 remote observed later so stale apply can be rejected on revalidation.
+
+The test topology should stay minimal but complete:
+
+- one remote source site that seeds the persisted pull base
+- one local edited site that produces the candidate plan
+- one drift witness that mutates the same remote after dry-run
+- one runner that alone is allowed to compare, upload, inspect, and recover
 
 The pull importer must persist a push base package so later pushes can prove
 the merge base, and it must also preserve the additional pull evidence needed
