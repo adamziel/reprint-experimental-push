@@ -65,7 +65,10 @@ design still needs a production mutation boundary with per-write preconditions,
 durable journal semantics, and a recovery artifact that survives failure
 across file, DB, and plugin boundaries. It also needs proof that the push path
 is not just a mirrored pull pipeline with write verbs attached or a route
-shape that happens to return the expected endpoint.
+shape that happens to return the expected endpoint. A route that only proves
+endpoint shape, replay behavior, or packaged-plugin mounting still does not
+prove live remote drift handling, identity remapping, or production storage
+durability.
 
 ### ZS-Sync
 
@@ -78,6 +81,8 @@ are only useful if every enumerated resource either has a mutation rule or a
 hard block. Scanner evidence is planning input, not a write-safety proof, and
 it does not prove remote drift handling, create-time identity allocation, or
 plugin-owned side effects outside the scanned set.
+It also does not prove that a ready plan remains safe after the remote changes
+between scan and write.
 
 ### ForkPress
 
@@ -90,7 +95,9 @@ preserves base/local/remote evidence and forces a fresh live revalidation on
 retry. ForkPress is also the warning sign here: reviewed resolution is not a
 success path unless the remote is preserved for audit and the next retry
 re-plans from fresh evidence. ForkPress is the comparison point, not a
-guarantee that this branch has matched it.
+guarantee that this branch has matched it. Its merge and crash-consistency
+vocabulary is therefore a bar for auditability, not proof that a lab-backed
+push endpoint can safely claim production support.
 
 ## Production Claim Checklist
 
@@ -99,6 +106,9 @@ evidence for all of these, not just a plausible design:
 
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals.
+- Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
+  outputs are never sufficient by themselves to claim production mutation
+  safety.
 - Live-remote revalidation immediately before apply, with stale retries
   rejected before any write.
 - A complete coverage manifest for core, plugin, theme, upload, generated,
