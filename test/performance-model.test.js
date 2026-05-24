@@ -1423,6 +1423,10 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-file-hash-skips-chunk-receipts').rejectedGate,
     'recovery',
   );
+  assert.equal(
+    rejectedById.get('compressed-manifest-hash-skips-live-compare').rejectedGate,
+    'live',
+  );
   assert.ok(
     rejectedById
       .get('compressed-chunk-receipts-complete-large-upload')
@@ -1624,6 +1628,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'compressed-receipts-replace-durable-progress',
     'fingerprint-completes-large-upload',
     'compressed-file-hash-skips-chunk-receipts',
+    'compressed-manifest-hash-skips-live-compare',
     'compressed-chunk-receipts-complete-large-upload',
     'compressed-receipts-plus-cached-hash-complete-large-upload',
     'index-and-compressed-manifest-hash-completes-large-upload',
