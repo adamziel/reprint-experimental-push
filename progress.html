@@ -474,21 +474,21 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof stays in lab/model scope: 89 Node tests pass after supervised lane merges. Production push remains blocked until auth, durable journaling, graph identity, Docker/Playground integration, and plugin-driver proof exist.</p>
-        <time class="update-stamp" datetime="2026-05-25T01:14:15+02:00">Last updated: May 25, 2026, 01:14:15 CEST</time>
+        <p class="lead">Lab proof is still the only verified proof: 89 Node tests pass after supervised lane merges. Production push remains blocked until auth, durable journaling, graph identity, Docker/Playground integration, and plugin-driver proof exist.</p>
+        <time class="update-stamp" datetime="2026-05-25T01:14:43+02:00">Last updated: May 25, 2026, 01:14:43 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">89 Node tests passing</span>
-          <span class="pill">Production gates still blocked</span>
-          <span class="pill">Auth and journal proof missing</span>
-          <span class="pill">Graph identity still pending</span>
+          <span class="pill">Trend flat</span>
+          <span class="pill">Top blocker: production auth and journal proof</span>
+          <span class="pill">Graph identity pending</span>
           <span class="pill">Docker and Playground integration pending</span>
-          <span class="pill">Plugin driver proof missing</span>
+          <span class="pill">Plugin driver proof pending</span>
           <span class="pill">Production push blocked</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>Scan view only. Detailed evidence lives in the linked docs.</p>
+        <p>Detailed evidence lives in the linked docs and can be audited without a build step.</p>
       </div>
     </header>
 
@@ -553,10 +553,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence landed.</span></li>
-            <li><strong>Not going well</strong><span>Production auth, journal durability, graph identity, Docker/Playground integration, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>The public page was refreshed with a current timestamp and a concise summary.</span></li>
-            <li><strong>Next nudge</strong><span>Prove production auth and journal storage before claiming push safety.</span></li>
+            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence remain linked.</span></li>
+            <li><strong>Top risk</strong><span>Production auth and journal durability are still the first proof gate before any push-safety claim.</span></li>
+            <li><strong>Still pending</strong><span>Graph identity, Docker/Playground integration, and plugin-driver proof remain unverified.</span></li>
+            <li><strong>Progress change</strong><span>The public page was refreshed with a current timestamp and a tighter first-screen summary.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -585,10 +585,10 @@
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
             <div class="proof-item"><span class="status">Lab proof</span><p>Packaged route requires scoped credentials, rejects unprovisioned and unscoped credentials, cleans 2 expired signed artifacts, and applies 7 graph-safe mutations in local lab runs.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Production credential lifecycle and authorization.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Durable journal with crash, lease, and fencing tests.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Docker/full Playground integration beyond fixture labs.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>WordPress graph identity mapping, general plugin drivers, and rollback.</p></div>
+            <div class="proof-item"><span class="status">Gate 1</span><p>Production credential lifecycle and authorization remain unproven.</p></div>
+            <div class="proof-item"><span class="status">Gate 2</span><p>Durable journal with crash, lease, and fencing tests remains pending.</p></div>
+            <div class="proof-item"><span class="status">Gate 3</span><p>Docker/full Playground integration beyond fixture labs remains pending.</p></div>
+            <div class="proof-item"><span class="status">Gate 4</span><p>WordPress graph identity mapping, general plugin drivers, and rollback remain unproven.</p></div>
           </div>
         </section>
 

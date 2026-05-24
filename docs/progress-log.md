@@ -4,6 +4,18 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Tightening
+
+- Updated [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:14:43 CEST`) and tightened the first-screen wording so the
+  top blocker is easier to audit at a glance.
+- The public page still keeps WordPress executor, durable recovery journal,
+  Docker/Playground integration, and plugin drivers pending until proven.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/playground-topology.md](playground-topology.md),
+  [docs/protocol.md](protocol.md), [docs/executor.md](executor.md), and
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md).
+
 ## 2026-05-25 - Timestamp Sync Refresh
 
 - Updated [progress.html](../progress.html) to the live `date` output
