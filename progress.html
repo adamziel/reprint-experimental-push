@@ -474,28 +474,27 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is still lab/model scope: 89 Node tests pass after supervised lane merges covering planner invariants, recovery replay/failure states, fast-path guardrails, protocol binding, and audit updates. Five next-proof worker outputs were integrated; the graph HTTP smoke remains active and unmerged. Production push remains blocked.</p>
-        <time class="update-stamp" datetime="2026-05-25T00:20:00+02:00">Last updated: May 25, 2026, 00:20 CEST</time>
+        <p class="lead">Current proof is still lab/model scope: 82 Node tests pass, packaged push accepts only scoped credentials, stale graph references block safely, and guarded benchmark claims fail closed. Real WordPress executor, recovery journal, Docker/Playground integration, and plugin drivers remain pending until proven.</p>
+        <time class="update-stamp" datetime="2026-05-25T09:00:00+02:00">Last updated: May 25, 2026, 09:00 CEST</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">89 Node tests passing</span>
+          <span class="pill">82 Node tests passing</span>
           <span class="pill">Packaged plugin route passing</span>
           <span class="pill">Scoped creds required</span>
-          <span class="pill">Graph refs guarded</span>
-          <span class="pill">Recovery states covered</span>
-          <span class="pill">5 worker outputs integrated</span>
-          <span class="pill">Graph HTTP smoke pending</span>
-          <span class="pill">Production push blocked</span>
+          <span class="pill">Unscoped creds rejected</span>
+          <span class="pill">Graph refs blocked</span>
+          <span class="pill">Recovery claim fenced</span>
+          <span class="pill">Executor, journal, Docker, drivers pending</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>Scan view only. Detailed evidence lives in the linked docs.</p>
+        <p>Scan view only. Detailed evidence lives in the linked docs and newest log entry.</p>
       </div>
     </header>
 
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
-        <strong>89</strong>
+        <strong>82</strong>
         <span>passing Node tests</span>
       </div>
       <div class="metric">
@@ -503,12 +502,12 @@
         <span>production readiness</span>
       </div>
       <div class="metric">
-        <strong>0</strong>
-        <span>production gates proven</span>
+        <strong>4</strong>
+        <span>explicit pending proof gates</span>
       </div>
       <div class="metric">
-        <strong>4</strong>
-        <span>pending proof gates</span>
+        <strong>0</strong>
+        <span>production gates proven</span>
       </div>
     </section>
 
@@ -522,31 +521,31 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">45%</span></div>
           <div class="bar" aria-label="No data loss merge invariants 45 percent"><div class="fill green" style="width:45%"></div></div>
-          <p class="note">Matching independent delete/edit cases are covered; stale graph references still block. Gap: real graph identity mapping.</p>
+          <p class="note">Unsafe topology and stale WordPress graph references are blocked. Gap: real graph identity mapping.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">29%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 29 percent"><div class="fill green" style="width:29%"></div></div>
-          <p class="note">Replay and failure-state coverage is sharper in the model. Gap: production journal durability.</p>
+          <p class="note">Stale recovery claims now fence old workers before mutation in the model. Gap: production journal durability.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">42%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 42 percent"><div class="fill amber" style="width:42%"></div></div>
-          <p class="note">Protocol/executor docs now name the production push flow. Gap: real WordPress executor, durable journal, and leases.</p>
+          <p class="note">Packaged route requires scoped credentials and rejects unscoped admin Application Passwords. Gap: production auth, journal, and leases.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">19%</span></div>
           <div class="bar" aria-label="Fast path and chunking 19 percent"><div class="fill" style="width:19%"></div></div>
-          <p class="note">Rejected fast paths now name the broken safety gate. Gap: real large-site runtime benchmark.</p>
+          <p class="note">Guarded benchmark evidence exists and rejects unsupported production speed claims. Gap: real large-site runtime benchmark.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">30%</span></div>
           <div class="bar" aria-label="Independent evidence and critique 30 percent"><div class="fill red" style="width:30%"></div></div>
-          <p class="note">Objective and critic audits reflect the latest evidence. Gap: re-audit production-backed internals.</p>
+          <p class="note">Objective and critic audits reflect the route/package evidence. Gap: re-audit production-backed internals.</p>
         </div>
       </section>
 
@@ -554,10 +553,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence landed.</span></li>
-            <li><strong>Not going well</strong><span>Production auth, durable journal storage, leases, graph mapping, Docker/Playground integration, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>Five next-proof worker outputs were integrated; production readiness stayed blocked.</span></li>
-            <li><strong>Next nudge</strong><span>Get the graph HTTP smoke green, then prove production auth and journal storage.</span></li>
+            <li><strong>Going well</strong><span>82 Node tests pass; scoped credential proof, graph blocking, recovery fencing, and guarded benchmark evidence landed.</span></li>
+            <li><strong>Not going well</strong><span>Production auth, journal, leases, graph mapping, and plugin drivers remain unproven.</span></li>
+            <li><strong>Progress change</strong><span>Lab/model evidence moved up across four lanes; production readiness stayed blocked.</span></li>
+            <li><strong>Next nudge</strong><span>Replace lab auth/session/journal internals and prove graph identity mapping.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -588,8 +587,8 @@
             <div class="proof-item"><span class="status">Lab proof</span><p>Packaged route requires scoped credentials, rejects unprovisioned and unscoped credentials, cleans 2 expired signed artifacts, and applies 7 graph-safe mutations.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Production credential lifecycle and authorization.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Durable journal with crash, lease, and fencing tests.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Docker/full Playground integration beyond fixture labs.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>WordPress graph identity mapping, general plugin drivers, and rollback.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Full integration beyond fixture labs.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>WordPress graph identity, general plugin drivers, and rollback.</p></div>
           </div>
         </section>
 
@@ -597,7 +596,7 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth and graph safety remain pending.</p>
+              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production executor, durable recovery, and graph safety remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>

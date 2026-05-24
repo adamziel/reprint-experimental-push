@@ -1,0 +1,153 @@
+{
+  "url": "file:///home/claude/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/progress-publisher/progress.html",
+  "reports": [
+    {
+      "viewport": {
+        "name": "desktop",
+        "width": 1440,
+        "height": 1000,
+        "mobile": false
+      },
+      "report": {
+        "title": "Reprint Push Progress",
+        "h1": [
+          "Reprint Push Progress"
+        ],
+        "viewportWidth": 1440,
+        "viewportHeight": 1000,
+        "viewportMeta": "width=device-width, initial-scale=1",
+        "bodyScrollWidth": 1440,
+        "bodyScrollHeight": 2734,
+        "pageHeightRatio": 2.73,
+        "horizontalOverflow": false,
+        "overflow": [],
+        "controlCount": 14,
+        "firstViewportControlCount": 1,
+        "visibleHeadings": [
+          "Reprint Push Progress",
+          "Work Lanes",
+          "Supervisor Feedback"
+        ],
+        "firstViewportText": [
+          "EVIDENCE-LED PROJECT STATUS",
+          "Reprint Push Progress",
+          "Current proof is lab/model evidence: 77 Node tests plus packaged-plugin activation of /wp-json/reprint/v1/push/*, disabled packaged auth bootstrap, signed-store cleanup, 401 refusal for an unprovisioned alternate credential path, and dependency payload redaction. Package/auth-bootstrap hardening, signed-store cleanup, and dependency redaction are not production push support. Production push remains blocked by real credential lifecycle, durable journal storage, leases/fencing, WordPress graph identity, and general plugin drivers.",
+          "/wp-json/reprint/v1/push/*",
+          "Last updated: May 24, 2026, 23:08 CEST",
+          "77 Node tests passing",
+          "Packaged plugin route passing",
+          "Auth bootstrap disabled",
+          "Signed-store cleanup passing",
+          "Dependency payloads redacted",
+          "Alternate creds rejected",
+          "Production push blocked",
+          "Open progress log",
+          "Scan view only. Detailed evidence lives in the linked docs.",
+          "77",
+          "passing Node tests",
+          "Flat",
+          "production readiness"
+        ],
+        "warnings": [],
+        "unnamedControls": [],
+        "imagesWithoutAlt": 0
+      }
+    },
+    {
+      "viewport": {
+        "name": "tablet",
+        "width": 768,
+        "height": 1024,
+        "mobile": false
+      },
+      "report": {
+        "title": "Reprint Push Progress",
+        "h1": [
+          "Reprint Push Progress"
+        ],
+        "viewportWidth": 768,
+        "viewportHeight": 1024,
+        "viewportMeta": "width=device-width, initial-scale=1",
+        "bodyScrollWidth": 768,
+        "bodyScrollHeight": 3759,
+        "pageHeightRatio": 3.67,
+        "horizontalOverflow": false,
+        "overflow": [],
+        "controlCount": 14,
+        "firstViewportControlCount": 1,
+        "visibleHeadings": [
+          "Reprint Push Progress"
+        ],
+        "firstViewportText": [
+          "EVIDENCE-LED PROJECT STATUS",
+          "Reprint Push Progress",
+          "Current proof is lab/model evidence: 77 Node tests plus packaged-plugin activation of /wp-json/reprint/v1/push/*, disabled packaged auth bootstrap, signed-store cleanup, 401 refusal for an unprovisioned alternate credential path, and dependency payload redaction. Package/auth-bootstrap hardening, signed-store cleanup, and dependency redaction are not production push support. Production push remains blocked by real credential lifecycle, durable journal storage, leases/fencing, WordPress graph identity, and general plugin drivers.",
+          "/wp-json/reprint/v1/push/*",
+          "Last updated: May 24, 2026, 23:08 CEST",
+          "77 Node tests passing",
+          "Packaged plugin route passing",
+          "Auth bootstrap disabled",
+          "Signed-store cleanup passing",
+          "Dependency payloads redacted",
+          "Alternate creds rejected",
+          "Production push blocked",
+          "Open progress log",
+          "Scan view only. Detailed evidence lives in the linked docs.",
+          "77",
+          "passing Node tests",
+          "Flat",
+          "production readiness"
+        ],
+        "warnings": [],
+        "unnamedControls": [],
+        "imagesWithoutAlt": 0
+      }
+    },
+    {
+      "viewport": {
+        "name": "mobile",
+        "width": 390,
+        "height": 844,
+        "mobile": true
+      },
+      "report": {
+        "title": "Reprint Push Progress",
+        "h1": [
+          "Reprint Push Progress"
+        ],
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "viewportMeta": "width=device-width, initial-scale=1",
+        "bodyScrollWidth": 390,
+        "bodyScrollHeight": 2687,
+        "pageHeightRatio": 3.18,
+        "horizontalOverflow": false,
+        "overflow": [],
+        "controlCount": 2,
+        "firstViewportControlCount": 1,
+        "visibleHeadings": [
+          "Reprint Push Progress"
+        ],
+        "firstViewportText": [
+          "EVIDENCE-LED PROJECT STATUS",
+          "Reprint Push Progress",
+          "Current proof is lab/model evidence: 77 Node tests plus packaged-plugin activation of /wp-json/reprint/v1/push/*, disabled packaged auth bootstrap, signed-store cleanup, 401 refusal for an unprovisioned alternate credential path, and dependency payload redaction. Package/auth-bootstrap hardening, signed-store cleanup, and dependency redaction are not production push support. Production push remains blocked by real credential lifecycle, durable journal storage, leases/fencing, WordPress graph identity, and general plugin drivers.",
+          "/wp-json/reprint/v1/push/*",
+          "Last updated: May 24, 2026, 23:08 CEST",
+          "77 Node tests passing",
+          "Packaged plugin route passing",
+          "Auth bootstrap disabled",
+          "Signed-store cleanup passing",
+          "Dependency payloads redacted",
+          "Alternate creds rejected",
+          "Production push blocked",
+          "Open progress log",
+          "Scan view only. Detailed evidence lives in the linked docs."
+        ],
+        "warnings": [],
+        "unnamedControls": [],
+        "imagesWithoutAlt": 0
+      }
+    }
+  ]
+}
