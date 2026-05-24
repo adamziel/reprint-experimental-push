@@ -2416,6 +2416,44 @@ test('durable recovery stays within old remote, fully updated remote, or blocked
   assert.equal(blocked.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Drifted after completion');
 });
 
+test('atomic apply recovery remains inside the documented post-failure states', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true, expectedStatus: 'old-remote' }],
+    ['after staging', { failAfterStaging: true, expectedStatus: 'old-remote' }],
+    ['after dependency validation', { failAfterDependencyValidation: true, expectedStatus: 'old-remote' }],
+  ]) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assert.equal(error.details.recovery.status, options.expectedStatus, label);
+    assert.ok(error.details.recovery.artifacts.journal, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+});
+
 test('durable pre-commit failures persist old-remote recovery evidence', () => {
   const base = baseSite();
   const local = baseSite();
