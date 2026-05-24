@@ -924,6 +924,9 @@ Use the topology to prove the remote and local roles are separate:
 - Apply must revalidate against the live remote again even when the dry-run receipt is valid.
 - The local site is derived from a pull of the remote base, so the persisted
   pull package is the planning base for later push attempts.
+- Journal inspection must return fenced ownership details, including claim
+  generation and lease expiry, so lost-response retries can tell whether a
+  claim is still open or already resolved.
 
 Recovery should always begin with `push_journal` or `push_recover` in
 `inspect` mode before any mutating retry. If the remote cannot prove the same

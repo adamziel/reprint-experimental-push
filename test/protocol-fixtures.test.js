@@ -62,6 +62,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(snapshot.cursor, null);
   assert.equal(snapshot.coverage.complete, true);
   assert.equal(snapshot.coverage.coverage_hash, 'sha256:remote-coverage');
+  assert.equal(snapshot.resources[0].storage_guard, 'filesystem-compare-rename');
   assert.equal(snapshot.resources.length, 3);
   assert.ok(snapshot.resources.every((resource) => resource.storage_guard));
   assert.ok(headers.read_only_request_headers['X-Auth-Signature'].startsWith('hmac-sha256:'), 'read-only auth must stay HMAC-based');
@@ -83,6 +84,8 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(journalOpen.entries[0].resources[0].before_hash, 'sha256:base-index');
   assert.equal(journalOpen.entries[0].resources[0].staged_hash, 'sha256:local-index');
   assert.equal(journalOpen.entries[0].storage_guards[0].outcome, 'claimed');
+  assert.equal(journalOpen.entries[0].resources[1].resource_key, 'row:["wp_posts","ID:1"]');
+  assert.equal(journalOpen.entries[0].storage_guards[1].guard, 'mysql-transaction-row-lock');
 });
 
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {
@@ -151,6 +154,8 @@ test('push recovery inspect fixture distinguishes safe evidence from blocked rec
     'Inspection proved the batch cannot be safely finished or rolled back.',
   );
   assert.equal(blocked.details.target_state_counts.blocked, 1);
+  assert.equal(blocked.details.live_hashes[0].resource_key, 'file:index.php');
+  assert.equal(blocked.details.live_hashes[0].actual_hash, 'sha256:unexpected-live-index');
   assert.equal(decision.inspect.mutates, false);
   assert.equal(decision.inspect.next, 'finish|rollback|retry|block');
   assert.ok(decision.mutating_modes.finish.requires.includes('fresh live hashes'));

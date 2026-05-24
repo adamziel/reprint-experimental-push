@@ -76,7 +76,10 @@ Endpoint specifics:
   idempotency resolution, lease/fencing evidence, and apply classification.
   It reads durable journal rows only; it does not mint a new lock or rewrite a
   prior claim. Journal inspection is how the client distinguishes accepted,
-  committed, replayable, and blocked results after a timeout or crash.
+  committed, replayable, and blocked results after a timeout or crash. The
+  journal rows must expose claim owner, claim generation, lease expiry, the
+  before/staged/after hash triplet for each resource, and storage-guard
+  outcomes so the executor can classify each resource as old, new, or blocked.
 - `push_recover` is the only recovery entrypoint. `inspect` must stay
   read-only; `auto`, `finish`, and `rollback` may mutate only when the journal
   and fresh live hashes prove the action. Recovery must not infer safety from
@@ -237,6 +240,10 @@ at
 [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
 captures the one-remote, one-local, one-drift-witness test shape plus the
 sandbox-only `8080` ingress rule used for Docker or Playground proof.
+The journal fixture at
+[`fixtures/protocol/push-journal-open-response.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-journal-open-response.json)
+captures the fenced open-claim state, including claim generation and lease
+expiry, so tests can distinguish an open claim from a committed batch.
 The recovery decision fixture at
 [`fixtures/protocol/push-recovery-decision.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-decision.json)
 captures the inspect-first rule that keeps `push_recover` read-only until
