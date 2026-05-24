@@ -63,3 +63,20 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
   assert.equal(mapping.persisted_base_package.remote_site_id, 'remote-example');
   assert.equal(mapping.required_invariants[0], 'the pull package is immutable provenance, not a live lock');
 });
+
+test('push recovery inspect fixture distinguishes safe evidence from blocked recovery', () => {
+  const inspect = readJson('fixtures/protocol/push-recovery-inspect-response.json');
+  const blocked = readJson('fixtures/protocol/push-recovery-inspect-blocked-response.json');
+
+  assert.equal(inspect.state, 'inspect');
+  assert.equal(inspect.proof, 'journal-and-live-hashes-reviewed');
+  assert.deepEqual(inspect.actions, ['inspected-journal', 'inspected-live-hashes']);
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.code, 'RECOVERY_BLOCKED');
+  assert.equal(blocked.state, 'inspect');
+  assert.equal(
+    blocked.message,
+    'Inspection proved the batch cannot be safely finished or rolled back.',
+  );
+  assert.equal(blocked.details.target_state_counts.blocked, 1);
+});
