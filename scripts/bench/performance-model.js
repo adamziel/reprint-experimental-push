@@ -532,6 +532,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'index-and-compressed-package-cache-skips-plugin-activation',
+    proposal: 'treat a fresh remote index plus a compressed package cache as enough proof to skip plugin activation and the atomic-group barrier',
+    rejectedBecause: 'planning evidence and compressed package storage can reduce lookup work, but they cannot prove activation state, dependency readiness, or group commit completion',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-upload-queue-completes-plugin-install',
     proposal: 'treat a fresh remote index plus a compressed upload queue as proof that a plugin install already finished',
     rejectedBecause: 'planning evidence and queue compression can reduce work, but they cannot prove dependency checks, staged files, and the atomic-group commit survived failure',

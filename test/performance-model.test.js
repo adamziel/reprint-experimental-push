@@ -523,6 +523,20 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
       .get('index-and-compressed-package-cache-skips-plugin-validators')
       .violates.includes('compression'),
   );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-package-cache-skips-plugin-activation')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-package-cache-skips-plugin-activation')
+      .violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-package-cache-skips-plugin-activation').rejectedGate,
+    'group',
+  );
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
   assert.ok(
     rejectedById.get('live-chunk-publish').violates.includes('atomic-file-publish'),
@@ -1295,6 +1309,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-package-hash-completes-plugin-update',
     'index-and-package-hash-skips-plugin-validators',
     'compressed-package-cache-skips-plugin-preconditions',
+    'index-and-compressed-package-cache-skips-plugin-activation',
     'index-and-compressed-upload-queue-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-plugin-update',
     'index-and-compressed-row-batch-completes-plugin-update',
