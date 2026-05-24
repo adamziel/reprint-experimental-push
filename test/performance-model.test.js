@@ -226,6 +226,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
     ),
     'model rejects treating a local fingerprint plus a cached digest as large-upload completion',
   );
+  assert.ok(
+    model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'compressed-manifest-hash-skips-live-compare',
+    ),
+    'model rejects treating a compressed manifest hash as enough proof to skip the live file compare',
+  );
+  assert.ok(
+    model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'index-and-compressed-manifest-hash-completes-large-upload',
+    ),
+    'model rejects treating a fresh remote index plus a compressed manifest hash as large-upload completion',
+  );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
   assert.ok(
