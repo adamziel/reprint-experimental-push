@@ -54,7 +54,7 @@ function printUsage() {
   process.stderr.write(`Usage:
   reprint-push-lab plan --base base.json --local local.json --remote remote.json [--out plan.json]
   reprint-push-lab apply --remote remote.json --plan plan.json [--out remote-after.json]
-  reprint-push-lab push-authenticated --base base.json --local local.json --source-url http://127.0.0.1:9400 --username USER --application-password PASS --idempotency-key KEY [--dry-run-only] [--out result.json]
+  reprint-push-lab push-authenticated --base base.json --local local.json --source-url http://127.0.0.1:9400 --username USER --application-password PASS --idempotency-key KEY [--route-profile lab-authenticated|production-shaped] [--dry-run-only] [--out result.json]
 
 The lab works on deterministic JSON snapshots. It is not the production
 WordPress transport; it is the executable safety model used to design it.
@@ -97,6 +97,7 @@ async function main() {
       username: requirePath(args, 'username'),
       applicationPassword: requirePath(args, 'application-password'),
       idempotencyKey: requirePath(args, 'idempotency-key'),
+      routeProfile: args['route-profile'] || 'lab-authenticated',
       dryRunOnly: Boolean(args['dry-run-only']),
       labDriftAfterSnapshot: typeof args['lab-drift-after-snapshot'] === 'string'
         ? args['lab-drift-after-snapshot']

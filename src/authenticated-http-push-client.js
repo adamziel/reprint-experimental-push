@@ -2,7 +2,20 @@ import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { createPushPlan } from './planner.js';
 import { digest } from './stable-json.js';
 
-const namespacePath = '/wp-json/reprint-push-lab/v1/authenticated';
+const routeProfiles = {
+  'lab-authenticated': {
+    name: 'lab-authenticated',
+    namespace: 'reprint-push-lab/v1',
+    routePrefix: '/authenticated',
+    namespacePath: '/wp-json/reprint-push-lab/v1/authenticated',
+  },
+  'production-shaped': {
+    name: 'production-shaped',
+    namespace: 'reprint/v1',
+    routePrefix: '/push',
+    namespacePath: '/wp-json/reprint/v1/push',
+  },
+};
 const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
 const sessionHeader = 'X-Reprint-Push-Session';
 const authContentHashHeader = 'X-Auth-Content-Hash';
@@ -12,10 +25,10 @@ const authSignatureHeader = 'X-Auth-Signature';
 const pushSignatureHeader = 'X-Reprint-Push-Signature';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
-const retryableReadOnlyGetPaths = new Set([
-  `${namespacePath}/snapshot`,
-  `${namespacePath}/db-journal`,
-]);
+const retryableReadOnlyGetPaths = new Set(Object.values(routeProfiles).flatMap((profile) => [
+  `${profile.namespacePath}/snapshot`,
+  `${profile.namespacePath}/db-journal`,
+]));
 const sideEffectQueryParams = new Set([
   'reprint_push_lab_drift_after_snapshot',
 ]);
@@ -27,6 +40,7 @@ export async function runAuthenticatedHttpPush({
   username,
   applicationPassword,
   idempotencyKey,
+  routeProfile = 'lab-authenticated',
   dryRunOnly = false,
   labDriftAfterSnapshot = '',
   now = new Date(),
@@ -45,14 +59,17 @@ export async function runAuthenticatedHttpPush({
   }
 
   const credential = { username, password: applicationPassword };
-  const client = authenticatedHttpClient({ sourceUrl, credential });
+  const profile = resolveRouteProfile(routeProfile);
+  const client = authenticatedHttpClient({ sourceUrl, credential, routeProfile: profile.name });
   const summary = {
     ok: false,
     mode: dryRunOnly ? 'dry-run' : 'apply',
     source: {
       url: redactUrl(sourceUrl),
-      namespace: 'reprint-push-lab/v1',
-      routePrefix: '/authenticated',
+      namespace: profile.namespace,
+      routePrefix: profile.routePrefix,
+      routeProfile: profile.name,
+      labBacked: true,
     },
     idempotencyKeyHash: digest(idempotencyKey),
     preflight: null,
@@ -139,15 +156,22 @@ export async function runAuthenticatedHttpPush({
   return summary;
 }
 
-export function authenticatedHttpClient({ sourceUrl, credential }) {
+export function authenticatedHttpClient({ sourceUrl, credential, routeProfile = 'lab-authenticated' }) {
   const baseUrl = normalizeBaseUrl(sourceUrl);
+  const profile = resolveRouteProfile(routeProfile);
 
   return {
     get(pathSuffix) {
-      return requestJson(baseUrl, 'GET', `${namespacePath}${pathSuffix}`, undefined, authHeaders(credential));
+      return requestJson(baseUrl, 'GET', `${profile.namespacePath}${pathSuffix}`, undefined, authHeaders(credential));
+    },
+    post(pathSuffix, body, headers = {}) {
+      return requestJson(baseUrl, 'POST', `${profile.namespacePath}${pathSuffix}`, body, {
+        ...authHeaders(credential),
+        ...headers,
+      });
     },
     signedGet(pathSuffix, options = {}) {
-      const pathname = `${namespacePath}${pathSuffix}`;
+      const pathname = `${profile.namespacePath}${pathSuffix}`;
       return requestJsonRaw(
         baseUrl,
         'GET',
@@ -157,7 +181,7 @@ export function authenticatedHttpClient({ sourceUrl, credential }) {
       );
     },
     signedPost(pathSuffix, body, options = {}) {
-      const pathname = `${namespacePath}${pathSuffix}`;
+      const pathname = `${profile.namespacePath}${pathSuffix}`;
       const rawBody = JSON.stringify(body);
       return requestJsonRaw(
         baseUrl,
@@ -168,6 +192,20 @@ export function authenticatedHttpClient({ sourceUrl, credential }) {
       );
     },
   };
+}
+
+function resolveRouteProfile(routeProfile) {
+  const key = String(routeProfile || 'lab-authenticated');
+  if (key === 'lab') {
+    return routeProfiles['lab-authenticated'];
+  }
+  if (key === 'production' || key === 'prod') {
+    return routeProfiles['production-shaped'];
+  }
+  if (routeProfiles[key]) {
+    return routeProfiles[key];
+  }
+  throw new Error(`Unknown routeProfile: ${routeProfile}`);
 }
 
 function summarizePlan(plan) {

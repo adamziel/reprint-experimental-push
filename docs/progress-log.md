@@ -6,13 +6,14 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Current Supervisor Snapshot
 
-- Status: `70` Node tests pass; Playground and CLI lab evidence remains linked.
-- Trend: lab/model confidence improved; production readiness is still flat.
+- Status: `70` Node tests pass; `npm run test:playground:production-shaped-push`
+  passes against `/wp-json/reprint/v1/push/*`.
+- Trend: reliable executor moved up in lab-backed route proof; production
+  readiness is still flat.
 - Blocker: no production Reprint endpoint, auth binding, durable journal,
   storage guard, or general plugin driver proof has landed.
-- Next nudge: reliable executor should prove one production-shaped route slice:
-  preflight, dry-run receipt, guarded DB/file writes, journal/recovery inspect,
-  replay, and different-body conflict refusal.
+- Next nudge: turn the lab-backed route into a packaged production endpoint
+  with production auth/session cleanup and durable journal guarantees.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
 

@@ -194,6 +194,19 @@ hashed app-password entries and sets the current user because local Playground
 core did not establish `/wp-json/wp/v2/users/me`; it is not production Reprint
 auth or production Application Password integration.
 
+Current production-shaped route note:
+`npm run test:playground:production-shaped-push` verifies signed
+preflight/dry-run/apply plus authenticated snapshot, replay, DB journal, and
+recovery inspect through `/wp-json/reprint/v1/push/*`. The CLI can target that
+profile with `--route-profile production-shaped`. This proves route shape and
+request binding over a real local Playground source site, including guarded
+DB/file mutations, same-key different-body conflict refusal, and unmodified
+cross-route receipt refusal before mutation. It is still lab-backed route-shape
+evidence: the route is mounted by the Playground mu-plugin, uses the lab
+signing key derivation, and does not prove tamper-resistant production receipt
+security, production packaging, credential lifecycle, nonce cleanup, durable
+production journal storage, leases, or arbitrary plugin drivers.
+
 ### 3. Remote Snapshot Hash Listing
 
 Call `push_snapshot_hashes` until complete. Include base resource keys so
@@ -479,9 +492,9 @@ Recommended usage:
 - Store the base manifest in the runner workspace.
 - Bind Playground servers to loopback or container-internal addresses.
 - Route browser access through the single local 8080 proxy if needed.
-- Run authenticated preflight, snapshot, dry-run, apply, journal, and recovery
-  calls through the production route names even when the backing implementation
-  is a Playground fixture.
+- Run signed preflight/dry-run/apply plus authenticated snapshot, journal, and
+  recovery inspect through the production route names even when the backing
+  implementation is a Playground fixture.
 
 Playground is best for protocol, planner, and recovery fixtures. Docker with
 MySQL/MariaDB remains necessary for transaction and lock behavior that differs

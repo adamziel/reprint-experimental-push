@@ -24,6 +24,7 @@ require_once $reprint_push_lab_dir . '/push-remote-lib.php';
 require_once $reprint_push_lab_dir . '/push-db-journal-lib.php';
 
 const REPRINT_PUSH_LAB_REST_NAMESPACE = 'reprint-push-lab/v1';
+const REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE = 'reprint/v1';
 const REPRINT_PUSH_LAB_AUTH_SCOPE = 'reprint-push-lab:authenticated-http-push';
 const REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE = 'reprint_push_lab_auth';
 const REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE = 'reprint_push_lab_signature';
@@ -169,11 +170,121 @@ function reprint_push_lab_rest_register_routes(): void
         'callback' => 'reprint_push_lab_rest_authenticated_recovery_inspect',
         'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
     ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/preflight', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_preflight',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/dry-run', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_dry_run',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/apply', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_apply',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/snapshot', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_snapshot',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/journal', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_journal',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        'args' => [
+            'limit' => [
+                'type' => 'integer',
+                'default' => 20,
+                'minimum' => 1,
+                'maximum' => 80,
+                'sanitize_callback' => 'absint',
+            ],
+        ],
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/db-journal', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_db_journal',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        'args' => [
+            'limit' => [
+                'type' => 'integer',
+                'default' => 20,
+                'minimum' => 1,
+                'maximum' => 80,
+                'sanitize_callback' => 'absint',
+            ],
+        ],
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/db-journal/schema', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_db_journal_schema',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/recovery/inspect', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_recovery_inspect',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
 }
 
 function reprint_push_lab_rest_public_lab_permission(): bool
 {
     return true;
+}
+
+function reprint_push_lab_rest_route_profile(WP_REST_Request $request): array
+{
+    $route = (string) $request->get_route();
+    if (strpos($route, '/' . REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE . '/push/') === 0) {
+        return [
+            'profile' => 'production-shaped',
+            'restNamespace' => REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE,
+            'routePrefix' => '/push',
+            'dryRunRoute' => '/push/dry-run',
+            'authScope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+            'labBacked' => true,
+            'warning' => 'Production-shaped route names backed by the local Playground lab harness; not a production Reprint endpoint.',
+        ];
+    }
+
+    if (strpos($route, '/' . REPRINT_PUSH_LAB_REST_NAMESPACE . '/authenticated/') !== 0) {
+        return [
+            'profile' => 'lab-public',
+            'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+            'routePrefix' => '',
+            'dryRunRoute' => '/dry-run',
+            'authScope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+            'labBacked' => true,
+            'warning' => 'Public local Playground lab route; not production auth.',
+        ];
+    }
+
+    return [
+        'profile' => 'lab-authenticated',
+        'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+        'routePrefix' => '/authenticated',
+        'dryRunRoute' => '/authenticated/dry-run',
+        'authScope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+        'labBacked' => true,
+        'warning' => 'Local Playground lab authenticated route; not a production Reprint endpoint.',
+    ];
+}
+
+function reprint_push_lab_rest_profile_route(WP_REST_Request $request, string $suffix): string
+{
+    $profile = reprint_push_lab_rest_route_profile($request);
+    return (string) $profile['routePrefix'] . $suffix;
 }
 
 function reprint_push_lab_rest_authenticated_permission(WP_REST_Request $request)
@@ -218,11 +329,13 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
 
     $auth = reprint_push_lab_rest_auth_evidence($request);
     $signature = reprint_push_lab_rest_signature_context($request);
+    $profile = reprint_push_lab_rest_route_profile($request);
 
     return reprint_push_lab_rest_json_response([
         'ok' => true,
         'mode' => 'preflight',
         'auth' => $auth,
+        'routeProfile' => $profile,
         'protocol' => [
             'schemaVersion' => 1,
             'authString' => 'nonce + timestamp + content_hash',
@@ -252,7 +365,7 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
                 'reprint_push' => current_user_can('manage_options'),
             ],
             'scopes' => [
-                REPRINT_PUSH_LAB_AUTH_SCOPE,
+                (string) $profile['authScope'],
                 'dry-run',
                 'apply',
             ],
@@ -377,11 +490,13 @@ function reprint_push_lab_rest_recovery_inspect(WP_REST_Request $request): WP_RE
         $payload = reprint_push_lab_rest_json_payload($request);
         $plan = reprint_push_lab_rest_plan_payload($payload, 'inspect');
         $receipt = reprint_push_lab_rest_receipt_payload($payload);
+        $profile = reprint_push_lab_rest_route_profile($request);
 
         $result = reprint_push_protocol_inspect_recovery($plan, $receipt, [
             'transport' => 'wordpress-rest',
-            'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
-            'restRoute' => '/recovery/inspect',
+            'restNamespace' => (string) $profile['restNamespace'],
+            'restRoute' => reprint_push_lab_rest_profile_route($request, '/recovery/inspect'),
+            'routeProfile' => (string) $profile['profile'],
         ]);
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
@@ -406,10 +521,13 @@ function reprint_push_lab_rest_protocol_response(string $mode, WP_REST_Request $
         $payload = reprint_push_lab_rest_json_payload($request);
         $plan = reprint_push_lab_rest_plan_payload($payload, $mode);
         $receipt = $mode === 'apply' ? reprint_push_lab_rest_receipt_payload($payload) : null;
+        $profile = reprint_push_lab_rest_route_profile($request);
 
         $result = reprint_push_protocol_run_payload($mode, $plan, $receipt, [
             'transport' => 'wordpress-rest',
-            'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+            'restNamespace' => (string) $profile['restNamespace'],
+            'restRoute' => reprint_push_lab_rest_profile_route($request, $mode === 'dry-run' ? '/dry-run' : '/apply'),
+            'routeProfile' => (string) $profile['profile'],
         ], reprint_push_lab_rest_lab_options($payload));
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
@@ -433,6 +551,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
     bool $validate_before_idempotency_claim = false
 ): WP_REST_Response
 {
+    $profile = reprint_push_lab_rest_route_profile($request);
     $context = null;
     $received_entry = null;
     $accepted = null;
@@ -451,7 +570,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
         }
 
         $payload = reprint_push_lab_rest_json_payload($request);
-        $context = reprint_push_lab_rest_db_journal_context($payload, $idempotency_key);
+        $context = reprint_push_lab_rest_db_journal_context($payload, $idempotency_key, $profile);
         $committed = reprint_push_lab_db_journal_committed_row_for_key($context['idempotencyKeyHash']);
 
         if (is_array($committed) && (string) ($committed['request_hash'] ?? '') === $context['requestHash']) {
@@ -789,7 +908,8 @@ function reprint_push_lab_rest_run_db_journal_apply(
     ]);
     $result = reprint_push_protocol_run_payload('apply', $plan, $receipt, [
         'transport' => 'wordpress-rest',
-        'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+        'restNamespace' => (string) ($context['restNamespace'] ?? REPRINT_PUSH_LAB_REST_NAMESPACE),
+        'routeProfile' => (string) ($context['routeProfile'] ?? 'lab-authenticated'),
         'idempotencyKeyHash' => $context['idempotencyKeyHash'],
         'requestHash' => $context['requestHash'],
         'dbJournalCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
@@ -1682,7 +1802,7 @@ function reprint_push_lab_rest_idempotency_conflict_result(array $context): arra
     return $conflict_result;
 }
 
-function reprint_push_lab_rest_db_journal_context(array $payload, string $idempotency_key): array
+function reprint_push_lab_rest_db_journal_context(array $payload, string $idempotency_key, array $profile = []): array
 {
     return [
         'idempotencyKeyHash' => reprint_push_lab_db_journal_key_hash($idempotency_key),
@@ -1691,6 +1811,8 @@ function reprint_push_lab_rest_db_journal_context(array $payload, string $idempo
         'receiptHash' => reprint_push_lab_db_journal_receipt_hash_from_payload($payload),
         'planFingerprint' => reprint_push_lab_db_journal_plan_fingerprint_from_payload($payload),
         'mutationCount' => reprint_push_lab_db_journal_mutation_count_from_payload($payload),
+        'restNamespace' => (string) ($profile['restNamespace'] ?? REPRINT_PUSH_LAB_REST_NAMESPACE),
+        'routeProfile' => (string) ($profile['profile'] ?? 'lab-authenticated'),
     ];
 }
 
@@ -2404,9 +2526,10 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
     array $plan
 ): array {
     $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
+    $profile = reprint_push_lab_rest_route_profile($request);
     $receipt['authBinding'] = [
         'schemaVersion' => 1,
-        'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+        'scope' => (string) $profile['authScope'],
         'identity' => reprint_push_lab_rest_auth_evidence($request)['identity'],
         'session' => reprint_push_lab_rest_auth_evidence($request)['session'],
         'pushSession' => [
@@ -2417,8 +2540,10 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
             'dryRunCanonicalHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
         ],
         'request' => [
-            'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
-            'dryRunRoute' => '/authenticated/dry-run',
+            'restNamespace' => (string) $profile['restNamespace'],
+            'dryRunRoute' => (string) $profile['dryRunRoute'],
+            'routeProfile' => (string) $profile['profile'],
+            'labBacked' => (bool) ($profile['labBacked'] ?? false),
             'planPayloadHash' => hash('sha256', reprint_push_stable_json($plan)),
             'dryRunBodyHash' => hash('sha256', reprint_push_stable_json($payload)),
         ],
@@ -2442,6 +2567,7 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
     array $plan,
     array $receipt_payload
 ): void {
+    $profile = reprint_push_lab_rest_route_profile($request);
     $receipt = reprint_push_protocol_extract_receipt($receipt_payload);
     $binding = isset($receipt['authBinding']) && is_array($receipt['authBinding'])
         ? $receipt['authBinding']
@@ -2457,7 +2583,7 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt hash does not match receipt body.', $receipt);
     }
 
-    if ((string) ($binding['scope'] ?? '') !== REPRINT_PUSH_LAB_AUTH_SCOPE) {
+    if ((string) ($binding['scope'] ?? '') !== (string) $profile['authScope']) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt auth scope does not match authenticated push scope.', $receipt);
     }
 
@@ -2479,8 +2605,8 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
     }
 
     $request_binding = isset($binding['request']) && is_array($binding['request']) ? $binding['request'] : [];
-    if ((string) ($request_binding['restNamespace'] ?? '') !== REPRINT_PUSH_LAB_REST_NAMESPACE
-        || (string) ($request_binding['dryRunRoute'] ?? '') !== '/authenticated/dry-run'
+    if ((string) ($request_binding['restNamespace'] ?? '') !== (string) $profile['restNamespace']
+        || (string) ($request_binding['dryRunRoute'] ?? '') !== (string) $profile['dryRunRoute']
         || (string) ($request_binding['planPayloadHash'] ?? '') !== hash('sha256', reprint_push_stable_json($plan))
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt request binding does not match the supplied apply plan.', $receipt);
@@ -2827,8 +2953,9 @@ function reprint_push_lab_rest_lab_notice(): array
     return [
         'surface' => 'wordpress-rest',
         'namespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+        'productionShapedNamespace' => REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE,
         'scope' => 'local Playground fixture only',
-        'permission' => 'public lab route; not production auth',
+        'permission' => 'lab-backed route; production-shaped aliases still use local Playground fixture auth',
     ];
 }
 

@@ -1,27 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 21:47 CEST
+Last updated: 2026-05-24 22:04 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-24 - Current Nudge
 
-- Going well: `70` Node tests pass, and invariants, recovery, protocol,
-  fast-path, audit, and critic lanes all sharpened lab/model gates.
+- Going well: `70` Node tests pass, and
+  `npm run test:playground:production-shaped-push` proves the lab-backed
+  `/wp-json/reprint/v1/push/*` route slice.
 - Not going well: production readiness is flat. The repo still lacks a
   production endpoint, credential binding, nonce cleanup, durable audit,
   storage guard, and general plugin driver proof.
-- Progress change: lab/model evidence moved up; production evidence did not.
-- Next nudge: reliable executor should run one production-shaped route slice
-  end to end with guarded DB/file writes, journal/recovery inspect, replay, and
-  different-body conflict refusal.
+- Progress change: reliable executor moved up in lab-backed route proof;
+  production evidence did not.
+- Next nudge: package the route as a production endpoint with real auth/session
+  cleanup and durable journal guarantees.
 
 | Lane | Change | Next nudge |
 | --- | --- | --- |
 | Invariants | Up in lab | Prove real WordPress graph identity and drift handling. |
 | Recovery | Up in lab | Prove production DB journal durability and crash boundaries. |
-| Reliable executor | Up in contract | Build the first production-shaped route slice. |
+| Reliable executor | Up in lab route proof | Package the production endpoint and durable journal path. |
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the first executable production-shaped mutation slice. |
 | Progress publisher | Synced | Keep Pages aligned and concise. |
