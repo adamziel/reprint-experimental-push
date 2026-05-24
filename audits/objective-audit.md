@@ -250,6 +250,8 @@ proof gates:
 7. A release test aggregator and CI workflow that run the safety-critical
    unit, Playground, auth, storage, recovery, idempotency, plugin, and
    performance gates or explicitly label excluded tests as non-release proof.
+   Right now the strongest smoke scripts are still manual opt-ins, so the
+   repository cannot yet claim that release evidence is actually enforced.
 8. Runtime benchmarks for large uploads and large DB changes with concrete
    throughput, memory, retry, and recovery measurements.
 
