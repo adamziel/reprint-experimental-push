@@ -31,8 +31,8 @@ Failure and recovery examples:
   read-only inspection step used before any lost-response retry or recovery
   decision.
 - `push-journal-open-response.json` shows an in-progress claim with fenced
-  writer evidence, which is the proof the executor needs before it retries or
-  recovers an interrupted apply.
+  writer evidence, including claim generation and lease expiry, which is the
+  proof the executor needs before it retries or recovers an interrupted apply.
 - `push-recovery-request.json` and `push-recovery-response.json` show a
   successful recovery finalization after a read-only inspect step.
 - `push-recovery-inspect-request.json` and `push-recovery-inspect-response.json`
@@ -74,6 +74,16 @@ requires idempotency for all recovery requests.
 `push_recover` `mode: "inspect"` is the evidence reader that decides whether
 the next safe step is finish, rollback, retry, or block. Neither call should
 be treated as a live write lock.
+
+The open-journal and inspect fixtures intentionally keep the proof surface
+small but explicit:
+
+- `push-journal-open-response.json` shows a claim owner, claim generation,
+  lease expiry, and per-resource guard outcomes so fenced ownership is visible.
+- `push-recovery-inspect-response.json` reports the journal and live-hash
+  review result without authorizing a mutation.
+- `push-recovery-response.json` is only the committed case after the inspect
+  evidence proves the batch can be finalized safely.
 
 The fixtures are intentionally paired so tests can verify the full sequence:
 preflight, remote snapshot hash listing, dry-run upload, batched apply,
