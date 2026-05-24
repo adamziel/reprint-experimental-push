@@ -511,6 +511,9 @@ partial writes, or plugin-owned side effects without losing auditability.
 Nothing in the route shape, package layout, or fixture replay proves live
 remote preservation unless the same path also revalidates the remote and
 classifies every boundary write.
+A smoke that only ends in `finalMatchesLocal: true` still does not show that
+the remote stayed preserved, that a fresh live snapshot was taken before the
+first write, or that stale review artifacts were rejected.
 
 Scenario: push applies plugin files, then the process dies before the related
 options, custom-table rows, or activation state are committed. The file side is
@@ -549,6 +552,8 @@ runtime-only registries or migration-owned rows that only appear during apply.
 It also leaves room for identity remapping failures: a scan can name the right
 object class and still miss that create-time IDs, aliases, or cross-table
 references changed after the inventory was recorded.
+Unknown plugin-owned state outside the allowlist must therefore stop the push
+unless a semantic driver proves the exact ownership surface and side effects.
 
 Required change: use ZS-Sync-style scanning as planning input only. A ready
 push must block on unknown or incomplete coverage.
@@ -584,6 +589,8 @@ the reviewed scope still matches the live hashes at apply time, and the retry
 path can prove it rejected stale scope before any write.
 If the approval artifact cannot be tied to a fresh live snapshot, it must be
 treated as stale evidence, not as permission to continue.
+`finalMatchesLocal` does not change that rule; it is still only a fixture
+compatibility signal, not proof of a safe retry after drift.
 
 Required change: adopt the ForkPress-grade lifecycle before making
 ForkPress-grade claims. Manual resolution is acceptable only when the remote
@@ -612,6 +619,8 @@ would reasonably read as equivalent.
   explicit hard block.
 - Every create path has stable identity allocation, or it is blocked when the
   remote can renumber, alias, or reassign the target.
+- Every create or remap path proves identity allocation before write, or it
+  blocks when a remote or plugin-owned reference can change under it.
 - Every conflict resolution writes a reviewed artifact with base, local,
   remote, reviewer, action, and fresh revalidation evidence.
 - Any stale manual-review artifact or stale approval hash is rejected before
@@ -631,6 +640,9 @@ would reasonably read as equivalent.
   never treated as production proof unless the same path also proves live
   remote revalidation, stale-approval rejection, and safe retry from a fresh
   snapshot with the exact approved scope.
+- `finalMatchesLocal` on its own is explicitly non-evidence for remote
+  preservation, identity stability, plugin ownership safety, or crash
+  recovery.
 - Route-shape matches, package mounting, and fixture replay remain comparison
   evidence only; they cannot be used to claim remote preservation, identity
   stability, or plugin ownership safety without a live revalidation proof.
@@ -700,9 +712,9 @@ Before any production-grade push claim, the project needs all of these:
     executor path intended for release.
 14. A documented release gate that fails closed on stale manual-review
     artifacts, unknown plugin ownership, route-shape-only evidence, fixture
-    replay alone, any claim that only restates the lab route shape, or any
-    create path that can renumber, alias, or reassign target identity without
-    a live remap proof.
+    replay alone, `finalMatchesLocal` alone, any claim that only restates the
+    lab route shape, or any create path that can renumber, alias, or reassign
+    target identity without a live remap proof.
 
 The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
