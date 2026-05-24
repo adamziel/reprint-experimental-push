@@ -52,24 +52,30 @@ test('benchmark model covers large uploads and plugin installs', () => {
     pluginInstall.actions.some((action) => action.type === 'remote-index-probe'),
     'plugin install models remote planning indexes',
   );
-  assert.ok(
-    pluginInstall.actions.some((action) => action.type === 'file-hash'),
-    'plugin install models file hashing',
-  );
-  assert.ok(
-    pluginInstall.actions.some((action) => action.type === 'chunk-upload'),
-    'plugin install models chunk uploads',
-  );
+  assert.ok(pluginInstall.actions.some((action) => action.type === 'file-hash'));
+  assert.ok(pluginInstall.actions.some((action) => action.type === 'chunk-upload'));
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'compression-decision'),
-    'plugin install models compression decisions',
+    'plugin install models compression decisions for staged files',
   );
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-row-batch'),
     'plugin install models database row batching',
   );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'group-staging-finalize'),
+    'plugin install models the group staging finalize barrier',
+  );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
+  assert.ok(
+    pluginInstall.backpressure.pauseWhen.includes('staging-disk-budget-hit'),
+    'plugin install backpressure should cover staging disk pressure',
+  );
+  assert.ok(
+    pluginInstall.backpressure.resumeRequires.includes('database-batch-commit-records'),
+    'plugin install backpressure should require durable batch receipts before resume',
+  );
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
@@ -343,7 +349,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('fresh-dry-run-authorizes-apply').proposal.includes('dry-run plan is recent'));
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('metadata-only-conflict-check').violates.includes('strong-resource-hashes'));
+<<<<<<< HEAD
   assert.ok(rejectedById.get('remote-index-authorizes-mutation').proposal.includes('permission'));
+=======
+
+  const rejectedIds = new Set(model.rejectedFastPaths.map((fastPath) => fastPath.id));
+  for (const id of [
+    'live-chunk-publish',
+    'fresh-dry-run-authorizes-apply',
+    'remote-index-authorizes-mutation',
+    'split-plugin-install',
+    'blind-sql-replace',
+    'backpressure-drops-evidence',
+  ]) {
+    assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);
+  }
+>>>>>>> ff1dd1b (Tighten fast-path benchmark coverage)
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {

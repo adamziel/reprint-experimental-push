@@ -307,6 +307,22 @@ break the no-data-loss contract:
 - Backpressure cannot erase evidence, mark work complete, or hide which bytes
   and rows are still pending.
 
+The rejected fast paths in the model are the ones most likely to be tempting
+under load:
+
+- live-path chunk publish is rejected because a crash after the first chunk
+  would leave a half-uploaded file visible without a durable completion proof.
+- dry-run freshness is rejected because a remote edit between plan and apply
+  would be overwritten without a live compare-and-swap check.
+- remote-index authorization is rejected because a stale listing can still
+  plan quickly but cannot prove current storage state.
+- split plugin install is rejected because files, rows, metadata, dependency
+  checks, and activation state must cross visibility together.
+- blind SQL replace is rejected because it removes per-row compare-and-swap
+  guards and can silently overwrite concurrent remote edits.
+- backpressure evidence dropping is rejected because a pause must preserve the
+  exact rows, chunks, and validators needed to resume or classify failure.
+
 ## Benchmark Shape
 
 Benchmarks need to model the expensive paths that can break safety, not only
@@ -333,6 +349,15 @@ The model intentionally treats receipts, cursors, and pressure budgets as
 first-class fields. A benchmark that only proves fewer requests were made is not
 enough; it must also prove which chunks, row batches, and group members can be
 resumed after a failure.
+
+The important rejection cases are modeled too:
+
+- chunk receipts are required before a staged chunk can be considered complete.
+- plugin installs cannot publish files early or activate before validators pass.
+- remote indexes can guide planning only and never replace live apply
+  preconditions.
+- backpressure pauses upstream producers instead of compressing away evidence
+  or treating an unacknowledged buffer as success.
 
 `scripts/bench/guarded-executor-benchmark.js` moves one step past the static
 model. It generates real file chunk buffers, writes them into benchmark staging,
