@@ -380,6 +380,10 @@ under load:
   evidence does not create the missing receipt or commit record.
 - compressed-queue-drains-completes-work is rejected because a drained queue
   can still hide missing chunk or batch acknowledgements.
+- remote-index-plus-compressed-row-batch-completes-plugin-update is rejected
+  because planning evidence and batch compression cannot prove row-level
+  preconditions, dependency checks, or the atomic-group commit survived a
+  failure.
 
 ## Benchmark Shape
 
