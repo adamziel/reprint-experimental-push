@@ -52,6 +52,11 @@ Likewise, a create path is not safe because it can name an object class; it has
 to prove stable identity reservation or fail closed when the remote can
 renumber, alias, or reassign the target. Until each class has that proof or a
 hard block, a success message is stronger than the evidence.
+That applies equally to review artifacts: a stale approval that can still be
+reused after drift is not a review trail, it is an unsafe capability leak. The
+audit must show the stale artifact remains readable for inspection, is rejected
+before write, and cannot be widened to a different row, file, or plugin-owned
+surface on retry.
 The same warning applies to plugin data traps that are easy to miss in review:
 plugin-owned options, custom tables, generated files, activation hooks, cron,
 and cache entries can all mutate outside the main post/page row plan. If any
@@ -244,6 +249,10 @@ evidence for all of these, not just a plausible design:
 - A stale approval must remain an audit record only: the next retry has to
   start from fresh live evidence, and the old record must not be reused to
   authorize a different row, file, or plugin-owned surface.
+- A production claim must also show a negative test for plugin-owned state
+  outside the allowlist, including at least one of options, custom tables,
+  generated files, activation hooks, cron, or cache side effects, or else the
+  design must hard-block that surface before apply.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
 
@@ -258,6 +267,15 @@ repo-specific evidence, not in lab shape or source-note comparison language:
   create that could be renumbered, aliased, or remapped on the remote.
 - Every plugin-owned surface touched by push is either enumerated in the
   coverage manifest or hard-blocked before apply.
+- A stale manual-review artifact is rejected before write, remains available
+  for audit, and cannot be reused to authorize a widened scope after live
+  drift or partial failure.
+- Partial file/DB/plugin side effects are classified as blocked recovery, not
+  as success, unless the audit shows a remote-preserving retry path with fresh
+  evidence and no untracked writes outside the intended boundary.
+- The release gate includes an evidence pack that names the exact live hashes,
+  the rejected stale approval, the retry scope, and the proof that any
+  plugin-owned surface outside the allowlist was either blocked or covered.
 - A stale manual-review artifact is rejected before write, remains auditable
   for retry review, and cannot be reused after the remote changes.
 - A partial recovery replay cannot resurrect or widen the old manual-review
