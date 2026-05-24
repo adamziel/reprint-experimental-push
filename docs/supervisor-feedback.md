@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:07 CEST
+Last updated: 2026-05-25 00:10 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 00:07 CEST - Supervised Lane Merge Refresh
+## 2026-05-25 00:10 CEST - Supervised Lane Merge Refresh
 
 - Going well: `85` Node tests pass after supervised lane merges. Matching
   delete/edit, recovery terminal states, fast-path guardrails, protocol binding,
@@ -15,8 +15,8 @@ changed, what is helping, what is not helping, and the next nudge.
   general plugin drivers remain unproven.
 - Progress change: lab/model evidence improved across five lanes; production
   readiness stayed blocked.
-- Active supervision: one fast-mode same-plan graph worker is isolated in its
-  lane and is not merged yet.
+- Active supervision: four fast-mode workers are isolated in lane worktrees:
+  same-plan graph, reliable executor, recovery, and fast paths.
 - Next nudge: keep workers focused on production-backed auth/journal proof and
   graph identity mapping.
 
