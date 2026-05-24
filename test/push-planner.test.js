@@ -233,6 +233,25 @@ test('stops a local deletion when the remote edited the same resource', () => {
   assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote secret editorial update');
 });
 
+test('stops a local file deletion when the remote edited the same file', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete local.files['index.php'];
+  remote.files['index.php'] = '<?php echo "Remote secret file update";';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(JSON.stringify(conflict).includes('Remote secret file update'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['index.php'], '<?php echo "Remote secret file update";');
+});
+
 test('stops a local directory deletion that would remove a remote-only descendant', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
