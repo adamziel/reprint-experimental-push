@@ -258,6 +258,32 @@ evidence for all of these, not just a plausible design:
   behavior.
 - Graph identity mapping or an explicit hard block for every relationship-
   bearing row class that can silently rewire references.
+
+## Release Gate For Production Wording
+
+Do not let a doc, PR description, review comment, or status update claim
+production-grade push support unless every item below is true and evidence is
+attached to the current commit or worktree state:
+
+- The claim cites a live write-path proof, not only a route-shape smoke,
+  packaged-plugin mount, fixture replay, or `finalMatchesLocal` result.
+- Any comparison to Reprint, ZS-Sync, or ForkPress states whether the source
+  note was re-verified against the current upstream commit or worktree state.
+- The claim shows what happens when the remote drifts after dry-run and before
+  apply, and the stale attempt fails closed before any mutation.
+- The claim shows how create-time identity remapping is either safely
+  represented or hard-blocked before write.
+- The claim shows how plugin-owned state outside the allowlist is discovered
+  or blocked, including options, custom tables, generated files, activation
+  hooks, cron, and cache side effects.
+- The claim shows how a partial file, DB, or plugin apply is classified
+  durably and how a retry starts from fresh evidence instead of reusing stale
+  approval.
+- The claim shows that a manual-resolution artifact remains readable for
+  audit but cannot be reused or widened after the live snapshot changes.
+- The claim does not rely on "manual resolution will handle it later" unless
+  the remote is preserved for audit and the retry path is explicitly
+  replay-safe.
 - Reviewed conflict artifacts that preserve base/local/remote evidence,
   reviewer identity, chosen action, and fresh revalidation data.
 - Rejected retries must stay auditable, but they must not be allowed to
