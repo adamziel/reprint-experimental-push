@@ -2703,3 +2703,25 @@ test('acceptable post-failure states carry the required recovery artifacts', () 
   assert.ok(blocked.details.recovery.artifacts.remote, 'blocked recovery must include remote artifacts');
   assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
 });
+
+test('stale completed replay blocks instead of duplicating inserts or reviving stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "drifted";';
+  const before = JSON.stringify(replayRemote);
+  const replayError = captureError(() => applyPlan(replayRemote, plan, { journal: completed.journal }));
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.equal(JSON.stringify(replayRemote), before);
+  assert.equal(replayError.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
