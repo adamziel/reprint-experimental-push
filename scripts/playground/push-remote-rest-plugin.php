@@ -2340,24 +2340,64 @@ function reprint_push_lab_rest_maybe_bootstrap_auth_users(): void
 
 function reprint_push_lab_rest_upsert_auth_user(string $login, string $app_password, string $role, string $slug): void
 {
+    reprint_push_lab_rest_provision_push_application_password([
+        'login' => $login,
+        'appPassword' => $app_password,
+        'role' => $role,
+        'slug' => $slug,
+        'name' => 'Reprint Push Lab Auth Smoke',
+        'createUser' => true,
+        'updateRole' => true,
+    ]);
+}
+
+function reprint_push_lab_rest_provision_push_application_password(array $args): array
+{
+    $login = sanitize_user((string) ($args['login'] ?? ''), true);
+    $app_password = (string) ($args['appPassword'] ?? $args['password'] ?? '');
+    $role = sanitize_key((string) ($args['role'] ?? ''));
+    $slug = sanitize_key((string) ($args['slug'] ?? $login));
+    $name = sanitize_text_field((string) ($args['name'] ?? 'Reprint Push Credential'));
+    $create_user = !empty($args['createUser']);
+    $update_role = !empty($args['updateRole']);
+
     if ($login === '' || $app_password === '') {
-        return;
+        return [
+            'ok' => false,
+            'code' => 'reprint_push_provision_missing_credential',
+            'message' => 'Provisioning requires a login and Application Password.',
+        ];
     }
 
     $user = get_user_by('login', $login);
-    if (!$user) {
+    if (!$user && $create_user) {
         $user_id = wp_insert_user([
             'user_login' => $login,
             'user_pass' => wp_generate_password(32, true, true),
             'user_email' => sanitize_user($login, true) . '@example.test',
             'display_name' => $login,
-            'role' => $role,
+            'role' => $role !== '' ? $role : 'administrator',
         ]);
         if (is_wp_error($user_id)) {
-            return;
+            return [
+                'ok' => false,
+                'code' => 'reprint_push_provision_user_failed',
+                'message' => $user_id->get_error_message(),
+            ];
         }
-    } else {
-        $user_id = (int) $user->ID;
+        $user = get_user_by('id', (int) $user_id);
+    }
+
+    if (!$user) {
+        return [
+            'ok' => false,
+            'code' => 'reprint_push_provision_user_missing',
+            'message' => 'Provisioning requires an existing user unless createUser is enabled.',
+        ];
+    }
+
+    $user_id = (int) $user->ID;
+    if ($update_role && $role !== '') {
         $wp_user = new WP_User($user_id);
         $wp_user->set_role($role);
     }
@@ -2374,13 +2414,26 @@ function reprint_push_lab_rest_upsert_auth_user(string $login, string $app_passw
     $items[] = [
         'uuid' => $uuid,
         'app_id' => $app_id,
-        'name' => 'Reprint Push Lab Auth Smoke',
+        'name' => $name !== '' ? $name : 'Reprint Push Credential',
         'password' => wp_hash_password($normalized_app_password),
         'created' => time(),
         'last_used' => null,
         'last_ip' => null,
+        'reprint_push_scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+        'reprint_push_credential_type' => 'push-application-password',
     ];
     update_user_meta($user_id, '_application_passwords', $items);
+
+    return [
+        'ok' => true,
+        'userId' => $user_id,
+        'userLogin' => (string) $user->user_login,
+        'applicationPasswordUuid' => $uuid,
+        'applicationPasswordAppId' => $app_id,
+        'credentialHash' => hash('sha256', $login . "\n" . $app_password),
+        'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+        'credentialType' => 'push-application-password',
+    ];
 }
 
 function reprint_push_lab_rest_auth_bootstrap_enabled(): bool
@@ -2528,6 +2581,9 @@ function reprint_push_lab_rest_verify_application_password(int $user_id, string 
         if (!wp_check_password($normalized_password, (string) $item['password'], $user_id)) {
             continue;
         }
+        if (!reprint_push_lab_rest_application_password_item_allows_push($item)) {
+            continue;
+        }
 
         $user = get_user_by('id', $user_id);
         if (!$user) {
@@ -2540,6 +2596,9 @@ function reprint_push_lab_rest_verify_application_password(int $user_id, string 
             'userId' => $user_id,
             'userLogin' => (string) $user->user_login,
             'applicationPasswordUuid' => (string) ($item['uuid'] ?? ''),
+            'applicationPasswordAppId' => (string) ($item['app_id'] ?? ''),
+            'credentialScope' => reprint_push_lab_rest_application_password_item_scope($item),
+            'credentialType' => (string) ($item['reprint_push_credential_type'] ?? ''),
             'credentialHash' => hash('sha256', $login . "\n" . $password),
             'signingKey' => hash_hmac('sha256', 'reprint-push-lab-v1' . "\n" . $login, $password),
             'playgroundFallback' => true,
@@ -2548,6 +2607,16 @@ function reprint_push_lab_rest_verify_application_password(int $user_id, string 
     }
 
     return null;
+}
+
+function reprint_push_lab_rest_application_password_item_allows_push(array $item): bool
+{
+    return reprint_push_lab_rest_application_password_item_scope($item) === REPRINT_PUSH_LAB_AUTH_SCOPE;
+}
+
+function reprint_push_lab_rest_application_password_item_scope(array $item): string
+{
+    return (string) ($item['reprint_push_scope'] ?? $item['reprint_push_lab_scope'] ?? '');
 }
 
 function reprint_push_lab_rest_playground_basic_auth_context(string $login, string $password): ?array
@@ -2607,6 +2676,9 @@ function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
             'type' => is_array($auth) ? $auth['type'] : null,
             'verifier' => is_array($auth) ? ($auth['verifier'] ?? null) : null,
             'applicationPasswordUuid' => is_array($auth) ? $auth['applicationPasswordUuid'] : null,
+            'applicationPasswordAppId' => is_array($auth) ? ($auth['applicationPasswordAppId'] ?? null) : null,
+            'credentialScope' => is_array($auth) ? ($auth['credentialScope'] ?? null) : null,
+            'credentialType' => is_array($auth) ? ($auth['credentialType'] ?? null) : null,
             'credentialHash' => is_array($auth) ? $auth['credentialHash'] : null,
             'playgroundFallback' => is_array($auth) ? (bool) ($auth['playgroundFallback'] ?? false) : false,
             'warning' => is_array($auth) && isset($auth['warning']) ? (string) $auth['warning'] : null,

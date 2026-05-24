@@ -25,6 +25,11 @@ const alternateCredentials = {
   password: 'reprint-push-alt-admin-app-password',
 };
 
+const unscopedCredentials = {
+  username: 'reprint_push_unscoped_admin',
+  password: 'reprint-push-unscoped-app-password',
+};
+
 const fixtures = {
   base: 'fixtures/playground/remote-base.blueprint.json',
   local: 'fixtures/playground/local-edited.blueprint.json',
@@ -36,6 +41,7 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
+const packageLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-package-'));
 const packageRoot = path.join(tmpDir, 'package');
@@ -48,7 +54,7 @@ try {
   buildPluginPackage(pluginDir);
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
   fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
-  fs.writeFileSync(localPath, `${JSON.stringify(snapshots.local, null, 2)}\n`);
+  fs.writeFileSync(localPath, `${JSON.stringify(packageLocalSnapshot, null, 2)}\n`);
 
   const summary = {
     package: {
@@ -80,6 +86,16 @@ try {
     assert.equal(unprovisionedAlternatePreflight.status, 401);
     assert.equal(unprovisionedAlternatePreflight.body.code, 'reprint_push_lab_auth_required');
 
+    const unscopedPreflight = await requestJson(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/preflight',
+      undefined,
+      signedHeadersForPreflight(unscopedCredentials),
+    );
+    assert.equal(unscopedPreflight.status, 401);
+    assert.equal(unscopedPreflight.body.code, 'reprint_push_lab_auth_required');
+
     const preflight = await requestJson(
       server.baseUrl,
       'GET',
@@ -92,6 +108,8 @@ try {
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
     assert.equal(preflight.body.routeProfile.labBacked, true);
+    assert.equal(preflight.body.auth.session.credentialScope, 'reprint-push-lab:authenticated-http-push');
+    assert.equal(preflight.body.auth.session.credentialType, 'push-application-password');
     assertSignedStoreCleanup(preflight.body.sessionStore?.cleanup);
 
     const result = runCli([
@@ -130,7 +148,7 @@ try {
     );
     assert.equal(after.status, 200);
     assert.equal(after.body.ok, true);
-    assertVisibleSurfaceEqual(after.body.snapshot, snapshots.local, 'packaged plugin final source');
+    assertVisibleSurfaceEqual(after.body.snapshot, packageLocalSnapshot, 'packaged plugin final source');
 
     summary.routes = {
       namespace: preflight.body.routeProfile.restNamespace,
@@ -138,6 +156,8 @@ try {
       profile: preflight.body.routeProfile.profile,
       authBootstrapDisabled: true,
       unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
+      unscopedApplicationPasswordStatus: unscopedPreflight.status,
+      credentialScope: preflight.body.auth.session.credentialScope,
       signedStoreCleanup: {
         deletedExpiredTotal: preflight.body.sessionStore.cleanup.deletedExpiredTotal,
         sessionsDeleted: preflight.body.sessionStore.cleanup.sessionOptions.deletedExpired,
@@ -179,6 +199,15 @@ function buildPluginPackage(targetDir) {
   }
 }
 
+function withoutUnmappedGraphPostmeta(snapshot) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
+    delete next.db.wp_postmeta;
+  }
+  return next;
+}
+
 function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
   const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
   blueprint.meta = {
@@ -191,18 +220,17 @@ function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
     code: [
       '<?php',
       "require_once '/wordpress/wp-load.php';",
-      "$login = 'reprint_push_admin';",
-      "$app_password = 'reprint-push-admin-app-password';",
-      "$slug = 'primary-admin';",
       '$stable_uuid = static function (string $seed): string { $hex = md5($seed); return substr($hex, 0, 8) . \'-\' . substr($hex, 8, 4) . \'-\' . substr($hex, 12, 4) . \'-\' . substr($hex, 16, 4) . \'-\' . substr($hex, 20, 12); };',
-      '$user = get_user_by(\'login\', $login);',
-      'if (!$user) { $user_id = wp_insert_user(array(\'user_login\' => $login, \'user_pass\' => wp_generate_password(32, true, true), \'user_email\' => sanitize_user($login, true) . \'@example.test\', \'display_name\' => $login, \'role\' => \'administrator\')); if (is_wp_error($user_id)) { throw new RuntimeException($user_id->get_error_message()); } } else { $user_id = (int) $user->ID; $wp_user = new WP_User($user_id); $wp_user->set_role(\'administrator\'); }',
-      '$uuid = $stable_uuid(\'reprint-push-lab-\' . $slug);',
-      '$app_id = $stable_uuid(\'reprint-push-lab-app-\' . $slug);',
+      "$login = 'reprint_push_unscoped_admin';",
+      "$app_password = 'reprint-push-unscoped-app-password';",
+      "$slug = 'unscoped-admin';",
+      '$user_id = wp_insert_user(array(\'user_login\' => $login, \'user_pass\' => wp_generate_password(32, true, true), \'user_email\' => sanitize_user($login, true) . \'@example.test\', \'display_name\' => $login, \'role\' => \'administrator\'));',
+      'if (is_wp_error($user_id)) { throw new RuntimeException($user_id->get_error_message()); }',
+      '$uuid = $stable_uuid(\'reprint-push-unscoped-\' . $slug);',
+      '$app_id = $stable_uuid(\'reprint-push-unscoped-app-\' . $slug);',
       '$items = get_user_meta($user_id, \'_application_passwords\', true);',
       '$items = is_array($items) ? array_values($items) : array();',
-      '$items = array_values(array_filter($items, static function ($item) use ($uuid, $app_id): bool { return !is_array($item) || ((string) ($item[\'uuid\'] ?? \'\') !== $uuid && (string) ($item[\'app_id\'] ?? \'\') !== $app_id); }));',
-      '$items[] = array(\'uuid\' => $uuid, \'app_id\' => $app_id, \'name\' => \'Reprint Push Package Smoke\', \'password\' => wp_hash_password(preg_replace(\'/[^a-zA-Z0-9]/\', \'\', $app_password)), \'created\' => time(), \'last_used\' => null, \'last_ip\' => null);',
+      '$items[] = array(\'uuid\' => $uuid, \'app_id\' => $app_id, \'name\' => \'Unscoped Application Password\', \'password\' => wp_hash_password(preg_replace(\'/[^a-zA-Z0-9]/\', \'\', $app_password)), \'created\' => time(), \'last_used\' => null, \'last_ip\' => null);',
       'update_user_meta($user_id, \'_application_passwords\', $items);',
     ].join(' '),
   });
@@ -214,6 +242,15 @@ function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
       "require_once ABSPATH . 'wp-admin/includes/plugin.php';",
       "$result = activate_plugin('reprint-push/reprint-push.php');",
       'if (is_wp_error($result)) { throw new RuntimeException($result->get_error_message()); }',
+    ].join(' '),
+  });
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      '$result = reprint_push_lab_rest_provision_push_application_password(array(\'login\' => \'reprint_push_admin\', \'appPassword\' => \'reprint-push-admin-app-password\', \'role\' => \'administrator\', \'slug\' => \'primary-admin\', \'name\' => \'Reprint Push Package Smoke\', \'createUser\' => true, \'updateRole\' => true));',
+      'if (empty($result[\'ok\'])) { throw new RuntimeException((string) ($result[\'message\'] ?? \'push credential provisioning failed\')); }',
     ].join(' '),
   });
   blueprint.steps.push({
