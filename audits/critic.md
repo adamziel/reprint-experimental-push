@@ -206,6 +206,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 
 - The push path is a real production endpoint and does not resolve to
   Playground, fixture, or copied lab internals.
+- Route-shape matches, packaged-plugin mounting, and `finalMatchesLocal`
+  outputs remain lab evidence only; they do not count as production mutation
+  proof even when the endpoint name looks correct.
 - The live remote is revalidated immediately before apply, and any stale
   retry starts from a fresh snapshot rather than reusing old approval or stale
   manual-review artifacts.
