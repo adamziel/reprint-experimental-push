@@ -393,11 +393,34 @@ remote state or require a plugin/theme driver that can prove semantic safety.
 
 ## Endpoints
 
-All endpoints use the existing Reprint API dispatch style:
+The endpoint names below are the protocol contract. A production
+implementation may expose them through the existing exporter dispatcher, a
+WordPress REST namespace, or both, but the authenticated signature must bind the
+actual received route and query string so a request cannot be replayed across
+transports.
+
+| Protocol endpoint | Existing exporter dispatcher | Production REST binding | Current Playground route-shape fixture |
+| --- | --- | --- | --- |
+| `push_preflight` | `POST /?reprint-api&endpoint=push_preflight` | `POST /wp-json/reprint/v1/push/preflight` | `/wp-json/reprint/v1/push/preflight` |
+| `push_snapshot_hashes` | `POST /?reprint-api&endpoint=push_snapshot_hashes` | `POST /wp-json/reprint/v1/push/snapshot-hashes` | `/wp-json/reprint/v1/push/snapshot` |
+| `push_plan_dry_run` | `POST /?reprint-api&endpoint=push_plan_dry_run` | `POST /wp-json/reprint/v1/push/dry-run` | `/wp-json/reprint/v1/push/dry-run` |
+| `push_batch_apply` | `POST /?reprint-api&endpoint=push_batch_apply` | `POST /wp-json/reprint/v1/push/batches` | `/wp-json/reprint/v1/push/apply` |
+| `push_journal` | `POST /?reprint-api&endpoint=push_journal` | `POST /wp-json/reprint/v1/push/journal` | `/wp-json/reprint/v1/push/db-journal` |
+| `push_recover` | `POST /?reprint-api&endpoint=push_recover` | `POST /wp-json/reprint/v1/push/recover` | `/wp-json/reprint/v1/push/recovery/inspect` |
+
+The REST bindings are the intended production route names for new
+implementations. The existing dispatcher remains valid for compatibility with
+the current pull API shape:
 
 ```text
 /?reprint-api&endpoint=<endpoint-name>
 ```
+
+The current Playground fixture routes are intentionally narrower: `/snapshot`
+returns the fixture snapshot used by the lab planner, `/apply` applies a single
+fixture batch, `/db-journal` exposes the lab DB journal, and
+`/recovery/inspect` is read-only. They are route-shape evidence, not permission
+to weaken the production method, hash-listing, journal, or recovery contracts.
 
 ### `push_preflight`
 
