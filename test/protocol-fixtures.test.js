@@ -195,3 +195,26 @@ test('push recovery inspect fixture distinguishes safe evidence from blocked rec
   assert.ok(decision.mutating_modes.finish.requires.includes('fresh live hashes'));
   assert.ok(decision.required_invariants.includes('inspect is read-only'));
 });
+
+test('push session journal proof binds the minted session to fencing and inspect-first recovery', () => {
+  const proof = readJson('fixtures/protocol/push-session-journal-proof.json');
+
+  assert.equal(proof.proof_id, 'push-session-journal-proof-one-remote-one-local');
+  assert.equal(proof.session.push_session, 'psh_01j00000000000000000000000');
+  assert.equal(proof.session.remote_site_id, 'remote-example');
+  assert.equal(proof.session.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(proof.session.identity_hash, 'sha256:remote-identity');
+  assert.equal(proof.live_evidence.snapshot_id, 'snap_01j00000000000000000000000');
+  assert.equal(proof.live_evidence.remote_changed_snapshot_id, 'snap_01j00000000000000000000001');
+  assert.equal(proof.live_evidence.same_remote_identity, true);
+  assert.equal(proof.journal_fencing.claim_generation, 4);
+  assert.equal(proof.journal_fencing.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.deepEqual(proof.recovery.blocked_when, [
+    'fresh live hashes do not match the journaled target',
+    'the journal cannot prove a safe finish or rollback',
+  ]);
+  assert.equal(proof.recovery.inspect_mode, 'inspect');
+  assert.equal(proof.recovery.mutates, false);
+  assert.ok(proof.required_invariants.includes('claim generation and lease expiry fence stale workers before mutation'));
+  assert.ok(proof.required_invariants.includes('journal inspection is read-only and inspect must come before mutating recovery'));
+});

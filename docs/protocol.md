@@ -238,6 +238,30 @@ merge base. This package is read-only evidence for later push planning:
 - the resource keys, hashes, and optional bodies observed during the pull
 - the pull-time remote coverage hash and any scope-completion proof that
   showed the base was complete enough for later mutation
+
+That persisted package is what `push_preflight` binds to the live remote. The
+server does not re-export the base during push; it only verifies that the
+stored pull package still identifies the same remote lineage and requested
+scope. The live remote hash listing is then used as fresh planning evidence,
+while the dry-run receipt and journal rows capture eligibility and replay
+proof without becoming a lock.
+
+The executor should treat the pull/export/import handoff as a chain of
+provenance:
+
+1. exporter scans the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. preflight binds that package to a live remote identity and a short-lived
+   push session
+4. snapshot hashes provide the fresh planning view for the requested scope
+5. dry-run uploads the canonical plan derived from base, local, and live
+6. apply revalidates the live remote before every batch and at the storage
+   boundary
+7. journal and recovery inspect read durable evidence only
+
+Recovery is inspect-first because the journal can prove ownership and liveness
+without proving safety. A recovery inspect result may be enough to choose the
+next mutating mode, but it never replaces fresh live hashes.
 - the durable journal row fields used for claim, lease, and fencing proof
 
 If the remote cannot recognize the site identity or the plan cannot prove

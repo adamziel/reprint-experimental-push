@@ -25,6 +25,7 @@ The normal sequence is:
 17. `push-topology.json`
 18. `push-flow.json`
 19. `push-recovery-decision.json`
+20. `push-session-journal-proof.json`
 
 Failure and recovery examples:
 
@@ -47,6 +48,9 @@ Failure and recovery examples:
 - `push-pull-mapping.json` shows how the persisted pull base package becomes
   immutable provenance for push preflight, snapshot listing, dry-run upload,
   batched apply, journal inspection, and recovery.
+- `push-session-journal-proof.json` shows the restart-proof tuple that binds
+  the minted push session to the journal claim, lease fence, and inspect-first
+  recovery path.
 - `push-flow.json` shows the ordered push stages from preflight through
   inspect-first recovery and makes the dry-run/apply split explicit.
 - `push-auth-headers.json` shows the required authentication header families

@@ -89,6 +89,22 @@ The mapping to the existing pull pipeline is one-way:
   storage boundary
 - push journal and push recover inspect read durable evidence only
 
+The executor should persist the following proof tuple so a restart can
+distinguish fresh planning evidence from replay evidence:
+
+- `base_manifest_id`, `base_manifest_hash`, and `base_coverage_hash` from the
+  persisted pull package
+- `push_session`, `remote_site_id`, and `identity_hash` from preflight
+- `snapshot_id`, `coverage_hash`, and `site_epoch` from the live hash listing
+- `plan_id`, `plan_hash`, and the accepted dry-run receipt hash
+- `journal_cursor`, claim generation, and lease expiry from apply or journal
+- the last recovery `mode`, `proof`, and `state`
+
+That tuple is not a lock. It is only the minimum restart evidence that lets
+the executor decide whether to resume, re-list the remote, or stop and
+inspect. If any of the live evidence is stale, the executor must discard the
+old apply authority and rebuild from a fresh `push_snapshot_hashes` call.
+
 Acceptance criteria for the reliable executor:
 
 - It never calls `push_batch_apply` without a persisted pull base, completed

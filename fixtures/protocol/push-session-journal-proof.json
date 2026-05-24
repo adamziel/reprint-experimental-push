@@ -1,0 +1,47 @@
+{
+  "proof_id": "push-session-journal-proof-one-remote-one-local",
+  "purpose": "binds the pushed session to journal fencing and inspect-first recovery",
+  "session": {
+    "push_session": "psh_01j00000000000000000000000",
+    "remote_site_id": "remote-example",
+    "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+    "identity_hash": "sha256:remote-identity",
+    "expires_at": "2026-05-24T00:10:00Z"
+  },
+  "live_evidence": {
+    "snapshot_id": "snap_01j00000000000000000000000",
+    "coverage_hash": "sha256:remote-coverage",
+    "site_epoch": "epoch:remote-example:142",
+    "remote_changed_snapshot_id": "snap_01j00000000000000000000001",
+    "same_remote_identity": true,
+    "drift_note": "the same remote may change after dry-run, so apply must refresh live evidence"
+  },
+  "journal_fencing": {
+    "journal_cursor": "journal:dry_01j00000000000000000000000:1",
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "required_proof": [
+      "claim generation fences older workers",
+      "lease expiry stops stale apply replay",
+      "journal inspection is read-only"
+    ]
+  },
+  "recovery": {
+    "inspect_mode": "inspect",
+    "mutates": false,
+    "proof": "journal-and-live-hashes-reviewed",
+    "next": "finish|rollback|retry|block",
+    "blocked_when": [
+      "fresh live hashes do not match the journaled target",
+      "the journal cannot prove a safe finish or rollback"
+    ]
+  },
+  "required_invariants": [
+    "preflight binds the push session to the stored pull base and live remote identity",
+    "dry-run eligibility never replaces apply-time live revalidation",
+    "claim generation and lease expiry fence stale workers before mutation",
+    "journal inspection is read-only and inspect must come before mutating recovery",
+    "live drift between dry-run and apply must be detected by fresh apply-time evidence"
+  ]
+}
