@@ -2075,6 +2075,26 @@ test('replaying a completed plan requires a complete matching journal envelope',
   assert.equal(JSON.stringify(result.site), after);
 });
 
+test('stale completed replay blocks with journal and remote artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.db.wp_posts['ID:2'].post_title = 'Drifted after completion';
+
+  const error = captureError(() => applyPlan(driftedRemote, plan, { journal: completed.journal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Drifted after completion');
+});
+
 test('partial remote mutation is a blocked recovery state with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
