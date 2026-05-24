@@ -458,7 +458,7 @@
           <span class="pill">Playground labs passing</span>
           <span class="pill">DB recovery labs passing</span>
           <span class="pill">Storage-boundary file update/create/delete passing</span>
-          <span class="pill">Production push pending</span>
+          <span class="pill">Production push blocked by missing evidence</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
@@ -473,8 +473,8 @@
         <span>passing Node lab scenarios; Playground smokes cover WordPress-facing cases</span>
       </div>
       <div class="metric">
-        <strong>11</strong>
-        <span>evidence docs covering protocol, topology, recovery, critique, and progress</span>
+        <strong>13</strong>
+        <span>linked docs and audits covering protocol, topology, recovery, critique, and progress</span>
       </div>
       <div class="metric">
         <strong>1</strong>
@@ -528,10 +528,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>Recovery evidence improved: stale-claim retry and fixture upload file update/create/delete guards now have local Playground proof.</span></li>
-            <li><strong>Not going well</strong><span>The project is still lab-scoped. Production Reprint mutation, auth binding, durable journal, and arbitrary plugin data safety are pending.</span></li>
-            <li><strong>Progress change</strong><span>No-data-loss recovery moved up; reliable executor and fast paths are mostly flat until production-shaped writes exist.</span></li>
-            <li><strong>Next nudge</strong><span>Build the smallest production-shaped source-site mutation slice: authenticated dry-run, one guarded DB row, one guarded file, DB journal, replay, and conflict refusal.</span></li>
+            <li><strong>Going well</strong><span>Lab proof is broader: signed authenticated routes, DB idempotency/recovery slices, JIT drift refusal, storage-boundary DB/file guards, and fixture plugin/data atomicity are linked.</span></li>
+            <li><strong>Not going well</strong><span>Production Reprint mutation, credential binding, durable production journal, storage durability, and arbitrary plugin data safety are still blocked by missing evidence.</span></li>
+            <li><strong>Progress change</strong><span>Recovery and guarded writes moved up. Reliable executor moved up in the lab only. Fast paths remain flat. Plugin data improved only for allowlisted fixtures.</span></li>
+            <li><strong>Next nudge</strong><span>Build the smallest production-shaped source-site mutation slice: authenticated dry-run, one guarded DB row, one guarded file, DB journal, replay, conflict refusal, and recovery inspect.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -543,6 +543,8 @@
             <li><a href="docs/approach-scorecard.md">Approach scorecard</a> ranks guarded three-way push and ForkPress-style merge highest.</li>
             <li><a href="docs/protocol.md">Protocol sketch</a> defines proposed push preflight, hashes, dry-run, apply, journal, and recovery endpoints.</li>
             <li><a href="docs/playground-topology.md">Playground topology</a> summarizes snapshots, guarded apply, REST/auth labs, DB recovery, storage guards, plugin fixtures, and JSONL journal evidence.</li>
+            <li><a href="audits/objective-audit.md">Objective audit</a> maps current proof to release blockers.</li>
+            <li><a href="audits/critic.md">Critic audit</a> lists hidden data-loss modes and missing production proof.</li>
             <li><a href="docs/supervisor-feedback.md">Supervisor feedback</a> gives short nudges on trend, risks, and the next proof gap.</li>
             <li><a href="docs/progress-log.md">Progress log</a> records dated status entries and links to evidence.</li>
           </ul>

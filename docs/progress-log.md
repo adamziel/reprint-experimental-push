@@ -469,6 +469,24 @@ linked implementation artifacts.
   HTTP mutation, generic WordPress filesystem safety proof, or a production
   crash proof.
 
+## 2026-05-24 - Supervisor Evidence Refresh
+
+- Updated [supervisor feedback](supervisor-feedback.md) so the short feedback
+  loop reflects the fuller evidence set: signed authenticated lab routes, DB
+  journal replay/finalization/stale-claim slices, JIT drift refusal,
+  storage-boundary DB/file guards, fixture forms data, and fixture plugin
+  install atomicity.
+- Updated [progress.html](../progress.html) to keep the first screen concise,
+  show the visible May 24, 2026 last-updated date, and link to detailed
+  evidence in the progress log, supervisor feedback, objective audit, critic
+  audit, protocol, topology, scenario matrix, and scorecard instead of
+  embedding long audit text.
+- Current status remains conservative: recovery and guarded writes moved up in
+  local Playground lab evidence; reliable executor moved up only in lab-shaped
+  auth/protocol evidence; fast paths remain design-level; arbitrary plugin
+  semantics and production Reprint source mutation remain blocked by missing
+  evidence.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | What changed | Next proof |

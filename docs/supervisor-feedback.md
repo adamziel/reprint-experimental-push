@@ -5,7 +5,59 @@ Last updated: 2026-05-24
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-24
+## 2026-05-24 - Evidence Refresh
+
+### Going Well
+
+- The evidence trail is more consistent. The progress page, progress log,
+  objective audit, and critic audit all say the same thing: useful lab proof,
+  no production push claim.
+- Lab coverage improved around hard failure boundaries: DB journal replay,
+  missing-commit finalization, all-old stale-claim retry, JIT drift refusal,
+  and storage-boundary DB/file refusal now have local Playground evidence.
+- Auth-shaped source mutation is better exercised in the lab: signed
+  authenticated preflight/dry-run/apply, auth-bound receipts, idempotency
+  replay, and conflict refusal are documented.
+- Fixture plugin/data safety is less hand-wavy: forms fixture data, one custom
+  table driver, and hard-coded fixture plugin install atomicity now have
+  allowlisted proof.
+
+### Not Going Well
+
+- Production source-site mutation is still blocked by missing evidence. There
+  is no production Reprint endpoint, production credential binding, production
+  durable audit record, or production storage guard.
+- Recovery is still lab-scoped. SQLite/host-mount, JSONL model, and option/DB
+  lab journals do not prove production DB durability, filesystem `fsync`,
+  locks, leases, rollback, or exactly-once writes.
+- Plugin safety remains allowlist-scoped. Arbitrary serialized options,
+  activation hooks, custom tables, generated data, and rollback are still
+  blocked by missing validators.
+- Fast paths are still design-level. There are no large-site transfer
+  benchmarks, chunk cursors, memory ceilings, or resume proofs.
+
+### Progress Delta
+
+| Lane | Direction | Nudge |
+| --- | --- | --- |
+| No-data-loss invariants | Up | Owner: no-data-loss invariants. Gap: WordPress graph identity. Next test: post, postmeta, attachment, taxonomy, and remote drift. |
+| No-data-loss recovery | Up | Owner: no-data-loss recovery. Gap: production durability. Next test: kill apply at each DB/file boundary and classify old/new/blocked. |
+| Reliable executor | Up in lab, blocked for production | Owner: reliable executor. Gap: real Reprint endpoint and credential binding. Next test: signed preflight, dry-run, apply, replay, and conflict refusal. |
+| Plugin data | Up in fixtures, blocked generally | Owner: no-data-loss invariants. Gap: arbitrary plugin state. Next test: one real plugin validator/driver beyond the forms fixture. |
+| Fast paths | Flat | Owner: fast paths. Gap: executable chunking proof. Next test: large upload/table benchmark with receipts, preconditions, journals, and recovery. |
+| Independent audit and critic | Flat | Owner: independent auditor and critic. Gap: live integration behavior. Next test: re-audit the first production-shaped source mutation slice. |
+| Progress publisher | Up | Owner: progress publisher and feedback supervisor. Gap: page/log drift. Next test: keep one-screen status linked to detailed caveats. |
+
+### Next Supervisor Nudge
+
+The next milestone should be the smallest production-shaped mutation slice:
+authenticated preflight, read-only dry run, one guarded DB row update, one
+guarded file write, DB journal evidence, same-key replay, different-body
+conflict refusal, and recovery inspect over a real local WordPress source
+boundary. Treat every broader claim as blocked by missing evidence until that
+slice exists.
+
+## 2026-05-24 - Initial Feedback
 
 ### Going Well
 
