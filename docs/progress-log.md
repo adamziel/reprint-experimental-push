@@ -16,8 +16,8 @@ linked implementation artifacts.
   checks, stale remote dependency blocking, and precondition hashes. Evidence:
   [src/planner.js](../src/planner.js).
 - The current applicator validates preconditions, stages mutations, rejects
-  non-ready plans, and returns journal/recovery evidence for old remote, fully
-  updated remote, and blocked recovery cases. Evidence:
+  non-ready plans, and returns in-memory lab journal/recovery evidence for old
+  remote, fully updated remote, and blocked recovery cases. Evidence:
   [src/apply.js](../src/apply.js) and
   [docs/recovery/apply-journal.md](recovery/apply-journal.md).
 - `scripts/playground/smoke-blueprints.sh` passed with three no-server
@@ -78,7 +78,7 @@ linked implementation artifacts.
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
 | Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md) | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks |
-| Recovery boundaries | 14% | Journal/recovery artifacts in [src/apply.js](../src/apply.js) and tests | Durable on-disk journal, process-kill tests, storage-level recovery proof |
+| Recovery boundaries | 14% | In-memory lab journal/recovery evidence in [src/apply.js](../src/apply.js) and tests | Durable on-disk journal, process-kill tests, storage-level recovery proof |
 | Reliable executor and protocol | 18% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, and fixture-scoped Playground protocol smoke | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |

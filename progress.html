@@ -448,13 +448,13 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">14%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 14 percent"><div class="fill green" style="width:14%"></div></div>
-          <p class="note">The applicator now returns journal and recovery-state artifacts for old remote, fully updated remote, and blocked recovery cases. Durable on-disk journals and process-kill recovery remain pending.</p>
+          <p class="note">The applicator now returns in-memory lab journal/recovery evidence for old remote, fully updated remote, and blocked recovery cases. Durable on-disk journals and process-kill recovery remain pending.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">18%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 18 percent"><div class="fill amber" style="width:18%"></div></div>
-          <p class="note">The CLI can plan and apply deterministic JSON snapshots, the proposed Reprint push protocol has request/response fixtures, and Playground snapshot extraction is automated. A lab-only fixture endpoint now verifies read-only dry-run, required receipt-backed apply, missing/tampered receipt refusal, stale rejection, and conflict refusal; the production Reprint HTTP mutation endpoint and durable audit records are pending.</p>
+          <p class="note">The CLI can plan and apply deterministic JSON snapshots, the proposed Reprint push protocol has request/response fixtures, and Playground snapshot extraction is automated. A lab-only fixture endpoint now verifies read-only dry-run, apply requiring a supplied dry-run receipt, MISSING_DRY_RUN_RECEIPT before mutation when missing, RECEIPT_MISMATCH before mutation when tampered, stale rejection, conflict refusal, and hash-bound receipt evidence; the production Reprint HTTP mutation endpoint, signed/auth-bound receipts, and durable audit records are pending.</p>
         </div>
 
         <div class="lane">

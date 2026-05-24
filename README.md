@@ -37,12 +37,14 @@ snapshots, creates a ready plan with `remote=base`, applies that plan inside a
 fresh Playground source site, and verifies WordPress-visible posts, options, and
 files after apply. The Playground protocol smoke also exercises a fixture-scoped
 dry-run/apply endpoint: dry-run is read-only by same-process before/after
-readback, apply with a supplied dry-run receipt mutates the five expected
-fixture resources and verifies hashes, stale apply fails with
-`PRECONDITION_FAILED`, missing or tampered receipts fail before mutation, and
-non-ready conflict plans fail with `PLAN_NOT_READY`.
+readback, apply requires a supplied dry-run receipt before it can mutate the
+five expected fixture resources, and the endpoint verifies hashes after apply.
+Missing receipts fail before mutation with `MISSING_DRY_RUN_RECEIPT`, tampered
+receipts fail before mutation with `RECEIPT_MISMATCH`, stale apply fails with
+`PRECONDITION_FAILED`, and non-ready conflict plans fail with `PLAN_NOT_READY`.
 This remains a lab harness, not production Reprint HTTP source mutation support.
-Its receipt and journal checks are fixture-scoped lab audit evidence, not a
+Its receipts are hash-bound to plan, mutation, precondition, and resource
+evidence, and its journal checks are fixture-scoped lab audit evidence, not a
 durable production journal, auth model, or signing scheme.
 
 The lab CLI works on three snapshots:
