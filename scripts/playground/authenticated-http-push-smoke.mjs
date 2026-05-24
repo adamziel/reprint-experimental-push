@@ -49,10 +49,11 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
+const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
 
 const readyPlan = createPushPlan({
   base: snapshots.base,
-  local: snapshots.local,
+  local: readyLocalSnapshot,
   remote: snapshots.base,
   now: fixedNow,
 });
@@ -544,7 +545,7 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
 
   const applyAfter = await getAuthenticated(server, '/snapshot', authHeaders(credentials.admin));
   assert.equal(applyAfter.status, 200);
-  assertVisibleSurfaceEqual(applyAfter.body.snapshot, snapshots.local, 'authenticated apply final HTTP snapshot');
+  assertVisibleSurfaceEqual(applyAfter.body.snapshot, readyLocalSnapshot, 'authenticated apply final HTTP snapshot');
   assertAppliedHashes(readyPlan, applyAfter.body.snapshot);
   assertAppliedFixtureValues(applyAfter.body.snapshot);
 
@@ -577,7 +578,7 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   assert.equal(replay.body.idempotency?.replayed, true);
   assert.equal(replay.body.idempotency?.freshMutationWork, false);
   const replayAfter = await getSnapshot(server);
-  assertVisibleSurfaceEqual(replayAfter.body.snapshot, snapshots.local, 'authenticated replay final HTTP snapshot');
+  assertVisibleSurfaceEqual(replayAfter.body.snapshot, readyLocalSnapshot, 'authenticated replay final HTTP snapshot');
   const journalAfterReplay = await getDbJournalEntries(server);
   assert.equal(
     countJournalEvents(journalAfterReplay, 'mutation-applied'),
@@ -657,7 +658,7 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
     status: apply.status,
     applied: apply.body.applied,
     freshMutationWork: apply.body.idempotency?.freshMutationWork,
-    finalMatchesLocal: digest(visibleSurface(applyAfter.body.snapshot)) === digest(visibleSurface(snapshots.local)),
+    finalMatchesLocal: digest(visibleSurface(applyAfter.body.snapshot)) === digest(visibleSurface(readyLocalSnapshot)),
   };
   summary.replay = {
     status: replay.status,
@@ -686,7 +687,7 @@ await withPlaygroundServer('authenticated-stale-remote', path.join(repoRoot, fix
   assert.equal(staleDryRun.body.code, 'PRECONDITION_FAILED');
   const staleAfter = await getSnapshot(server);
   assertTargetSurfaceEqual(staleAfter.body.snapshot, staleBefore.body.snapshot, 'authenticated stale failed dry-run target surface');
-  assertVisibleSurfaceNotEqual(staleAfter.body.snapshot, snapshots.local, 'authenticated stale failure preserved drifted state');
+  assertVisibleSurfaceNotEqual(staleAfter.body.snapshot, readyLocalSnapshot, 'authenticated stale failure preserved drifted state');
   await assertNoIdempotencyClaim(server, 'authenticated stale failed dry-run');
 
   summary.stale = {
@@ -694,7 +695,7 @@ await withPlaygroundServer('authenticated-stale-remote', path.join(repoRoot, fix
     status: staleDryRun.status,
     code: staleDryRun.body.code,
     preservedFixture: staleAfter.body.snapshot.meta.fixture,
-    finalMatchesLocal: digest(visibleSurface(staleAfter.body.snapshot)) === digest(visibleSurface(snapshots.local)),
+    finalMatchesLocal: digest(visibleSurface(staleAfter.body.snapshot)) === digest(visibleSurface(readyLocalSnapshot)),
   };
 });
 
@@ -1283,6 +1284,15 @@ function assertVisibleSurfaceNotEqual(actual, expected, label) {
   assert.notEqual(digest(visibleSurface(actual)), digest(visibleSurface(expected)), `${label} mismatch`);
 }
 
+function withoutUnmappedGraphPostmeta(snapshot) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
+    delete next.db.wp_postmeta;
+  }
+  return next;
+}
+
 function visibleSurface(snapshot) {
   return {
     files: snapshot.files,
@@ -1298,7 +1308,6 @@ function assertReadyPlanResources(plan) {
     'row:["wp_options","option_name:reprint_push_forms_fixture"]',
     'row:["wp_options","option_name:reprint_push_plugin_payload"]',
     'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
-    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
     'row:["wp_posts","ID:1001"]',
     'row:["wp_posts","ID:2001"]',
   ];

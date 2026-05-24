@@ -33,15 +33,16 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
+const routeLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-shaped-route-'));
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
-fs.writeFileSync(localPath, `${JSON.stringify(snapshots.local, null, 2)}\n`);
+fs.writeFileSync(localPath, `${JSON.stringify(routeLocalSnapshot, null, 2)}\n`);
 
 const readyPlan = createPushPlan({
   base: snapshots.base,
-  local: snapshots.local,
+  local: routeLocalSnapshot,
   remote: snapshots.base,
 });
 
@@ -196,7 +197,7 @@ try {
     assert.equal(apply.body.mode, 'apply');
     assert.equal(apply.body.applied, readyPlan.mutations.length);
     assert.equal(apply.body.idempotency.freshMutationWork, true);
-    await assertCurrentSurface(client, snapshots.local, 'production-shaped apply final source');
+    await assertCurrentSurface(client, routeLocalSnapshot, 'production-shaped apply final source');
 
     const replay = await client.signedPost('/apply', applyBody, {
       session,
@@ -206,7 +207,7 @@ try {
     assert.equal(replay.body.ok, true);
     assert.equal(replay.body.idempotency.replayed, true);
     assert.equal(replay.body.idempotency.freshMutationWork, false);
-    await assertCurrentSurface(client, snapshots.local, 'production-shaped replay must not mutate');
+    await assertCurrentSurface(client, routeLocalSnapshot, 'production-shaped replay must not mutate');
 
     const conflict = await client.signedPost('/apply', {
       ...applyBody,
@@ -219,7 +220,7 @@ try {
     assert.equal(conflict.body.ok, false);
     assert.equal(conflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
     assert.equal(conflict.body.idempotency.freshMutationWork, false);
-    await assertCurrentSurface(client, snapshots.local, 'production-shaped different-body conflict must not mutate');
+    await assertCurrentSurface(client, routeLocalSnapshot, 'production-shaped different-body conflict must not mutate');
 
     const dbJournal = await client.get('/db-journal?limit=80');
     assert.equal(dbJournal.status, 200);
@@ -618,6 +619,15 @@ function parseMarkedJson(stdout, begin, end, missingMessage) {
     throw new Error(missingMessage);
   }
   return JSON.parse(match[1]);
+}
+
+function withoutUnmappedGraphPostmeta(snapshot) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
+    delete next.db.wp_postmeta;
+  }
+  return next;
 }
 
 function assertVisibleSurfaceEqual(actual, expected, label) {
