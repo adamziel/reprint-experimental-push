@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildBenchmarkModel,
   DEFAULT_LIMITS,
+  FAST_PATH_GATES,
   MIB,
   SAFE_FAST_PATHS,
   SAFE_SPEEDUP_AREAS,
@@ -28,6 +29,7 @@ test('safety contract covers required speedup areas and terminal states', () => 
   const model = buildBenchmarkModel();
 
   assert.equal(model.safetyContract.priority, 'fast-fourth');
+  assert.deepEqual(model.fastPathGates, FAST_PATH_GATES);
   assert.deepEqual(model.safeSpeedupAreas, SAFE_SPEEDUP_AREAS);
   assert.deepEqual(model.safeFastPaths, SAFE_FAST_PATHS);
 
@@ -50,6 +52,7 @@ test('safety contract covers required speedup areas and terminal states', () => 
 
 test('safe fast path proposals retain proof obligations', () => {
   const model = buildBenchmarkModel();
+  const gateIds = FAST_PATH_GATES.map((gate) => gate.id).sort();
   const fastPathByArea = new Map(
     model.safeFastPaths.map((fastPath) => [fastPath.area, fastPath]),
   );
@@ -64,6 +67,15 @@ test('safe fast path proposals retain proof obligations', () => {
     assert.ok(fastPath.allowedShortcut, `missing allowed shortcut for ${fastPath.area}`);
     assert.ok(fastPath.visibilityBoundary, `missing visibility boundary for ${fastPath.area}`);
     assert.ok(fastPath.failureEvidence, `missing recovery evidence for ${fastPath.area}`);
+    assert.deepEqual(
+      Object.keys(fastPath.gateProofs).sort(),
+      gateIds,
+      `missing gate proof for ${fastPath.area}`,
+    );
+    for (const [gateId, proof] of Object.entries(fastPath.gateProofs)) {
+      assert.equal(typeof proof, 'string', `gate ${gateId} proof must be text`);
+      assert.ok(proof.length > 20, `gate ${gateId} proof is too weak for ${fastPath.area}`);
+    }
     assert.equal(fastPath.bypassesLivePreconditions, false);
     assert.equal(fastPath.splitsAtomicGroup, false);
     assert.equal(fastPath.publishesStagedDataEarly, false);
@@ -221,13 +233,17 @@ test('parallelism limits and backpressure budgets are explicit', () => {
 
 test('rejected fast paths cover precondition bypasses and atomic group splits', () => {
   const model = buildBenchmarkModel();
+  const gateIds = new Set(FAST_PATH_GATES.map((gate) => gate.id));
   const rejectedById = new Map(
     model.rejectedFastPaths.map((fastPath) => [fastPath.id, fastPath]),
   );
 
+  assert.ok(model.rejectedFastPaths.every((fastPath) => gateIds.has(fastPath.rejectedGate)));
   assert.equal(rejectedById.get('fresh-dry-run-authorizes-apply').violates[0], 'live-preconditions');
+  assert.equal(rejectedById.get('fresh-dry-run-authorizes-apply').rejectedGate, 'live');
   assert.ok(rejectedById.get('remote-index-authorizes-mutation').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
+  assert.equal(rejectedById.get('split-plugin-install').rejectedGate, 'group');
   assert.ok(
     rejectedById.get('skip-plugin-validators-on-package-hash').violates.includes('plugin-preconditions'),
   );
