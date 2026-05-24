@@ -26,6 +26,8 @@ mechanism, but it is still only a guardrail. It does not create the required
 release boundary, so the repo can still present a green default test run while
 the strongest claims remain skipped. In other words, the suite can reject
 unsafe release claims, but it does not yet enforce the full release claim.
+That means the current test story is strongest as a blocker generator, not as
+release-grade proof of no data loss, reliability, or speed.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -78,6 +80,8 @@ verification on 2026-05-25:
 A release claim still needs retained run artifacts for the full long smoke set
 and, more importantly, proof at the production-backed Reprint source-mutation
 boundary.
+Without that boundary proof, the current test suite cannot support a claim of
+no data loss, reliability, or speed for a live source WordPress push.
 
 The default suite passed locally on 2026-05-25, but it is still mostly model
 proof plus fixture-scoped lab evidence. Passing it does not close the
