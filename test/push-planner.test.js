@@ -1454,6 +1454,40 @@ test('preserves remote-only plugin removals while still applying independent loc
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('keeps remote-only plugin removals while a live-preconditioned delete and matching independent edit stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  const remote = baseSite();
+  remote.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const editDecision = decisionFor(plan, 'file:wp-content/themes/theme/style.css');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(mutationFor(plan, 'file:index.php').action, 'delete');
+  assert.equal(mutationFor(plan, 'file:index.php').changeKind, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+});
+
 test('stops stale local plugin file edits when the remote removed that plugin', () => {
   const base = baseSite();
   const local = baseSite();
