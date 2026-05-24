@@ -2281,6 +2281,69 @@ test('durable recovery stays within old remote, fully updated remote, or blocked
   assert.equal(blocked.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Drifted after completion');
 });
 
+test('durable pre-commit failures persist old-remote recovery evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const failureScenarios = [
+    {
+      label: 'before mutation',
+      options: { failBeforeMutation: true },
+      expectedJournalStatus: 'opened',
+    },
+    {
+      label: 'after staging',
+      options: { failAfterStaging: true },
+      expectedJournalStatus: 'staged',
+    },
+    {
+      label: 'after dependency validation',
+      options: { failAfterDependencyValidation: true },
+      expectedJournalStatus: 'dependencies-validated',
+    },
+  ];
+
+  for (const scenario of failureScenarios) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        ...scenario.options,
+        durableJournal,
+      }));
+    durableJournal.close();
+
+    const persisted = readRecoveryJournal(journalPath);
+
+    assert.ok(error instanceof PushPlanError, scenario.label);
+    assert.equal(JSON.stringify(remote), before, scenario.label);
+    assert.equal(error.details.recovery.status, 'old-remote', scenario.label);
+    assert.equal(
+      error.details.recovery.artifacts.journal.status,
+      scenario.expectedJournalStatus,
+      scenario.label,
+    );
+    assert.equal(
+      persisted.records[persisted.records.length - 1].type,
+      'recovery-state',
+      scenario.label,
+    );
+    assert.equal(
+      persisted.records[persisted.records.length - 1].state,
+      'old-remote',
+      scenario.label,
+    );
+    assert.equal(persisted.integrity.status, 'ok', scenario.label);
+  }
+});
+
 test('atomic apply only accepts the documented recovery states', () => {
   const base = baseSite();
   const local = baseSite();
