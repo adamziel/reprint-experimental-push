@@ -1,9 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:10:30 CEST
+Last updated: 2026-05-25 01:11:13 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 01:11:13 CEST - Supervisor Snapshot
+
+- Going well: the visible page and log still agree, and the first screen stays compact.
+- Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
+- Progress change: timestamp-only refresh; no evidence moved a gate.
+- Next nudge: keep each lane tied to one production-backed test and do not overstate readiness.
 
 ## 2026-05-25 01:10:30 CEST - Supervisor Snapshot
 
