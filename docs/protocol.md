@@ -212,6 +212,29 @@ and push. The server should expose a stable `site_id` plus hashed evidence:
 The executor may update stored remote URLs after an explicit user action, but it
 must not silently retarget a push to a different `site_id`.
 
+### Pull Base Binding
+
+The push protocol consumes the persisted pull base as its merge base. The pull
+pipeline must therefore store enough evidence for later push planning:
+
+- `base_manifest_id`
+- `base_manifest_hash`
+- `base_coverage_hash`
+- `remote_site_id`
+- `pull_protocol_version`
+- the resource keys, hashes, and optional bodies that were observed during the
+  pull
+
+That persisted base is the local truth source for:
+
+- which remote site was originally pulled
+- which resource keys existed at pull time
+- which hashes are the expected base values for a three-way push plan
+- which scopes were scanned completely enough to permit later mutation
+
+Push planning must stop if the stored base package is missing, corrupt,
+incomplete for the requested scope, or bound to a different remote identity.
+
 ### Idempotency
 
 `X-Reprint-Push-Idempotency-Key` is required for `push_plan_dry_run`,
@@ -243,6 +266,8 @@ A coverage manifest includes:
 - cursor completion proof for every requested scope
 - excluded generated/cache/runtime resources with policy reasons
 - blocked unknown resources that make the plan ineligible for apply
+- a complete remote hash listing for the requested scope, including absent
+  entries for base keys when requested
 
 Dry-run must reject a plan whose `remote_coverage_hash` does not match the
 accepted remote hash listing or whose requested mutations depend on resources
