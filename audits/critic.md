@@ -1,5 +1,41 @@
 # Critic Audit
 
+## 2026-05-24 Production Push Claim Gate
+
+Verdict: the project must not claim production-grade push support yet. The
+current design is a useful executable safety model with local Playground and
+JSON-model evidence, but the proof stops before arbitrary live WordPress source
+mutation.
+
+The required changes before a production-grade claim are:
+
+| Gate | Data-loss scenario | Missing proof | Required change |
+| --- | --- | --- | --- |
+| Production Reprint mutation endpoint | A lab `/reprint-push-lab` route accepts a mutation path that production docs later treat as real Reprint push. | No production route proves push-scoped credentials, read-only export secret rejection, TLS policy, nonce/session cleanup, durable audit rows, and operator identity outside the lab namespace. | Implement production Reprint push route names and auth binding, then run signed preflight, dry-run, apply, replay, different-body conflict, and journal inspection through them. |
+| Complete coverage manifest | A ready plan changes plugin code while the source has unlisted HPOS tables, Action Scheduler rows, mu-plugin state, generated assets, multisite tables, or plugin custom tables. | No signed coverage artifact proves every affected core, plugin, theme, upload, generated-file, schema, user/order, and multisite surface was scanned or explicitly blocked. | Make incomplete/unknown coverage a hard block and bind completed coverage hashes into dry-run and apply evidence. |
+| Storage-boundary writes | A remote edit lands after dry-run or after the initial JIT hash, but before the final SQL, filesystem, plugin activation, schema, or generated-file write. | Current guarded writes cover fixture DB updates and fixture upload file writes only; there is no production MySQL/InnoDB, filesystem `fsync`, lock/lease, insert/delete/schema, activation, or arbitrary-file CAS proof. | Add production storage guards for each supported write kind and kill/race tests that prove stale writes affect zero targets and preserve the remote. |
+| Cross-store recovery | A plugin or theme update publishes files, DB rows, activation state, options, custom tables, and generated files, then the host dies between boundaries. | No production journal classifies every affected target as old, new, or blocked after crashes at each file, DB, activation, and generated-resource boundary. | Build a durable production journal plus recovery inspector and run a kill matrix at every durable boundary; never report success unless final hashes and commit records agree. |
+| Reviewed conflict resolution | A user manually fixes a conflict in wp-admin or chooses "take local" for a resource changed on the source, then retries with stale evidence. | No reviewed-resolution artifact preserves the remote value, base/local/remote diffs, reviewer identity, selected action, retry state, and fresh live revalidation. | Treat manual resolution as a new auditable plan: preserve remote evidence, refresh the source snapshot, replan, and revalidate before mutation. |
+| Plugin semantic closure | An allowlisted plugin option is pushed while the plugin also depends on serialized counters, cron rows, generated CSS, roles, migrations, custom tables, or activation side effects. | Fixture allowlists and owner markers do not prove the complete plugin resource graph, supported operations, side effects, version constraints, rollback/block behavior, or redaction rules. | Define plugin validator/driver contracts and prove at least one real plugin beyond fixtures; unknown plugin state must preserve remote and stop. |
+| WordPress graph identity | Local creates posts, attachments, terms, users, comments, or orders whose IDs or paths collide with source-side objects created after pull. | No ID allocation, remapping, reference rewrite, serialized block/postmeta/menu/GUID rewrite, or referential-integrity validator exists across the WordPress graph. | Add graph-aware identity and reference handling or block graph-mutating pushes that cannot prove safe remapping. |
+| Semantic independence | Local code or template changes are applied while remote-only options, metadata, rewrite rules, taxonomy relations, or generated caches remain "non-overlapping" by key but are reinterpreted by the new code. | No dependency graph or compatibility validator proves preserved remote-only resources remain valid after local code/content changes. | Promote coupled resources into atomic groups or require validators that explicitly approve preserved remote-only state. |
+| Audit and redaction | A blocked recovery artifact contains customer orders, form entries, membership rows, private uploads, API keys, or absolute paths while the operator needs enough evidence to retry safely. | Current redaction checks are fixture/forbidden-string based; there is no production allowlist schema, retention policy, privacy review, or operator report contract. | Define production audit schemas with stable hashes, redacted diffs, retention, and operator-facing recovery reports. |
+| Release test suite | Documentation cites many passing smokes and the project gradually sounds production-safe. | The strongest Playground smokes are optional/manual, and no single release gate runs production-shaped endpoint/auth/storage/recovery/plugin/performance proof. | Create a release suite that runs the production-shaped push path, crash/race matrix, plugin validator fixtures, redaction assertions, and large-site benchmark before any public reliability claim. |
+
+Source comparison: Reprint gives resumable stages and transport budgets, but
+push needs guarded mutation and recovery at every write boundary. ZS-Sync gives
+scanner/cursor vocabulary, but coverage is planning evidence only and cannot
+authorize mutation. ForkPress is the closest reliability target because it
+requires reviewed conflict records, plugin validators, revalidation, and
+old/new/blocked recovery artifacts; the current design borrows those words but
+does not yet prove that lifecycle in production.
+
+Reliability language should stay narrow. "Atomic", "reliable", "recovery", and
+"no data loss" are acceptable only when scoped to the exact lab or fixture that
+proved them. The project can claim executable safety-model progress; it cannot
+claim arbitrary production WordPress source push, general plugin safety,
+production atomicity, or production no-data-loss push.
+
 ## 2026-05-24 Follow-Up Verdict
 
 I rechecked the current design notes, source notes, scenario matrix, recovery
