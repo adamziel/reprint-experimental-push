@@ -176,7 +176,10 @@ credentials, production DB/file durability, real concurrent WordPress traffic,
 or arbitrary plugin data. It also does not prove no-data-loss at the WordPress
 graph boundary: the default suite can show that selected modeled resources are
 preserved, but not that a live posts/postmeta/attachment/taxonomy/plugin graph
-survives a failed push without silent loss or duplication.
+survives a failed push without silent loss or duplication. It does not prove
+reliability at the live boundary because it lacks production crash, restart,
+lease, and fencing evidence. It does not prove speed because the benchmark
+tests refuse unsupported claims rather than measure a production path.
 In release terms, the default suite is a safety filter, not a production-safe
 proof. It can justify blocking bad changes; it cannot justify shipping the
 live-source no-data-loss, reliability, or speed claims by itself.
@@ -222,7 +225,7 @@ invocation and can be skipped while `npm test` remains green.
 
 ### Test Gaps That Block Release Claims
 
-1. **The strongest evidence is not wired into a release suite.** There is no
+1. **The strongest evidence is not wired into a release gate.** There is no
    CI workflow or release wrapper in the repository. The default `npm test`
    command does not run any Playground smoke, and the shorter
    `npm run test:playground` path stops at plan/apply/protocol even though the
@@ -231,9 +234,11 @@ invocation and can be skipped while `npm test` remains green.
    CLI, production-shaped route/package, mid-apply drift, and recovery. That
    means the strongest proof is still manual opt-in, not release-gated. There
    is no single enforced command that fails closed when mandatory auth,
-   storage, recovery, plugin, graph, and performance checks are skipped.
+   storage, recovery, plugin, graph, performance, and crash-boundary checks
+   are skipped.
    A release claim cannot rely on tests that only pass when somebody remembers
-   to run the right scripts.
+   to run the right scripts, and the current suite therefore cannot function as
+   the final release gate for the objective.
 
 2. **The default suite is proof of invariants, not proof of release readiness.**
    `npm test` is useful because it proves the model and several fixture
