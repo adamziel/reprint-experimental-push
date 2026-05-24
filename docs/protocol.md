@@ -21,6 +21,18 @@ API. Pull remains the way a local site gets its merge base. Push is allowed
 only when the executor can prove that the pull base, the edited local site, and
 the live remote site still form a safe three-way plan.
 
+Push is split into a read-only planning phase and a write phase:
+
+- `push_preflight` authenticates and negotiates session and capability state.
+- `push_snapshot_hashes` records the live remote hash view used for planning.
+- `push_plan_dry_run` uploads a canonical plan and records a non-mutating
+  receipt.
+- `push_batch_apply` executes accepted plans in bounded batches with live
+  revalidation before every write.
+- `push_journal` resolves lost responses and crash ambiguity.
+- `push_recover` is the only endpoint allowed to finish, roll back, or block a
+  partially applied batch after proof from the journal and live hashes.
+
 Required behavior:
 
 - `push_preflight` authenticates a push-capable credential, binds the request
@@ -63,10 +75,10 @@ the apply and mutating recovery steps may change target resources.
 | 6 | `push_journal` | No | Lets the executor resolve lost responses, crashes, and ambiguous apply states. |
 | 7 | `push_recover` | Mode-dependent | Finishes, rolls back, or blocks only when journal artifacts and live hashes prove the action. |
 
-`snapshot_id`, `coverage_hash`, and `dry_run_id` are evidence and request
-bindings. They are not remote locks. A remote edit between any non-mutating
-step and apply must be detected by apply revalidation and must preserve the
-remote edit unless a newly planned mutation explicitly covers it.
+`snapshot_id`, `coverage_hash`, `dry_run_id`, and `journal_cursor` are evidence
+and request bindings. They are not remote locks. A remote edit between any
+non-mutating step and apply must be detected by apply revalidation and must
+preserve the remote edit unless a newly planned mutation explicitly covers it.
 
 ## Pull Pipeline Mapping
 
@@ -1009,6 +1021,10 @@ references needed for manual repair.
 idempotency key, and live revalidation before any target resource is changed.
 `inspect` is read-only and may share the authentication rules used by
 `push_journal`, but it must still be bound to the push session and dry-run.
+
+For the executor, the journal inspection step is mandatory whenever the HTTP
+response to apply is ambiguous. Recovery must never be inferred from the local
+attempt state alone; it needs journal evidence and fresh live hashes.
 
 ## Planner Contract
 
