@@ -1,6 +1,7 @@
 {
   "ok": true,
   "plan_id": "plan_2026-05-24T00:00:00Z_001",
+  "plan_hash": "sha256:plan",
   "dry_run_id": "dry_01j00000000000000000000000",
   "status": "ready",
   "accepted_until": "2026-05-24T00:20:00Z",
@@ -9,13 +10,25 @@
     "plan-schema",
     "resource-addressability",
     "atomic-group-closure",
+    "coverage-complete",
+    "storage-guards-supported",
     "remote-precondition-readable",
     "journal-writable"
   ],
+  "coverage": {
+    "remote_coverage_hash": "sha256:remote-coverage",
+    "status": "accepted"
+  },
   "apply_requirements": {
     "must_revalidate": true,
+    "must_revalidate_at_storage_boundary": true,
     "must_use_dry_run_id": true,
     "max_batch_mutations": 100
+  },
+  "idempotency": {
+    "key": "idem_dry_01j00000000000000000000",
+    "replayed": false,
+    "request_hash": "sha256:dry-run-request"
   },
   "journal_cursor": "journal:dry_01j00000000000000000000000:1"
 }

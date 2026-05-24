@@ -2,6 +2,26 @@
   "ok": true,
   "snapshot_id": "snap_01j00000000000000000000000",
   "site_epoch": "epoch:remote-example:142",
+  "coverage": {
+    "coverage_id": "cov_01j00000000000000000000000",
+    "coverage_hash": "sha256:remote-coverage",
+    "scanner_version": "reprint-push-scanner/1",
+    "hash_algorithm": "sha256",
+    "complete": true,
+    "scopes": {
+      "files": ["wp-content/plugins", "wp-content/themes", "wp-content/uploads"],
+      "tables": ["wp_options", "wp_posts", "wp_postmeta"],
+      "plugins": "metadata-and-declared-drivers",
+      "themes": "metadata-and-declared-drivers"
+    },
+    "excluded": [
+      {
+        "resource_key": "runtime:transients",
+        "reason": "generated-cache"
+      }
+    ],
+    "blocked": []
+  },
   "cursor": null,
   "complete": true,
   "resources": [
@@ -13,21 +33,24 @@
       "size_bytes": 18,
       "mtime": 1779571200,
       "owner": "core",
-      "capabilities": ["put", "delete", "stage"]
+      "capabilities": ["put", "delete", "stage"],
+      "storage_guard": "filesystem-compare-rename"
     },
     {
       "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
       "resource_type": "row",
       "hash": "sha256:base-post-1",
       "owner": "core",
-      "capabilities": ["put", "delete", "transaction"]
+      "capabilities": ["put", "delete", "transaction"],
+      "storage_guard": "mysql-transaction-row-lock"
     },
     {
       "resource_key": "plugin:forms",
       "resource_type": "plugin",
       "hash": "sha256:forms-1.0.0-active",
       "owner": "forms",
-      "capabilities": ["activate", "deactivate", "validate"]
+      "capabilities": ["activate", "deactivate", "validate"],
+      "storage_guard": "semantic-driver"
     }
   ]
 }

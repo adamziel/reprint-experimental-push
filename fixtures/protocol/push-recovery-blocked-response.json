@@ -11,9 +11,17 @@
         "before_hash": "sha256:base-index",
         "planned_hash": "sha256:local-index",
         "actual_hash": "sha256:unexpected-live-index",
+        "state": "blocked",
+        "storage_guard": "filesystem-compare-rename",
         "artifact_refs": ["artifact://reprint-push/batch-1/index.php.staged"]
       }
-    ]
+    ],
+    "target_state_counts": {
+      "old": 0,
+      "new": 0,
+      "blocked": 1,
+      "unknown": 0
+    }
   },
   "journal_cursor": "journal:dry_01j00000000000000000000000:3"
 }
