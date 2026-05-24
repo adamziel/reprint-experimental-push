@@ -173,6 +173,10 @@ evidence for all of these, not just a plausible design:
   revalidation; those results do not prove create-time identity remapping,
   plugin-owned state outside the allowlist, or protection from partial
   file/DB/plugin side effects.
+- A lab route-shape smoke or packaged-plugin mount that returns live-looking
+  hashes must never be upgraded into a production claim unless the same write
+  path was exercised against a live remote after drift and the evidence shows
+  the remote was preserved or the write failed closed.
 - `finalMatchesLocal`, committed replay, or packaged-plugin success on a
   fixture never prove the same path is safe against live remote drift in
   plugin metadata, graph identity, custom-table state, or create-time identity
@@ -395,6 +399,10 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A stale manual-review artifact must be rejected before write even when the
   route shape matches, the plugin package mounts cleanly, or a fixture replay
   returns `finalMatchesLocal`; those signals remain lab evidence only.
+- A stale manual-review artifact may stay readable for audit, but once the
+  live remote hash or snapshot timestamp changes it is no longer current
+  authority and cannot be widened to a different row, file, or plugin-owned
+  surface.
 - Any reviewed approval artifact must bind to the exact base, local, remote,
   and coverage hashes that were reviewed. If any of those hashes change, the
   old artifact remains audit evidence only and cannot authorize a retry.
