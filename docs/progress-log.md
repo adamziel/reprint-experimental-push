@@ -4,6 +4,19 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Status Signal Trim
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:34:20 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Shortened the public lead so the first screen stays to one concise proof
+  statement instead of restating the gate list.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Status Signal Refresh
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
