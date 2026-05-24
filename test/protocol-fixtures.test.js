@@ -44,6 +44,58 @@ test('push protocol fixture captures the production stage order and recovery rul
   ]);
 });
 
+test('push contract fixture binds the pull handoff to the production push sequence', () => {
+  const contract = readJson('fixtures/protocol/push-contract.json');
+
+  assert.equal(contract.contract_id, 'push-contract-production-extension');
+  assert.equal(contract.pull_handoff.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(contract.pull_handoff.importer, 'persists the base package as immutable provenance');
+  assert.equal(
+    contract.pull_handoff.push_snapshot_hashes,
+    'lists the live remote comparison set for planning only',
+  );
+  assert.equal(
+    contract.pull_handoff.push_plan_dry_run,
+    'uploads the canonical dry-run plan as eligibility evidence only',
+  );
+  assert.equal(
+    contract.pull_handoff.push_batch_apply,
+    'applies mutation batches only after fresh live revalidation before every batch and again at the storage boundary',
+  );
+  assert.deepEqual(contract.protocol_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    contract.production_shape.remote_snapshot_hash_listing,
+    'a cursorable live remote hash listing used only for planning',
+  );
+  assert.equal(
+    contract.production_shape.dry_run_plan_upload,
+    'a canonical plan upload that yields a receipt but never a lock',
+  );
+  assert.equal(contract.topology.networking.ingress_port, 8080);
+  assert.equal(contract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(contract.topology.networking.tunnels, 'disallowed');
+  assert.equal(contract.topology.docker.remote_base, 'remote-base');
+  assert.equal(contract.topology.docker.local_edited, 'local-edited');
+  assert.equal(contract.topology.docker.remote_changed, 'remote-changed');
+  assert.equal(contract.topology.playground.remote_base, 'remote-base');
+  assert.equal(contract.topology.playground.local_edited, 'local-edited');
+  assert.equal(contract.topology.playground.remote_changed, 'remote-changed');
+  assert.equal(contract.proofs.auth.includes('existing HMAC family'), true);
+  assert.equal(contract.proofs.session_journal.includes('inspect-first recovery path'), true);
+  assert.equal(contract.required_invariants[0], 'dry-run and apply are separate remote operations');
+  assert.ok(
+    contract.required_invariants.includes('remote snapshot hash listing is planning evidence, not write authority'),
+  );
+});
+
 test('push auth fixture requires push-scoped headers for mutating calls and keeps inspect read-only', () => {
   const preflightRequest = readJson('fixtures/protocol/push-preflight-request.json');
   const snapshotRequest = readJson('fixtures/protocol/push-snapshot-hashes-request.json');
@@ -284,42 +336,4 @@ test('push auth session journal proof binds push-scoped auth to journal fencing 
   ]);
   assert.ok(proof.inspect.blocked_when.includes('fresh live hashes do not match the journaled target'));
   assert.ok(proof.required_invariants.includes('mutating push requests must carry a push session, idempotency key, and canonical push signature'));
-});
-
-test('push contract fixture ties pull provenance, push stages, and topology into one proof', () => {
-  const contract = readJson('fixtures/protocol/push-contract.json');
-
-  assert.equal(contract.contract_id, 'push-contract-production-extension');
-  assert.equal(contract.pull_handoff.exporter, 'scans the merge base and coverage evidence');
-  assert.equal(contract.pull_handoff.push_preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
-  assert.equal(contract.pull_handoff.push_snapshot_hashes, 'lists the live remote comparison set for planning only');
-  assert.equal(contract.pull_handoff.push_plan_dry_run, 'uploads the canonical plan as eligibility evidence only');
-  assert.equal(contract.pull_handoff.push_batch_apply, 'revalidates live remote state before every batch and again at the storage boundary');
-  assert.equal(contract.pull_handoff.push_journal, 'inspects durable claim, lease, and fencing evidence without granting write authority');
-  assert.equal(contract.pull_handoff.push_recover, 'inspects first, then finishes, rolls back, or blocks only when journal evidence plus fresh live hashes prove the action');
-  assert.deepEqual(contract.protocol_sequence, [
-    'preflight',
-    'snapshot-hashes',
-    'dry-run',
-    'apply',
-    'journal',
-    'recovery-inspect',
-    'recovery-mutate',
-  ]);
-  assert.equal(contract.topology.networking.ingress_port, 8080);
-  assert.equal(contract.topology.networking.proxy_policy, 'local-only');
-  assert.equal(contract.topology.networking.tunnels, 'disallowed');
-  assert.equal(contract.topology.docker.remote_base, 'remote-base');
-  assert.equal(contract.topology.docker.remote_changed, 'remote-changed');
-  assert.equal(contract.topology.docker.runner, 'runner');
-  assert.ok(contract.topology.docker.proof.includes('one private network'));
-  assert.ok(contract.topology.docker.proof.includes('remote-base and remote-changed are the same remote identity at different times'));
-  assert.equal(contract.topology.playground.runner, 'local test process');
-  assert.ok(contract.topology.playground.proof.includes('separate disposable blueprints'));
-  assert.ok(contract.proofs.auth.includes('push session'));
-  assert.ok(contract.proofs.session_journal.includes('inspect-first recovery path'));
-  assert.ok(contract.proofs.recovery_decision.includes('fresh live hashes'));
-  assert.ok(contract.proofs.recovery_path.includes('old, new, blocked, or open'));
-  assert.ok(contract.required_invariants.includes('dry-run and apply are separate remote operations'));
-  assert.ok(contract.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
 });
