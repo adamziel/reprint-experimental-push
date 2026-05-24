@@ -261,6 +261,8 @@ persisted pull base package. For Playground verification, mirror it with one
 `remote-base` server, one `local-edited` server, and the same runner process.
 In both cases, keep the live drift state on the same remote site so stale-apply
 tests prove a fresh revalidation boundary instead of a reused dry-run receipt.
+`push_journal` and `push_recover inspect` are evidence reads only; any
+mutating recovery step must still prove fresh live state before it can act.
 
 The same topology is captured in `push-topology.json` so focused tests can
 assert the intended role split without re-encoding prose assumptions.

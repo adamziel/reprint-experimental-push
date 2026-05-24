@@ -137,6 +137,8 @@ Shared harness rules:
   at different times, not two different sites.
 - Dry-run and apply remain separate remote calls even when the same runner
   executes both.
+- `push_journal` and `push_recover inspect` explain ambiguity but do not
+  authorize a write.
 
 Docker and Playground use the same proof boundary:
 
@@ -181,7 +183,8 @@ The mapping to the existing pull pipeline is one-way:
 - push dry-run uploads the canonical three-way plan
 - push batch apply revalidates the live remote before every batch and at the
   storage boundary
-- push journal and push recover inspect read durable evidence only
+- push journal and push recover inspect read durable evidence first; mutating
+  recovery only proceeds when fresh live hashes prove the action
 
 That mapping is the production handoff boundary. Pull proves the merge base
 and coverage. Push consumes that immutable package, binds it to the live
