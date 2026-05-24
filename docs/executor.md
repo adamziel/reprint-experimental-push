@@ -132,7 +132,9 @@ evidence and never assumes that the old worker still owns the batch.
 
 The existing pull command already knows how to run stages, save state, retry
 timeouts, and resume after interruption. Push should reuse that orchestration
-style with different stage semantics.
+style with different stage semantics. The pull exporter/importer still owns
+the persisted merge base; push only layers live remote proof, dry-run receipt,
+batch receipts, and journal/recovery evidence on top of that immutable base.
 
 | Pull concept | Push executor equivalent |
 | --- | --- |
@@ -145,7 +147,8 @@ style with different stage semantics.
 
 The push executor should not reuse the pull streaming SQL dump as a mutation
 format. SQL replay is too coarse for a live remote. It can reuse pull transport,
-budgeting, cursoring, multipart handling, and HMAC helpers.
+budgeting, cursoring, multipart handling, and HMAC helpers, but only as
+transport and auth primitives, not as proof of liveness.
 
 The persisted pull base package is the executor's provenance anchor, not a
 remote lock:
@@ -188,7 +191,9 @@ push-base/
 
 The executor treats this package as read-only evidence. If it is missing,
 corrupt, or from a different remote identity, push planning stops before
-preflight can become a mutation path.
+preflight can become a mutation path. If the remote drifts between dry-run
+and apply, the executor must discard the old listing and repopulate live proof
+before resuming.
 
 The executor must also respect the pull-to-push provenance boundary:
 
@@ -258,10 +263,10 @@ runner         Node/PHP runner that orchestrates pull, plan, dry-run, apply
 ```
 
 Only the runner talks to the remote and local sites. No WordPress container
-publishes a public port. If browser inspection is needed, expose at most the sandbox-provided
-`8080` ingress through an optional local-only proxy. Do not use ngrok,
-cloudflared, localtunnel, serveo, localhost.run, Tailscale Funnel, or any
-equivalent tunnel.
+publishes a public port. If browser inspection is needed, expose at most the
+sandbox-provided `8080` ingress through an optional local-only proxy. Do not
+use ngrok, cloudflared, localtunnel, serveo, localhost.run, Tailscale Funnel,
+or any equivalent tunnel.
 
 The intended Docker data flow is:
 

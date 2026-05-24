@@ -54,6 +54,10 @@ Required behavior:
   blocked inspection result is required when the server cannot prove a safe
   finish or rollback.
 
+The protocol extension is production-shaped rather than lab-shaped: a dry-run
+receipt is only an eligibility artifact, never a lease. The remote may accept
+the plan and still reject later apply batches if the live state has drifted.
+
 Dry-run is an eligibility and planning receipt, not a liveness reservation.
 The remote may accept a dry-run plan and still reject later apply batches if
 the live hash listing changes or the storage boundary can no longer prove the
@@ -107,6 +111,16 @@ Pull still discovers and records the merge base. Push consumes that base and
 adds live-remote revalidation and mutation journaling. The mapping is explicit:
 the pull exporter/importer produces the persisted base package, and push reads
 that package as immutable provenance rather than re-exporting or rewriting it.
+
+The pull pipeline remains the source of truth for the base package:
+
+- exporter scans and serializes the merge base and coverage evidence
+- importer persists the base package as read-only provenance for later push
+- push preflight binds that provenance to the live remote identity and session
+- push snapshot hashes compare the live remote against the persisted base
+- push dry-run uploads the canonical three-way plan from base, local, and live
+- push apply revalidates the live remote before every batch and again at the
+  storage boundary
 
 | Pull stage | Push mapping |
 | --- | --- |
@@ -257,7 +271,8 @@ Rules:
 
 If a server supports only the current export HMAC and not the canonical push
 signature, it may serve pull endpoints and hash listing, but it must reject
-dry-run upload, apply, journal repair, and recovery mutation.
+dry-run upload, apply, journal repair, and recovery mutation. That preserves
+the pull contract while making push strictly more restrictive.
 Push-capable servers may still require the export HMAC on every push request
 because push builds on the same authentication floor as pull.
 
