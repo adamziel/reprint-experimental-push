@@ -75,10 +75,14 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
   assert.equal(topology.roles.remote_base.examples.docker, 'remote-base');
   assert.equal(topology.roles.local_edited.examples.playground, 'local-edited');
   assert.equal(topology.roles.remote_changed.examples.docker, 'remote-changed');
-  assert.equal(topology.roles.remote_changed.role, 'the same remote site after independent live drift between dry-run and apply');
+  assert.equal(topology.roles.remote_changed.role, 'the same remote site after independent drift between dry-run and apply');
   assert.equal(topology.roles.runner.role, 'the only process allowed to compare, upload, inspect, and recover');
   assert.equal(topology.roles.remote_base.examples.playground, 'remote-base');
   assert.equal(topology.roles.local_edited.examples.docker, 'local-edited');
+  assert.ok(topology.docker.topology.some((line) => line.includes('remote-base is one WordPress source site')));
+  assert.ok(topology.docker.topology.some((line) => line.includes('runner is the only caller')));
+  assert.ok(topology.playground.topology.some((line) => line.includes('remote-base is the source blueprint')));
+  assert.ok(topology.playground.topology.some((line) => line.includes('runner is the local test process')));
   assert.ok(topology.docker.evidence.some((line) => line.includes('push_batch_apply revalidates the live remote')));
   assert.ok(topology.playground.shape.some((line) => line.includes('fresh snapshot listing')));
   assert.ok(topology.docker.shape.some((line) => line.includes('remote-base pulls first and seeds the merge base')));

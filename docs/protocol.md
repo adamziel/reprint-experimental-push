@@ -233,6 +233,10 @@ artifacts already stored on disk:
 The machine-readable handoff fixture at
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
 captures the same one-way mapping for tests.
+The topology fixture at
+[`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
+captures the one-remote, one-local, one-drift-witness test shape and the
+sandbox-only 8080 ingress rule used for Docker or Playground proof.
 
 The pull exporter/importer owns the persisted base package and the base
 coverage evidence. Push never asks pull to become a write lock. Instead, push

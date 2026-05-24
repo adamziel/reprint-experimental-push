@@ -792,7 +792,7 @@ eligibility only. Apply must fetch fresh live evidence again before every
 batch.
 
 The machine-readable fixture [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
-captures the same role split for test code, and
+captures the same one-remote, one-local, one-drift-witness split for test code, and
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
 captures the pull-to-push handoff that the executor must preserve.
 [`fixtures/protocol/push-flow.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-flow.json)
@@ -805,7 +805,7 @@ The fixtures are intentionally narrow:
 - `push-pull-mapping.json` asserts that the persisted pull base stays
   read-only provenance.
 - `push-topology.json` asserts the one-remote, one-local, one-drift-witness
-  shape for Docker and Playground.
+  shape for Docker and Playground, plus the sandbox-only 8080 ingress rule.
 
 Minimal Compose shape:
 

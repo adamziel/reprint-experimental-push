@@ -9,7 +9,7 @@
   "roles": {
     "remote_base": {
       "kind": "source-site",
-      "role": "pulled merge base and persisted push provenance",
+      "role": "the one remote source site that seeds the persisted pull base",
       "examples": {
         "docker": "remote-base",
         "playground": "remote-base"
@@ -17,7 +17,7 @@
     },
     "local_edited": {
       "kind": "edited-clone",
-      "role": "local plan source after user edits",
+      "role": "the one local edited site that produces the candidate plan",
       "examples": {
         "docker": "local-edited",
         "playground": "local-edited"
@@ -25,7 +25,7 @@
     },
     "remote_changed": {
       "kind": "live-drift-witness",
-      "role": "the same remote site after independent live drift between dry-run and apply",
+      "role": "the same remote site after independent drift between dry-run and apply",
       "examples": {
         "docker": "remote-changed",
         "playground": "remote-changed"
@@ -41,6 +41,12 @@
     }
   },
   "docker": {
+    "topology": [
+      "remote-base is one WordPress source site on the private network",
+      "local-edited is one imported WordPress clone with user edits",
+      "remote-changed is the same source site after live drift",
+      "runner is the only caller that can run preflight, snapshot listing, dry-run, apply, journal inspect, and recovery"
+    ],
     "evidence": [
       "push_preflight mints the push session and auth scope before any planning call",
       "push_snapshot_hashes captures the live remote comparison set used for dry-run planning",
@@ -55,10 +61,17 @@
       "push_plan_dry_run is only an eligibility receipt; push_batch_apply must revalidate live remote state before every batch and again at the storage boundary",
       "push_journal and push_recover inspect are read-only evidence readers, while mutating recovery modes require fresh live proof",
       "remote-db and local-db remain isolated so live drift does not contaminate the local edit history",
-      "use only the sandbox-provided 8080 ingress through a local-only proxy when browser-visible inspection is needed"
+      "use only the sandbox-provided 8080 ingress through a local-only proxy when browser-visible inspection is needed",
+      "never use remote tunnels such as ngrok, cloudflared, localtunnel, serveo, localhost.run, or Tailscale Funnel"
     ]
   },
   "playground": {
+    "topology": [
+      "remote-base is the source blueprint that becomes the persisted pull base",
+      "local-edited is the imported clone with local edits",
+      "remote-changed is the same source blueprint after independent drift",
+      "runner is the local test process that drives the push protocol against the disposable blueprints"
+    ],
     "evidence": [
       "remote-base seeds the persisted pull base package and push identity evidence",
       "local-edited supplies the edited local clone used to build the canonical plan",
