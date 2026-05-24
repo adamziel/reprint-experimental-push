@@ -1,37 +1,58 @@
 # Acceptable Post-Failure States
 
-The atomic apply path is only acceptable if a failure leaves one of these states:
+This lane treats durable recovery as valid only when an interrupted apply lands in one of these states:
 
 1. `old-remote`
-   - No remote mutation is visible.
-   - Recovery artifacts may exist and must explain why apply stopped.
-   - Safe retries must reuse the artifact instead of guessing from local state.
+1. `fully-updated-remote`
+1. `blocked-recovery` with artifacts
 
-2. `fully-updated-remote`
-   - Every planned mutation is visible on the remote.
-   - The durable journal must show completion or replay completion.
-   - Replaying the same completed plan must not duplicate inserts or reapply stale local data.
+## Old remote
 
-3. `blocked-recovery`
-   - The remote may be partially updated, or the journal may be incomplete.
-   - Recovery artifacts are required.
-   - Retrying must fail closed until fresh recovery evidence proves the site is safe to finish or abandon.
+The remote remains unchanged from the last known good state.
 
-Anything else is a recovery bug.
+Required artifacts:
 
-A partial remote mutation without a recovery artifact is a release blocker, even
-if the write path eventually reports success on a later retry. The retry path
-must never duplicate inserts or resurrect stale local data from an outdated
-journal.
+- Journal evidence showing where the apply stopped.
+- No committed remote mutation is required.
 
-## Failure Boundaries
+This state is acceptable for failures before any remote mutation is committed, including failures:
 
-The atomic apply boundary checks must keep these failure modes inside the contract above:
+- before mutation
+- after staging
+- after dependency validation
 
-- Failure before mutation must leave `old-remote` plus a recovery artifact.
-- Failure after staging must still leave `old-remote` plus a recovery artifact.
-- Failure after dependency validation must still leave `old-remote` plus a recovery artifact.
-- Replaying a completed plan must return `fully-updated-remote`, not a second write path.
-- If replay finishes the remote but the durable replay record fails, the result must still classify as `fully-updated-remote` with artifacts.
-- If a completed journal no longer matches the current remote, durable replay must block with `blocked-recovery` and artifacts.
-- If a completed journal no longer matches the remote, the result must be `blocked-recovery` with artifacts, never a silent retry.
+## Fully updated remote
+
+The remote matches the completed plan and replay is inert.
+
+Required artifacts:
+
+- Journal evidence proving the plan was already completed.
+
+Retry must not:
+
+- apply the same insert twice
+- resurrect stale local data
+- create new mutation work
+
+## Blocked recovery with artifacts
+
+The remote is partially or suspiciously updated and must not be treated as safe to replay.
+
+Required artifacts:
+
+- durable journal evidence
+- remote-state evidence describing the observed drift or partial commit
+
+This is the release-blocker state if a retry would otherwise risk:
+
+- duplicate inserts
+- stale data resurrection
+- silent partial write reuse without a recovery artifact
+
+## Operational rule
+
+Any failure path must end in one of the three states above.
+
+If the remote is not fully old or fully updated, the recovery result must be blocked and inspectable.
+
