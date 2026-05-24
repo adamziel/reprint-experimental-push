@@ -212,6 +212,16 @@ as separate opt-ins.
   matters because the repo can still look healthy while the strongest proof
   remains opt-in.
 
+Actionable release-gate requirement:
+
+- create one required release command that runs the safety-critical auth,
+  journal, storage, recovery, plugin, graph, and benchmark checks in a single
+  failure path
+- fail that command when any production-shaped proof still reports
+  `labBacked: true`, fixture-only scope, or missing live-source evidence
+- wire the same command into CI so the release bar is enforced, not merely
+  documented
+
 That means the repo can still look healthy while the exact proof needed for a
 release claim has not been run. For this objective, that is a release blocker,
 not just a documentation gap.
@@ -231,6 +241,16 @@ They do not yet prove the release claim:
 - no production-backed crash, replay, lease, or fencing matrix is enforced
 - no measured throughput or memory threshold is required before release
 - no single command fails the build when those stronger checks are omitted
+- no release job proves the live-source push path under crash, replay, and
+  lease-fencing failure modes
+
+Bottom line:
+
+- `npm test` is useful executable evidence for the model and selected fixtures
+- the Playground smokes are useful lab evidence for local safety checks
+- neither is a release gate for the objective, because the objective needs a
+  single enforced command that proves or blocks the live-source release claim
+  before shipping
 
 The uncomfortable interpretation is that the suite is currently better at
 preventing false confidence than at proving live-source safety. A green run
