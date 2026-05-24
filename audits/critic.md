@@ -264,6 +264,10 @@ production-grade push support:
 - Identity safety: create paths must either reserve stable identities or
   block; a retry may not renumber or remap identities from stale local
   assumptions.
+- Identity proof must be durable, not inferred from a label match: if create
+  paths can rename, alias, or remap records after planning, the design must
+  prove a reservation or allocation record that survives drift, not a best-
+  effort lookup from the old plan.
 - Plugin ownership safety: every plugin-owned table, file, option, cron,
   cache, activation, and generated surface in scope must be explicitly
   enumerated or hard-blocked, and remote ownership drift must be revalidated
@@ -289,6 +293,10 @@ production-grade push support:
   remote hashes that were reviewed, the reviewer identity, and the live
   snapshot timestamp, and it must fail closed if any of those change before
   apply.
+- Stale-artifact expiry: a review artifact may remain auditable, but any live
+  hash mismatch must invalidate it for authorization on the next retry, route
+  mount, or packaged-plugin smoke, and the new run must start from fresh live
+  evidence.
 
 ## Must-Have Proof Before Production Wording
 
