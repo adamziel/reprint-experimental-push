@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:23:09 CEST.
+- Last update: 2026-05-25 01:24:00 CEST.
 - Status: `89` Node tests still pass.
-- Trend: the visible page and this log stay aligned, and the scan copy is
-  shorter, but production readiness is still blocked by missing evidence.
+- Trend: the visible page and this log stay aligned, and the scan view stays
+  compact, but production readiness is still blocked by missing evidence.
 - Supervision: the same-plan graph worker remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
