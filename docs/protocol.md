@@ -81,6 +81,9 @@ Endpoint specifics:
 The protocol extension is production-shaped rather than lab-shaped: a dry-run
 receipt is only an eligibility artifact, never a lease. The remote may accept
 the plan and still reject later apply batches if the live state has drifted.
+The live snapshot listing is therefore a planning read, not a reusable write
+authority, and recovery evidence must be read fresh from the journal plus the
+current remote before any mutating finish or rollback can proceed.
 
 That means a push executor must treat the remote snapshot listing as a fresh
 planning view and the apply path as a later live proof step. The remote may
