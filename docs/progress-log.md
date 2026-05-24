@@ -4,6 +4,18 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Progress Publisher Refresh
+
+- Last update: 2026-05-25 00:20 CEST.
+- Public page refreshed: [progress.html](../progress.html) keeps the visible
+  update stamp, the evidence summary, and the pending-gate list in one screen.
+- History kept conservative: [docs/supervisor-feedback.md](supervisor-feedback.md)
+  still says production auth, durable journal storage, leases, graph mapping,
+  Docker/Playground integration, and plugin drivers remain unproven.
+- Current status: `89` Node tests pass after supervised lane merges; the graph
+  HTTP smoke remains active and unmerged; production push stays blocked.
+- Trend: lab/model evidence improved; production readiness stayed flat.
+
 ## 2026-05-25 - Current Supervisor Snapshot
 
 - Last update: 2026-05-25 00:20 CEST.
