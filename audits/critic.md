@@ -260,6 +260,17 @@ evidence for all of these, not just a plausible design:
   outside the allowlist, including at least one of options, custom tables,
   generated files, activation hooks, cron, or cache side effects, or else the
   design must hard-block that surface before apply.
+- Production wording is blocked unless the claim names the exact live-write
+  boundary it exercised in this repo; route-shape, packaged-plugin mounting,
+  `finalMatchesLocal`, and benchmark throughput models are compatibility
+  signals only and never production proof by themselves.
+- Any claim that cites Reprint, ZS-Sync, or ForkPress source notes must also
+  say whether the cited upstream behavior was re-verified against the current
+  commit or worktree state. If it was not re-verified, the note is comparison
+  context only and cannot support production wording.
+- A production-language claim must include the live remote drift case it used,
+  the stale approval that was rejected, and the fresh retry evidence that
+  rebuilt scope from current hashes rather than reusing the old decision.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
 
