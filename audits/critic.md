@@ -249,6 +249,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A stale approval, stale snapshot, or stale manual-review artifact cannot be
   recycled as evidence for a new apply, even if the plan hash or endpoint name
   has not changed.
+- A stale manual-review artifact must be rejected before write even when the
+  route shape matches, the plugin package mounts cleanly, or a fixture replay
+  returns `finalMatchesLocal`; those signals remain lab evidence only.
 - Any reviewed approval artifact must bind to the exact base, local, remote,
   and coverage hashes that were reviewed. If any of those hashes change, the
   old artifact remains audit evidence only and cannot authorize a retry.
