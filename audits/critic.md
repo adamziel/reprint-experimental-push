@@ -66,20 +66,23 @@ production push support.
 
 The Reprint source notes support staged, resumable transport: preflight, files
 pull, DB pull, DB apply, flat document root, runtime apply, and optional start.
-That is a good transport shape for chunking and budgets, but pull resumability
-does not prove source-site mutation safety.
+Reprint source notes support the staged, resumable transport shape: preflight,
+files pull, DB pull, DB apply, flat docroot, runtime apply, and start. That is
+a good transport primitive for push, but it is not a mutation proof.
 
-Scenario: push publishes plugin files and then related DB rows, but the process
-dies after files are visible and before DB commit or journal finalization.
+Scenario: push applies plugin files, then the process dies before the related
+options, custom-table rows, or activation state are committed. The file side is
+visible, the remote state is mixed, and the operator has no proof whether the
+site is old, new, or blocked.
 
-Missing proof: production Reprint does not yet show guarded per-chunk mutation,
-mutation-scoped auth, durable recovery state, rollback/blocked artifacts, and
-operator audit records for every remote write boundary.
+Missing proof: the current design still lacks a production Reprint mutation
+boundary with per-chunk compare-and-swap, durable recovery state across each
+write surface, and an auditable rollback/blocked artifact for every remote
+write boundary. Pull resumability alone does not prove source mutation safety.
 
-Required change: extend Reprint push with coverage-bound planning,
-storage-boundary guards, production mutation credentials, and durable
-old/new/blocked journal evidence. Pull resumability cannot be reused as a
-production push reliability claim.
+Required change: production push must extend Reprint with mutation-scoped auth,
+coverage-bound planning, storage-boundary guards, and a durable journal that
+survives file/DB/plugin boundaries separately.
 
 ### ZS-Sync
 
@@ -87,17 +90,17 @@ The ZS-Sync notes are useful for scanner composition, cursors, resource
 providers, and bounded changed-resource listing. They are not a source-site
 mutation policy.
 
-Scenario: a scanner cursor completes for known core files and tables while an
-active plugin stores required state in an unregistered custom table, generated
-file, cron queue, or action scheduler row.
+Scenario: the scanner says the known tables and files are current, but a plugin
+stores state in an unregistered custom table, a generated file, or a runtime
+cache that the scanner never enumerated. The plan then looks complete while the
+remote still has unscanned state that can be corrupted by the push.
 
-Missing proof: no source-site coverage contract binds scanner cursors to all
-active plugins, mu-plugins, themes, uploads, generated artifacts, custom
-tables, and multisite scopes affected by the push.
+Missing proof: no completed coverage manifest ties the scanner to every plugin,
+mu-plugin, theme, upload derivative, generated artifact, custom table, and
+multisite scope that push can affect.
 
-Required change: use ZS-Sync-style scanning as planning input only. A ready push
-requires complete coverage for the affected scope, or the unknown scope must
-block apply.
+Required change: use ZS-Sync-style scanning as planning input only. A ready
+push must block on unknown or incomplete coverage.
 
 ### ForkPress
 
@@ -106,13 +109,15 @@ three-way merge records, reviewed conflict resolution, plugin validators,
 revalidation, and crash consistency where failure is old, new, or blocked with
 artifacts.
 
-Scenario: a user manually resolves a conflict and retries from stale evidence,
-or a plugin publish fails during activation after files are visible.
+Scenario: an operator reviews a conflict, picks "take local," and retries after
+the source site changed again or after a partial apply left a mixed remote
+state. If the retry accepts the old approval, the conflict review becomes
+stale overwrite permission.
 
-Missing proof: the current project borrows ForkPress invariants but not the
-full production lifecycle: reviewed resolution artifacts, semantic validator
-contracts, production storage durability, and old/new/blocked proof for every
-visible boundary.
+Missing proof: the current design does not yet show a reviewed-resolution
+artifact that preserves base/local/remote evidence, binds the approval to a
+fresh live snapshot, and forces the retry to rebuild the plan from current
+remote hashes.
 
 Required change: adopt the ForkPress-grade lifecycle before making
 ForkPress-grade claims. Manual resolution is acceptable only when the remote is
