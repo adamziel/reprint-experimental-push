@@ -245,6 +245,12 @@ In release terms, the default suite is a safety filter, not a production-safe
 proof. It can justify blocking bad changes; it cannot justify shipping the
 live-source no-data-loss, reliability, or speed claims by itself.
 
+`npm run test:playground` is also evidence, but it is only a partial lab chain:
+it runs plan/apply/push-protocol and then stops. The stronger auth, DB journal,
+storage-guard, process-kill, stale-claim, production-shaped route, plugin
+package, and benchmark checks remain separate commands. A passing default suite
+therefore leaves the release bar procedural instead of enforced.
+
 Concrete limitation: the default suite can prove a planner rule such as "do not
 drop a remote-only descendant when a local directory disappears" in a model, but
 that is still not the same as proving arbitrary WordPress object graphs survive
