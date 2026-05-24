@@ -565,6 +565,19 @@ A smoke that only ends in `finalMatchesLocal: true` still does not show that
 the remote stayed preserved, that a fresh live snapshot was taken before the
 first write, or that stale review artifacts were rejected.
 
+What Reprint source notes do prove:
+
+- A push transport can be staged and resumed.
+- Pull/export code can carry protocol metadata, resource budgets, and streaming helpers.
+- Route shape and package layout can be documented without inventing the push flow from scratch.
+
+What they do not prove:
+
+- Live source mutation safety.
+- Remote preservation across partial apply.
+- Identity stability when a live remote renumbers or reassigns objects.
+- Plugin-owned side-effect safety or production credential handling.
+
 Scenario: push applies plugin files, then the process dies before the related
 options, custom-table rows, or activation state are committed. The file side is
 visible, the remote state is mixed, and the operator has no proof whether the
@@ -588,6 +601,19 @@ authoritative and the others as consumers of changed resources. They are not
 a source-site mutation policy. ZS-Sync proves bounded discovery, not write
 permission. Its value here is as a conservative inventory model: enumerate
 what changed, then decide whether a push may proceed.
+
+What ZS-Sync source notes do prove:
+
+- Cursor-based, bounded rescans are feasible.
+- A provider can list changed resources in batches.
+- An authoritative-site model can bound discovery work.
+
+What they do not prove:
+
+- That a scanned resource set is complete for WordPress push.
+- That discovered identity stays valid through create, aliasing, or remap.
+- That unknown plugin-owned state is safe to mutate.
+- That discovery alone authorizes any write.
 
 Scenario: the scanner says the known tables and files are current, but a plugin
 stores state in an unregistered custom table, a generated file, or a runtime
@@ -618,6 +644,19 @@ WordPress files and SQLite data, not live push of a remote source site. ForkPres
 is the strongest comparison point because it treats manual conflict handling as
 a first-class audited state, but it still does not prove this repository's live
 remote path, graph identity remapping, or plugin-owned state handling.
+
+What ForkPress source notes do prove:
+
+- Conflict resolution can be reviewed, recorded, and revalidated.
+- Crash outcomes can be classified as old, new, or blocked.
+- Plugin semantics can be isolated behind validators/drivers.
+
+What they do not prove:
+
+- That this repository has a live production push endpoint.
+- That reviewed scope stays valid after remote drift.
+- That manual approval can be reused after partial apply.
+- That graph identity remapping is safe on create or aliasing paths.
 
 Scenario: an operator reviews a conflict, picks "take local," and retries after
 the source site changed again or after a partial apply left a mixed remote
@@ -665,6 +704,8 @@ would reasonably read as equivalent.
   hard-blocks before apply.
 - Every plugin-owned resource in scope has a declared contract, or the push
   hard-blocks before apply.
+- Any plugin-owned resource outside the declared manifest is treated as unknown
+  state and blocks the push; manual resolution cannot widen that scope.
 - Every relationship-bearing row class has either a proven rewrite rule or an
   explicit hard block.
 - Every create path has stable identity allocation, or it is blocked when the
@@ -679,6 +720,8 @@ would reasonably read as equivalent.
   write, but still kept readable for audit and retry.
 - A stale approval artifact is never treated as live permission, even when the
   route name, package name, or lab smoke output still looks correct.
+- Stale approvals remain audit artifacts only; they cannot authorize a new
+  row, file, option, or plugin-owned surface after drift.
 - Manual resolution is not a success condition unless the remote remains
   preserved for audit and the retry can be replayed safely from fresh live
   evidence.
@@ -703,6 +746,9 @@ would reasonably read as equivalent.
   stability, or plugin ownership safety without a live revalidation proof.
 - A route that only looks production-shaped is not evidence of production
   safety, reliability, or retry correctness.
+- Comparisons to Reprint, ZS-Sync, and ForkPress remain source-note evidence
+  only; they cannot be upgraded into proof of production push support without a
+  repo-specific live mutation path.
 - A manual review artifact is only acceptable when the remote snapshot,
   reviewed scope, and hashes still match at apply time; otherwise the artifact
   must stay audit-only and be rejected before any write.
