@@ -128,6 +128,10 @@ a second drift.
 Before the project can use production-grade push wording, the audit needs
 evidence for all of these, not just a plausible design:
 
+- The source notes for Reprint, ZS-Sync, and ForkPress are treated as
+  conservative design input only. They do not prove live remote drift
+  rejection, stable identity reservation for creates, plugin-owned state
+  revalidation, durable recovery, or a production write boundary in this repo.
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
@@ -170,6 +174,34 @@ evidence for all of these, not just a plausible design:
   production claim ships, and that gate must fail closed on stale manual
   review artifacts, unknown plugin ownership, route-shape-only evidence, or
   fixture-only replay evidence.
+
+## Release Gate Checklist
+
+Use this checklist before any doc, PR, or status comment says the project has
+production-grade push support:
+
+- Production push endpoint: the exercised write path must be the real
+  production-backed source mutation path, not a Playground proxy, route-shape
+  stand-in, or copied lab executor.
+- Fresh remote proof: apply must re-read the live remote immediately before
+  the first guarded write, and any stale hash or stale manual review artifact
+  must fail closed before mutation.
+- Identity safety: create paths must either reserve stable identities or
+  block; a retry may not renumber or remap identities from stale local
+  assumptions.
+- Plugin ownership safety: every plugin-owned table, file, option, cron,
+  cache, activation, and generated surface in scope must be explicitly
+  enumerated or hard-blocked, and remote ownership drift must be revalidated
+  before write.
+- Partial-side-effect safety: a failure that leaves mixed file, DB, or plugin
+  effects must produce durable artifacts that classify the target as old,
+  fully updated, or blocked recovery without pretending the push succeeded.
+- Auditability: the review artifact must bind to the exact base/local/remote
+  hashes, reviewer identity, live snapshot timestamp, and retry scope so the
+  remote can be preserved and the operator can safely retry or inspect later.
+- Evidence standard: fixture replay, route-shape smoke, and packaged-plugin
+  mounting are compatibility checks only; none may be cited as proof of
+  production safety.
 
 ## Changes Required Before A Production Claim
 
