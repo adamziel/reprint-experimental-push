@@ -12,6 +12,13 @@ const authSignatureHeader = 'X-Auth-Signature';
 const pushSignatureHeader = 'X-Reprint-Push-Signature';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
+const retryableReadOnlyGetPaths = new Set([
+  `${namespacePath}/snapshot`,
+  `${namespacePath}/db-journal`,
+]);
+const sideEffectQueryParams = new Set([
+  'reprint_push_lab_drift_after_snapshot',
+]);
 
 export async function runAuthenticatedHttpPush({
   sourceUrl,
@@ -250,7 +257,7 @@ async function requestJson(baseUrl, method, pathname, body = undefined, headers 
 }
 
 async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, headers = {}) {
-  const retryable = method === 'GET' && !Object.hasOwn(headers, authNonceHeader);
+  const retryable = isRetryableReadOnlyGet(baseUrl, method, pathname, headers);
   const attempts = retryable ? transientFetchAttempts : 1;
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -290,6 +297,30 @@ async function requestJsonRawOnce(baseUrl, method, pathname, rawBody = undefined
     status: response.status,
     body: json,
   };
+}
+
+function isRetryableReadOnlyGet(baseUrl, method, pathname, headers) {
+  if (method !== 'GET' || hasHeader(headers, authNonceHeader)) {
+    return false;
+  }
+
+  const url = new URL(pathname, baseUrl);
+  if (!retryableReadOnlyGetPaths.has(url.pathname)) {
+    return false;
+  }
+
+  for (const key of sideEffectQueryParams) {
+    if (url.searchParams.has(key)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function hasHeader(headers, headerName) {
+  const target = headerName.toLowerCase();
+  return Object.keys(headers).some((key) => key.toLowerCase() === target);
 }
 
 function withConnectionClose(headers) {

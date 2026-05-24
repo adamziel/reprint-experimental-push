@@ -5,6 +5,41 @@ Last updated: 2026-05-24
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-24 - Evidence Checkpoint
+
+### Going Well
+
+- Status surfaces agree and stay lab-scoped.
+- The CLI lab now covers snapshot, dry-run, apply, replay, changed-source
+  refusal, and post-snapshot drift refusal.
+- Recovery, guarded DB/file writes, forms data, and atomic plugin fixtures have
+  executable smoke coverage.
+
+### Not Going Well
+
+- Production readiness is flat: no Reprint mutation endpoint, credential
+  binding, nonce/session cleanup, or durable production audit record.
+- WordPress graph and plugin safety remain fixture-scoped.
+- Fast paths still lack executable chunk cursors and large-site benchmarks.
+
+### Progress Delta
+
+| Lane | Direction | Nudge |
+| --- | --- | --- |
+| No-data-loss invariants | Flat | Next: one WordPress graph fixture with post, postmeta, attachment, taxonomy, and drift. |
+| No-data-loss recovery | Flat after lab gains | Next: kill each DB/file boundary with durable journal evidence. |
+| Reliable executor | Up in lab, flat in production | Next: production-shaped Reprint route/auth/audit/recovery contract. |
+| Plugin data | Flat | Next: one real plugin validator beyond fixture allowlists. |
+| Fast paths | Flat | Next: chunked large-site benchmark with receipts and resume cursors. |
+| Audit lanes | Flat | Next: re-audit the first production-shaped source mutation slice. |
+| Progress publisher | Up | Next: keep the page one-screen and link details. |
+
+### Next Supervisor Nudge
+
+Ask reliable executor for the next proof: production-shaped Reprint route names,
+credential binding, signed preflight/dry-run/apply, nonce cleanup, audit rows,
+same-key replay, different-body conflict refusal, and recovery inspect.
+
 ## 2026-05-24 - CLI Push Refresh
 
 ### Going Well

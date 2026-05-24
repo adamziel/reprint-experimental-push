@@ -4,9 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-24 - Integrated Feedback And Verification Refresh
+
+- Integrated the feedback supervisor progress refresh into `main`.
+  [progress.html](../progress.html) now shows a visible "Last updated:
+  May 24, 2026" marker, a short supervisor feedback panel, and concise lane
+  summaries.
+- Fresh post-merge verification passed: `npm test` reported `64` Node scenarios,
+  and the no-server Playground, authenticated CLI/HTTP push, file-journal
+  recovery, storage-guarded DB/file write, DB process-kill, missing-commit
+  finalization, stale-claim retry, forms table, and plugin atomic-install smokes
+  all passed.
+- Production readiness is unchanged. The next useful proof is still a
+  production-shaped Reprint endpoint/auth/audit/recovery contract.
+
 ## 2026-05-24 - Progress Publisher Verification Refresh
 
-- `npm test` passed in this lane with `55` Node scenarios. Evidence:
+- `npm test` passed in the integrated tree with `64` Node scenarios. Evidence:
   [package.json](../package.json),
   [test/push-planner.test.js](../test/push-planner.test.js),
   [test/recovery-journal.test.js](../test/recovery-journal.test.js), and
@@ -417,7 +431,7 @@ linked implementation artifacts.
 - `npm run test:playground:db-journal-idempotency` passed after the smoke's
   different-body concurrency request was made deterministic by waiting for the
   winning idempotency claim before sending the conflicting request. `npm test`
-  still passes with 55 Node test scenarios.
+  now passes with 64 Node test scenarios.
 - Caveats remain explicit: this is lab-scoped JIT pre-write evidence, not
   storage-level compare-and-swap, locking, production DB durability, rollback,
   production Reprint push, generic plugin/custom-table safety, or arbitrary
@@ -514,8 +528,9 @@ linked implementation artifacts.
   dry-run returns `412 PRECONDITION_FAILED`, apply is not called, and the
   concurrent source change is preserved.
 - The authenticated CLI client now retries transient socket failures only for
-  unsigned GET requests and sends `Connection: close`; signed requests remain
-  single-shot so nonce replay protections are not weakened.
+  unsigned read-only GET routes without side-effect lab query parameters and
+  sends `Connection: close`; signed requests remain single-shot so nonce replay
+  protections are not weakened.
 - Caveat: this makes the lab source-site flow usable from the CLI, but it still
   targets the lab endpoint. It is not a production Reprint endpoint, production
   credential binding, or production durability proof.
@@ -529,13 +544,32 @@ linked implementation artifacts.
   reliable executor moved up in the lab, while production endpoint/auth/journal
   claims remain blocked.
 
+## 2026-05-24 - Supervisor Evidence Checkpoint
+
+- The current checkpoint found no newer merged executable evidence after the
+  authenticated CLI push smoke and feedback refresh. The visible trend is
+  therefore flat, not a readiness increase.
+- [progress.html](../progress.html) keeps the current status to a concise
+  one-screen summary with a visible May 24, 2026 update date and links to the
+  detailed evidence instead of embedding long audit text.
+- [supervisor feedback](supervisor-feedback.md) now names the next nudge per
+  lane: production-shaped Reprint endpoint/auth/audit proof for reliable
+  executor, WordPress graph identity for invariants, production crash-boundary
+  durability for recovery, real plugin validator coverage for plugin data,
+  executable chunking benchmarks for fast paths, and live-integration re-audit
+  for audit lanes.
+- Production readiness is unchanged. The repository still lacks a production
+  Reprint source-site mutation endpoint, production credential binding,
+  nonce/session cleanup proof, durable production audit/recovery records,
+  production filesystem/DB durability proof, and arbitrary plugin data safety.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | What changed | Next proof |
 | --- | ---: | --- | --- |
 | Merge invariants | 38% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
 | Recovery boundaries | 24% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
-| Reliable executor and protocol | 28% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, and CLI post-snapshot drift refusal exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, and durable audit records. |
+| Reliable executor and protocol | 28% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, and post-snapshot drift refusal exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, nonce/session cleanup, and durable audit records. |
 | Fast path and chunking | 12% | Performance model and fast-path design are documented. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
 | Independent evidence and critique | 25% | Objective audit, critic notes, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
 
