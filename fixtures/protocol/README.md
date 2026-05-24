@@ -149,6 +149,12 @@ The fixture topology encodes the exact proof order the executor must preserve:
 5. `push_journal` resolves lost responses and crash ambiguity without authorizing a write.
 6. `push_recover inspect` reads evidence first, and mutating recovery modes only proceed when the journal and live hashes prove the action.
 
+The auth proof is intentionally strict:
+
+- read-only inspection uses the existing HMAC auth header family only
+- dry-run, apply, and mutating recovery require the push session, idempotency key, and canonical push signature
+- inspect stays read-only and must not be treated as a hidden mutation grant
+
 Docker harnesses should wire this as one private network with a remote site
 pair, a local site pair, and one runner container. Playground harnesses
 should mirror the same role split with separate disposable blueprints for

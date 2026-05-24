@@ -36,6 +36,22 @@ test('push protocol fixture captures the production stage order and recovery rul
   ]);
 });
 
+test('push auth fixture requires push-scoped headers for mutating calls and keeps inspect read-only', () => {
+  const headers = readJson('fixtures/protocol/push-auth-headers.json');
+  const journalOpen = readJson('fixtures/protocol/push-journal-open-response.json');
+  const inspectRequest = readJson('fixtures/protocol/push-recovery-inspect-request.json');
+
+  assert.ok(headers.read_only_request_headers['X-Auth-Signature'].startsWith('hmac-sha256:'), 'read-only auth must stay HMAC-based');
+  assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Session'], 'mutating requests must carry a push session');
+  assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Idempotency-Key'], 'mutating requests must carry an idempotency key');
+  assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Signature'], 'mutating requests must carry a canonical push signature');
+  assert.equal(inspectRequest.mode, 'inspect');
+  assert.ok(!('idempotency_key' in inspectRequest), 'inspect must not require a mutating idempotency key');
+  assert.equal(journalOpen.entries[0].claim_generation, 4);
+  assert.equal(journalOpen.entries[0].lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(journalOpen.entries[0].storage_guards[0].outcome, 'claimed');
+});
+
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {
   const topology = readJson('fixtures/protocol/push-topology.json');
 
@@ -49,6 +65,8 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
   assert.equal(topology.roles.runner.role, 'the only process allowed to compare, upload, inspect, and recover');
   assert.ok(topology.docker.evidence.some((line) => line.includes('push_batch_apply revalidates the live remote')));
   assert.ok(topology.playground.shape.some((line) => line.includes('fresh snapshot listing')));
+  assert.ok(topology.docker.shape.some((line) => line.includes('remote-base pulls first and seeds the merge base')));
+  assert.ok(topology.playground.evidence.some((line) => line.includes('remote-changed is the same remote site observed later')));
 });
 
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
