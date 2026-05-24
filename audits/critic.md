@@ -229,6 +229,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A stale approval, stale snapshot, or stale manual-review artifact cannot be
   recycled as evidence for a new apply, even if the plan hash or endpoint name
   has not changed.
+- Any reviewed approval artifact must bind to the exact base, local, remote,
+  and coverage hashes that were reviewed. If any of those hashes change, the
+  old artifact remains audit evidence only and cannot authorize a retry.
 - Every mutation surface has an explicit coverage manifest entry, or the push
   hard-blocks before apply.
 - Every plugin-owned resource has a declared contract, or the push hard-blocks
@@ -240,6 +243,10 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   artifacts cannot authorize a retry.
 - A partial conflict resolution cannot be widened on retry; the next apply must
   revalidate the exact approved scope or reject before any write.
+- Route-shape matches, packaged-plugin mounting, and `finalMatchesLocal`
+  results are compatibility evidence only. They must not be used as proof of
+  production mutation safety, live-remote drift handling, or current-release
+  readiness.
 - Every apply boundary has durable recovery evidence that can classify the
   target as old, new, or blocked after a crash.
 - Every partial side effect path is either rolled back, fenced, or preserved
