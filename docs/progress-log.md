@@ -4,7 +4,19 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Refresh
+
+- Updated [progress.html](../progress.html) with a fresh visible last-updated
+  stamp and a tighter summary of the current evidence boundary.
+- The public page now states the known pending gates directly: real WordPress
+  executor, recovery journal, Docker/Playground integration, and plugin
+  drivers remain unproven.
+- No new proof claims were added. The visible status remains constrained to
+  evidence already linked from the repository.
+
 ## 2026-05-24 23:08 CEST - Current Verification Snapshot
+
+## 2026-05-24 - Current Supervisor Snapshot
 
 - Status: `82` Node tests pass. The production-shaped, packaged-plugin, and
   authenticated HTTP smokes pass against graph-safe route fixtures.
