@@ -87,6 +87,16 @@ the resource key, the live remote hash observed during planning, and the
   unrelated resources may still proceed if their own live remote preconditions
   are satisfied.
 
+## Must Preserve Live Evidence
+
+- The remote hash observed during planning for every mutation that remains
+  eligible.
+- The unchanged remote resource behind a `keep-remote` decision.
+- The related remote resource named by a conflict or blocker.
+- The independent local mutation evidence for any plan that becomes conflicted,
+  so long as the mutation itself was still safe to compute before the stop
+  condition was discovered.
+
 ## Must Stop
 
 - Local and remote changed the same resource to different hashes.
