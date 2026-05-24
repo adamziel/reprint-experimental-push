@@ -42,6 +42,11 @@ For each of those boundaries, the remote must remain in one of the acceptable
 states above, and replay must not duplicate inserts or resurrect stale local
 data.
 
+The completed-plan replay case is only acceptable when the journal still
+matches the remote after hashes. If the remote has drifted since completion,
+the outcome is not `fully-updated-remote`; it is `blocked-recovery` with the
+remote and journal artifacts needed to inspect the drift.
+
 ## Durable Journal Expectations
 
 The recovery journal should be durable enough to answer these questions after a
