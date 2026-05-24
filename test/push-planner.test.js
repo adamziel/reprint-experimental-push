@@ -1753,7 +1753,7 @@ test('injected failure before mutation leaves the old remote with a journal arti
   assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
   assert.equal(JSON.stringify(remote), before);
   assertAcceptableRecoveryState(error.details.recovery);
-  assert.equal(error.details.recovery.status, 'old-remote');
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
   assert.equal(error.details.recovery.artifacts.journal.entries.length, 2);
 });
@@ -1774,7 +1774,7 @@ test('injected failure after staging leaves the old remote with staged rollback 
   const journal = error.details.recovery.artifacts.journal;
   assert.equal(JSON.stringify(remote), before);
   assertAcceptableRecoveryState(error.details.recovery);
-  assert.equal(error.details.recovery.status, 'old-remote');
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
   assert.equal(journal.status, 'staged');
   assert.deepEqual(journal.entries.map((entry) => entry.status), ['staged', 'staged']);
   assert.ok(journal.entries.every((entry) => entry.beforeValue && entry.afterValue));
@@ -1811,7 +1811,7 @@ test('injected failure after dependency validation leaves the old remote with va
   assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
   assert.equal(JSON.stringify(remote), before);
   assertAcceptableRecoveryState(error.details.recovery);
-  assert.equal(error.details.recovery.status, 'old-remote');
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
 });
 
@@ -2124,6 +2124,8 @@ test('replaying a completed plan does not duplicate inserts or reapply stale loc
   assert.equal(error.code, 'RECOVERY_BLOCKED');
   assert.equal(changedAfterCompletion.db.wp_posts['ID:2'].post_title, 'Remote edited after push');
   assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal);
+  assert.ok(error.details.recovery.artifacts.remote);
 });
 
 test('completed replay on a fresh durable journal persists a restart-inspectable envelope', () => {
