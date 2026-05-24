@@ -350,6 +350,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'manifest-hash-completes-large-upload',
+    proposal: 'treat a matching manifest or archive hash as proof that every chunk and guarded publish already succeeded',
+    rejectedBecause: 'a full-object hash can confirm content identity, but it cannot prove each chunk receipt or the publish finalize record survived failure',
+    rejectedGate: 'recovery',
+    violates: ['chunk-receipts', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
     id: 'backpressure-drops-evidence',
     proposal: 'summarize or drop queued precondition evidence when upload or journal queues are over budget',
     rejectedBecause: 'pressure handling must pause producers, not erase the evidence needed to classify recovery',
