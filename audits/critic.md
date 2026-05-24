@@ -293,6 +293,10 @@ production-grade push support:
   compatibility checks only. They do not prove production safety, because they
   can succeed while the live remote has drifted, the write path is still
   lab-backed, or stale manual-review artifacts are being reused.
+- A route-shape smoke, packaged-plugin mount, or fixture replay must never be
+  promoted into production wording unless the same request path was exercised
+  against a live remote after drift and the stale approval failed closed before
+  mutation.
 - A production claim must show the live remote was revalidated at the actual
   apply boundary, not just during dry-run or fixture planning.
 - A production claim must fail closed on create-time identity remapping unless
@@ -302,6 +306,9 @@ production-grade push support:
   declared allowlist, including plugin tables, options, generated files,
   activation side effects, cron, and cache state, unless a semantic driver
   proves the mutation surface exactly.
+- A production claim must fail closed on any stale manual-review artifact that
+  can still be read for audit but no longer matches the live snapshot, plan
+  hash, or retry scope.
 - A production claim must fail closed on partial file/DB/plugin side effects;
   a split remote state is not success unless the remote is preserved for audit
   and the retry path can prove safe recovery from fresh evidence.
