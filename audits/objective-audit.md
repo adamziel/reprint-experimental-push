@@ -98,7 +98,7 @@ these release requirements:
 | R12 | Make apply idempotent and resumable across duplicate requests, chunks, process failures, stale claims, and operator retries. |
 | R13 | Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope. |
 | R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
-| R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets and a release threshold that cannot be skipped by accident. |
+| R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets, a documented measurement environment, and a release threshold that cannot be skipped by accident. |
 | R16 | Provide one enforced release gate that runs the safety, recovery, auth, storage, plugin, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough. |
 
 The most important release requirement is not one individual check; it is the
@@ -129,7 +129,7 @@ Evidence classes used below:
 | R12 idempotent resumability | DB journal smokes require `X-Reprint-Push-Idempotency-Key`, reject same-key/different-body requests, replay committed or rejected results, claim one concurrent same-key executor, finalize missing commits, and handle one all-old stale-claim retry path. Production-shaped route smoke also proves same-key replay and same-key/different-body conflict under `/reprint/v1`. | No chunk cursor, production retry contract, production duplicate first-apply test, shared-DB multi-worker proof, stale-plan invalidation across chunks, or production stale-claim lease/fencing/expiry behavior. | Yes |
 | R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
-| R15 speed | Executable proof: `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, backpressure triggers, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, and no memory ceiling or throughput target is measured against a real push path. The current evidence can justify refusing unsupported speed claims; it cannot justify saying the push path is fast or production-scaled. | Yes for any speed claim |
+| R15 speed | Executable proof: `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, backpressure triggers, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no release threshold is tied to a documented benchmark environment. The current evidence can justify refusing unsupported speed claims; it cannot justify saying the push path is fast or production-scaled. | Yes for any speed claim |
 | R16 release suite | Executable proof: `npm test` passed with 89 tests, 0 failures, and 0 skips. Lab/fixture proof: `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. The repo exposes named opt-in gates for auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomicity, forms lab, authenticated CLI, production-shaped routing/package, mid-apply drift, and recovery. | No CI workflow or release aggregator was found. The only bundled release-like script is `npm run test:playground`, and it still stops after plan/apply/push-protocol. The stronger gates are not chained into any enforced command, so release evidence is still a manual assembly of optional scripts. The production-shaped smoke itself still reports `labBacked: true`, so route-shaped success is not production proof. There is no single enforced command that proves safety, durability, and performance together before release. The current default test pass is therefore only a model-and-fixture checkpoint, not a release gate. | Yes |
 
 ## Test Audit
@@ -268,9 +268,9 @@ invocation and can be skipped while `npm test` remains green.
 10. **Speed has no measured evidence at the production boundary.** The
    performance tests prove a model, claim gates, and guardrails. They do not
    move bytes, mutate a source site, measure memory, measure throughput, or
-   verify that safety checks remain enabled under load. The current proof is
-   enough to block unsupported speed claims, not to justify a "fast"
-   release claim.
+   pin those numbers to a documented benchmark environment with a release
+   threshold. The current proof is enough to block unsupported speed claims,
+   not to justify a "fast" release claim.
 
 11. **The release surface is real but fragmented.** The repository already
     exposes high-value smokes for auth, journal durability, storage guards,
@@ -305,9 +305,11 @@ invocation and can be skipped while `npm test` remains green.
 14. **The speed claim is still only a model.** The benchmark tests verify
     evidence structure, guardrail placement, and failure gates, but they do
     not measure a real push path against a live WordPress site, do not report
-    a throughput target, and do not establish a memory ceiling under load.
-    Until a production-shaped benchmark runs the executor end to end, "fast"
-    remains blocked as a release claim, not merely unproven.
+    a throughput target, do not establish a memory ceiling under load, and do
+    not enforce a benchmark environment that can fail release automatically.
+    Until a production-shaped benchmark runs the executor end to end with a
+    non-bypassable threshold, "fast" remains blocked as a release claim, not
+    merely unproven.
 
 ## Required Release Gates
 
