@@ -1,28 +1,15 @@
-# Durable Recovery Journal Contract
+# Durable Recovery Contract
 
-The recovery tests in this lane use JSON fixtures and in-memory objects to model
-apply failures, but production recovery needs a durable journal with stronger
-guarantees:
+The recovery model in `src/apply.js` treats atomic apply as one of three post-failure states:
 
-- the journal must survive process exit and restart;
-- the journal must be written before the executor treats a partial apply as safe;
-- the journal must preserve enough evidence to classify `old-remote`,
-  `fully-updated-remote`, or `blocked-recovery`;
-- a partial remote mutation without a durable recovery artifact is a release
-  blocker.
+- `old-remote`: nothing was committed remotely; the journal is the recovery artifact.
+- `fully-updated-remote`: every planned mutation is already present; the journal is the replay artifact.
+- `blocked-recovery`: the remote drifted or partially applied outside the recoverable envelope; both journal and remote artifacts are required.
 
-Fixture-based evidence is still useful for proving the state machine, but it is
-not the same thing as production durability. In particular, JSON test doubles do
-not prove database row durability, fsync semantics, plugin activation fences, or
-filesystem crash recovery.
+The contract is intentionally strict:
 
-Accepted recovery outcomes remain narrow:
+- A pre-commit failure may stage or validate work, but it must not leave a partially mutated remote without journal evidence.
+- A completed replay must stay inert, return zero applied mutations, and not resurrect stale local data.
+- A partial remote mutation without recovery artifacts is a blocker, not a safe retry target.
 
-- `old-remote`: no remote mutation escaped the failure boundary.
-- `fully-updated-remote`: replay observed that the completed plan already
-  matched the live remote.
-- `blocked-recovery`: the remote may be partially updated, but the journal and
-  live hashes prove the executor cannot safely infer completion.
-
-Replay must stay idempotent. If a completed plan is replayed against a matching
-remote, it must not duplicate inserts or resurrect stale local data.
+This lane's tests treat the journal as the source of truth for recovery classification and verify that the allowed states remain stable across failure injection and replay.
