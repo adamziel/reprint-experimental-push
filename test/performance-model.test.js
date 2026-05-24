@@ -349,9 +349,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('fresh-dry-run-authorizes-apply').proposal.includes('dry-run plan is recent'));
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('metadata-only-conflict-check').violates.includes('strong-resource-hashes'));
-<<<<<<< HEAD
   assert.ok(rejectedById.get('remote-index-authorizes-mutation').proposal.includes('permission'));
-=======
 
   const rejectedIds = new Set(model.rejectedFastPaths.map((fastPath) => fastPath.id));
   for (const id of [
@@ -364,7 +362,6 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);
   }
->>>>>>> ff1dd1b (Tighten fast-path benchmark coverage)
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {
