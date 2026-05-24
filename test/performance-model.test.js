@@ -46,6 +46,14 @@ test('benchmark model covers large uploads and plugin installs', () => {
     ),
     'large upload still ends in a guarded publish step',
   );
+  assert.ok(
+    largeUpload.backpressure.resumeRequires.includes('durable-chunk-receipts'),
+    'large upload resumes only from durable chunk evidence',
+  );
+  assert.ok(
+    largeUpload.backpressure.resumeRequires.includes('database-batch-commit-records'),
+    'large upload keeps recovery records explicit even without DB work',
+  );
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
   assert.ok(pluginUpdate.totals.dbRows >= 6_000, 'plugin update includes dependency-heavy row batches');
@@ -122,6 +130,14 @@ test('benchmark model covers large uploads and plugin installs', () => {
       (action) => action.type === 'atomic-group-commit' && action.canonicalVisible === true,
     ),
     'plugin update models the final atomic-group commit as the only visibility point',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'remote-index-probe' && action.applyMustRevalidate === true),
+    'plugin update keeps remote indexes planning-only',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'plugin-metadata-stage'),
+    'plugin update models staged plugin metadata before commit',
   );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
@@ -614,6 +630,11 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('index-and-compressed-upload-queue-completes-plugin-install')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-upload-queue-completes-plugin-update')
       .violates.includes('remote-index-planning-only'),
   );
@@ -640,6 +661,11 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(
     rejectedById.get('index-and-compressed-upload-queue-completes-plugin-update').rejectedGate,
     'recovery',
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-upload-queue-completes-plugin-update')
+      .violates.includes('atomic-groups'),
   );
   assert.ok(
     rejectedById
@@ -682,6 +708,11 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-update')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-row-batch-completes-plugin-install')
       .violates.includes('remote-index-planning-only'),
   );
@@ -721,6 +752,11 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-install')
+      .violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-upload-queue-completes-large-upload')
       .violates.includes('remote-index-planning-only'),
   );
@@ -747,6 +783,11 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(
     rejectedById.get('index-and-compressed-upload-queue-completes-large-upload').rejectedGate,
     'recovery',
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-upload-queue-completes-large-upload')
+      .violates.includes('chunk-receipts'),
   );
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(
@@ -800,6 +841,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-table-checksum-skips-batch-preconditions',
     'full-digest-completes-chunk-resume',
     'manifest-hash-completes-large-upload',
+    'parallelize-atomic-group-commit',
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);
   }

@@ -121,6 +121,9 @@ The benchmark shape must stay realistic:
 - A dependency-heavy plugin-update workload exercises the same barrier with
   nontrivial dependency evidence, staged rows, and a second atomic-group
   commit path.
+- Each of those workloads keeps recovery evidence visible in the model: chunk
+  receipts for uploads, batch receipts for rows, and group-finalize records
+  for coupled plugin changes.
 - A rejected-path workload proves that a visible staging object is not enough
   to complete a chunk, and that a fresh dry run still does not authorize apply.
 - Large uploads and plugin installs must both include recovery edges, not just
