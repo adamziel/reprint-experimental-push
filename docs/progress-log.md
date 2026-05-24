@@ -6,25 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Current Supervisor Snapshot
 
-- Status: `82` Node tests pass. The production-shaped, packaged-plugin, and
-  authenticated HTTP smokes pass against graph-safe route fixtures.
-- New proof: push routes now accept only explicitly provisioned push-scoped
+- Status: fresh verification at 2026-05-24 23:46 CEST passed `82` Node tests.
+  The production-shaped, packaged-plugin, and authenticated HTTP smokes remain
+  linked evidence for graph-safe route fixtures.
+- Current proof: push routes accept only explicitly provisioned push-scoped
   Application Password entries. The packaged smoke rejects both an
   unprovisioned alternate credential and an unscoped administrator Application
   Password with `401`, then applies seven graph-safe mutations.
-- Also merged: stale WordPress graph references are blocked, stale recovery
+- Also present: stale WordPress graph references are blocked, stale recovery
   claims fence old workers before mutation, and guarded executor benchmark
   evidence refuses production throughput claims when proof is missing.
-- Trend: no-data-loss, recovery, fast-path, and reliable-executor evidence all
-  moved up in lab/model scope. Production readiness is still blocked.
+- Trend: evidence is stable since the 23:24 refresh. No-data-loss, recovery,
+  fast-path, and reliable-executor lanes are up inside lab/model scope only.
+  Production readiness is still blocked.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, and arbitrary plugin drivers remain
   unproven.
-- Next nudge: replace lab-backed auth/session/journal internals with
-  production lifecycle and durable journal guarantees, then prove graph identity
-  mapping instead of dropping blocked graph edges from route smokes.
+- Next nudge: require one production-backed proof per owner: credentials,
+  journal ownership/leases, graph identity mapping, and a large-site benchmark
+  with safety checks still enabled.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and keeps details behind links.
+- Lane deploy note: this update becomes live on GitHub Pages only after this
+  lane merges to `main`; the deployed copy was not verified from this lane.
 
 <details>
 <summary>Earlier progress entries</summary>

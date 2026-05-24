@@ -1,9 +1,36 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 23:24 CEST
+Last updated: 2026-05-24 23:46 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-24 23:46 CEST - Verification Refresh
+
+- Going well: fresh `npm test` passed with `82` Node tests. Scoped
+  credentials, graph-reference blocking, recovery fencing, and guarded
+  benchmark claim checks are still green.
+- Not going well: no new production-backed evidence landed since 23:24.
+  Production auth/session storage, durable journal ownership, leases/fencing,
+  full graph identity mapping, and general plugin drivers remain blocked by
+  missing evidence.
+- Progress change: evidence stayed stable; production readiness stayed flat.
+- Next nudge: ask for one production-backed proof per lane, not broader lab
+  coverage.
+- Page note: this lane update becomes live only after the lane merges to
+  `main`.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Owner: no-data-loss invariants. Gap: real post/postmeta/attachment/taxonomy identity mapping. Next test: graph fixture that proves blocking or remapping instead of excluding blocked edges. |
+| Recovery | Owner: no-data-loss recovery. Gap: production journal ownership and leases. Next test: kill a production-backed journal/claim boundary and prove stale workers are fenced before mutation. |
+| Reliable executor | Owner: reliable executor. Gap: production push credentials and session storage. Next test: replace lab Application Password/signing storage with scoped production credentials. |
+| Fast paths | Owner: fast paths. Gap: no runtime benchmark. Next test: large Playground/Docker benchmark with receipts, journals, preconditions, and memory limits enabled. |
+| Audit and critic | Owner: independent audit and critic. Gap: route internals are still lab-backed. Next test: re-audit after `/reprint/v1` no longer reports lab-backed internals. |
+| Progress publisher | Owner: progress publisher. Gap: deployed Pages cannot update from this lane. Next test: after merge, verify the public `progress.html` date and linked evidence. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 23:24 CEST - Scoped Credential And Graph Safety Refresh
 
@@ -31,9 +58,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Run the guarded benchmark against a real large Playground/Docker site. |
 | Audit and critic | Re-audit after production-backed auth and journal rows land. |
 | Progress publisher | Keep Pages dated, concise, and explicit about blocked production gates. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 23:04 CEST - Auth Bootstrap And Redaction Refresh
 
