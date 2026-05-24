@@ -763,6 +763,13 @@ The push executor maps directly onto the existing pull pipeline:
 6. Push journal and recover inspect read durable evidence only until the
    journal proves a safe finish, rollback, or block.
 
+That mapping is one-way. Pull establishes the persisted base package and the
+coverage proof; push consumes those artifacts as immutable provenance and
+never rewrites them to make a stale remote look current. The live remote hash
+listing is a planning snapshot only, and the dry-run receipt is a receipt of
+eligibility only. Apply must fetch fresh live evidence again before every
+batch.
+
 The machine-readable fixture [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
 captures the same role split for test code, and
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)

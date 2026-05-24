@@ -64,14 +64,16 @@ Endpoint specifics:
   enough for planning. It is a read-only remote view and never a lock.
 - `push_plan_dry_run` accepts the canonical plan derived from the persisted
   pull base, the local edited site, and the live snapshot. It records the plan
-  as eligible or blocked, but it never reserves remote liveness.
+  as eligible or blocked, but it never reserves remote liveness. The dry-run
+  receipt is only a planning receipt, never an apply permit.
 - `push_batch_apply` is the only normal mutation path. It must revalidate the
   live remote before every batch and again at the storage boundary before any
   write. Dry-run evidence is not sufficient by itself.
 - `push_journal` is a read-only journal inspector for lost-response recovery,
   idempotency resolution, lease/fencing evidence, and apply classification.
   It reads durable journal rows only; it does not mint a new lock or rewrite a
-  prior claim.
+  prior claim. Journal inspection is how the client distinguishes accepted,
+  committed, replayable, and blocked results after a timeout or crash.
 - `push_recover` is the only recovery entrypoint. `inspect` must stay
   read-only; `auto`, `finish`, and `rollback` may mutate only when the journal
   and fresh live hashes prove the action.
@@ -138,6 +140,8 @@ Pull still discovers and records the merge base. Push consumes that base and
 adds live-remote revalidation and mutation journaling. The mapping is explicit:
 the pull exporter/importer produces the persisted base package, and push reads
 that package as immutable provenance rather than re-exporting or rewriting it.
+The remote hash listing is similarly one-way evidence: it informs planning, but
+it does not reserve the remote or survive as apply-time truth.
 
 The pull pipeline remains the source of truth for the base package:
 
@@ -197,6 +201,8 @@ The pull-to-push handoff is linear and one-way:
 5. Push dry-run uploads the canonical plan built from base, local, and live remote.
 6. Push apply mutates only when live revalidation still matches the plan and the
    storage boundary still proves the individual write.
+7. Push journal and recovery inspect resolve lost responses or interrupted
+   apply attempts without turning stale evidence into write authority.
 
 The existing pull exporter/importer pipeline remains the source of truth for the
 persisted merge base. Push does not add a second export format or a second notion
