@@ -398,6 +398,17 @@ test('parallelism limits and backpressure budgets are explicit', () => {
 
 test('large uploads and plugin work retain the required fast-path evidence', () => {
   const model = buildBenchmarkModel();
+  const largeUpload = model.workloads.find((workload) => workload.kind === 'large-upload');
+  const pluginInstall = model.workloads.find((workload) => workload.kind === 'plugin-install');
+  const pluginUpdate = model.workloads.find((workload) => workload.kind === 'plugin-update');
+  const largeUploadSchedule = model.schedules.find((schedule) => schedule.kind === 'large-upload');
+  const pluginInstallSchedule = model.schedules.find((schedule) => schedule.kind === 'plugin-install');
+  const pluginUpdateSchedule = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
+
+  assert.ok(largeUpload.files.reduce((sum, file) => sum + file.sizeBytes, 0) > 2 * 1024 * 1024 * 1024);
+  assert.ok(pluginInstall.files.length >= 4);
+  assert.ok(pluginInstall.rowGroups.reduce((sum, group) => sum + group.rowCount, 0) > 10_000);
+  assert.ok(pluginUpdate.rowGroups.reduce((sum, group) => sum + group.rowCount, 0) > 6_000);
 
   for (const schedule of model.schedules) {
     const remoteIndexProbe = schedule.actions.find((action) => action.type === 'remote-index-probe');
@@ -457,32 +468,28 @@ test('large uploads and plugin work retain the required fast-path evidence', () 
     assert.ok(filePublishes.every((action) => action.requiresCompleteChunkReceipts > 0));
   }
 
-  const largeUpload = model.schedules.find((schedule) => schedule.kind === 'large-upload');
-  const pluginInstall = model.schedules.find((schedule) => schedule.kind === 'plugin-install');
-  const pluginUpdate = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
-
   assert.ok(
-    largeUpload.actions.some((action) => action.type === 'file-publish' && action.publishMode === 'compare-and-swap'),
+    largeUploadSchedule.actions.some((action) => action.type === 'file-publish' && action.publishMode === 'compare-and-swap'),
     'large uploads should keep publish visibility behind a guarded compare-and-swap',
   );
   assert.ok(
-    largeUpload.actions.every((action) => action.type !== 'atomic-group-commit'),
+    largeUploadSchedule.actions.every((action) => action.type !== 'atomic-group-commit'),
     'large uploads should not invent an atomic-group commit that does not exist',
   );
   assert.ok(
-    pluginInstall.actions.some((action) => action.type === 'group-staging-finalize'),
+    pluginInstallSchedule.actions.some((action) => action.type === 'group-staging-finalize'),
     'plugin install should model the group staging barrier',
   );
   assert.ok(
-    pluginUpdate.actions.some((action) => action.type === 'group-staging-finalize'),
+    pluginUpdateSchedule.actions.some((action) => action.type === 'group-staging-finalize'),
     'plugin update should model the group staging barrier',
   );
   assert.ok(
-    pluginUpdate.actions.some((action) => action.type === 'atomic-group-commit' && action.canonicalVisible === true),
+    pluginUpdateSchedule.actions.some((action) => action.type === 'atomic-group-commit' && action.canonicalVisible === true),
     'plugin update should only become visible at the atomic-group commit',
   );
   assert.ok(
-    pluginUpdate.actions.some((action) => action.type === 'remote-index-probe' && action.applyMustRevalidate === true),
+    pluginUpdateSchedule.actions.some((action) => action.type === 'remote-index-probe' && action.applyMustRevalidate === true),
     'plugin update should keep remote indexes planning-only',
   );
 });
@@ -532,6 +539,20 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById
       .get('index-and-compressed-package-cache-skips-plugin-activation')
       .violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-package-cache-completes-plugin-install')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-package-cache-completes-plugin-install')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-package-cache-completes-plugin-install').rejectedGate,
+    'recovery',
   );
   assert.equal(
     rejectedById.get('index-and-compressed-package-cache-skips-plugin-activation').rejectedGate,
@@ -1386,6 +1407,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-package-hash-skips-plugin-validators',
     'compressed-package-cache-skips-plugin-preconditions',
     'index-and-compressed-package-cache-skips-plugin-activation',
+    'index-and-compressed-package-cache-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-plugin-update',
     'index-and-compressed-row-batch-completes-plugin-update',

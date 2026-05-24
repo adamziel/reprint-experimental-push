@@ -61,6 +61,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed upload queue still cannot prove a plugin update finished, because dependency checks, staged files, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed package cache still cannot skip plugin validators or the atomic-group barrier, because planning evidence and compressed storage do not prove dependency readiness or metadata writes.
 - A fresh remote index plus a compressed package cache still cannot skip plugin activation or the atomic-group barrier, because planning evidence and compressed storage do not prove the activation state or group commit completion.
+- A fresh remote index plus a compressed package cache still cannot prove a plugin install finished, because dependency checks, metadata writes, file receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row batch still cannot prove a plugin install finished, because per-row preconditions, dependency checks, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row summary still cannot prove plugin activation finished, because the per-row receipts, activation state change, and atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row summary still cannot prove plugin install finished, because dependency checks, row receipts, and the atomic-group commit still need durable evidence.
@@ -445,6 +446,9 @@ under load:
   and atomic-group commit before it can become visible.
 - remote-index plus cached package hash cannot skip plugin validators because
   package identity is not a substitute for the live group-scoped commit barrier.
+- remote-index plus compressed package cache cannot complete plugin install
+  because dependency checks, metadata writes, file receipts, and the
+  atomic-group commit still need durable evidence.
 - dependency-heavy plugin update cannot be fast-pathed by index freshness alone
   because dependency checks still have to survive the atomic-group barrier.
 - split plugin install is rejected because files, rows, metadata, dependency
