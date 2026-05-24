@@ -3,7 +3,10 @@ set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 lanes_root="${REPRINT_PUSH_LANES_DIR:-"$HOME/reprint-experimental-push-lanes"}"
+tmux_socket_dir="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)"
 mkdir -p "$lanes_root"
+mkdir -p "$tmux_socket_dir"
+chmod 700 "$tmux_socket_dir"
 
 lanes=(
   no-data-loss-invariants

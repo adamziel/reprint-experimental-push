@@ -9,8 +9,11 @@ branch="lane/$lane"
 session="rp-$lane"
 prompt="$repo/supervision/lanes/$lane.md"
 output="$worktree/.lane-output/final.md"
+tmux_socket_dir="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)"
 
 mkdir -p "$lanes_root"
+mkdir -p "$tmux_socket_dir"
+chmod 700 "$tmux_socket_dir"
 
 if ! git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$repo" worktree add -B "$branch" "$worktree" HEAD
