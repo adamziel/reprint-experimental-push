@@ -417,6 +417,9 @@ under load:
 - remote-index plus cached package hash is rejected because planning evidence
   and package identity cannot prove dependency checks, metadata writes, or the
   atomic-group commit.
+- remote-index plus cached package hash is also rejected for plugin updates,
+  because the update still needs the same dependency checks, metadata writes,
+  and atomic-group commit before it can become visible.
 - remote-index plus cached package hash cannot skip plugin validators because
   package identity is not a substitute for the live group-scoped commit barrier.
 - dependency-heavy plugin update cannot be fast-pathed by index freshness alone

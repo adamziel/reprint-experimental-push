@@ -684,7 +684,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.ok(
-      rejectedById
+    rejectedById
       .get('index-and-package-hash-completes-plugin-install')
       .violates.includes('remote-index-planning-only'),
   );
@@ -700,6 +700,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.equal(
     rejectedById.get('index-and-package-hash-completes-plugin-install').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-package-hash-completes-plugin-update')
+      .violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-package-hash-completes-plugin-update')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-package-hash-completes-plugin-update')
+      .violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-package-hash-completes-plugin-update').rejectedGate,
     'group',
   );
   assert.ok(
@@ -987,6 +1006,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-chunk-receipts-skip-file-compare',
     'index-and-chunk-receipts-skip-guarded-publish',
     'index-and-package-hash-completes-plugin-install',
+    'index-and-package-hash-completes-plugin-update',
     'index-and-package-hash-skips-plugin-validators',
     'index-and-compressed-upload-queue-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-plugin-update',

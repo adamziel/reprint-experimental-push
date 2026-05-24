@@ -476,6 +476,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'plugin-preconditions', 'atomic-groups'],
   },
   {
+    id: 'index-and-package-hash-completes-plugin-update',
+    proposal: 'treat a fresh remote index plus a cached plugin package hash as proof that the update can skip its live boundary',
+    rejectedBecause: 'planning evidence and a package hash do not prove dependency checks, metadata writes, or atomic-group commit completion',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'plugin-preconditions', 'atomic-groups'],
+  },
+  {
     id: 'index-and-package-hash-skips-plugin-validators',
     proposal: 'use a fresh remote index plus a cached package hash to skip dependency, metadata, and activation validators',
     rejectedBecause: 'package identity can speed planning, but validators still need a live group-scoped commit barrier',
