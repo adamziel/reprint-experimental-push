@@ -321,6 +321,10 @@ production-grade push support:
   packaged-plugin mount, or `finalMatchesLocal` alone is never enough, and a
   status update must not imply production safety by association with the
   source-note comparison.
+- Lab-shape guardrail: a route-shape smoke, packaged-plugin mount, or
+  fixture `finalMatchesLocal` result may only be described as lab or
+  compatibility evidence; it must not be reframed as proof that the live
+  write path is production-safe, remote-preserving, or retry-safe.
 - Manual-review proof: the review artifact must show the exact base/local/
   remote hashes that were reviewed, the reviewer identity, and the live
   snapshot timestamp, and it must fail closed if any of those change before
