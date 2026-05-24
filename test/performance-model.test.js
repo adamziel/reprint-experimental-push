@@ -962,6 +962,31 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);
   }
+
+  for (const area of model.safeSpeedupAreas) {
+    const hasRejectedExample = model.rejectedFastPaths.some((fastPath) => {
+      switch (area) {
+        case 'file-hashing':
+          return fastPath.violates.includes('canonical-resource-hashes');
+        case 'chunk-upload':
+          return fastPath.violates.includes('chunk-receipts');
+        case 'database-row-batching':
+          return fastPath.violates.includes('row-preconditions');
+        case 'remote-indexes':
+          return fastPath.violates.includes('remote-index-planning-only');
+        case 'compression':
+          return fastPath.violates.includes('compression');
+        case 'parallelism-limits':
+          return fastPath.violates.includes('backpressure');
+        case 'backpressure':
+          return fastPath.violates.includes('backpressure');
+        default:
+          return false;
+      }
+    });
+
+    assert.ok(hasRejectedExample, `missing rejected fast path for ${area}`);
+  }
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {

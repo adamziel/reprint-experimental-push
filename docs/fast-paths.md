@@ -146,6 +146,11 @@ The benchmark shape must stay realistic:
 - Rejected fast paths are modeled alongside the safe ones so the benchmark can
   prove that the tempting shortcuts were rejected for the right reason, not
   just omitted from the happy path.
+- Each safe family also needs at least one concrete rejection example in the
+  model, so the lane keeps showing why file hashing, chunk upload, database
+  batching, remote indexes, compression, parallelism limits, and backpressure
+  all stop at the first unsafe gate instead of drifting into ambiguous
+  failure handling.
 
 ## File Hashing
 
