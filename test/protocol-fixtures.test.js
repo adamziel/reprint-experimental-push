@@ -215,6 +215,21 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
     'recovery-inspect',
     'recovery-mutate',
   ]);
+  assert.ok(
+    topology.test_topology.drift_proof.includes(
+      'remote-base and remote-changed are the same remote identity observed at different times',
+    ),
+  );
+  assert.ok(
+    topology.test_topology.drift_proof.includes(
+      'apply revalidates fresh live evidence before every batch and again at the storage boundary',
+    ),
+  );
+  assert.ok(
+    topology.test_topology.drift_proof.includes(
+      'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
 });
 
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
