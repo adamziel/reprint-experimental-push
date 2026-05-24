@@ -18,6 +18,9 @@ the live remote immediately before apply.
 - Local deletions remain auto-applicable only when the deleted resource still
   matches the pull base on the live remote. Remote-only changes to unrelated
   plugin metadata or plugin files do not relax that precondition.
+- Remote-only plugin metadata or file changes do not block unrelated local file
+  or row deletions when those deletions still satisfy the live remote hash
+  check.
 - Matching independent edits where local and remote changed a resource to the
   same hash, including deletions, file edits, and plugin context changes; these
   produce `already-in-sync` decisions, not mutations.

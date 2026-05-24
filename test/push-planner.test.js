@@ -511,6 +511,32 @@ test('keeps remote-only plugin changes while planning a safe local deletion behi
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
+test('keeps remote-only plugin changes while planning an unrelated local row deletion', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.db.wp_posts['ID:1'];
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const deletion = mutationFor(plan, 'row:["wp_posts","ID:1"]');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(deletion.action, 'delete');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.plugins.forms.active, false);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('blocks local plugin metadata changes when remote plugin files changed', () => {
   const base = baseSite();
   const local = baseSite();
