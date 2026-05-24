@@ -36,6 +36,13 @@
     }
   },
   "docker": {
+    "evidence": [
+      "push_preflight mints the push session and auth scope before any planning call",
+      "push_snapshot_hashes captures the live remote comparison set used for dry-run planning",
+      "push_plan_dry_run is eligibility only and never a write lock",
+      "push_batch_apply revalidates the live remote before every batch and again at the storage boundary",
+      "push_journal and push_recover inspect read durable evidence before any mutating recovery mode"
+    ],
     "shape": [
       "remote-base pulls first and seeds the merge base",
       "local-edited is restored from that base and edited independently",
@@ -47,6 +54,12 @@
     ]
   },
   "playground": {
+    "evidence": [
+      "remote-base seeds the persisted pull base package and push identity evidence",
+      "local-edited supplies the edited local clone used to build the canonical plan",
+      "remote-changed is the same remote site observed later so stale apply can be rejected",
+      "the runner stays the only actor that may compare, upload, inspect, or recover"
+    ],
     "shape": [
       "remote-base seeds the pull base and push identity evidence",
       "local-edited is the imported site after local changes",
