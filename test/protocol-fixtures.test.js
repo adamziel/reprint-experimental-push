@@ -100,6 +100,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology.playground.local_edited, 'local-edited');
   assert.equal(contract.topology.playground.remote_changed, 'remote-changed');
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
+  assert.equal(
+    contract.proofs.auth_session_journal,
+    'push-auth-session-journal-proof.json binds push-scoped auth, session minting, journal rows, lease fencing, and inspect-first recovery',
+  );
   assert.equal(contract.proofs.auth.includes('existing HMAC family'), true);
   assert.equal(contract.proofs.session_journal.includes('inspect-first recovery path'), true);
   assert.equal(contract.required_invariants[0], 'dry-run and apply are separate remote operations');
@@ -319,13 +323,14 @@ test('push auth session journal proof binds push-scoped auth to journal fencing 
   const proof = readJson('fixtures/protocol/push-auth-session-journal-proof.json');
 
   assert.equal(proof.proof_id, 'push-auth-session-journal-proof-one-remote-one-local');
-  assert.equal(proof.auth.export_hmac_family, 'hmac-sha256');
   assert.equal(proof.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(proof.auth.export_hmac_family, 'hmac-sha256');
   assert.deepEqual(proof.auth.push_requires, [
     'push session',
     'canonical push signature',
     'idempotency key',
   ]);
+  assert.equal(proof.auth.inspect_requires[1], 'no mutating idempotency key');
   assert.ok(proof.auth.inspect_requires.includes('HMAC-authenticated request'));
   assert.equal(proof.session.push_session, 'psh_01j00000000000000000000000');
   assert.equal(proof.session.remote_site_id, 'remote-example');
@@ -339,6 +344,7 @@ test('push auth session journal proof binds push-scoped auth to journal fencing 
   assert.equal(proof.journal_row.staged_hash, 'sha256:local-post-1');
   assert.equal(proof.journal_row.after_hash, 'sha256:remote-post-1');
   assert.equal(proof.journal_row.storage_guard, 'mysql-transaction-row-lock');
+  assert.equal(proof.journal_row.lease_expires_at, '2026-05-24T00:00:09Z');
   assert.equal(proof.inspect.mode, 'inspect');
   assert.equal(proof.inspect.mutates, false);
   assert.deepEqual(proof.inspect.requires, [

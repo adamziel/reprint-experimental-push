@@ -26,8 +26,9 @@ The normal sequence is:
 18. `push-flow.json`
 19. `push-recovery-decision.json`
 20. `push-session-journal-proof.json`
-21. `push-recovery-path.json`
-22. `push-contract.json`
+21. `push-auth-session-journal-proof.json`
+22. `push-recovery-path.json`
+23. `push-contract.json`
 
 Failure and recovery examples:
 
@@ -53,6 +54,10 @@ Failure and recovery examples:
 - `push-session-journal-proof.json` shows the restart-proof tuple that binds
   the minted push session to the journal claim, lease fence, and inspect-first
   recovery path.
+- `push-auth-session-journal-proof.json` shows the stronger production proof
+  that keeps push auth at least as strict as the export HMAC family while
+  binding the session, journal row, lease fence, and inspect-first recovery
+  path together.
 - `push-flow.json` shows the ordered push stages from preflight through
   inspect-first recovery and makes the dry-run/apply split explicit.
 - `push-topology.json` shows the one-remote, one-local, one-drift-witness
