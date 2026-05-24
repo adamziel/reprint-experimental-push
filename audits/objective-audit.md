@@ -260,8 +260,10 @@ invocation and can be skipped while `npm test` remains green.
     and production-shaped routing, but they are not collected under a single
     enforced gate. That means the current proof set is larger than `npm test`
     alone, yet still weaker than a release-ready matrix because the strongest
-    claims stay manual and easy to skip. A release review should treat that as
-    a missing control, not as a minor convenience gap.
+    claims stay manual and easy to skip. The release blocker is not "more
+    tests" in the abstract; it is one enforced aggregator that fails if the
+    required auth, storage, recovery, plugin, and performance gates are not
+    executed.
 
 11. **The highest-value missing edge case is a real crash matrix on the live
     write boundaries.** The current smoke suite can show one process-kill path
@@ -280,6 +282,8 @@ invocation and can be skipped while `npm test` remains green.
    that fails the build when the strongest auth, storage, recovery, plugin,
    and performance smokes are skipped. Until that changes, release readiness
    remains a manual judgment, not an evidence-backed property of the repo.
+   The actionable fix is to add a single release gate command plus CI that
+   runs it, rather than relying on separate opt-in scripts.
 
 13. **The speed claim is still only a model.** The benchmark tests verify
     evidence structure, guardrail placement, and failure gates, but they do
@@ -317,7 +321,8 @@ proof gates:
    journal, storage, recovery, production-shaped route/package, and plugin
    smokes remain manual opt-ins. The repository cannot yet claim that release
    evidence is actually enforced. Release readiness remains a manual
-   judgment call until that aggregator exists.
+   judgment call until that aggregator exists, and that missing aggregator is
+   the current top release blocker.
 8. Runtime benchmarks for large uploads and large DB changes with concrete
    throughput, memory, retry, and recovery measurements.
 
