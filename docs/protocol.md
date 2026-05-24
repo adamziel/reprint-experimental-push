@@ -1,8 +1,9 @@
 # Reprint Push Protocol Extension
 
-This document defines the production push extension for Reprint. Push is not a
-separate synchronization system. It is the write path that extends the existing
-exporter/importer pull pipeline with a safe remote mutation protocol.
+This document describes the intended push extension for Reprint. Push is not a
+separate synchronization system. It is the write path concept that would
+extend the existing exporter/importer pull pipeline with a safe remote
+mutation protocol once the required proofs exist.
 
 The contract is deliberately strict:
 

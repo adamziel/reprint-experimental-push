@@ -1,8 +1,8 @@
 # Reliable Push Executor
 
-This document describes how a production Reprint push executor should run the
-protocol in [protocol.md](protocol.md), how it maps onto the existing pull
-pipeline, and how to test one remote site and one local site.
+This document describes how an intended production Reprint push executor
+should run the protocol in [protocol.md](protocol.md), how it maps onto the
+existing pull pipeline, and how to test one remote site and one local site.
 
 ## Executor Responsibilities
 

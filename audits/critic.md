@@ -12,45 +12,65 @@ not cosmetic. They are the exact points where a partial write, hidden plugin
 side effect, stale retry, or graph rewrite can silently lose remote state while
 the system reports a plausible success.
 
+The safest current wording is narrower: this repo contains executable safety
+model evidence and lab-backed route-shape evidence. It does not yet prove a
+production-safe push path, even when the route names, receipts, or fixture
+smokes look production-shaped.
+
 ## Blocking Gaps
 
 | Risk | Scenario | Missing proof | Why this blocks production |
 | --- | --- | --- | --- |
-| Hidden data loss across graph writes | A push edits `wp_postmeta.post_id`, `post_parent`, `_thumbnail_id`, menu links, attachment references, or serialized block payloads while the target identity changed on the remote after pull. | The current proof only blocks a narrow stale-reference case and explicitly says same-plan identity creation and general rewrite remain unsupported. There is no identity map, rewrite proof, or end-to-end referential integrity test for the affected WordPress graph surfaces. | Without automatic rewrite or a hard block for every graph-mutating class, a push can preserve row hashes while breaking relationships or resurrecting the wrong object. |
-| Manual resolution can become stale overwrite permission | An operator selects "take local" after reviewing a conflict, then retries after the remote changed again or after a previous attempt left a mixed state. | No reviewed-resolution artifact binds the approval to the exact base/local/remote hashes, reviewer identity, and a fresh live snapshot on retry. The docs say manual resolution is only acceptable if the remote is preserved for audit and retry starts from fresh evidence, but the design does not yet show that artifact or enforcement path. | A stale manual decision is equivalent to granting overwrite permission on new remote data. |
-| Plugin data traps remain under-modeled | A plugin stores state in a custom table, generated file, cron row, cache entry, activation hook, or serialized option not covered by the allowlist. | The current plan relies on fixture allowlists and a small set of driver checks. It does not define plugin-owned resource graphs, versioned semantics, rollback expectations, or a conservative fallback for unknown plugin state. | Production push needs to know what each plugin owns, or it must refuse the push. Guessing is unsafe because plugin state often spans tables, files, and runtime side effects. |
+| Live remote drift after dry-run | A plan is dry-run against one live remote snapshot, then the remote changes before apply starts or between apply batches. | The repo proves stale refusal in fixtures and lab routes, but not a production claim that every remote write boundary rechecks live state immediately before the write and preserves the drifted remote if the batch fails. | Dry-run evidence is planning evidence only. Without fresh live revalidation at each write boundary, apply can overwrite changes that were not part of the approved plan. |
+| Identity remapping on create | A push creates a new post, attachment, term, menu item, or meta row whose identity must be remapped on the remote, but the remote already created or changed a matching object after pull. | The current proof blocks one narrow stale-reference case and explicitly says same-plan identity creation and general rewrite remain unsupported. There is no end-to-end proof for identity assignment, reference rewrite, or referential integrity across WordPress graph surfaces. | Creating the wrong identity is a silent corruption case: hashes can match while relationships point to the wrong object. |
+| Plugin-owned state outside allowlists | A plugin stores state in a custom table, generated file, cron row, cache entry, schema table, or activation side effect that is not in the allowlist or semantic driver. | The current plan relies on fixture allowlists and a small set of driver checks. It does not define a complete plugin-owned resource graph, versioned semantics, rollback expectations, or a conservative fallback for unknown plugin state. | Production push must either prove ownership for each plugin-owned surface or refuse the mutation. Guessing is unsafe because plugin state often spans tables, files, options, cron, and runtime side effects. |
+| Recovery after partial file/DB/plugin side effects | The apply path writes one surface, then dies before the related DB row, option, plugin activation state, or file publish is finalized. | The recovery evidence stops at classification in lab-backed and fixture-scoped paths. It does not prove durable production journals, kill-at-every-boundary replay, or repair across DB, filesystem, plugin activation, and stale-claim lease boundaries. | A partial side effect can leave the site in a mixed old/new state that looks successful until the next request, deploy, or retry. |
+| Stale manual review artifacts | An operator reviews a conflict, chooses "take local", and later retries from a saved note or stale artifact after the remote changed again. | No reviewed-resolution artifact binds the approval to the exact base/local/remote hashes, reviewer identity, fresh live snapshot, and retry attempt. The docs say manual resolution is only acceptable if the remote is preserved for audit and retry starts from fresh evidence, but the enforcement path is still missing. | A stale manual decision becomes overwrite permission for a different remote state than the one the reviewer approved. |
 | False reliability from lab-backed routes | A route looks production-shaped, returns live hashes, and accepts push-like requests, but the implementation still resolves to Playground internals or fixture-only paths. | The current evidence repeatedly distinguishes lab-backed route shape from production implementation, but the design does not yet provide a production endpoint that is not lab-backed. | A named endpoint is not production support if its success path still depends on copied lab code, fixture scopes, or route-shape smoke tests. |
-| Recovery claims stop at classification | After a partial apply, the system can label the remote `old-remote`, `fully-updated-remote`, or `blocked-recovery`, but cannot complete a production repair across every boundary. | The recovery docs intentionally stop at lab evidence. They do not prove durable production journals, kill-at-every-boundary replay, or repair across DB, filesystem, plugin activation, and stale-claim lease boundaries. | Production push must survive real crashes, not just classify them after the fact. |
-| Storage boundary proof is still fixture-bounded | A remote changes after dry-run but before a MySQL update, file publish, schema write, activation side effect, or plugin publish. | The guarded write proof is limited to specific Playground fixtures and a narrow set of file/database operations. It does not cover arbitrary production inserts, deletes, schema changes, plugin activation writes, or generic compare-and-swap semantics. | Partial success at a narrow fixture boundary is not proof that arbitrary production writes are safe. |
 | Coverage gaps can hide unknown remote state | The remote contains mu-plugin settings, WooCommerce HPOS data, Action Scheduler queues, custom tables, generated assets, or multisite data outside the scanner scope. | The design says unknown coverage should block, but no completed production coverage manifest exists that binds every affected surface into the apply evidence. | If the planner cannot prove it saw the resource, it cannot safely mutate it. |
 
 ## What Reprint, ZS-Sync, And ForkPress Actually Contribute
 
 ### Reprint
 
-Reprint gives the transport skeleton: preflight, chunking, resumability, and
-protocol versioning. That is a good starting point for push, but it is not a
-mutation guarantee. The current design still needs a production mutation
-boundary with per-write preconditions, durable journal semantics, and a
-recovery artifact that survives failure across file, DB, and plugin boundaries.
+Reprint source notes prove a staged pull transport: preflight, files pull,
+database pull, database apply, flat document root, runtime apply, and optional
+start. They also prove protocol versioning and transport framing on the export
+side. What they do not prove is safe source mutation. There is no evidence in
+the notes for a production push endpoint, production-side write preconditions,
+durable mutation journaling, or recovery across file, DB, and plugin
+boundaries.
+
+What this repo still must prove: a production mutation boundary with live
+revalidation before every write, a durable recovery artifact, and a complete
+coverage manifest that binds the pulled base to the live remote before apply.
 
 ### ZS-Sync
 
-ZS-Sync contributes scanner composition and bounded resource enumeration. That
-helps the planner know what changed. It does not prove what is safe to mutate.
-The current design still lacks a complete coverage manifest that ties scanner
-results to every core, plugin, theme, upload, generated, custom-table, and
-multisite resource the push can affect.
+ZS-Sync source notes prove scanner composition, cursor-based rescans, bounded
+changed-resource listing, and a provider model for enumerating selected
+resources. They do not prove source mutation safety, ownership semantics, or a
+push policy for unknown state.
+
+What this repo still must prove: that scanner output becomes a complete
+coverage manifest and that any unscanned plugin, custom-table, generated-file,
+or multisite resource hard-blocks apply rather than being guessed into safety.
 
 ### ForkPress
 
-ForkPress sets the reliability bar the project must match before it can make a
-production claim: three-way merge records, reviewed conflict resolution,
-plugin-specific validators, and crash consistency that classifies failure as
-old, new, or blocked with artifacts. The current design borrows the vocabulary
-but not the proof. In particular, it still needs a resolution artifact that
-preserves base/local/remote evidence and forces a fresh live revalidation on
-retry.
+ForkPress source notes prove the strongest reliability bar in this comparison:
+three-way merge records, reviewed conflict resolution, plugin-specific
+validators, and crash-consistency language that distinguishes old, new, and
+blocked states with artifacts.
+
+They do not prove that this repo already has equivalent behavior. The missing
+proof here is a resolution artifact that preserves base/local/remote evidence,
+binds the reviewer action to a fresh live revalidation, and forces replay from
+current remote state on retry.
+
+What this repo still must prove: reviewed conflict handling with durable
+evidence, fresh revalidation on retry, and plugin-driver semantics that either
+prove ownership or refuse the mutation.
 
 ## Changes Required Before A Production Claim
 
@@ -237,6 +257,32 @@ Blocked wording until the required proofs exist:
 - "durable production recovery"
 - "safe for arbitrary live WordPress source sites"
 - "production throughput"
+
+## Supervisor Release Gate Checklist
+
+A supervisor should treat any production-readiness wording as blocked until all
+of these can be checked off against current executable evidence:
+
+- [ ] The push endpoint is not lab-backed and does not resolve to Playground or
+  fixture internals.
+- [ ] Production-scoped authentication, session handling, replay protection,
+  and credential lifecycle are proven.
+- [ ] The pull-base manifest and live remote coverage manifest are complete for
+  the requested scope, with unknown resources hard-blocking apply.
+- [ ] Dry-run is treated as planning-only evidence, and apply rechecks live
+  remote state immediately before every write.
+- [ ] Storage-boundary guards exist for every supported DB, file, plugin, and
+  schema mutation kind.
+- [ ] Plugin-owned state outside allowlists either has a semantic driver or
+  hard-blocks the push.
+- [ ] Recovery proves old/new/blocked classification across partial file,
+  DB, and plugin side effects.
+- [ ] Manual conflict resolution is tied to a durable reviewed artifact and
+  fresh live revalidation on retry.
+- [ ] Release claims are backed by the full safety, recovery, auth, storage,
+  plugin, and performance suite, not by optional smoke tests alone.
+- [ ] The wording being reviewed names only what the evidence proves, not what
+  the architecture intends to prove later.
 
 ## Minimum Production Claim Gates
 
