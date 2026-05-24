@@ -157,6 +157,20 @@ The pull-to-push handoff is linear and one-way:
 6. Push apply mutates only when live revalidation still matches the plan and the
    storage boundary still proves the individual write.
 
+The existing pull exporter/importer pipeline remains the source of truth for the
+persisted merge base. Push does not add a second export format or a second notion
+of base ownership. Instead, it layers live remote proof on top of the pull
+artifacts already stored on disk:
+
+- pull exporter/importer creates `push-base/` and the immutable base manifest
+- push preflight binds that package to the live remote identity and write scope
+- push snapshot hashes list the live remote comparison set for the requested scope
+- push dry-run uploads the canonical plan derived from the pulled base plus local edits
+- push apply revalidates the live remote before every batch and again at the
+  storage boundary
+- push journal and recovery inspect read durable evidence only, and never rewrite
+  the persisted pull base to make a stale plan look current
+
 The pull exporter/importer owns the persisted base package and the base
 coverage evidence. Push never asks pull to become a write lock. Instead, push
 uses the persisted base package as immutable provenance and layers new
@@ -216,6 +230,21 @@ the durable journal rows that describe preflight, snapshot listing, dry-run,
 batch apply, journal inspection, and recovery. The executor may reuse pull
 transport, cursoring, budgeting, and HMAC helpers, but it must not reuse pull
 streaming export payloads as push mutation payloads.
+
+For wire-contract consumers, the production sequence is intentionally strict:
+
+1. `push_preflight` negotiates protocol support, write scope, and journal
+   capability against the live remote.
+2. `push_snapshot_hashes` lists the current remote hashes and coverage for the
+   exact planning scope.
+3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt only.
+4. `push_batch_apply` revalidates the live remote again before every batch and
+   at the storage boundary.
+5. `push_journal` inspects durable evidence after a timeout, crash, or lost
+   response.
+6. `push_recover` begins in `mode: "inspect"` and only proceeds mutating when
+   the journal and live hashes prove the repair is safe.
 
 ## Authentication
 

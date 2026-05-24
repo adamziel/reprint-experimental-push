@@ -176,6 +176,15 @@ Mapping summary:
 - pull retry semantics remain for read-only stages, while apply retries are
   gated by journal inspection and idempotency proof
 
+Production push is therefore a two-site proof flow:
+
+- one remote site supplies the live identity, snapshot hashes, dry-run
+  eligibility checks, apply revalidation, journal evidence, and recovery state
+- one local edited site supplies the pulled base plus user changes that become
+  the candidate plan
+- the runner owns the protocol flow and is the only actor allowed to compare,
+  upload, inspect, or recover
+
 The pull importer must persist a push base package so later pushes can prove
 the merge base, and it must also preserve the additional pull evidence needed
 for later recovery decisions:
