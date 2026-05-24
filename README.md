@@ -101,10 +101,11 @@ refusal with `PRECONDITION_FAILED` and no remote change, completed replay with
 `0` additional mutations, drift outside before/after hashes as
 `blockedUnknown > 0`, and no raw fixture fields/data in journal files. This is
 still JSON-model lab evidence, not production WordPress recovery: it does not
-replace the DB table journal or process-kill tests, journal paths must be
-unique or reset intentionally because plan journal open defaults to `truncate`,
-and raw-value prevention is forbidden-key/fixture-string based rather than a
-complete allowlist schema.
+replace the DB table journal or process-kill tests, and the per-append `fsync`
+evidence is lab evidence rather than full production durability. Journal paths
+must be unique or reset intentionally because plan journal open defaults to
+`truncate`, and raw-value prevention is forbidden-key/fixture-string based
+rather than a complete allowlist schema.
 
 The lab CLI works on three snapshots:
 

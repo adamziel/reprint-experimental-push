@@ -449,7 +449,7 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">20%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 20 percent"><div class="fill green" style="width:20%"></div></div>
-          <p class="note">The applicator returns in-memory lab journal/recovery evidence, npm run test:playground:recovery verifies LAB_INJECTED_APPLY_FAILURE after fail-after-2, blocked-recovery inspection, 2 new and 6 old targets, and PRECONDITION_FAILED on retry, and npm run test:recovery:file-journal verifies append-only JSONL records with per-append fsync evidence, restart-style old/blocked/completed/drift classification, no-op completed replay, and no raw fixture fields/data. Production DB-table journaling, process-kill recovery, and auto-repair remain pending.</p>
+          <p class="note">The applicator returns in-memory lab journal/recovery evidence, npm run test:playground:recovery verifies LAB_INJECTED_APPLY_FAILURE after fail-after-2, blocked-recovery inspection, 2 new and 6 old targets, and PRECONDITION_FAILED on retry, and the standalone npm run test:recovery:file-journal command verifies file-backed recovery journal evidence: append-only JSONL records with per-append fsync evidence, restart-style old/blocked/completed/drift classification, no-op completed replay, and no raw fixture fields/data. This is JSON-model lab evidence only, not production WordPress recovery: no process-kill proof, no production DB table journal yet, and per-append fsync evidence is not full production durability. Auto-repair remains pending.</p>
         </div>
 
         <div class="lane">
