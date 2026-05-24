@@ -267,8 +267,9 @@ Actionable release-gate requirement:
 
 That means the repo can still look healthy while the exact proof needed for a
 release claim has not been run. For this objective, that is a release blocker,
-not a release caveat.
-not just a documentation gap.
+not a release caveat. It is also more than a documentation gap, because the
+strongest checks are still split across optional commands instead of one
+enforced release path.
 
 ### Test Verdict
 
@@ -291,6 +292,9 @@ They do not yet prove the release claim:
   every DB/file/plugin boundary without silent loss or duplication
 - no current benchmark proves throughput or memory on the real push path, so
   speed remains a blocked claim rather than a measured release fact
+- no single release command in `package.json` runs the whole safety matrix in
+  one required path, so the strongest evidence can still be skipped while the
+  default suite stays green
 
 Bottom line:
 
