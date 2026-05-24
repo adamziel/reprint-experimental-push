@@ -129,6 +129,50 @@ The executor treats this package as read-only evidence. If it is missing,
 corrupt, or from a different remote identity, push planning stops before
 preflight can become a mutation path.
 
+## One-Remote, One-Local Test Topology
+
+The recommended integration test topology is one live remote site, one local
+edited site, and one runner. The remote remains the source of truth for the
+push protocol; the local site is the pull target that was edited after import.
+
+### Docker Topology
+
+Use Docker when you want the clearest separation between the two sites and the
+runner:
+
+```text
+docker network: reprint-push
+
+remote-db      source site database
+remote-wp      source WordPress site with the push extension
+local-db       edited local site database
+local-wp       edited local WordPress site created from the pull base
+runner         Node/PHP runner that orchestrates pull, plan, dry-run, apply
+```
+
+Only the runner talks to both sites. No WordPress container publishes a public
+port. If browser inspection is needed, expose at most `127.0.0.1:8080` through
+an optional local-only proxy. Do not use ngrok, cloudflared, localtunnel,
+serveo, localhost.run, Tailscale Funnel, or any equivalent tunnel.
+
+### Playground Topology
+
+Use WordPress Playground when Docker or WP-CLI is unavailable in the sandbox.
+The local and remote sites can be represented by separate disposable blueprint
+runs:
+
+| Site | Blueprint | Role |
+| --- | --- | --- |
+| Remote base | `fixtures/playground/remote-base.blueprint.json` | Pulled source base and push source of truth. |
+| Local edited | `fixtures/playground/local-edited.blueprint.json` | Pulled local site after local edits. |
+| Remote changed | `fixtures/playground/remote-changed.blueprint.json` | Live remote after independent edits. |
+
+The runner executes the blueprints without opening a network port, exports the
+base manifest from `remote-base`, builds the local plan from `local-edited`,
+and uses `remote-changed` as the liveness drift case for `PRECONDITION_FAILED`
+and recovery coverage. This topology proves the one-remote, one-local shape
+without requiring external network exposure.
+
 ## Durable Push State
 
 Each push attempt gets its own state directory next to the saved pull state.
