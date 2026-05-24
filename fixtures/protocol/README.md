@@ -26,7 +26,8 @@ Failure and recovery examples:
 - `push-recovery-blocked-response.json` shows the evidence returned when the
   remote cannot prove a safe finish or rollback.
 - `push-auth-headers.json` shows the required authentication header families
-  for dry-run, apply, and mutating recovery requests.
+  and versioned canonical push signature parts for dry-run, apply, and mutating
+  recovery requests.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

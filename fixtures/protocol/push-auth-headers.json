@@ -15,6 +15,8 @@
     "X-Reprint-Push-Signature": "hmac-sha256:canonical-push-signature"
   },
   "canonical_push_signature_parts": [
+    "REPRINT-PUSH-V1",
+    "push_protocol_version",
     "method",
     "endpoint",
     "canonical_query",
