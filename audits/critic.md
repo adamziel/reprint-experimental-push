@@ -261,6 +261,11 @@ production-grade push support:
   any write and forced to start from a fresh live snapshot. A retry may not
   reuse an old approval record to widen scope, cross rows, or touch a
   different plugin-owned surface.
+- Claim-language gate: any doc, PR, branch status, review comment, or release
+  note that says `production-grade`, `production support`, or `production-safe`
+  must cite the live write path, fresh remote revalidation, and stale-approval
+  rejection; route-shape smoke, packaged-plugin mount, or `finalMatchesLocal`
+  alone is never enough.
 - Manual-review proof: the review artifact must show the exact base/local/
   remote hashes that were reviewed, the reviewer identity, and the live
   snapshot timestamp, and it must fail closed if any of those change before
