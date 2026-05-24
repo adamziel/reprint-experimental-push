@@ -79,3 +79,10 @@ shape described in the executor docs:
   dry-run plan.
 - `remote-changed` supplies the live drift case that must fail apply-time
   revalidation.
+
+The topology is asymmetric on purpose:
+
+- `remote-base` is the pulled merge base and the persisted push provenance.
+- `local-edited` is the edited local source used to build the candidate plan.
+- `remote-changed` is the independent live remote that proves apply-time
+  revalidation, journal inspection, and recovery are separate from dry-run.

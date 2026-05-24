@@ -138,6 +138,24 @@ The pull-to-push handoff is linear:
 5. Push dry-run uploads the canonical plan built from base, local, and live remote.
 6. Push apply mutates only when live revalidation still matches the plan.
 
+The pull exporter/importer owns the persisted base package and the base
+coverage evidence. Push never asks pull to become a write lock. Instead, push
+uses the persisted base package as immutable provenance and layers new
+attempt-state evidence on top:
+
+- the imported base manifest proves which remote lineage the local site came
+  from
+- the saved coverage hash proves which scopes were complete enough to plan
+  against
+- the remote hash listing proves what the live remote looked like at planning
+  time
+- the dry-run receipt proves the uploaded plan was eligible, not still live
+- the journal proves what happened when apply was interrupted or ambiguous
+
+An implementation may reuse the pull transport, cursoring, budgeting, and HMAC
+helpers, but it must not reuse the pull streaming export format as the push
+mutation format.
+
 The remote snapshot listing is the planning view, not the write lock. Any
 remote change after snapshot listing, dry-run, or journal inspection must be
 considered live until apply revalidates the batch at the storage boundary.
@@ -205,6 +223,8 @@ Rules:
 If a server supports only the current export HMAC and not the canonical push
 signature, it may serve pull endpoints and hash listing, but it must reject
 dry-run upload, apply, journal repair, and recovery mutation.
+Push-capable servers may still require the export HMAC on every push request
+because push builds on the same authentication floor as pull.
 
 Endpoint authentication requirements:
 

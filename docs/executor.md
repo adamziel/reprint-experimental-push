@@ -26,7 +26,9 @@ content for conflict display, but mutation starts only at `push_batch_apply`.
 Dry-run success is a permission and eligibility receipt, not a liveness lock.
 The executor must expect apply to fail if the remote changes between dry-run and
 the storage-boundary guard, and it must treat the dry-run response as stale as
-soon as a fresh remote listing shows new live state.
+soon as a fresh remote listing shows new live state. Apply-time revalidation is
+therefore mandatory before every batch, even when the dry-run receipt is still
+present.
 
 The executor treats the push protocol as a three-sided merge:
 
@@ -176,6 +178,13 @@ work. The topology should be explicit about role separation:
 - `remote-changed` is a live drift case that changes between dry-run and apply.
 - the runner is the only process that compares, uploads, inspects, and recovers.
 
+The test story is intentionally asymmetric:
+
+1. `remote-base` provides the pull base package and the persisted push provenance.
+2. `local-edited` provides the edited local content that becomes the candidate plan.
+3. `remote-changed` introduces live drift after dry-run so apply can prove
+   liveness revalidation is separate from planning.
+
 ### Docker Topology
 
 Use Docker when you want the clearest separation between the two sites and the
@@ -208,6 +217,8 @@ The intended Docker data flow is:
 - for browser-visible inspection, use only the sandbox-provided `8080` ingress
   through a local-only proxy bound inside the sandbox; do not publish any
   remote container port directly
+- if a live drift case is needed, point the runner at `remote-changed` for
+  apply and recovery while keeping `remote-base` as the persisted merge base
 
 Suggested Docker wiring:
 
@@ -258,6 +269,10 @@ The preferred Playground topology keeps the same role split:
 The runner should treat these as three snapshots of one logical site lineage,
 not as three independent targets. The important proof is that apply revalidates
 against the live remote, not that dry-run and apply see the same snapshot.
+
+For both Docker and Playground, the remote drift target must be distinct from
+the persisted base source, or the executor cannot prove that apply revalidated
+a live remote rather than replaying a stale snapshot.
 
 For production-facing checks, keep the topology constrained to a single remote
 source, a single edited local clone, and a single executor process. That keeps
