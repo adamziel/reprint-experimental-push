@@ -25,8 +25,8 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and links to the detailed evidence. In this lane, the page becomes live
   only after merge to `main`.
-- Refresh note: no new evidence landed in this pass; the update trimmed
-  repeated supervisor noise and kept the blocked gates explicit.
+- Refresh note: no new evidence landed; the page stays blocked and links to
+  the detailed evidence.
 
 ## 2026-05-25 - Supervisor Refresh
 
