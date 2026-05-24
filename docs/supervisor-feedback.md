@@ -1,30 +1,31 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:10 CEST
+Last updated: 2026-05-25 00:14 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 00:10 CEST - Supervised Lane Merge Refresh
+## 2026-05-25 00:14 CEST - Supervised Lane Merge Refresh
 
-- Going well: `85` Node tests pass after supervised lane merges. Matching
-  delete/edit, recovery terminal states, fast-path guardrails, protocol binding,
-  critic, and objective-audit evidence all landed.
+- Going well: `89` Node tests pass after supervised lane merges. Matching
+  delete/edit, recovery replay/failure states, fast-path rejection guardrails,
+  protocol binding, critic, and objective-audit evidence all landed.
 - Not going well: production auth/session storage, durable journal ownership,
   leases, full graph identity mapping, Docker/full Playground integration, and
   general plugin drivers remain unproven.
 - Progress change: lab/model evidence improved across five lanes; production
   readiness stayed blocked.
-- Active supervision: four fast-mode workers are isolated in lane worktrees:
-  same-plan graph, reliable executor, recovery, and fast paths.
+- Active supervision: four fast-mode workers were launched. Recovery, fast
+  paths, and reliable executor finished and were integrated; same-plan graph
+  restarted on the remaining HTTP smoke failure and remains unmerged.
 - Next nudge: keep workers focused on production-backed auth/journal proof and
   graph identity mapping.
 
 | Lane | Nudge |
 | --- | --- |
-| Invariants | Review same-plan graph output; then prove real WP identity mapping. |
-| Recovery | Move stale-claim fencing from model to production journal storage. |
-| Reliable executor | Replace scoped lab credentials with production push credentials. |
+| Invariants | Review same-plan graph output before widening graph apply. |
+| Recovery | Move model replay/failure proof into production journal storage. |
+| Reliable executor | Turn protocol docs into production push credentials and journal rows. |
 | Fast paths | Run guarded benchmark proof against a real large site. |
 | Audit and critic | Re-audit after production-backed auth and journal rows land. |
 | Progress publisher | Keep Pages dated, concise, and explicit about blocked gates. |
