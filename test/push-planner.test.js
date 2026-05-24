@@ -447,6 +447,32 @@ test('recognizes matching independent row deletions as already in sync', () => {
   assert.equal(decision.change.remoteChange, 'delete');
 });
 
+test('keeps remote-only plugin changes while recognizing a matching independent deletion', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete local.files['index.php'];
+  delete remote.files['index.php'];
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(deleteDecision.change.localChange, 'delete');
+  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(remote.files['index.php'], undefined);
+  assert.equal(remote.plugins.forms.version, '1.1.0');
+  assert.equal(remote.plugins.forms.active, false);
+});
+
 test('recognizes matching independent file edits as already in sync', () => {
   const base = baseSite();
   base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
