@@ -20,7 +20,10 @@ not live mutation safety. ZS-Sync shows bounded change discovery, not write
 policy. ForkPress shows the reliability bar, but only as a comparison point
 until this repo proves the same lifecycle. Any claim beyond that would be an
 inference, not direct evidence, and no route-shape or packaged-plugin smoke
-should be read as proof of live source-site safety.
+should be read as proof of live source-site safety. None of the three source
+notes prove remote-drift rejection at apply time, stable identity reservation
+for creates, or revalidation of plugin-owned ownership changes immediately
+before write.
 None of the source notes prove that stale manual-review artifacts are rejected
 before write, that retries after live remote drift start from a fresh
 snapshot, or that a fixture replay remains safe when identity or plugin-owned
