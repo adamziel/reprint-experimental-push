@@ -130,7 +130,7 @@ these release requirements:
 | R13 | Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope. |
 | R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
 | R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets, a documented measurement environment, and a release threshold that cannot be skipped by accident. A model that only refuses unsupported claims is not enough. |
-| R16 | Provide one enforced release gate that runs the safety, recovery, auth/session, storage, plugin-data-driver, graph-identity, real topology, crash-boundary, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough. |
+| R16 | Provide one enforced release gate that runs the safety, recovery, auth/session, storage, plugin-data-driver, graph-identity, real topology, crash-boundary, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough, and a green default suite is not a substitute. |
 
 The most important release requirement is not one individual check; it is the
 end-to-end enforcement of the full safety matrix before any live-source push is
@@ -214,6 +214,12 @@ They do not yet prove the release claim:
 - no production-backed crash, replay, lease, or fencing matrix is enforced
 - no measured throughput or memory threshold is required before release
 - no single command fails the build when those stronger checks are omitted
+
+The uncomfortable interpretation is that the suite is currently better at
+preventing false confidence than at proving live-source safety. A green run
+can mean the repository still has no production-backed crash matrix, no live
+lease/fencing proof, and no measured speed threshold, because the strongest
+proofs remain opt-in commands rather than a required release boundary.
 
 ## Test Audit
 
