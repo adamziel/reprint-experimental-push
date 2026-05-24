@@ -57,6 +57,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a cached digest still cannot skip per-row preconditions for a database batch.
 - A fresh remote index plus a table checksum still cannot skip per-row preconditions or plugin metadata checks.
 - A fresh remote index plus a compressed upload queue still cannot prove a plugin update finished, because dependency checks, staged files, and the atomic-group commit still need durable evidence.
+- A fresh remote index plus a compressed row batch still cannot prove a plugin install finished, because per-row preconditions, dependency checks, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus durable chunk receipts still cannot skip the live file compare before publish.
 - A fresh remote index plus a compressed upload queue still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
 - A compressed upload buffer still cannot stand in for per-chunk receipts or the guarded publish step.

@@ -682,6 +682,45 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-install')
+      .violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-install')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-install')
+      .violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-install')
+      .violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-install')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-install')
+      .violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-row-batch-completes-plugin-install')
+      .violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-row-batch-completes-plugin-install').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-upload-queue-completes-large-upload')
       .violates.includes('remote-index-planning-only'),
   );
@@ -756,6 +795,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-upload-queue-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-plugin-update',
     'index-and-compressed-row-batch-completes-plugin-update',
+    'index-and-compressed-row-batch-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-large-upload',
     'index-and-table-checksum-skips-batch-preconditions',
     'full-digest-completes-chunk-resume',

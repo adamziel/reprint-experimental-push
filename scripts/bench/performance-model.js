@@ -469,6 +469,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'index-and-compressed-row-batch-completes-plugin-install',
+    proposal: 'treat a fresh remote index plus a compressed row batch as proof that a plugin install already finished',
+    rejectedBecause: 'planning evidence and batch compression can reduce work, but they cannot prove per-row preconditions, dependency checks, or the atomic-group commit survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-upload-queue-completes-large-upload',
     proposal: 'treat a fresh remote index plus a compressed upload queue as proof that a large upload already finished',
     rejectedBecause: 'planning evidence and queue compression can reduce work, but they cannot prove the live file compare or durable chunk receipts survived failure',
