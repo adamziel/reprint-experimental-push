@@ -678,6 +678,12 @@ production push support.
 
 ## Source Comparison
 
+The comparisons below are conservative design notes, not proof rankings. Terms
+like "best baseline" or "strongest comparison point" only mean "best among the
+documented ideas under the current evidence gap." They do not imply production
+readiness, and they do not convert route-shape, scanner, or merge notes into
+mutation safety proof.
+
 ### Reprint
 
 The Reprint source notes support staged, resumable transport: preflight,
