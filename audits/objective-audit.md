@@ -40,15 +40,18 @@ refuses an unsupported throughput claim by listing blockers such as missing
 durable chunk receipts, missing live remote preconditions, missing durable
 journal integrity, missing graph-identity evidence, missing recovery evidence,
 and non-production storage or row-apply capabilities. That is useful refusal
-logic, but it is not a release gate. `npm test` and `npm run test:playground`
-remain green even when the strongest checks are skipped, so the repo can look
-healthy while the objective remains unproven. The current test story is
-therefore strongest as a blocker generator, not as release-grade proof of no
-data loss, reliability, or speed.
+logic, but it is not a release gate and it does not measure a production-shaped
+runtime or memory ceiling. `npm test` and `npm run test:playground` remain
+green even when the strongest checks are skipped, so the repo can look healthy
+while the objective remains unproven. The current test story is therefore
+strongest as a blocker generator, not as release-grade proof of no data loss,
+reliability, or speed.
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
 unmeasured speed claim instead of leaving those checks as optional scripts.
+Until that command exists, the honest speed statement is "speed is unproven
+and should not be claimed."
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
