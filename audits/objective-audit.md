@@ -76,14 +76,6 @@ gates were exercised.
 | Recovery and idempotency | Executable proof: unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Lab/fixture proof: Playground smokes cover DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. Lab/fixture proof: the production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. Docs-only proof: script names and comments describe durability intent. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. The current suite can demonstrate blocked recovery states, but it does not prove that a live source site survives crash/retry cycles without data loss or duplicate mutation at each guarded boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
 | Speed | Executable proof: `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and benchmark evidence gates. Lab/fixture proof: the benchmark harness can express production-claim blockers. Docs-only proof: scripts and audit text explain why the claim is blocked. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no benchmark evidence yet proves the claim at the production boundary. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, memory/runtime measurements, and an explicit pass/fail threshold for production throughput claims. |
 
-### Claim Audit
-
-| Claim | Current proof | Missing proof | Release blocker |
-| --- | --- | --- | --- |
-| No data loss | The repo proves selected planner rules, fixture-scoped protected writes, replay refusal, and a production-shaped lab route that still reports `labBacked: true`. | It does not prove a live WordPress graph survives a failed push without losing or duplicating posts, postmeta, attachments, taxonomy links, menus, users, plugin-owned rows, or serialized plugin payloads. | Missing live crash coverage at every guarded DB/file/plugin boundary. |
-| Reliability | The repo proves some journal, replay, stale-claim, and process-kill states are classified and blocked in local Playground fixtures. | It does not prove restart safety, leases, fencing, rollback, or exactly-once behavior on a live source site across all mutation types. | Missing production-backed kill matrix plus durable journal evidence. |
-| Speed | The repo proves benchmark guards and model checks exist. | It does not measure throughput or memory on a production-shaped executor, so it cannot support a release claim that the path is fast. | Missing measured end-to-end benchmark with a release threshold. |
-
 ## Explicit Requirements From The Objective
 
 The objective is to push local changes back to the original WordPress source
@@ -116,6 +108,13 @@ end-to-end enforcement of the full safety matrix before any live-source push is
 allowed. Without that, the remaining proof stays advisory, even when several
 individual smokes pass.
 
+### Claim Audit
+
+| Claim | Current proof | Missing proof | Release blocker |
+| --- | --- | --- | --- |
+| No data loss | The repo proves selected planner rules, fixture-scoped protected writes, replay refusal, and a production-shaped lab route that still reports `labBacked: true`. | It does not prove a live WordPress graph survives a failed push without losing or duplicating posts, postmeta, attachments, taxonomy links, menus, users, plugin-owned rows, or serialized plugin payloads. | Missing live crash coverage at every guarded DB/file/plugin boundary. |
+| Reliability | The repo proves some journal, replay, stale-claim, and process-kill states are classified and blocked in local Playground fixtures. | It does not prove restart safety, leases, fencing, rollback, or exactly-once behavior on a live source site across all mutation types. | Missing production-backed kill matrix plus durable journal evidence. |
+| Speed | The repo proves benchmark guards and model checks exist. | It does not measure throughput or memory on a production-shaped executor, so it cannot support a release claim that the path is fast. | Missing measured end-to-end benchmark with a release threshold. |
 ## Evidence Table
 
 Evidence classes used below:
