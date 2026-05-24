@@ -1047,6 +1047,33 @@ Blocked wording until the required proofs exist:
 - "safe for arbitrary live WordPress source sites"
 - "production throughput"
 
+## Release-Gate Checklist For Production Wording
+
+Before any doc, branch note, review comment, or status update may use
+production-readiness language, all of the following must be true and the
+evidence must be attached or directly referenced:
+
+1. The claim names the exact live write boundary that was exercised.
+2. The claim identifies the remote drift case used, not just a lab route or
+   packaged-plugin shape.
+3. The claim shows the stale approval that failed closed, plus the preserved
+   audit artifact that makes it readable but unusable.
+4. The claim shows a fresh retry built from current live hashes rather than
+   reusing the stale approval.
+5. The claim states whether Reprint, ZS-Sync, or ForkPress source notes were
+   reverified against the current upstream commit or worktree state; if not,
+   the comparison is context only.
+6. The claim includes the create-time identity or aliasing proof, or it says
+   the create path is blocked.
+7. The claim includes the plugin-owned state coverage result, including any
+   unknown or out-of-allowlist surface that blocked the push.
+8. The claim includes the partial file, DB, or plugin side-effect result, or
+   it says that mixed writes are blocked and audited.
+9. The claim names the recovery or crash artifact that preserves the old,
+   new, or blocked classification.
+10. The claim does not use `finalMatchesLocal`, fixture replay, route shape,
+    or packaging shape as proof of production safety by themselves.
+
 ## Minimum Production Claim Gates
 
 Before any production-grade push claim, the project needs all of these:
