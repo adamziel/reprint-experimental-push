@@ -357,6 +357,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-buffer-means-complete',
+    proposal: 'treat a compressed in-memory buffer as proof that upload or batch work is durable',
+    rejectedBecause: 'compression can shrink buffered state, but it cannot replace the receipt or commit record needed after failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'queue-empty-means-complete',
     proposal: 'advance an upstream producer because the queue is empty even though receipts are missing',
     rejectedBecause: 'an empty queue is not proof that the remote acknowledged the work',
