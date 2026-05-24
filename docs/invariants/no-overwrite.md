@@ -22,6 +22,11 @@ the live remote immediately before apply.
   matches the live remote context, or the live remote plugin files and metadata
   still match the pull base. Owner plugin context means plugin metadata plus
   files under that plugin's directory.
+- Reference-bearing WordPress graph rows only when each referenced target is
+  present on the live remote and either that target did not drift since the
+  pull base or local has independently reached the same target hash as the live
+  remote. This is a narrow stale-reference guard, not a proof of general
+  identity remapping.
 
 Every automatic mutation must include a precondition tied to the mutation id,
 the resource key, the live remote hash observed during planning, and the
@@ -51,6 +56,10 @@ the resource key, the live remote hash observed during planning, and the
   requirements, hash requirements, and activation requirements. Raw dependency
   payload fields from push intents are not copied into blockers or
   atomic-group dependency summaries.
+- WordPress graph identity blocker evidence must keep relationship keys, source
+  and target resource keys, target hashes, and change kinds only. It must not
+  copy raw post content, postmeta values, term payloads, serialized blocks, menu
+  payloads, GUID values, option values, or raw row contents.
 
 ## Must Stop
 
@@ -64,6 +73,13 @@ the resource key, the live remote hash observed during planning, and the
   changed since the pull base and local does not match that live owner context.
 - Plugin-owned data changes whose declared driver does not match the resource
   table, such as `wp-option` for a `wp_postmeta` row.
+- WordPress graph mutations that reference a graph target whose live remote
+  hash changed since the pull base while local does not match that live remote
+  target hash. This includes stale local `wp_postmeta.post_id` writes pointing
+  at a post identity created on the remote after pull.
+- WordPress graph mutations that reference a graph target absent from the live
+  remote. Creating new target identities and rewriting relationship rows in the
+  same plan remains blocked until an identity-map/rewrite proof exists.
 - File topology conflicts where applying a local file or type change would
   require overwriting, removing, or hiding a live remote ancestor or descendant.
   The conflicting file mutation and its precondition must be suppressed rather
