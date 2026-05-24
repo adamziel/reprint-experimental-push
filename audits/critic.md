@@ -524,6 +524,11 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   production proof, even if the notes describe a similar transport, scan, or
   merge vocabulary; the repo still needs its own live mutation evidence on the
   same request path.
+- A comparison note from Reprint, ZS-Sync, or ForkPress can justify a design
+  choice, but it cannot be promoted into current proof without a live remote
+  revalidation on this repo's write path after drift. The note remains context,
+  not authority, even if the same endpoint name or route shape appears in a
+  smoke.
 - Reprint, ZS-Sync, and ForkPress source notes are comparison evidence only;
   they do not transfer safety proof to this repository by resemblance alone.
   Their notes can justify transport shape, scanner shape, or reliability
@@ -613,6 +618,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - The release gate fails closed on live remote drift, identity remapping on
   create, plugin-owned data outside allowlists, partial file/DB/plugin side
   effects, and stale manual-review artifacts even when a lab smoke passes.
+- The release gate also fails closed if a stale review artifact was created
+  before a partial recovery replay and the retry would reuse it to authorize a
+  different row, file, or plugin-owned surface.
 - The release suite runs the production-shaped auth, storage, recovery,
   plugin, graph, and audit checks together, not as isolated smoke tests.
 - The gate fails closed if a retry would reuse stale manual-review artifacts,
