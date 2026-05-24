@@ -46,7 +46,58 @@ function reprint_push_protocol_run(string $mode, string $plan_path, ?string $rec
     }
 
     $plan = reprint_push_protocol_read_json_file($plan_path, 'Plan');
+    $receipt_payload = null;
+
+    if ($receipt_path !== null && $receipt_path !== '') {
+        if ($mode !== 'apply') {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_ARGUMENT',
+                'message' => 'Receipt paths are only accepted for apply.',
+                'mode' => $mode,
+            ]);
+        }
+
+        $receipt_payload = reprint_push_protocol_read_json_file($receipt_path, 'Receipt');
+    }
+
+    return reprint_push_protocol_run_payload($mode, $plan, $receipt_payload, [
+        'transport' => 'cli-file',
+    ]);
+}
+
+function reprint_push_protocol_run_payload(
+    string $mode,
+    array $plan,
+    ?array $receipt_payload = null,
+    array $journal_context = []
+): array {
+    if (!in_array($mode, ['dry-run', 'apply'], true)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'Mode must be dry-run or apply.',
+            'mode' => $mode,
+        ]);
+    }
+
     $plan_hash = reprint_push_protocol_plan_hash($plan);
+
+    if ($mode === 'apply' && $receipt_payload === null) {
+        $journal_entry = reprint_push_protocol_append_journal_event('receipt-required', $journal_context + [
+            'mode' => $mode,
+            'planId' => $plan['id'] ?? null,
+            'planHash' => $plan_hash,
+        ]);
+
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'MISSING_DRY_RUN_RECEIPT',
+            'message' => 'Apply requires a supplied dry-run receipt JSON.',
+            'mode' => $mode,
+            'journal' => reprint_push_protocol_journal_evidence($journal_entry),
+        ]);
+    }
 
     reprint_push_protocol_assert_plan_ready($plan, $mode, $plan_hash);
 
@@ -59,19 +110,17 @@ function reprint_push_protocol_run(string $mode, string $plan_path, ?string $rec
     $plan_evidence = reprint_push_protocol_plan_evidence($plan, $plan_hash, $mutations, $precondition_entries);
     $receipt = null;
 
-    if ($receipt_path !== null && $receipt_path !== '') {
+    if ($receipt_payload !== null) {
         if ($mode !== 'apply') {
             reprint_push_protocol_fail([
                 'ok' => false,
                 'code' => 'INVALID_ARGUMENT',
-                'message' => 'Receipt paths are only accepted for apply.',
+                'message' => 'Receipts are only accepted for apply.',
                 'mode' => $mode,
             ]);
         }
 
-        $receipt = reprint_push_protocol_extract_receipt(
-            reprint_push_protocol_read_json_file($receipt_path, 'Receipt')
-        );
+        $receipt = reprint_push_protocol_extract_receipt($receipt_payload);
         reprint_push_protocol_assert_receipt_binds_to_plan($receipt, $plan, $plan_evidence, $mutations, $precondition_entries);
     }
 
@@ -79,12 +128,12 @@ function reprint_push_protocol_run(string $mode, string $plan_path, ?string $rec
     $verified_preconditions = reprint_push_protocol_verify_preconditions(
         $current,
         $precondition_entries,
-        $mode === 'apply' ? $plan_evidence + ['receiptHash' => (string) ($receipt['receiptHash'] ?? '')] : $plan_evidence
+        $journal_context + ($mode === 'apply' ? $plan_evidence + ['receiptHash' => (string) ($receipt['receiptHash'] ?? '')] : $plan_evidence)
     );
 
     if ($mode === 'dry-run') {
         $receipt = reprint_push_protocol_create_receipt($plan, $plan_evidence, $mutations, $precondition_entries, $verified_preconditions, $current);
-        $journal_entry = reprint_push_protocol_append_journal_event('dry-run-recorded', $plan_evidence + [
+        $journal_entry = reprint_push_protocol_append_journal_event('dry-run-recorded', $journal_context + $plan_evidence + [
             'receiptHash' => (string) $receipt['receiptHash'],
             'verifiedPreconditions' => reprint_push_protocol_compact_precondition_hashes($verified_preconditions),
         ]);
@@ -100,7 +149,7 @@ function reprint_push_protocol_run(string $mode, string $plan_path, ?string $rec
         ];
     }
 
-    $started_entry = reprint_push_protocol_append_journal_event('apply-started', $plan_evidence + [
+    $started_entry = reprint_push_protocol_append_journal_event('apply-started', $journal_context + $plan_evidence + [
         'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
         'verifiedPreconditions' => reprint_push_protocol_compact_precondition_hashes($verified_preconditions),
     ]);
@@ -111,7 +160,7 @@ function reprint_push_protocol_run(string $mode, string $plan_path, ?string $rec
 
     $after = reprint_push_export_snapshot();
     $verified_keys = reprint_push_protocol_verify_after_hashes($after, $mutations);
-    $committed_entry = reprint_push_protocol_append_journal_event('apply-committed', $plan_evidence + [
+    $committed_entry = reprint_push_protocol_append_journal_event('apply-committed', $journal_context + $plan_evidence + [
         'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
         'startedCursor' => $started_entry['cursor'],
         'verifiedKeys' => $verified_keys,

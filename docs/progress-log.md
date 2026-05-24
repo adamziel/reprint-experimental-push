@@ -73,13 +73,36 @@ linked implementation artifacts.
   fixture-scoped lab evidence, not durable production journaling. Production
   Reprint HTTP source mutation support remains pending.
 
+## 2026-05-24 - Local-Only Playground REST Lab Slice
+
+- `npm run test:playground:http-push` passed as a standalone harness that
+  starts disposable WordPress Playground servers bound only to `127.0.0.1` and
+  exercises real HTTP against a local lab REST namespace,
+  `reprint-push-lab/v1`.
+- The lab routes are `GET /snapshot`, `GET /journal`, `POST /dry-run`, and
+  `POST /apply`. The script verifies namespace discovery, snapshot readback,
+  journal readback, dry-run read-only behavior, missing receipt refusal with
+  `428 MISSING_DRY_RUN_RECEIPT`, dry-run receipt creation, and successful apply
+  of the five expected fixture mutations.
+- Negative HTTP-style cases are also covered: tampered receipts fail with
+  `409 RECEIPT_MISMATCH`, stale remote state fails with
+  `412 PRECONDITION_FAILED`, and conflict dry-run/apply fail with
+  `409 PLAN_NOT_READY` while reporting row, file, and plugin-data conflict
+  classes.
+- This is still lab-only and fixture-scoped. The REST plugin is public only
+  because it is mounted into local disposable Playground. It does not prove
+  production auth, sessions, nonce checks, signed receipts, durable journals,
+  crash recovery, or production source mutation. The script is intentionally
+  outside `npm run test:playground` because it starts real servers and takes
+  around two minutes.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
 | Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md) | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks |
 | Recovery boundaries | 14% | In-memory lab journal/recovery evidence in [src/apply.js](../src/apply.js) and tests | Durable on-disk journal, process-kill tests, storage-level recovery proof |
-| Reliable executor and protocol | 18% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, and fixture-scoped Playground protocol smoke | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
+| Reliable executor and protocol | 20% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, and standalone local-only REST lab harness | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
 
@@ -93,8 +116,9 @@ linked implementation artifacts.
   blocked.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test,
   export planner snapshots, run guarded apply into a fresh Playground source,
-  and exercise a lab-only fixture protocol endpoint with WordPress-visible
-  readback. Production push behavior remains pending until mutations flow
-  through the intended HTTP source endpoint and are verified there.
+  exercise a lab-only fixture protocol endpoint with WordPress-visible readback,
+  and verify a standalone local-only REST lab namespace over real HTTP.
+  Production push behavior remains pending until mutations flow through the
+  intended authenticated source endpoint and are verified there.
 - Plugin validators or drivers: pending until plugin-specific semantics are
   implemented and tested against real plugin-owned data.

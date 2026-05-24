@@ -28,6 +28,9 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground fixture protocol tampered receipt | Apply with a mismatched receipt rejects with `RECEIPT_MISMATCH` before mutation. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol stale apply | Stale apply rejects with `PRECONDITION_FAILED` and preserves the changed remote fixture. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol non-ready plan | Conflict dry-run and apply reject with `PLAN_NOT_READY` and report row, file, and plugin-data conflict classes. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
+| Playground local REST namespace | Disposable Playground servers expose `reprint-push-lab/v1` with `GET /snapshot`, `GET /journal`, `POST /dry-run`, and `POST /apply` over real local HTTP. | `npm run test:playground:http-push` |
+| Playground local REST ready apply | Dry-run is read-only, returns a receipt, and receipt-backed apply writes the five expected fixture mutations. | `npm run test:playground:http-push` |
+| Playground local REST receipt/stale/conflict refusals | Missing receipt rejects with `428 MISSING_DRY_RUN_RECEIPT`, tampered receipt with `409 RECEIPT_MISMATCH`, stale remote with `412 PRECONDITION_FAILED`, and conflict plans with `409 PLAN_NOT_READY` for row, file, and plugin-data classes. | `npm run test:playground:http-push` |
 | Failure happens while staging mutations | No partially mutated remote state is returned or committed. | `injected failure before commit returns no partially mutated remote state` |
 
 ## Remaining Missing Scenarios
@@ -35,6 +38,7 @@ The first executable matrix lives in `test/push-planner.test.js`.
 - Production Reprint HTTP source mutation endpoint for live source sites.
 - Reprint exporter protocol extension for authenticated push preflight,
   sessions, signed/expiring production receipts, and mutation batches.
+- Production auth/session/nonce proof for any source-site REST mutation route.
 - File body streaming with large upload chunks.
 - Database transaction boundaries on MySQL and SQLite.
 - Remote plugin activation/update with dependency and recovery checks.

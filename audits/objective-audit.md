@@ -2,15 +2,17 @@
 
 ## Verdict
 
-The repository currently proves an early JSON-snapshot safety model plus a
-lab-only, fixture-scoped Playground push endpoint, not a production-safe
-WordPress push transport. That distinction matters: most of the strongest
-no-data-loss, reliability, and speed claims still depend on design intent, not
-direct executable evidence at the production boundary.
+The repository currently proves an early JSON-snapshot safety model plus
+lab-only, fixture-scoped Playground push endpoints, including a local-only REST
+slice over real HTTP, not a production-safe WordPress push transport. That
+distinction matters: most of the strongest no-data-loss, reliability, and speed
+claims still depend on design intent, not direct executable evidence at the
+production boundary.
 
 Release status: **not releasable as a production push path**. It is acceptable
-as a lab harness for planner invariants and fixture-scoped Playground protocol
-evidence if all public status and docs keep that scope explicit.
+as a lab harness for planner invariants, fixture-scoped Playground protocol
+evidence, and local-only HTTP-style REST evidence if all public status and docs
+keep that scope explicit.
 
 ## Explicit Requirements From The Objective
 
@@ -43,16 +45,16 @@ production system will depend on.
 | --- | --- | --- | --- |
 | R1 three-way planning | `createPushPlan()` enumerates file, plugin, and row resources from base/local/remote and compares stable hashes. Tests cover unchanged remote, remote-only changes, non-overlapping changes, direct conflicts, and Playground fixture snapshots from real WordPress rows, options, and files. | No real Reprint exporter/importer snapshots. No coverage for WordPress IDs, postmeta relationships, taxonomies, plugin tables, serialized options, or multisite resources beyond narrow Playground fixture uploads/options/posts. | Yes. A production claim needs broader fixture-backed WordPress snapshots and resource identity rules. |
 | R2 preserve remote changes | `keep-remote` decisions are produced when local equals base and remote differs. Tests assert a remote-only post title survives. | Only same-resource hash cases are tested. Cross-resource semantic loss is untested, such as remote changing a post while local changes dependent postmeta, attachments, menus, or plugin options. | Yes. Remote preservation is not proven for WordPress data graphs. |
-| R3 preconditioned apply | `applyPlan()` validates mutation preconditions before applying to a staged clone. Tests reject drift on a planned file mutation, and the Playground fixture protocol smoke rejects stale apply with `PRECONDITION_FAILED` while preserving the drifted remote fixture. | Preconditions are lab hash checks, not production compare-and-swap writes on files, MySQL, SQLite, or Reprint HTTP endpoints. No test covers remote drift during a multi-resource production apply. | Yes. This is the central no-data-loss gate and currently has no production-boundary proof. |
-| R4 conflict stop and evidence | Direct same-resource conflicts become `conflict`, and `applyPlan()` refuses non-ready plans. Plugin-owned row conflicts get a separate class. Playground conflict dry-run/apply return `PLAN_NOT_READY` with row, file, and plugin-data audit classes. | No reviewed resolution workflow, persisted conflict record, operator audit trail, or fixtures for realistic plugin-owned data. | Yes. Conflict detection without durable evidence is insufficient for release. |
+| R3 preconditioned apply | `applyPlan()` validates mutation preconditions before applying to a staged clone. Tests reject drift on a planned file mutation. The Playground protocol smokes reject stale apply with `PRECONDITION_FAILED`; the local REST lab returns `412 PRECONDITION_FAILED` while preserving the drifted remote fixture. | Preconditions are lab hash checks, not production compare-and-swap writes on files, MySQL, SQLite, or authenticated Reprint HTTP endpoints. No test covers remote drift during a multi-resource production apply. | Yes. This is the central no-data-loss gate and currently has no production-boundary proof. |
+| R4 conflict stop and evidence | Direct same-resource conflicts become `conflict`, and `applyPlan()` refuses non-ready plans. Plugin-owned row conflicts get a separate class. Playground conflict dry-run/apply return `PLAN_NOT_READY`; the local REST lab returns `409 PLAN_NOT_READY` with row, file, and plugin-data audit classes. | No reviewed resolution workflow, persisted conflict record, operator audit trail, or fixtures for realistic plugin-owned data. | Yes. Conflict detection without durable evidence is insufficient for release. |
 | R5 atomic coupled changes | Push intents can group resources; tests cover missing dependencies, same-group dependencies, outside-group blocking, remote dependency drift, incompatible version ranges, and dependency hash mismatches. `applyPlan()` stages a clone before returning. | No transaction boundary exists for actual file/database/plugin writes. `requireAtomic` is metadata, not a production enforcement mechanism. Plugin activation, rollback, and mixed DB/filesystem failure are untested. | Yes. Partial plugin/application state is explicitly rejected by project docs. |
 | R6 plugin/serialized data safety | Rows with `__pluginOwner` are classified as `plugin-data-conflict` on direct conflicts. Docs reject generic serialized-data merges. | No plugin validator contract, no real plugin fixtures, no serialized PHP option parser, and no proof that plugin-owned tables/options are discovered consistently. | Yes. This is a direct data-loss risk. |
 | R7 crash recovery | One injected failure before staged clone return proves the original input object is not mutated in that narrow path. Source notes identify crash-consistency goals. | No durable journal, no kill-process tests, no after-commit failure tests, no recovery command, and no proof that the system can classify old/new/blocked state after interruption. | Yes. Current failure proof is not crash-recovery proof. |
 | R8 resumable chunks | Source notes cite resumable pull and recommend chunked push. | No chunk journal, cursor, idempotency key, retry contract, resume tests, or stale-plan invalidation tests. | Yes. A live push cannot rely on one in-memory apply call. |
-| R9 real WordPress execution | Playground base/local/remote fixtures export real WordPress posts/options/files, guarded apply writes a fresh source fixture with WordPress-visible readback, and a fixture-scoped PHP endpoint smoke covers dry-run/apply/stale/conflict paths. | No production Reprint HTTP source mutation endpoint, no Docker/live-source executor, no database transaction tests, no filesystem permission tests, and no plugin activation/custom-table semantics. | Yes. The current project is a lab model only. |
+| R9 real WordPress execution | Playground base/local/remote fixtures export real WordPress posts/options/files, guarded apply writes a fresh source fixture with WordPress-visible readback, a fixture-scoped PHP endpoint smoke covers dry-run/apply/stale/conflict paths, and the standalone local REST lab verifies `reprint-push-lab/v1` routes over real HTTP on `127.0.0.1`. | No production Reprint HTTP source mutation endpoint, no production auth/session/nonce proof, no Docker/live-source executor, no database transaction tests, no filesystem permission tests, and no plugin activation/custom-table semantics. | Yes. The current project is a lab model only. |
 | R10 speed | The model mutates only changed resources instead of replacing the whole site. Progress page marks fast path at 12 percent and lists chunking/streaming as open. | No benchmarks, complexity budget, large-file streaming, parallel upload tests, memory ceiling, or latency targets. | Yes for any speed claim beyond "not whole-site replacement in the model." |
-| R11 honest dry run | README states apply can refuse if the live remote changes after dry run. Drift tests cover file mutation drift and Playground fixture stale apply. The protocol smoke verifies ready apply with a supplied dry-run receipt, rejects missing receipts with `MISSING_DRY_RUN_RECEIPT`, and rejects tampered receipts with `RECEIPT_MISMATCH`. Lab receipts bind to the plan fingerprint/hash, mutation and precondition sets, ordered resource keys, and dry-run actual hashes. | No stale-plan expiry, production signing/auth binding, UI/operator warning tests, or concurrency test for remote changes between individual production writes. | Blocking for UX/reliability release, not for the current lab scope. |
-| R12 audit records | Plans include mutations, preconditions, decisions, conflicts, blockers, and atomic groups. The lab PHP endpoint records bounded fixture-scoped lab journal/audit option events for dry-run, apply, stale, non-ready, missing-receipt, and mismatch outcomes. | Records are still fixture-scoped lab option events unless the caller saves them. There is no durable production audit log, no recovery artifact schema, no redaction policy, and no operator-facing report. | Yes for production. |
+| R11 honest dry run | README states apply can refuse if the live remote changes after dry run. Drift tests cover file mutation drift and Playground fixture stale apply. The protocol smokes verify ready apply with a supplied dry-run receipt, reject missing receipts with `MISSING_DRY_RUN_RECEIPT`, and reject tampered receipts with `RECEIPT_MISMATCH`. The local REST lab verifies the corresponding HTTP statuses: `428`, `409`, and `412`. Lab receipts bind to the plan fingerprint/hash, mutation and precondition sets, ordered resource keys, and dry-run actual hashes. | No stale-plan expiry, production signing/auth binding, UI/operator warning tests, or concurrency test for remote changes between individual production writes. | Blocking for UX/reliability release, not for the current lab scope. |
+| R12 audit records | Plans include mutations, preconditions, decisions, conflicts, blockers, and atomic groups. The lab PHP endpoint records bounded fixture-scoped lab journal/audit option events for dry-run, apply, stale, non-ready, missing-receipt, and mismatch outcomes; the local REST lab reads the journal over `GET /journal`. | Records are still fixture-scoped lab option events unless the caller saves them. There is no durable production audit log, no recovery artifact schema, no redaction policy, and no operator-facing report. | Yes for production. |
 
 ## Test Audit
 
@@ -89,11 +91,12 @@ pure in-memory apply behavior.
    ceilings, streaming assertions, or chunk scheduling tests. Speed claims
    should stay explicitly provisional.
 
-4. **The Playground endpoint is intentionally not a production endpoint.** It
-   proves a narrow fixture-scoped protocol shape, including read-only dry-run,
+4. **The Playground endpoints are intentionally not production endpoints.** They
+   prove a narrow fixture-scoped protocol shape, including read-only dry-run,
    required receipt-backed ready apply, stale rejection, receipt mismatch
-   refusal, and conflict refusal.
-   It does not provide production auth, sessions, durable journals, source-site
+   refusal, conflict refusal, journal readback, and local-only REST routes under
+   `reprint-push-lab/v1`.
+   They do not provide production auth, sessions, durable journals, source-site
    capability checks, receipt signing, or receipt expiry.
 
 ## Required Release Gates
@@ -119,6 +122,6 @@ needs direct proof for these gates:
    not skip preconditions, journals, or validators.
 
 Until those gates exist, the honest claim is: **the lab demonstrates planner
-invariants for simplified JSON snapshots and a fixture-scoped Playground push
-protocol smoke; it does not yet prove no data loss, reliability, or speed for a
-live WordPress push.**
+invariants for simplified JSON snapshots, fixture-scoped Playground push
+protocol smoke, and local-only HTTP-style REST behavior; it does not yet prove
+no data loss, reliability, or speed for a live WordPress push.**

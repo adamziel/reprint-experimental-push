@@ -101,6 +101,38 @@ endpoint also records bounded fixture-scoped lab journal/audit option events:
 `receipt-mismatch`. These records are lab audit evidence only, not durable
 production journals.
 
+## Local-Only REST Lab Harness
+
+```bash
+npm run test:playground:http-push
+```
+
+This standalone script starts disposable WordPress Playground servers bound
+only to `127.0.0.1` and talks to them over real HTTP. It is not included in
+`npm run test:playground` because it takes around two minutes and starts real
+servers.
+
+The lab REST surface is mounted under the namespace `reprint-push-lab/v1` with:
+
+- `GET /snapshot`
+- `GET /journal`
+- `POST /dry-run`
+- `POST /apply`
+
+The HTTP-style harness verifies namespace discovery, snapshot export, journal
+readback, read-only dry-run, `MISSING_DRY_RUN_RECEIPT` before mutation when a
+receipt is missing, dry-run receipt creation, ready apply success with five
+fixture mutations, `RECEIPT_MISMATCH` before mutation when the receipt is
+tampered, stale remote refusal with `PRECONDITION_FAILED`, and conflict refusal
+with `PLAN_NOT_READY` for row, file, and plugin-data classes.
+
+This is stronger protocol-shape evidence than the no-server smoke because it
+uses real local HTTP against disposable Playground servers. It remains
+lab-only and fixture-scoped: the REST plugin is public only inside the local
+Playground runtime, and it does not prove production auth, sessions, nonce
+checks, signed receipts, durable journals, crash recovery, or live source-site
+mutation safety.
+
 ## Next Proofs Needed
 
 - Replace the fixture-scoped PHP lab endpoint with a real Reprint push HTTP

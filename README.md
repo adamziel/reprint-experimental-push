@@ -31,6 +31,12 @@ Run the no-server WordPress Playground integration harness:
 npm run test:playground
 ```
 
+Run the standalone local-only HTTP REST lab harness:
+
+```bash
+npm run test:playground:http-push
+```
+
 The Playground target is the lab proof for real WordPress fixture state. It
 exports snapshots from Playground sites, exercises conflict planning from those
 snapshots, creates a ready plan with `remote=base`, applies that plan inside a
@@ -46,6 +52,15 @@ This remains a lab harness, not production Reprint HTTP source mutation support.
 Its receipts are hash-bound to plan, mutation, precondition, and resource
 evidence, and its journal checks are fixture-scoped lab audit evidence, not a
 durable production journal, auth model, or signing scheme.
+
+The `test:playground:http-push` script starts disposable Playground servers
+bound only to `127.0.0.1` and verifies a local-only REST lab namespace,
+`reprint-push-lab/v1`, with `GET /snapshot`, `GET /journal`, `POST /dry-run`,
+and `POST /apply`. It covers namespace discovery, snapshots, journal readback,
+read-only dry-run, required dry-run receipts, five-mutation apply success,
+tampered receipt refusal, stale remote refusal, and row/file/plugin-data
+conflict classes. It is intentionally standalone because it starts real HTTP
+servers and takes around two minutes; it is not included in `test:playground`.
 
 The lab CLI works on three snapshots:
 
