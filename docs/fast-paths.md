@@ -72,6 +72,16 @@ The benchmark model records those fields in `safeFastPaths`. A proposed
 optimization is incomplete if it can show lower request counts but cannot name
 its unchanged visibility boundary and failure evidence.
 
+The benchmark shape must stay realistic:
+
+- A large upload workload exercises file hashing, chunk upload, compression
+  decisions, and backpressure under a body size that is well beyond a toy case.
+- A plugin-install workload exercises remote indexes, row batching, staged
+  plugin metadata, and the atomic group commit barrier.
+- Rejected fast paths are modeled alongside the safe ones so the benchmark can
+  prove that the tempting shortcuts were rejected for the right reason, not
+  just omitted from the happy path.
+
 ## File Hashing
 
 Use a two-level model:
@@ -218,6 +228,12 @@ validators, and the final durable commit record.
   preconditions pass.
 - Replaying SQL dumps or bulk `REPLACE` statements without row-level
   compare-and-swap predicates.
+- Treating chunk receipts as optional and publishing staged bytes without a
+  guarded finalize step.
+- Merging rows from different plugin owners or atomic groups into one visible
+  batch because the SQL shape matches.
+- Using index freshness, cursor freshness, or a successful dry run as a live
+  mutation authorization.
 - Retrying non-idempotent mutations without a plan id, resource key, and batch
   idempotency key.
 - Compressing payloads and then comparing compressed bytes as the canonical
