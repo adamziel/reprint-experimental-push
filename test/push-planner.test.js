@@ -2483,6 +2483,79 @@ test('blocks local postmeta references to stale remote-created post identity', (
   assert.equal(remote.db.wp_posts['ID:2'].post_title, 'remote-private-post-title');
 });
 
+test('blocks local featured-image references when the remote deleted the referenced post', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {};
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'base featured image target',
+    post_content: 'base featured image body',
+    post_status: 'publish',
+  };
+  base.db.wp_postmeta['meta_id:46'] = {
+    meta_id: 46,
+    post_id: 2,
+    meta_key: '_thumbnail_id',
+    meta_value: 2,
+    note: 'base featured image note',
+  };
+  const local = baseSite();
+  local.db.wp_postmeta = {};
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'base featured image target',
+    post_content: 'base featured image body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta['meta_id:46'] = {
+    meta_id: 46,
+    post_id: 2,
+    meta_key: '_thumbnail_id',
+    meta_value: 2,
+    note: 'local featured image note',
+  };
+  const remote = baseSite();
+  remote.db.wp_postmeta = {};
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'base featured image target',
+    post_content: 'base featured image body',
+    post_status: 'publish',
+  };
+  remote.db.wp_postmeta['meta_id:46'] = {
+    meta_id: 46,
+    post_id: 2,
+    meta_key: '_thumbnail_id',
+    meta_value: 2,
+    note: 'base featured image note',
+  };
+  delete remote.db.wp_posts['ID:2'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remoteChange, 'delete');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(planJson.includes('base featured image target'), false);
+  assert.equal(planJson.includes('base featured image body'), false);
+  assert.equal(planJson.includes('local featured image note'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
