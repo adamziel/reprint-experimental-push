@@ -54,6 +54,12 @@ or `blocked-recovery` without raw target values. A replayed in-memory journal
 must exactly match the plan's mutation ids, resource keys, actions, before
 hashes, and after hashes before it can suppress fresh mutation work.
 
+When an `old-remote` in-memory journal is retried while appending to the same
+durable JSONL file, the apply model records `journal-retry-opened` and reuses
+the original `target-planned` records. It does not append duplicate target
+records, because duplicate target metadata would make restart inspection
+ambiguous even when the retry finishes as `fully-updated-remote`.
+
 ## Current Playground Lab Evidence
 
 `npm run test:playground:recovery` verifies the lab failpoint

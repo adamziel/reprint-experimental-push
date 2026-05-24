@@ -43,6 +43,7 @@ export function applyPlan(remote, plan, options = {}) {
 
   const durableJournal = getDurableJournalWriter(options);
   const hasPreviousJournal = Boolean(options.journal);
+  let previousJournalState = null;
   let journal = prepareJournal(remote, plan, options.journal);
   if (journal.status === 'completed') {
     const result = replayCompletedPlan(remote, plan, journal);
@@ -51,6 +52,7 @@ export function applyPlan(remote, plan, options = {}) {
   }
   if (hasPreviousJournal) {
     const observedState = classifyJournalRemote(remote, journal);
+    previousJournalState = observedState.status;
     if (observedState.status === 'fully-updated-remote') {
       const completedJournal = completeObservedJournal(journal, plan);
       const recoveryState = {
@@ -76,7 +78,10 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   validatePreconditions(remote, plan);
-  recordDurablePlanOpened(durableJournal, remote, plan, options);
+  recordDurablePlanOpened(durableJournal, remote, plan, {
+    ...options,
+    previousJournalState,
+  });
 
   if (options.failBeforeMutation) {
     recordDurableRecoveryState(durableJournal, remote, plan, {
@@ -503,12 +508,18 @@ function recordDurablePlanOpened(writer, remote, plan, options = {}) {
   }
 
   const artifactRefs = options.artifactRefs || options.journalArtifactRefs || {};
-  appendDurableEvent(writer, 'journal-opened', {
+  const retryingOldRemoteJournal = options.previousJournalState === 'old-remote';
+  const appendOnlyRetry = retryingOldRemoteJournal && durableJournalHasPriorRecords(writer);
+  appendDurableEvent(writer, appendOnlyRetry ? 'journal-retry-opened' : 'journal-opened', {
     planId: plan.id,
-    state: 'opened',
+    state: retryingOldRemoteJournal ? 'retrying-old-remote' : 'opened',
     observedHash: digest(remote),
     artifactRefs,
   });
+
+  if (appendOnlyRetry) {
+    return;
+  }
 
   for (const mutation of plan.mutations || []) {
     appendDurableEvent(writer, 'target-planned', {
@@ -524,6 +535,10 @@ function recordDurablePlanOpened(writer, remote, plan, options = {}) {
       artifactRefs: {},
     });
   }
+}
+
+function durableJournalHasPriorRecords(writer) {
+  return Number.isInteger(writer.nextSequence) && writer.nextSequence > 1;
 }
 
 function recordDurableReplay(writer, remote, plan, recoveryState) {
