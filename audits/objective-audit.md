@@ -26,6 +26,15 @@ mechanism, but it is still only a guardrail. It does not create the required
 release boundary, so the repo can still present a green default test run while
 the strongest claims remain skipped.
 
+The more actionable blocker is the live-source no-data-loss claim. It still
+needs a crash matrix that covers every guarded write boundary with before and
+after state plus journal evidence. Until the repo can show DB row
+update/insert/delete, file create/update/delete, plugin activation or package
+publish, finalization or commit write, replay after restart or duplicate
+request, and stale claim or lease expiry on the production-backed path, the
+no-data-loss claim remains blocked even if the model and fixtures keep
+passing.
+
 The honest release claim is narrower: this repository is an executable safety
 model and local Playground lab for push invariants. It does **not** yet prove
 production no-data-loss, production reliability, or measured speed.
