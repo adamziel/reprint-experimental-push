@@ -1,6 +1,9 @@
 # Scenario Matrix
 
 The first executable matrix lives in `test/push-planner.test.js`.
+The "Current evidence" column means local lab coverage only. It does not
+prove live remote drift handling, production write safety, or retry safety on
+its own.
 
 | Scenario | Expected behavior | Current evidence |
 | --- | --- | --- |
