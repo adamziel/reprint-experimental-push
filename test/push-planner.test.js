@@ -136,6 +136,7 @@ function assertAcceptableRecoveryState(recoveryState) {
   );
   if (recoveryState.status === 'blocked-recovery') {
     assert.ok(recoveryState.artifacts?.journal, 'blocked recovery must carry journal artifacts');
+    assert.ok(recoveryState.artifacts?.remote, 'blocked recovery must carry remote artifacts');
   }
 }
 
