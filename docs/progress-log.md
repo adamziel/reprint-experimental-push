@@ -4,13 +4,17 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-24 - Current Supervisor Snapshot
+## 2026-05-24 21:54 CEST - Supervisor Verification Refresh
 
-- Status: `70` Node tests pass; Playground and CLI lab evidence remains linked.
-- Trend: lab/model confidence improved; production readiness is still flat.
+- Status: fresh `npm test` passed with `70` tests. Playground and CLI lab
+  smokes remain linked prior evidence, not newly rerun production proof.
+- Trend: verification freshness improved; production readiness is still flat.
 - Blocker: no production Reprint endpoint, auth binding, durable journal,
   storage guard, or general plugin driver proof has landed.
-- Next nudge: reliable executor should prove one production-shaped route slice:
+- Lane hygiene: `scripts/supervision/status.sh` showed only this feedback
+  refresh session active; older cycle worktrees are behind current
+  `origin/main`, so lane claims need rebase and rerun before they count.
+- Next nudge: reliable executor owns one production-shaped route slice:
   preflight, dry-run receipt, guarded DB/file writes, journal/recovery inspect,
   replay, and different-body conflict refusal.
 - Public page: [progress.html](../progress.html) shows a visible last-updated

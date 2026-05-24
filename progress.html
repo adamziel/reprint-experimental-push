@@ -474,12 +474,12 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is lab/model evidence: 70 Node tests plus Playground and CLI smokes. Production push remains blocked by missing endpoint, auth, durable journal, and plugin-driver proof.</p>
-        <time class="update-stamp" datetime="2026-05-24T21:47:00+02:00">Last updated: May 24, 2026, 21:47 CEST</time>
+        <p class="lead">Fresh proof is lab/model evidence: 70 Node tests passed. Linked Playground and CLI smokes remain prior lab evidence; production push is still blocked by missing endpoint, auth, durable journal, storage guard, and plugin-driver proof.</p>
+        <time class="update-stamp" datetime="2026-05-24T21:54:00+02:00">Last updated: May 24, 2026, 21:54 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">70 Node tests passing</span>
-          <span class="pill">Playground labs passing</span>
-          <span class="pill">CLI drift refusal passing</span>
+          <span class="pill">Playground lab evidence linked</span>
+          <span class="pill">Stale lanes need rerun</span>
           <span class="pill">Production push blocked</span>
         </div>
       </div>
@@ -550,10 +550,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>Lab/model gates sharpened; 70 Node tests pass.</span></li>
-            <li><strong>Not going well</strong><span>Production endpoint, auth, journal, storage guard, and plugin proof are still missing.</span></li>
-            <li><strong>Progress change</strong><span>Lab/model up; production flat.</span></li>
-            <li><strong>Next nudge</strong><span>Run one production-shaped route slice with guarded DB/file writes and recovery inspect.</span></li>
+            <li><strong>Going well</strong><span>Fresh <code>npm test</code> passed with 70 tests; lab/model evidence stays linked.</span></li>
+            <li><strong>Not going well</strong><span>Production endpoint, auth, journal, storage guard, and plugin proof are still missing; stale lanes need rerun.</span></li>
+            <li><strong>Progress change</strong><span>Verification freshness up; production proof flat.</span></li>
+            <li><strong>Next nudge</strong><span>Owner: reliable executor. Run one production-shaped route slice with guarded DB/file writes and recovery inspect.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>

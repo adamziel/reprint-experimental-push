@@ -1,11 +1,35 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 21:47 CEST
+Last updated: 2026-05-24 21:54 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-24 - Current Nudge
+## 2026-05-24 21:54 CEST - Verification And Lane Hygiene
+
+- Going well: fresh `npm test` passed with `70` tests, and the public status
+  surfaces still keep the production claim blocked by missing evidence.
+- Not going well: production readiness is flat, and older cycle worktrees are
+  behind current `origin/main`; lane claims need rebase plus rerun before they
+  count as fresh evidence.
+- Progress change: verification freshness improved; production proof did not.
+- Next nudge: reliable executor owns the first production-shaped route slice:
+  preflight, dry-run, apply, guarded DB/file writes, journal/recovery inspect,
+  replay, and different-body conflict refusal.
+
+| Lane | Change | Next nudge |
+| --- | --- | --- |
+| Invariants | Flat; stale lanes need rerun | Owner: invariants. Rebase, then prove real WordPress graph identity and drift handling. |
+| Recovery | Flat after lab gains | Owner: recovery. Rebase, then kill every DB/file boundary and classify old/new/blocked. |
+| Reliable executor | Production still flat | Owner: reliable executor. Run the production-shaped route slice end to end. |
+| Fast paths | Model only | Owner: fast paths. Benchmark large uploads/tables with receipts, cursors, and memory ceilings after the route slice exists. |
+| Audit and critic | Waiting on executable slice | Owner: auditor/critic. Re-audit only after retained route-slice evidence exists. |
+| Progress publisher | Needs page/log freshness | Owner: progress publisher. Rebase, rerun page checks, and keep detailed evidence linked. |
+
+<details>
+<summary>Earlier feedback entries</summary>
+
+## 2026-05-24 21:47 CEST - Current Nudge
 
 - Going well: `70` Node tests pass, and invariants, recovery, protocol,
   fast-path, audit, and critic lanes all sharpened lab/model gates.
@@ -25,9 +49,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the first executable production-shaped mutation slice. |
 | Progress publisher | Synced | Keep Pages aligned and concise. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Evidence Checkpoint
 
