@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:42 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
+## 2026-05-25 00:42 CEST - Supervised Lane Merge Refresh
 
 - Going well: `89` Node tests pass after supervised lane merges. Matching
   delete/edit, recovery replay/failure states, fast-path rejection guardrails,
@@ -17,13 +17,13 @@ changed, what is helping, what is not helping, and the next nudge.
 - Not going well: production auth/session storage, durable journal ownership,
   leases, full graph identity mapping, Docker/full Playground integration, and
   general plugin drivers remain unproven.
-- Progress change: eight fast-mode worker outputs were integrated across the
-  last two passes; production readiness stayed blocked.
+- Progress change: no new proof moved the production gates; the page update is
+  a timestamp refresh and wording cleanup only.
 - Active supervision: same-plan graph remains active and unmerged. Completed
   replacement sessions were stopped after review; stale progress-publisher
   output was rejected instead of merged.
 - Next nudge: keep workers focused on production-backed auth/journal proof and
-  graph identity mapping.
+  graph identity mapping, then verify the lane copy after merge.
 
 | Lane | Nudge |
 | --- | --- |
@@ -32,7 +32,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Reliable executor | Turn protocol docs into production push credentials and journal rows. |
 | Fast paths | Run guarded benchmark proof against a real large site. |
 | Audit and critic | Re-audit current proof while implementation lanes run. |
-| Progress publisher | Keep Pages dated, concise, and explicit about active lanes. |
+| Progress publisher | Keep Pages dated, concise, and explicit about active lanes; lane copy becomes live after merge to `main`. |
 
 <details>
 <summary>Earlier feedback entries</summary>
