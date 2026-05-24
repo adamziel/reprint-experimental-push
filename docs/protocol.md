@@ -80,6 +80,11 @@ The protocol extension is production-shaped rather than lab-shaped: a dry-run
 receipt is only an eligibility artifact, never a lease. The remote may accept
 the plan and still reject later apply batches if the live state has drifted.
 
+That means a push executor must treat the remote snapshot listing as a fresh
+planning view and the apply path as a later live proof step. The remote may
+legitimately change between those steps; in that case the apply path must
+revalidate and refuse to reuse the older live evidence.
+
 Dry-run is an eligibility and planning receipt, not a liveness reservation.
 The remote may accept a dry-run plan and still reject later apply batches if
 the live hash listing changes or the storage boundary can no longer prove the
@@ -236,6 +241,20 @@ The persisted pull package is therefore evidence, not authority:
   each batch and again at the storage boundary.
 - `push_journal` and `push_recover inspect` only explain what happened; they do
   not turn an old proof into a current lock.
+
+For the existing exporter/importer pipeline, the pull package is the exact
+handoff point:
+
+- exporter produces the merge-base snapshot and the scope coverage evidence
+- importer persists that package unchanged as read-only provenance
+- push preflight binds that package to one remote identity and one session
+- push snapshot listing refreshes the live comparison set for planning
+- push dry-run uploads the canonical plan derived from base, local, and live
+- push apply revalidates the live remote before every batch and again at the
+  storage boundary
+
+This preserves the pull pipeline as the source of truth for the base package
+while push adds live-remote proof on top of it.
 
 The remote snapshot listing is the planning view, not the write lock. Any
 remote change after snapshot listing, dry-run, or journal inspection must be

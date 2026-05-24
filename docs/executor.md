@@ -199,6 +199,23 @@ Production push is therefore a two-site proof flow:
 - the runner owns the protocol flow and is the only actor allowed to compare,
   upload, inspect, or recover
 
+The implementation test topology should mirror that shape exactly:
+
+- `remote-base` is the original remote source site and the persisted pull base
+- `local-edited` is the imported local clone after user edits
+- `remote-changed` is the same remote site after independent drift between
+  dry-run and apply
+- `runner` is the only process that can run preflight, snapshot listing,
+  dry-run, apply, journal inspection, and recovery
+
+For Docker, keep those roles in separate containers on one private network and
+drive browser-visible inspection only through the sandbox-provided `8080`
+ingress with a local-only proxy. For Playground, use three disposable
+blueprints with the same role split and the same drift pattern. In both cases,
+the point of `remote-changed` is to prove that dry-run and apply are separate
+remote operations and that apply revalidates the live remote after the plan is
+already accepted.
+
 The pull importer must persist a push base package so later pushes can prove
 the merge base, and it must also preserve the additional pull evidence needed
 for later recovery decisions:

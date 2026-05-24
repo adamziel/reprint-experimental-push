@@ -201,6 +201,17 @@ tests prove a fresh revalidation boundary instead of a reused dry-run receipt.
 The same topology is captured in `push-topology.json` so focused tests can
 assert the intended role split without re-encoding prose assumptions.
 
+The machine-checked topology proof should assert all four roles directly:
+
+- `remote_base` seeds the persisted pull package and the live source identity
+- `local_edited` carries the locally edited clone used for planning
+- `remote_changed` is the same source site after drift and must fail stale
+  apply revalidation
+- `runner` is the only actor that may compare, upload, inspect, or recover
+
+That check is what keeps the docs honest about the production topology instead
+of leaving the one-remote, one-local proof in prose only.
+
 The fixture contract is intentionally one remote, one local, one runner:
 
 - `remote_base` is the persisted pull source of truth.

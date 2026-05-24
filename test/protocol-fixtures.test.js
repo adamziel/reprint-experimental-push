@@ -61,6 +61,7 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
   assert.equal(topology.networking.tunnels, 'disallowed');
   assert.equal(topology.roles.remote_base.examples.docker, 'remote-base');
   assert.equal(topology.roles.local_edited.examples.playground, 'local-edited');
+  assert.equal(topology.roles.remote_changed.examples.docker, 'remote-changed');
   assert.equal(topology.roles.remote_changed.role, 'the same remote site after independent live drift between dry-run and apply');
   assert.equal(topology.roles.runner.role, 'the only process allowed to compare, upload, inspect, and recover');
   assert.ok(topology.docker.evidence.some((line) => line.includes('push_batch_apply revalidates the live remote')));
