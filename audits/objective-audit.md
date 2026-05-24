@@ -346,7 +346,8 @@ invocation and can be skipped while `npm test` remains green.
    graph identity, recovery evidence, atomic-group commit measurement, and
    production storage and row-apply capabilities. That makes the current speed
    story stricter than the docs, but still not releasable: the repository lacks
-   the measured end-to-end run that clears those blockers.
+   the measured end-to-end run, documented environment, and release threshold
+   that would clear those blockers.
 
 4. **No test proves the no-data-loss claim across the whole WordPress graph.**
    The current evidence can preserve selected posts, options, files, postmeta,
@@ -369,9 +370,9 @@ invocation and can be skipped while `npm test` remains green.
 7. **Speed evidence is modeled, not measured for release.**
    The benchmark tests are useful because they reject unsupported speed claims
    and encode guardrails, but they do not move bytes through a production
-   executor, measure a live source site, or establish a release throughput
-   threshold on a documented environment. The suite can block a false "fast"
-   claim, but it cannot authorize a real one.
+   executor, measure a live source site, or establish a release throughput or
+   memory threshold on a documented environment. The suite can block a false
+   "fast" claim, but it cannot authorize a real one.
 
 8. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
