@@ -140,6 +140,23 @@ function assertAcceptableRecoveryState(recoveryState) {
   }
 }
 
+function assertRecoveryStateArtifacts(recoveryState, expectedStatus) {
+  assertAcceptableRecoveryState(recoveryState);
+  assert.equal(recoveryState.status, expectedStatus);
+  if (expectedStatus === 'old-remote') {
+    assert.ok(recoveryState.artifacts?.journal, 'old remote recovery must carry journal artifacts');
+    assert.equal(recoveryState.artifacts.remote, undefined);
+  }
+  if (expectedStatus === 'fully-updated-remote') {
+    assert.ok(recoveryState.artifacts?.journal, 'fully updated recovery must carry journal artifacts');
+    assert.equal(recoveryState.artifacts.remote, undefined);
+  }
+}
+
+function assertRemoteUnchanged(remote, snapshot) {
+  assert.equal(JSON.stringify(remote), snapshot);
+}
+
 test('plans and applies local changes when remote still matches the pull base', () => {
   const base = baseSite();
   const local = baseSite();
@@ -1169,6 +1186,123 @@ test('applies an atomic plugin install when dependencies are included in the sam
     result.site.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value.mode,
     'installed',
   );
+});
+
+test('keeps the old remote state when failure happens before any mutation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failBeforeMutation: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assertRemoteUnchanged(remote, before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+});
+
+test('keeps the old remote state when failure happens after staging', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failAfterStaging: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_STAGING');
+  assertRemoteUnchanged(remote, before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+});
+
+test('keeps the old remote state when failure happens after dependency validation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* dependency */';
+  local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent */';
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
+  local.pushIntents = [
+    {
+      id: 'install-atomic-fixture-stack',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: [
+        `file:${pluginMainFile(atomicDependencyPlugin)}`,
+        `file:${pluginMainFile(atomicDependentPlugin)}`,
+        `plugin:${atomicDependencyPlugin}`,
+        `plugin:${atomicDependentPlugin}`,
+      ],
+      dependencies: {
+        plugins: [
+          {
+            name: atomicDependencyPlugin,
+            version: '2.1.0',
+            hash: resourceHash(local, pluginResource(atomicDependencyPlugin)),
+          },
+        ],
+      },
+    },
+  ];
+
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failAfterDependencyValidation: true }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assertRemoteUnchanged(remote, before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+});
+
+test('replays a completed plan without reapplying mutations', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const readyPlan = planFor(base, local, remote);
+  const applied = applyPlan(remote, readyPlan);
+  const completedJournal = applied.journal;
+  const replayRemote = JSON.parse(JSON.stringify(applied.site));
+  const before = JSON.stringify(replayRemote);
+
+  const replay = applyPlan(replayRemote, readyPlan, { journal: completedJournal });
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.journal.status, 'completed');
+  assertRemoteUnchanged(replayRemote, before);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+});
+
+test('replaying a completed plan with drift blocks recovery and keeps artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const remote = baseSite();
+  const readyPlan = planFor(base, local, remote);
+  const applied = applyPlan(remote, readyPlan);
+  const driftedRemote = JSON.parse(JSON.stringify(applied.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const before = JSON.stringify(driftedRemote);
+
+  const error = captureError(() => applyPlan(driftedRemote, readyPlan, { journal: applied.journal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assertRemoteUnchanged(driftedRemote, before);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal);
+  assert.ok(error.details.recovery.artifacts.remote);
 });
 
 test('executor rejects forged ready atomic plugin plans before mutation', () => {
