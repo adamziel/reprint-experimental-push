@@ -4,6 +4,18 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - First Screen Audit Path
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:41:56 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Shortened the first-screen evidence blurb and reordered the links so the
+  audit path stays readable without implying any new production proof.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/protocol.md](protocol.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/executor.md](executor.md),
+  and [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - First Screen Signal Refresh
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
