@@ -19,7 +19,7 @@ Responsibilities:
 - Upload the plan with `push_plan_dry_run`.
 - Apply ready plans in bounded `push_batch_apply` calls.
 - Inspect `push_journal` after any timeout, process crash, or ambiguous error.
-- Run `push_recover` only when the journal says recovery is required.
+- Run `push_recover` in `inspect` mode first, then in a mutating mode only when the journal says recovery is required and the live remote can prove the action.
 
 The executor must not mutate the remote during planning. It may fetch remote
 content for conflict display, but mutation starts only at `push_batch_apply`.
@@ -94,7 +94,7 @@ Resume decisions are conservative:
 | Dry-run ready, no apply receipts | Call `push_journal`, then apply only if the dry-run is still ready and no batch is open. | A prior process may have applied after persisting the dry-run. |
 | Batch request persisted, no response | Call `push_journal` before replay. | The HTTP response may have been lost after mutation. |
 | `PRECONDITION_FAILED` persisted | Start a new attempt from fresh remote hashes. | Editing the old batch would break idempotency and stale liveness evidence. |
-| `RECOVERY_REQUIRED` persisted | Call `push_journal`, then `push_recover` according to recovery policy. | Recovery needs journal artifacts and live hashes, not local guesses. |
+| `RECOVERY_REQUIRED` persisted | Call `push_journal`, then `push_recover` in `inspect` mode before any mutating recovery mode. | Recovery needs journal artifacts and live hashes, not local guesses. |
 
 ## Mapping To Existing Reprint Pull
 
@@ -542,7 +542,8 @@ cloudflared tunnels, localtunnel, serveo, localhost.run, Tailscale Funnel, or
 equivalent remote tunnel services.
 
 The same shape can also be expressed with WordPress Playground when Docker or
-WP-CLI is unavailable in the sandbox.
+WP-CLI is unavailable in the sandbox. In both cases, the remote and local
+sites stay distinct: one remote source of truth, one edited local pull target.
 
 Minimal Compose shape:
 
