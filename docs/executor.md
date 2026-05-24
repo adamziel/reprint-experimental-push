@@ -199,6 +199,8 @@ The executor must also respect the pull-to-push provenance boundary:
 - push apply revalidates at the batch and storage boundary
 - push journal and recovery inspect explain state transitions without granting
   mutation permission
+- the persisted pull base package is never rewritten to make a stale plan look
+  current
 
 ## One-Remote, One-Local Test Topology
 
@@ -235,6 +237,9 @@ The topology proves the production rule that dry-run and apply are separate:
    revalidate and reject stale work.
 6. Use `push_journal` and `push_recover` to resolve any lost-response or crash
    ambiguity before retrying.
+7. Keep `remote-base` as the persisted pull source and `remote-changed` as the
+   live drift target so the executor proves it is comparing, not replaying, a
+   stale snapshot.
 
 ### Docker Topology
 

@@ -130,3 +130,11 @@ reused dry-run receipt.
 
 The same topology is captured in `push-topology.json` so focused tests can
 assert the intended role split without re-encoding prose assumptions.
+
+The fixture contract is intentionally one remote, one local, one runner:
+
+- `remote_base` is the persisted pull source of truth.
+- `local_edited` is the imported and edited local site.
+- `remote_changed` is the live drift target that forces apply-time
+  revalidation.
+- `runner` is the only actor that may compare, upload, inspect, or recover.

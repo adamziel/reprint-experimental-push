@@ -186,14 +186,18 @@ still only proof, not permission.
 The hash listing is also how the executor proves scope completeness before it
 uploads a dry-run plan. If the live listing is partial, blocked, or incomplete
 for the requested scope, the executor must stop before dry-run and refresh the
-remote view rather than guessing from the persisted pull base.
+remote view rather than guessing from the persisted pull base. A stale or
+partial listing is not eligible for dry-run upload, even when the persisted
+pull base is complete.
 
 The existing pull exporter/importer still owns the base package format. Push
 does not invent a second notion of truth; it layers live remote verification
 and mutation receipts on top of the pull artifacts already persisted on disk.
 The only new persistent push-side evidence is the attempt state directory and
 the durable journal rows that describe preflight, snapshot listing, dry-run,
-batch apply, journal inspection, and recovery.
+batch apply, journal inspection, and recovery. The executor may reuse pull
+transport, cursoring, budgeting, and HMAC helpers, but it must not reuse pull
+streaming export payloads as push mutation payloads.
 
 ## Authentication
 
