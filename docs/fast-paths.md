@@ -173,6 +173,9 @@ The rejected examples are not abstract lint. They are concrete failure modes:
   encoding and resource identity are different facts.
 - Parallel commits cannot be widened across atomic groups because the commit
   barrier is the visibility boundary.
+- Chunk uploads cannot become visible across atomic groups as soon as receipts
+  arrive, because the owning group barrier still has to keep the upload set
+  classifiable after crash or retry.
 - Backpressure cannot drop receipts or journals because the missing evidence is
   what makes failure classification unambiguous.
 

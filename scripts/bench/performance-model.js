@@ -538,6 +538,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['atomic-groups', 'row-preconditions', 'visibility-boundary'],
   },
+  {
+    id: 'parallelize-chunk-visibility-across-groups',
+    proposal: 'let chunk uploads from different atomic groups become visible as soon as their receipts arrive',
+    rejectedBecause: 'chunk receipts can overlap, but visibility still has to wait for the owning group barrier so a crash cannot expose a half-complete plugin or upload set',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'chunk-receipts', 'visibility-boundary'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
