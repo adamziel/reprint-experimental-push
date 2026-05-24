@@ -35,11 +35,15 @@ for lane in "${lanes[@]}"; do
     git -C "$repo" worktree add -B "$branch" "$worktree" HEAD
   elif git -C "$worktree" diff --quiet && git -C "$worktree" diff --cached --quiet; then
     git -C "$worktree" fetch --quiet origin main
-    if ! git -C "$worktree" merge --ff-only origin/main >/dev/null; then
-      printf '%s\n' "worktree not fast-forwarded: $worktree"
+    if git -C "$worktree" merge-base --is-ancestor HEAD origin/main; then
+      git -C "$worktree" merge --ff-only origin/main >/dev/null
+    else
+      printf '%s\n' "worktree has clean local commits; not starting stale lane: $worktree"
+      continue
     fi
   else
-    printf '%s\n' "worktree has local changes; not fast-forwarding: $worktree"
+    printf '%s\n' "worktree has local changes; not starting: $worktree"
+    continue
   fi
 
   mkdir -p "$worktree/.lane-output"

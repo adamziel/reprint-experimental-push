@@ -53,7 +53,8 @@ for lane in "${lanes[@]}"; do
   elif git -C "$worktree" merge-base --is-ancestor HEAD "$base_ref"; then
     git -C "$worktree" merge --ff-only "$base_ref" >/dev/null
   else
-    printf '%s\n' "worktree has clean local commits; not fast-forwarding: $worktree"
+    printf '%s\n' "worktree has clean local commits; not starting stale lane: $worktree"
+    continue
   fi
 
   mkdir -p "$worktree/.lane-output"

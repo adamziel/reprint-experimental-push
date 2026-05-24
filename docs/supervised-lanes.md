@@ -75,7 +75,9 @@ git -C "$lane" push -u origin HEAD
 ```
 
 If a lane died before finishing, restart the same cycle. The launcher will
-reuse clean worktrees, skip dirty worktrees, and leave old branches untouched:
+reuse clean worktrees, fast-forward lanes that are behind `origin/main`, skip
+dirty worktrees, and skip clean stale branches with local commits. Inspect or
+archive stale lane commits before starting a new session from them:
 
 ```bash
 scripts/supervision/start-cycle.sh cycle-20260524-followup
@@ -97,4 +99,3 @@ curl -fsSL -H 'Cache-Control: no-cache' \
 
 The page must stay concise. Detailed evidence belongs in Markdown docs linked
 from the page.
-
