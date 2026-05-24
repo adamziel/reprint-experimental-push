@@ -62,6 +62,14 @@ Useful defaults for the first production prototype:
 - A chunk journal that is fsynced or remote-acknowledged before more chunks are
   considered complete.
 
+Resume is also a fast path, but only from receipts. A resumed sender may skip a
+chunk PUT when staging already has a receipt for the same plan id, resource key,
+local resource hash, chunk index, byte range, and chunk digest. Missing or
+unreadable receipts make the chunk incomplete, even if the staging object looks
+present. That rule keeps retry behavior monotonic: the sender can resend a
+chunk, pause, or block, but it does not have to infer whether unacknowledged
+bytes reached the remote.
+
 ## Database Row Batching
 
 Batch rows for throughput, but keep conflict semantics per row. A safe batch
@@ -97,6 +105,11 @@ Indexes can be stale, incomplete, or invalidated by a live edit. Treat them as
 planning evidence. The apply phase still reads the current remote hash or uses a
 server-side compare-and-swap predicate before mutation.
 
+An index generation or scanner cursor is useful for cache invalidation and
+incremental planning, not authorization. A good client records the cursor next to
+the plan so it can explain which listing was used, then discards that evidence
+as soon as apply needs a live precondition check.
+
 ## Compression
 
 Compression belongs to the transport layer. Hashing and conflict detection
@@ -126,6 +139,12 @@ count, remote error rate, latency, staging disk usage, and journal lag. When a
 budget is hit, upstream producers pause. They do not drop evidence, skip hashes,
 or mark work complete before durable acknowledgement.
 
+The important fast path is selective idling. Hashing can pause while uploads
+drain, database batch construction can pause while row commits catch up, and
+compression can stop feeding the upload queue while staging disk is high. Work
+already acknowledged stays resumable through chunk receipts, row batch commit
+records, and atomic group staging records.
+
 ## Fast Paths To Reject
 
 - Publishing chunks directly into the live file path.
@@ -147,6 +166,10 @@ or mark work complete before durable acknowledgement.
   journal.
 - Reporting success when staged bytes, staged rows, or an atomic group commit
   are still unacknowledged.
+- Skipping plugin dependency, metadata, or activation validators because a
+  package hash was cached.
+- Treating a present staging object as a completed chunk without a matching
+  durable receipt.
 
 ## Benchmark Shape
 
@@ -168,6 +191,11 @@ The deterministic model in `scripts/bench/performance-model.js` captures these
 benchmark shapes without touching a live site. It should stay aligned with the
 planner invariants: speedups can reduce bytes, round trips, and duplicate work,
 but cannot remove preconditions or split atomic groups.
+
+The model intentionally treats receipts, cursors, and pressure budgets as
+first-class fields. A benchmark that only proves fewer requests were made is not
+enough; it must also prove which chunks, row batches, and group members can be
+resumed after a failure.
 
 The model exposes three contract lists that tests should keep current:
 
