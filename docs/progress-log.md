@@ -4,6 +4,28 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-24 22:15 CEST - Supervisor Verification Snapshot
+
+- Status: fresh `npm test` passed `70` tests; fresh
+  `npm run test:playground:production-shaped-push` passed against the
+  lab-backed `/wp-json/reprint/v1/push/*` route slice.
+- Trend: stable since the previous snapshot. Reliable executor evidence remains
+  up in lab-backed route proof; production readiness remains flat.
+- Smoke evidence: the production-shaped route smoke reported `labBacked: true`,
+  `8` applied fixture mutations, cross-route receipt mismatch refusal, same-key
+  replay with no fresh mutation work, different-body idempotency conflict, DB
+  journal events, and recovery inspection as `fully-updated-remote`.
+- Blocker: no packaged production route, push credential binding,
+  nonce/session cleanup, durable production journal, storage guard matrix,
+  complete coverage manifest, or general plugin driver proof has landed.
+- Visible page: [progress.html](../progress.html) shows the 22:15 CEST
+  last-updated stamp and links to evidence instead of embedding long audits.
+  Script evidence:
+  [production-shaped-route-smoke.mjs](../scripts/playground/production-shaped-route-smoke.mjs).
+
+<details>
+<summary>Earlier progress entries</summary>
+
 ## 2026-05-24 - Current Supervisor Snapshot
 
 - Status: `70` Node tests pass; `npm run test:playground:production-shaped-push`
@@ -16,9 +38,6 @@ linked implementation artifacts.
   with production auth/session cleanup and durable journal guarantees.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
-
-<details>
-<summary>Earlier progress entries</summary>
 
 ## 2026-05-24 - Integrated Feedback And Verification Refresh
 
@@ -585,7 +604,7 @@ linked implementation artifacts.
 | --- | ---: | --- | --- |
 | Merge invariants | 41% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, stale owner-plugin context blocking, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
 | Recovery boundaries | 25% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, durable old-remote retry evidence, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
-| Reliable executor and protocol | 30% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, post-snapshot drift refusal, and production contract fixtures exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, nonce/session cleanup, and durable audit records. |
+| Reliable executor and protocol | 34% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, post-snapshot drift refusal, production contract fixtures, and a lab-backed `/wp-json/reprint/v1/push/*` route smoke exist. | Packaged production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, nonce/session cleanup, and durable audit records. |
 | Fast path and chunking | 15% | Performance model covers staged chunks, group finalization, idempotency, missing receipts, pressure budgets, and rejected unsafe shortcuts. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
 | Independent evidence and critique | 27% | Objective audit, critic production gate, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
 

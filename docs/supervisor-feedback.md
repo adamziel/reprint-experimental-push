@@ -1,9 +1,36 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 22:04 CEST
+Last updated: 2026-05-24 22:15 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-24 22:15 CEST - Verification Nudge
+
+- Going well: fresh `npm test` passed `70` tests, and
+  `npm run test:playground:production-shaped-push` passed the lab-backed
+  `/wp-json/reprint/v1/push/*` dry-run/apply route slice.
+- Not going well: the proof is still lab-backed. `main` still lacks a packaged
+  production route, push credential binding, nonce/session cleanup, durable
+  production journal, storage guard matrix, complete coverage manifest, and
+  general plugin driver proof.
+- Progress change: stable since the last supervisor update. Fresh verification
+  moved; production readiness did not.
+- Next nudge: ask reliable executor for the smallest packaged production slice:
+  real route registration, scoped auth/session cleanup, durable journal rows,
+  replay/conflict refusal, and recovery inspection.
+
+| Owner | Proof gap | Next test |
+| --- | --- | --- |
+| No-data-loss invariants | WordPress graph identity and coverage completeness. | Prove post, postmeta, attachment, and taxonomy drift preserves or blocks every relation. |
+| No-data-loss recovery | Production durability and crash boundaries. | Kill each DB/file/journal boundary and classify old/new/blocked with retained hashes. |
+| Reliable executor | Packaged production endpoint, auth cleanup, and durable audit. | Run signed preflight, dry-run, apply, same-key replay, different-body conflict, and recovery inspect through production route code. |
+| Fast paths | No measured runtime proof under safety guards. | Run a large file/table benchmark with receipts, preconditions, journals, and resume cursors. |
+| Independent audit and critic | Route smoke has not been re-audited as a production claim gate. | Re-audit the first packaged mutation slice before any readiness increase. |
+| Progress publisher | Page/log drift and optimistic wording risk. | Keep the visible page one-screen, dated, and linked to caveats after every evidence change. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Current Nudge
 
@@ -26,9 +53,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the first executable production-shaped mutation slice. |
 | Progress publisher | Synced | Keep Pages aligned and concise. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Evidence Checkpoint
 

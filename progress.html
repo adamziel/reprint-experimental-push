@@ -474,11 +474,12 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is lab/model evidence: 70 Node tests plus a lab-backed <code>/wp-json/reprint/v1/push/*</code> route smoke. Production push remains blocked by auth, durable journal, storage, and plugin-driver proof.</p>
-        <time class="update-stamp" datetime="2026-05-24T22:04:00+02:00">Last updated: May 24, 2026, 22:04 CEST</time>
+        <p class="lead">Current proof is lab/model evidence: 70 Node tests plus a freshly verified, lab-backed <code>/wp-json/reprint/v1/push/*</code> route smoke. Production push remains blocked by auth, durable journal, storage, coverage, and plugin-driver proof.</p>
+        <time class="update-stamp" datetime="2026-05-24T22:15:00+02:00">Last updated: May 24, 2026, 22:15 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">70 Node tests passing</span>
           <span class="pill">Production-shaped route smoke passing</span>
+          <span class="pill">Verified 22:15 CEST</span>
           <span class="pill">CLI drift refusal passing</span>
           <span class="pill">Production push blocked</span>
         </div>
@@ -550,10 +551,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>Production-shaped route smoke passes over the lab harness.</span></li>
-            <li><strong>Not going well</strong><span>Production auth, durable journal, storage guard, and plugin proof are still missing.</span></li>
-            <li><strong>Progress change</strong><span>Reliable executor up in lab; production flat.</span></li>
-            <li><strong>Next nudge</strong><span>Package the route with real auth cleanup and durable journal guarantees.</span></li>
+            <li><strong>Going well</strong><span>70 Node tests and the production-shaped route smoke passed in fresh verification.</span></li>
+            <li><strong>Not going well</strong><span>The route proof is still lab-backed; production auth, journal, storage, coverage, and plugin proof are missing.</span></li>
+            <li><strong>Progress change</strong><span>Verification is current; production readiness is unchanged.</span></li>
+            <li><strong>Next nudge</strong><span>Reliable executor: package the route with scoped auth cleanup, durable journal rows, replay/conflict refusal, and recovery inspect.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -561,6 +562,7 @@
         <section class="panel latest-evidence-panel" aria-labelledby="latest-evidence">
           <h2 id="latest-evidence">Latest Evidence</h2>
           <ul class="link-list">
+            <li><a href="scripts/playground/production-shaped-route-smoke.mjs">Production-shaped route smoke</a></li>
             <li><a href="docs/scenario-matrix.md">Scenario matrix</a></li>
             <li><a href="docs/approach-scorecard.md">Approach scorecard</a></li>
             <li><a href="docs/protocol.md">Protocol sketch</a></li>
