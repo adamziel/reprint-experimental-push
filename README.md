@@ -19,6 +19,15 @@ executable safety model: a deterministic JSON-snapshot planner, an atomic
 applicator, lab-only Playground fixture endpoints, and scenario tests that
 define the invariants the production transport must satisfy.
 
+## Supervised Work
+
+The current tmux/worktree workflow is documented in
+[docs/supervised-lanes.md](docs/supervised-lanes.md). Start with:
+
+```bash
+scripts/supervision/status.sh
+```
+
 ## Current Prototype
 
 ```bash

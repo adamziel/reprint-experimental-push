@@ -13,6 +13,7 @@ git -C "$repo" worktree list
 if [ -d "$lanes_root" ]; then
   printf '\n%s\n' "lane git state:"
   while IFS= read -r worktree; do
+    [ -e "$worktree/.git" ] || continue
     git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1 || continue
     lane_label="${worktree#"$lanes_root"/}"
     printf '\n## %s\n' "$lane_label"
