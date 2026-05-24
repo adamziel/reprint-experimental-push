@@ -242,6 +242,13 @@ query, session, or idempotency binding; signed public-route attempts; nonce
 replay before idempotency replay; and replay with a fresh nonce/signature and
 zero fresh mutation work.
 
+The `npm run test:playground:authenticated-cli-push` smoke exercises the same
+authenticated lab routes through `reprint-push-lab push-authenticated`. It
+fetches the live source snapshot, builds a plan from base/local snapshot files,
+proves dry-run is non-mutating, applies the eight fixture mutations with DB
+journal commit evidence, and refuses a changed source locally before dry-run or
+apply.
+
 This is authenticated local Playground source-site mutation evidence only. It
 does not prove production Reprint auth, TLS deployment, nonce/replay store
 cleanup, production auth/session handling, real exporter credential binding,

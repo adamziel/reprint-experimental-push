@@ -127,6 +127,12 @@ deployment, nonce/replay store cleanup, production session handling, real
 exporter credential binding, durable production audit records, and full
 production push.
 
+`npm run test:playground:authenticated-cli-push` now verifies the same lab
+protocol through the `reprint-push-lab push-authenticated` command. That CLI
+fetches the source snapshot, builds a fresh three-way plan from base/local
+snapshot files, signs preflight/dry-run/apply, applies with an idempotency key,
+and refuses a changed source as `PLAN_NOT_READY_LOCALLY` before mutation.
+
 ### Current Fixture Plugin Atomicity Lab
 
 `npm run test:playground:plugin-atomic-install` is protocol-shape evidence for

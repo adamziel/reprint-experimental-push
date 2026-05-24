@@ -39,6 +39,24 @@ scripts/supervision/status.sh
 
 The scripts create worktrees under
 `$REPRINT_PUSH_LANES_DIR` or `~/reprint-experimental-push-lanes`.
+Clean existing worktrees are fast-forwarded to `origin/main` before a new
+session starts. Dirty or diverged worktrees are reported and left untouched.
+
+## Auditing Active Work
+
+Use these commands from the main worktree:
+
+```bash
+scripts/supervision/status.sh
+tmux capture-pane -pt rp-feedback-supervisor:0 -S -120
+tmux attach -t rp-feedback-supervisor
+git -C ~/reprint-experimental-push-lanes/feedback-supervisor status --short --branch
+```
+
+Each lane writes its final report to `.lane-output/final.md` inside that lane's
+worktree. A live tmux session means work is still in progress; a clean worktree
+with a pushed branch and no tmux session means the lane has finished its current
+assignment.
 
 ## Lane Rules
 

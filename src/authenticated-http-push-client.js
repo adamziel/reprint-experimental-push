@@ -1,0 +1,413 @@
+import { createHash, createHmac, randomBytes } from 'node:crypto';
+import { createPushPlan } from './planner.js';
+import { digest } from './stable-json.js';
+
+const namespacePath = '/wp-json/reprint-push-lab/v1/authenticated';
+const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
+const sessionHeader = 'X-Reprint-Push-Session';
+const authContentHashHeader = 'X-Auth-Content-Hash';
+const authTimestampHeader = 'X-Auth-Timestamp';
+const authNonceHeader = 'X-Auth-Nonce';
+const authSignatureHeader = 'X-Auth-Signature';
+const pushSignatureHeader = 'X-Reprint-Push-Signature';
+
+export async function runAuthenticatedHttpPush({
+  sourceUrl,
+  base,
+  local,
+  username,
+  applicationPassword,
+  idempotencyKey,
+  dryRunOnly = false,
+  now = new Date(),
+}) {
+  if (!sourceUrl) {
+    throw new Error('Missing sourceUrl');
+  }
+  if (!username) {
+    throw new Error('Missing username');
+  }
+  if (!applicationPassword) {
+    throw new Error('Missing applicationPassword');
+  }
+  if (!idempotencyKey) {
+    throw new Error('Missing idempotencyKey');
+  }
+
+  const credential = { username, password: applicationPassword };
+  const client = authenticatedHttpClient({ sourceUrl, credential });
+  const summary = {
+    ok: false,
+    mode: dryRunOnly ? 'dry-run' : 'apply',
+    source: {
+      url: redactUrl(sourceUrl),
+      namespace: 'reprint-push-lab/v1',
+      routePrefix: '/authenticated',
+    },
+    idempotencyKeyHash: digest(idempotencyKey),
+    preflight: null,
+    plan: null,
+    dryRun: null,
+    apply: null,
+    after: null,
+    dbJournal: null,
+  };
+
+  const preflight = await client.signedGet('/preflight');
+  summary.preflight = summarizeResponse(preflight);
+  if (preflight.status !== 200 || preflight.body?.ok !== true) {
+    summary.code = preflight.body?.code || 'PREFLIGHT_FAILED';
+    return summary;
+  }
+  const session = preflight.body.session?.id;
+  if (!session) {
+    summary.code = 'PREFLIGHT_SESSION_MISSING';
+    return summary;
+  }
+
+  const remoteSnapshot = await client.get('/snapshot');
+  if (remoteSnapshot.status !== 200 || remoteSnapshot.body?.ok !== true) {
+    summary.code = remoteSnapshot.body?.code || 'SNAPSHOT_FAILED';
+    summary.snapshot = summarizeResponse(remoteSnapshot);
+    return summary;
+  }
+
+  const plan = createPushPlan({
+    base,
+    local,
+    remote: remoteSnapshot.body.snapshot,
+    now,
+  });
+  summary.plan = summarizePlan(plan);
+
+  if (plan.status !== 'ready') {
+    summary.code = 'PLAN_NOT_READY_LOCALLY';
+    summary.ok = false;
+    return summary;
+  }
+
+  const dryRun = await client.signedPost('/dry-run', { plan }, {
+    session,
+    idempotencyKey,
+  });
+  summary.dryRun = summarizeResponse(dryRun);
+  if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
+    summary.code = dryRun.body?.code || 'DRY_RUN_FAILED';
+    return summary;
+  }
+
+  if (dryRunOnly) {
+    const afterDryRun = await client.get('/snapshot');
+    summary.after = summarizeSnapshot(afterDryRun, local);
+    summary.ok = afterDryRun.status === 200 && afterDryRun.body?.ok === true;
+    return summary;
+  }
+
+  const apply = await client.signedPost('/apply', {
+    plan,
+    receipt: dryRun.body.receipt,
+  }, {
+    session,
+    idempotencyKey,
+  });
+  summary.apply = summarizeResponse(apply);
+
+  const afterApply = await client.get('/snapshot');
+  summary.after = summarizeSnapshot(afterApply, local);
+  const dbJournal = await client.get('/db-journal?limit=80');
+  summary.dbJournal = summarizeDbJournal(dbJournal);
+
+  summary.ok = apply.status === 200
+    && apply.body?.ok === true
+    && summary.after?.finalMatchesLocal === true;
+  if (!summary.ok) {
+    summary.code = apply.body?.code || 'APPLY_FAILED';
+  }
+  return summary;
+}
+
+export function authenticatedHttpClient({ sourceUrl, credential }) {
+  const baseUrl = normalizeBaseUrl(sourceUrl);
+
+  return {
+    get(pathSuffix) {
+      return requestJson(baseUrl, 'GET', `${namespacePath}${pathSuffix}`, undefined, authHeaders(credential));
+    },
+    signedGet(pathSuffix, options = {}) {
+      const pathname = `${namespacePath}${pathSuffix}`;
+      return requestJsonRaw(
+        baseUrl,
+        'GET',
+        pathname,
+        undefined,
+        signedRequestHeaders(credential, 'GET', pathname, '', options),
+      );
+    },
+    signedPost(pathSuffix, body, options = {}) {
+      const pathname = `${namespacePath}${pathSuffix}`;
+      const rawBody = JSON.stringify(body);
+      return requestJsonRaw(
+        baseUrl,
+        'POST',
+        pathname,
+        rawBody,
+        signedRequestHeaders(credential, 'POST', pathname, rawBody, options),
+      );
+    },
+  };
+}
+
+function summarizePlan(plan) {
+  return {
+    id: plan.id,
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.length,
+    mutationKeys: plan.mutations.map((mutation) => mutation.resourceKey),
+    conflicts: plan.conflicts.map((conflict) => ({
+      resourceKey: conflict.resourceKey,
+      reason: conflict.reason,
+      resolutionPolicy: conflict.resolutionPolicy,
+      className: conflict.className,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      resourceKey: blocker.resourceKey,
+      reason: blocker.reason,
+      className: blocker.className,
+    })),
+  };
+}
+
+function summarizeResponse(response) {
+  const body = response.body || {};
+  return {
+    status: response.status,
+    ok: body.ok === true,
+    mode: body.mode,
+    code: body.code,
+    applied: body.applied,
+    receiptHash: body.receipt?.receiptHash,
+    authUser: body.auth?.identity?.userLogin,
+    sessionType: body.auth?.session?.type,
+    signed: body.signedRequest?.signed === true,
+    idempotency: body.idempotency ? {
+      replayed: body.idempotency.replayed === true,
+      freshMutationWork: body.idempotency.freshMutationWork === true,
+      status: body.idempotency.status,
+      conflict: body.idempotency.conflict === true,
+    } : undefined,
+    storageGuard: body.storageGuard ? {
+      boundary: body.storageGuard.boundary,
+      operation: body.storageGuard.operation,
+      outcome: body.storageGuard.outcome,
+    } : undefined,
+  };
+}
+
+function summarizeSnapshot(response, local) {
+  if (response.status !== 200 || response.body?.ok !== true) {
+    return summarizeResponse(response);
+  }
+  const snapshot = response.body.snapshot;
+  return {
+    status: response.status,
+    ok: true,
+    snapshotHash: digest(snapshotContent(snapshot)),
+    visibleSurfaceHash: digest(visibleSurface(snapshot)),
+    finalMatchesLocal: digest(visibleSurface(snapshot)) === digest(visibleSurface(local)),
+  };
+}
+
+function summarizeDbJournal(response) {
+  if (response.status !== 200 || response.body?.ok !== true) {
+    return summarizeResponse(response);
+  }
+  const rows = response.body.dbJournal?.latestRows || [];
+  return {
+    status: response.status,
+    ok: true,
+    rows: rows.length,
+    applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
+    mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
+    idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
+  };
+}
+
+async function requestJson(baseUrl, method, pathname, body = undefined, headers = {}) {
+  return requestJsonRaw(
+    baseUrl,
+    method,
+    pathname,
+    body === undefined ? undefined : JSON.stringify(body),
+    headers,
+  );
+}
+
+async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, headers = {}) {
+  const response = await fetch(new URL(pathname, baseUrl), {
+    method,
+    headers: rawBody === undefined ? headers : {
+      'content-type': 'application/json',
+      ...headers,
+    },
+    body: rawBody,
+  });
+  const text = await response.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`Expected JSON from ${method} ${pathname}, got HTTP ${response.status}\n${text}\n${error.message}`);
+  }
+  return {
+    status: response.status,
+    body: json,
+  };
+}
+
+function signedRequestHeaders(credential, method, pathname, rawBody, options = {}) {
+  const contentHash = sha256Hex(rawBody);
+  const timestamp = options.timestamp || currentSignedTimestamp();
+  const nonce = options.nonce || nextSignedNonce('cli-push');
+  const signingKey = labSigningKey(credential);
+  const authString = `${nonce}${timestamp}${contentHash}`;
+  const canonical = pushCanonicalString({
+    method,
+    pathname,
+    contentHash,
+    session: options.session || '',
+    idempotencyKey: options.idempotencyKey || '',
+  });
+  const headers = {
+    ...authHeaders(credential),
+    [authContentHashHeader]: contentHash,
+    [authTimestampHeader]: timestamp,
+    [authNonceHeader]: nonce,
+    [authSignatureHeader]: hmacHex(signingKey, authString),
+    [pushSignatureHeader]: hmacHex(signingKey, canonical),
+  };
+
+  if (options.session !== undefined) {
+    headers[sessionHeader] = options.session;
+  }
+  if (options.idempotencyKey !== undefined) {
+    headers[idempotencyHeader] = options.idempotencyKey;
+  }
+
+  return headers;
+}
+
+function pushCanonicalString({ method, pathname, contentHash, session, idempotencyKey }) {
+  const [rawPath, rawQuery = ''] = pathname.split('?', 2);
+  return [
+    'REPRINT-PUSH-LAB-V1',
+    method.toUpperCase(),
+    rawPath || '/',
+    canonicalQuery(rawQuery),
+    contentHash,
+    session,
+    idempotencyKey,
+  ].join('\n');
+}
+
+function canonicalQuery(query) {
+  if (!query) {
+    return '';
+  }
+
+  return query
+    .split('&')
+    .map((part, index) => {
+      if (!part) {
+        return null;
+      }
+      const [key, value = ''] = part.split('=', 2);
+      return {
+        key: rawUrlDecodeQueryPart(key),
+        value: rawUrlDecodeQueryPart(value),
+        index,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.key !== b.key) {
+        return a.key < b.key ? -1 : 1;
+      }
+      if (a.value !== b.value) {
+        return a.value < b.value ? -1 : 1;
+      }
+      return a.index - b.index;
+    })
+    .map((pair) => `${rawUrlEncode(pair.key)}=${rawUrlEncode(pair.value)}`)
+    .join('&');
+}
+
+function rawUrlDecodeQueryPart(value) {
+  return decodeURIComponent(value.replace(/\+/g, '%20'));
+}
+
+function rawUrlEncode(value) {
+  return encodeURIComponent(value).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
+}
+
+function labSigningKey(credential) {
+  return hmacHex(credential.password, `reprint-push-lab-v1\n${credential.username}`);
+}
+
+function authHeaders(credential) {
+  return {
+    authorization: `Basic ${Buffer.from(`${credential.username}:${credential.password}`, 'utf8').toString('base64')}`,
+  };
+}
+
+function hmacHex(key, data) {
+  return createHmac('sha256', key).update(data, 'utf8').digest('hex');
+}
+
+function sha256Hex(data) {
+  return createHash('sha256').update(data, 'utf8').digest('hex');
+}
+
+function currentSignedTimestamp() {
+  return String(Math.floor(Date.now() / 1000));
+}
+
+function nextSignedNonce(prefix) {
+  return `${prefix}-${Date.now()}-${randomBytes(6).toString('hex')}`;
+}
+
+function normalizeBaseUrl(sourceUrl) {
+  const parsed = new URL(sourceUrl);
+  parsed.hash = '';
+  parsed.search = '';
+  if (!parsed.pathname.endsWith('/')) {
+    parsed.pathname += '/';
+  }
+  return parsed;
+}
+
+function redactUrl(sourceUrl) {
+  const parsed = new URL(sourceUrl);
+  parsed.username = '';
+  parsed.password = '';
+  return parsed.toString();
+}
+
+function snapshotContent(snapshot) {
+  return {
+    meta: {
+      source: snapshot?.meta?.source,
+      fixture: snapshot?.meta?.fixture,
+      table_prefix: snapshot?.meta?.table_prefix,
+    },
+    ...visibleSurface(snapshot),
+  };
+}
+
+function visibleSurface(snapshot) {
+  return {
+    files: snapshot?.files,
+    db: snapshot?.db,
+    plugins: snapshot?.plugins,
+  };
+}

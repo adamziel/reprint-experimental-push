@@ -193,6 +193,17 @@ Reprint auth; responses intentionally expose stable hash evidence such as
 credential/signing-key hashes for lab proof and are not a production response
 contract.
 
+The `test:playground:authenticated-cli-push` script verifies the same
+authenticated flow through the `reprint-push-lab push-authenticated` command
+against disposable Playground source sites bound to `127.0.0.1`. The command
+fetches the live source snapshot, builds a three-way plan from `base` and
+`local` snapshot files, performs signed preflight and dry-run, and optionally
+applies with an idempotency key. The smoke proves dry-run is non-mutating,
+apply commits the eight fixture mutations with DB journal evidence, and a
+changed source is refused locally as `PLAN_NOT_READY_LOCALLY` before dry-run or
+apply. This is still the lab endpoint and not production Reprint auth or a
+production mutation endpoint.
+
 The `test:playground:db-journal-idempotency` script verifies a separate
 DB-native lab journal for `POST /apply`. Apply now requires
 `X-Reprint-Push-Idempotency-Key`; a missing key returns
@@ -403,6 +414,15 @@ reprint-push-lab apply \
   --remote live-remote.json \
   --plan push-plan.json \
   --out remote-after.json
+
+reprint-push-lab push-authenticated \
+  --base pulled-base.json \
+  --local local-edited.json \
+  --source-url http://127.0.0.1:9400 \
+  --username reprint_push_admin \
+  --application-password "$APP_PASSWORD" \
+  --idempotency-key "$IDEMPOTENCY_KEY" \
+  --out push-result.json
 ```
 
 The model uses a three-way base/local/remote comparison. A plan may be:

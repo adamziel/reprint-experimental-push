@@ -16,5 +16,10 @@ if [ -d "$lanes_root" ]; then
     git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1 || continue
     printf '\n## %s\n' "$(basename "$worktree")"
     git -C "$worktree" status --short --branch
+    if git -C "$worktree" rev-parse --verify origin/main >/dev/null 2>&1; then
+      ahead_main="$(git -C "$worktree" rev-list --count origin/main..HEAD)"
+      behind_main="$(git -C "$worktree" rev-list --count HEAD..origin/main)"
+      printf 'main delta: ahead %s, behind %s\n' "$ahead_main" "$behind_main"
+    fi
   done
 fi

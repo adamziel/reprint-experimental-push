@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import process from 'node:process';
 import { createPushPlan } from '../src/planner.js';
 import { applyPlan } from '../src/apply.js';
+import { runAuthenticatedHttpPush } from '../src/authenticated-http-push-client.js';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -53,6 +54,7 @@ function printUsage() {
   process.stderr.write(`Usage:
   reprint-push-lab plan --base base.json --local local.json --remote remote.json [--out plan.json]
   reprint-push-lab apply --remote remote.json --plan plan.json [--out remote-after.json]
+  reprint-push-lab push-authenticated --base base.json --local local.json --source-url http://127.0.0.1:9400 --username USER --application-password PASS --idempotency-key KEY [--dry-run-only] [--out result.json]
 
 The lab works on deterministic JSON snapshots. It is not the production
 WordPress transport; it is the executable safety model used to design it.
@@ -87,6 +89,23 @@ async function main() {
     return;
   }
 
+  if (command === 'push-authenticated') {
+    const result = await runAuthenticatedHttpPush({
+      base: readJson(requirePath(args, 'base')),
+      local: readJson(requirePath(args, 'local')),
+      sourceUrl: requirePath(args, 'source-url'),
+      username: requirePath(args, 'username'),
+      applicationPassword: requirePath(args, 'application-password'),
+      idempotencyKey: requirePath(args, 'idempotency-key'),
+      dryRunOnly: Boolean(args['dry-run-only']),
+    });
+    writeJson(args.out || '-', result);
+    if (!result.ok) {
+      process.exitCode = 2;
+    }
+    return;
+  }
+
   throw new Error(`Unknown command: ${command}`);
 }
 
@@ -94,4 +113,3 @@ main().catch((error) => {
   process.stderr.write(`${error.stack || error.message}\n`);
   process.exitCode = 1;
 });
-

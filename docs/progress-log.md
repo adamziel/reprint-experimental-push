@@ -469,13 +469,40 @@ linked implementation artifacts.
   HTTP mutation, generic WordPress filesystem safety proof, or a production
   crash proof.
 
+## 2026-05-24 - Authenticated CLI Push Smoke
+
+- `npm run test:playground:authenticated-cli-push` passed as a standalone
+  local-only Playground smoke for the `reprint-push-lab push-authenticated`
+  command.
+- The command fetches a source snapshot over the authenticated lab REST route,
+  builds the three-way push plan from `base` and `local` snapshot files, signs
+  preflight/dry-run/apply requests, and applies with an idempotency key.
+- Positive proof covers a non-mutating dry-run, then an apply of the eight
+  current fixture mutations with DB journal `apply-committed` evidence and a
+  final source snapshot matching the local fixture surface.
+- Negative proof covers a changed source site: the CLI reports
+  `PLAN_NOT_READY_LOCALLY` with conflict evidence and does not call dry-run or
+  apply.
+- Caveat: this makes the lab source-site flow usable from the CLI, but it still
+  targets the lab endpoint. It is not a production Reprint endpoint, production
+  credential binding, or production durability proof.
+
+## 2026-05-24 - Supervisor Feedback Refresh
+
+- The feedback supervisor lane pushed
+  `origin/lane/feedback-supervisor` with a refreshed dated status entry,
+  concise blocked-by-evidence language, and audit links.
+- The main progress page now folds that feedback into the CLI push update:
+  reliable executor moved up in the lab, while production endpoint/auth/journal
+  claims remain blocked.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | What changed | Next proof |
 | --- | ---: | --- | --- |
 | Merge invariants | 38% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
 | Recovery boundaries | 24% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
-| Reliable executor and protocol | 25% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, and hash-only guard evidence exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, and durable audit records. |
+| Reliable executor and protocol | 27% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, and an authenticated CLI push smoke exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, and durable audit records. |
 | Fast path and chunking | 12% | Performance model and fast-path design are documented. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
 | Independent evidence and critique | 25% | Objective audit, critic notes, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
 
