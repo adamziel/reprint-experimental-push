@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Lab/model evidence still holds. Production remains blocked by missing evidence, and the linked docs stay one click away.</p>
-        <time class="update-stamp" datetime="2026-05-25T01:45:35+02:00">Last updated: May 25, 2026, 01:45:35 CEST</time>
+        <p class="lead">Lab/model evidence still holds. Production remains blocked by missing evidence, and the detailed logs stay one click away.</p>
+        <time class="update-stamp" datetime="2026-05-25T01:46:11+02:00">Last updated: May 25, 2026, 01:46:11 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Lab evidence still holds</span>
           <span class="pill">Production evidence still missing</span>
@@ -485,6 +485,7 @@
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
+        <a class="log-link" href="docs/supervisor-feedback.md">Open supervisor feedback</a>
         <p>Scan view only. Detailed evidence lives in the linked docs, and this lane's copy becomes live after merge to <code>main</code>.</p>
       </div>
     </header>
@@ -514,7 +515,7 @@
         <span>Short, dated, linked</span>
       </div>
       <div class="panel">
-        <p>Going well: the page, log, and newest note still agree, and the scan copy stays short. Not going well: production proof is unchanged, with auth, journal durability, leases, graph identity, integration, and plugin drivers still missing. Progress change: no evidence delta; this pass only tightened the visible surfaces. Next nudge: keep each lane to one proof gap, one next test, and one owner.</p>
+        <p>Going well: the page, log, and newest note still agree. Not going well: production proof is still missing for auth, journal durability, leases, graph identity, integration, and plugin drivers. Progress change: no evidence delta; this pass only trimmed the public wording. Next nudge: keep each lane to one proof gap, one next test, and one owner.</p>
         <ul class="compact-list" aria-label="Lane nudges">
           <li><strong>Invariants</strong><span>Prove graph identity on a real site.</span></li>
           <li><strong>Recovery</strong><span>Prove durable journal writes under crash boundaries.</span></li>
@@ -593,7 +594,7 @@
             <li><a href="docs/supervisor-feedback.md">Supervisor feedback</a></li>
             <li><a href="docs/progress-log.md">Progress log</a></li>
           </ul>
-          <p class="note">Detailed caveats and command evidence live in the linked docs. This lane's page becomes live after merge to `main`.</p>
+          <p class="note">Detailed caveats and command evidence live in the linked docs, especially the progress log and supervisor feedback. This lane's page becomes live after merge to `main`.</p>
         </section>
 
         <section class="panel" aria-labelledby="proof-gates">
