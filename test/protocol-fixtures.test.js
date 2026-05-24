@@ -153,7 +153,15 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
   assert.equal(mapping.session_binding.remote_site_id, 'remote-example');
   assert.deepEqual(mapping.session_binding.requested_scope, ['files', 'database', 'plugins', 'themes']);
   assert.equal(mapping.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(mapping.coverage_binding.base_coverage_hash, 'sha256:base-coverage');
+  assert.equal(mapping.coverage_binding.remote_coverage_hash, 'sha256:remote-coverage');
+  assert.ok(mapping.coverage_binding.required_proof.includes('immutable provenance'));
   assert.equal(mapping.required_invariants[0], 'the pull package is immutable provenance, not a live lock');
+  assert.ok(
+    mapping.required_invariants.includes(
+      'the stored pull coverage hash anchors provenance and the live remote coverage hash only proves planning freshness',
+    ),
+  );
   assert.ok(mapping.required_invariants.includes('preflight binds the push session to the stored pull base, requested scope, and live remote identity'));
   assert.ok(mapping.required_invariants.includes('remote hash listing is planning evidence and never an apply lock'));
   assert.ok(mapping.required_invariants.includes('mutating recovery requires inspect evidence before finish or rollback'));

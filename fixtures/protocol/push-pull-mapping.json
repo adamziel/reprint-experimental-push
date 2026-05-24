@@ -24,6 +24,11 @@
     ],
     "scoped_write_authority": "one persisted pull base, one remote identity, one requested scope, one short-lived push session"
   },
+  "coverage_binding": {
+    "base_coverage_hash": "sha256:base-coverage",
+    "remote_coverage_hash": "sha256:remote-coverage",
+    "required_proof": "the persisted pull coverage is immutable provenance and the remote coverage hash is fresh planning evidence only"
+  },
   "persisted_base_package": {
     "base_manifest_id": "pull-2026-05-24T00:00:00Z",
     "base_manifest_hash": "sha256:base-manifest",
@@ -38,6 +43,7 @@
   },
   "required_invariants": [
     "the pull package is immutable provenance, not a live lock",
+    "the stored pull coverage hash anchors provenance and the live remote coverage hash only proves planning freshness",
     "dry-run is eligibility only and apply revalidates the live remote again",
     "remote hash listing is planning evidence and never an apply lock",
     "journal and recover inspect explain evidence without turning stale proof into authority",
