@@ -1711,6 +1711,40 @@ test('preserves remote-only plugin changes', () => {
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.1 */');
 });
 
+test('keeps remote-only plugin changes while a local directory delete and matching descendant delete stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/child.txt'] = 'child base';
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery'];
+  delete local.files['wp-content/uploads/gallery/child.txt'];
+  const remote = baseSite();
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const directoryDeletion = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const descendantDeletion = decisionFor(plan, 'file:wp-content/uploads/gallery/child.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(directoryDeletion.decision, 'already-in-sync');
+  assert.equal(directoryDeletion.change.localChange, 'delete');
+  assert.equal(directoryDeletion.change.remoteChange, 'delete');
+  assert.equal(descendantDeletion.decision, 'already-in-sync');
+  assert.equal(descendantDeletion.change.localChange, 'delete');
+  assert.equal(descendantDeletion.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/child.txt'), false);
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('preserves remote-only plugin removals while still applying independent local changes', () => {
   const base = baseSite();
   const local = baseSite();
