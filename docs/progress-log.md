@@ -39,6 +39,9 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
 
+<details>
+<summary>Earlier progress entries</summary>
+
 ## 2026-05-24 - Progress Publisher Fresh Verification
 
 - `npm test` passed in this lane with `70` Node scenarios covering the
@@ -79,9 +82,6 @@ linked implementation artifacts.
   [desktop screenshot](progress-assets/screenshots/desktop.png),
   [tablet screenshot](progress-assets/screenshots/tablet.png), and
   [mobile screenshot](progress-assets/screenshots/mobile.png).
-
-<details>
-<summary>Earlier progress entries</summary>
 
 ## 2026-05-24 - Core Evidence Recheck
 
