@@ -25,8 +25,7 @@ Task:
    long audit text.
 4. Keep `docs/progress-log.md` aligned with the visible page. Do not overstate
    production readiness.
-5. Push your branch to `origin lane/feedback-supervisor` when finished and
-   leave the worktree clean.
+5. Push your current lane branch when finished and leave the worktree clean.
 
 Quality bar:
 

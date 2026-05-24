@@ -14,6 +14,22 @@ tmux_socket_dir="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)"
 mkdir -p "$lanes_root"
 mkdir -p "$tmux_socket_dir"
 chmod 700 "$tmux_socket_dir"
+git -C "$repo" fetch --quiet origin main
+
+start_fresh_session() {
+  suffix="refresh-$(date +%Y%m%d-%H%M%S)"
+  worktree="$lanes_root/$lane-$suffix"
+  branch="lane/$lane-$suffix"
+  session="rp-$lane-$suffix"
+  output="$worktree/.lane-output/final.md"
+
+  if tmux has-session -t "$session" 2>/dev/null; then
+    printf '%s\n' "session exists: $session"
+    exit 0
+  fi
+
+  git -C "$repo" worktree add -b "$branch" "$worktree" origin/main
+}
 
 if tmux has-session -t "$session" 2>/dev/null; then
   printf '%s\n' "session exists: $session"
@@ -23,16 +39,15 @@ fi
 if ! git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$repo" worktree add -B "$branch" "$worktree" HEAD
 elif git -C "$worktree" diff --quiet && git -C "$worktree" diff --cached --quiet; then
-  git -C "$worktree" fetch --quiet origin main
   if git -C "$worktree" merge-base --is-ancestor HEAD origin/main; then
     git -C "$worktree" merge --ff-only origin/main >/dev/null
   else
-    printf '%s\n' "worktree has clean local commits; not starting stale feedback session: $worktree"
-    exit 1
+    printf '%s\n' "worktree has clean local commits; starting fresh feedback session instead: $worktree"
+    start_fresh_session
   fi
 else
-  printf '%s\n' "worktree has local changes; not starting feedback session: $worktree"
-  exit 1
+  printf '%s\n' "worktree has local changes; starting fresh feedback session instead: $worktree"
+  start_fresh_session
 fi
 
 mkdir -p "$worktree/.lane-output"

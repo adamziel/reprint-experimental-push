@@ -28,6 +28,16 @@ Start a fresh supervised cycle from current `origin/main`:
 scripts/supervision/start-cycle.sh cycle-YYYYMMDD-label
 ```
 
+Start just the feedback supervisor:
+
+```bash
+scripts/supervision/start-feedback-session.sh
+```
+
+If the default feedback worktree has stale local commits or local changes, the
+script leaves it untouched and starts a fresh suffixed feedback session from
+current `origin/main`.
+
 For this cycle, the session names and worktrees are:
 
 | Lane | Session | Worktree |
