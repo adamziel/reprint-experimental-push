@@ -2,205 +2,216 @@
 
 ## Verdict
 
-The repository currently proves an early JSON-snapshot safety model plus
-lab-only, fixture-scoped Playground push endpoints, including a local-only REST
-slice over real HTTP, lab recovery inspection after an injected partial apply,
-file-backed JSONL recovery journal evidence in the JSON model, a fixture-scoped
-DB journal/idempotency slice, an authenticated local Playground source-site
-mutation slice under `/authenticated/*`, a narrow allowlisted plugin-owned
-forms data slice, and hard-coded fixture plugin install atomicity evidence, not
-a production-safe WordPress push transport. That
-distinction matters: most of the strongest
-no-data-loss, reliability, and speed claims still depend on design intent, not
-direct executable evidence at the production boundary.
+The project is **not releasable as a production WordPress push path**.
 
-Release status: **not releasable as a production push path**. It is acceptable
-as a lab harness for planner invariants, fixture-scoped Playground protocol
-evidence, local-only HTTP-style REST evidence, injected-failure recovery
-inspection, JSON-model file-backed journal evidence, fixture-scoped DB
-journal/idempotency evidence, and authenticated local Playground source-site
-mutation evidence if all public status and docs keep that scope explicit.
+The repository now has meaningful lab evidence: three-way JSON snapshot
+planning, fixture-scoped Playground apply paths, authenticated local Playground
+routes, DB journal/idempotency slices, process-kill and stale-claim smokes, and
+narrow storage-boundary guards for selected fixture DB rows and upload files.
+That is still not direct proof for the objective: pushing local edits back to a
+live source WordPress site without losing concurrent source changes, while
+remaining reliable and fast.
+
+The honest release claim is narrower: this repository is an executable safety
+model and local Playground lab for push invariants. It does **not** yet prove
+production no-data-loss, production reliability, or measured speed.
+
+## Evidence Standard
+
+Only executable evidence at the boundary being claimed counts as proof.
+
+Design docs, model tests, and fixture smokes are useful, but they are indirect
+for production claims unless they exercise the same authentication, storage,
+journal, crash, concurrency, and WordPress data semantics that production will
+depend on. A test that proves a local Playground fixture row is guarded does
+not prove arbitrary MySQL/InnoDB rows are guarded. A test that proves a JSON
+object is not mutated does not prove a source site can recover after a process
+dies between file and database writes.
+
+## Follow-up Audit Pass
+
+This pass treats docs and script names as leads, not proof. Fresh local
+verification: `npm test` passed with 64 tests. The longer Playground smokes were
+source-inspected in this pass, not rerun. A release claim still needs a retained
+run artifact for each long Playground smoke and, more importantly, proof at the
+production Reprint source-mutation boundary.
+
+| Area | Directly observed proof | Still insufficient | Next proof required |
+| --- | --- | --- | --- |
+| No-overwrite planner | Unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. | These are JSON-model resources plus fixture policy, not WordPress graph semantics. The tests cannot prove post/postmeta/attachment/taxonomy/menu/plugin relationships are complete or safe. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
+| Recovery and idempotency | Unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt journal blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Playground smoke source covers DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local SQLite/host-mount evidence. Neither proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. | Kill the production-shaped executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
+| Speed | `test/performance-model.test.js` proves a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and rejected unsafe fast paths. | No bytes move. No large table mutates. No memory ceiling, throughput target, retry cursor, or live benchmark exists. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, and memory/runtime measurements. |
 
 ## Explicit Requirements From The Objective
 
-The objective is to push local edits back to the original source WordPress site
-after a pull, while the source site may still be live and may have changed.
-From that, the minimum requirements are:
+The objective is to push local changes back to the original WordPress source
+site after a pull, while that source may still be live and may have changed.
+The priorities are no data loss, no data loss, reliable, and fast. That implies
+these release requirements:
 
 | ID | Requirement |
 | --- | --- |
-| R1 | Use a three-way comparison between pulled base, edited local state, and current live remote state before any mutation. |
-| R2 | Preserve every remote change made after the pull unless a deliberate, reviewed conflict resolution says otherwise. |
-| R3 | Apply local changes only when the remote resource preconditions still match immediately before mutation. |
-| R4 | Stop on local/remote conflicts and keep durable evidence explaining what blocked the push. |
-| R5 | Treat coupled file, database, plugin, activation, and option changes as atomic groups; never report success for a split plugin/application state. |
-| R6 | Avoid generic merges for plugin-owned or serialized data unless a plugin-specific validator or merge driver proves the repair. |
-| R7 | Survive failures with a known final state: old state, new state, or blocked recovery state with artifacts. |
-| R8 | Be resumable across chunks and process failures without weakening preconditions or conflict policy. |
-| R9 | Prove behavior against real WordPress file and database stores, not only object snapshots. |
-| R10 | Prove that speed work is bounded, chunked, and benchmarked, and that it does not bypass no-data-loss checks. |
-| R11 | Keep dry-run output honest: a dry run is only a plan, not a guarantee that a later apply will succeed on a live source. |
-| R12 | Provide audit records sufficient for an operator to understand skipped remote changes, applied local changes, conflicts, blockers, and recovery state. |
+| R1 | Persist a complete pull-base manifest with stable resource identities, hashes, ownership hints, schema fingerprints, and protocol metadata. |
+| R2 | Read the current live remote state before planning and compare base, local, and remote in a three-way plan. |
+| R3 | Preserve remote-only changes by default, including deletes, plugin state, files, rows, and related resources. |
+| R4 | Stop on local/remote conflicts with durable, redacted evidence that an operator can inspect. |
+| R5 | Apply every mutation only behind a live precondition that is rechecked immediately before the write. |
+| R6 | Enforce storage-boundary guarded writes, or an equivalent compare-and-swap primitive, for every production DB and filesystem mutation. |
+| R7 | Treat coupled file, DB, plugin, option, activation, and schema changes as atomic groups. Never report success for a split plugin/application state. |
+| R8 | Reject plugin-owned, serialized, custom-table, or schema-sensitive data unless an explicit validator or semantic driver proves the mutation. |
+| R9 | Authenticate and authorize source-site mutation with production credentials, scoped push permissions, replay protection, and TLS outside local-only tests. |
+| R10 | Keep dry-run honest: dry-run is planning evidence only; apply must still refuse stale or changed remote state. |
+| R11 | Persist a durable production journal sufficient to classify failure as old remote, fully updated remote, or blocked recovery. |
+| R12 | Make apply idempotent and resumable across duplicate requests, chunks, process failures, stale claims, and operator retries. |
+| R13 | Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope. |
+| R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
+| R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard. |
+| R16 | Provide a release test suite that actually runs the safety, recovery, auth, storage, plugin, and performance gates intended to support public claims. |
 
 ## Evidence Table
 
-Indirect evidence is treated as insufficient. Design notes are useful, but they
-do not prove the behavior until executable checks exercise the same boundary the
-production system will depend on.
-
-| Requirement | Current proof | Missing proof | Release blocker |
+| Req | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| R1 three-way planning | `createPushPlan()` enumerates file, plugin, and row resources from base/local/remote and compares stable hashes. Tests cover unchanged remote, remote-only changes, non-overlapping changes, direct conflicts, and Playground fixture snapshots from real WordPress rows, options, files, fixture-marked `_reprint_push_forms_schema` postmeta, `wp_reprint_push_forms_lab` custom-table rows, and `reprint-push-forms-fixture` plugin metadata. | No real Reprint exporter/importer snapshots. No coverage for WordPress IDs, postmeta relationships, taxonomies, plugin tables, serialized options, or multisite resources beyond narrow Playground fixture uploads/options/posts and the allowlisted plugin-owned forms fixture. | Yes. A production claim needs broader fixture-backed WordPress snapshots and resource identity rules. |
-| R2 preserve remote changes | `keep-remote` decisions are produced when local equals base and remote differs. Tests assert a remote-only post title survives. | Only same-resource hash cases are tested. Cross-resource semantic loss is untested, such as remote changing a post while local changes dependent postmeta, attachments, menus, or plugin options. | Yes. Remote preservation is not proven for WordPress data graphs. |
-| R3 preconditioned apply | `applyPlan()` validates mutation preconditions before applying to a staged clone. Tests reject drift on a planned file mutation. The Playground protocol smokes reject stale apply with `PRECONDITION_FAILED`; the local REST lab returns `412 PRECONDITION_FAILED` while preserving the drifted remote fixture. The storage-boundary DB smoke adds guarded SQL update evidence for narrow existing fixture rows, and `npm run test:playground:storage-guarded-file-write` adds guarded compare-and-rename/unlink evidence for fixture upload file update/create/delete after the JIT pre-write hash. | Preconditions are lab hash checks plus narrow local Playground fixture storage-boundary guards, not production compare-and-swap writes on arbitrary files, MySQL, SQLite, or authenticated Reprint HTTP endpoints. The file smoke covers upload-file update/create/delete, not arbitrary files or fixture plugin-file writes beyond the named update code path, and does not prove production `fsync`, filesystem CAS/locks, rollback, or filesystem durability. No test covers remote drift during a multi-resource production apply. | Yes. This is the central no-data-loss gate and currently has no production-boundary proof. |
-| R4 conflict stop and evidence | Direct same-resource conflicts become `conflict`, and `applyPlan()` refuses non-ready plans. Plugin-owned row conflicts get a separate class. Unknown plugin-owned custom-table rows block as `unsupported-plugin-owned-resource`, and conflict evidence exposes hashes/evidence rather than raw plugin values. Playground conflict dry-run/apply return `PLAN_NOT_READY`; the local REST lab returns `409 PLAN_NOT_READY` with row, file, and plugin-data audit classes. | No reviewed resolution workflow, persisted conflict record, operator audit trail, or fixtures for realistic plugin-owned data. | Yes. Conflict detection without durable evidence is insufficient for release. |
-| R5 atomic coupled changes | Push intents can group resources; tests cover missing dependencies, same-group dependencies, outside-group blocking, remote dependency drift, incompatible version ranges, and dependency hash mismatches. `applyPlan()` stages a clone before returning. `npm run test:playground:plugin-atomic-install` adds hard-coded Playground fixture plugin install evidence: base/remote lack fixture plugins, local includes dependency and dependent fixture plugins in one atomic group, apply activates both and writes exact fixture plugin files/resources plus allowlisted option data, replay does zero fresh mutation work, forged ready plans and row-only bypass attempts reject before mutation, JavaScript and PHP validation both run, and before-commit/during-publish/activation failures preserve or classify safely. | No production transaction boundary exists for actual file/database/plugin writes. The fixture plugin smoke is exact-allowlist Playground evidence only, not arbitrary production plugin installation/update/activation support, production rollback, generic plugin semantic drivers, generic custom-table drivers, arbitrary plugin-owned data safety, or production durability/auth proof. | Yes. Partial plugin/application state is explicitly rejected by project docs. |
-| R6 plugin/serialized data safety | Rows with `__pluginOwner` are classified as `plugin-data-conflict` on direct conflicts. The forms fixture adds allowlisted safe apply for `reprint_push_forms_fixture`, fixture-marked `_reprint_push_forms_schema` postmeta, and the exact fixture-only `wp_reprint_push_forms_lab` custom-table driver `fixture-forms-lab-table`: owner `forms`, positive `id:N`, explicit policy, unchanged active `reprint-push-forms-fixture` evidence, precondition hashes, exact PHP table/column/payload validation, delete blocked, idempotent replay with zero fresh mutation work, and redacted hash-only journal/recovery evidence. `reprint-push-forms-fixture` metadata remains export/detect only. The fixture plugin install smoke blocks arbitrary plugin files, direct `active_plugins` row mutation, other custom-table apply, arbitrary plugin-owned data, and row-only plugin-owned data bypass attempts outside declared atomic dependency requirements. Docs reject generic serialized-data merges. | No production plugin validator contract, no arbitrary plugin activation/update fixture, no serialized PHP option parser, no generic custom-table apply driver, and no proof that arbitrary production plugin-owned tables/options are discovered consistently. | Yes. This is a direct data-loss risk. |
-| R7 crash recovery | One injected failure before staged clone return proves the original input object is not mutated in that narrow path. The Playground recovery harness verifies `LAB_INJECTED_APPLY_FAILURE` after two successful whole-resource mutations, hash-only bounded option-journal evidence, CLI/REST inspection of `blocked-recovery`, `2 new` and `6 old` targets, and retry refusal with `PRECONDITION_FAILED`. The JSON-model file journal writes append-only JSONL records with monotonic sequences and per-append `fsync` evidence, and restart-style inspection verifies old-remote before mutation, fail-after-2 `blocked-recovery` with `2 new`/`6 old`/`0` unknown, retry refusal with no remote change, completed replay with `0` additional mutations, drift as `blockedUnknown > 0`, and no raw fixture fields/data in journal files. The local REST DB journal slice records `mutation-prepared` before each write, `mutation-applied` after observed hash calculation, apply/replay/conflict events, and compact hash/metadata-only evidence in `wp_reprint_push_lab_push_journal`. The process-kill smoke sends real `SIGKILL` during an in-flight DB-journaled REST apply on a host-mounted localhost Playground server, restarts against the same mount, verifies opened/started DB rows persist without false `apply-committed`, classifies mixed live target hashes from DB planned evidence plus live hashes, returns non-mutating `RECOVERY_BLOCKED`, and blocks retry without overwriting partial state. The missing-commit finalization smoke proves `BATCH_RECOVERY_FINALIZED` when the same key/body finds all live target hashes already at planned after hashes with `apply-committed` missing, while same key/different body still conflicts before finalization. The all-old stale-claim smoke proves a lab-only retry path where explicit abandonment evidence, validated started targets, zero mutation evidence, and old live target hashes allow a derived unique `stale-claim-retry-started` to perform one fresh mutation set, commit, and later replay; it also proves retry-claim in-progress and retry-start-without-abandonment blocking negatives. The storage-boundary DB and fixture file write smokes prove stale-at-write rejections preserve drift, record no `mutation-applied` for the failed target, run no later mutations, record no `apply-committed`, and replay same key/body with no fresh mutation work. The file write smoke now covers fixture upload update/create/delete drift. | No production DB table journal durability, no storage-level `fsync` proof for target writes, no rollback, no exactly-once production writes, no full MySQL/InnoDB or filesystem CAS behavior, no after-commit production WordPress failure tests, no production stale-claim leases/fencing/claim expiry, and no automatic repair policy. The DB journal/process-kill/finalization/stale-claim/storage-boundary evidence is fixture-scoped local Playground SQLite/host-mount evidence only, and tests mostly count mutation evidence rows rather than deeply asserting every observed hash. The JSONL journal is JSON-model lab evidence; journal paths must be unique or intentionally reset because plan journal open defaults to `truncate`, and raw-value prevention is forbidden-key/fixture-string based rather than a full allowlist schema. | Yes. Current recovery proof is not production crash-recovery proof. |
-| R8 resumable chunks | The DB idempotency slice requires `X-Reprint-Push-Idempotency-Key`; missing keys return `400 MISSING_IDEMPOTENCY_KEY`, same key/body replays as `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`, same key/different body rejects with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation, and same key/body can finalize a missing `apply-committed` row as `BATCH_RECOVERY_FINALIZED` with zero fresh mutation work when all live hashes match planned after hashes. A unique `claim_key_hash` column provides DB-native first-apply claiming; concurrent same-key/same-body first applies produce exactly one opened claim and one fresh mutation executor, while duplicate/different-body requests reject before mutation. The all-old stale-claim smoke adds a derived unique retry claim for the lab stale-claim retry case and proves the loser returns `IDEMPOTENCY_KEY_IN_PROGRESS` without mutating. Source notes cite resumable pull and recommend chunked push. | No chunk journal, cursor, resume tests, stale-plan invalidation tests, production retry contract, production stale-claim lease/fencing/expiry behavior, or production finalization path. | Yes. A live push cannot rely on one in-memory apply call. |
-| R9 real WordPress execution | Playground base/local/remote fixtures export real WordPress posts/options/files plus the fixture-scoped plugin-owned forms option/postmeta, exact forms lab table driver, and plugin metadata slice. Guarded apply writes a fresh source fixture with WordPress-visible readback for eight exact ready mutations, a fixture-scoped PHP endpoint smoke covers dry-run/apply/stale/conflict paths, the standalone local REST lab verifies `reprint-push-lab/v1` routes over real HTTP on `127.0.0.1`, and `npm run test:playground:authenticated-http-push` verifies authenticated local source-site mutation under `/wp-json/reprint-push-lab/v1/authenticated/*` with Basic-auth-shaped Application Password credentials, `manage_options`, signed lab requests for preflight/dry-run/apply, raw-body SHA-256 `X-Auth-Content-Hash`, nonce/timestamp/content-hash auth signatures, method/path/canonical-query/content-hash/session/idempotency push signatures, nonce replay before idempotency replay, auth-bound receipts, stale no-data-loss, idempotency, replay with fresh nonce/signature and zero fresh mutation work, and fresh authenticated snapshot readback. `npm run test:playground:plugin-atomic-install` adds local REST evidence for exact allowlisted fixture plugin file writes, plugin resource activation, allowlisted plugin-owned option data, dependency/dependent atomic grouping, and failure classification. `npm run test:playground:storage-guarded-file-write` adds local Playground evidence for fixture upload file update/create/delete guarded after JIT with hash-only `filesystem-compare-rename`/`filesystem-compare-unlink` evidence. | No production Reprint HTTP source mutation endpoint, no production Reprint auth/TLS/session/nonce/replay-store cleanup proof, no production Application Password integration, no real exporter credential binding, no Docker/live-source executor, no database transaction tests, no production filesystem durability/`fsync`/lock tests, and no arbitrary production plugin activation/custom-table apply semantics. Public legacy lab routes remain public/mutable, and stable credential/signing-key hash evidence in responses is lab proof rather than a production contract. | Yes. The current project is a lab model only. |
-| R10 speed | The model mutates only changed resources instead of replacing the whole site. `test/performance-model.test.js` verifies a deterministic scheduling model for a 1 GiB-class upload, chunk staging before publish, bounded DB row batches with per-row preconditions, atomic-group visibility, parallelism limits, backpressure budgets, and a remote index marked planning-only. Progress page still marks fast path at 12 percent and says real transfer benchmarks remain open. | No runtime benchmarks, live transfer measurements, streaming implementation, memory ceiling, latency target, large-site run, or proof that the modeled schedule is wired into the executor. | Yes for any speed claim beyond "the repository has a safety-preserving performance design model." |
-| R11 honest dry run | README states apply can refuse if the live remote changes after dry run. Drift tests cover file mutation drift and Playground fixture stale apply. The protocol smokes verify ready apply with a supplied dry-run receipt, reject missing receipts with `MISSING_DRY_RUN_RECEIPT`, and reject tampered receipts with `RECEIPT_MISMATCH`. The local REST lab verifies the corresponding HTTP statuses: `428`, `409`, and `412`. Lab receipts bind to the plan fingerprint/hash, mutation and precondition sets, ordered resource keys, and dry-run actual hashes. The authenticated Playground slice mints auth-bound receipts and rejects tampered/wrong-identity receipts with `AUTH_RECEIPT_MISMATCH`, expired receipts with `AUTH_RECEIPT_EXPIRED`, and stale remote apply before idempotency claim. | No production signing/auth binding, UI/operator warning tests, or concurrency test for remote changes between individual production writes. Auth-bound receipt evidence is local Playground lab evidence, not production Reprint auth. | Blocking for UX/reliability release, not for the current lab scope. |
-| R12 audit records | Plans include mutations, preconditions, decisions, conflicts, blockers, and atomic groups. The lab PHP endpoint records bounded fixture-scoped lab journal/audit option events for dry-run, apply, stale, non-ready, missing-receipt, mismatch, and injected recovery outcomes; the local REST lab reads the legacy option journal over `GET /journal`, and recovery inspect reports hash-only current state. The JSON-model file journal persists hash/metadata-only JSONL records with sequence and `fsync` evidence. The DB idempotency slice records `idempotency-opened`, `apply-started`, per-mutation `mutation-prepared`, per-mutation `mutation-applied`, `apply-committed`, `apply-replayed`, and conflict evidence in `wp_reprint_push_lab_push_journal`; compact DB mutation evidence stores hashes and metadata only. Storage-boundary DB and file write evidence is also hash-only; the file slice records boundary `filesystem-compare-rename` for update/create or `filesystem-compare-unlink` for delete, driver, operation, logical fixture path, compared fields, expected resource/storage hashes, actual/planned storage hashes, physical path hash, and outcome without raw file contents or absolute host paths. | Records are still fixture-scoped lab option events, JSON-model files, or local Playground DB table rows. There is no durable production audit log, no production recovery artifact schema, no complete redaction/allowlist policy, and no operator-facing report. | Yes for production. |
+| R1 base manifest | The JSON model carries base/local/remote snapshots with stable resource keys and hashes. Playground exporters produce fixture snapshots for posts, options, files, postmeta, a forms lab table, and narrow plugin metadata. | No production Reprint pull-base manifest contract. No proof for complete WordPress identity mapping, table schemas, generated data, object cache state, media metadata, taxonomies, users, multisite, or arbitrary plugin ownership. | Yes |
+| R2 three-way planning | `createPushPlan()` compares base/local/remote hashes. `npm test` covers local-only changes, remote-only changes, matching independent edits, direct conflicts, deletes, file topology conflicts, plugin state, and atomic dependency metadata. | No production remote hash listing. No test that starts from a real Reprint pull and then pushes back through a production source mutation endpoint. | Yes |
+| R3 preserve remote changes | Unit tests keep remote-only row and plugin changes, block local deletion versus remote update, stop local directory deletion that would hide a remote-only descendant, and stop file type swaps that would hide remote-only descendants. Playground stale apply smokes preserve fixture drift. | No proof for semantic graph preservation across posts/postmeta/attachments/terms/menus/options/plugin tables. No proof for remote changes to resources that are not directly mutated but are semantically coupled to local changes. | Yes |
+| R4 conflict stop and evidence | Conflicts, blockers, hashes, change kinds, and plugin-owned conflict classes are represented. Raw fixture values are checked out of selected conflict/journal/recovery paths. | No durable production conflict artifact, operator workflow, reviewed resolution path, complete redaction schema, or production audit report. | Yes |
+| R5 immediate preconditions | `applyPlan()` validates preconditions before model apply. Playground smokes verify stale dry-run/apply refusal and just-in-time pre-write hash rejection for selected fixtures. | The production write path does not exist. No proof that every production mutation rechecks liveness immediately before its write under real source-site concurrency. | Yes |
+| R6 storage-boundary guards | `test:playground:storage-guarded-db-write` proves guarded single-statement `UPDATE` behavior for existing fixture `wp_posts`, allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact forms lab rows. `test:playground:storage-guarded-file-write` proves guarded update/create/delete for accepted fixture upload files. | No production MySQL/InnoDB CAS proof, transactions, locks, rollback, filesystem `fsync`, filesystem lock/CAS proof, arbitrary file guarding, arbitrary create/delete DB guarding, schema changes, plugin activation guarding, or production Reprint HTTP mutation. | Yes |
+| R7 atomic groups | Planner tests cover dependency presence, same-group dependencies, outside-group blocking, dependency hash/version/activation checks, and forged ready-plan rejection. `test:playground:plugin-atomic-install` adds a hard-coded fixture plugin install path and failure classification. | No general plugin install/update/activation support, no production rollback, no production atomic visibility boundary across files/DB/plugin activation, and no proof for arbitrary plugin side effects. | Yes |
+| R8 plugin-owned data | Unknown plugin-owned rows block. The forms fixture allows only explicit `wp-option`, `wp-postmeta`, and exact `fixture-forms-lab-table` policies with active unchanged fixture plugin evidence. Unsupported custom tables and direct `active_plugins` mutation remain blocked. | No production plugin validator contract, serialized PHP data parser/validator, generic custom-table driver, schema migration driver, or proof that arbitrary plugin-owned data is discovered consistently. | Yes |
+| R9 auth and authorization | `test:playground:authenticated-http-push` and `test:playground:authenticated-cli-push` prove authenticated local Playground aliases, Basic-auth-shaped Application Password credentials, `manage_options`, signed lab requests, nonce replay rejection, auth-bound receipts, idempotency keys, stale refusal, and replay with zero fresh mutation work. | It uses lab routes and a Playground fallback verifier. No production Reprint auth integration, TLS deployment, push credential scoping, nonce/replay store cleanup, session lifecycle, rate limiting, or real exporter credential binding. Public legacy lab routes remain public/mutable. | Yes |
+| R10 honest dry-run | Protocol smokes require receipts, reject missing/tampered receipts, bind receipts to plan/preconditions, and reject stale remote state. Authenticated lab routes bind receipts to auth/session/request data. | No production UI/operator warning tests. No proof for remote changes between production chunks or between individual production writes beyond fixture hooks. | Yes for production UX and source mutation |
+| R11 durable recovery | Model recovery tests classify old/updated/blocked states. JSONL journal tests append with monotonic sequences and `fsync` calls. Playground recovery, DB journal, process-kill, missing-commit finalization, and stale-claim smokes add useful fixture evidence. | No production DB-table journal, no storage-level crash matrix, no target write `fsync` proof, no exactly-once production writes, no production leases/fencing/claim expiry, no rollback, and no automatic repair policy. | Yes |
+| R12 idempotent resumability | DB journal smokes require `X-Reprint-Push-Idempotency-Key`, reject same-key/different-body requests, replay committed or rejected results, claim one concurrent same-key executor, finalize missing commits, and handle one all-old stale-claim retry path. | No chunk cursor, production retry contract, production duplicate first-apply test, shared-DB multi-worker proof, stale-plan invalidation across chunks, or production stale-claim lease/fencing/expiry behavior. | Yes |
+| R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, and fixture plugin metadata. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No full production Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
+| R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
+| R15 speed | `test/performance-model.test.js` proves a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, remote indexes as planning-only, and backpressure triggers. | No runtime benchmark, no transfer implementation proof, no memory ceiling, no latency/throughput target, no large-site run, and no proof that the model is wired into the executor. | Yes for any speed claim |
+| R16 release suite | `npm test` passed 64 tests during this audit. It covers unit/model behavior, snapshot apply gates, performance model checks, and JSONL recovery tests. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol and excludes auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, and recovery smokes unless invoked separately. | Yes |
 
 ## Test Audit
 
-The current tests are useful, and the lab coverage has grown beyond pure
-in-memory planner behavior. They still do not prove the production claims. The
-important distinction is boundary: most tests prove model behavior or local
-Playground fixture behavior, while the objective needs production source-site
-mutation proof.
+### What The Default Tests Prove
 
-| Claim | Test verdict | Release implication |
-| --- | --- | --- |
-| No data loss | Partially proven for JSON snapshots, selected WordPress Playground fixtures, stale-precondition refusals, fixture storage guards, and blocked recovery classifications. Not proven for arbitrary WordPress data graphs, production storage writes, production auth, or production plugin-owned data. | Keep the public claim scoped to lab no-overwrite evidence. Do not claim production no-data-loss push. |
-| Reliable | Partially proven for idempotent lab replay, DB-journaled fixture slices, injected failures, one local Playground process-kill path, missing-commit finalization, and JSONL restart inspection. Not proven for production DB/filesystem durability, leases/fencing, rollback, every write boundary, or automatic repair. | Release remains blocked until reliability tests run at the intended production mutation boundary. |
-| Fast | Proven only as a deterministic scheduling model: chunking, bounded batches, staged visibility, backpressure, and planning-only indexes are represented and tested. No real transfer, memory, concurrency, or large-site benchmark exists. | Treat speed as design direction, not measured capability. |
+`npm test` passed during this audit:
 
-| Test area | What it proves | What it does not prove |
-| --- | --- | --- |
-| Local changes on unchanged remote | Planner creates mutations and staged apply returns local file/row values. | That WordPress writes are safe, transactional, ordered correctly, or reversible. |
-| Remote-only changes | A direct remote-only row change is not overwritten. | Preservation of related data graphs, generated data, remote uploads, postmeta, menus, taxonomies, plugin tables, or object-cache state. |
-| Non-overlapping changes | A local file addition and remote post change can coexist in the returned snapshot. | That "non-overlapping" is semantically true in WordPress. A file and database row can be coupled even when their resource keys differ. |
-| Direct conflicts | Same-row divergent edits block apply and leave the input object untouched. | Delete/edit conflicts, rename/move conflicts, binary file conflicts, row identity collisions, foreign-key-like relationships, or reviewed conflict resolution. |
-| Plugin-owned data conflict class | A manually annotated row gets `plugin-data-conflict`; the forms fixture also proves allowlisted fixture option/postmeta apply plus the exact forms lab table driver `fixture-forms-lab-table`. `reprint-push-forms-fixture` plugin metadata remains detection-only. | Discovery of arbitrary production plugin ownership, real activation semantics, generic custom-table apply drivers, or safe handling of serialized plugin data. |
-| Atomic plugin install dependency | Missing dependencies, same-group dependencies, outside-group dependency mutations, remote dependency drift, incompatible version ranges, and dependency hash mismatches are covered. | Active/inactive state, activation hooks, mixed filesystem/database failure, or rollback. |
-| Playground fixture plugin install atomicity | `npm run test:playground:plugin-atomic-install` verifies fixture-only plugin install through local Playground REST: base/remote lack the fixture plugins; local includes dependency and dependent plugins in the same atomic group; apply activates both, writes exact fixture plugin files/resources and allowlisted option data, and replay does zero fresh mutation work. It rejects missing dependency, dependency outside group, incompatible version, hash mismatch, activation requirement mismatch, remote dependency drift, stale preconditions, stale live dependency evidence, forged ready plans missing dependency mutation/`atomicGroups`/dependency requirements, and row-only plugin-owned data bypass attempts including `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`. It also confirms arbitrary plugin files, direct `active_plugins` row mutation, custom tables outside `fixture-forms-lab-table`, and arbitrary plugin-owned data remain blocked. | Arbitrary production plugin installation/update/activation support, production rollback, plugin semantic drivers, generic custom-table drivers, arbitrary plugin-owned data safety, production durability/auth proof, or a general plugin dependency solver. During-publish and activation failures classify blocked recovery; they do not prove rollback. |
-| Atomic group success | A grouped plugin stack applies to the staged object. | Production atomicity. The code returns a complete cloned site; it does not perform partially observable remote writes. |
-| Remote drift after dry run | A changed planned file hash causes `PRECONDITION_FAILED`. | Drift on non-mutated dependencies, drift during an apply batch, stale plan expiry, or compare-and-swap at the storage layer. |
-| Injected failure before commit | Throwing during staged mutation leaves the original object unchanged. | Crash consistency. There is no committed partial state, journal, recovery scan, or kill-process boundary in this test. |
-| Playground lab recovery inspection | Fail-after-2 applies two whole-resource mutations, returns `LAB_INJECTED_APPLY_FAILURE`, records hash-only journal evidence, classifies `blocked-recovery` with `2 new` and `6 old` targets through CLI and REST inspect, and refuses retry with `PRECONDITION_FAILED`. | Production durable recovery. This injected failure path is not a hard-kill test, `fsync` proof, production journal, or automatic repair. |
-| File-backed JSONL recovery journal | `npm run test:recovery:file-journal` writes append-only JSONL with monotonic sequences and per-append `fsync` evidence, then restart-style inspection verifies old-remote before mutation, fail-after-2 `blocked-recovery` with `2 new`/`6 old`/`0` unknown, retry refusal with `PRECONDITION_FAILED` and no remote change, completed replay with `0` additional mutations, drift as `blockedUnknown > 0`, and no raw fixture fields/data. | Production durable recovery. It is a JSON-model lab slice, not a WordPress DB table journal or process-kill test. Journal paths need unique/reset handling because plan open defaults to `truncate`, and raw-value prevention is not a full allowlist schema. |
-| Authenticated local Playground HTTP push | `npm run test:playground:authenticated-http-push` verifies `/wp-json/reprint-push-lab/v1/authenticated/*` routes over real local HTTP. It covers Basic-auth-shaped Application Password credentials for bootstrapped users, `manage_options`, signed preflight/dry-run/apply, `X-Auth-Content-Hash` over raw request body bytes, auth signatures over nonce/timestamp/content hash, push signatures over method/path/canonical query/content hash/session/idempotency key, preflight-minted short-lived sessions, dry-run/apply session and idempotency requirements, signature verification before JSON parsing/receipt/idempotency/journal/mutation, preflight identity/capability/scope/session/expiry/journal evidence, read-only authenticated dry-run, auth-bound receipts, receipt validation before DB idempotency claim/mutation, `X-Reprint-Push-Idempotency-Key`, fresh authenticated snapshot verification, missing/bad/malformed auth, insufficient capability, forged `reprint_push_lab_auth`, unsigned/malformed/bad hash/body changed/stale/future timestamp/wrong method/path/query/wrong session/idempotency mismatch/public-route signature/nonce replay cases, nonce replay before idempotency replay, `AUTH_RECEIPT_MISMATCH`, `AUTH_RECEIPT_EXPIRED`, stale remote no-data-loss, and replay with fresh nonce/signature and zero fresh mutation work. | Production Reprint auth. This is lab HMAC and authenticated local Playground source-site mutation evidence only. The fallback verifier exists because Playground core did not establish `/wp-json/wp/v2/users/me`; it is not production Application Password integration and does not prove production TLS deployment, nonce/replay store cleanup, production session handling, real exporter credential binding, durable production audit records, or full production push. Public legacy lab routes remain public/mutable, and stable credential/signing-key hash evidence in responses is lab proof rather than a production response contract. |
-| DB journal idempotency, process kill, missing-commit finalization, and all-old stale-claim retry | `npm run test:playground:db-journal-idempotency` requires `X-Reprint-Push-Idempotency-Key`, rejects missing keys with `400 MISSING_IDEMPOTENCY_KEY`, records `mutation-prepared`/`mutation-applied` plus apply/replay/conflict events in `wp_reprint_push_lab_push_journal`, replays same key/body as `BATCH_ALREADY_COMMITTED` with no fresh mutation work or extra mutation events, rejects same key/different body with `409 IDEMPOTENCY_KEY_CONFLICT`, and proves DB-native concurrent first-apply claiming with one opened claim and one fresh mutation executor. `npm run test:playground:db-journal-process-kill` sends real `SIGKILL` during an in-flight DB-journaled REST apply, restarts a host-mounted localhost Playground site, verifies opened/started DB rows persist with no false commit, returns non-mutating `RECOVERY_BLOCKED` from DB planned evidence plus live hashes, and blocks retry without overwriting partial state. `npm run test:playground:db-journal-missing-commit-finalization` proves same key/body returns `BATCH_RECOVERY_FINALIZED` with zero fresh mutation work when all live target hashes already match planned after hashes and `apply-committed` is missing, while same key/different body still conflicts before finalization. `npm run test:playground:db-journal-stale-claim-all-old` proves the lab all-old abandoned-claim retry path, derived unique retry-claim in-progress guard, retry-start-without-abandonment `RECOVERY_BLOCKED`, and later `BATCH_ALREADY_COMMITTED` replay. | Production durable recovery or resumability. It is fixture-scoped local Playground SQLite/host-mount evidence, not production durability, storage `fsync`, rollback, exactly-once production writes, arbitrary plugin data safety, full MySQL/InnoDB behavior, production stale-claim leases/fencing/claim expiry, cross-process/shared-DB lock proof, arbitrary production repair, or production retry policy. Tests mostly count mutation evidence rows rather than deeply asserting every observed hash. Redaction checks are key-based plus fixture-value smoke checks, not a formal sanitizer for arbitrary future messages. |
-| Performance model | `test/performance-model.test.js` proves that the benchmark model includes a large upload and a plugin install, stages chunks before guarded publish, keeps DB batches bounded with per-row preconditions, hides plugin install members until an atomic-group commit, and names parallelism/backpressure limits. | Runtime speed. This is not an executor benchmark, not a network transfer test, not a memory ceiling, not a streaming implementation proof, and not evidence that real large sites finish within any target. |
+- 64 passing tests.
+- Planner no-overwrite invariants for simplified JSON snapshots, including
+  deletion preconditions, delete/update conflicts, directory-descendant
+  topology conflicts, and file type swap conflicts.
+- Plugin-owned resource blocking and the exact forms lab driver checks in the JavaScript model.
+- Atomic dependency metadata and forged-plan rejection in the model executor.
+- JSON-model recovery journal classification and append/`fsync` calls.
+- Snapshot apply gates for named lab plugin resources, named lab plugin file paths, and exact forms lab custom-table rows when PHP is available.
+- A deterministic performance model, not measured performance.
 
-## Additional Findings
+This is useful evidence. It does not exercise a production source site, a
+production push endpoint, real production credentials, production DB/file
+durability, real concurrent WordPress traffic, or arbitrary plugin data.
 
-1. **Atomic group membership is caller-trusted.** If a push intent omits a
-   coupled resource, the planner has no independent way to discover that the
-   group is incomplete. Production needs validators that can reject incomplete
-   file/database/plugin sets before any write.
+### What The Standalone Smokes Prove
 
-2. **The failure test is weaker than the reliability claim.** It proves that a
-   JavaScript object is not mutated when a throw happens before a returned
-   clone. It does not prove recovery after an interrupted process, failed file
-   write, committed DB transaction, HTTP timeout, plugin activation fatal, or
-   operator retry. The file-backed JSONL journal adds restart-style
-   classification and per-append `fsync` evidence in the JSON model, but it is
-   still not production WordPress crash-boundary proof. The DB process-kill
-   smoke adds local Playground `SIGKILL`/restart evidence for opened/started DB
-   rows, no false commit, DB-only `RECOVERY_BLOCKED`, and retry refusal. The
-   missing-commit finalization smoke adds `BATCH_RECOVERY_FINALIZED` when the
-   same key/body sees all live target hashes at planned after hashes and the
-   `apply-committed` row is missing. The all-old stale-claim smoke adds
-   local-only proof that explicit abandonment evidence, validated started
-   targets, zero mutation evidence, and old live hashes can safely open one
-   derived retry claim, while duplicate retry and retry-start-without-
-   abandonment cases remain non-mutating. The storage-boundary file write smoke
-   adds lab evidence for stale-at-write rejection around fixture upload file
-   update/create/delete, but it is not production filesystem durability,
-   `fsync`, filesystem CAS/locking, rollback, arbitrary file safety, or a
-   fixture plugin-file write smoke. These are still not production
-   durability, storage `fsync`, rollback, exactly-once production writes, full
-   MySQL/InnoDB or filesystem CAS behavior, production stale-claim
-   leases/fencing/claim expiry, or arbitrary production repair.
+The standalone Playground smokes materially improve the lab story:
 
-3. **Speed has design-model proof, not runtime proof.** The performance model
-   usefully asserts chunk staging, row-batch bounds, backpressure, and atomic
-   visibility rules. It does not move bytes, mutate a live site, measure
-   memory, or prove throughput. Speed claims should stay explicitly
-   provisional.
+- Local REST protocol routes prove dry-run/apply receipt behavior, stale
+  refusal, and journal readback for fixture resources.
+- Authenticated local Playground routes prove a lab auth/signature floor,
+  nonce replay rejection, auth-bound receipts, capability checks, idempotency,
+  and replay semantics.
+- DB journal smokes prove fixture-scoped idempotency, DB-native claiming,
+  rejected replay, one process-kill blocked recovery path, missing-commit
+  finalization, and an all-old stale-claim retry path.
+- Storage guard smokes prove selected fixture DB row updates and accepted
+  fixture upload file update/create/delete paths reject drift after the JIT
+  hash check and before the storage write.
+- Plugin atomic smokes prove one hard-coded fixture plugin dependency/install
+  shape, selected forged-plan negatives, replay behavior, and failure
+  classification.
+- Forms lab smokes prove one exact fixture custom-table semantic driver.
 
-4. **The Playground endpoints are intentionally not production endpoints.** They
-   prove a narrow fixture-scoped protocol shape, including read-only dry-run,
-   required receipt-backed ready apply, stale rejection, receipt mismatch
-   refusal, conflict refusal, journal readback, mandatory apply idempotency
-   keys, idempotent replay/conflict evidence in a local DB table, lab recovery
-   inspection, local-only REST routes under `reprint-push-lab/v1`, DB-native
-   concurrent first-apply claiming, local Playground process-kill/restart
-   blocked recovery, DB-only missing-commit finalization, and authenticated
-   local Playground aliases under `/authenticated/*` that require
-   `manage_options`, reject forged `reprint_push_lab_auth`, bind receipts to
-   auth/session/request data, reject `AUTH_RECEIPT_MISMATCH` and
-   `AUTH_RECEIPT_EXPIRED`, and verify source changes through a fresh
-   authenticated snapshot. Playground fallback caveat: the lab verifier
-   validates stored hashed app-password entries and sets the current user
-   because local Playground core did not establish `/wp-json/wp/v2/users/me`.
-   They do not provide production Reprint auth, protocol HMAC, TLS deployment,
-   production nonce/replay/session storage, production Application Password
-   integration, real exporter credential binding, durable journals, production
-   process-kill safety, or production finalization/replay.
+These tests are still lab-bound. They mostly prove carefully controlled
+fixtures and deterministic failure hooks. They do not prove production
+durability, arbitrary WordPress resources, arbitrary plugins, real MySQL/InnoDB
+behavior, real filesystem crash semantics, production auth, or measured speed.
 
-5. **The plugin-owned forms and fixture plugin install slices are
-   fixture-scoped.** The allowlisted `reprint_push_forms_fixture` option,
-   `_reprint_push_forms_schema` postmeta, and exact `wp_reprint_push_forms_lab`
-   driver `fixture-forms-lab-table` prove guarded handling for known fixture
-   resources only. `reprint-push-forms-fixture` metadata remains detection-only,
-   and unsupported plugin-owned rows block instead of applying. The fixture
-   plugin install smoke adds exact allowlisted fixture plugin file/resource
-   writes and atomic dependency checks, but it is not arbitrary production
-   plugin installation/update/activation support or rollback proof.
+### Test Gaps That Block Release Claims
+
+1. **The strongest evidence is not wired into a release suite.** There is no
+   CI workflow in the repository. The default `npm test` command does not run
+   the long Playground smokes that support most README claims. A release claim
+   cannot rely on tests that are optional and manually invoked.
+
+2. **No test exercises the complete production path.** There is no single test
+   that starts with a Reprint pull base, edits a local WordPress site, fetches a
+   live source snapshot through production Reprint APIs, performs authenticated
+   production dry-run, applies production mutations, and then verifies the live
+   source site.
+
+3. **No-data-loss proof is resource-narrow.** The tests are strongest for
+   simplified resources and named fixtures. They do not prove semantic
+   no-loss behavior for WordPress data graphs such as posts plus postmeta plus
+   attachments plus taxonomy relationships, or for arbitrary plugin tables and
+   serialized options.
+
+4. **Storage safety is partial.** The DB guard smoke covers existing fixture
+   row updates only. The file guard smoke covers accepted fixture upload
+   update/create/delete paths. There is no production storage proof for
+   arbitrary files, plugin file publish, DB inserts/deletes, schema changes,
+   activation side effects, transactions, locks, rollback, or target `fsync`.
+
+5. **Crash recovery coverage is sparse relative to the claim.** The process
+   kill smoke is valuable but covers one local Playground path. There is no
+   kill-at-every-boundary matrix across DB writes, file writes, plugin
+   activation, journal writes, finalization, stale claims, and replay.
+
+6. **Reliability assertions often count events rather than prove every hash
+   transition.** Several smokes verify expected event names, counts, and coarse
+   replay behavior. Release-grade recovery needs deeper assertions that each
+   journaled before/after/observed hash corresponds to the live storage state
+   at every recovery boundary.
+
+7. **Auth is lab-auth, not production-auth.** The authenticated Playground
+   tests are good protocol-shape evidence, but the fallback Application
+   Password verifier and lab HMAC/session store do not prove production
+   credentials, TLS, secret scoping, nonce cleanup, replay retention, or
+   source-site authorization.
+
+8. **Plugin safety is intentionally hard-coded.** The tests prove that the lab
+   blocks arbitrary plugin data and allows exact fixtures. That is the right
+   conservative behavior, but it means production plugin-owned data remains a
+   release blocker until validator contracts and real plugin fixtures exist.
+
+9. **Speed has no measured evidence.** The performance tests prove a model and
+   guardrails. They do not move bytes, mutate a source site, measure memory,
+   measure throughput, or verify that safety checks remain enabled under load.
 
 ## Required Release Gates
 
-Before this project can claim production-grade no-data-loss push behavior, it
-needs direct proof for these gates:
+Before any production no-data-loss push claim, the project needs these direct
+proof gates:
 
-1. Broader real WordPress fixture suite covering files, uploads, posts, postmeta,
-   taxonomies, options, plugin tables, serialized PHP data, plugin activation,
-   and multisite if in scope. The current forms fixture is not enough to claim
-   arbitrary production plugin semantics.
-2. Storage-level compare-and-swap or equivalent guarded writes for every file
-   and database mutation. Current lab evidence covers guarded SQL updates for
-   narrow fixture rows and guarded compare/rename/unlink for fixture upload
-   file update/create/delete only; it does not cover arbitrary files, fixture
-   plugin-file writes beyond the named update path, production filesystem
-   durability/`fsync`, production locks, or production Reprint HTTP mutation.
-3. Durable production apply journal, likely DB-table backed for WordPress
-   source mutation, with recovery tests that kill the process at every write
-   boundary and prove old/new/blocked state classification across storage
-   boundaries, including production stale-claim leases/fencing/claim expiry.
-   The current DB journal/idempotency/process-kill/finalization/stale-claim
-   slice is fixture-scoped local Playground SQLite/host-mount evidence, and the
-   JSONL lab journal has per-append `fsync` evidence, but neither is enough for
-   this production gate.
-4. Atomic group enforcement for coupled file/database/plugin operations,
-   including rollback or blocked recovery artifacts after partial external
-   effects.
-5. Plugin validator/merge-driver contract with at least one real plugin fixture
-   and explicit fallback to preserve remote state.
-6. Stale-plan and concurrency tests for remote changes before apply, during
-   apply, between chunks, and production duplicate first applies with the same
-   idempotency key.
-7. Benchmarks with large files and large tables proving speed improvements do
-   not skip preconditions, journals, or validators.
+1. A production Reprint push endpoint with production authentication, scoped
+   push credentials, TLS assumptions, nonce/replay/session storage, and source
+   mutation authorization.
+2. A complete pull-base manifest and live remote hash listing contract covering
+   the WordPress data shapes in scope.
+3. Storage-boundary guarded writes, or equivalent CAS, for every production DB
+   and filesystem mutation type, including inserts, deletes, schema changes,
+   plugin files, and activation-sensitive changes.
+4. A durable production journal with kill-at-every-boundary tests across
+   journal writes, DB writes, file writes, plugin activation, commit
+   finalization, replay, and stale-claim paths.
+5. A broader WordPress fixture suite covering posts, postmeta, attachments,
+   terms, menus, users, options, serialized data, uploads, plugin tables,
+   plugin activation, schema changes, and multisite if in scope.
+6. A plugin validator/semantic-driver contract with at least one real plugin
+   fixture and a conservative fallback that preserves remote state and blocks.
+7. A release test aggregator and CI workflow that run the safety-critical
+   unit, Playground, auth, storage, recovery, idempotency, plugin, and
+   performance gates or explicitly label excluded tests as non-release proof.
+8. Runtime benchmarks for large uploads and large DB changes with concrete
+   throughput, memory, retry, and recovery measurements.
 
-Until those gates exist, the honest claim is: **the lab demonstrates planner
-invariants for simplified JSON snapshots, fixture-scoped Playground push
-protocol smoke, local-only HTTP-style REST behavior, and injected-failure
-recovery inspection plus file-backed JSONL journal evidence in the JSON model
-and fixture-scoped DB journal/idempotency/process-kill plus missing-commit
-finalization and all-old stale-claim evidence, plus hard-coded fixture plugin
-install atomicity evidence; it does not yet prove no data loss, reliability, or
-speed for a live WordPress push.**
+Until these gates exist, public documentation should keep the claim scoped to:
+**lab evidence for push safety invariants, not production-safe live WordPress
+push.**
