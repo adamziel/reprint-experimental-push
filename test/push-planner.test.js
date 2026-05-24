@@ -207,6 +207,12 @@ test('stops a local directory deletion that would remove a remote-only descendan
   const conflict = plan.conflicts[0];
 
   assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(
+    plan.preconditions.some((precondition) => precondition.resourceKey === 'file:wp-content/uploads/gallery'),
+    false,
+  );
   assert.equal(conflict.class, 'file-topology-conflict');
   assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery');
   assert.equal(conflict.relatedResourceKey, 'file:wp-content/uploads/gallery/remote-only.jpg');
@@ -230,6 +236,12 @@ test('stops file type swaps that would hide remote-only descendants', () => {
   const conflict = plan.conflicts[0];
 
   assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(
+    plan.preconditions.some((precondition) => precondition.resourceKey === 'file:wp-content/uploads/gallery'),
+    false,
+  );
   assert.equal(conflict.class, 'file-topology-conflict');
   assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery');
   assert.equal(conflict.relatedResourceKey, 'file:wp-content/uploads/gallery/remote-only.jpg');
@@ -238,6 +250,27 @@ test('stops file type swaps that would hide remote-only descendants', () => {
   assert.equal(JSON.stringify(conflict).includes('remote image bytes'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote image bytes');
+});
+
+test('keeps independent mutation evidence while suppressing unsafe topology mutations', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.files['wp-content/uploads/gallery'];
+  local.files['index.php'] = '<?php echo "local ordinary edit";';
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/remote-only.jpg'] = 'remote private image bytes';
+  const remoteBefore = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(mutationFor(plan, 'file:index.php').action, 'put');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
 test('recognizes matching independent edits as already in sync', () => {
@@ -277,6 +310,28 @@ test('preserves remote-only plugin changes', () => {
   assert.equal(result.site.plugins.forms.version, '1.1.0');
   assert.equal(result.site.plugins.forms.active, false);
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.1 */');
+});
+
+test('combines local ordinary changes while preserving remote-only plugin changes', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local ordinary edit";';
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, 'file:index.php').action, 'put');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.files['index.php'], '<?php echo "local ordinary edit";');
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.plugins.forms.active, false);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
 test('blocks local plugin metadata changes when remote plugin files changed', () => {
