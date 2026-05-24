@@ -293,6 +293,8 @@ validators, and the final durable commit record.
   package hash was cached.
 - Treating a present staging object as a completed chunk without a matching
   durable receipt.
+- Treating a full-file digest as enough proof to resume chunk work when chunk
+  receipts are missing.
 - Merging database rows from different plugin owners or atomic groups into one
   commit-visible batch.
 - Treating a remote index cursor, generation, or ETag as a lock that can cover
@@ -364,6 +366,8 @@ resumed after a failure.
 The important rejection cases are modeled too:
 
 - chunk receipts are required before a staged chunk can be considered complete.
+- full-file digests can skip rehash work, but they cannot replace missing
+  chunk receipts during resume.
 - plugin installs cannot publish files early or activate before validators pass.
 - remote indexes can guide planning only and never replace live apply
   preconditions.

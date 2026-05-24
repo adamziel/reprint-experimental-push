@@ -337,6 +337,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('commit-group-with-missing-receipts').violates.includes('durable-progress'),
   );
   assert.ok(rejectedById.get('resume-chunk-without-receipt').violates.includes('chunk-receipts'));
+  assert.ok(
+    rejectedById.get('full-digest-completes-chunk-resume').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('full-digest-completes-chunk-resume').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('backpressure'));
   assert.ok(rejectedById.get('unbounded-parallelism').violates.includes('backpressure'));
   assert.ok(rejectedById.get('digest-as-authority').violates.includes('live-preconditions'));
@@ -407,6 +413,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'queue-empty-means-complete',
     'fresh-index-empty-queue-completes-apply',
     'index-and-digest-completes-apply',
+    'full-digest-completes-chunk-resume',
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);
   }

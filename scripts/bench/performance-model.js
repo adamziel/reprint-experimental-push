@@ -343,6 +343,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['durable-progress', 'chunk-receipts'],
   },
   {
+    id: 'full-digest-completes-chunk-resume',
+    proposal: 'treat a matching full-file digest as enough proof to skip missing chunk receipts during resume',
+    rejectedBecause: 'a full-file digest can identify content, but it cannot prove which chunk acknowledgements survived failure',
+    rejectedGate: 'recovery',
+    violates: ['chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'backpressure-drops-evidence',
     proposal: 'summarize or drop queued precondition evidence when upload or journal queues are over budget',
     rejectedBecause: 'pressure handling must pause producers, not erase the evidence needed to classify recovery',
