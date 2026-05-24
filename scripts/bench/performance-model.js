@@ -406,6 +406,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-upload-queue-completes-large-upload',
+    proposal: 'treat a drained compressed upload queue as proof that a large upload has fully completed',
+    rejectedBecause: 'compression can reduce queued bytes, but it cannot prove the missing chunk receipts or guarded publish record survived failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'queue-empty-means-complete',
     proposal: 'advance an upstream producer because the queue is empty even though receipts are missing',
     rejectedBecause: 'an empty queue is not proof that the remote acknowledged the work',

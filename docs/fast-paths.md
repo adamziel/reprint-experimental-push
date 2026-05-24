@@ -429,6 +429,9 @@ under load:
   exact rows, chunks, and validators needed to resume or classify failure.
 - compressed-buffer-completes-work is rejected because shrinking buffered
   evidence does not create the missing receipt or commit record.
+- compressed-upload-queue-completes-large-upload is rejected because a drained
+  compressed queue can still hide missing chunk receipts or the guarded
+  publish record.
 - compressed-queue-drains-completes-work is rejected because a drained queue
   can still hide missing chunk or batch acknowledgements.
 - remote-index-plus-compressed-row-batch-completes-plugin-update is rejected
