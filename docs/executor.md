@@ -27,6 +27,15 @@ Dry-run success is a permission and eligibility receipt, not a liveness lock.
 The executor must expect apply to fail if the remote changes between dry-run and
 the storage-boundary guard.
 
+The executor treats the push protocol as a three-sided merge:
+
+- local edited site
+- persisted pull base
+- live remote hash listing
+
+It must never use the remote listing as a replacement for the pull base, and it
+must never treat a dry-run receipt as proof that apply is still safe.
+
 Acceptance criteria for the reliable executor:
 
 - It never calls `push_batch_apply` without a persisted pull base, completed
@@ -96,6 +105,11 @@ Resume decisions are conservative:
 | `PRECONDITION_FAILED` persisted | Start a new attempt from fresh remote hashes. | Editing the old batch would break idempotency and stale liveness evidence. |
 | `RECOVERY_REQUIRED` persisted | Call `push_journal`, then `push_recover` in `inspect` mode before any mutating recovery mode. | Recovery needs journal artifacts and live hashes, not local guesses. |
 
+The executor also persists the last seen journal cursor and recovery proof so a
+restart can distinguish "lost HTTP response" from "server committed but client
+did not observe it". This is the boundary that prevents accidental double
+mutation when the process crashes mid-apply.
+
 ## Mapping To Existing Reprint Pull
 
 The existing pull command already knows how to run stages, save state, retry
@@ -115,8 +129,19 @@ The push executor should not reuse the pull streaming SQL dump as a mutation
 format. SQL replay is too coarse for a live remote. It can reuse pull transport,
 budgeting, cursoring, multipart handling, and HMAC helpers.
 
+Mapping summary:
+
+- pull preflight becomes push preflight plus capability negotiation for write
+  paths
+- pull listing stages become remote hash listing instead of body fetches
+- pull apply becomes the local three-way planner that builds a dry-run plan
+- pull state persistence becomes the push attempt state directory and journal
+- pull retry semantics remain for read-only stages, while apply retries are
+  gated by journal inspection and idempotency proof
+
 The pull importer must persist a push base package so later pushes can prove
-the merge base:
+the merge base, and it must also preserve the additional pull evidence needed
+for later recovery decisions:
 
 ```text
 push-base/
@@ -169,6 +194,18 @@ The intended Docker data flow is:
 - `remote-db` and `local-db` are kept separate so remote drift can be observed
   without contaminating the local edit history.
 
+Suggested Docker wiring:
+
+- remote site uses a dedicated WordPress + DB pair and serves as the source of
+  truth for `push_preflight`, `push_snapshot_hashes`, `push_plan_dry_run`,
+  `push_batch_apply`, `push_journal`, and `push_recover`
+- local site uses a separate WordPress + DB pair imported from the pull base
+  and represents the edited source material used to build the plan
+- the runner attaches to both container networks, performs the pull/export,
+  computes the three-way plan, uploads the dry-run, and drives apply/recovery
+- no service outside the sandbox should be reachable; if a browser is needed,
+  the optional proxy binds to `127.0.0.1:8080` only
+
 ### Playground Topology
 
 Use WordPress Playground when Docker or WP-CLI is unavailable in the sandbox.
@@ -196,6 +233,17 @@ Use only the sandbox-provided `8080` ingress if a browser-visible proxy is
 needed for inspection, and keep the WordPress blueprints isolated from each
 other.
 
+The preferred Playground topology keeps the same role split:
+
+- remote base blueprint is the source truth used to create the pull base
+- local edited blueprint is the imported site after user modifications
+- remote changed blueprint is a separately booted live remote that exercises
+  stale plan rejection, journal inspection, and recovery outcomes
+
+The runner should treat these as three snapshots of one logical site lineage,
+not as three independent targets. The important proof is that apply revalidates
+against the live remote, not that dry-run and apply see the same snapshot.
+
 ## Durable Push State
 
 Each push attempt gets its own state directory next to the saved pull state.
@@ -222,6 +270,15 @@ If the remote returns `PRECONDITION_FAILED`, the executor creates a new push
 attempt after refreshing remote hashes and replanning. If the response is lost,
 the executor first calls `push_journal`; only a journal state that proves the
 same request is still open may be retried with the same key and body.
+
+Recovery handling:
+
+- `inspect` is always the first recovery call after an ambiguous apply state
+- `finish` is only allowed when the journal proves the batch already committed
+- `rollback` is only allowed when the journal and live hashes prove the remote
+  can be restored to a safe pre-batch state
+- `auto` is a server-side choice between finish, rollback, or block; the
+  executor still records the proof it received
 
 The state directory is also the audit boundary between the existing pull
 pipeline and push. Pull may refresh or replace `push-base/` only after a

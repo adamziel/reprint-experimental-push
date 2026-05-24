@@ -229,9 +229,14 @@ That persisted base is the local truth source for:
 - which resource keys existed at pull time
 - which hashes are the expected base values for a three-way push plan
 - which scopes were scanned completely enough to permit later mutation
+- which cursor-completion proofs must be preserved when a later push wants a
+  wider or overlapping scope
 
 Push planning must stop if the stored base package is missing, corrupt,
 incomplete for the requested scope, or bound to a different remote identity.
+The push planner may still call `push_snapshot_hashes` for inspection, but it
+must not upload a dry-run plan without a complete pull base for the intended
+scope.
 
 ### Idempotency
 
@@ -274,16 +279,19 @@ accepted remote hash listing or whose requested mutations depend on resources
 outside covered scopes. Apply must still revalidate the live resources; coverage
 only proves the planner had a complete enough view to propose a plan.
 
+Dry-run is therefore an eligibility receipt, not a liveness lock. The remote
+may accept the plan and later reject the same batch at apply time if the live
+hashes or storage-boundary proof changed.
+
 ### Current Playground Auth Lab
 
 `npm run test:playground:authenticated-http-push` is lab HMAC evidence, not
-this production auth protocol. It verifies authenticated local Playground
-source-site mutation under
-`/wp-json/reprint-push-lab/v1/authenticated/*` with Basic-auth-shaped
-Application Password credentials for bootstrapped users, `manage_options`,
-auth-bound receipts, `AUTH_RECEIPT_MISMATCH`, `AUTH_RECEIPT_EXPIRED`,
-`X-Reprint-Push-Idempotency-Key`, stale no-data-loss, and replay with zero
-fresh mutation work. Signed requests are required for
+the production push protocol. It verifies authenticated local Playground
+source-site mutation under `/wp-json/reprint-push-lab/v1/authenticated/*`
+with Basic-auth-shaped Application Password credentials for bootstrapped
+users, `manage_options`, auth-bound receipts, `AUTH_RECEIPT_MISMATCH`,
+`AUTH_RECEIPT_EXPIRED`, `X-Reprint-Push-Idempotency-Key`, stale no-data-loss,
+and replay with zero fresh mutation work. Signed requests are required for
 `/authenticated/preflight`, `/authenticated/dry-run`, and
 `/authenticated/apply`.
 

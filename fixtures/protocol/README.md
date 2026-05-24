@@ -40,6 +40,15 @@ Dry-run and apply are intentionally separate fixtures. A test must not treat
 `push-apply-batch-request.json`; apply revalidates the remote and can still
 return `push-precondition-failed-response.json`.
 
+The journal and recovery fixtures show how a client resolves ambiguity after
+timeouts or crashes:
+
+- `push-journal-response.json` reports the evidence needed to decide whether a
+  request was only accepted, already committed, or still replayable.
+- `push-recovery-response.json` shows the proof-oriented repair path.
+- `push-recovery-blocked-response.json` shows the case where the server cannot
+  prove that finish or rollback is safe.
+
 Recovery examples use `mode: "auto"` for a mutating repair attempt. A pure
 inspection call uses the same `push_recover` endpoint with `mode: "inspect"`
 and omits the mutating recovery idempotency key unless the implementation
