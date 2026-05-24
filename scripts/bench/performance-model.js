@@ -420,6 +420,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'row-preconditions', 'live-preconditions'],
   },
   {
+    id: 'index-and-chunk-receipts-skip-file-compare',
+    proposal: 'use a fresh remote index plus durable chunk receipts to skip the live file compare before publish',
+    rejectedBecause: 'planning evidence and chunk acknowledgements can prove staged progress, but they cannot prove the live file still matches the publish precondition',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'chunk-receipts', 'live-preconditions'],
+  },
+  {
     id: 'index-and-table-checksum-skips-batch-preconditions',
     proposal: 'use a fresh remote index plus a table checksum to skip row-batch preconditions or plugin metadata checks',
     rejectedBecause: 'planning evidence and table-level metadata can shorten lookup work, but they cannot replace live per-row or per-member preconditions at mutation time',
