@@ -7,12 +7,10 @@ linked implementation artifacts.
 ## 2026-05-25 - Progress Visibility Check
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 01:26:29 CEST`) and kept the visible last-updated stamp in the
+  (`2026-05-25 01:27:13 CEST`) and kept the visible last-updated stamp in the
   header.
-- Tightened the top blocker line to keep production auth, durable journal, and
-  graph identity proof visible without adding optimism.
-- The public page still treats production auth, durable journaling, graph
-  identity, Docker/Playground integration, and plugin drivers as pending until
+- The public page still keeps production auth, durable journaling, graph
+  identity, Docker/Playground integration, and plugin drivers pending until
   proof appears.
 - Evidence links remain [progress.html](../progress.html),
   [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
