@@ -159,6 +159,23 @@ The benchmark shape must stay realistic:
   all stop at the first unsafe gate instead of drifting into ambiguous
   failure handling.
 
+The rejected examples are not abstract lint. They are concrete failure modes:
+
+- A fresh dry run cannot authorize apply because the remote may change before
+  the live compare.
+- A visible staging object cannot complete a chunk because the durable receipt
+  may be missing after a crash.
+- A cross-group row batch cannot be merged for throughput because recovery
+  would not know which coupled plugin owns the partial result.
+- A remote index cannot become a lock because it only reflects planning-time
+  state.
+- A compressed hash cannot stand in for canonical content state because wire
+  encoding and resource identity are different facts.
+- Parallel commits cannot be widened across atomic groups because the commit
+  barrier is the visibility boundary.
+- Backpressure cannot drop receipts or journals because the missing evidence is
+  what makes failure classification unambiguous.
+
 ## File Hashing
 
 Use a two-level model:

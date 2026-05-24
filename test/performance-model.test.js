@@ -1024,3 +1024,41 @@ test('failure injection boundaries include every durable transition in the bench
   assert.ok(actionTypes.has('group-staging-finalize'), 'group staging finalize is explicitly modeled');
   assert.ok(actionTypes.has('atomic-group-commit'), 'atomic group commit is explicitly modeled');
 });
+
+test('rejected fast paths keep unsafe shortcuts out of the safe families', () => {
+  const model = buildBenchmarkModel();
+  const rejectedById = new Map(model.rejectedFastPaths.map((entry) => [entry.id, entry]));
+
+  const areaChecks = new Map([
+    ['file-hashing', (entry) => entry.violates.includes('canonical-resource-hashes')],
+    ['chunk-upload', (entry) => entry.violates.includes('chunk-receipts')],
+    ['database-row-batching', (entry) => entry.violates.includes('row-preconditions')],
+    ['remote-indexes', (entry) => entry.violates.includes('remote-index-planning-only')],
+    ['compression', (entry) => entry.violates.includes('compression')],
+    ['parallelism-limits', (entry) => entry.violates.includes('atomic-groups') || entry.violates.includes('backpressure')],
+    ['backpressure', (entry) => entry.violates.includes('backpressure')],
+  ]);
+
+  for (const [area, predicate] of areaChecks) {
+    assert.ok(
+      model.rejectedFastPaths.some(predicate),
+      `missing rejected fast path for ${area}`,
+    );
+  }
+
+  assert.equal(rejectedById.get('fresh-dry-run-authorizes-apply').rejectedGate, 'live');
+  assert.equal(rejectedById.get('visible-staging-object-completes-chunk').rejectedGate, 'recovery');
+  assert.equal(rejectedById.get('cross-group-row-batch').rejectedGate, 'group');
+  assert.equal(rejectedById.get('remote-index-authorizes-mutation').rejectedGate, 'live');
+  assert.equal(rejectedById.get('compressed-canonical-hash').rejectedGate, 'live');
+  assert.equal(rejectedById.get('parallelize-atomic-group-commit').rejectedGate, 'group');
+  assert.equal(rejectedById.get('backpressure-drops-evidence').rejectedGate, 'recovery');
+
+  for (const entry of model.rejectedFastPaths) {
+    assert.ok(entry.id);
+    assert.ok(entry.proposal.length > 20);
+    assert.ok(entry.rejectedBecause.length > 20);
+    assert.ok(entry.rejectedGate);
+    assert.ok(Array.isArray(entry.violates) && entry.violates.length > 0);
+  }
+});
