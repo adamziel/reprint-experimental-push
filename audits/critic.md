@@ -150,6 +150,9 @@ evidence for all of these, not just a plausible design:
 - Rejected retries must stay auditable, but they must not be allowed to
   execute from the old approval record, and a partial approval must never be
   widened to unrelated rows, files, or plugin-owned surfaces on retry.
+- A reviewed manual-resolution artifact is not success on its own; the retry
+  must preserve the remote, bind to the exact stale snapshot that was
+  reviewed, and force a fresh plan before any write.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
 - A release gate that runs the full safety-critical suite before any
@@ -223,6 +226,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - The live remote is revalidated immediately before apply, and any stale
   retry starts from a fresh snapshot rather than reusing old approval or stale
   manual-review artifacts.
+- A stale approval, stale snapshot, or stale manual-review artifact cannot be
+  recycled as evidence for a new apply, even if the plan hash or endpoint name
+  has not changed.
 - Every mutation surface has an explicit coverage manifest entry, or the push
   hard-blocks before apply.
 - Every plugin-owned resource has a declared contract, or the push hard-blocks
