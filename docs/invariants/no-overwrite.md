@@ -114,6 +114,9 @@ the resource key, the live remote hash observed during planning, and the
 - Local and remote changed the same resource to different hashes.
 - Local deletion versus remote update, local update versus remote deletion, and
   plugin-owned data changes without a plugin-specific merge policy.
+- Plugin-owned deletions without explicit delete support in the plugin-owned
+  policy. The planner must stop rather than assume a stale plugin-owned row
+  may be removed safely.
 - Plugin metadata or plugin file changes when another live remote context
   resource for that plugin changed since the pull base and local does not match
   that live owner context.

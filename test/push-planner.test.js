@@ -1502,6 +1502,29 @@ test('allows plugin-owned option rows only with explicit snapshot driver policy'
   assert.equal(mutationFor(readyPlan, resourceKey).changeKind, 'update');
 });
 
+test('blocks plugin-owned option deletions without explicit delete opt-in', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.match(blocker.reason, /delete mutations/);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
   const base = baseSite();
