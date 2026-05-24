@@ -810,6 +810,41 @@ function scheduleWorkload(workload, limits) {
     });
   }
 
+  const backpressureSignals = [];
+  const totalUploadBytes = actions
+    .filter((action) => action.type === 'chunk-upload')
+    .reduce((sum, action) => sum + action.sizeBytes, 0);
+  const totalDbBatches = actions.filter((action) => action.type === 'db-row-batch').length;
+
+  if (totalUploadBytes > limits.maxBufferedUploadBytes) {
+    backpressureSignals.push('upload-acks-lag');
+    backpressureSignals.push('staging-disk-budget-hit');
+  }
+  if (totalDbBatches > limits.maxPendingDbBatches) {
+    backpressureSignals.push('journal-fsync-lag');
+  }
+  if (workload.atomicGroup) {
+    backpressureSignals.push('remote-latency-budget-hit');
+  }
+
+  if (backpressureSignals.length > 0) {
+    actions.push({
+      type: 'backpressure-pause',
+      workloadId: workload.id,
+      planId: workload.planId,
+      pauseWhen: [...new Set(backpressureSignals)],
+      onPressure: 'pause-upstream-producers',
+      forbiddenResponse: 'drop-evidence-or-mark-unacknowledged-work-complete',
+      resumeRequires: [
+        'durable-chunk-receipts',
+        'database-batch-commit-records',
+        'journal-fsync-caught-up',
+      ],
+      canonicalVisible: false,
+      durableEvidence: 'backpressure-pause-record',
+    });
+  }
+
   if (workload.atomicGroup) {
     actions.push(finalizeAtomicGroupStaging(workload, actions));
     actions.push({

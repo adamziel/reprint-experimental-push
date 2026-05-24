@@ -441,6 +441,9 @@ under load:
   because planning evidence and batch compression cannot prove row-level
   preconditions, dependency checks, or the atomic-group commit survived a
   failure.
+- remote-index-plus-compressed-row-batch-completes-plugin-install is rejected
+  for the same reason, because install row batches still need per-row
+  preconditions, dependency checks, and the atomic-group commit barrier.
 - compressed-row-batch-skips-batch-receipts is rejected because compression
   can lower queue pressure, but it cannot replace per-row receipts or the
   recovery record needed to classify a partial batch.
@@ -462,6 +465,8 @@ tiny row updates:
 - Backpressure scenarios where the remote slows down, staging disk fills, or
   journal lag forces the sender to pause instead of guessing which work landed.
   journal fsync falls behind.
+- Explicit backpressure pause records in the model so large uploads and plugin
+  changes cannot claim success just because the sender stopped producing.
 - Failure injection before and after every durable boundary: chunk ack, batch
   commit, group staging finalize, and atomic group commit.
 

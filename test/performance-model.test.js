@@ -42,6 +42,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'large upload models chunk uploads',
   );
   assert.ok(
+    largeUpload.actions.some((action) => action.type === 'backpressure-pause'),
+    'large upload models an explicit backpressure pause point',
+  );
+  assert.ok(
     largeUpload.actions.some(
       (action) => action.type === 'file-publish' && action.publishMode === 'compare-and-swap',
     ),
@@ -103,6 +107,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(pluginInstall.actions.some((action) => action.type === 'file-hash'));
   assert.ok(pluginInstall.actions.some((action) => action.type === 'chunk-upload'));
   assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'backpressure-pause'),
+    'plugin install models an explicit backpressure pause point',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'compression-decision'),
     'plugin install models compression decisions for staged files',
   );
@@ -113,6 +121,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginUpdate.actions.some((action) => action.type === 'db-row-batch'),
     'plugin update models database row batching',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'backpressure-pause'),
+    'plugin update models an explicit backpressure pause point',
   );
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'group-staging-finalize'),
@@ -426,6 +438,13 @@ test('large uploads and plugin work retain the required fast-path evidence', () 
     assert.ok(schedule.backpressure.resumeRequires.includes('durable-chunk-receipts'));
     assert.ok(schedule.backpressure.resumeRequires.includes('database-batch-commit-records'));
     assert.ok(schedule.backpressure.resumeRequires.includes('journal-fsync-caught-up'));
+
+    const pause = schedule.actions.find((action) => action.type === 'backpressure-pause');
+    assert.ok(pause, `${schedule.kind} should model an explicit pause point`);
+    assert.equal(pause.onPressure, 'pause-upstream-producers');
+    assert.ok(pause.pauseWhen.length > 0);
+    assert.ok(pause.resumeRequires.includes('durable-chunk-receipts'));
+    assert.ok(pause.resumeRequires.includes('database-batch-commit-records'));
 
     const filePublishes = schedule.actions.filter((action) => action.type === 'file-publish');
     assert.ok(filePublishes.every((action) => action.publishMode === 'compare-and-swap'));
@@ -1080,6 +1099,7 @@ test('failure injection boundaries include every durable transition in the bench
   assert.ok(actionTypes.has('db-row-batch'), 'database batch commit is modeled by row batches');
   assert.ok(actionTypes.has('group-staging-finalize'), 'group staging finalize is explicitly modeled');
   assert.ok(actionTypes.has('atomic-group-commit'), 'atomic group commit is explicitly modeled');
+  assert.ok(actionTypes.has('backpressure-pause'), 'backpressure pause is explicitly modeled');
 });
 
 test('rejected fast paths keep unsafe shortcuts out of the safe families', () => {
