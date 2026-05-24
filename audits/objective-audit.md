@@ -573,7 +573,8 @@ invocation and can be skipped while `npm test` remains green.
    move bytes, mutate a source site, measure memory, measure throughput, or
    pin those numbers to a documented benchmark environment with a release
    threshold. The current proof is enough to block unsupported speed claims,
-   not to justify a "fast" release claim.
+   not to justify a "fast" release claim. If the release path cannot run this
+   measurement automatically, the speed claim stays blocked.
 
 15. **The release surface is real but fragmented.** The repository already
     exposes high-value smokes for auth, journal durability, storage guards,
@@ -680,7 +681,10 @@ required auth, storage, recovery, plugin, graph, and performance checks in a
 fixed order and fails if any mandatory step is absent or only lab-backed.
 No checked-in CI workflow was found in the repository tree, so there is no
 automated backstop that would fail a release when the stronger gates are
-skipped.
+skipped. The next actionable proof is a `verify:release`-style command that
+refuses release whenever any required step still reports `labBacked: true`,
+fixture-only scope, missing live-topology evidence, or an unmeasured speed
+claim.
 
 ## Required Release Gates
 
@@ -724,10 +728,12 @@ push.**
 ## Weakest Current Claim
 
 The weakest surviving claim is the one that sounds simplest: that a live
-source WordPress site can be pushed back without data loss. Right now the repo
-only proves that selected fixtures survive selected lab paths, and those paths
-do not yet cover the same auth, storage, journal, and graph boundaries as a
-real source mutation.
+source WordPress site can be pushed back without data loss. Speed is also
+blocked, but the no-data-loss claim is the broader release blocker because it
+depends on the same write-boundary evidence the repo still lacks. Right now the
+repo only proves that selected fixtures survive selected lab paths, and those
+paths do not yet cover the same auth, storage, journal, and graph boundaries
+as a real source mutation.
 
 To make the claim release-grade, the next proof must be a kill matrix that
 covers every guarded write boundary on a real push path, with live before/after
@@ -745,6 +751,11 @@ fixture or model:
 If any one of these boundaries is still only covered by a model or fixture
 smoke, the no-data-loss claim stays blocked and should not be softened in the
 README, release notes, status comments, or branch descriptions.
+
+The release gate should therefore fail closed on two separate conditions:
+
+- any missing live write-boundary proof for the no-data-loss claim
+- any unmeasured or undocumented benchmark environment for the speed claim
 
 The current suite is therefore good at rejecting regressions, but it is not
 yet good enough to justify the live-source production claims. The most
