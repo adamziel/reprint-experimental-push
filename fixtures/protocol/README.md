@@ -88,6 +88,18 @@ The hash-listing fixture is the planning boundary:
   lock.
 - apply must fetch fresh live evidence again before each batch.
 
+For integration tests, the fixtures are meant to be exercised in the same
+one-remote, one-local topology described in the executor docs:
+
+- `remote-base` is the remote source site that produced the pull base package.
+- `local-edited` is the locally edited site used to build the candidate plan.
+- `remote-changed` is the live drift case used to prove apply-time
+  revalidation, journal inspection, and recovery are distinct from dry-run.
+
+That topology is the minimal production-shaped test setup because it keeps the
+planning remote and the drift remote separate while the runner remains the
+only process that can compare, upload, and recover.
+
 The test harness for these fixtures should use the same one-remote, one-local
 shape described in the executor docs:
 

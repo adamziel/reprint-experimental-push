@@ -100,6 +100,16 @@ push resumes from the last safe state:
 - If a batch response was lost, call `push_journal` first and retry only if the journal still proves the same request is open.
 - If the server reports `RECOVERY_REQUIRED`, inspect then recover.
 
+On any ambiguous stop, the executor must prefer the freshest evidence path:
+
+1. Read `push_journal` first.
+2. If the journal says a claim is open, check claim generation and lease expiry
+   before retrying.
+3. If the journal says recovery is required, run `push_recover` in `inspect`
+   mode before any mutating recovery call.
+4. If live hashes diverge from the recorded dry-run or apply evidence, discard
+   the old receipt and rebuild from a fresh remote listing.
+
 Resume decisions are conservative:
 
 | Persisted state | First action on restart | Reason |
@@ -179,6 +189,16 @@ push-base/
 The executor treats this package as read-only evidence. If it is missing,
 corrupt, or from a different remote identity, push planning stops before
 preflight can become a mutation path.
+
+The executor must also respect the pull-to-push provenance boundary:
+
+- pull exporter/importer creates the immutable merge base
+- push preflight binds that base to the live remote identity
+- push snapshot hashes record the current live comparison set
+- push dry-run proves the uploaded plan is eligible, not that it remains live
+- push apply revalidates at the batch and storage boundary
+- push journal and recovery inspect explain state transitions without granting
+  mutation permission
 
 ## One-Remote, One-Local Test Topology
 
