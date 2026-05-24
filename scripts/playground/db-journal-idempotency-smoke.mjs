@@ -379,7 +379,7 @@ await withPlaygroundServer(
       postLab(server, '/apply', originalBody, { [idempotencyHeader]: key }),
       'different-body original apply',
     );
-    await sleep(100);
+    await waitForJournalEvent(server, dbJournalRoute, 'idempotency-opened', 'different-body original idempotency claim');
     const conflictApply = labelRequest(
       postLab(server, '/apply', differentBody, { [idempotencyHeader]: key }),
       'different-body conflicting apply',
@@ -790,6 +790,21 @@ async function getSnapshot(server) {
 
 async function getDbJournal(server, dbJournalRoute) {
   return getLab(server, `${dbJournalRoute.path}?limit=80`);
+}
+
+async function waitForJournalEvent(server, dbJournalRoute, event, label, timeoutMs = 5000) {
+  const started = Date.now();
+  let lastEvents = [];
+  while (Date.now() - started < timeoutMs) {
+    const journal = await getDbJournal(server, dbJournalRoute);
+    const entries = journalEntries(journal.body);
+    lastEvents = entries.map(journalEvent);
+    if (entries.some((entry) => journalEvent(entry) === event)) {
+      return;
+    }
+    await sleep(100);
+  }
+  throw new Error(`Timed out waiting for ${event} in DB journal for ${label}; saw ${lastEvents.join(', ')}`);
 }
 
 async function getLab(server, pathSuffix) {

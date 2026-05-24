@@ -255,6 +255,7 @@ production response contract.
 
 ```bash
 npm run test:playground:db-journal-idempotency
+npm run test:playground:mid-apply-drift
 npm run test:playground:db-journal-missing-commit-finalization
 ```
 
@@ -284,6 +285,19 @@ requests produce exactly one fresh mutation executor and one opened claim; the
 duplicate request returns safe in-progress/retry/replay behavior without running
 mutations. Concurrent same-key/different-body requests reject the conflicting
 request before mutation.
+
+The mid-apply drift smoke is a standalone local-only REST harness for the
+just-in-time pre-write check. It performs dry-run, starts apply, then uses a lab
+hook to drift one target after `mutation-prepared` and before that mutation's
+write. The PHP apply path re-hashes that mutation's own resource immediately
+before `reprint_push_apply_resource()`, returns
+`412 PRECONDITION_FAILED`, preserves the drifted value, records hash-only
+`mutation-precondition-failed`/`apply-rejected` evidence, writes no
+`mutation-applied` for the failed mutation, writes no later mutations, and
+writes no `apply-committed`. Same key/body replay is non-mutating and replays
+the rejection; same key/different body conflicts. This proves the lab gap is
+closed for the fixture path, not storage-level compare-and-swap, locking, or
+production durability.
 
 ```bash
 npm run test:playground:db-journal-process-kill
@@ -353,6 +367,15 @@ mutation, omit `atomicGroups`, or omit dependency requirements, and row-only
 plugin-owned data bypass attempts. The planner/executor rejects the forged
 row-only case with `ATOMIC_GROUP_DEPENDENCY_UNDECLARED` before it can treat
 dependent plugin-owned option data as an independent safe row.
+
+The positive path also records explicit `same-apply-staged` proof when an
+activation-style plugin mutation sees the inactive staged plugin hash produced
+by an earlier same-apply plugin file mutation. That exception is fixture-scoped
+and requires the declared ready atomic group to cover both mutations by
+`mutationIds` and `resources`. Negative cases verify that external staged files
+without valid same-apply proof, forged mutation-local group ids without
+declared group coverage, and planned inactive plugin mutations reject with
+`PRECONDITION_FAILED` before activation or commit.
 
 Validation exists on both executor sides used by this repository:
 `src/apply.js` validates atomic dependency closure in JavaScript before staged

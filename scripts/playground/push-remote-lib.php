@@ -191,6 +191,7 @@ function reprint_push_protocol_run_payload(
                 'startedCursor' => $started_entry['cursor'],
                 'index' => (int) $index,
                 'mutationId' => $mutation_id,
+                'resource' => $mutation['resource'],
                 'resourceKey' => (string) $mutation['resourceKey'],
                 'resourceType' => (string) ($mutation['resource']['type'] ?? ''),
                 'beforeHash' => $before_hash,
@@ -200,6 +201,29 @@ function reprint_push_protocol_run_payload(
                 'appliedCount' => $applied,
             ]);
 
+            $pre_write_check = reprint_push_protocol_recheck_mutation_precondition(
+                $plan,
+                $mutation,
+                $precondition,
+                $journal_context + $plan_evidence + [
+                    'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                    'startedCursor' => $started_entry['cursor'],
+                    'index' => (int) $index,
+                    'appliedCount' => $applied,
+                ],
+                $mutation_event_callback,
+                $recovery_entries
+            );
+            $pre_write_hash = (string) $pre_write_check['actualHash'];
+            $pre_write_evidence = [
+                'preWriteExpectedHash' => $before_hash,
+                'preWriteActualHash' => $pre_write_hash,
+                'actualHash' => $pre_write_hash,
+                'preconditionCheck' => (string) $pre_write_check['preconditionCheck'],
+            ];
+            if (isset($pre_write_check['preWriteStagingProof']) && is_array($pre_write_check['preWriteStagingProof'])) {
+                $pre_write_evidence['preWriteStagingProof'] = $pre_write_check['preWriteStagingProof'];
+            }
             reprint_push_apply_resource($mutation['resource'], $mutation['value']);
             $applied++;
 
@@ -225,7 +249,7 @@ function reprint_push_protocol_run_payload(
                 'phase' => 'after-write',
                 'status' => 'applied',
                 'appliedCount' => $applied,
-            ]);
+            ] + $pre_write_evidence);
 
             reprint_push_protocol_append_journal_event('mutation-applied', $journal_context + $plan_evidence + [
                 'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
@@ -235,7 +259,7 @@ function reprint_push_protocol_run_payload(
                 'resourceKey' => (string) $mutation['resourceKey'],
                 'observedHash' => $observed_hash,
                 'recoveryPlan' => $recovery_entries,
-            ]);
+            ] + $pre_write_evidence);
 
             if ($lab_fail_after_mutations !== null && $applied >= $lab_fail_after_mutations) {
                 reprint_push_protocol_fail([
@@ -352,11 +376,259 @@ function reprint_push_protocol_record_apply_failure(
         'recovery' => [
             'required' => true,
             'state' => $inspection['state'],
+            'counts' => $inspection['counts'],
             'targets' => $inspection['targets'],
             'currentHashes' => $current_hashes,
             'scope' => 'lab-only evidence; not durable process-kill recovery',
         ],
     ]);
+}
+
+function reprint_push_protocol_recheck_mutation_precondition(
+    array $plan,
+    array $mutation,
+    array $precondition,
+    array $journal_context,
+    $mutation_event_callback,
+    array &$recovery_entries
+): array {
+    $snapshot = reprint_push_export_snapshot();
+    $actual_hash = reprint_push_hash_resource($snapshot, $mutation['resource']);
+    $expected_hash = (string) ($precondition['expectedHash'] ?? '');
+    $mutation_id = (string) ($mutation['id'] ?? '');
+    $resource_key = (string) ($mutation['resourceKey'] ?? ($precondition['resourceKey'] ?? ''));
+
+    if ($actual_hash === $expected_hash) {
+        return [
+            'actualHash' => $actual_hash,
+            'preconditionCheck' => 'just-in-time',
+        ];
+    }
+
+    $staging_proof = reprint_push_protocol_same_apply_staged_plugin_proof(
+        $plan,
+        $mutation,
+        $recovery_entries,
+        $actual_hash
+    );
+    if ($staging_proof !== null) {
+        return [
+            'actualHash' => $actual_hash,
+            'preconditionCheck' => 'same-apply-staged',
+            'preWriteStagingProof' => $staging_proof,
+        ];
+    }
+
+    $recovery_entries = reprint_push_protocol_mark_recovery_entry(
+        $recovery_entries,
+        $mutation_id,
+        'precondition-failed',
+        $actual_hash
+    );
+
+    $failure_evidence = $journal_context + [
+        'mutationId' => $mutation_id,
+        'resourceKey' => $resource_key,
+        'resourceType' => (string) ($mutation['resource']['type'] ?? ''),
+        'beforeHash' => $expected_hash,
+        'preWriteExpectedHash' => $expected_hash,
+        'preWriteActualHash' => $actual_hash,
+        'actualHash' => $actual_hash,
+        'plannedAfterHash' => (string) ($mutation['localHash'] ?? ''),
+        'observedHash' => $actual_hash,
+        'phase' => 'pre-write-check',
+        'status' => 'rejected',
+        'preconditionCheck' => 'just-in-time',
+        'recoveryPlan' => $recovery_entries,
+    ];
+
+    reprint_push_protocol_emit_mutation_event(
+        $mutation_event_callback,
+        'mutation-precondition-failed',
+        $failure_evidence
+    );
+    reprint_push_protocol_append_journal_event('mutation-precondition-failed', $failure_evidence);
+
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => 'PRECONDITION_FAILED',
+        'message' => 'Precondition failed for ' . $resource_key . '.',
+        'resourceKey' => $resource_key,
+        'mutationId' => $mutation_id,
+        'expectedHash' => $expected_hash,
+        'actualHash' => $actual_hash,
+        'preconditionCheck' => 'just-in-time',
+    ]);
+}
+
+function reprint_push_protocol_same_apply_staged_plugin_proof(
+    array $plan,
+    array $mutation,
+    array $recovery_entries,
+    string $actual_hash
+): ?array
+{
+    $resource = isset($mutation['resource']) && is_array($mutation['resource']) ? $mutation['resource'] : [];
+    if ((string) ($resource['type'] ?? '') !== 'plugin') {
+        return null;
+    }
+    $atomic_group_id = (string) ($mutation['atomicGroupId'] ?? '');
+    if ($atomic_group_id === '') {
+        return null;
+    }
+    if (!isset($mutation['value']) || !is_array($mutation['value']) || !isset($mutation['value']['value'])) {
+        return null;
+    }
+    if (!is_array($mutation['value']['value'])) {
+        return null;
+    }
+
+    $plugin_slug = (string) ($resource['name'] ?? '');
+    $staged_value = $mutation['value']['value'];
+    if (($staged_value['active'] ?? null) !== true) {
+        return null;
+    }
+    $plugin_file = (string) ($staged_value['pluginFile'] ?? '');
+    if ($plugin_slug === '' || $plugin_file !== $plugin_slug . '/' . $plugin_slug . '.php') {
+        return null;
+    }
+    $staged_value['active'] = false;
+    $staged_hash = hash('sha256', reprint_push_stable_json($staged_value));
+    if ($actual_hash !== $staged_hash) {
+        return null;
+    }
+
+    $current_index = null;
+    $mutation_id = (string) ($mutation['id'] ?? '');
+    foreach ($recovery_entries as $entry) {
+        if ((string) ($entry['mutationId'] ?? '') === $mutation_id) {
+            $current_index = (int) ($entry['index'] ?? -1);
+            break;
+        }
+    }
+    if ($current_index === null || $current_index < 0) {
+        return null;
+    }
+
+    $main_file_path = 'wp-content/plugins/' . $plugin_file;
+    foreach ($recovery_entries as $entry) {
+        if ((int) ($entry['index'] ?? -1) >= $current_index) {
+            continue;
+        }
+        if ((string) ($entry['status'] ?? '') !== 'applied') {
+            continue;
+        }
+        if ((string) ($entry['atomicGroupId'] ?? '') !== $atomic_group_id) {
+            continue;
+        }
+
+        $entry_resource = isset($entry['resource']) && is_array($entry['resource']) ? $entry['resource'] : [];
+        if ((string) ($entry_resource['type'] ?? '') !== 'file') {
+            continue;
+        }
+        if ((string) ($entry_resource['path'] ?? '') !== $main_file_path) {
+            continue;
+        }
+
+        $after_hash = (string) ($entry['afterHash'] ?? $entry['localHash'] ?? '');
+        $observed_hash = (string) ($entry['observedHash'] ?? '');
+        if ($after_hash === '' || $observed_hash === '' || $observed_hash !== $after_hash) {
+            continue;
+        }
+
+        $declared_group_proof = reprint_push_protocol_declared_staged_plugin_group_proof(
+            $plan,
+            $mutation,
+            $entry
+        );
+        if ($declared_group_proof === null) {
+            continue;
+        }
+
+        return $declared_group_proof + [
+            'scope' => 'same-apply-declared-atomic-group-recovery-entry',
+            'plugin' => $plugin_slug,
+            'atomicGroupId' => $atomic_group_id,
+            'stagedHash' => $staged_hash,
+            'currentMutationId' => $mutation_id,
+            'currentMutationIndex' => $current_index,
+            'prerequisiteMutationId' => (string) ($entry['mutationId'] ?? ''),
+            'prerequisiteMutationIndex' => (int) ($entry['index'] ?? -1),
+            'prerequisiteResourceKey' => (string) ($entry['resourceKey'] ?? ''),
+            'prerequisiteAfterHash' => $after_hash,
+            'prerequisiteObservedHash' => $observed_hash,
+        ];
+    }
+
+    return null;
+}
+
+function reprint_push_protocol_declared_staged_plugin_group_proof(
+    array $plan,
+    array $mutation,
+    array $prerequisite_entry
+): ?array {
+    $group_id = (string) ($mutation['atomicGroupId'] ?? '');
+    if ($group_id === '') {
+        return null;
+    }
+
+    $current_mutation_id = (string) ($mutation['id'] ?? '');
+    $prerequisite_mutation_id = (string) ($prerequisite_entry['mutationId'] ?? '');
+    $current_resource_key = (string) ($mutation['resourceKey'] ?? '');
+    $prerequisite_resource_key = (string) ($prerequisite_entry['resourceKey'] ?? '');
+    if ($current_mutation_id === '' || $prerequisite_mutation_id === '' || $current_resource_key === '' || $prerequisite_resource_key === '') {
+        return null;
+    }
+
+    $groups = isset($plan['atomicGroups']) && is_array($plan['atomicGroups']) ? $plan['atomicGroups'] : [];
+    foreach ($groups as $group) {
+        if (!is_array($group) || (string) ($group['id'] ?? '') !== $group_id) {
+            continue;
+        }
+
+        if (($group['requireAtomic'] ?? null) !== true) {
+            return null;
+        }
+        if ((string) ($group['status'] ?? '') !== 'ready') {
+            return null;
+        }
+        if ((string) ($group['kind'] ?? '') !== 'plugin-install') {
+            return null;
+        }
+
+        $mutation_ids = reprint_push_protocol_string_set($group['mutationIds'] ?? []);
+        if (!isset($mutation_ids[$current_mutation_id]) || !isset($mutation_ids[$prerequisite_mutation_id])) {
+            return null;
+        }
+
+        $resource_keys = reprint_push_protocol_string_set($group['resources'] ?? []);
+        if (!isset($resource_keys[$current_resource_key]) || !isset($resource_keys[$prerequisite_resource_key])) {
+            return null;
+        }
+
+        return [
+            'declaredAtomicGroupId' => $group_id,
+            'declaredAtomicGroupKind' => (string) ($group['kind'] ?? ''),
+            'declaredAtomicGroupStatus' => (string) ($group['status'] ?? ''),
+            'declaredAtomicGroupRequireAtomic' => true,
+            'declaredAtomicGroupCoverage' => 'mutationIds+resources',
+        ];
+    }
+
+    return null;
+}
+
+function reprint_push_protocol_string_set($values): array
+{
+    $set = [];
+    if (!is_array($values)) {
+        return $set;
+    }
+    foreach ($values as $value) {
+        $set[(string) $value] = true;
+    }
+    return $set;
 }
 
 function reprint_push_protocol_lab_fail_after_mutations(array $options): ?int
@@ -434,6 +706,7 @@ function reprint_push_protocol_recovery_entries(array $mutations, array $precond
             'mutationId' => $mutation_id,
             'resourceKey' => (string) $mutation['resourceKey'],
             'resource' => $mutation['resource'],
+            'atomicGroupId' => isset($mutation['atomicGroupId']) ? (string) $mutation['atomicGroupId'] : null,
             'beforeHash' => $expected_hash,
             'preconditionExpectedHash' => $expected_hash,
             'afterHash' => $local_hash,

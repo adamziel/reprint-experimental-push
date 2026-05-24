@@ -620,6 +620,17 @@ function reprint_push_lab_db_journal_mutation_evidence(array $mutation, ?string 
     if (isset($mutation['appliedCount'])) {
         $evidence['appliedCount'] = max(0, (int) $mutation['appliedCount']);
     }
+    foreach (['preWriteExpectedHash', 'preWriteActualHash', 'actualHash'] as $key) {
+        if (isset($mutation[$key])) {
+            $evidence[$key] = (string) $mutation[$key];
+        }
+    }
+    if (isset($mutation['preconditionCheck'])) {
+        $evidence['preconditionCheck'] = (string) $mutation['preconditionCheck'];
+    }
+    if (isset($mutation['preWriteStagingProof']) && is_array($mutation['preWriteStagingProof'])) {
+        $evidence['preWriteStagingProof'] = $mutation['preWriteStagingProof'];
+    }
     if ($observed_hash !== null) {
         $evidence['observedHash'] = $observed_hash;
     } elseif (isset($mutation['observedHash'])) {

@@ -486,7 +486,11 @@ function reprint_push_lab_rest_apply_with_db_journal(
             );
         }
 
-        if ($validate_before_idempotency_claim) {
+        $existing_claim = reprint_push_lab_db_journal_claim_row_for_key($context['idempotencyKeyHash']);
+        $same_request_claim_exists = is_array($existing_claim)
+            && (string) ($existing_claim['requestHash'] ?? '') === $context['requestHash'];
+
+        if ($validate_before_idempotency_claim && !$same_request_claim_exists) {
             $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
             $receipt = reprint_push_lab_rest_receipt_payload($payload);
             $accepted = reprint_push_lab_rest_validate_apply_for_db_journal($plan, $receipt, $context);
@@ -577,7 +581,10 @@ function reprint_push_lab_rest_apply_with_db_journal(
         ]);
 
         $options = reprint_push_lab_rest_lab_options($payload);
-        $options['mutationEventCallback'] = reprint_push_lab_rest_db_journal_mutation_callback($context, $started_entry);
+        $options['mutationEventCallback'] = reprint_push_lab_rest_compose_mutation_callbacks([
+            reprint_push_lab_rest_db_journal_mutation_callback($context, $started_entry),
+            reprint_push_lab_rest_lab_drift_after_prepared_callback($options),
+        ]);
         $result = reprint_push_protocol_run_payload('apply', $plan, $receipt, [
             'transport' => 'wordpress-rest',
             'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
@@ -709,7 +716,7 @@ function reprint_push_lab_rest_validate_apply_for_db_journal(array $plan, ?array
 function reprint_push_lab_rest_db_journal_mutation_callback(array $context, array $started_entry): callable
 {
     return static function (string $event, array $evidence) use ($context, $started_entry): void {
-        if (!in_array($event, ['mutation-prepared', 'mutation-applied'], true)) {
+        if (!in_array($event, ['mutation-prepared', 'mutation-precondition-failed', 'mutation-applied'], true)) {
             return;
         }
 
@@ -725,6 +732,84 @@ function reprint_push_lab_rest_db_journal_mutation_callback(array $context, arra
         ];
 
         reprint_push_lab_db_journal_append_event($event, $event_context);
+    };
+}
+
+function reprint_push_lab_rest_compose_mutation_callbacks(array $callbacks): callable
+{
+    $callbacks = array_values(array_filter($callbacks, 'is_callable'));
+    return static function (string $event, array $evidence) use ($callbacks): void {
+        foreach ($callbacks as $callback) {
+            $callback($event, $evidence);
+        }
+    };
+}
+
+function reprint_push_lab_rest_lab_drift_after_prepared_callback(array $options): ?callable
+{
+    if (!array_key_exists('labDriftAfterPrepared', $options)) {
+        return null;
+    }
+
+    $spec = $options['labDriftAfterPrepared'];
+    if (!is_array($spec)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'labDriftAfterPrepared must be an object when supplied.',
+        ]);
+    }
+
+    $mutation_id = isset($spec['mutationId']) ? (string) $spec['mutationId'] : '';
+    $resource_key = isset($spec['resourceKey']) ? (string) $spec['resourceKey'] : '';
+    if ($mutation_id === '' && $resource_key === '') {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'labDriftAfterPrepared requires mutationId or resourceKey.',
+        ]);
+    }
+    if (!array_key_exists('value', $spec) && !array_key_exists('absent', $spec)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'labDriftAfterPrepared requires value or absent.',
+        ]);
+    }
+
+    $payload = [];
+    if (array_key_exists('absent', $spec)) {
+        $payload['absent'] = $spec['absent'] === true || $spec['absent'] === 1 || $spec['absent'] === '1';
+    }
+    if (array_key_exists('value', $spec)) {
+        $payload['value'] = $spec['value'];
+    }
+    $resource_override = isset($spec['resource']) && is_array($spec['resource']) ? $spec['resource'] : null;
+
+    $did_drift = false;
+    return static function (string $event, array $evidence) use ($mutation_id, $resource_key, $payload, $resource_override, &$did_drift): void {
+        if ($did_drift || $event !== 'mutation-prepared') {
+            return;
+        }
+        if ($mutation_id !== '' && (string) ($evidence['mutationId'] ?? '') !== $mutation_id) {
+            return;
+        }
+        if ($resource_key !== '' && (string) ($evidence['resourceKey'] ?? '') !== $resource_key) {
+            return;
+        }
+
+        $resource = $resource_override ?? ($evidence['resource'] ?? null);
+        if (!is_array($resource)) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_ARGUMENT',
+                'message' => 'labDriftAfterPrepared could not resolve the prepared mutation resource.',
+            ]);
+        }
+
+        reprint_push_assert_supported_apply_resource($resource);
+        reprint_push_apply_resource($resource, $payload);
+        $did_drift = true;
     };
 }
 
@@ -1996,6 +2081,9 @@ function reprint_push_lab_rest_lab_options(array $payload): array
     $options = [];
     if (array_key_exists('labFailAfterMutations', $payload)) {
         $options['labFailAfterMutations'] = $payload['labFailAfterMutations'];
+    }
+    if (array_key_exists('labDriftAfterPrepared', $payload)) {
+        $options['labDriftAfterPrepared'] = $payload['labDriftAfterPrepared'];
     }
     return $options;
 }

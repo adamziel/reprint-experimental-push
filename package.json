@@ -18,6 +18,7 @@
     "test:playground:authenticated-http-push": "node ./scripts/playground/authenticated-http-push-smoke.mjs",
     "test:playground:plugin-atomic-install": "node ./scripts/playground/plugin-atomic-install-smoke.mjs",
     "test:playground:db-journal-idempotency": "node ./scripts/playground/db-journal-idempotency-smoke.mjs",
+    "test:playground:mid-apply-drift": "node ./scripts/playground/mid-apply-drift-smoke.mjs",
     "test:playground:db-journal-process-kill": "node ./scripts/playground/db-journal-process-kill-smoke.mjs",
     "test:playground:db-journal-missing-commit-finalization": "node ./scripts/playground/db-journal-missing-commit-finalization-smoke.mjs",
     "test:playground:recovery": "node ./scripts/playground/recovery-smoke.mjs",

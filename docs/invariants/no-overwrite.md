@@ -39,6 +39,36 @@ the resource key, the live remote hash observed during planning, and the
   post-apply remote state and planned plugin mutations.
 - Any internally generated mutation that lacks a matching live remote
   precondition.
+- Any mutation whose target hash drifts after dry-run or initial apply
+  validation but before that specific mutation write.
 
 Stopping means the plan status is `conflict` or `blocked`; apply must refuse
 the plan and leave the remote snapshot unchanged.
+
+## Just-In-Time Apply Evidence
+
+The lab apply path now re-hashes each mutation's own resource immediately
+before the write. The comparison uses that mutation's bound precondition hash;
+it does not reuse the earlier dry-run snapshot, receipt, or accepted
+precondition list as liveness proof. If the pre-write live hash differs, apply
+returns `PRECONDITION_FAILED`, preserves the drifted value, writes no
+`mutation-applied` event for that mutation, writes no later mutations, and
+writes no `apply-committed`.
+
+The DB journal records hash-only evidence for this boundary:
+`preWriteExpectedHash`, `preWriteActualHash`, `preconditionCheck`, mutation
+metadata, and recovery counts/targets. A same-key/body retry after a rejected
+mid-apply drift replays the rejection with no fresh mutation work; same
+key/different body remains an idempotency conflict.
+
+There is one fixture-scoped staged plugin allowance for atomic activation:
+`preconditionCheck: same-apply-staged` is permitted only when an
+activation-style plugin mutation planned `active: true`, the live plugin hash
+matches that same planned value with `active` forced false, and
+`preWriteStagingProof` points to an earlier same-apply plugin file mutation
+covered by the declared ready atomic group. Forged mutation-local group ids,
+missing declared group coverage, and planned inactive plugin mutations must not
+use this exception.
+
+This is lab no-overwrite evidence, not storage-level compare-and-swap, locking,
+rollback, production DB durability, or generic plugin/custom-table safety.

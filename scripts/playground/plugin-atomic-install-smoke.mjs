@@ -138,8 +138,11 @@ await withPlaygroundServer('plugin-atomic-positive', blueprints.base, async (ser
   const afterDigest = digest(targetSurface(after.body.snapshot));
 
   const journalAfterApply = await getDbJournal(server);
-  const mutationEventsAfterApply = countJournalEvents(journalEntries(journalAfterApply.body), 'mutation-applied');
+  const applyEntries = journalEntries(journalAfterApply.body);
+  const mutationEventsAfterApply = countJournalEvents(applyEntries, 'mutation-applied');
   assert.equal(mutationEventsAfterApply, readyPlan.mutations.length);
+  assertSameApplyStagingProof(applyEntries, readyPlan, dependencyPlugin);
+  assertSameApplyStagingProof(applyEntries, readyPlan, dependentPlugin);
 
   const replay = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: 'plugin-atomic-positive-apply' });
   assert.equal(replay.status, 200);
@@ -170,6 +173,7 @@ await withPlaygroundServer('plugin-atomic-positive', blueprints.base, async (ser
         after.body.snapshot.plugins[dependentPlugin].active,
       ],
       allowlistedDataWritten: Boolean(after.body.snapshot.db.wp_options['option_name:reprint_push_atomic_fixture_data']),
+      sameApplyStagingProof: true,
     },
     replay: {
       status: replay.status,
@@ -181,6 +185,173 @@ await withPlaygroundServer('plugin-atomic-positive', blueprints.base, async (ser
 });
 
 assert.ok(readyReceipt, 'positive dry-run receipt was not captured');
+
+await withPlaygroundServer('plugin-atomic-staged-shortcut-negative', blueprints.base, async (server) => {
+  summary.transport.servers.push(server.summary);
+
+  const stagedShortcutPlan = pluginBeforeFilePlan(readyPlan, dependentPlugin);
+  const pluginMutation = mutationForResource(stagedShortcutPlan, `plugin:${dependentPlugin}`);
+  const fileMutation = mutationForResource(
+    stagedShortcutPlan,
+    `file:wp-content/plugins/${dependentPlugin}/${dependentPlugin}.php`,
+  );
+  assert.ok(
+    stagedShortcutPlan.mutations.findIndex((mutation) => mutation.id === pluginMutation.id)
+      < stagedShortcutPlan.mutations.findIndex((mutation) => mutation.id === fileMutation.id),
+    'negative fixture must prepare plugin mutation before its file mutation',
+  );
+
+  const dryRun = await postLab(server, '/dry-run', { plan: stagedShortcutPlan });
+  assert.equal(dryRun.status, 200);
+  assert.equal(dryRun.body.ok, true);
+
+  const body = {
+    plan: stagedShortcutPlan,
+    receipt: dryRun.body.receipt,
+    labDriftAfterPrepared: {
+      mutationId: pluginMutation.id,
+      resourceKey: pluginMutation.resourceKey,
+      resource: fileMutation.resource,
+      value: fileMutation.value.value,
+    },
+  };
+
+  const failed = await postLab(server, '/apply', body, { [idempotencyHeader]: 'plugin-atomic-staged-shortcut-negative' });
+  assert.equal(failed.status, 412, JSON.stringify(failed.body));
+  assert.equal(failed.body.ok, false);
+  assert.equal(failed.body.code, 'PRECONDITION_FAILED');
+  assert.equal(failed.body.preconditionCheck, 'just-in-time');
+  assert.equal(failed.body.resourceKey, `plugin:${dependentPlugin}`);
+  assert.equal(failed.body.recovery?.state, 'blocked-recovery');
+
+  const after = await getSnapshot(server);
+  assert.equal(
+    after.body.snapshot.files[`wp-content/plugins/${dependentPlugin}/${dependentPlugin}.php`],
+    snapshots.local.files[`wp-content/plugins/${dependentPlugin}/${dependentPlugin}.php`],
+    'external staged plugin file should be preserved',
+  );
+  assert.equal(after.body.snapshot.plugins[dependentPlugin]?.active, false, 'dependent plugin must not be activated');
+  assert.equal(Boolean(after.body.snapshot.db.wp_options['option_name:reprint_push_atomic_fixture_data']), false, 'later option mutation must not run');
+
+  const journal = await getDbJournal(server);
+  const entries = journalEntries(journal.body);
+  assert.equal(countJournalEvents(entries, 'apply-committed'), 0, 'staged shortcut rejection must not commit');
+  assert.equal(countJournalEvents(entries, 'mutation-precondition-failed'), 1, 'staged shortcut must record one JIT failure');
+  assertNoMutationAppliedFor(entries, pluginMutation.id);
+  assertNoStagingProofFor(entries, pluginMutation.id);
+
+  summary.negative.stagedShortcutWithoutSameApplyProof = {
+    status: failed.status,
+    code: failed.body.code,
+    resourceKey: failed.body.resourceKey,
+    dependentPluginActive: Boolean(after.body.snapshot.plugins[dependentPlugin]?.active),
+    applyCommitted: false,
+    stagedFilePreserved: true,
+  };
+});
+
+await withPlaygroundServer('plugin-atomic-staged-forged-group-negative', blueprints.base, async (server) => {
+  summary.transport.servers.push(server.summary);
+
+  const forgedGroupPlan = forgedMutationLocalGroupOnlyPlan(readyPlan);
+  const pluginMutation = mutationForResource(forgedGroupPlan, `plugin:${dependencyPlugin}`);
+  const fileMutation = mutationForResource(
+    forgedGroupPlan,
+    `file:wp-content/plugins/${dependencyPlugin}/${dependencyPlugin}.php`,
+  );
+  assert.ok(
+    forgedGroupPlan.mutations.findIndex((mutation) => mutation.id === fileMutation.id)
+      < forgedGroupPlan.mutations.findIndex((mutation) => mutation.id === pluginMutation.id),
+    'forged group fixture must stage the plugin file before the plugin mutation',
+  );
+
+  const dryRun = await postLab(server, '/dry-run', { plan: forgedGroupPlan });
+  assert.equal(dryRun.status, 200, JSON.stringify(dryRun.body));
+  assert.equal(dryRun.body.ok, true);
+
+  const failed = await postLab(
+    server,
+    '/apply',
+    { plan: forgedGroupPlan, receipt: dryRun.body.receipt },
+    { [idempotencyHeader]: 'plugin-atomic-staged-forged-group-negative' },
+  );
+  assert.equal(failed.status, 412, JSON.stringify(failed.body));
+  assert.equal(failed.body.ok, false);
+  assert.equal(failed.body.code, 'PRECONDITION_FAILED');
+  assert.equal(failed.body.preconditionCheck, 'just-in-time');
+  assert.equal(failed.body.resourceKey, `plugin:${dependencyPlugin}`);
+  assert.equal(failed.body.recovery?.state, 'blocked-recovery');
+
+  const after = await getSnapshot(server);
+  assert.equal(after.body.snapshot.plugins[dependencyPlugin]?.active, false, 'dependency plugin must not be activated');
+
+  const journal = await getDbJournal(server);
+  const entries = journalEntries(journal.body);
+  assert.equal(countJournalEvents(entries, 'apply-committed'), 0, 'forged group rejection must not commit');
+  assert.equal(countJournalEvents(entries, 'mutation-precondition-failed'), 1, 'forged group must record one JIT failure');
+  assertNoMutationAppliedFor(entries, pluginMutation.id);
+  assertNoStagingProofFor(entries, pluginMutation.id);
+
+  summary.negative.stagedShortcutWithForgedGroupCoverage = {
+    status: failed.status,
+    code: failed.body.code,
+    resourceKey: failed.body.resourceKey,
+    dependencyPluginActive: Boolean(after.body.snapshot.plugins[dependencyPlugin]?.active),
+    applyCommitted: false,
+  };
+});
+
+await withPlaygroundServer('plugin-atomic-planned-inactive-staged-negative', blueprints.base, async (server) => {
+  summary.transport.servers.push(server.summary);
+
+  const inactivePluginPlan = plannedInactivePluginPlan(readyPlan, dependentPlugin);
+  const pluginMutation = mutationForResource(inactivePluginPlan, `plugin:${dependentPlugin}`);
+  const fileMutation = mutationForResource(
+    inactivePluginPlan,
+    `file:wp-content/plugins/${dependentPlugin}/${dependentPlugin}.php`,
+  );
+  assert.ok(
+    inactivePluginPlan.mutations.findIndex((mutation) => mutation.id === fileMutation.id)
+      < inactivePluginPlan.mutations.findIndex((mutation) => mutation.id === pluginMutation.id),
+    'inactive plugin fixture must stage the plugin file before the plugin mutation',
+  );
+
+  const dryRun = await postLab(server, '/dry-run', { plan: inactivePluginPlan });
+  assert.equal(dryRun.status, 200, JSON.stringify(dryRun.body));
+  assert.equal(dryRun.body.ok, true);
+
+  const failed = await postLab(
+    server,
+    '/apply',
+    { plan: inactivePluginPlan, receipt: dryRun.body.receipt },
+    { [idempotencyHeader]: 'plugin-atomic-planned-inactive-staged-negative' },
+  );
+  assert.equal(failed.status, 412, JSON.stringify(failed.body));
+  assert.equal(failed.body.ok, false);
+  assert.equal(failed.body.code, 'PRECONDITION_FAILED');
+  assert.equal(failed.body.preconditionCheck, 'just-in-time');
+  assert.equal(failed.body.resourceKey, `plugin:${dependentPlugin}`);
+  assert.equal(failed.body.recovery?.state, 'blocked-recovery');
+
+  const after = await getSnapshot(server);
+  assert.equal(after.body.snapshot.plugins[dependentPlugin]?.active, false, 'planned inactive plugin must remain inactive');
+  assert.equal(Boolean(after.body.snapshot.db.wp_options['option_name:reprint_push_atomic_fixture_data']), false, 'later option mutation must not run');
+
+  const journal = await getDbJournal(server);
+  const entries = journalEntries(journal.body);
+  assert.equal(countJournalEvents(entries, 'apply-committed'), 0, 'planned inactive rejection must not commit');
+  assert.equal(countJournalEvents(entries, 'mutation-precondition-failed'), 1, 'planned inactive mutation must record one JIT failure');
+  assertNoMutationAppliedFor(entries, pluginMutation.id);
+  assertNoStagingProofFor(entries, pluginMutation.id);
+
+  summary.negative.plannedInactivePluginDoesNotUseStagedProof = {
+    status: failed.status,
+    code: failed.body.code,
+    resourceKey: failed.body.resourceKey,
+    dependentPluginActive: Boolean(after.body.snapshot.plugins[dependentPlugin]?.active),
+    applyCommitted: false,
+  };
+});
 
 await withPlaygroundServer('plugin-atomic-negative', blueprints.base, async (server) => {
   summary.transport.servers.push(server.summary);
@@ -1029,6 +1200,49 @@ function tamperReadyPlan(plan, mutate) {
   return copy;
 }
 
+function pluginBeforeFilePlan(plan, plugin) {
+  return tamperReadyPlan(plan, (copy) => {
+    const fileKey = `file:wp-content/plugins/${plugin}/${plugin}.php`;
+    const pluginKey = `plugin:${plugin}`;
+    const fileIndex = copy.mutations.findIndex((mutation) => mutation.resourceKey === fileKey);
+    const pluginIndex = copy.mutations.findIndex((mutation) => mutation.resourceKey === pluginKey);
+    assert.ok(fileIndex >= 0, `missing file mutation for ${plugin}`);
+    assert.ok(pluginIndex >= 0, `missing plugin mutation for ${plugin}`);
+    const [fileMutation] = copy.mutations.splice(fileIndex, 1);
+    const nextPluginIndex = copy.mutations.findIndex((mutation) => mutation.resourceKey === pluginKey);
+    copy.mutations.splice(nextPluginIndex + 1, 0, fileMutation);
+    const orderedMutationIds = new Map(copy.mutations.map((mutation, index) => [mutation.id, index]));
+    copy.preconditions.sort((left, right) => (
+      orderedMutationIds.get(left.mutationId) - orderedMutationIds.get(right.mutationId)
+    ));
+    copy.summary.mutations = copy.mutations.length;
+  });
+}
+
+function forgedMutationLocalGroupOnlyPlan(plan) {
+  return tamperReadyPlan(plan, (copy) => {
+    assert.ok(copy.atomicGroups?.[0], 'ready fixture must have one atomic group');
+    copy.atomicGroups[0].mutationIds = [];
+    copy.atomicGroups[0].resources = [];
+  });
+}
+
+function plannedInactivePluginPlan(plan, plugin) {
+  return tamperReadyPlan(plan, (copy) => {
+    const mutation = mutationForResource(copy, `plugin:${plugin}`);
+    assert.notEqual(mutation.value?.absent, true);
+    assert.ok(mutation.value?.value, `missing planned plugin value for ${plugin}`);
+    mutation.value.value.active = false;
+    mutation.localHash = resourceHash({ plugins: { [plugin]: mutation.value.value } }, mutation.resource);
+  });
+}
+
+function mutationForResource(plan, resourceKey) {
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === resourceKey);
+  assert.ok(mutation, `missing mutation for ${resourceKey}`);
+  return mutation;
+}
+
 function forgedReceipt(plan, snapshot) {
   const evidence = planEvidence(plan);
   const verifiedPreconditions = plan.preconditions.map((precondition) => ({
@@ -1209,6 +1423,56 @@ function countJournalEvents(entries, event) {
 
 function journalEvent(entry) {
   return entry.event ?? entry.eventName ?? entry.event_name ?? entry.type ?? entry.name;
+}
+
+function mutationEvidence(entry) {
+  return entry.resourceHashEvidence?.mutation ?? {};
+}
+
+function assertSameApplyStagingProof(entries, plan, plugin) {
+  const pluginMutation = mutationForResource(plan, `plugin:${plugin}`);
+  const fileMutation = mutationForResource(plan, `file:wp-content/plugins/${plugin}/${plugin}.php`);
+  const event = entries.find((entry) => (
+    journalEvent(entry) === 'mutation-applied'
+      && mutationEvidence(entry).mutationId === pluginMutation.id
+  ));
+  assert.ok(event, `missing mutation-applied event for ${plugin}`);
+
+  const evidence = mutationEvidence(event);
+  assert.equal(evidence.preconditionCheck, 'same-apply-staged', `${plugin} must mark staged precondition proof`);
+  assert.notEqual(evidence.preWriteActualHash, evidence.preWriteExpectedHash, `${plugin} should have staged inactive pre-write hash`);
+  assert.ok(evidence.preWriteStagingProof, `${plugin} missing staging proof`);
+  assert.equal(evidence.preWriteStagingProof.plugin, plugin);
+  assert.equal(evidence.preWriteStagingProof.currentMutationId, pluginMutation.id);
+  assert.equal(evidence.preWriteStagingProof.prerequisiteMutationId, fileMutation.id);
+  assert.equal(evidence.preWriteStagingProof.prerequisiteResourceKey, fileMutation.resourceKey);
+  assert.equal(evidence.preWriteStagingProof.declaredAtomicGroupId, plan.atomicGroups[0].id);
+  assert.equal(evidence.preWriteStagingProof.declaredAtomicGroupKind, 'plugin-install');
+  assert.equal(evidence.preWriteStagingProof.declaredAtomicGroupStatus, 'ready');
+  assert.equal(evidence.preWriteStagingProof.declaredAtomicGroupRequireAtomic, true);
+  assert.equal(evidence.preWriteStagingProof.declaredAtomicGroupCoverage, 'mutationIds+resources');
+  assert.ok(
+    Number(evidence.preWriteStagingProof.prerequisiteMutationIndex) < Number(evidence.preWriteStagingProof.currentMutationIndex),
+    `${plugin} staging proof must point to an earlier same-apply mutation`,
+  );
+}
+
+function assertNoMutationAppliedFor(entries, mutationId) {
+  assert.ok(
+    !entries.some((entry) => journalEvent(entry) === 'mutation-applied' && mutationEvidence(entry).mutationId === mutationId),
+    `mutation-applied must not be written for ${mutationId}`,
+  );
+}
+
+function assertNoStagingProofFor(entries, mutationId) {
+  const event = entries.find((entry) => (
+    journalEvent(entry) === 'mutation-precondition-failed'
+      && mutationEvidence(entry).mutationId === mutationId
+  ));
+  assert.ok(event, `missing mutation-precondition-failed event for ${mutationId}`);
+  const evidence = mutationEvidence(event);
+  assert.equal(evidence.preconditionCheck, 'just-in-time');
+  assert.equal(Object.hasOwn(evidence, 'preWriteStagingProof'), false, 'failed shortcut must not carry staged proof');
 }
 
 function parseMarkedJson(stdout, begin, end, missingMessage) {

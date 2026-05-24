@@ -7,7 +7,8 @@ separate synchronization system.
 The core invariant is:
 
 1. Dry-run and apply are separate remote operations.
-2. Apply revalidates the live remote before every mutation batch.
+2. Apply revalidates the live remote before every mutation batch and, in the
+   current lab apply path, re-hashes each target immediately before its write.
 3. A failed or interrupted apply leaves a durable journal that lets recovery
    prove whether the remote is old, new, or blocked with artifacts.
 
@@ -150,6 +151,21 @@ fresh mutation work, and redacted hash-only journal/recovery evidence. Failure
 injection classifies before-commit as
 old-remote and during-publish/activation failure as blocked/non-complete
 recovery evidence; it does not prove rollback.
+
+The same lab path now performs a just-in-time pre-write hash check for each
+mutation target. A live target drift after dry-run and after initial apply
+validation, but before mutation `N` writes, returns `PRECONDITION_FAILED`,
+preserves the drifted target, writes no `mutation-applied` event for `N`,
+writes no later mutations, and writes no `apply-committed`. Plugin atomic
+activation has one fixture-scoped exception: an activation-style plugin
+mutation whose planned value has `active: true` may see the inactive staged
+plugin hash if a prior same-apply fixture plugin file mutation already applied
+and the declared ready atomic group explicitly covers both the file mutation
+and plugin mutation. The journal marks that case with
+`preconditionCheck: same-apply-staged` and `preWriteStagingProof`. Forged
+mutation-local group ids without declared group coverage and planned inactive
+plugin mutations do not use the exception. This is lab protocol evidence, not
+generic production plugin support.
 
 ## Resource Model
 
@@ -450,6 +466,18 @@ Required apply behavior:
 6. Stage all file and database changes for the batch.
 7. Commit the batch atomically when possible.
 8. Record final hashes for every mutated resource.
+
+The current Playground/REST lab apply path also re-hashes the specific target
+resource immediately before calling the target write for each mutation. That
+just-in-time check uses the mutation's own bound expected hash, not an earlier
+batch snapshot, dry-run receipt, or accepted precondition list. If the live hash
+differs, apply rejects with `PRECONDITION_FAILED` and stops before that
+mutation write. Earlier landed mutations, if any, are recovery evidence for a
+partial state; retry of the same DB idempotency key/body replays the rejection
+or stays blocked with no fresh mutation work rather than continuing the batch.
+This protects the lab path against the known window, but it is not
+storage-level compare-and-swap, locking, transaction isolation, or a production
+WordPress durability guarantee.
 
 Response body:
 

@@ -49,6 +49,12 @@ Run the DB-backed journal/idempotency REST lab harness:
 npm run test:playground:db-journal-idempotency
 ```
 
+Run the mid-apply drift JIT pre-write smoke:
+
+```bash
+npm run test:playground:mid-apply-drift
+```
+
 Run the DB-backed process-kill/restart smoke:
 
 ```bash
@@ -194,6 +200,17 @@ same rejection with `idempotency.replayed: true` and no fresh mutation work.
 This DB journal is separate from the legacy `wp_options` lab journal read by
 `GET /journal`; both are fixture-scoped evidence.
 
+The `test:playground:mid-apply-drift` script verifies the current lab
+just-in-time pre-write guard. After dry-run and initial apply validation, a lab
+hook changes one target after `mutation-prepared` but before that mutation's
+write. Apply re-hashes that mutation's own resource immediately before writing,
+returns `412 PRECONDITION_FAILED`, preserves the drifted target, writes no
+`mutation-applied` event for the failed mutation, writes no later mutations,
+and writes no `apply-committed`. DB replay of the same key/body returns the
+same rejected result with `idempotency.replayed: true` and no fresh mutation
+work; the same key with a different body conflicts. The evidence is hash-only
+and lab-scoped, not storage-level compare-and-swap or locking.
+
 The `test:playground:db-journal-process-kill` script runs a local-only
 Playground process-kill smoke over a host-mounted WordPress directory. It sends
 a real `SIGKILL` to the localhost Playground server during an in-flight
@@ -237,6 +254,13 @@ outside the group, incompatible version, hash mismatch, activation requirement
 mismatch, remote dependency drift, stale preconditions, forged ready plans that
 omit dependency mutation, `atomicGroups`, or dependency requirements, stale
 live-remote dependency evidence, and row-only plugin-owned data bypass attempts.
+The plugin atomic positive path may accept the inactive staged plugin hash only
+for activation-style plugin mutations, and only when hash-only journal evidence
+shows a prior same-apply fixture plugin file mutation covered by the declared
+ready atomic group. Negative proof covers staged shortcut attempts without that
+same-apply proof, forged mutation-local group coverage without declared group
+coverage, and planned inactive plugin mutations trying to use the staged
+shortcut.
 Executor-side validation runs in both JavaScript and PHP before mutation or
 preconditions where relevant. Arbitrary plugin files, direct `active_plugins`
 row mutation, arbitrary plugin-owned data, and custom tables outside the exact
@@ -308,9 +332,12 @@ The model uses a three-way base/local/remote comparison. A plan may be:
 - `blocked`: dependencies or other hard gates are missing.
 - `conflict`: local and remote both changed the same resource differently.
 
-Apply revalidates remote preconditions immediately before mutation. If the live
-remote changed after the dry run, apply refuses to run and leaves the remote
-unchanged.
+Apply revalidates remote preconditions before mutation and, in the current lab
+REST path, re-hashes each mutation target immediately before that target write.
+If the live remote changed after the dry run or between initial apply
+validation and a specific mutation write, apply refuses with
+`PRECONDITION_FAILED` instead of overwriting the changed target. This remains
+lab evidence, not storage-level compare-and-swap or locking.
 
 ## Research Inputs
 

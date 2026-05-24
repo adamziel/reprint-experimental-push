@@ -106,6 +106,24 @@ evidence stores hashes and metadata only: mutation order/id/resource key/type,
 before hash, planned after hash, observed hash, phase/status, and
 request/plan/receipt/idempotency hashes.
 
+The current lab apply path also records just-in-time pre-write evidence. Before
+each mutation write, the target resource is re-hashed and compared with that
+mutation's bound expected hash. Hash-only evidence may include
+`preWriteExpectedHash`, `preWriteActualHash`, `preconditionCheck`, and, for the
+fixture plugin activation staged path, `preWriteStagingProof`. The staged proof
+contains only declared atomic-group metadata, mutation ids/order, resource keys,
+and hashes; it must not include plugin file contents, plugin option values, row
+payloads, post content, or snapshots.
+
+When the pre-write hash check rejects with `PRECONDITION_FAILED`, DB journal
+evidence records `mutation-precondition-failed` and terminal `apply-rejected`
+without a `mutation-applied` event for that mutation, without later mutation
+events, and without `apply-committed`. Same key/body retry after this rejected
+mid-apply drift replays the rejection with `idempotency.replayed: true` and no
+fresh mutation work, or returns a conservative recovery block. Same key with a
+different body remains `409 IDEMPOTENCY_KEY_CONFLICT`. Missing-commit
+finalization must not turn a partial JIT rejection into a commit.
+
 The verified replay behavior is idempotent for the fixture batch: same key plus
 same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`,
 does no fresh mutation work, adds no extra per-mutation events, and leaves the
