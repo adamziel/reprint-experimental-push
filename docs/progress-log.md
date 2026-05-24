@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Progress Visibility Refresh
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:27:42 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Tightened the first screen by removing duplicate blocker pills while keeping
+  the top blocker, trend, and current gate count visible.
+- The public page still treats WordPress executor, durable recovery journal,
+  Docker/Playground integration, and plugin drivers as pending until proof
+  appears.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md), and
+  [docs/playground-topology.md](playground-topology.md).
+
 ## 2026-05-25 - Progress Visibility Check
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
