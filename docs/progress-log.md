@@ -6,13 +6,13 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Progress Publisher Refresh
 
-- Last update: 2026-05-25 09:00 CEST.
+- Last update: 2026-05-25 00:33 CEST.
 - Public page refreshed: [progress.html](../progress.html) keeps the visible
   update stamp, the evidence summary, and the pending-gate list in one screen.
 - History kept conservative: [docs/supervisor-feedback.md](supervisor-feedback.md)
   still says production auth, durable journal storage, leases, graph mapping,
   Docker/Playground integration, and plugin drivers remain unproven.
-- Current status: `82` Node tests pass; the packaged route still requires
+- Current status: `89` Node tests pass; the packaged route still requires
   scoped credentials, blocks unscoped credentials, and keeps the production
   push gate closed.
 - Evidence links: [docs/protocol.md](protocol.md),
@@ -46,10 +46,10 @@ linked implementation artifacts.
   evidence.
 - Trend: no-data-loss, recovery, fast-path, reliable-executor, and audit lanes
   improved inside lab/model scope. Production readiness is still blocked.
-- Supervision: seven fast-mode workers are active in isolated lane worktrees:
-  same-plan graph, recovery, reliable executor, fast paths, independent
-  auditor, critic, and progress publisher. The same-plan graph worker remains
-  unmerged while it fixes the remaining HTTP smoke failure.
+- Supervision: next-proof fast-path, critic, and reliable-executor outputs were
+  reviewed and integrated. The same-plan graph worker remains active and
+  unmerged; the stale progress-publisher output was rejected because it used a
+  future timestamp and heavy screenshot assets.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, and arbitrary plugin drivers remain
   unproven.

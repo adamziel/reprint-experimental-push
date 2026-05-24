@@ -474,16 +474,14 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is still lab/model scope: 82 Node tests pass, packaged push accepts only scoped credentials, stale graph references block safely, and guarded benchmark claims fail closed. Real WordPress executor, recovery journal, Docker/Playground integration, and plugin drivers remain pending until proven.</p>
+        <p class="lead">Current proof is still lab/model scope: 89 Node tests pass after supervised lane merges covering planner invariants, recovery replay/failure states, fast-path guardrails, protocol binding, and audit updates. The graph HTTP lane remains active and unmerged. Production push remains blocked.</p>
         <time class="update-stamp" datetime="2026-05-25T00:33:54+02:00">Last updated: May 25, 2026, 00:33 CEST</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">82 Node tests passing</span>
+          <span class="pill">89 Node tests passing</span>
           <span class="pill">Packaged plugin route passing</span>
           <span class="pill">Scoped creds required</span>
-          <span class="pill">Unscoped creds rejected</span>
-          <span class="pill">Graph refs blocked</span>
-          <span class="pill">Recovery claim fenced</span>
-          <span class="pill">Executor, journal, Docker, drivers pending</span>
+          <span class="pill">Graph refs guarded</span>
+          <span class="pill">Recovery states covered</span>
           <span class="pill">Graph HTTP smoke pending</span>
           <span class="pill">Production push blocked</span>
         </div>
@@ -555,10 +553,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>82 Node tests pass; scoped credential proof, graph blocking, recovery fencing, and guarded benchmark evidence landed.</span></li>
-            <li><strong>Not going well</strong><span>Production auth, journal, leases, graph mapping, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>Lab/model evidence moved up across four lanes; production readiness stayed blocked.</span></li>
-            <li><strong>Next nudge</strong><span>Replace lab auth/session/journal internals and prove graph identity mapping.</span></li>
+            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence landed.</span></li>
+            <li><strong>Not going well</strong><span>Production auth, journal, leases, graph mapping, integration, and plugin drivers remain unproven.</span></li>
+            <li><strong>Progress change</strong><span>Seven replacement workers were active; production readiness stayed blocked.</span></li>
+            <li><strong>Next nudge</strong><span>Get the graph HTTP smoke green, then prove production auth and journal storage.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
