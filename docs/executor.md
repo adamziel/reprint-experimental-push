@@ -380,7 +380,8 @@ local site, and one runner. The machine-readable version lives in
 - `remote-base` is the pulled source of truth and persists the base package.
 - `local-edited` is the imported site after user edits.
 - `remote-changed` is the same remote after independent drift between dry-run
-  and apply.
+  and apply. It is the live drift witness for the same remote identity, not a
+  second source site.
 - `runner` is the only process that may compare, upload, inspect, or recover.
 
 For Docker, keep the remote and local databases isolated so drift is visible
@@ -394,6 +395,15 @@ For Playground, use separate disposable blueprints for `remote-base`,
 for browser-visible inspection. The important proof is that apply revalidates
 fresh live state after dry-run, not that the same snapshot happened to persist.
 
+For both Docker and Playground, the topology proof is a four-role matrix:
+
+| Role | Docker example | Playground example | Proof purpose |
+| --- | --- | --- | --- |
+| `remote-base` | `remote-base` | `remote-base` | Seeds the persisted pull base and live source identity. |
+| `local-edited` | `local-edited` | `local-edited` | Carries the imported local edits that become the candidate plan. |
+| `remote-changed` | `remote-changed` | `remote-changed` | Proves apply-time revalidation against the same remote after drift. |
+| `runner` | `runner` | local test process | Is the only actor allowed to compare, upload, inspect, and recover. |
+
 Suggested Docker wiring:
 
 - remote site uses a dedicated WordPress + DB pair and serves as the source of
@@ -405,6 +415,9 @@ Suggested Docker wiring:
   computes the three-way plan, uploads the dry-run, and drives apply/recovery
 - no service outside the sandbox should be reachable; if a browser is needed,
   the optional proxy binds to `127.0.0.1:8080` only
+- `remote-changed` must be the same logical remote as `remote-base`, started
+  later with independent drift so stale-dry-run apply attempts fail for the
+  right reason
 
 ### Playground Topology
 
