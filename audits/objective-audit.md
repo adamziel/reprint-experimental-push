@@ -31,10 +31,12 @@ dies between file and database writes.
 ## Follow-up Audit Pass
 
 This pass treats docs and script names as leads, not proof. Fresh local
-verification: `npm test` passed with 64 tests. The longer Playground smokes were
-source-inspected in this pass, not rerun. A release claim still needs a retained
-run artifact for each long Playground smoke and, more importantly, proof at the
-production Reprint source-mutation boundary.
+verification on 2026-05-24 after rebasing onto current `origin/main`: `npm test`
+passed with 67 tests, 0 failures, and 0 skips. The longer Playground smokes
+were source-inspected in this pass, not
+rerun. A release claim still needs a retained run artifact for each long
+Playground smoke and, more importantly, proof at the production Reprint
+source-mutation boundary.
 
 | Area | Directly observed proof | Still insufficient | Next proof required |
 | --- | --- | --- | --- |
@@ -79,7 +81,7 @@ these release requirements:
 | R5 immediate preconditions | `applyPlan()` validates preconditions before model apply. Playground smokes verify stale dry-run/apply refusal and just-in-time pre-write hash rejection for selected fixtures. | The production write path does not exist. No proof that every production mutation rechecks liveness immediately before its write under real source-site concurrency. | Yes |
 | R6 storage-boundary guards | `test:playground:storage-guarded-db-write` proves guarded single-statement `UPDATE` behavior for existing fixture `wp_posts`, allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact forms lab rows. `test:playground:storage-guarded-file-write` proves guarded update/create/delete for accepted fixture upload files. | No production MySQL/InnoDB CAS proof, transactions, locks, rollback, filesystem `fsync`, filesystem lock/CAS proof, arbitrary file guarding, arbitrary create/delete DB guarding, schema changes, plugin activation guarding, or production Reprint HTTP mutation. | Yes |
 | R7 atomic groups | Planner tests cover dependency presence, same-group dependencies, outside-group blocking, dependency hash/version/activation checks, and forged ready-plan rejection. `test:playground:plugin-atomic-install` adds a hard-coded fixture plugin install path and failure classification. | No general plugin install/update/activation support, no production rollback, no production atomic visibility boundary across files/DB/plugin activation, and no proof for arbitrary plugin side effects. | Yes |
-| R8 plugin-owned data | Unknown plugin-owned rows block. The forms fixture allows only explicit `wp-option`, `wp-postmeta`, and exact `fixture-forms-lab-table` policies with active unchanged fixture plugin evidence. Unsupported custom tables and direct `active_plugins` mutation remain blocked. | No production plugin validator contract, serialized PHP data parser/validator, generic custom-table driver, schema migration driver, or proof that arbitrary plugin-owned data is discovered consistently. | Yes |
+| R8 plugin-owned data | Unknown plugin-owned rows block. The forms fixture allows only explicit `wp-option`, `wp-postmeta`, and exact `fixture-forms-lab-table` policies with active unchanged fixture plugin evidence. Unit tests now also block plugin-owned data when the owner plugin files changed only on remote, while allowing it when the owner plugin context independently matches remote. Unsupported custom tables and direct `active_plugins` mutation remain blocked. | No production plugin validator contract, serialized PHP data parser/validator, generic custom-table driver, schema migration driver, or proof that arbitrary plugin-owned data is discovered consistently. | Yes |
 | R9 auth and authorization | `test:playground:authenticated-http-push` and `test:playground:authenticated-cli-push` prove authenticated local Playground aliases, Basic-auth-shaped Application Password credentials, `manage_options`, signed lab requests, nonce replay rejection, auth-bound receipts, idempotency keys, stale refusal, and replay with zero fresh mutation work. | It uses lab routes and a Playground fallback verifier. No production Reprint auth integration, TLS deployment, push credential scoping, nonce/replay store cleanup, session lifecycle, rate limiting, or real exporter credential binding. Public legacy lab routes remain public/mutable. | Yes |
 | R10 honest dry-run | Protocol smokes require receipts, reject missing/tampered receipts, bind receipts to plan/preconditions, and reject stale remote state. Authenticated lab routes bind receipts to auth/session/request data. | No production UI/operator warning tests. No proof for remote changes between production chunks or between individual production writes beyond fixture hooks. | Yes for production UX and source mutation |
 | R11 durable recovery | Model recovery tests classify old/updated/blocked states. JSONL journal tests append with monotonic sequences and `fsync` calls. Playground recovery, DB journal, process-kill, missing-commit finalization, and stale-claim smokes add useful fixture evidence. | No production DB-table journal, no storage-level crash matrix, no target write `fsync` proof, no exactly-once production writes, no production leases/fencing/claim expiry, no rollback, and no automatic repair policy. | Yes |
@@ -87,7 +89,7 @@ these release requirements:
 | R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, and fixture plugin metadata. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No full production Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
 | R15 speed | `test/performance-model.test.js` proves a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, remote indexes as planning-only, and backpressure triggers. | No runtime benchmark, no transfer implementation proof, no memory ceiling, no latency/throughput target, no large-site run, and no proof that the model is wired into the executor. | Yes for any speed claim |
-| R16 release suite | `npm test` passed 64 tests during this audit. It covers unit/model behavior, snapshot apply gates, performance model checks, and JSONL recovery tests. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol and excludes auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, and recovery smokes unless invoked separately. | Yes |
+| R16 release suite | `npm test` passed 67 tests during this audit. It covers unit/model behavior, snapshot apply gates, performance model checks, and JSONL recovery tests. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol and excludes auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, and recovery smokes unless invoked separately. | Yes |
 
 ## Test Audit
 
@@ -95,11 +97,12 @@ these release requirements:
 
 `npm test` passed during this audit:
 
-- 64 passing tests.
+- 67 passing tests.
 - Planner no-overwrite invariants for simplified JSON snapshots, including
   deletion preconditions, delete/update conflicts, directory-descendant
   topology conflicts, and file type swap conflicts.
-- Plugin-owned resource blocking and the exact forms lab driver checks in the JavaScript model.
+- Plugin-owned resource blocking, stale owner-plugin context blocking, and the
+  exact forms lab driver checks in the JavaScript model.
 - Atomic dependency metadata and forged-plan rejection in the model executor.
 - JSON-model recovery journal classification and append/`fsync` calls.
 - Snapshot apply gates for named lab plugin resources, named lab plugin file paths, and exact forms lab custom-table rows when PHP is available.
