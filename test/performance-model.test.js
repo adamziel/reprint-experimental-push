@@ -510,6 +510,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('parallelize-atomic-group-commit').violates.includes('atomic-groups'),
   );
+  assert.equal(
+    rejectedById.get('parallelize-db-batch-visibility-across-groups').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById
+      .get('parallelize-db-batch-visibility-across-groups')
+      .violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById
+      .get('parallelize-db-batch-visibility-across-groups')
+      .violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('parallelize-db-batch-visibility-across-groups')
+      .violates.includes('visibility-boundary'),
+  );
   assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('backpressure'));
   assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('queue-empty-means-complete').proposal.includes('queue is empty'));
@@ -891,6 +910,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'full-digest-completes-chunk-resume',
     'manifest-hash-completes-large-upload',
     'parallelize-atomic-group-commit',
+    'parallelize-db-batch-visibility-across-groups',
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);
   }

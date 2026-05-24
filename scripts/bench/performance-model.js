@@ -510,6 +510,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['atomic-groups', 'visibility-boundary'],
   },
+  {
+    id: 'parallelize-db-batch-visibility-across-groups',
+    proposal: 'publish database batches from different atomic groups in parallel once their SQL work is done',
+    rejectedBecause: 'row work can overlap, but visibility still has to wait for each group-owned commit barrier so recovery can name the exact coupled state',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'row-preconditions', 'visibility-boundary'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
