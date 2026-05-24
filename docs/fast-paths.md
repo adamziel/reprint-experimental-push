@@ -470,6 +470,10 @@ under load:
   because planning evidence and batch compression cannot prove row-level
   preconditions, dependency checks, or the atomic-group commit survived a
   failure.
+- remote-index-plus-compressed-package-cache-completes-plugin-update is
+  rejected because package compression can reduce transfer work, but it still
+  cannot prove dependency checks, metadata writes, row receipts, or the
+  atomic-group commit survived failure.
 - remote-index-plus-compressed-row-batch-completes-plugin-install is rejected
   for the same reason, because install row batches still need per-row
   preconditions, dependency checks, and the atomic-group commit barrier.
