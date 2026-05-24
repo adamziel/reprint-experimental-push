@@ -27,6 +27,19 @@ Dry-run success is a permission and eligibility receipt, not a liveness lock.
 The executor must expect apply to fail if the remote changes between dry-run and
 the storage-boundary guard.
 
+Acceptance criteria for the reliable executor:
+
+- It never calls `push_batch_apply` without a persisted pull base, completed
+  remote hash listing, ready local plan, and accepted dry-run receipt.
+- It treats `dry_run_id`, `snapshot_id`, and `coverage_hash` as evidence, not as
+  locks.
+- It reuses idempotency keys only with byte-identical request bodies.
+- It stops on `PRECONDITION_FAILED` and replans from a fresh remote listing.
+- It asks `push_journal` before retrying any apply whose HTTP response was lost.
+- It marks a push complete only after journal confirmation proves all batches
+  committed.
+- It refuses to run against a remote that only has read-only export HMAC scope.
+
 ## State Machine
 
 ```text
@@ -119,6 +132,13 @@ If the remote returns `PRECONDITION_FAILED`, the executor creates a new push
 attempt after refreshing remote hashes and replanning. If the response is lost,
 the executor first calls `push_journal`; only a journal state that proves the
 same request is still open may be retried with the same key and body.
+
+The state directory is also the audit boundary between the existing pull
+pipeline and push. Pull may refresh or replace `push-base/` only after a
+successful pull. A push attempt may copy hashes and identifiers from
+`push-base/`, but it must not rewrite the base package to make a stale plan
+look current. A conflict resolution, URL retarget confirmation, or recovery
+action creates a new attempt record with its own plan and request hashes.
 
 ## Execution Flow
 
@@ -429,6 +449,18 @@ Suggested assertions:
 - Lost HTTP response is resolved by idempotency plus journal inspect.
 - Recovery can prove committed, rolled back, or blocked.
 
+Minimum topology matrix:
+
+| Case | Remote action | Expected result |
+| --- | --- | --- |
+| Clean push | Remote unchanged since pull | Dry-run ready, apply committed, journal complete. |
+| Remote-only edit | Remote changed a different resource | Planner keeps remote edit and applies local non-conflicting edits. |
+| Direct conflict | Remote changed the same resource differently | Planner reports conflict; no dry-run apply path. |
+| Drift after dry-run | Remote changes a planned target before apply | Apply returns `PRECONDITION_FAILED`; remote edit survives. |
+| Lost apply response | Runner drops connection after request | Executor inspects journal, then replays or resumes by idempotency. |
+| Interrupted batch | Server exits after staging or partial write | Recovery reports committed, rolled back, or blocked with resource evidence. |
+| Read-only credential | Export secret lacks push scope | Preflight or dry-run rejects before mutation. |
+
 ## Playground Test Topology
 
 WordPress Playground can run the same shape with faster setup:
@@ -461,6 +493,7 @@ Protocol fixtures live under `fixtures/protocol/`.
 
 They are not complete site exports. They are wire-contract examples for:
 
+- required auth header families and signature inputs
 - preflight request and response shape
 - remote hash listing request and response
 - dry-run upload and receipt
