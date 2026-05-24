@@ -474,12 +474,13 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is lab/model evidence: 76 Node tests plus packaged-plugin activation of <code>/wp-json/reprint/v1/push/*</code> with signed session/nonce cleanup. Production push remains blocked by real credential lifecycle, durable journal storage, leases/fencing, WordPress graph identity, and general plugin drivers.</p>
-        <time class="update-stamp" datetime="2026-05-24T22:45:00+02:00">Last updated: May 24, 2026, 22:45 CEST</time>
+        <p class="lead">Current proof is lab/model evidence: 76 Node tests plus packaged-plugin activation of <code>/wp-json/reprint/v1/push/*</code>, signed session/nonce cleanup, disabled packaged auth bootstrap, and 401 refusal for an unprovisioned alternate credential path. Production push remains blocked by real credential lifecycle, durable journal storage, leases/fencing, WordPress graph identity, and general plugin drivers.</p>
+        <time class="update-stamp" datetime="2026-05-24T23:02:00+02:00">Last updated: May 24, 2026, 23:02 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">76 Node tests passing</span>
           <span class="pill">Production-shaped route smoke passing</span>
           <span class="pill">Packaged plugin route passing</span>
+          <span class="pill">Packaged auth bootstrap disabled</span>
           <span class="pill">Signed store cleanup passing</span>
           <span class="pill">Hardening slices merged</span>
           <span class="pill">CLI drift refusal passing</span>
@@ -553,7 +554,7 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>76 Node tests pass; packaged route, route smoke, and signed-store cleanup all pass.</span></li>
+            <li><strong>Going well</strong><span>76 Node tests pass; packaged route, route smoke, signed-store cleanup, disabled auth bootstrap, and unprovisioned 401 refusal all pass.</span></li>
             <li><strong>Not going well</strong><span>The endpoint internals still use lab-backed storage, auth, and journals.</span></li>
             <li><strong>Progress change</strong><span>Hardening slices landed across invariants, recovery, protocol, fast paths, and audits; production readiness is still blocked.</span></li>
             <li><strong>Next nudge</strong><span>Replace lab auth/session/journal storage with production lifecycle and durable storage behavior.</span></li>
@@ -583,7 +584,7 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Lab proof</span><p>Packaged route cleans expired signed session/nonce options: 2 expired artifacts deleted, 8 mutations applied, final snapshot matched local.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Packaged route disables public lab routes and packaged auth bootstrap, cleans 2 expired signed artifacts, applies 8 mutations, and matches the final local snapshot.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Production credential lifecycle and authorization.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Durable journal with crash, lease, and fencing tests.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Full integration beyond fixture labs.</p></div>
