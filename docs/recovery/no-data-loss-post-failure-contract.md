@@ -15,6 +15,13 @@ The release blocker is strict: a partial remote mutation without a recovery arti
 - failure after dependency validation stays `old-remote`
 - replaying a completed plan stays `fully-updated-remote`
 - stale completed replay stays `blocked-recovery` and includes journal plus remote artifacts
+- partial commit recovery stays `blocked-recovery` and must not be treated as safe retry input unless the artifacts are present
+
+These are the only acceptable end states after failure:
+
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery` with artifacts
 
 ## Durable journal note
 

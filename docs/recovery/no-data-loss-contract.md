@@ -20,5 +20,14 @@ The contract used by the tests is:
 3. failure after dependency validation returns `old-remote`
 4. completed replay returns `fully-updated-remote`
 5. stale completed replay blocks with `blocked-recovery` and artifacts
+6. partial commit recovery stays `blocked-recovery` and never claims safety without artifacts
+
+That gives the recovery state table this exact shape:
+
+| Condition | Acceptable state |
+| --- | --- |
+| No remote mutation became durable | `old-remote` |
+| The plan was already fully applied or replayed safely | `fully-updated-remote` |
+| The remote may be partially applied, but artifacts are attached | `blocked-recovery` |
 
 Any partial remote mutation without recovery artifacts is considered unsafe.
