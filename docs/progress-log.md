@@ -6,16 +6,22 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Current Supervisor Snapshot
 
-- Status: `70` Node tests pass. Both
+- Status: `76` Node tests pass. Both
   `npm run test:playground:production-shaped-push` and
   `npm run test:playground:production-plugin-package` pass against
-  `/wp-json/reprint/v1/push/*`. The packaged smoke also proves expired signed
-  session and nonce option cleanup while retaining unexpired artifacts.
-- Trend: reliable executor moved from packaged endpoint proof to signed-store
-  hygiene proof; production readiness is still blocked.
-- Blocker: the packaged endpoint still uses lab auth and lab journal internals.
-  Production credential lifecycle, durable storage, leases, and arbitrary
-  plugin drivers are still unproven.
+  `/wp-json/reprint/v1/push/*`. The packaged smoke reported
+  `signedStoreCleanup.deletedExpiredTotal: 2`, `sessionsDeleted: 1`,
+  `noncesDeleted: 1`, `applied: 8`, and `finalMatchesLocal: true`.
+- Merged hardening slices: fast-path proof obligations, no-overwrite topology
+  mutation suppression, recovery journaling for durable write failures and
+  replay envelopes, protocol transport/route binding, refreshed objective
+  audit, and refreshed critic production gate audit.
+- Trend: reliable executor, recovery, invariants, fast-path model, and audit
+  evidence all improved in lab/model scope; production readiness is still
+  blocked.
+- Blocker: the packaged endpoint still uses lab-backed internals. Production
+  credential lifecycle, durable storage, leases/fencing, WordPress graph
+  identity, and arbitrary plugin drivers are still unproven.
 - Next nudge: replace lab-backed internals with production auth/session
   lifecycle and durable journal guarantees under the packaged plugin.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
@@ -587,11 +593,11 @@ linked implementation artifacts.
 
 | Area | Progress | What changed | Next proof |
 | --- | ---: | --- | --- |
-| Merge invariants | 41% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, stale owner-plugin context blocking, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
-| Recovery boundaries | 25% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, durable old-remote retry evidence, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
-| Reliable executor and protocol | 38% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, post-snapshot drift refusal, production contract fixtures, production-shaped route smoke, packaged-plugin route activation, and signed session/nonce cleanup evidence exist. | Production auth/TLS/session/nonce lifecycle, real exporter credentials, durable audit records, leases, and arbitrary plugin drivers. |
-| Fast path and chunking | 15% | Performance model covers staged chunks, group finalization, idempotency, missing receipts, pressure budgets, and rejected unsafe shortcuts. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
-| Independent evidence and critique | 27% | Objective audit, critic production gate, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
+| Merge invariants | 42% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, unsafe topology mutation suppression, stale owner-plugin context blocking, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
+| Recovery boundaries | 27% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, durable old-remote retry evidence, durable replay envelopes, journal-write failure recovery artifacts, and stale-at-write refusal are lab/model-proved. | Production DB journal durability, `fsync`/locking/leases/fencing, and crash-boundary behavior. |
+| Reliable executor and protocol | 40% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, post-snapshot drift refusal, production transport binding docs, production-shaped route smoke, packaged-plugin route activation, and signed session/nonce cleanup evidence exist. | Production auth/TLS/session/nonce lifecycle, real exporter credentials, durable audit records, leases/fencing, and arbitrary plugin drivers. |
+| Fast path and chunking | 17% | Performance model now records safe fast-path proof obligations for each speedup area, plus staged chunks, group finalization, idempotency, missing receipts, pressure budgets, and rejected unsafe shortcuts. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
+| Independent evidence and critique | 30% | Objective audit, critic production gate, source notes, and supervisor feedback were refreshed against the production-shaped/package evidence. | External review against live integration behavior. |
 
 ## 2026-05-24 - Explicit Pending Proof Gates
 

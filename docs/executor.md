@@ -204,8 +204,9 @@ DB/file mutations, same-key different-body conflict refusal, and unmodified
 cross-route receipt refusal before mutation. It is still lab-backed route-shape
 evidence: the route is mounted by the Playground mu-plugin, uses the lab
 signing key derivation, and does not prove tamper-resistant production receipt
-security, production packaging, credential lifecycle, nonce cleanup, durable
-production journal storage, leases, or arbitrary plugin drivers.
+security, credential lifecycle, production nonce/replay retention, durable
+production journal storage, leases/fencing, WordPress graph identity, or
+arbitrary plugin drivers.
 
 Current packaged-plugin note:
 `npm run test:playground:production-plugin-package` builds a temporary
@@ -217,8 +218,8 @@ expired and unexpired signed session/nonce option artifacts and proves
 preflight deletes the expired artifacts while retaining unexpired ones. This
 improves the packaging and signed-store hygiene proof but is still not
 production readiness: the endpoint internals remain lab-backed until production
-auth, credential lifecycle, durable journal storage, leases, and plugin drivers
-replace the fixture implementation.
+auth, credential lifecycle, durable journal storage, leases/fencing, WordPress
+graph identity, and plugin drivers replace the fixture implementation.
 
 ### 3. Remote Snapshot Hash Listing
 

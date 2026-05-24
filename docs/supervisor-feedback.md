@@ -1,30 +1,35 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 22:41 CEST
+Last updated: 2026-05-24 22:45 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-24 22:41 CEST - Signed Store Cleanup
+## 2026-05-24 22:45 CEST - Hardening Merge Refresh
 
-- Going well: `70` Node tests pass, the production-shaped route smoke passes,
-  and the packaged plugin now proves expired signed session and nonce options
-  are cleaned while unexpired ones are retained.
-- Not going well: cleanup is still lab-backed WordPress option storage. Real
-  credential lifecycle, durable journal storage, leases, and plugin drivers
-  remain unproven.
-- Progress change: reliable executor gained signed-store hygiene evidence;
-  production readiness is still blocked by missing production internals.
-- Next nudge: turn the packaged route from lab internals into production auth
-  and durable journal behavior, keeping replay/conflict refusal intact.
+- Going well: `76` Node tests pass. The production-shaped and packaged-plugin
+  smokes pass; packaged-plugin evidence includes signed-store cleanup
+  `deletedExpiredTotal: 2`, `sessionsDeleted: 1`, `noncesDeleted: 1`,
+  `applied: 8`, and `finalMatchesLocal: true`.
+- Also merged: fast-path proof obligations, no-overwrite topology suppression,
+  recovery journaling hardening, protocol transport binding, objective audit,
+  and critic production gate refresh.
+- Not going well: the endpoint internals remain lab-backed. Production
+  credential lifecycle, durable storage, leases/fencing, WordPress graph
+  identity, and arbitrary plugin drivers remain unproven.
+- Progress change: several lab/model lanes moved up; production push remains
+  blocked by missing production internals.
+- Next nudge: replace lab-backed auth/session/journal internals with production
+  lifecycle and durable storage behavior while keeping replay/conflict refusal
+  intact.
 
 | Lane | Nudge |
 | --- | --- |
 | Invariants | Add real graph fixtures before widening automatic apply. |
-| Recovery | Prove kill-at-boundary journal durability. |
+| Recovery | Prove kill-at-boundary journal durability on production storage. |
 | Reliable executor | Replace lab auth/session storage with production lifecycle. |
 | Fast paths | Measure chunking without weakening receipts or preconditions. |
-| Audit and critic | Re-audit signed-store cleanup as lab evidence only. |
+| Audit and critic | Re-audit the next production-backed mutation slice, not just route shape. |
 | Progress publisher | Keep Pages concise and dated after each proof change. |
 
 <details>
