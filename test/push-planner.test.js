@@ -2388,6 +2388,7 @@ test('failure before mutation leaves old remote and a recovery artifact', () => 
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
   assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
   assert.equal(error.details.recovery.status, 'old-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
 });
@@ -2406,6 +2407,7 @@ test('failure after staging leaves old remote and a recovery artifact', () => {
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'INJECTED_FAILURE_AFTER_STAGING');
   assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
   assert.equal(error.details.recovery.status, 'old-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'staged');
 });
@@ -2424,6 +2426,7 @@ test('failure after dependency validation leaves old remote and a recovery artif
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
   assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
   assert.equal(error.details.recovery.status, 'old-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
 });
@@ -2442,7 +2445,9 @@ test('replaying a completed plan returns the fully updated remote without reappl
 
   assert.equal(JSON.stringify(completed.site), completedSnapshot);
   assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
 });
