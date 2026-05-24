@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:36:49 CEST.
+- Last update: 2026-05-25 01:37:31 CEST.
 - Status: `89` Node tests still pass.
 - Trend: the visible page, this log, and the newest supervisor note still agree; the blocker set did not change.
 - Supervision: the same-plan graph worker remains active and unmerged.
@@ -15,7 +15,7 @@ linked implementation artifacts.
 - Pending proof gates: production auth/session storage, durable journal ownership, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers.
 - Next nudge: keep production gates blocked until a worker proves production auth/session/journal internals and graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update date and links to the detailed evidence. In this lane, the page becomes live only after merge to `main`.
-- Refresh note: this pass only tightened scan copy; the evidence gap did not change.
+- Refresh note: no evidence delta; this pass only refreshed the visible timestamp and scan copy.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
