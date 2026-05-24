@@ -2640,6 +2640,51 @@ test('stale completed replay blocks with journal and remote artifacts', () => {
   assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Drifted after completion');
 });
 
+test('atomic apply recovery contract keeps the documented states and artifact shapes', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options, expectedStatus, expectedJournalStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote', 'opened'],
+    ['after staging', { failAfterStaging: true }, 'old-remote', 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote', 'dependencies-validated'],
+  ]) {
+    const remote = baseSite();
+    const snapshot = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+    assert.equal(error.details.recovery.status, expectedStatus, label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+
+  const staleRemote = JSON.parse(JSON.stringify(completed.site));
+  staleRemote.files['index.php'] = '<?php echo "drifted";';
+  const blocked = captureError(() => applyPlan(staleRemote, plan, { journal: completed.journal }));
+
+  assert.ok(blocked instanceof PushPlanError);
+  assert.equal(blocked.code, 'RECOVERY_BLOCKED');
+  assert.equal(blocked.details.recovery.status, 'blocked-recovery');
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.ok(blocked.details.recovery.artifacts.remote);
+});
+
 test('partial remote mutation is a blocked recovery state with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
