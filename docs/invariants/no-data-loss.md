@@ -9,6 +9,7 @@ The push planner must preserve remote-only state unless it has a live remote pre
 - Matching independent edits, deletions, and file type swaps when both sides reached the same result.
 - Ordinary local mutations that are unrelated to remote-only plugin drift.
 - Remote-only plugin removals do not weaken the live-remote precondition for an unrelated local deletion, even when matching independent edits or file type swaps are also present.
+- When a remote-only plugin removal is present alongside an unrelated deletion plus matching independent edits or file type swaps, the matching resources stay `already-in-sync` and the unrelated deletion still needs its own live-remote precondition.
 
 ## Must preserve
 
