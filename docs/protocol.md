@@ -54,6 +54,26 @@ Required behavior:
   blocked inspection result is required when the server cannot prove a safe
   finish or rollback.
 
+Endpoint specifics:
+
+- `push_preflight` is the only place where the server may mint or refresh a
+  short-lived push session. The session is bound to one persisted pull base,
+  one remote identity, one write scope, and one authenticated principal.
+- `push_snapshot_hashes` returns a cursorable listing of the requested live
+  remote hashes, plus a coverage proof that the requested scope was complete
+  enough for planning. It is a read-only remote view and never a lock.
+- `push_plan_dry_run` accepts the canonical plan derived from the persisted
+  pull base, the local edited site, and the live snapshot. It records the plan
+  as eligible or blocked, but it never reserves remote liveness.
+- `push_batch_apply` is the only normal mutation path. It must revalidate the
+  live remote before every batch and again at the storage boundary before any
+  write. Dry-run evidence is not sufficient by itself.
+- `push_journal` is a read-only journal inspector for lost-response recovery,
+  idempotency resolution, lease/fencing evidence, and apply classification.
+- `push_recover` is the only recovery entrypoint. `inspect` must stay
+  read-only; `auto`, `finish`, and `rollback` may mutate only when the journal
+  and fresh live hashes prove the action.
+
 The protocol extension is production-shaped rather than lab-shaped: a dry-run
 receipt is only an eligibility artifact, never a lease. The remote may accept
 the plan and still reject later apply batches if the live state has drifted.
@@ -225,6 +245,16 @@ partial listing is not eligible for dry-run upload, even when the persisted
 pull base is complete. Apply must fetch fresh live evidence again before every
 batch and treat the dry-run listing as stale if the remote changed after it
 was recorded.
+
+Recovery classification:
+
+- `committed`: every intended mutation is present, and the final hashes match
+  the accepted plan.
+- `rolled_back`: no target resource changed, or the server proves the batch
+  was fully reversed with matching evidence.
+- `blocked`: the journal or live hashes do not prove a safe finish or rollback.
+- `open`: the batch is still in flight or the journal shows a live claim that
+  may resume under the same request identity.
 
 The existing pull exporter/importer still owns the base package format. Push
 does not invent a second notion of truth; it layers live remote verification

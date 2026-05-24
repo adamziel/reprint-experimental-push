@@ -739,10 +739,12 @@ The push executor maps directly onto the existing pull pipeline:
 
 1. Pull exporter/importer creates the immutable base package and coverage
    evidence.
-2. Push preflight binds that package to the live remote identity and a short
-   lived push session.
-3. Push snapshot hashes record the live comparison set used for planning.
-4. Push dry-run uploads the canonical three-way plan without mutating state.
+2. Push preflight binds that package to the live remote identity, write scope,
+   and a short-lived push session.
+3. Push snapshot hashes record the live comparison set and scope-completion
+   proof used for planning.
+4. Push dry-run uploads the canonical three-way plan without mutating state
+   and without reserving liveness.
 5. Push apply revalidates the live remote before each batch and again at the
    storage boundary.
 6. Push journal and recover inspect read durable evidence only until the
@@ -754,6 +756,15 @@ captures the same role split for test code, and
 captures the pull-to-push handoff that the executor must preserve.
 [`fixtures/protocol/push-flow.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-flow.json)
 captures the exact stage order and recovery boundary for focused tests.
+
+The fixtures are intentionally narrow:
+
+- `push-flow.json` asserts the ordered endpoint sequence and fresh-live
+  revalidation before apply.
+- `push-pull-mapping.json` asserts that the persisted pull base stays
+  read-only provenance.
+- `push-topology.json` asserts the one-remote, one-local, one-drift-witness
+  shape for Docker and Playground.
 
 Minimal Compose shape:
 
@@ -823,6 +834,8 @@ Suggested assertions:
 - Recovery must start with `push_recover` in `inspect` mode and only then may
   advance to `auto`, `finish`, or `rollback` when the journal proves the state.
 - Recovery can prove committed, rolled back, or blocked.
+- Recovery cannot silently turn stale evidence into permission; it must fetch
+  fresh live hashes before any mutating recovery mode.
 
 Minimum topology matrix:
 
@@ -851,6 +864,8 @@ Use the topology to prove the remote and local roles are separate:
 - `local-edited` is the edited local mirror that feeds the planner.
 - A separate `remote-changed` state is required for the stale-apply case so dry-run and apply are not conflated.
 - Apply must revalidate against the live remote again even when the dry-run receipt is valid.
+- The local site is derived from a pull of the remote base, so the persisted
+  pull package is the planning base for later push attempts.
 
 Recovery should always begin with `push_journal` or `push_recover` in
 `inspect` mode before any mutating retry. If the remote cannot prove the same
@@ -882,6 +897,8 @@ Recommended usage:
   implementation is a Playground fixture.
 - Treat `remote-changed` as the authoritative live-remote liveness witness:
   if it diverges after dry-run, the executor must revalidate before apply.
+- The production route names are the same in Docker and Playground; only the
+  backing site implementation changes.
 
 Playground is best for protocol, planner, and recovery fixtures. Docker with
 MySQL/MariaDB remains necessary for transaction, lock, and fencing behavior
