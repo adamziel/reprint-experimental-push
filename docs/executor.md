@@ -4,6 +4,27 @@ This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
+The production sequence is fixed:
+
+1. `push_preflight` binds the persisted pull base to a live remote identity
+   and a short-lived push session.
+2. `push_snapshot_hashes` lists the live remote comparison set for planning.
+3. The local planner builds the canonical three-way plan from base, local, and
+   live remote evidence.
+4. `push_plan_dry_run` uploads that canonical plan as eligibility evidence
+   only.
+5. `push_batch_apply` revalidates the live remote before every batch and again
+   at the storage boundary.
+6. `push_journal` resolves lost responses and ambiguity without authorizing a
+   write.
+7. `push_recover inspect` runs before any mutating recovery mode, and mutating
+   recovery only proceeds when journal rows plus fresh live hashes prove the
+   action.
+
+Dry-run and apply are therefore separate remote calls. A valid dry-run receipt
+is not a lock, and a later apply must still fail if the remote changed after
+the snapshot listing or after the plan was accepted.
+
 ## Executor Responsibilities
 
 The executor is the client-side orchestrator. It runs after a site was pulled,
@@ -71,6 +92,16 @@ The same shape is what the Docker and Playground proofs must implement:
 | `local-edited` | Imported edited-site container on the same private network | Separate loopback Playground instance | Holds the user edits that the planner will compare against the base. |
 | `remote-changed` | Same remote site observed later after drift | Same Playground site after a later mutation | Proves apply revalidates live state instead of replaying dry-run evidence. |
 | `runner` | Client container or host process | Client process | Signs requests, uploads plans, reads journals, and drives recovery. |
+
+The pull/export/import handoff is the provenance boundary that push consumes:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that package to the live remote identity and session
+- snapshot hashing produces fresh planning evidence only
+- dry-run uploads the canonical plan as eligibility evidence only
+- batch apply revalidates the live remote before every batch and at the storage boundary
+- journal inspection and recovery inspection read durable evidence before any mutating recovery mode can proceed
 
 Shared harness rules:
 
