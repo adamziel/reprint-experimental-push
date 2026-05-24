@@ -621,12 +621,17 @@ would reasonably read as equivalent.
   remote can renumber, alias, or reassign the target.
 - Every create or remap path proves identity allocation before write, or it
   blocks when a remote or plugin-owned reference can change under it.
+- Every create path that can renumber, alias, or reassign an identity must
+  prove the remap against a fresh live snapshot before the first write.
 - Every conflict resolution writes a reviewed artifact with base, local,
   remote, reviewer, action, and fresh revalidation evidence.
 - Any stale manual-review artifact or stale approval hash is rejected before
   write, but still kept readable for audit and retry.
 - A stale approval artifact is never treated as live permission, even when the
   route name, package name, or lab smoke output still looks correct.
+- Manual resolution is not a success condition unless the remote remains
+  preserved for audit and the retry can be replayed safely from fresh live
+  evidence.
 - A retry always starts from fresh live evidence and cannot reuse an old
   approval for unrelated rows, files, or plugin state, including plugin-owned
   surfaces that drifted after the review or were only partially approved in a
@@ -646,6 +651,8 @@ would reasonably read as equivalent.
 - Route-shape matches, package mounting, and fixture replay remain comparison
   evidence only; they cannot be used to claim remote preservation, identity
   stability, or plugin ownership safety without a live revalidation proof.
+- A route that only looks production-shaped is not evidence of production
+  safety, reliability, or retry correctness.
 - A manual review artifact is only acceptable when the remote snapshot,
   reviewed scope, and hashes still match at apply time; otherwise the artifact
   must stay audit-only and be rejected before any write.
@@ -657,6 +664,9 @@ would reasonably read as equivalent.
   blocked classification.
 - The release suite runs auth, storage, recovery, plugin, graph, redaction,
   and performance gates together, not as isolated smokes.
+- Any production-readiness wording is blocked until the release gate passes
+  with live remote revalidation, stale-approval rejection, and a fresh retry
+  from the exact approved scope.
 - Route-shape, fixture replay, packaged-plugin mounting, and `finalMatchesLocal`
   remain lab evidence only.
 - Any production-readiness wording in docs, PRs, branch status, review
