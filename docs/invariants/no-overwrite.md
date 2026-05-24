@@ -21,6 +21,8 @@ the live remote immediately before apply.
 - Matching independent edits where local and remote changed a resource to the
   same hash, including deletions and file edits; these produce
   `already-in-sync` decisions, not mutations.
+- Matching independent file type swaps that land on the same hash; these also
+  produce `already-in-sync` decisions, not mutations.
 - Plugin installs or data updates whose declared dependencies are already on
   the expected post-apply remote, or are installed by the same plan.
 - Plugin metadata or plugin file mutations only when the rest of that plugin's
@@ -59,6 +61,9 @@ the resource key, the live remote hash observed during planning, and the
 - Remote descendants that would be hidden by a local file deletion or type swap
   unless the plan also proves the descendant is an unchanged base resource
   being deleted.
+- Remote-only plugin metadata and plugin files when local deletes or updates an
+  ordinary non-plugin resource. Those remote-only plugin changes remain
+  `keep-remote` decisions.
 - Unsafe file topology mutations are not emitted once a stop condition is
   found. Independent mutations may remain in the conflicted plan as
   hash-preconditioned audit evidence, but apply must refuse the whole non-ready

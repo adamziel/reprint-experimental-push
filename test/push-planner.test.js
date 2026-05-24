@@ -360,6 +360,24 @@ test('recognizes matching independent file edits as already in sync', () => {
   assert.equal(decision.change.remoteChange, 'update');
 });
 
+test('recognizes matching independent file type swaps as already in sync', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+
+  const plan = planFor(base, local, remote);
+  const decision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decision.decision, 'already-in-sync');
+  assert.equal(decision.change.localChange, 'type-change');
+  assert.equal(decision.change.remoteChange, 'type-change');
+});
+
 test('preserves remote-only plugin changes', () => {
   const base = baseSite();
   const remote = baseSite();
@@ -399,6 +417,24 @@ test('preserves remote-only plugin removals', () => {
   assert.equal(fileDecision.decision, 'keep-remote');
   assert.equal(fileDecision.change.remoteChange, 'delete');
   assert.equal(Object.hasOwn(applyPlan(remote, plan).site.plugins, 'forms'), false);
+});
+
+test('preserves remote-only plugin changes while local deletes an ordinary file', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const fileDelete = mutationFor(plan, 'file:index.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(fileDelete.action, 'delete');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
 });
 
 test('combines local ordinary changes while preserving remote-only plugin changes', () => {
