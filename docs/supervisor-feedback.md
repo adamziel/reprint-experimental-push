@@ -1,27 +1,20 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:47 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
+## 2026-05-25 00:47 CEST - Supervised Lane Merge Refresh
 
-- Going well: `89` Node tests pass after supervised lane merges. Matching
-  delete/edit, recovery replay/failure states, fast-path rejection guardrails,
-  protocol binding, critic, and objective-audit evidence all landed.
-- Also merged: a concise acceptable recovery-state contract, stricter critic
-  blocking gaps, objective-audit refresh, journal/recovery protocol wording,
-  safe fast-path family guidance, benchmark assertions for large upload/plugin
-  workloads, and explicit recovery inspect semantics.
+- Going well: `89` Node tests pass, and the latest merges tightened planner,
+  recovery, fast-path, protocol, critic, and audit evidence.
 - Not going well: production auth/session storage, durable journal ownership,
   leases, full graph identity mapping, Docker/full Playground integration, and
   general plugin drivers remain unproven.
-- Progress change: eight fast-mode worker outputs were integrated across the
-  last two passes; production readiness stayed blocked.
-- Active supervision: same-plan graph remains active and unmerged. Completed
-  replacement sessions were stopped after review; stale progress-publisher
-  output was rejected instead of merged.
+- Progress change: eight fast-mode worker outputs were integrated; production
+  readiness stayed blocked.
+- Active supervision: the same-plan graph lane is still active and unmerged.
 - Next nudge: keep workers focused on production-backed auth/journal proof and
   graph identity mapping.
 
@@ -35,7 +28,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Progress publisher | Keep Pages dated, concise, and explicit about active lanes. |
 
 <details>
-<summary>Earlier feedback entries</summary>
+<summary>Earlier feedback entries and fuller audit detail</summary>
 
 ## 2026-05-24 23:24 CEST - Scoped Credential And Graph Safety Refresh
 
