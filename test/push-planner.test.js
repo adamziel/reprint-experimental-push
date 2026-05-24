@@ -2334,6 +2334,29 @@ test('completed replay on an existing durable journal keeps replay evidence appe
   assert.equal(persisted.records.some((record) => record.type === 'target-planned'), false);
 });
 
+test('completed replay stays inert when local source data diverges after completion', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+
+  local.files['index.php'] = '<?php echo "diverged local";';
+  local.db.wp_posts['ID:2'].post_title = 'Inserted locally again';
+
+  const before = JSON.stringify(completed.site);
+  const replay = applyPlan(completed.site, plan, { journal: completed.journal });
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(JSON.stringify(completed.site), before);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('completed replay durable write failure still classifies as fully updated remote', () => {
   const base = baseSite();
   const local = baseSite();
