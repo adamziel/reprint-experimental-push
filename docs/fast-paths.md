@@ -52,6 +52,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Extra parallelism is only safe while it preserves the same preconditions, receipts, and atomic barrier.
 - Backpressure must pause producers; it cannot claim success by draining evidence into memory.
 - Compressing buffered evidence can save memory, but it cannot stand in for a receipt or commit record.
+- A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
 
 The safe version of a fast path is usually a "skip duplicate staging work" or
 "stage earlier" optimization, not a "commit earlier" optimization. The commit
@@ -298,6 +299,8 @@ validators, and the final durable commit record.
   receipts are missing.
 - Treating a compressed in-memory buffer as proof that upload or batch work is
   durable.
+- Treating a drained compressed queue as proof that all staged work reached the
+  remote.
 - Merging database rows from different plugin owners or atomic groups into one
   commit-visible batch.
 - Treating a remote index cursor, generation, or ETag as a lock that can cover
@@ -341,6 +344,8 @@ under load:
   exact rows, chunks, and validators needed to resume or classify failure.
 - compressed-buffer-completes-work is rejected because shrinking buffered
   evidence does not create the missing receipt or commit record.
+- compressed-queue-drains-completes-work is rejected because a drained queue
+  can still hide missing chunk or batch acknowledgements.
 
 ## Benchmark Shape
 
@@ -465,3 +470,5 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - Parallelism cannot bypass the atomic group commit barrier.
 - Backpressure cannot drop receipts or summarize evidence so recovery loses the
   ability to classify the remote state.
+- A drained queue cannot prove that the remote acknowledged every staged chunk
+  or row.

@@ -364,6 +364,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-queue-drains-means-complete',
+    proposal: 'treat a drained compressed queue as proof that all staged work reached the remote',
+    rejectedBecause: 'a smaller queue can reduce pressure, but it still cannot prove which chunks or rows were durably acknowledged',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'queue-empty-means-complete',
     proposal: 'advance an upstream producer because the queue is empty even though receipts are missing',
     rejectedBecause: 'an empty queue is not proof that the remote acknowledged the work',

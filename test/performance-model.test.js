@@ -348,6 +348,15 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-buffer-means-complete').violates.includes('durable-progress'),
   );
+  assert.ok(
+    rejectedById.get('compressed-queue-drains-means-complete').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-queue-drains-means-complete').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-queue-drains-means-complete').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('unbounded-parallelism').violates.includes('backpressure'));
   assert.ok(rejectedById.get('digest-as-authority').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compression-skips-precondition').violates.includes('live-preconditions'));
@@ -415,6 +424,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'blind-sql-replace',
     'backpressure-drops-evidence',
     'compressed-buffer-means-complete',
+    'compressed-queue-drains-means-complete',
     'queue-empty-means-complete',
     'fresh-index-empty-queue-completes-apply',
     'index-and-digest-completes-apply',
