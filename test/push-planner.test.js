@@ -2886,6 +2886,36 @@ test('recovery boundaries only allow old remote, fully updated remote, or blocke
   assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
 });
 
+test('durable completed replay stays fully updated and leaves inspectable replay evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const replay = applyPlan(JSON.parse(JSON.stringify(completed.site)), plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(
+    persisted.records[persisted.records.length - 1].type,
+    'journal-replayed',
+  );
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
+});
+
 test('acceptable post-failure states carry the required recovery artifacts', () => {
   const base = baseSite();
   const local = baseSite();
