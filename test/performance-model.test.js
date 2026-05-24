@@ -39,6 +39,11 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.equal(pluginInstall.atomicGroupId, 'install-commerce-stack');
   assert.equal(pluginInstall.totals.groupStagingFinalizes, 1);
   assert.equal(pluginInstall.totals.atomicGroupCommits, 1);
+  assert.equal(pluginInstall.backpressure.onPressure, 'pause-upstream-producers');
+  assert.ok(
+    pluginInstall.backpressure.resumeRequires.includes('database-batch-commit-records'),
+    'plugin install backpressure resumes only from durable batch evidence',
+  );
   assert.ok(
     largeUpload.actions.some((action) => action.type === 'compression-decision'),
     'large upload models compression decisions',
@@ -291,6 +296,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
   assert.ok(
+    rejectedById.get('live-chunk-publish').violates.includes('atomic-file-publish'),
+    'direct chunk publishing must keep the atomic publish barrier',
+  );
+  assert.ok(
+    rejectedById.get('fresh-dry-run-authorizes-apply').proposal.includes('dry-run plan is recent'),
+  );
+  assert.ok(
     rejectedById.get('visible-staging-object-completes-chunk').violates.includes('durable-progress'),
   );
   assert.ok(
@@ -310,7 +322,24 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compression-skips-precondition').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
+  assert.ok(
+    model.rejectedFastPaths.every((fastPath) =>
+      fastPath.rejectedGate === 'live' ||
+      fastPath.rejectedGate === 'group' ||
+      fastPath.rejectedGate === 'recovery'
+    ),
+    'rejected fast paths should map to a concrete bypass or ambiguity gate',
+  );
+  assert.ok(
+    rejectedById.get('visible-staging-object-completes-chunk').violates.includes('durable-progress'),
+  );
+  assert.ok(
+    rejectedById.get('staged-bytes-as-published').violates.includes('atomic-groups'),
+  );
+  assert.equal(rejectedById.get('staged-bytes-as-published').rejectedGate, 'group');
   assert.ok(rejectedById.get('live-chunk-publish').proposal.includes('live file path'));
+  assert.ok(rejectedById.get('live-chunk-publish').violates.includes('atomic-file-publish'));
+  assert.ok(rejectedById.get('fresh-dry-run-authorizes-apply').proposal.includes('dry-run plan is recent'));
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('metadata-only-conflict-check').violates.includes('strong-resource-hashes'));
   assert.ok(rejectedById.get('remote-index-authorizes-mutation').proposal.includes('permission'));

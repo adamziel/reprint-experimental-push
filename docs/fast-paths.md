@@ -82,6 +82,10 @@ The benchmark shape must stay realistic:
   plugin metadata, and the atomic group commit barrier.
 - A rejected-path workload proves that a visible staging object is not enough
   to complete a chunk, and that a fresh dry run still does not authorize apply.
+- Large uploads and plugin installs must both include recovery edges, not just
+  happy-path throughput. That means chunk receipts, batch receipts, and group
+  finalize records must be present so a retry can still classify old, new, or
+  blocked without guessing.
 - Rejected fast paths are modeled alongside the safe ones so the benchmark can
   prove that the tempting shortcuts were rejected for the right reason, not
   just omitted from the happy path.
@@ -241,6 +245,7 @@ validators, and the final durable commit record.
 - Publishing chunks directly into the live file path.
 - Publishing staged chunks or row batches just because the staging objects
   exist and look complete.
+- Publishing chunks before their durable receipts exist.
 - Skipping apply preconditions because the dry-run plan was just generated.
 - Treating a remote index generation as permission to mutate.
 - Using mtime, size, row count, or table checksum instead of strong resource
