@@ -322,6 +322,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['atomic-groups', 'durable-progress'],
   },
   {
+    id: 'resume-chunk-without-receipt',
+    proposal: 'skip a chunk resend whenever a staging object appears present even if the durable receipt is missing',
+    rejectedBecause: 'a present-looking object without a receipt cannot prove which bytes were acknowledged after failure',
+    rejectedGate: 'recovery',
+    violates: ['durable-progress', 'chunk-receipts'],
+  },
+  {
     id: 'backpressure-drops-evidence',
     proposal: 'summarize or drop queued precondition evidence when upload or journal queues are over budget',
     rejectedBecause: 'pressure handling must pause producers, not erase the evidence needed to classify recovery',

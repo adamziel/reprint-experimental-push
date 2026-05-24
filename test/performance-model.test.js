@@ -28,6 +28,14 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
+  assert.ok(
+    pluginInstall.totals.uploadChunks > 10,
+    'plugin install includes enough chunked file work to exercise staged retries',
+  );
+  assert.ok(
+    pluginInstall.totals.filePublishes >= 4,
+    'plugin install includes multiple files crossing the group barrier',
+  );
   assert.equal(pluginInstall.atomicGroupId, 'install-commerce-stack');
   assert.equal(pluginInstall.totals.groupStagingFinalizes, 1);
   assert.equal(pluginInstall.totals.atomicGroupCommits, 1);
@@ -291,6 +299,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('commit-group-with-missing-receipts').violates.includes('durable-progress'),
   );
+  assert.ok(rejectedById.get('resume-chunk-without-receipt').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('backpressure'));
   assert.ok(rejectedById.get('unbounded-parallelism').violates.includes('backpressure'));
   assert.ok(rejectedById.get('digest-as-authority').violates.includes('live-preconditions'));
