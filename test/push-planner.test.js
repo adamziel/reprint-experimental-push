@@ -3156,6 +3156,7 @@ test('completed replay stays inert even if the local source diverges after compl
   const staleLocal = JSON.parse(JSON.stringify(local));
   staleLocal.files['index.php'] = '<?php echo "stale-local";';
   staleLocal.db.wp_posts['ID:2'].post_title = 'Stale local insert';
+  staleLocal.db.wp_posts['ID:3'] = { ID: 3, post_title: 'Late local insert', post_status: 'draft' };
   const before = JSON.stringify(completed.site);
 
   const replay = applyPlan(completed.site, plan, { journal: completed.journal });
@@ -3168,6 +3169,7 @@ test('completed replay stays inert even if the local source diverges after compl
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(staleLocal.files['index.php'], '<?php echo "stale-local";');
   assert.equal(staleLocal.db.wp_posts['ID:2'].post_title, 'Stale local insert');
+  assert.equal(staleLocal.db.wp_posts['ID:3'].post_title, 'Late local insert');
 });
 
 test('lane recovery boundaries stay within old remote, fully updated remote, or blocked recovery', () => {
