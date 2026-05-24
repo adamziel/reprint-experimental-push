@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:30:13 CEST.
+- Last update: 2026-05-25 01:31:15 CEST.
 - Status: `89` Node tests still pass.
-- Trend: the visible page, the log, and the newest supervisor note still agree, and the scan view stays compact.
+- Trend: the visible page, this log, and the newest supervisor note still agree; the scan view is compact and the blocker set did not change.
 - Supervision: the same-plan graph worker remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to this log for the evidence trail.
