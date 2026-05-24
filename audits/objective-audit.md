@@ -104,7 +104,7 @@ these release requirements:
 | R12 idempotent resumability | DB journal smokes require `X-Reprint-Push-Idempotency-Key`, reject same-key/different-body requests, replay committed or rejected results, claim one concurrent same-key executor, finalize missing commits, and handle one all-old stale-claim retry path. Production-shaped route smoke also proves same-key replay and same-key/different-body conflict under `/reprint/v1`. | No chunk cursor, production retry contract, production duplicate first-apply test, shared-DB multi-worker proof, stale-plan invalidation across chunks, or production stale-claim lease/fencing/expiry behavior. | Yes |
 | R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
-| R15 speed | `test/performance-model.test.js` proves a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, remote indexes as planning-only, and backpressure triggers. | No runtime benchmark, no transfer implementation proof, no memory ceiling, no latency/throughput target, no large-site run, and no proof that the model is wired into the executor. | Yes for any speed claim |
+| R15 speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, backpressure triggers, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, and no memory ceiling or throughput target is measured against a real push path. | Yes for any speed claim |
 | R16 release suite | `npm test` passed with 89 tests, 0 failures, and 0 skips. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol. That means auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes all remain opt-in rather than release-gated. | Yes |
 
 ## Test Audit
@@ -113,7 +113,11 @@ these release requirements:
 
 `npm test` passed during this audit:
 
+<<<<<<< HEAD
 - 89 passing tests.
+=======
+- 82 passing tests.
+>>>>>>> 7bfe7f8 (Tighten objective audit evidence)
 - Planner no-overwrite invariants for simplified JSON snapshots, including
   deletion preconditions, delete/update conflicts, directory-descendant
   topology conflicts, and file type swap conflicts.
