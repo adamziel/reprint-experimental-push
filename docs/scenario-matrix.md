@@ -4,6 +4,8 @@ The first executable matrix lives in `test/push-planner.test.js`.
 
 The planner policy summary lives in
 [No Overwrite Playbook](invariants/no-overwrite-playbook.md).
+The compact boundary note lives in
+[No Overwrite Boundaries](invariants/no-overwrite-boundaries.md).
 
 | Scenario | Expected behavior | Current evidence |
 | --- | --- | --- |
