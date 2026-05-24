@@ -11,7 +11,8 @@ the live remote immediately before apply.
   proves no live remote ancestor or descendant would be hidden.
 - Independent local changes while other remote-only resources changed.
 - Matching independent edits where local and remote changed a resource to the
-  same hash; these produce `already-in-sync` decisions, not mutations.
+  same hash, including deletions and file edits; these produce
+  `already-in-sync` decisions, not mutations.
 - Plugin installs or data updates whose declared dependencies are already on
   the expected post-apply remote, or are installed by the same plan.
 - Plugin metadata or plugin file mutations only when the rest of that plugin's
