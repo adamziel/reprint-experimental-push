@@ -28,9 +28,11 @@ state changes on the live remote.
 What the notes do prove is narrower: Reprint gives the transport rhythm we can
 borrow, ZS-Sync shows that bounded scanning is feasible, and ForkPress shows
 that reviewed resolution and crash classification are the right failure
-language. None of them prove that this repository has matched those semantics
-at the mutation boundary, and none of them prove that a positive lab result
-survives a fresh live snapshot, a drifted remote, or a narrowed retry scope.
+language. Those are source-note lessons from other repos, not proof that this
+repo has the same mutation guarantees. None of them prove that this repository
+has matched those semantics at the mutation boundary, and none of them prove
+that a positive lab result survives a fresh live snapshot, a drifted remote,
+or a narrowed retry scope.
 
 The current design also still has five unproven failure classes that matter for
 production push safety: live remote drift between dry-run and apply, create-time
@@ -142,8 +144,8 @@ evidence for all of these, not just a plausible design:
   retry preserves the remote, re-plans from fresh evidence, and rejects any
   widened scope before write.
 - A real production Reprint push endpoint that does not resolve to Playground
-  or copied lab internals, and a proof that package mounting only exposes the
-  endpoint shape rather than the mutation semantics.
+  or copied lab internals, plus a repo-specific proof that package mounting
+  only exposes the endpoint shape rather than the write-path semantics.
 - A route that looks production-shaped, returns live hashes, or passes a
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
