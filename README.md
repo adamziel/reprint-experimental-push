@@ -43,6 +43,12 @@ Run the DB-backed journal/idempotency REST lab harness:
 npm run test:playground:db-journal-idempotency
 ```
 
+Run the DB-backed process-kill/restart smoke:
+
+```bash
+npm run test:playground:db-journal-process-kill
+```
+
 Run the lab recovery inspection harness:
 
 ```bash
@@ -99,10 +105,27 @@ DB-native lab journal for `POST /apply`. Apply now requires
 body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`, no
 fresh mutation work, no extra mutation events, and an unchanged snapshot. Same
 key plus a different body returns `409 IDEMPOTENCY_KEY_CONFLICT` before
-mutation. This DB journal is separate from the legacy `wp_options` lab journal
-read by `GET /journal`; both are fixture-scoped evidence. The DB slice is not
-production durability or process-kill proof, and it does not yet prove the race
-case for duplicate first applies under concurrency.
+mutation. The same harness also verifies the DB-native claim path: a unique
+`claim_key_hash` opens exactly one first-apply claim before mutation, concurrent
+same-key/same-body first applies produce exactly one fresh mutation executor,
+and the duplicate request returns safe in-progress/retry/replay behavior without
+running mutations. Concurrent same-key/different-body applies reject the loser
+with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation. This DB journal is separate
+from the legacy `wp_options` lab journal read by `GET /journal`; both are
+fixture-scoped evidence.
+
+The `test:playground:db-journal-process-kill` script runs a local-only
+Playground process-kill smoke over a host-mounted WordPress directory. It sends
+a real `SIGKILL` to the localhost Playground server during an in-flight
+DB-journaled REST apply, restarts against the same mount, and verifies DB
+`idempotency-opened`/`apply-started` rows persist without a false
+`apply-committed`, live target hashes are explainable as old/new with no silent
+divergence, `GET /recovery/inspect` reports `blocked-recovery`, and retry does
+not overwrite the partial state. This is local Playground SQLite/host-mount lab
+evidence only, not production durability. DB-native per-mutation evidence can be
+short after hard kill because mutation rows append after protocol return;
+option-journal/live hashes carry partial evidence today. Missing-commit
+finalization/replay remains pending.
 
 The `test:playground:recovery` script exercises the lab-only failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The
@@ -111,7 +134,7 @@ successful whole-resource mutations, classifies the remote as
 `blocked-recovery`, reports `2 new` and `6 old` targets through CLI/REST
 inspection, and refuses retry with `PRECONDITION_FAILED`. This is bounded lab
 inspection over option-journal evidence with hashes only; it is not
-process-kill safe, `fsync` safe, durable production recovery, or auto-repair.
+durable production recovery or auto-repair.
 
 The `test:recovery:file-journal` script verifies the JSON-model file-backed
 recovery journal. It writes append-only JSONL records with monotonic sequences,
@@ -122,11 +145,11 @@ refusal with `PRECONDITION_FAILED` and no remote change, completed replay with
 `0` additional mutations, drift outside before/after hashes as
 `blockedUnknown > 0`, and no raw fixture fields/data in journal files. This is
 still JSON-model lab evidence, not production WordPress recovery: it does not
-replace the DB table journal or process-kill tests, and the per-append `fsync`
-evidence is lab evidence rather than full production durability. Journal paths
-must be unique or reset intentionally because plan journal open defaults to
-`truncate`, and raw-value prevention is forbidden-key/fixture-string based
-rather than a complete allowlist schema.
+replace the DB table journal or the local Playground process-kill smoke, and
+the per-append `fsync` evidence is lab evidence rather than full production
+durability. Journal paths must be unique or reset intentionally because plan
+journal open defaults to `truncate`, and raw-value prevention is
+forbidden-key/fixture-string based rather than a complete allowlist schema.
 
 The lab CLI works on three snapshots:
 

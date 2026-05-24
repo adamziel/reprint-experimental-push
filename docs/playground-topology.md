@@ -167,11 +167,35 @@ fresh mutation work, does not add extra per-mutation journal events, and leaves
 the snapshot unchanged. Reusing the same key with a different body returns
 `409 IDEMPOTENCY_KEY_CONFLICT` before mutation.
 
-This is fixture-scoped DB journal evidence, not production durability. It does
-not prove process-kill safety, storage-level crash behavior, or the concurrency
-race where duplicate first applies with the same key arrive at the same time.
-Redaction checks are key-based plus fixture-value smoke checks, not a formal
-sanitizer for arbitrary future messages.
+The harness also covers concurrent duplicate first applies. The DB-native claim
+uses the unique nullable `claim_key_hash` column so only one
+`idempotency-opened` row can win before mutation. Concurrent same-key/same-body
+requests produce exactly one fresh mutation executor and one opened claim; the
+duplicate request returns safe in-progress/retry/replay behavior without running
+mutations. Concurrent same-key/different-body requests reject the conflicting
+request before mutation.
+
+```bash
+npm run test:playground:db-journal-process-kill
+```
+
+The process-kill smoke uses a localhost Playground server with a host-mounted
+WordPress directory. It starts an in-flight DB-journaled REST apply, waits for
+`idempotency-opened` and `apply-started`, sends a real `SIGKILL` to the
+Playground server process group, restarts against the same mounted WordPress
+directory, and verifies that DB rows and target data persisted.
+
+After restart the DB journal must not contain `apply-committed` or replay
+evidence. Live target hashes are classified as old/new with no blocked-unknown
+targets, recovery inspection reports `blocked-recovery`, and retry over the
+same idempotency key is blocked without changing the partial target state. The
+smoke intentionally keeps this as local Playground SQLite/host-mount evidence:
+it does not prove production durability, storage-level crash behavior, or
+safe missing-commit finalization/replay. DB-native per-mutation rows can be
+short after a hard kill because mutation-applied rows append after the core
+protocol returns; option-journal evidence and live hashes carry partial state
+evidence today. Redaction checks are key-based plus fixture-value smoke checks,
+not a formal sanitizer for arbitrary future messages.
 
 ## Lab Recovery Harness
 
@@ -219,9 +243,9 @@ fixture fields/data.
 
 This file-backed journal is lab evidence for the JSON safety model, not
 production WordPress recovery. It does not replace a production DB table
-journal, process-kill tests, source-site crash testing, or automatic repair.
-Journal paths must be unique or reset intentionally because opening a plan
-recovery journal defaults to `truncate`; raw-value prevention is
+journal, the local Playground process-kill smoke, source-site crash testing, or
+automatic repair. Journal paths must be unique or reset intentionally because
+opening a plan recovery journal defaults to `truncate`; raw-value prevention is
 forbidden-key/fixture-string based rather than a full allowlist schema.
 
 ## Next Proofs Needed
@@ -232,8 +256,9 @@ forbidden-key/fixture-string based rather than a full allowlist schema.
 - Add production-grade receipt expiry, signing/auth binding, and durable audit
   storage around the accepted remote snapshot.
 - Promote the fixture-scoped DB journal/idempotency slice into a production
-  DB-table journal with process-kill, concurrent duplicate-apply, and
-  storage-level recovery proof before claiming durable production recovery.
+  DB-table journal with production storage-level recovery proof,
+  missing-commit finalization/replay, and WordPress commit-boundary coverage
+  before claiming durable production recovery.
   The JSONL lab journal has per-append `fsync` evidence, but no production
   WordPress crash boundary.
 - Add real plugin activation, custom-table driver, recovery, and auth proof

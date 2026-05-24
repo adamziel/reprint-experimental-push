@@ -5,9 +5,10 @@ The Playground lab uses a bounded option journal to classify a failed apply
 without storing raw before/after values. The JSON-model lab also has a
 file-backed append-only JSONL journal with monotonic sequences and `fsync`
 evidence after each append. A newer local-only Playground REST slice adds a
-fixture-scoped DB table journal for apply idempotency. These slices are not
-production WordPress recovery: they do not prove production durability, do not
-include process-kill tests, and do not auto-repair a partial remote.
+fixture-scoped DB table journal for apply idempotency, concurrent duplicate
+claiming, and local process-kill inspection. These slices are not production
+WordPress recovery: they do not prove production durability and do not
+auto-repair a partial remote.
 
 The production design target is a durable artifact that separates a safe retry
 from an unsafe partial push. A failed apply must leave the system classifiable
@@ -56,7 +57,7 @@ states reported as old, new, or blocked-unknown, and a retry refuses with
 The journal records planned recovery entries, `mutation-applied`,
 `apply-failed`, `recovery-required`, and current hashes without raw values. This
 is enough to prove the lab classification path, but it is still not a durable
-production journal, not process-kill/`fsync` proof, and not an automated repair
+production journal, not a hard-kill/`fsync` path, and not an automated repair
 mechanism.
 
 ## Current File-Backed JSONL Evidence
@@ -82,11 +83,11 @@ The smoke covers these restart-style states:
 
 This is stronger than the earlier in-memory-only recovery model, but it is
 still JSON-model lab evidence. It is not the production WordPress DB table
-journal, not process-kill proof, and not a production repair policy. Journal
-paths must be unique or reset intentionally because opening a plan recovery
-journal defaults to `truncate`. The raw-value guard is based on forbidden keys
-and fixture strings, not a complete allowlist schema for every production
-record shape.
+journal, not the local Playground process-kill smoke, and not a production
+repair policy. Journal paths must be unique or reset intentionally because
+opening a plan recovery journal defaults to `truncate`. The raw-value guard is
+based on forbidden keys and fixture strings, not a complete allowlist schema for
+every production record shape.
 
 ## Current DB Journal Idempotency Evidence
 
@@ -107,8 +108,28 @@ does no fresh mutation work, adds no extra per-mutation events, and leaves the
 snapshot unchanged. Same key plus a different body returns
 `409 IDEMPOTENCY_KEY_CONFLICT` before mutation.
 
-This is useful DB-table shape evidence, but it is not production durable
-recovery. It does not prove process-kill safety, storage-level crash behavior,
-or the concurrency race for duplicate first applies with the same idempotency
-key. Redaction is checked through forbidden keys and fixture values, not by a
-formal sanitizer for arbitrary future journal messages.
+The same harness verifies DB-native first-apply claiming. The journal table has
+a unique nullable `claim_key_hash` column used only by `idempotency-opened`
+rows. Concurrent same-key/same-body first applies create exactly one opened
+claim and exactly one fresh mutation executor; the duplicate request returns
+safe in-progress/retry/replay behavior without mutation. Concurrent
+same-key/different-body requests reject the loser with
+`409 IDEMPOTENCY_KEY_CONFLICT` before mutation.
+
+`npm run test:playground:db-journal-process-kill` verifies local hard-kill
+behavior in a host-mounted Playground lab. It sends `SIGKILL` to the localhost
+Playground server process group during an in-flight DB-journaled REST apply,
+restarts against the same WordPress mount, and verifies that DB
+`idempotency-opened`/`apply-started` rows persist with no false
+`apply-committed` or replay state. Live target hashes are explainable as old or
+new, recovery inspection reports `blocked-recovery`, and retry does not
+overwrite the partial state.
+
+This is useful DB-table shape evidence, but it is still local Playground
+SQLite/host-mount lab evidence, not production durable recovery or
+storage-level crash proof. DB-native per-mutation evidence can be short after
+hard kill because mutation rows append after protocol return; option-journal
+entries and live hashes carry partial evidence today. Missing-commit
+finalization/replay remains pending. Redaction is checked through forbidden
+keys and fixture values, not by a formal sanitizer for arbitrary future journal
+messages.

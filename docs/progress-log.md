@@ -51,7 +51,7 @@ linked implementation artifacts.
   target as `blocked-recovery`, with `2 new` targets and `6 old` targets; retry
   refuses with `PRECONDITION_FAILED`.
 - This is lab recovery inspection evidence only. It is not a durable production
-  recovery journal, not process-kill or `fsync` safe, and not auto-repair.
+  recovery journal, not a hard-kill or `fsync` path, and not auto-repair.
   Evidence: [docs/recovery/apply-journal.md](recovery/apply-journal.md) and
   [docs/playground-topology.md](playground-topology.md).
 
@@ -70,11 +70,12 @@ linked implementation artifacts.
   `blockedUnknown > 0`; and journal files with no raw fixture fields/data.
 - Caveats remain explicit: this is JSON-model lab evidence, not production
   WordPress recovery. It does not replace a production DB table journal or
-  process-kill tests. Journal paths must be unique or reset intentionally
-  because opening a plan recovery journal defaults to `truncate`, and raw-value
-  prevention is forbidden-key/fixture-string based rather than a full allowlist
-  schema. Evidence: [docs/recovery/apply-journal.md](recovery/apply-journal.md)
-  and [docs/playground-topology.md](playground-topology.md).
+  the local Playground process-kill smoke. Journal paths must be unique or
+  reset intentionally because opening a plan recovery journal defaults to
+  `truncate`, and raw-value prevention is forbidden-key/fixture-string based
+  rather than a full allowlist schema. Evidence:
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md) and
+  [docs/playground-topology.md](playground-topology.md).
 
 ## 2026-05-24 - Playground Guarded Apply Target
 
@@ -148,12 +149,36 @@ linked implementation artifacts.
   `idempotency.replayed: true`, performs no fresh mutation work, writes no
   extra per-mutation events, and leaves the snapshot unchanged. Same key plus a
   different body returns `409 IDEMPOTENCY_KEY_CONFLICT` before mutation.
+- The same harness now covers concurrent duplicate first applies. The unique
+  `claim_key_hash` column opens exactly one `idempotency-opened` claim before
+  mutation; concurrent same-key/same-body requests produce exactly one fresh
+  mutation executor, and the duplicate returns safe in-progress/retry/replay
+  behavior without mutation. Concurrent same-key/different-body requests reject
+  the conflicting request with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation.
 - This DB journal is separate from the legacy `wp_options` lab journal read by
   `GET /journal`; the legacy `/journal` route still exists. Caveats remain:
-  fixture-scoped local Playground evidence only, no production durability or
-  process-kill proof, no concurrency/race proof for duplicate first applies,
-  and redaction checks are key-based plus fixture-value smoke checks rather
-  than a full sanitizer for arbitrary future messages.
+  fixture-scoped local Playground evidence only, no production durability, and
+  redaction checks are key-based plus fixture-value smoke checks rather than a
+  full sanitizer for arbitrary future messages.
+
+## 2026-05-24 - DB Journal Process-Kill Smoke
+
+- `npm run test:playground:db-journal-process-kill` passed as a local-only
+  Playground SQLite/host-mount process-kill smoke.
+- The harness starts a localhost Playground server against a host-mounted
+  WordPress directory, begins a DB-journaled REST apply, waits for
+  `idempotency-opened` and `apply-started`, sends a real `SIGKILL` to the
+  Playground server process group, and restarts against the same mount.
+- After restart, DB opened/started rows and target data persist, the DB journal
+  does not falsely report `apply-committed` or replay, live target hashes are
+  explainable as old/new with no blocked-unknown targets, recovery inspection
+  reports `blocked-recovery`, and retry over the same key is blocked without
+  overwriting the partial state.
+- Caveats remain: this is local Playground lab evidence, not production
+  durability. DB-native per-mutation evidence can be short after hard kill
+  because mutation rows append after protocol return; option-journal evidence
+  and live hashes carry partial evidence today. Missing-commit
+  finalization/replay remains pending.
 
 ## 2026-05-24 - Plugin-Owned Forms Fixture Slice
 
@@ -181,7 +206,7 @@ linked implementation artifacts.
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
 | Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling and detection-only custom-table/plugin metadata | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
-| Recovery boundaries | 20% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal` | Production DB table journal durability, process-kill tests, production WordPress crash-boundary proof, concurrent duplicate first-apply proof, auto-repair policy |
+| Recovery boundaries | 20% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground process-kill smoke through `npm run test:playground:db-journal-process-kill` | Production DB table journal durability, production WordPress crash-boundary proof, missing-commit finalization/replay, auto-repair policy |
 | Reliable executor and protocol | 20% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, and DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key` | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
@@ -196,10 +221,12 @@ linked implementation artifacts.
   classifies the target as old, new, or blocked across WordPress write
   boundaries. The current JSONL lab slice has per-append `fsync` evidence and
   restart-style classification, the Playground fail-after lab slice classifies
-  old/new/blocked-recovery after injected PHP failure, and the DB idempotency
-  slice records fixture-scoped apply/replay/conflict events in
-  `wp_reprint_push_lab_push_journal`, but none proves process-kill safety,
-  concurrent duplicate first-apply behavior, or production repair.
+  old/new/blocked-recovery after injected PHP failure, the DB idempotency slice
+  records fixture-scoped apply/replay/conflict events and concurrent duplicate
+  first-apply behavior in `wp_reprint_push_lab_push_journal`, and the
+  process-kill smoke proves local Playground opened/started rows survive
+  `SIGKILL`/restart without false commit. This still does not prove production
+  durability, missing-commit finalization/replay, or production repair.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test,
   export planner snapshots, run guarded apply into a fresh Playground source,
   exercise a lab-only fixture protocol endpoint with WordPress-visible readback,

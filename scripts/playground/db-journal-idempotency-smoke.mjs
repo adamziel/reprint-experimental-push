@@ -58,6 +58,7 @@ const summary = {
   routes: {},
   dryRun: {},
   idempotency: {},
+  concurrency: {},
   failures: {},
 };
 
@@ -260,16 +261,189 @@ await withPlaygroundServer('db-journal-idempotency-base', path.join(repoRoot, fi
 
 assert.ok(readyReceipt, 'ready dry-run receipt was not captured');
 
+await withPlaygroundServer(
+  'db-journal-concurrent-first-same-body',
+  path.join(repoRoot, fixtures.base),
+  async (server) => {
+    summary.transport.servers.push(server.summary);
+
+    const dbJournalRoute = await discoverDbJournalRoute(server);
+    await getDbJournal(server, dbJournalRoute);
+    const dryRun = await postLab(server, '/dry-run', { plan: readyPlan });
+    assert.equal(dryRun.status, 200);
+    assert.equal(dryRun.body.ok, true);
+
+    const applyBody = {
+      plan: readyPlan,
+      receipt: dryRun.body.receipt,
+      labDelayAfterIdempotencyOpenMs: 3000,
+    };
+    const key = 'idem-concurrent-first-same-body';
+    const before = await getSnapshot(server);
+    assertSnapshotContentEqual(before.body.snapshot, snapshots.base, 'concurrent same-body before HTTP snapshot');
+
+    const firstApply = labelRequest(
+      postLab(server, '/apply', applyBody, { [idempotencyHeader]: key }),
+      'same-body winning apply',
+    );
+    const duplicateApply = labelRequest(
+      postLab(server, '/apply', applyBody, { [idempotencyHeader]: key }),
+      'same-body duplicate apply',
+    );
+    const [first, duplicate] = await Promise.all([firstApply, duplicateApply]);
+    const responses = [first, duplicate];
+    const safeDuplicate = responses.find((response) => response.body.idempotency?.freshMutationWork !== true);
+    const winner = responses.find((response) => response.body.idempotency?.freshMutationWork === true);
+    assert.ok(safeDuplicate, 'same-body race must have a non-mutating duplicate response');
+    assertConcurrentDuplicateSafe(safeDuplicate, 'same-body duplicate first apply');
+    assert.ok(winner?.body.ok, 'same-body winning apply should finish ok');
+    assert.equal(
+      responses.filter((response) => response.body.idempotency?.freshMutationWork === true).length,
+      1,
+      'concurrent same-body first apply must have exactly one fresh mutation executor',
+    );
+
+    const after = await getSnapshot(server);
+    assertVisibleSurfaceEqual(after.body.snapshot, snapshots.local, 'same-body concurrent apply final visible surface');
+    assertAppliedHashes(readyPlan, after.body.snapshot);
+
+    const dbJournalAfterConcurrent = await getDbJournal(server, dbJournalRoute);
+    const entries = assertDbJournalEvidence(dbJournalAfterConcurrent.body, 'DB journal after same-body concurrency');
+    assertDbJournalHasNoOptionBacking(dbJournalAfterConcurrent.body, 'DB journal after same-body concurrency');
+    assert.equal(countJournalEvents(entries, 'idempotency-opened'), 1, 'same-body race must create one idempotency claim');
+    assert.equal(countJournalEvents(entries, 'apply-started'), 1, 'same-body race must start one mutation executor');
+    assert.equal(countJournalEvents(entries, 'apply-committed'), 1, 'same-body race must commit once');
+    assert.equal(
+      countJournalEvents(entries, 'mutation-applied'),
+      readyPlan.mutations.length,
+      'same-body race must record exactly one mutation set',
+    );
+    assertJournalEvents(entries, ['idempotency-in-progress']);
+    assertEventBefore(entries, 'idempotency-in-progress', 'apply-started', 'same-body duplicate must be recorded before mutation work starts');
+    assertStoredJournalHasNoRawFixtureData(dbJournalAfterConcurrent.body);
+
+    const replay = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: key });
+    assert.equal(replay.status, 200);
+    assertReplayResponse(replay.body);
+    const dbJournalAfterReplay = await getDbJournal(server, dbJournalRoute);
+    const replayEntries = assertDbJournalEvidence(dbJournalAfterReplay.body, 'DB journal after same-body concurrency replay');
+    assert.equal(
+      countJournalEvents(replayEntries, 'mutation-applied'),
+      readyPlan.mutations.length,
+      'same-body post-commit replay must not add mutation-applied events',
+    );
+
+    summary.concurrency.sameBody = {
+      route: 'POST /wp-json/reprint-push-lab/v1/apply',
+      workers: server.summary.workers,
+      duplicateStatus: safeDuplicate.status,
+      duplicateCode: safeDuplicate.body.code ?? null,
+      freshMutationExecutors: 1,
+      openedClaims: 1,
+      mutationEvents: readyPlan.mutations.length,
+      duplicateBeforeMutationWork: true,
+      finalMatchesLocal: true,
+    };
+  },
+  { workers: 2 },
+);
+
+await withPlaygroundServer(
+  'db-journal-concurrent-first-different-body',
+  path.join(repoRoot, fixtures.base),
+  async (server) => {
+    summary.transport.servers.push(server.summary);
+
+    const dbJournalRoute = await discoverDbJournalRoute(server);
+    await getDbJournal(server, dbJournalRoute);
+    const dryRun = await postLab(server, '/dry-run', { plan: readyPlan });
+    assert.equal(dryRun.status, 200);
+    assert.equal(dryRun.body.ok, true);
+
+    const originalBody = {
+      plan: readyPlan,
+      receipt: dryRun.body.receipt,
+      labDelayAfterIdempotencyOpenMs: 3000,
+    };
+    const differentBody = {
+      plan: changedPlan(readyPlan),
+      receipt: tamperedReceipt(dryRun.body.receipt, (receipt) => {
+        receipt.planId = 'changed-plan-for-concurrent-idempotency-conflict';
+      }),
+    };
+    const key = 'idem-concurrent-first-different-body';
+    const before = await getSnapshot(server);
+    assertSnapshotContentEqual(before.body.snapshot, snapshots.base, 'concurrent different-body before HTTP snapshot');
+
+    const firstApply = labelRequest(
+      postLab(server, '/apply', originalBody, { [idempotencyHeader]: key }),
+      'different-body original apply',
+    );
+    await sleep(100);
+    const conflictApply = labelRequest(
+      postLab(server, '/apply', differentBody, { [idempotencyHeader]: key }),
+      'different-body conflicting apply',
+    );
+    const [first, conflict] = await Promise.all([firstApply, conflictApply]);
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.ok, false);
+    assert.equal(conflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
+    assert.equal(conflict.body.idempotency?.freshMutationWork, false);
+
+    assert.equal(first.status, 200);
+    assert.ok(first.body.ok, 'different-body original apply should finish ok');
+    assert.equal(first.body.idempotency?.freshMutationWork, true);
+
+    const after = await getSnapshot(server);
+    assertVisibleSurfaceEqual(after.body.snapshot, snapshots.local, 'different-body original apply final visible surface');
+    assertAppliedHashes(readyPlan, after.body.snapshot);
+
+    const dbJournalAfterConflict = await getDbJournal(server, dbJournalRoute);
+    const entries = assertDbJournalEvidence(dbJournalAfterConflict.body, 'DB journal after different-body concurrency');
+    assertDbJournalHasNoOptionBacking(dbJournalAfterConflict.body, 'DB journal after different-body concurrency');
+    assert.equal(countJournalEvents(entries, 'idempotency-opened'), 1, 'different-body race must create one idempotency claim');
+    assert.equal(countJournalEvents(entries, 'idempotency-key-conflict'), 1, 'different-body race must record one conflict');
+    assert.equal(countJournalEvents(entries, 'apply-started'), 1, 'different-body race must start one mutation executor');
+    assert.equal(countJournalEvents(entries, 'apply-committed'), 1, 'different-body race must commit original request once');
+    assert.equal(
+      countJournalEvents(entries, 'mutation-applied'),
+      readyPlan.mutations.length,
+      'different-body race must record exactly one mutation set',
+    );
+    assert.equal(
+      keyRequestHashes(entries).size,
+      2,
+      'different-body journal evidence should include original and conflicting request hashes',
+    );
+    assertEventBefore(entries, 'idempotency-key-conflict', 'apply-started', 'different-body conflict must be recorded before mutation work starts');
+    assertStoredJournalHasNoRawFixtureData(dbJournalAfterConflict.body);
+
+    summary.concurrency.differentBody = {
+      route: 'POST /wp-json/reprint-push-lab/v1/apply',
+      workers: server.summary.workers,
+      conflictStatus: conflict.status,
+      conflictCode: conflict.body.code,
+      freshMutationExecutors: 1,
+      openedClaims: 1,
+      mutationEvents: readyPlan.mutations.length,
+      conflictBeforeMutationWork: true,
+      originalRequestCommitted: true,
+    };
+  },
+  { workers: 2 },
+);
+
 await withPlaygroundServer('db-journal-stale-remote', path.join(repoRoot, fixtures.remoteChanged), async (server) => {
   summary.transport.servers.push(server.summary);
 
   const staleBefore = await getSnapshot(server);
   assertSnapshotContentEqual(staleBefore.body.snapshot, snapshots.remoteChanged, 'stale before HTTP snapshot');
+  const staleKey = 'idem-stale-remote';
   const staleApply = await postLab(
     server,
     '/apply',
     { plan: readyPlan, receipt: readyReceipt },
-    { [idempotencyHeader]: 'idem-stale-remote' },
+    { [idempotencyHeader]: staleKey },
   );
   assert.equal(staleApply.status, 412);
   assert.equal(staleApply.body.ok, false);
@@ -278,11 +452,39 @@ await withPlaygroundServer('db-journal-stale-remote', path.join(repoRoot, fixtur
   assertTargetSurfaceEqual(staleAfter.body.snapshot, staleBefore.body.snapshot, 'stale failed apply target surface');
   assertVisibleSurfaceNotEqual(staleAfter.body.snapshot, snapshots.local, 'stale failure preserved drifted state');
 
+  const staleConflict = await postLab(
+    server,
+    '/apply',
+    {
+      plan: changedPlan(readyPlan),
+      receipt: tamperedReceipt(readyReceipt, (receipt) => {
+        receipt.planId = 'changed-plan-after-stale-rejection';
+      }),
+    },
+    { [idempotencyHeader]: staleKey },
+  );
+  assert.equal(staleConflict.status, 409);
+  assert.equal(staleConflict.body.ok, false);
+  assert.equal(staleConflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
+
+  const staleReplay = await postLab(
+    server,
+    '/apply',
+    { plan: readyPlan, receipt: readyReceipt },
+    { [idempotencyHeader]: staleKey },
+  );
+  assert.equal(staleReplay.status, 412);
+  assert.equal(staleReplay.body.ok, false);
+  assert.equal(staleReplay.body.code, 'PRECONDITION_FAILED');
+  assert.equal(staleReplay.body.idempotency?.replayed, true);
+  assert.equal(staleReplay.body.idempotency?.freshMutationWork, false);
+
   summary.failures.staleRemote = {
     route: 'POST /wp-json/reprint-push-lab/v1/apply',
     status: staleApply.status,
     code: staleApply.body.code,
     targetSnapshotUnchanged: true,
+    rejectedReplayAfterConflict: staleReplay.body.idempotency?.replayed === true,
   };
 });
 
@@ -319,8 +521,8 @@ function exportSnapshot(name, blueprintPath) {
   );
 }
 
-async function withPlaygroundServer(name, blueprintPath, run) {
-  const server = await startPlaygroundServer(name, blueprintPath);
+async function withPlaygroundServer(name, blueprintPath, run, options = {}) {
+  const server = await startPlaygroundServer(name, blueprintPath, options);
   try {
     await run(server);
   } finally {
@@ -328,10 +530,11 @@ async function withPlaygroundServer(name, blueprintPath, run) {
   }
 }
 
-async function startPlaygroundServer(name, blueprintPath) {
+async function startPlaygroundServer(name, blueprintPath, options = {}) {
   const port = await findLocalPort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const logs = [];
+  const workers = options.workers ?? 1;
   const args = [
     '--yes',
     '@wp-playground/cli@latest',
@@ -347,7 +550,7 @@ async function startPlaygroundServer(name, blueprintPath) {
     '--port',
     String(port),
     '--workers',
-    '1',
+    String(workers),
     '--verbosity',
     'quiet',
   ];
@@ -385,6 +588,7 @@ async function startPlaygroundServer(name, blueprintPath) {
       name,
       baseUrl,
       port,
+      workers,
       listenerCheck,
       stopped: false,
     },
@@ -597,14 +801,26 @@ async function postLab(server, pathSuffix, body, headers = {}) {
 }
 
 async function requestJson(server, method, pathname, body = undefined, headers = {}) {
-  const response = await fetch(`${server.baseUrl}${pathname}`, {
-    method,
-    headers: body === undefined ? headers : {
-      'content-type': 'application/json',
-      ...headers,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let response;
+  try {
+    response = await fetch(`${server.baseUrl}${pathname}`, {
+      method,
+      headers: body === undefined ? {
+        connection: 'close',
+        ...headers,
+      } : {
+        'content-type': 'application/json',
+        connection: 'close',
+        ...headers,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (error) {
+    throw new Error(
+      `Fetch failed for ${method} ${pathname}: ${error.message}\nRecent Playground logs:\n${server.logs.join('')}`,
+      { cause: error },
+    );
+  }
   const text = await response.text();
   let json;
   try {
@@ -616,6 +832,14 @@ async function requestJson(server, method, pathname, body = undefined, headers =
     status: response.status,
     body: json,
   };
+}
+
+async function labelRequest(promise, label) {
+  try {
+    return await promise;
+  } catch (error) {
+    throw new Error(`${label}: ${error.message}`, { cause: error });
+  }
 }
 
 function assertRouteNamespace(body) {
@@ -726,6 +950,22 @@ function assertJournalEventOneOf(entries, events) {
   );
 }
 
+function assertEventBefore(entries, beforeEvent, afterEvent, label) {
+  const beforeSequence = firstJournalEventSequence(entries, beforeEvent);
+  const afterSequence = firstJournalEventSequence(entries, afterEvent);
+  assert.ok(beforeSequence > 0, `${label}: missing ${beforeEvent}`);
+  assert.ok(afterSequence > 0, `${label}: missing ${afterEvent}`);
+  assert.ok(
+    beforeSequence < afterSequence,
+    `${label}: expected ${beforeEvent} before ${afterEvent}, got ${beforeSequence} >= ${afterSequence}`,
+  );
+}
+
+function firstJournalEventSequence(entries, event) {
+  const row = entries.find((entry) => journalEvent(entry) === event);
+  return row ? Number(row.sequence ?? row.id ?? 0) : 0;
+}
+
 function countJournalEvents(entries, event) {
   return entries.filter((entry) => journalEvent(entry) === event).length;
 }
@@ -744,6 +984,27 @@ function assertReplayResponse(body) {
     || events.includes('idempotency-replayed');
 
   assert.ok(replayed, 'retry must return BATCH_ALREADY_COMMITTED or idempotency replay evidence');
+}
+
+function assertConcurrentDuplicateSafe(response, label) {
+  const replayed = response.status === 200
+    && (response.body.code === 'BATCH_ALREADY_COMMITTED' || response.body.idempotency?.replayed === true);
+  const inProgress = response.status === 409
+    && response.body.code === 'IDEMPOTENCY_KEY_IN_PROGRESS'
+    && response.body.idempotency?.inProgress === true;
+
+  assert.ok(replayed || inProgress, `${label} must replay or return explicit in-progress`);
+  assert.notEqual(
+    response.body.idempotency?.freshMutationWork,
+    true,
+    `${label} must not perform fresh mutation work`,
+  );
+}
+
+function keyRequestHashes(entries) {
+  return new Set(entries
+    .map((entry) => entry.requestHash ?? entry.request_hash)
+    .filter((hash) => typeof hash === 'string' && hash.length > 0));
 }
 
 function assertStoredJournalHasNoRawFixtureData(body) {

@@ -29,6 +29,7 @@ function reprint_push_lab_db_journal_ensure_table(): void
     $table_name = reprint_push_lab_db_journal_table_name();
     $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
     if ($exists === $table_name) {
+        reprint_push_lab_db_journal_ensure_claim_schema();
         return;
     }
 
@@ -48,17 +49,29 @@ function reprint_push_lab_db_journal_ensure_table(): void
         result_json longtext NULL,
         resource_hash_evidence_json longtext NULL,
         error_code varchar(80) NOT NULL DEFAULT '',
+        claim_key_hash char(64) NULL DEFAULT NULL,
         lab_scope varchar(191) NOT NULL DEFAULT 'local-playground-fixture',
         created_at datetime NOT NULL,
         updated_at datetime NOT NULL,
         PRIMARY KEY  (id),
+        UNIQUE KEY claim_key_hash (claim_key_hash),
         KEY idempotency_key_hash (idempotency_key_hash),
         KEY request_hash (request_hash),
         KEY event (event),
         KEY created_at (created_at)
     ) {$charset_collate}";
 
-    $wpdb->query($sql);
+    $previous_error_suppression = method_exists($wpdb, 'suppress_errors')
+        ? $wpdb->suppress_errors(true)
+        : null;
+    try {
+        $wpdb->query($sql);
+    } finally {
+        if ($previous_error_suppression !== null) {
+            $wpdb->suppress_errors($previous_error_suppression);
+        }
+    }
+    reprint_push_lab_db_journal_ensure_claim_schema();
 }
 
 function reprint_push_lab_db_journal_schema(): array
@@ -84,6 +97,7 @@ function reprint_push_lab_db_journal_schema(): array
             'result_json' => 'sanitized compact result JSON; no raw payload/content/snapshots/option journal',
             'resource_hash_evidence_json' => 'sanitized DB-native resource/hash evidence only',
             'error_code' => 'compact error code for rejected/conflict events',
+            'claim_key_hash' => 'nullable unique idempotency claim hash; only idempotency-opened rows set it',
             'lab_scope' => 'fixture scope marker',
             'created_at' => 'UTC event timestamp',
             'updated_at' => 'UTC event timestamp',
@@ -158,6 +172,45 @@ function reprint_push_lab_db_journal_mutation_count_from_payload(array $payload)
 
 function reprint_push_lab_db_journal_append_event(string $event, array $context = []): array
 {
+    return reprint_push_lab_db_journal_insert_event($event, $context);
+}
+
+function reprint_push_lab_db_journal_try_open_idempotency(array $context): array
+{
+    global $wpdb;
+
+    $claim_key_hash = (string) ($context['idempotencyKeyHash'] ?? '');
+    if ($claim_key_hash === '') {
+        throw new RuntimeException('Cannot open DB idempotency claim without an idempotency key hash.');
+    }
+
+    $entry = reprint_push_lab_db_journal_insert_event('idempotency-opened', $context, $claim_key_hash, false);
+    if (is_array($entry)) {
+        return [
+            'opened' => true,
+            'entry' => $entry,
+        ];
+    }
+
+    $claim_row = reprint_push_lab_db_journal_claim_row_for_key($claim_key_hash);
+    if (is_array($claim_row)) {
+        return [
+            'opened' => false,
+            'entry' => $claim_row,
+            'lastError' => (string) $wpdb->last_error,
+        ];
+    }
+
+    throw new RuntimeException('Could not open push lab DB idempotency claim.');
+}
+
+function reprint_push_lab_db_journal_insert_event(
+    string $event,
+    array $context = [],
+    ?string $claim_key_hash = null,
+    bool $throw_on_failure = true
+): ?array
+{
     global $wpdb;
 
     reprint_push_lab_db_journal_ensure_table();
@@ -185,38 +238,69 @@ function reprint_push_lab_db_journal_append_event(string $event, array $context 
         'result_json' => $result_json,
         'resource_hash_evidence_json' => $resource_evidence_json,
         'error_code' => (string) ($context['errorCode'] ?? ''),
+        'claim_key_hash' => $claim_key_hash,
         'lab_scope' => 'local-playground-fixture',
         'created_at' => $now,
         'updated_at' => $now,
     ];
 
-    $inserted = $wpdb->insert(
-        reprint_push_lab_db_journal_table_name(),
-        $row,
-        [
-            '%s',
-            '%s',
-            '%s',
-            '%s',
-            '%s',
-            '%s',
-            '%d',
-            '%d',
-            '%s',
-            '%s',
-            '%s',
-            '%s',
-            '%s',
-            '%s',
-            '%s',
-        ]
-    );
+    $previous_error_suppression = null;
+    if (!$throw_on_failure && method_exists($wpdb, 'suppress_errors')) {
+        $previous_error_suppression = $wpdb->suppress_errors(true);
+    }
+
+    try {
+        $inserted = $wpdb->insert(
+            reprint_push_lab_db_journal_table_name(),
+            $row,
+            [
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%d',
+                '%d',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+            ]
+        );
+    } finally {
+        if ($previous_error_suppression !== null) {
+            $wpdb->suppress_errors($previous_error_suppression);
+        }
+    }
 
     if ($inserted === false) {
+        if (!$throw_on_failure) {
+            return null;
+        }
         throw new RuntimeException('Could not write push lab DB journal event.');
     }
 
     return reprint_push_lab_db_journal_row_by_id((int) $wpdb->insert_id);
+}
+
+function reprint_push_lab_db_journal_ensure_claim_schema(): void
+{
+    global $wpdb;
+
+    $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
+    $columns = $wpdb->get_results("SHOW COLUMNS FROM {$quoted_table} LIKE 'claim_key_hash'", ARRAY_A) ?: [];
+    if (count($columns) === 0) {
+        $wpdb->query("ALTER TABLE {$quoted_table} ADD COLUMN claim_key_hash char(64) NULL DEFAULT NULL AFTER error_code");
+    }
+
+    $indexes = $wpdb->get_results("SHOW INDEX FROM {$quoted_table} WHERE Key_name = 'claim_key_hash'", ARRAY_A) ?: [];
+    if (count($indexes) === 0) {
+        $wpdb->query("ALTER TABLE {$quoted_table} ADD UNIQUE KEY claim_key_hash (claim_key_hash)");
+    }
 }
 
 function reprint_push_lab_db_journal_rows_for_key(string $idempotency_key_hash): array
@@ -246,9 +330,49 @@ function reprint_push_lab_db_journal_committed_row_for_key(string $idempotency_k
     return null;
 }
 
+function reprint_push_lab_db_journal_terminal_row_for_key(string $idempotency_key_hash): ?array
+{
+    $rows = array_reverse(reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash));
+    foreach ($rows as $row) {
+        $event = (string) ($row['event'] ?? '');
+        if ($event === 'apply-committed' || $event === 'apply-rejected') {
+            return $row;
+        }
+    }
+    return null;
+}
+
+function reprint_push_lab_db_journal_claim_row_for_key(string $idempotency_key_hash): ?array
+{
+    global $wpdb;
+
+    reprint_push_lab_db_journal_ensure_table();
+
+    $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
+    $row = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT * FROM {$quoted_table} WHERE claim_key_hash = %s ORDER BY id ASC LIMIT 1",
+            $idempotency_key_hash
+        ),
+        ARRAY_A
+    );
+    return is_array($row) ? reprint_push_lab_db_journal_public_row($row) : null;
+}
+
 function reprint_push_lab_db_journal_key_has_different_request(string $idempotency_key_hash, string $request_hash): bool
 {
+    $claim_row = reprint_push_lab_db_journal_claim_row_for_key($idempotency_key_hash);
+    if (is_array($claim_row)) {
+        $claim_request_hash = (string) ($claim_row['requestHash'] ?? '');
+        return $claim_request_hash !== '' && $claim_request_hash !== $request_hash;
+    }
+
     foreach (reprint_push_lab_db_journal_rows_for_key($idempotency_key_hash) as $row) {
+        $event = (string) ($row['event'] ?? '');
+        if ($event !== 'idempotency-opened' && $event !== 'apply-committed' && $event !== 'apply-rejected') {
+            continue;
+        }
+
         $row_request_hash = (string) ($row['request_hash'] ?? '');
         if ($row_request_hash !== '' && $row_request_hash !== $request_hash) {
             return true;
@@ -338,6 +462,7 @@ function reprint_push_lab_db_journal_public_row(array $row): array
             ? reprint_push_lab_db_journal_sanitize_value($resource_evidence)
             : null,
         'errorCode' => (string) ($row['error_code'] ?? ''),
+        'claimKeyHash' => (string) ($row['claim_key_hash'] ?? ''),
         'labScope' => (string) ($row['lab_scope'] ?? ''),
         'createdAt' => (string) ($row['created_at'] ?? ''),
         'updatedAt' => (string) ($row['updated_at'] ?? ''),
@@ -395,6 +520,29 @@ function reprint_push_lab_db_journal_replay_result(array $committed_row): array
         'idempotencyKeyHash' => (string) ($committed_row['idempotency_key_hash'] ?? ''),
         'requestHash' => (string) ($committed_row['request_hash'] ?? ''),
         'committedSequence' => (int) ($committed_row['id'] ?? 0),
+    ];
+    return $result;
+}
+
+function reprint_push_lab_db_journal_replay_rejected_result(array $rejected_row): array
+{
+    $result = json_decode((string) ($rejected_row['result_json'] ?? ''), true);
+    if (!is_array($result)) {
+        $result = [
+            'ok' => false,
+            'code' => (string) ($rejected_row['error_code'] ?? 'PUSH_PROTOCOL_ERROR'),
+            'mode' => 'apply',
+            'applied' => (int) ($rejected_row['applied_count'] ?? 0),
+        ];
+    }
+    $result = reprint_push_lab_db_journal_sanitize_value($result);
+    $result['ok'] = false;
+    $result['idempotency'] = [
+        'replayed' => true,
+        'freshMutationWork' => false,
+        'idempotencyKeyHash' => (string) ($rejected_row['idempotency_key_hash'] ?? ''),
+        'requestHash' => (string) ($rejected_row['request_hash'] ?? ''),
+        'rejectedSequence' => (int) ($rejected_row['id'] ?? 0),
     ];
     return $result;
 }

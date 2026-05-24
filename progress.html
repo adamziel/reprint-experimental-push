@@ -399,12 +399,12 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Experimental push-back from a pulled local WordPress site to the live source site. The current implementation is a JSON-snapshot safety model plus lab-scoped Playground apply, protocol-smoke, local-only REST and recovery harnesses, DB journal/idempotency evidence, file-backed JSONL recovery journal evidence, and allowlisted plugin-owned fixture data, not a production WordPress transport.</p>
+        <p class="lead">Experimental push-back from a pulled local WordPress site to the live source site. The current implementation is a JSON-snapshot safety model plus lab-scoped Playground apply, protocol-smoke, local-only REST and recovery harnesses, DB journal/idempotency/process-kill evidence, file-backed JSONL recovery journal evidence, and allowlisted plugin-owned fixture data, not a production WordPress transport.</p>
         <div class="meta" aria-label="Project status">
           <span class="pill">Last updated: May 24, 2026</span>
           <span class="pill">42 lab tests passing</span>
           <span class="pill">Playground REST and recovery labs passing</span>
-          <span class="pill">DB idempotency lab passing</span>
+          <span class="pill">DB idempotency/process-kill labs passing</span>
           <span class="pill">JSONL file journal lab passing</span>
           <span class="pill">Reprint HTTP mutation pending</span>
         </div>
@@ -418,7 +418,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong>42</strong>
-        <span>passing lab scenarios across planner invariants, apply recovery, DB idempotency, file-backed recovery journals, and performance model tests</span>
+        <span>passing lab scenarios across planner invariants, apply recovery, DB idempotency/process-kill, file-backed recovery journals, and performance model tests</span>
       </div>
       <div class="metric">
         <strong>11</strong>
@@ -426,7 +426,7 @@
       </div>
       <div class="metric">
         <strong>1</strong>
-        <span>Playground integration for snapshot planning, guarded apply, fixture-scoped protocol smoke, local REST/recovery lab checks, DB idempotency, and allowlisted plugin-owned forms data</span>
+        <span>Playground integration for snapshot planning, guarded apply, fixture-scoped protocol smoke, local REST/recovery lab checks, DB idempotency/process-kill, and allowlisted plugin-owned forms data</span>
       </div>
       <div class="metric">
         <strong>4</strong>
@@ -450,7 +450,7 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">20%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 20 percent"><div class="fill green" style="width:20%"></div></div>
-          <p class="note">The applicator returns in-memory lab journal/recovery evidence, npm run test:playground:recovery verifies LAB_INJECTED_APPLY_FAILURE after fail-after-2, blocked-recovery inspection, 2 new and 6 old targets, and PRECONDITION_FAILED on retry, npm run test:playground:db-journal-idempotency verifies fixture-scoped DB apply/replay/conflict events in wp_reprint_push_lab_push_journal, and npm run test:recovery:file-journal verifies append-only JSONL recovery evidence. This remains lab evidence only: no process-kill proof, no production DB journal durability, no duplicate first-apply concurrency proof, and no auto-repair.</p>
+          <p class="note">The applicator returns in-memory lab journal/recovery evidence, npm run test:playground:recovery verifies LAB_INJECTED_APPLY_FAILURE after fail-after-2, blocked-recovery inspection, 2 new and 6 old targets, and PRECONDITION_FAILED on retry, npm run test:playground:db-journal-idempotency verifies fixture-scoped DB apply/replay/conflict events, DB-native claim opening, and concurrent duplicate first-apply behavior in wp_reprint_push_lab_push_journal, npm run test:playground:db-journal-process-kill verifies local Playground SIGKILL/restart persistence without false commit, and npm run test:recovery:file-journal verifies append-only JSONL recovery evidence. This remains lab evidence only: no production DB journal durability, no missing-commit finalization/replay, and no auto-repair.</p>
         </div>
 
         <div class="lane">
@@ -479,7 +479,7 @@
             <li><a href="docs/scenario-matrix.md">Scenario matrix</a> maps the current test coverage and remaining integration scenarios.</li>
             <li><a href="docs/approach-scorecard.md">Approach scorecard</a> ranks guarded three-way push and ForkPress-style merge highest.</li>
             <li><a href="docs/protocol.md">Protocol sketch</a> defines proposed push preflight, hashes, dry-run, apply, journal, and recovery endpoints.</li>
-            <li><a href="docs/playground-topology.md">Playground topology</a> exports base/local/remote WordPress snapshots, asserts planner outcomes, and documents guarded apply, fixture-scoped protocol smoke, allowlisted forms fixture data, the standalone local REST/recovery lab harnesses, DB journal/idempotency lab, and the JSONL file journal lab.</li>
+            <li><a href="docs/playground-topology.md">Playground topology</a> exports base/local/remote WordPress snapshots, asserts planner outcomes, and documents guarded apply, fixture-scoped protocol smoke, allowlisted forms fixture data, the standalone local REST/recovery lab harnesses, DB journal/idempotency/process-kill labs, and the JSONL file journal lab.</li>
             <li><a href="docs/progress-log.md">Progress log</a> records dated status entries and links to evidence.</li>
           </ul>
         </section>
@@ -488,8 +488,8 @@
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
             <div class="proof-item"><span class="status">Pending</span><p>Production Reprint HTTP source mutation endpoint for files, rows, and plugin state on a live source site, including auth/session/nonce proof.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Production DB-table recovery journal with crash/kill-process and duplicate first-apply concurrency tests around each WordPress commit boundary.</p></div>
-            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply, protocol smoke, local REST checks, DB idempotency, recovery inspection, and JSONL file journal checks verify read-only dry-run, required receipt-backed apply, mandatory apply idempotency keys, missing/tampered receipt refusal, stale rejection, conflict refusal, BATCH_ALREADY_COMMITTED replay, IDEMPOTENCY_KEY_CONFLICT refusal, the current eight exact ready mutations, blocked-recovery after fail-after-2 with 2 new and 6 old targets, PRECONDITION_FAILED retry refusal, per-append fsync evidence, and fixture-scoped lab journal/audit records.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Production DB-table recovery journal with crash/kill-process, storage-level durability, and missing-commit finalization/replay tests around each WordPress commit boundary.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply, protocol smoke, local REST checks, DB idempotency/process-kill, recovery inspection, and JSONL file journal checks verify read-only dry-run, required receipt-backed apply, mandatory apply idempotency keys, DB-native unique claim opening, concurrent duplicate first-apply handling, missing/tampered receipt refusal, stale rejection, conflict refusal, BATCH_ALREADY_COMMITTED replay, IDEMPOTENCY_KEY_CONFLICT refusal, the current eight exact ready mutations, local SIGKILL/restart persistence without false commit, blocked-recovery after fail-after-2 or hard kill, PRECONDITION_FAILED/retry refusal, per-append fsync evidence, and fixture-scoped lab journal/audit records.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Plugin-specific validators or drivers that prove safe semantic merges before applying arbitrary production plugin-owned data; current forms evidence is fixture/allowlist-scoped.</p></div>
           </div>
         </section>

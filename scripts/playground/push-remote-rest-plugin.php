@@ -194,27 +194,63 @@ function reprint_push_lab_rest_apply_with_db_journal(WP_REST_Request $request): 
         }
 
         if (reprint_push_lab_db_journal_key_has_different_request($context['idempotencyKeyHash'], $context['requestHash'])) {
-            $conflict_result = [
+            return reprint_push_lab_rest_json_response(
+                reprint_push_lab_rest_idempotency_conflict_result($context)
+            );
+        }
+
+        $claim = reprint_push_lab_db_journal_try_open_idempotency($context);
+        if (($claim['opened'] ?? false) !== true) {
+            $claim_entry = is_array($claim['entry'] ?? null) ? $claim['entry'] : [];
+            if ((string) ($claim_entry['requestHash'] ?? '') !== $context['requestHash']) {
+                return reprint_push_lab_rest_json_response(
+                    reprint_push_lab_rest_idempotency_conflict_result($context)
+                );
+            }
+
+            $terminal = reprint_push_lab_db_journal_terminal_row_for_key($context['idempotencyKeyHash']);
+            if (is_array($terminal) && (string) ($terminal['request_hash'] ?? '') === $context['requestHash']) {
+                $replay_result = (string) ($terminal['event'] ?? '') === 'apply-committed'
+                    ? reprint_push_lab_db_journal_replay_result($terminal)
+                    : reprint_push_lab_db_journal_replay_rejected_result($terminal);
+                $replay_entry = reprint_push_lab_db_journal_append_event('apply-replayed', $context + [
+                    'appliedCount' => 0,
+                    'result' => $replay_result,
+                    'resourceHashEvidence' => reprint_push_lab_db_journal_resource_hash_evidence($replay_result),
+                ]);
+                $replay_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($replay_entry);
+                return reprint_push_lab_rest_json_response($replay_result);
+            }
+
+            $in_progress_result = [
                 'ok' => false,
-                'code' => 'IDEMPOTENCY_KEY_CONFLICT',
-                'message' => 'Idempotency key was already used for a different canonical apply request.',
+                'code' => 'IDEMPOTENCY_KEY_IN_PROGRESS',
+                'message' => 'An apply request for this idempotency key is already in progress. Retry the same canonical request.',
                 'mode' => 'apply',
                 'idempotency' => [
                     'replayed' => false,
-                    'conflict' => true,
+                    'conflict' => false,
+                    'inProgress' => true,
+                    'freshMutationWork' => false,
                     'idempotencyKeyHash' => $context['idempotencyKeyHash'],
                     'requestHash' => $context['requestHash'],
+                    'claimSequence' => (int) ($claim_entry['sequence'] ?? 0),
                 ],
             ];
-            $conflict_entry = reprint_push_lab_db_journal_append_event('idempotency-key-conflict', $context + [
-                'errorCode' => 'IDEMPOTENCY_KEY_CONFLICT',
-                'result' => $conflict_result,
+            $in_progress_entry = reprint_push_lab_db_journal_append_event('idempotency-in-progress', $context + [
+                'errorCode' => 'IDEMPOTENCY_KEY_IN_PROGRESS',
+                'result' => $in_progress_result,
+                'resourceHashEvidence' => [
+                    'claimCursor' => 'db-journal:' . (int) ($claim_entry['sequence'] ?? 0),
+                    'requestHash' => $context['requestHash'],
+                ],
             ]);
-            $conflict_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($conflict_entry);
-            return reprint_push_lab_rest_json_response($conflict_result);
+            $in_progress_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($in_progress_entry);
+            return reprint_push_lab_rest_json_response($in_progress_result);
         }
 
-        $opened_entry = reprint_push_lab_db_journal_append_event('idempotency-opened', $context);
+        $opened_entry = $claim['entry'];
+        reprint_push_lab_rest_delay_after_idempotency_open($payload);
         $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
         $receipt = reprint_push_lab_rest_receipt_payload($payload);
         $mutations = reprint_push_lab_rest_plan_mutations_for_db_journal($plan);
@@ -289,6 +325,29 @@ function reprint_push_lab_rest_apply_with_db_journal(WP_REST_Request $request): 
     }
 
     return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_idempotency_conflict_result(array $context): array
+{
+    $conflict_result = [
+        'ok' => false,
+        'code' => 'IDEMPOTENCY_KEY_CONFLICT',
+        'message' => 'Idempotency key was already used for a different canonical apply request.',
+        'mode' => 'apply',
+        'idempotency' => [
+            'replayed' => false,
+            'conflict' => true,
+            'freshMutationWork' => false,
+            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+            'requestHash' => $context['requestHash'],
+        ],
+    ];
+    $conflict_entry = reprint_push_lab_db_journal_append_event('idempotency-key-conflict', $context + [
+        'errorCode' => 'IDEMPOTENCY_KEY_CONFLICT',
+        'result' => $conflict_result,
+    ]);
+    $conflict_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($conflict_entry);
+    return $conflict_result;
 }
 
 function reprint_push_lab_rest_db_journal_context(array $payload, string $idempotency_key): array
@@ -379,6 +438,34 @@ function reprint_push_lab_rest_lab_options(array $payload): array
     return $options;
 }
 
+function reprint_push_lab_rest_delay_after_idempotency_open(array $payload): void
+{
+    if (!array_key_exists('labDelayAfterIdempotencyOpenMs', $payload)) {
+        return;
+    }
+
+    $delay = $payload['labDelayAfterIdempotencyOpenMs'];
+    if (!is_int($delay) && !(is_string($delay) && preg_match('/^\d+$/', $delay))) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'labDelayAfterIdempotencyOpenMs must be a non-negative integer when supplied.',
+        ]);
+    }
+
+    $milliseconds = max(0, min(5000, (int) $delay));
+    if ($milliseconds > 0) {
+        $deadline = microtime(true) + ($milliseconds / 1000);
+        while (microtime(true) < $deadline) {
+            // Lab-only overlap hook for concurrency smoke tests.
+            if (function_exists('usleep')) {
+                $remaining_microseconds = max(1, (int) (($deadline - microtime(true)) * 1000000));
+                usleep(min(50000, $remaining_microseconds));
+            }
+        }
+    }
+}
+
 function reprint_push_lab_rest_snapshot(WP_REST_Request $request): WP_REST_Response
 {
     return reprint_push_lab_rest_json_response([
@@ -464,6 +551,7 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'MISSING_IDEMPOTENCY_KEY':
             return 400;
         case 'IDEMPOTENCY_KEY_CONFLICT':
+        case 'IDEMPOTENCY_KEY_IN_PROGRESS':
             return 409;
         case 'MISSING_DRY_RUN_RECEIPT':
             return 428;

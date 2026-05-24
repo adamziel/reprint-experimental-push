@@ -39,6 +39,10 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground DB journal records apply boundaries | `wp_reprint_push_lab_push_journal` records `idempotency-opened`, `apply-started`, per-mutation `mutation-applied`, `apply-committed`, replay, and conflict evidence separately from the legacy `wp_options` `/journal` evidence. | `npm run test:playground:db-journal-idempotency` |
 | Playground DB idempotency replay | Same key plus same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`, no fresh mutation work, no extra mutation events, and an unchanged snapshot. | `npm run test:playground:db-journal-idempotency` |
 | Playground DB idempotency conflict | Same key plus a different body rejects with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation. | `npm run test:playground:db-journal-idempotency` |
+| Playground DB idempotency concurrent same-body first apply | A unique `claim_key_hash` opens exactly one claim before mutation; concurrent same-key/same-body first applies produce one fresh mutation executor and the duplicate returns safe in-progress/retry/replay behavior without mutation. | `npm run test:playground:db-journal-idempotency` |
+| Playground DB idempotency concurrent different-body first apply | Concurrent same-key/different-body requests reject the conflicting request with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation while the original request is the only fresh mutation executor. | `npm run test:playground:db-journal-idempotency` |
+| Playground DB process-kill persistence | A real `SIGKILL` during an in-flight DB-journaled REST apply leaves persisted DB `idempotency-opened`/`apply-started` rows after host-mounted Playground restart without a false `apply-committed`. | `npm run test:playground:db-journal-process-kill` |
+| Playground DB process-kill recovery block | After hard kill/restart, live target hashes are explainable as old/new, recovery inspection reports `blocked-recovery`, and retry does not overwrite the partial state. | `npm run test:playground:db-journal-process-kill` |
 | Playground lab injected recovery failure | Fail-after-2 returns `LAB_INJECTED_APPLY_FAILURE` after two successful whole-resource mutations, records planned recovery entries and hash-only current state, and inspection reports `blocked-recovery` with `2 new` and `6 old` targets. | `npm run test:playground:recovery` |
 | Playground lab retry after partial apply | Retry over the partial lab state refuses with `PRECONDITION_FAILED` instead of applying over the blocked recovery state. | `npm run test:playground:recovery` |
 | File-backed JSONL recovery journal opens and restarts | Append-only JSONL records use monotonic sequences, include `fsync` evidence after each append, and can be read after restart-style inspection. | `npm run test:recovery:file-journal` |
@@ -64,11 +68,13 @@ The first executable matrix lives in `test/push-planner.test.js`.
   production plugin-owned options, postmeta, custom tables, or activation
   semantics.
 - Production DB-table journal and kill-process recovery tests around every
-  durable WordPress boundary. The current DB journal/idempotency slice is
-  fixture-scoped local Playground evidence only, with no process-kill proof and
-  no concurrency/race proof for duplicate first applies. The JSONL journal has
-  per-append `fsync` evidence in the JSON-model lab, and the Playground recovery
-  harness is injected lab failure inspection only.
+  durable WordPress boundary. The current DB journal/idempotency/process-kill
+  slice is fixture-scoped local Playground SQLite/host-mount evidence only,
+  not production durability. DB-native per-mutation evidence can be short after
+  hard kill because mutation rows append after protocol return; missing-commit
+  finalization/replay remains pending. The JSONL journal has per-append `fsync`
+  evidence in the JSON-model lab, and the Playground recovery harness is
+  injected lab failure inspection only.
 
 ## Invariant Policy
 
