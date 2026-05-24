@@ -39,6 +39,24 @@ has matched those semantics at the mutation boundary, and none of them prove
 that a positive lab result survives a fresh live snapshot, a drifted remote,
 or a narrowed retry scope.
 
+The project must treat the following as false-reliability claims and keep
+them out of production wording until the live write path is proven:
+
+- "The route is production-safe" when the only evidence is route shape,
+  packaged-plugin mounting, or `finalMatchesLocal`.
+- "Manual resolution is enough" when the stale artifact can be reused after a
+  drift, widened to a different surface, or applied without a fresh live
+  snapshot.
+- "The comparison notes prove the behavior" when the cited Reprint,
+  ZS-Sync, or ForkPress evidence has not been re-verified against the current
+  upstream commit or worktree state.
+- "The plugin is handled" when the proof only covers the main row and not
+  plugin-owned options, custom tables, generated files, activation hooks,
+  cron, or cache side effects.
+- "Recovery succeeded" when the system only classified the failure and did
+  not prove that the remote was preserved, the write failed closed, or the
+  retry rebuilt scope from fresh evidence.
+
 The current design also still has five unproven failure classes that matter for
 production push safety: live remote drift between dry-run and apply, create-time
 identity remapping, plugin-owned state outside the allowlist, partial file/DB/
@@ -322,6 +340,10 @@ repo-specific evidence, not in lab shape or source-note comparison language:
   snapshot, and stale-artifact rejection have all been proven on the same
   request path. Live-looking hashes do not change that standard, and they do
   not justify production wording by association.
+- Any doc, PR description, review comment, or status comment that cites the
+  source notes must state whether the cited upstream behavior was re-
+  verified against the current commit or worktree state. If not, the wording
+  must remain comparison-only and may not imply production support.
 
 ## Release Gate Checklist
 
