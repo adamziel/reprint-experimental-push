@@ -168,6 +168,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     pluginUpdate.actions.some((action) => action.type === 'plugin-metadata-stage'),
     'plugin update models staged plugin metadata before commit',
   );
+  assert.ok(
+    model.rejectedFastPaths.some((rejection) => rejection.id === 'compressed-manifest-completes-plugin-install'),
+    'model rejects treating a compressed manifest as plugin-install completion',
+  );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
   assert.ok(

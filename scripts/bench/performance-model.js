@@ -560,6 +560,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-manifest-completes-plugin-install',
+    proposal: 'treat a compressed manifest or package summary as proof that a plugin install already finished',
+    rejectedBecause: 'a compressed manifest can reduce lookup work, but it cannot prove dependency checks, metadata writes, row receipts, or the atomic-group commit survived failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-upload-queue-completes-plugin-install',
     proposal: 'treat a fresh remote index plus a compressed upload queue as proof that a plugin install already finished',
     rejectedBecause: 'planning evidence and queue compression can reduce work, but they cannot prove dependency checks, staged files, and the atomic-group commit survived failure',
