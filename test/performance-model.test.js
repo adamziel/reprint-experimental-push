@@ -425,6 +425,12 @@ test('large uploads and plugin work retain the required fast-path evidence', () 
     assert.ok(schedule.backpressure.pauseWhen.includes('staging-disk-budget-hit'));
     assert.ok(schedule.backpressure.resumeRequires.includes('durable-chunk-receipts'));
     assert.ok(schedule.backpressure.resumeRequires.includes('database-batch-commit-records'));
+    assert.ok(schedule.backpressure.resumeRequires.includes('journal-fsync-caught-up'));
+
+    const filePublishes = schedule.actions.filter((action) => action.type === 'file-publish');
+    assert.ok(filePublishes.every((action) => action.publishMode === 'compare-and-swap'));
+    assert.ok(filePublishes.every((action) => action.durableEvidence));
+    assert.ok(filePublishes.every((action) => action.requiresCompleteChunkReceipts > 0));
   }
 });
 

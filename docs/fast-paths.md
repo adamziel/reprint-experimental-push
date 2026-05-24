@@ -70,6 +70,13 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed upload buffer still cannot stand in for per-chunk receipts or the guarded publish step.
 - A matching manifest or archive hash still cannot stand in for missing chunk receipts or the guarded publish finalize record.
 - A fresh remote index plus a drained compressed queue still cannot prove apply is complete or that the live precondition survived failure.
+- File hashing cannot treat the previous digest alone as authority, because the local fingerprint only skips duplicate rehash work and the live remote compare still guards apply.
+- Chunk upload cannot treat a visible staging object as completion, because the finalize step still needs durable receipts and a guarded publish boundary.
+- Database row batching cannot widen a batch across plugin owners or atomic groups, because recovery needs one stable commit boundary per coupled set of rows.
+- Remote indexes cannot become a lock, because the listing is only planning evidence and may be stale by the time apply runs.
+- Compression cannot hash compressed bytes as canonical state, because transport encoding must not change the compare-and-swap value.
+- Parallelism cannot move the atomic-group commit barrier, because independent staging work is not the same as shared visibility.
+- Backpressure cannot clear a queue and call the work complete, because durable receipts are still required to classify recovery.
 
 Area-specific rejection examples are worth keeping explicit because each one
 fails in a different way:
