@@ -41,6 +41,12 @@ Push is split into a read-only planning phase and a write phase:
 - `push_recover` is the only endpoint allowed to finish, roll back, or block a
   partially applied batch after proof from the journal and live hashes.
 
+The snapshot phase deserves special emphasis: `push_snapshot_hashes` is a live
+remote hash listing, not a lock. It must be complete for the requested scope,
+cursorable for large sites, and fresh enough only for planning. The executor
+may use it to build the dry-run plan, but apply must still re-read live
+evidence before every batch and again at the storage boundary.
+
 Minimal wire shapes:
 
 | Endpoint | Required request evidence | Required response evidence |
@@ -257,10 +263,14 @@ The pull-to-push handoff is linear and one-way:
 1. Pull exports the base package and coverage evidence.
 2. Local editing mutates the imported site.
 3. Push preflight binds that stored base to the live remote identity and session.
-4. Push snapshot listing records the current remote hash view for the requested scope.
-5. Push dry-run uploads the canonical plan built from base, local, and live remote.
-6. Push apply mutates only when live revalidation still matches the plan and the
-   storage boundary still proves the individual write.
+4. Push snapshot listing records the current remote hash view for the requested
+   scope and coverage proof.
+5. Push dry-run uploads the canonical three-way plan and records eligibility
+   only.
+6. Push apply revalidates the live remote before every batch and again at the
+   storage boundary before any write.
+7. Push journal and recovery inspect explain durable state transitions without
+   granting authority to mutate.
 7. Push journal and recovery inspect resolve lost responses or interrupted
    apply attempts without turning stale evidence into write authority.
 

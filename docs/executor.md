@@ -58,8 +58,8 @@ local edited site, and one drift witness:
 
 - `remote-base` seeds the persisted pull base and the live source identity
 - `local-edited` is the imported site after user edits
-- `remote-changed` is the same remote site after independent drift between
-  dry-run and apply
+- `remote-changed` is the same logical remote as `remote-base`, observed later
+  after independent drift between dry-run and apply
 - `runner` is the only process that may run preflight, snapshot listing,
   dry-run, apply, journal inspection, and recovery
 
@@ -67,6 +67,11 @@ For Docker, keep those roles on one private network and expose browser-visible
 inspection only through the sandbox-provided `8080` ingress via a local-only
 proxy. For Playground, use the same role split with separate disposable
 blueprints and the same no-tunnel rule.
+
+The important part of the topology is not the container count. It is the
+proof boundary: `remote-base` and `remote-changed` must be the same remote
+identity at two different moments, so stale dry-run apply attempts fail for
+the right reason instead of due to an identity mix-up.
 
 The executor should treat the remote snapshot hash listing as the planning
 boundary and the dry-run receipt as a one-way eligibility proof. Neither one
