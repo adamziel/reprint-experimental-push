@@ -279,6 +279,21 @@ The pull pipeline remains the source of truth for the base package:
 - push recover inspects that journal first and only mutates when fresh live
   hashes and journal evidence prove the action
 
+The persisted pull package is the immutable handoff object for push:
+
+- `base_manifest_id` and `base_manifest_hash` identify the exact exported
+  lineage that was pulled.
+- `base_coverage_hash` proves the pull scope was complete enough to plan
+  against later.
+- `remote_site_id` and the resource hashes bind the package to one remote
+  identity.
+- `push_snapshot_hashes` produces fresh planning evidence only.
+- `push_plan_dry_run` proves eligibility only.
+- `push_batch_apply` must re-read and revalidate live remote state before
+  every batch and again at the storage boundary.
+- `push_journal` and `push_recover inspect` explain durable state without
+  turning old proof into current authority.
+
 | Pull stage | Push mapping |
 | --- | --- |
 | `preflight` | `push_preflight` checks protocol support, auth scope, writable roots, database transaction support, budgets, and journal storage. |

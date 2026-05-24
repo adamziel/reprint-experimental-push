@@ -433,6 +433,22 @@ the planning view, dry-run proves eligibility, apply performs fresh
 revalidation, and journal or recovery inspection explain ambiguity without
 rewriting the persisted base.
 
+The production test topology is fixed to one remote source site, one local
+edited site, one drift witness, and one runner:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` is the imported site after local edits.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only actor allowed to compare, upload, inspect, and recover.
+
+Docker and Playground share the same proof shape. The packaging differs, but
+the logic does not: one remote identity is observed twice (`remote-base` then
+`remote-changed`), one local clone supplies edits, and the runner alone drives
+preflight, snapshot listing, dry-run, apply, journal inspection, and recovery.
+Browser-visible inspection, when needed, must stay behind the
+sandbox-provided `8080` ingress through a local-only proxy. Remote tunnels are
+disallowed.
+
 ## One-Remote, One-Local Test Topology
 
 The recommended production-shaped topology is one remote source, one edited
