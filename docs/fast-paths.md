@@ -61,6 +61,23 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A matching manifest or archive hash still cannot stand in for missing chunk receipts or the guarded publish finalize record.
 - A fresh remote index plus a drained compressed queue still cannot prove apply is complete or that the live precondition survived failure.
 
+Area-specific rejection examples are worth keeping explicit because each one
+fails in a different way:
+
+- File hashing cannot fall back to mtime-only, size-only, or path-only equality
+  when that would skip a live remote hash check.
+- Chunk upload cannot treat a visible staging object or a matching digest as a
+  substitute for the durable receipt and guarded finalize step.
+- Database row batching cannot merge rows across owners or atomic groups just to
+  make a larger batch.
+- Remote indexes cannot authorize mutation because the listing may be stale by
+  the time apply runs.
+- Compression cannot change the canonical hash or replace the compare-and-swap
+  precondition on the uncompressed value.
+- Parallelism cannot bypass the atomic group commit barrier.
+- Backpressure cannot drop evidence, because the missing receipts are what make
+  recovery unambiguous after pause or crash.
+
 The safe version of a fast path is usually a "skip duplicate staging work" or
 "stage earlier" optimization, not a "commit earlier" optimization. The commit
 point is where no-data-loss guarantees are easiest to lose, so it stays narrow,

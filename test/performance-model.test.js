@@ -346,6 +346,55 @@ test('parallelism limits and backpressure budgets are explicit', () => {
   }
 });
 
+test('large uploads and plugin work retain the required fast-path evidence', () => {
+  const model = buildBenchmarkModel();
+
+  for (const schedule of model.schedules) {
+    const remoteIndexProbe = schedule.actions.find((action) => action.type === 'remote-index-probe');
+    assert.ok(remoteIndexProbe, `${schedule.kind} should begin with remote planning evidence`);
+    assert.equal(remoteIndexProbe.authorizesApply, false);
+    assert.equal(remoteIndexProbe.applyMustRevalidate, true);
+    assert.ok(remoteIndexProbe.requiredFields.includes('strongHash'));
+    assert.ok(remoteIndexProbe.requiredFields.includes('generation'));
+
+    const compressionDecisions = schedule.actions.filter(
+      (action) => action.type === 'compression-decision',
+    );
+    assert.ok(compressionDecisions.length > 0, `${schedule.kind} should model compression choices`);
+    assert.ok(
+      compressionDecisions.every(
+        (action) => action.canonicalHashEncoding === 'uncompressed-resource-value',
+      ),
+    );
+
+    const chunkUploads = schedule.actions.filter((action) => action.type === 'chunk-upload');
+    assert.ok(chunkUploads.length > 0, `${schedule.kind} should model chunk uploads`);
+    assert.ok(chunkUploads.every((action) => action.durableAckRequired === true));
+    assert.ok(chunkUploads.every((action) => action.destination === 'plan-staging'));
+    assert.ok(chunkUploads.every((action) => action.receiptKey.includes(action.chunkDigest)));
+
+    const dbBatches = schedule.actions.filter((action) => action.type === 'db-row-batch');
+    if (schedule.kind === 'large-upload') {
+      assert.equal(dbBatches.length, 0, 'large uploads should stay focused on file transfer');
+    } else {
+      assert.ok(dbBatches.length > 0, `${schedule.kind} should model row batches`);
+      assert.ok(dbBatches.every((batch) => batch.preconditions.kind === 'per-row-hash'));
+      assert.ok(dbBatches.every((batch) => batch.durableEvidence));
+      const groupFinalize = schedule.actions.find((action) => action.type === 'group-staging-finalize');
+      const commit = schedule.actions.find((action) => action.type === 'atomic-group-commit');
+      assert.ok(groupFinalize, `${schedule.kind} should keep the group finalize barrier`);
+      assert.ok(commit, `${schedule.kind} should keep the atomic group commit barrier`);
+      assert.equal(groupFinalize.canonicalVisible, false);
+      assert.equal(commit.canonicalVisible, true);
+    }
+
+    assert.equal(schedule.backpressure.onPressure, 'pause-upstream-producers');
+    assert.ok(schedule.backpressure.pauseWhen.includes('staging-disk-budget-hit'));
+    assert.ok(schedule.backpressure.resumeRequires.includes('durable-chunk-receipts'));
+    assert.ok(schedule.backpressure.resumeRequires.includes('database-batch-commit-records'));
+  }
+});
+
 test('rejected fast paths cover precondition bypasses and atomic group splits', () => {
   const model = buildBenchmarkModel();
   const gateIds = new Set(FAST_PATH_GATES.map((gate) => gate.id));
