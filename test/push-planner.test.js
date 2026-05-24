@@ -2679,3 +2679,27 @@ test('recovery boundaries only allow old remote, fully updated remote, or blocke
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
 });
+
+test('acceptable post-failure states carry the required recovery artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const preCommitFailure = captureError(() => applyPlan(baseSite(), plan, { failBeforeMutation: true }));
+  assertRecoveryStateArtifacts(preCommitFailure.details.recovery, 'old-remote');
+  assert.equal(preCommitFailure.details.recovery.artifacts.remote, undefined);
+
+  const completed = applyPlan(baseSite(), plan);
+  const replay = applyPlan(completed.site, plan, { journal: completed.journal });
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const blocked = captureError(() => applyPlan(driftedRemote, plan, { journal: completed.journal }));
+  assertRecoveryStateArtifacts(blocked.details.recovery, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts.remote, 'blocked recovery must include remote artifacts');
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+});
