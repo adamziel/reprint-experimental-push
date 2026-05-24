@@ -707,12 +707,7 @@ function reprint_push_apply_file_resource_with_storage_guard(array $resource, ar
     $relative_path = (string) ($resource['path'] ?? '');
     $is_delete = !empty($payload['absent']);
 
-    if (
-        $is_delete
-        || !reprint_push_is_fixture_file_guard_path($relative_path)
-        || ($expected_resource_value['exists'] ?? false) !== true
-        || ($expected_storage_value['exists'] ?? false) !== true
-    ) {
+    if (!reprint_push_is_fixture_file_guard_path($relative_path)) {
         reprint_push_apply_resource($resource, $payload);
         return [
             'applied' => true,
@@ -720,10 +715,137 @@ function reprint_push_apply_file_resource_with_storage_guard(array $resource, ar
         ];
     }
 
+    if ($expected_storage_value === null) {
+        $expected_storage_value = $expected_resource_value;
+    }
+
+    $expected_resource_exists = ($expected_resource_value['exists'] ?? false) === true;
+    $expected_storage_exists = ($expected_storage_value['exists'] ?? false) === true;
+    $is_fixture_upload = reprint_push_is_fixture_upload_path($relative_path);
+
+    if ($is_delete) {
+        if (!$is_fixture_upload) {
+            reprint_push_apply_resource($resource, $payload);
+            return [
+                'applied' => true,
+                'storageGuard' => null,
+            ];
+        }
+
+        $current_storage_value = reprint_push_get_file_storage_resource($relative_path);
+        if (!$expected_resource_exists || !$expected_storage_exists) {
+            return [
+                'applied' => false,
+                'storageGuard' => reprint_push_file_storage_guard_evidence(
+                    $relative_path,
+                    'delete',
+                    $expected_resource_value,
+                    $expected_storage_value,
+                    $current_storage_value,
+                    null,
+                    'stale-at-write'
+                ),
+            ];
+        }
+
+        $expected_storage_hash = reprint_push_hash_storage_resource_value($expected_storage_value);
+        $current_storage_hash = reprint_push_hash_storage_resource_value($current_storage_value);
+        if ($current_storage_hash !== $expected_storage_hash) {
+            return [
+                'applied' => false,
+                'storageGuard' => reprint_push_file_storage_guard_evidence(
+                    $relative_path,
+                    'delete',
+                    $expected_resource_value,
+                    $expected_storage_value,
+                    $current_storage_value,
+                    null,
+                    'stale-at-write'
+                ),
+            ];
+        }
+
+        $absolute_path = reprint_push_fixture_file_absolute_path($relative_path);
+        if (!unlink($absolute_path)) {
+            throw new RuntimeException('Could not delete guarded fixture file: ' . $relative_path);
+        }
+
+        return [
+            'applied' => true,
+            'storageGuard' => reprint_push_file_storage_guard_evidence(
+                $relative_path,
+                'delete',
+                $expected_resource_value,
+                $expected_storage_value,
+                $current_storage_value,
+                null,
+                'applied'
+            ),
+        ];
+    }
+
     $value = $payload['value'] ?? null;
     $contents = is_array($value) && ($value['type'] ?? null) === 'file'
         ? (string) ($value['content'] ?? '')
         : (string) $value;
+
+    if (!$expected_resource_exists || !$expected_storage_exists) {
+        if (!$is_fixture_upload) {
+            reprint_push_apply_resource($resource, $payload);
+            return [
+                'applied' => true,
+                'storageGuard' => null,
+            ];
+        }
+
+        $current_storage_value = reprint_push_get_file_storage_resource($relative_path);
+        if ($expected_resource_exists || $expected_storage_exists) {
+            return [
+                'applied' => false,
+                'storageGuard' => reprint_push_file_storage_guard_evidence(
+                    $relative_path,
+                    $expected_resource_exists ? 'update' : 'create',
+                    $expected_resource_value,
+                    $expected_storage_value,
+                    $current_storage_value,
+                    $contents,
+                    'stale-at-write'
+                ),
+            ];
+        }
+
+        $expected_storage_hash = reprint_push_hash_storage_resource_value($expected_storage_value);
+        $current_storage_hash = reprint_push_hash_storage_resource_value($current_storage_value);
+        if ($current_storage_hash !== $expected_storage_hash) {
+            return [
+                'applied' => false,
+                'storageGuard' => reprint_push_file_storage_guard_evidence(
+                    $relative_path,
+                    'create',
+                    $expected_resource_value,
+                    $expected_storage_value,
+                    $current_storage_value,
+                    $contents,
+                    'stale-at-write'
+                ),
+            ];
+        }
+
+        reprint_push_write_fixture_file_via_temp_rename($relative_path, $contents, null);
+
+        return [
+            'applied' => true,
+            'storageGuard' => reprint_push_file_storage_guard_evidence(
+                $relative_path,
+                'create',
+                $expected_resource_value,
+                $expected_storage_value,
+                $current_storage_value,
+                $contents,
+                'applied'
+            ),
+        ];
+    }
 
     $absolute_path = reprint_push_fixture_file_absolute_path($relative_path);
     $dir = dirname($absolute_path);
@@ -787,31 +909,78 @@ function reprint_push_apply_file_resource_with_storage_guard(array $resource, ar
     }
 }
 
+function reprint_push_write_fixture_file_via_temp_rename(string $relative_path, string $contents, ?int $mode): void
+{
+    $absolute_path = reprint_push_fixture_file_absolute_path($relative_path);
+    $dir = dirname($absolute_path);
+    if (!is_dir($dir) && !wp_mkdir_p($dir)) {
+        throw new RuntimeException('Could not create fixture file directory for guarded write: ' . $relative_path);
+    }
+
+    $temp_path = tempnam($dir, '.reprint-push-');
+    if ($temp_path === false) {
+        throw new RuntimeException('Could not create temporary fixture file for guarded write: ' . $relative_path);
+    }
+
+    try {
+        if (file_put_contents($temp_path, $contents) === false) {
+            throw new RuntimeException('Could not write temporary fixture file for guarded write: ' . $relative_path);
+        }
+        if ($mode !== null) {
+            @chmod($temp_path, $mode & 0777);
+        }
+        if (!rename($temp_path, $absolute_path)) {
+            throw new RuntimeException('Could not replace fixture file with guarded write: ' . $relative_path);
+        }
+        $temp_path = null;
+    } finally {
+        if (is_string($temp_path) && $temp_path !== '' && file_exists($temp_path)) {
+            @unlink($temp_path);
+        }
+    }
+}
+
 function reprint_push_file_storage_guard_evidence(
     string $relative_path,
     string $operation,
     array $expected_resource_value,
     array $expected_storage_value,
     array $current_storage_value,
-    string $planned_contents,
+    ?string $planned_contents,
     string $outcome
 ): array {
     return [
-        'boundary' => 'filesystem-compare-rename',
+        'boundary' => $operation === 'delete' ? 'filesystem-compare-unlink' : 'filesystem-compare-rename',
         'driver' => reprint_push_is_fixture_upload_path($relative_path) ? 'fixture-upload-file' : 'fixture-plugin-file',
         'operation' => $operation,
         'logicalPath' => $relative_path,
         'physicalPathHash' => hash('sha256', reprint_push_fixture_file_absolute_path($relative_path)),
         'comparedFields' => ['file-bytes'],
-        'expectedResourceHash' => hash('sha256', reprint_push_stable_json(reprint_push_normalize_snapshot_value($expected_resource_value['value'] ?? null))),
+        'expectedResourceHash' => reprint_push_hash_file_guard_resource_value($expected_resource_value),
         'expectedStorageHash' => reprint_push_hash_storage_resource_value($expected_storage_value),
         'actualStorageHash' => reprint_push_hash_storage_resource_value($current_storage_value),
-        'plannedStorageHash' => hash('sha256', reprint_push_stable_json([
-            'content' => $planned_contents,
-            'type' => 'file',
-        ])),
+        'plannedStorageHash' => reprint_push_hash_file_guard_planned_value($planned_contents),
         'outcome' => $outcome,
     ];
+}
+
+function reprint_push_hash_file_guard_resource_value(array $resource_value): string
+{
+    if (($resource_value['exists'] ?? false) !== true) {
+        return hash('sha256', '"__REPRINT_PUSH_ABSENT__"');
+    }
+    return hash('sha256', reprint_push_stable_json(reprint_push_normalize_snapshot_value($resource_value['value'] ?? null)));
+}
+
+function reprint_push_hash_file_guard_planned_value(?string $planned_contents): string
+{
+    if ($planned_contents === null) {
+        return hash('sha256', '"__REPRINT_PUSH_ABSENT__"');
+    }
+    return hash('sha256', reprint_push_stable_json([
+        'content' => $planned_contents,
+        'type' => 'file',
+    ]));
 }
 
 function reprint_push_is_fixture_file_guard_path(string $relative_path): bool

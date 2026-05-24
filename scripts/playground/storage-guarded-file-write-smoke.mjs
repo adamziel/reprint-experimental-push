@@ -17,11 +17,21 @@ const baseBlueprint = path.join(repoRoot, 'fixtures/playground/remote-base.bluep
 const targetPath = 'wp-content/uploads/reprint-push/shared.txt';
 const createPath = 'wp-content/uploads/reprint-push/zz-storage-guard-create.txt';
 const laterPath = 'wp-content/uploads/reprint-push/zz-storage-guard-later.txt';
+const createDriftPath = 'wp-content/uploads/reprint-push/zz-storage-guard-create-drift-a.txt';
+const createDriftLaterPath = 'wp-content/uploads/reprint-push/zz-storage-guard-create-drift-z.txt';
+const deleteDriftLaterPath = 'wp-content/uploads/reprint-push/zz-storage-guard-delete-later.txt';
 const plannedContent = 'storage guarded file planned content';
 const positiveContent = 'storage guarded file positive content';
 const driftContent = 'storage guarded file drift content';
 const conflictDriftContent = 'storage guarded file conflict drift content';
-const createContent = 'storage guarded file create fallback content';
+const createContent = 'storage guarded file create guarded content';
+const createDriftPlannedContent = 'storage guarded file create planned content';
+const createDriftContent = 'storage guarded file create drift content';
+const createConflictDriftContent = 'storage guarded file create conflict drift content';
+const createDriftLaterContent = 'storage guarded file create later content';
+const deleteDriftContent = 'storage guarded file delete drift content';
+const deleteConflictDriftContent = 'storage guarded file delete conflict drift content';
+const deleteDriftLaterContent = 'storage guarded file delete later content';
 const laterContent = 'storage guarded file later content';
 
 const base = exportSnapshot('base', baseBlueprint);
@@ -63,6 +73,27 @@ const preconditionsByMutation = new Map(
   failurePlan.preconditions.map((precondition) => [precondition.mutationId, precondition]),
 );
 
+const createDriftLocal = clone(base);
+createDriftLocal.files[createDriftPath] = createDriftPlannedContent;
+createDriftLocal.files[createDriftLaterPath] = createDriftLaterContent;
+const createDriftPlan = createPushPlan({
+  base,
+  local: createDriftLocal,
+  remote: base,
+  now: fixedNow,
+});
+assert.equal(createDriftPlan.status, 'ready');
+const createDriftMutation = mutationForPath(createDriftPlan, createDriftPath);
+const createDriftLaterMutation = mutationForPath(createDriftPlan, createDriftLaterPath);
+assert.ok(createDriftMutation, 'create drift plan missing drift target');
+assert.ok(createDriftLaterMutation, 'create drift plan missing later mutation');
+const createDriftIndex = createDriftPlan.mutations.findIndex((mutation) => mutation.id === createDriftMutation.id);
+const createDriftLaterIndex = createDriftPlan.mutations.findIndex((mutation) => mutation.id === createDriftLaterMutation.id);
+assert.ok(createDriftLaterIndex > createDriftIndex, 'create drift later mutation must be after drift target');
+const createPreconditionsByMutation = new Map(
+  createDriftPlan.preconditions.map((precondition) => [precondition.mutationId, precondition]),
+);
+
 const deleteLocal = clone(base);
 delete deleteLocal.files[targetPath];
 const deletePlan = createPushPlan({
@@ -75,10 +106,34 @@ assert.equal(deletePlan.status, 'ready');
 const deleteMutation = mutationForPath(deletePlan, targetPath);
 assert.ok(deleteMutation, 'delete plan missing file delete');
 
+const deleteDriftLocal = clone(base);
+delete deleteDriftLocal.files[targetPath];
+deleteDriftLocal.files[deleteDriftLaterPath] = deleteDriftLaterContent;
+const deleteDriftPlan = createPushPlan({
+  base,
+  local: deleteDriftLocal,
+  remote: base,
+  now: fixedNow,
+});
+assert.equal(deleteDriftPlan.status, 'ready');
+const deleteDriftMutation = mutationForPath(deleteDriftPlan, targetPath);
+const deleteDriftLaterMutation = mutationForPath(deleteDriftPlan, deleteDriftLaterPath);
+assert.ok(deleteDriftMutation, 'delete drift plan missing drift target');
+assert.ok(deleteDriftLaterMutation, 'delete drift plan missing later mutation');
+const deleteDriftIndex = deleteDriftPlan.mutations.findIndex((mutation) => mutation.id === deleteDriftMutation.id);
+const deleteDriftLaterIndex = deleteDriftPlan.mutations.findIndex((mutation) => mutation.id === deleteDriftLaterMutation.id);
+assert.ok(deleteDriftLaterIndex > deleteDriftIndex, 'delete drift later mutation must be after drift target');
+const deletePreconditionsByMutation = new Map(
+  deleteDriftPlan.preconditions.map((precondition) => [precondition.mutationId, precondition]),
+);
+
 const summary = {
   positive: {},
-  fallback: {},
-  failure: {},
+  delete: {},
+  updateFailure: {},
+  createFailure: {},
+  deleteFailure: {},
+  deleteMissingFailure: {},
   idempotency: {},
   redaction: {},
 };
@@ -120,19 +175,30 @@ await withPlaygroundServer('storage-guard-file-positive', baseBlueprint, async (
   assert.match(updateEvidence.storageGuard?.physicalPathHash ?? '', /^[a-f0-9]{64}$/);
   assert.ok(Array.isArray(updateEvidence.storageGuard?.comparedFields));
 
-  assert.ok(createEvidence, 'missing applied evidence for fallback file create');
-  assert.equal(createEvidence.preconditionCheck, 'just-in-time');
-  assert.equal(createEvidence.storageGuard, undefined, 'file create must remain outside guarded update slice');
+  assert.ok(createEvidence, 'missing applied evidence for guarded file create');
+  assert.equal(createEvidence.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(createEvidence.preWriteExpectedHash, createEvidence.preWriteActualHash);
+  assert.equal(createEvidence.storageGuard?.boundary, 'filesystem-compare-rename');
+  assert.equal(createEvidence.storageGuard?.driver, 'fixture-upload-file');
+  assert.equal(createEvidence.storageGuard?.operation, 'create');
+  assert.equal(createEvidence.storageGuard?.logicalPath, createPath);
+  assert.equal(createEvidence.storageGuard?.outcome, 'applied');
+  assert.match(createEvidence.storageGuard?.expectedResourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(createEvidence.storageGuard?.expectedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(createEvidence.storageGuard?.actualStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(createEvidence.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(createEvidence.storageGuard?.physicalPathHash ?? '', /^[a-f0-9]{64}$/);
+  assert.ok(Array.isArray(createEvidence.storageGuard?.comparedFields));
   assertStoredJournalHasNoRawFixtureData(dbJournal.body);
 
   summary.positive = {
     applied: apply.body.applied,
     updateBoundary: updateEvidence.storageGuard.boundary,
-    createStorageGuard: createEvidence.storageGuard ?? null,
+    createBoundary: createEvidence.storageGuard.boundary,
   };
 });
 
-await withPlaygroundServer('storage-guard-file-delete-fallback', baseBlueprint, async (server) => {
+await withPlaygroundServer('storage-guard-file-delete-positive', baseBlueprint, async (server) => {
   const dryRun = await postLab(server, '/dry-run', { plan: deletePlan });
   assert.equal(dryRun.status, 200);
   assert.equal(dryRun.body.ok, true);
@@ -152,14 +218,25 @@ await withPlaygroundServer('storage-guard-file-delete-fallback', baseBlueprint, 
     .filter((entry) => journalEvent(entry) === 'mutation-applied')
     .map(mutationEvidence);
   const deleteEvidence = applied.find((evidence) => evidence.mutationId === deleteMutation.id);
-  assert.ok(deleteEvidence, 'missing applied evidence for fallback file delete');
-  assert.equal(deleteEvidence.preconditionCheck, 'just-in-time');
-  assert.equal(deleteEvidence.storageGuard, undefined, 'file delete must remain outside guarded update slice');
+  assert.ok(deleteEvidence, 'missing applied evidence for guarded file delete');
+  assert.equal(deleteEvidence.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(deleteEvidence.preWriteExpectedHash, deleteEvidence.preWriteActualHash);
+  assert.equal(deleteEvidence.storageGuard?.boundary, 'filesystem-compare-unlink');
+  assert.equal(deleteEvidence.storageGuard?.driver, 'fixture-upload-file');
+  assert.equal(deleteEvidence.storageGuard?.operation, 'delete');
+  assert.equal(deleteEvidence.storageGuard?.logicalPath, targetPath);
+  assert.equal(deleteEvidence.storageGuard?.outcome, 'applied');
+  assert.match(deleteEvidence.storageGuard?.expectedResourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(deleteEvidence.storageGuard?.expectedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(deleteEvidence.storageGuard?.actualStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(deleteEvidence.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(deleteEvidence.storageGuard?.physicalPathHash ?? '', /^[a-f0-9]{64}$/);
+  assert.ok(Array.isArray(deleteEvidence.storageGuard?.comparedFields));
   assertStoredJournalHasNoRawFixtureData(dbJournal.body);
 
-  summary.fallback = {
+  summary.delete = {
     deleteApplied: apply.body.applied,
-    deleteStorageGuard: deleteEvidence.storageGuard ?? null,
+    deleteBoundary: deleteEvidence.storageGuard.boundary,
   };
 });
 
@@ -266,7 +343,7 @@ await withPlaygroundServer('storage-guard-file-drift', baseBlueprint, async (ser
   assert.equal(countJournalEvents(conflictEntries, 'mutation-applied'), failureIndex);
   assertStoredJournalHasNoRawFixtureData(dbJournalAfterConflict.body);
 
-  summary.failure = {
+  summary.updateFailure = {
     status: apply.status,
     code: apply.body.code,
     mutationIndex: failureIndex,
@@ -282,6 +359,346 @@ await withPlaygroundServer('storage-guard-file-drift', baseBlueprint, async (ser
   };
   summary.redaction = {
     responseAndJournal: true,
+  };
+});
+
+await withPlaygroundServer('storage-guard-file-create-drift', baseBlueprint, async (server) => {
+  const dryRun = await postLab(server, '/dry-run', { plan: createDriftPlan });
+  assert.equal(dryRun.status, 200);
+  assert.equal(dryRun.body.ok, true);
+
+  const applyBody = {
+    plan: createDriftPlan,
+    receipt: dryRun.body.receipt,
+    labDriftBeforeStorageWrite: {
+      mutationId: createDriftMutation.id,
+      resourceKey: createDriftMutation.resourceKey,
+      value: {
+        type: 'file',
+        content: createDriftContent,
+      },
+    },
+  };
+  const idempotencyKey = 'storage-guard-file-create-drift-001';
+  const apply = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
+  const driftHash = hashFileContent(createDriftContent);
+  assert.equal(apply.status, 412);
+  assert.equal(apply.body.ok, false);
+  assert.equal(apply.body.code, 'PRECONDITION_FAILED');
+  assert.equal(apply.body.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(apply.body.preWriteActualHash, createPreconditionsByMutation.get(createDriftMutation.id).expectedHash);
+  assert.equal(apply.body.actualHash, driftHash);
+  assert.equal(apply.body.applied, createDriftIndex);
+  assert.equal(apply.body.storageGuard?.boundary, 'filesystem-compare-rename');
+  assert.equal(apply.body.storageGuard?.driver, 'fixture-upload-file');
+  assert.equal(apply.body.storageGuard?.operation, 'create');
+  assert.equal(apply.body.storageGuard?.logicalPath, createDriftPath);
+  assert.equal(apply.body.storageGuard?.outcome, 'stale-at-write');
+  assert.match(apply.body.storageGuard?.expectedResourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.expectedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.actualStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.notEqual(apply.body.storageGuard?.actualStorageHash, apply.body.storageGuard?.expectedStorageHash);
+  assertResponseHasNoRawFixtureData(apply.body);
+
+  const afterFailure = await getSnapshot(server);
+  assert.equal(afterFailure.body.snapshot.files[createDriftPath], createDriftContent, 'remote-created file content must be preserved');
+  assert.equal(Object.hasOwn(afterFailure.body.snapshot.files, createDriftLaterPath), false, 'later create mutation must not run');
+  assert.equal(resourceHash(afterFailure.body.snapshot, createDriftMutation.resource), driftHash);
+  assert.notEqual(resourceHash(afterFailure.body.snapshot, createDriftMutation.resource), createDriftMutation.localHash);
+  assertLaterMutationsStayedOld(afterFailure.body.snapshot, createDriftPlan, createDriftIndex, createPreconditionsByMutation);
+
+  const dbJournal = await getLab(server, '/db-journal?limit=120');
+  const failureEntries = journalEntries(dbJournal.body);
+  assertJournalEvents(failureEntries, [
+    'idempotency-opened',
+    'apply-started',
+    'mutation-prepared',
+    'mutation-precondition-failed',
+    'apply-rejected',
+  ]);
+  assertNoJournalEvent(failureEntries, 'apply-committed');
+  assertNoMutationAppliedFor(failureEntries, createDriftMutation.id);
+  assert.equal(countJournalEvents(failureEntries, 'mutation-applied'), createDriftIndex);
+  assertNoPreparedAfter(failureEntries, createDriftIndex);
+  const failedEvidence = failureEntries
+    .filter((entry) => journalEvent(entry) === 'mutation-precondition-failed')
+    .map(mutationEvidence)
+    .find((evidence) => evidence.mutationId === createDriftMutation.id);
+  assert.ok(failedEvidence, 'missing failed create mutation storage evidence');
+  assert.equal(failedEvidence.preWriteActualHash, createPreconditionsByMutation.get(createDriftMutation.id).expectedHash);
+  assert.equal(failedEvidence.actualHash, driftHash);
+  assert.equal(failedEvidence.observedHash, driftHash);
+  assert.equal(failedEvidence.storageGuard?.boundary, 'filesystem-compare-rename');
+  assert.equal(failedEvidence.storageGuard?.operation, 'create');
+  assert.equal(failedEvidence.storageGuard?.outcome, 'stale-at-write');
+  assertStoredJournalHasNoRawFixtureData(dbJournal.body);
+
+  const replay = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(replay.status, 412);
+  assert.equal(replay.body.ok, false);
+  assert.equal(replay.body.idempotency?.replayed, true);
+  assert.equal(replay.body.idempotency?.freshMutationWork, false);
+  assertResponseHasNoRawFixtureData(replay.body);
+  const afterReplay = await getSnapshot(server);
+  assertTargetSurfaceEqual(afterReplay.body.snapshot, afterFailure.body.snapshot, 'replayed create rejection must not mutate');
+
+  const conflict = await postLab(server, '/apply', {
+    ...applyBody,
+    labDriftBeforeStorageWrite: {
+      ...applyBody.labDriftBeforeStorageWrite,
+      value: {
+        type: 'file',
+        content: createConflictDriftContent,
+      },
+    },
+  }, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(conflict.status, 409);
+  assert.equal(conflict.body.ok, false);
+  assert.equal(conflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
+  assert.equal(conflict.body.idempotency?.freshMutationWork, false);
+  assertResponseHasNoRawFixtureData(conflict.body);
+  const afterConflict = await getSnapshot(server);
+  assertTargetSurfaceEqual(afterConflict.body.snapshot, afterFailure.body.snapshot, 'different-body create conflict must not mutate');
+
+  const dbJournalAfterConflict = await getLab(server, '/db-journal?limit=120');
+  const conflictEntries = journalEntries(dbJournalAfterConflict.body);
+  assertJournalEvents(conflictEntries, ['apply-replayed', 'idempotency-key-conflict']);
+  assertNoJournalEvent(conflictEntries, 'apply-committed');
+  assert.equal(countJournalEvents(conflictEntries, 'mutation-applied'), createDriftIndex);
+  assertStoredJournalHasNoRawFixtureData(dbJournalAfterConflict.body);
+
+  summary.createFailure = {
+    status: apply.status,
+    code: apply.body.code,
+    mutationIndex: createDriftIndex,
+    driftPreserved: afterFailure.body.snapshot.files[createDriftPath] === createDriftContent,
+    laterMutationRan: Object.hasOwn(afterFailure.body.snapshot.files, createDriftLaterPath),
+    guardOutcome: apply.body.storageGuard.outcome,
+  };
+});
+
+await withPlaygroundServer('storage-guard-file-delete-drift', baseBlueprint, async (server) => {
+  const dryRun = await postLab(server, '/dry-run', { plan: deleteDriftPlan });
+  assert.equal(dryRun.status, 200);
+  assert.equal(dryRun.body.ok, true);
+
+  const applyBody = {
+    plan: deleteDriftPlan,
+    receipt: dryRun.body.receipt,
+    labDriftBeforeStorageWrite: {
+      mutationId: deleteDriftMutation.id,
+      resourceKey: deleteDriftMutation.resourceKey,
+      value: {
+        type: 'file',
+        content: deleteDriftContent,
+      },
+    },
+  };
+  const idempotencyKey = 'storage-guard-file-delete-drift-001';
+  const apply = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
+  const driftHash = hashFileContent(deleteDriftContent);
+  assert.equal(apply.status, 412);
+  assert.equal(apply.body.ok, false);
+  assert.equal(apply.body.code, 'PRECONDITION_FAILED');
+  assert.equal(apply.body.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(apply.body.preWriteActualHash, deletePreconditionsByMutation.get(deleteDriftMutation.id).expectedHash);
+  assert.equal(apply.body.actualHash, driftHash);
+  assert.equal(apply.body.applied, deleteDriftIndex);
+  assert.equal(apply.body.storageGuard?.boundary, 'filesystem-compare-unlink');
+  assert.equal(apply.body.storageGuard?.driver, 'fixture-upload-file');
+  assert.equal(apply.body.storageGuard?.operation, 'delete');
+  assert.equal(apply.body.storageGuard?.logicalPath, targetPath);
+  assert.equal(apply.body.storageGuard?.outcome, 'stale-at-write');
+  assert.match(apply.body.storageGuard?.expectedResourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.expectedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.actualStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.notEqual(apply.body.storageGuard?.actualStorageHash, apply.body.storageGuard?.expectedStorageHash);
+  assertResponseHasNoRawFixtureData(apply.body);
+
+  const afterFailure = await getSnapshot(server);
+  assert.equal(afterFailure.body.snapshot.files[targetPath], deleteDriftContent, 'changed delete target must be preserved');
+  assert.equal(Object.hasOwn(afterFailure.body.snapshot.files, deleteDriftLaterPath), false, 'later create mutation must not run');
+  assert.equal(resourceHash(afterFailure.body.snapshot, deleteDriftMutation.resource), driftHash);
+  assert.notEqual(resourceHash(afterFailure.body.snapshot, deleteDriftMutation.resource), deleteDriftMutation.localHash);
+  assertLaterMutationsStayedOld(afterFailure.body.snapshot, deleteDriftPlan, deleteDriftIndex, deletePreconditionsByMutation);
+
+  const dbJournal = await getLab(server, '/db-journal?limit=120');
+  const failureEntries = journalEntries(dbJournal.body);
+  assertJournalEvents(failureEntries, [
+    'idempotency-opened',
+    'apply-started',
+    'mutation-prepared',
+    'mutation-precondition-failed',
+    'apply-rejected',
+  ]);
+  assertNoJournalEvent(failureEntries, 'apply-committed');
+  assertNoMutationAppliedFor(failureEntries, deleteDriftMutation.id);
+  assert.equal(countJournalEvents(failureEntries, 'mutation-applied'), deleteDriftIndex);
+  assertNoPreparedAfter(failureEntries, deleteDriftIndex);
+  const failedEvidence = failureEntries
+    .filter((entry) => journalEvent(entry) === 'mutation-precondition-failed')
+    .map(mutationEvidence)
+    .find((evidence) => evidence.mutationId === deleteDriftMutation.id);
+  assert.ok(failedEvidence, 'missing failed delete mutation storage evidence');
+  assert.equal(failedEvidence.preWriteActualHash, deletePreconditionsByMutation.get(deleteDriftMutation.id).expectedHash);
+  assert.equal(failedEvidence.actualHash, driftHash);
+  assert.equal(failedEvidence.observedHash, driftHash);
+  assert.equal(failedEvidence.storageGuard?.boundary, 'filesystem-compare-unlink');
+  assert.equal(failedEvidence.storageGuard?.operation, 'delete');
+  assert.equal(failedEvidence.storageGuard?.outcome, 'stale-at-write');
+  assertStoredJournalHasNoRawFixtureData(dbJournal.body);
+
+  const replay = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(replay.status, 412);
+  assert.equal(replay.body.ok, false);
+  assert.equal(replay.body.idempotency?.replayed, true);
+  assert.equal(replay.body.idempotency?.freshMutationWork, false);
+  assertResponseHasNoRawFixtureData(replay.body);
+  const afterReplay = await getSnapshot(server);
+  assertTargetSurfaceEqual(afterReplay.body.snapshot, afterFailure.body.snapshot, 'replayed delete rejection must not mutate');
+
+  const conflict = await postLab(server, '/apply', {
+    ...applyBody,
+    labDriftBeforeStorageWrite: {
+      ...applyBody.labDriftBeforeStorageWrite,
+      value: {
+        type: 'file',
+        content: deleteConflictDriftContent,
+      },
+    },
+  }, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(conflict.status, 409);
+  assert.equal(conflict.body.ok, false);
+  assert.equal(conflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
+  assert.equal(conflict.body.idempotency?.freshMutationWork, false);
+  assertResponseHasNoRawFixtureData(conflict.body);
+  const afterConflict = await getSnapshot(server);
+  assertTargetSurfaceEqual(afterConflict.body.snapshot, afterFailure.body.snapshot, 'different-body delete conflict must not mutate');
+
+  const dbJournalAfterConflict = await getLab(server, '/db-journal?limit=120');
+  const conflictEntries = journalEntries(dbJournalAfterConflict.body);
+  assertJournalEvents(conflictEntries, ['apply-replayed', 'idempotency-key-conflict']);
+  assertNoJournalEvent(conflictEntries, 'apply-committed');
+  assert.equal(countJournalEvents(conflictEntries, 'mutation-applied'), deleteDriftIndex);
+  assertStoredJournalHasNoRawFixtureData(dbJournalAfterConflict.body);
+
+  summary.deleteFailure = {
+    status: apply.status,
+    code: apply.body.code,
+    mutationIndex: deleteDriftIndex,
+    driftPreserved: afterFailure.body.snapshot.files[targetPath] === deleteDriftContent,
+    laterMutationRan: Object.hasOwn(afterFailure.body.snapshot.files, deleteDriftLaterPath),
+    guardOutcome: apply.body.storageGuard.outcome,
+  };
+});
+
+await withPlaygroundServer('storage-guard-file-delete-missing-drift', baseBlueprint, async (server) => {
+  const dryRun = await postLab(server, '/dry-run', { plan: deleteDriftPlan });
+  assert.equal(dryRun.status, 200);
+  assert.equal(dryRun.body.ok, true);
+
+  const applyBody = {
+    plan: deleteDriftPlan,
+    receipt: dryRun.body.receipt,
+    labDriftBeforeStorageWrite: {
+      mutationId: deleteDriftMutation.id,
+      resourceKey: deleteDriftMutation.resourceKey,
+      absent: true,
+    },
+  };
+  const idempotencyKey = 'storage-guard-file-delete-missing-drift-001';
+  const apply = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(apply.status, 412);
+  assert.equal(apply.body.ok, false);
+  assert.equal(apply.body.code, 'PRECONDITION_FAILED');
+  assert.equal(apply.body.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(apply.body.preWriteActualHash, deletePreconditionsByMutation.get(deleteDriftMutation.id).expectedHash);
+  assert.equal(apply.body.actualHash, deleteDriftMutation.localHash);
+  assert.equal(apply.body.applied, deleteDriftIndex);
+  assert.equal(apply.body.storageGuard?.boundary, 'filesystem-compare-unlink');
+  assert.equal(apply.body.storageGuard?.driver, 'fixture-upload-file');
+  assert.equal(apply.body.storageGuard?.operation, 'delete');
+  assert.equal(apply.body.storageGuard?.logicalPath, targetPath);
+  assert.equal(apply.body.storageGuard?.outcome, 'stale-at-write');
+  assert.match(apply.body.storageGuard?.expectedResourceHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.expectedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.actualStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.match(apply.body.storageGuard?.plannedStorageHash ?? '', /^[a-f0-9]{64}$/);
+  assert.notEqual(apply.body.storageGuard?.actualStorageHash, apply.body.storageGuard?.expectedStorageHash);
+  assertResponseHasNoRawFixtureData(apply.body);
+
+  const afterFailure = await getSnapshot(server);
+  assert.equal(Object.hasOwn(afterFailure.body.snapshot.files, targetPath), false, 'missing delete target must remain absent');
+  assert.equal(Object.hasOwn(afterFailure.body.snapshot.files, deleteDriftLaterPath), false, 'later create mutation must not run');
+  assert.equal(resourceHash(afterFailure.body.snapshot, deleteDriftMutation.resource), deleteDriftMutation.localHash);
+  assertLaterMutationsStayedOld(afterFailure.body.snapshot, deleteDriftPlan, deleteDriftIndex, deletePreconditionsByMutation);
+
+  const dbJournal = await getLab(server, '/db-journal?limit=120');
+  const failureEntries = journalEntries(dbJournal.body);
+  assertJournalEvents(failureEntries, [
+    'idempotency-opened',
+    'apply-started',
+    'mutation-prepared',
+    'mutation-precondition-failed',
+    'apply-rejected',
+  ]);
+  assertNoJournalEvent(failureEntries, 'apply-committed');
+  assertNoMutationAppliedFor(failureEntries, deleteDriftMutation.id);
+  assert.equal(countJournalEvents(failureEntries, 'mutation-applied'), deleteDriftIndex);
+  assertNoPreparedAfter(failureEntries, deleteDriftIndex);
+  const failedEvidence = failureEntries
+    .filter((entry) => journalEvent(entry) === 'mutation-precondition-failed')
+    .map(mutationEvidence)
+    .find((evidence) => evidence.mutationId === deleteDriftMutation.id);
+  assert.ok(failedEvidence, 'missing failed delete-missing mutation storage evidence');
+  assert.equal(failedEvidence.preWriteActualHash, deletePreconditionsByMutation.get(deleteDriftMutation.id).expectedHash);
+  assert.equal(failedEvidence.actualHash, deleteDriftMutation.localHash);
+  assert.equal(failedEvidence.observedHash, deleteDriftMutation.localHash);
+  assert.equal(failedEvidence.storageGuard?.boundary, 'filesystem-compare-unlink');
+  assert.equal(failedEvidence.storageGuard?.operation, 'delete');
+  assert.equal(failedEvidence.storageGuard?.outcome, 'stale-at-write');
+  assertStoredJournalHasNoRawFixtureData(dbJournal.body);
+
+  const replay = await postLab(server, '/apply', applyBody, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(replay.status, 412);
+  assert.equal(replay.body.ok, false);
+  assert.equal(replay.body.idempotency?.replayed, true);
+  assert.equal(replay.body.idempotency?.freshMutationWork, false);
+  assertResponseHasNoRawFixtureData(replay.body);
+  const afterReplay = await getSnapshot(server);
+  assertTargetSurfaceEqual(afterReplay.body.snapshot, afterFailure.body.snapshot, 'replayed delete-missing rejection must not mutate');
+
+  const conflict = await postLab(server, '/apply', {
+    ...applyBody,
+    labDriftBeforeStorageWrite: {
+      ...applyBody.labDriftBeforeStorageWrite,
+      conflictMarker: true,
+    },
+  }, { [idempotencyHeader]: idempotencyKey });
+  assert.equal(conflict.status, 409);
+  assert.equal(conflict.body.ok, false);
+  assert.equal(conflict.body.code, 'IDEMPOTENCY_KEY_CONFLICT');
+  assert.equal(conflict.body.idempotency?.freshMutationWork, false);
+  assertResponseHasNoRawFixtureData(conflict.body);
+  const afterConflict = await getSnapshot(server);
+  assertTargetSurfaceEqual(afterConflict.body.snapshot, afterFailure.body.snapshot, 'different-body delete-missing conflict must not mutate');
+
+  const dbJournalAfterConflict = await getLab(server, '/db-journal?limit=120');
+  const conflictEntries = journalEntries(dbJournalAfterConflict.body);
+  assertJournalEvents(conflictEntries, ['apply-replayed', 'idempotency-key-conflict']);
+  assertNoJournalEvent(conflictEntries, 'apply-committed');
+  assert.equal(countJournalEvents(conflictEntries, 'mutation-applied'), deleteDriftIndex);
+  assertStoredJournalHasNoRawFixtureData(dbJournalAfterConflict.body);
+
+  summary.deleteMissingFailure = {
+    status: apply.status,
+    code: apply.body.code,
+    mutationIndex: deleteDriftIndex,
+    observedAbsent: !Object.hasOwn(afterFailure.body.snapshot.files, targetPath),
+    laterMutationRan: Object.hasOwn(afterFailure.body.snapshot.files, deleteDriftLaterPath),
+    guardOutcome: apply.body.storageGuard.outcome,
   };
 });
 
@@ -344,7 +761,21 @@ function assertStoredJournalHasNoRawFixtureData(body) {
     driftContent,
     conflictDriftContent,
     createContent,
+    createDriftPlannedContent,
+    createDriftContent,
+    createConflictDriftContent,
+    createDriftLaterContent,
+    deleteDriftContent,
+    deleteConflictDriftContent,
+    deleteDriftLaterContent,
     laterContent,
+  ];
+  const forbiddenPathFragments = [
+    repoRoot,
+    '/home/',
+    '/workspace/',
+    '/wordpress/',
+    '.reprint-push-',
   ];
 
   walkJournalValue(body, [], (pathParts, value) => {
@@ -353,6 +784,9 @@ function assertStoredJournalHasNoRawFixtureData(body) {
     if (typeof value === 'string') {
       for (const forbidden of forbiddenStrings) {
         assert.ok(!value.includes(forbidden), `journal stored raw fixture value at ${pathParts.join('.')}`);
+      }
+      for (const forbidden of forbiddenPathFragments) {
+        assert.ok(!value.includes(forbidden), `journal stored host/temp path fragment at ${pathParts.join('.')}`);
       }
     }
   });

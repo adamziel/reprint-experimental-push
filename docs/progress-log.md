@@ -284,6 +284,25 @@ linked implementation artifacts.
   leases/fencing/claim expiry, arbitrary production repair, or production retry
   policy.
 
+## 2026-05-24 - Supervisor Feedback Loop And Concise Progress Page
+
+- Added a dedicated `feedback-supervisor` lane and
+  `scripts/supervision/start-feedback-session.sh` so a separate session can
+  keep nudging the supervisor on what is going well, what is not, progress
+  deltas, and the next proof gap.
+- Added [supervisor feedback](supervisor-feedback.md) with a dated short status
+  entry. The current nudge is to prioritize a production-shaped source-site
+  mutation slice: authenticated dry-run, one guarded DB row, one guarded file,
+  DB journal, replay, and conflict refusal.
+- Updated [progress.html](../progress.html) to show a prominent visible
+  "Last updated: May 24, 2026" marker and to move detailed proof text into
+  linked Markdown docs. The page now has a short supervisor feedback panel and
+  shorter lane summaries.
+- This is a visibility/process improvement only. It does not change the core
+  production proof status: production Reprint HTTP mutation, production auth,
+  durable production journal, and arbitrary plugin data safety are still
+  pending.
+
 ## 2026-05-24 - Plugin-Owned Forms Fixture Slice
 
 - A verified fixture-scoped plugin-owned data slice now covers nested
@@ -415,119 +434,61 @@ linked implementation artifacts.
   inserts/deletes/files/plugin activation storage guarding, arbitrary
   plugin/custom-table semantic safety, or a production crash/fsync proof.
 
-## 2026-05-24 - Storage-Boundary Guarded Fixture File Update Slice
+## 2026-05-24 - Storage-Boundary Guarded Fixture File Write Slice
 
 - `npm run test:playground:storage-guarded-file-write` passed as a standalone
-  local-only Playground smoke for fixture-scoped existing file update writes.
+  local-only Playground smoke for fixture-scoped upload file update, create,
+  and delete writes.
 - The existing JIT pre-write resource hash still runs first. In the standalone
-  smoke, the existing fixture upload-file update compares live file bytes/hash
-  against the storage value observed after JIT, writes planned content to a
-  temp file in the same directory, and renames after the boundary comparison.
-- Positive coverage exists for an existing fixture upload file update with
+  smoke, fixture upload-file update/create mutations compare live file
+  bytes/hash against the storage value observed after JIT, write planned
+  content to a temp file in the same directory, and rename after the boundary
+  comparison. Fixture upload-file deletes compare the same storage value before
+  unlinking.
+- Positive coverage exists for an existing fixture upload file update, a
+  fixture upload file create, and a fixture upload file delete with
   `storageGuard` outcome `applied`. The code path also supports named fixture
-  plugin file paths, but this standalone smoke exercises an upload-file update,
-  not a fixture plugin-file update.
-- Drift after JIT but before the file write fails closed with
-  `PRECONDITION_FAILED`. The drifted file is preserved, no `mutation-applied`
-  is written for the failed file, no later mutations run, and no
-  `apply-committed` is written.
+  plugin file update paths, but this standalone smoke exercises upload-file
+  update/create/delete only.
+- Drift after JIT but before update, create, or delete fails closed with
+  `PRECONDITION_FAILED`. The drifted file state is preserved, no
+  `mutation-applied` is written for the failed file, no later mutations run,
+  and no `apply-committed` is written.
 - Same key/body replay after a storage-boundary file rejection is non-mutating
   with no fresh mutation work, and same key/different body returns
   `IDEMPOTENCY_KEY_CONFLICT`.
-- Creates and deletes stay outside this file `storageGuard` slice and remain
-  fallback/JIT-only.
 - Hash-only evidence is returned in responses and DB journal rows as
-  `storageGuard`: boundary `filesystem-compare-rename`, driver, operation,
-  logical fixture path, compared fields, expected resource/storage hashes,
-  actual/planned storage hashes, physical path hash, and outcome. It does not
-  expose raw file contents or absolute host paths.
+  `storageGuard`: boundary `filesystem-compare-rename` for update/create or
+  `filesystem-compare-unlink` for delete, driver, operation, logical fixture
+  path, compared fields, expected resource/storage hashes, actual/planned
+  storage hashes, physical path hash, and outcome. It does not expose raw file
+  contents or absolute host paths.
 - Caveats remain explicit: this is local Playground fixture evidence only. It
   is not production filesystem durability, storage `fsync`, a production
-  filesystem CAS/lock, rollback, create/delete guarding, arbitrary file
-  guarding, production Reprint HTTP mutation, generic WordPress filesystem
-  safety proof, or a production crash proof.
+  filesystem CAS/lock, rollback, arbitrary file guarding, production Reprint
+  HTTP mutation, generic WordPress filesystem safety proof, or a production
+  crash proof.
 
 ## 2026-05-24 - Status By Area
 
-| Area | Progress | Evidence | Still pending |
+| Area | Progress | What changed | Next proof |
 | --- | ---: | --- | --- |
-| Merge invariants | 38% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling, the exact `wp_reprint_push_forms_lab` driver through `npm run test:playground:forms-lab-table`, detection-only plugin metadata, JIT pre-write drift rejection through `npm run test:playground:mid-apply-drift`, fixture DB update storage-boundary stale-at-write rejection through `npm run test:playground:storage-guarded-db-write`, existing fixture upload-file update storage-boundary stale-at-write rejection through `npm run test:playground:storage-guarded-file-write`, and `npm run test:playground:plugin-atomic-install` fixture plugin install atomicity/staged-proof evidence | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production storage-level CAS/locking, production plugin semantics |
-| Recovery boundaries | 24% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization`; all-old stale-claim safe retry lab through `npm run test:playground:db-journal-stale-claim-all-old`; rejected JIT replay with no fresh mutation work through `npm run test:playground:mid-apply-drift`; storage-boundary stale-at-write replay/recovery evidence through `npm run test:playground:storage-guarded-db-write`; storage-boundary existing fixture upload-file stale-at-write replay/recovery evidence through `npm run test:playground:storage-guarded-file-write` | Production DB table journal durability, production WordPress crash-boundary proof, storage-level `fsync`, production stale-claim leases/fencing/claim expiry, auto-repair policy |
-| Reliable executor and protocol | 25% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, authenticated local Playground source-site mutation slice under `/authenticated/*`, DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key`, per-mutation pre-write hash evidence, and hash-only `storageGuard` evidence for lab fixture DB update and an existing fixture upload-file update write | Production Reprint protocol extension, production Reprint auth/HMAC/TLS/session/nonce proof, real exporter credential binding, real WordPress mutation executor, remote audit records, production storage-level compare-and-swap/locking |
-| Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
-| Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
+| Merge invariants | 38% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
+| Recovery boundaries | 24% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
+| Reliable executor and protocol | 25% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, and hash-only guard evidence exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, and durable audit records. |
+| Fast path and chunking | 12% | Performance model and fast-path design are documented. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
+| Independent evidence and critique | 25% | Objective audit, critic notes, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
 
 ## 2026-05-24 - Explicit Pending Proof Gates
 
-- Real WordPress executor: pending until a source site is mutated through the
-  intended production protocol and verified after apply. The current Playground
-  protocol smoke is a fixture-scoped lab endpoint only.
-- Durable production recovery journal: pending until a production DB table
-  journal or equivalent source-site artifact survives process failure and
-  classifies the target as old, new, or blocked across WordPress write
-  boundaries. The current JSONL lab slice has per-append `fsync` evidence and
-  restart-style classification, the Playground fail-after lab slice classifies
-  old/new/blocked-recovery after injected PHP failure, the DB idempotency slice
-  records fixture-scoped apply/replay/conflict events and concurrent duplicate
-  first-apply behavior in `wp_reprint_push_lab_push_journal`, and the
-  process-kill smoke proves local Playground opened/started rows survive
-  `SIGKILL`/restart without false commit while DB planned evidence plus live
-  hashes returns `RECOVERY_BLOCKED`. The missing-commit finalization smoke
-  proves `BATCH_RECOVERY_FINALIZED` for same key/body when all live target
-  hashes already match planned after hashes and `apply-committed` is missing.
-  The all-old stale-claim retry smoke proves a lab-only safe retry when
-  explicit abandonment evidence, validated started targets, zero mutation
-  evidence, and all-old live hashes allow a derived unique retry claim to run
-  exactly one fresh mutation set; it also proves retry-claim in-progress and
-  retry-start-without-abandonment blocking negatives.
-  The JIT drift smoke proves a mid-apply `PRECONDITION_FAILED` rejection is
-  replayed without fresh mutation work rather than finalized as a commit. The
-  storage-boundary guarded DB write smoke proves fixture update-only stale
-  writes fail closed after JIT and before SQL without mutation-applied, later
-  mutations, or apply-committed. The storage-boundary guarded file write smoke
-  proves an existing fixture upload file update fails closed after JIT and
-  before rename without mutation-applied, later mutations, apply-committed, or
-  fresh replay mutation work. This still does not prove production durability,
-  storage `fsync`, rollback, exactly-once production writes, arbitrary plugin
-  data safety, arbitrary file safety, full MySQL/InnoDB or filesystem CAS
-  behavior, production stale-claim leases/fencing/claim expiry, cross-process
-  shared-DB lock proof, arbitrary production repair, or production retry
-  policy.
-- WordPress integration: Playground base/local/remote fixtures now smoke-test,
-  export planner snapshots, run guarded apply into a fresh Playground source,
-  exercise a lab-only fixture protocol endpoint with WordPress-visible readback,
-  verify a standalone local-only REST lab namespace over real HTTP, and verify
-  authenticated local Playground source-site mutation under `/authenticated/*`
-  with auth-bound receipts, `manage_options`, idempotency, stale refusal, and
-  fresh authenticated snapshot readback. The mid-apply drift smoke verifies
-  per-mutation pre-write target rehashing in the lab apply path. The
-  storage-boundary guarded DB write smoke verifies local Playground/SQLite
-  fixture guarded SQL updates for existing `wp_posts`, allowlisted
-  `wp_options`, single-row `wp_postmeta`, and exact
-  `wp_reprint_push_forms_lab` rows, including marker-empty ownership drift
-  failure for posts/postmeta parents. The storage-boundary guarded file write
-  smoke verifies local Playground fixture compare-and-rename for an existing
-  upload file update, with hash-only evidence and drift preservation. The fixture
-  plugin install atomicity smoke adds hard-coded Playground evidence for exact
-  allowlisted fixture plugin file/resource writes, dependency/dependent
-  activation in one atomic group, row-only bypass rejection, forged ready-plan
-  rejection, stale dependency evidence rejection, staged-plugin proof negatives,
-  and blocked recovery classification after publish or activation failure.
-  Production push behavior remains pending until mutations
-  flow through the intended production source endpoint with production Reprint
-  auth, HMAC/TLS/session/nonce handling, real exporter credential binding, and
-  durable production audit/recovery records.
-- Plugin validators or drivers: pending until plugin-specific semantics are
-  implemented and tested against real plugin-owned data. Current evidence is
-  limited to allowlisted fixture option/postmeta apply, the exact
-  `wp_reprint_push_forms_lab` driver `fixture-forms-lab-table`, detection-only
-  plugin metadata export, and hard-coded fixture plugin install atomicity. The
-  forms lab driver is owner `forms`, positive `id:N`, explicit policy,
-  unchanged active `reprint-push-forms-fixture` evidence, precondition hashes,
-  exact PHP table/column/payload validation, delete blocked, idempotent replay
-  with zero fresh mutation work, and redacted hash-only journal/recovery
-  evidence. The staged plugin proof is limited to activation-style fixture
-  plugin mutations with declared ready atomic-group coverage and earlier
-  same-apply file evidence. It is not arbitrary production plugin
-  installation/update, activation, rollback, generic custom-table driver, or
-  plugin-owned data safety proof.
+- Production source mutation: still pending. A real source site must be mutated
+  through the intended Reprint protocol and verified after apply.
+- Durable recovery: still pending. Lab JSONL/DB journals prove useful slices,
+  but not production DB durability, `fsync`, locks, leases, rollback, or
+  exactly-once writes.
+- WordPress integration: still pending. Playground proves fixtures, local REST,
+  auth-shaped routes, storage guards, and plugin fixtures; production Reprint
+  auth, credential binding, and durable source-site audit records remain open.
+- Plugin semantics: still pending. Current safety is limited to allowlisted
+  fixture data, one forms custom-table driver, detection-only plugin metadata,
+  and hard-coded fixture plugin install atomicity.

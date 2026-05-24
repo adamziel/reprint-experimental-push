@@ -92,31 +92,31 @@ hashes, rows affected, outcome, and SQL shape hash. It does not include raw SQL
 values, post content, option values, meta values, forms payloads, snapshots, or
 plugin payloads.
 
-The storage-boundary file update smoke adds a narrow guarded filesystem proof
-after the JIT hash passes. Existing fixture file update mutations under
-accepted fixture upload paths, and the same code path for named fixture plugin
-file paths, compare the live file bytes/hash against the storage value observed
-after JIT. The planned content is written to a temp file in the same directory,
-then renamed after the boundary comparison. The positive smoke covers an
-existing fixture upload file update with `storageGuard.outcome: applied`.
+The storage-boundary file write smoke adds a narrow guarded filesystem proof
+after the JIT hash passes. Accepted fixture upload file updates and creates
+compare the live file bytes/hash against the storage value observed after JIT,
+write the planned content to a temp file in the same directory, then rename
+after the boundary comparison. Accepted fixture upload file deletes compare the
+same storage value before unlinking. The positive smoke covers an existing
+fixture upload file update, a fixture upload file create, and a fixture upload
+file delete with `storageGuard.outcome: applied`.
 
-If the file drifts after JIT but before the write, apply returns
-`PRECONDITION_FAILED`, preserves the drifted file, writes no
+If the file drifts after JIT but before update, create, or delete, apply
+returns `PRECONDITION_FAILED`, preserves the drifted file state, writes no
 `mutation-applied` for the failed file, writes no later mutations, and writes
 no `apply-committed`. Same key/body replay is non-mutating with no fresh
-mutation work; same key/different body remains an idempotency conflict. Creates
-and deletes stay outside this file `storageGuard` slice and remain
-fallback/JIT-only.
+mutation work; same key/different body remains an idempotency conflict.
 
 The file `storageGuard` evidence is hash-only: boundary
-`filesystem-compare-rename`, driver, operation, logical fixture path, compared
-fields, expected resource/storage hashes, actual/planned storage hashes,
-physical path hash, and outcome. It does not include raw file contents or
-absolute host paths.
+`filesystem-compare-rename` for update/create or `filesystem-compare-unlink`
+for delete, driver, operation, logical fixture path, compared fields, expected
+resource/storage hashes, actual/planned storage hashes, physical path hash, and
+outcome. It does not include raw file contents or absolute host paths.
 
 This is lab no-overwrite evidence, not production DB or filesystem durability,
 production Reprint HTTP mutation, generic MySQL/InnoDB or filesystem
 compare-and-swap proof, storage `fsync`, transactions, locking, rollback,
-create/delete guarding, arbitrary file guarding, plugin activation storage
-guarding, or arbitrary plugin/custom-table semantic safety. The standalone file
-smoke exercises an upload-file update, not a fixture plugin-file update.
+arbitrary file guarding, plugin activation storage guarding, or arbitrary
+plugin/custom-table semantic safety. The code path supports named fixture
+plugin file update paths, but the standalone file smoke exercises upload-file
+update/create/delete only.

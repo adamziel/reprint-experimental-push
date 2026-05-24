@@ -55,8 +55,8 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground mid-apply rejected replay | Same key/body after the mid-apply JIT rejection replays the rejected result with `idempotency.replayed: true` and no fresh mutation work; same key/different body returns `409 IDEMPOTENCY_KEY_CONFLICT`; recovery inspect is non-mutating. | `npm run test:playground:mid-apply-drift` |
 | Playground storage-boundary guarded DB updates | After the JIT pre-write hash passes, existing fixture row updates for `wp_posts`, allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact positive-id `wp_reprint_push_forms_lab` rows use a single guarded `wpdb` update comparing expected stored columns at the SQL write boundary. Evidence is hash-only `storageGuard` with boundary, driver, logical/physical table, operation, compared columns, expected resource/storage hashes, rows affected, outcome, and SQL shape hash. | `npm run test:playground:storage-guarded-db-write` |
 | Playground storage-boundary drift failures | Value drift on each supported table, marker-empty ownership drift for posts and postmeta parents, and absent/delete drift fail closed with rows affected `0`, outcome `stale-at-write`, `PRECONDITION_FAILED`, drift preserved, no `mutation-applied` for the failed target, no later mutations, and no `apply-committed`. | `npm run test:playground:storage-guarded-db-write` |
-| Playground storage-boundary guarded fixture file update | After the JIT pre-write hash passes, an existing fixture upload file update compares live file bytes/hash against the storage value observed after JIT, writes planned content to a same-directory temp file, and renames after the comparison. Evidence is hash-only `storageGuard` with boundary `filesystem-compare-rename`, driver, operation, logical fixture path, compared fields, expected resource/storage hashes, actual/planned storage hashes, physical path hash, and outcome `applied`. | `npm run test:playground:storage-guarded-file-write` |
-| Playground storage-boundary file drift failure | Post-JIT/pre-write file drift returns `PRECONDITION_FAILED`, preserves the drifted file, records no `mutation-applied` for the failed file, runs no later mutations, writes no `apply-committed`, replays same key/body with no fresh mutation work, and conflicts on same key/different body. Create/delete file mutations stay fallback/JIT-only and outside this file `storageGuard` slice. | `npm run test:playground:storage-guarded-file-write` |
+| Playground storage-boundary guarded fixture file writes | After the JIT pre-write hash passes, fixture upload file update/create mutations compare live file bytes/hash against the storage value observed after JIT, write planned content to a same-directory temp file, and rename after the comparison; fixture upload file deletes compare the same storage value before unlinking. Evidence is hash-only `storageGuard` with boundary `filesystem-compare-rename` for update/create or `filesystem-compare-unlink` for delete, driver, operation, logical fixture path, compared fields, expected resource/storage hashes, actual/planned storage hashes, physical path hash, and outcome `applied`. | `npm run test:playground:storage-guarded-file-write` |
+| Playground storage-boundary file drift failures | Post-JIT/pre-write file drift on update, create, or delete returns `PRECONDITION_FAILED`, preserves the drifted file state, records no `mutation-applied` for the failed file, runs no later mutations, writes no `apply-committed`, replays same key/body with no fresh mutation work, and conflicts on same key/different body. | `npm run test:playground:storage-guarded-file-write` |
 | Playground DB idempotency concurrent same-body first apply | A unique `claim_key_hash` opens exactly one claim before mutation; concurrent same-key/same-body first applies produce one fresh mutation executor and the duplicate returns safe in-progress/retry/replay behavior without mutation. | `npm run test:playground:db-journal-idempotency` |
 | Playground DB idempotency concurrent different-body first apply | Concurrent same-key/different-body requests reject the conflicting request with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation while the original request is the only fresh mutation executor. | `npm run test:playground:db-journal-idempotency` |
 | Playground DB process-kill persistence | A real `SIGKILL` during an in-flight DB-journaled REST apply leaves persisted DB `idempotency-opened`/`apply-started` rows after host-mounted Playground restart without a false `apply-committed`. | `npm run test:playground:db-journal-process-kill` |
@@ -101,13 +101,12 @@ The first executable matrix lives in `test/push-planner.test.js`.
   `npm run test:playground:storage-guarded-file-write` proves only local
   Playground fixture slices: update-only guarded SQL for existing `wp_posts`,
   allowlisted `wp_options`, single-row `wp_postmeta`, exact
-  `wp_reprint_push_forms_lab` rows, and guarded compare-and-rename for an
-  existing fixture upload file update. The file code path supports named
-  fixture plugin file paths, but the standalone smoke does not exercise a
-  fixture plugin-file update. These are not generic MySQL/InnoDB or filesystem
-  CAS, transactions/locking, rollback, storage `fsync`, create/delete guarding,
-  arbitrary file guarding, plugin activation guarding, or production Reprint
-  HTTP mutation.
+  `wp_reprint_push_forms_lab` rows, and guarded compare/rename/unlink for
+  fixture upload file update/create/delete. The file code path supports named
+  fixture plugin file update paths, but the standalone smoke does not exercise
+  fixture plugin-file writes. These are not generic MySQL/InnoDB or filesystem
+  CAS, transactions/locking, rollback, storage `fsync`, arbitrary file
+  guarding, plugin activation guarding, or production Reprint HTTP mutation.
 - Production plugin activation/update with dependency and recovery checks.
 - Object-cache, cron, generated files, and maintenance-mode interactions.
 - Plugin validator and merge-driver contracts with real plugin fixtures; the

@@ -147,25 +147,27 @@ hash for observed/actual/recovery state while retaining the pre-write hash that
 proves the JIT check passed.
 
 `npm run test:playground:storage-guarded-file-write` verifies the storage
-boundary immediately after that JIT hash passes for existing fixture file
-update mutations. For accepted fixture upload paths, and in the same code path
-for named fixture plugin file paths, apply compares the live file bytes/hash
-against the storage value observed after JIT, writes the planned content to a
-temp file in the same directory, then renames after the boundary comparison.
-Positive evidence covers an existing fixture upload file update with
-`storageGuard.outcome: applied`.
+boundary immediately after that JIT hash passes for fixture file write
+mutations. For accepted fixture upload paths, existing-file updates and creates
+compare the live file bytes/hash against the storage value observed after JIT,
+write the planned content to a temp file in the same directory, then rename
+after the boundary comparison. Existing-file deletes compare the same storage
+value before unlinking. Positive evidence covers an existing fixture upload
+file update, a fixture upload file create, and a fixture upload file delete
+with `storageGuard.outcome: applied`.
 
-If a lab hook drifts the file after JIT but before the write, apply returns
-`PRECONDITION_FAILED`, preserves the drifted file, records no
-`mutation-applied` for the failed file, records no later mutations, and records
-no `apply-committed`. Same key/body replay remains non-mutating with no fresh
-mutation work, and same key/different body remains
-`IDEMPOTENCY_KEY_CONFLICT`. Creates and deletes stay outside this file
-`storageGuard` slice and remain fallback/JIT-only. File evidence is hash-only:
-boundary `filesystem-compare-rename`, driver, operation, logical fixture path,
-compared fields, expected resource/storage hashes, actual/planned storage
-hashes, physical path hash, and outcome. It exposes neither raw file contents
-nor absolute host paths.
+If a lab hook drifts the file after JIT but before update, create, or delete,
+apply returns `PRECONDITION_FAILED`, preserves the drifted file state, records
+no `mutation-applied` for the failed file, records no later mutations, and
+records no `apply-committed`. Same key/body replay remains non-mutating with no
+fresh mutation work, and same key/different body remains
+`IDEMPOTENCY_KEY_CONFLICT`. File evidence is hash-only: boundary
+`filesystem-compare-rename` for update/create or `filesystem-compare-unlink`
+for delete, driver, operation, logical fixture path, compared fields, expected
+resource/storage hashes, actual/planned storage hashes, physical path hash, and
+outcome. It exposes neither raw file contents nor absolute host paths. The code
+path also supports named fixture plugin file update paths, but this standalone
+smoke exercises upload-file update/create/delete only.
 
 The verified replay behavior is idempotent for the fixture batch: same key plus
 same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`,

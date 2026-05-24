@@ -14,6 +14,7 @@ parallel sessions do not overwrite each other.
 | `fast-paths` | Fast | Chunking, hashing, batching, benchmark design |
 | `independent-auditor` | Audit | Evidence checks against the objective |
 | `critic` | Critique | High-bar review across all design sessions |
+| `feedback-supervisor` | Feedback | Supervisor nudges, progress deltas, concise status updates |
 | `progress-publisher` | Visibility | `progress.html`, progress log, GitHub Pages readiness |
 
 ## Commands
@@ -22,6 +23,12 @@ Start or resume all lanes:
 
 ```bash
 scripts/supervision/start-lanes.sh
+```
+
+Start or resume only the feedback supervisor session:
+
+```bash
+scripts/supervision/start-feedback-session.sh
 ```
 
 Check sessions and branch state:
@@ -39,8 +46,9 @@ The scripts create worktrees under
 - Do not edit another lane's owned files unless the prompt explicitly allows it.
 - Push finished lane work to the remote branch.
 - Leave the worktree clean after pushing.
+- The feedback lane should keep a short "what changed / what is stuck / next
+  nudge" record and make sure `progress.html` has a visible last-updated date.
 - Do not use remote tunnel services. Use only local processes and the sandbox
   8080 ingress if a browser preview is needed.
 - Do not add generated-by attribution or agent labels to commits, branches, PRs,
   or comments.
-

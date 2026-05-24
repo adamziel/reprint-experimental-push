@@ -12,6 +12,7 @@ lanes=(
   fast-paths
   independent-auditor
   critic
+  feedback-supervisor
   progress-publisher
 )
 

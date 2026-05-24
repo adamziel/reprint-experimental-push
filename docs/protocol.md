@@ -194,24 +194,25 @@ still runs first. If it passes for an existing fixture file update under an
 accepted fixture upload path or named fixture plugin file path, the apply path
 compares the live file bytes/hash against the storage value observed after JIT,
 writes the planned content to a temp file in the same directory, then renames
-after the boundary comparison. Positive evidence from
+after the boundary comparison. Existing fixture upload file deletes compare the
+same storage value before unlinking. Positive evidence from
 `npm run test:playground:storage-guarded-file-write` covers an existing fixture
-upload file update with `storageGuard.outcome: applied`. The failure path
-injects drift after JIT but before the write and returns
-`PRECONDITION_FAILED`, preserves the drifted file, records no
-`mutation-applied` for the failed file, runs no later mutations, and records no
-`apply-committed`; same key/body replay does no fresh mutation work and same
-key/different body conflicts. Creates and deletes stay outside this file
-`storageGuard` slice and remain fallback/JIT-only. Evidence is hash-only:
-boundary `filesystem-compare-rename`, driver, operation, logical fixture path,
-compared fields, expected resource/storage hashes, actual/planned storage
+upload file update, a fixture upload file create, and a fixture upload file
+delete with `storageGuard.outcome: applied`. The failure path injects drift
+after JIT but before update/create/delete and returns `PRECONDITION_FAILED`,
+preserves the drifted file state, records no `mutation-applied` for the failed
+file, runs no later mutations, and records no `apply-committed`; same key/body
+replay does no fresh mutation work and same key/different body conflicts.
+Evidence is hash-only: boundary `filesystem-compare-rename` for update/create
+or `filesystem-compare-unlink` for delete, driver, operation, logical fixture
+path, compared fields, expected resource/storage hashes, actual/planned storage
 hashes, physical path hash, and outcome. It exposes neither raw file contents
 nor absolute host paths. This is local Playground fixture evidence only, not
 production filesystem durability, not `fsync`, not a production filesystem
-CAS/lock, not rollback, not create/delete guarding, not arbitrary files, not
-production Reprint HTTP mutation, and not a generic WordPress filesystem safety
-proof. The code path supports named fixture plugin file paths, but the new
-standalone smoke exercises an upload-file update.
+CAS/lock, not rollback, not arbitrary files, not production Reprint HTTP
+mutation, and not a generic WordPress filesystem safety proof. The code path
+supports named fixture plugin file update paths, but the standalone smoke
+exercises upload-file update/create/delete only.
 
 ## Resource Model
 

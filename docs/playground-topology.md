@@ -326,28 +326,30 @@ transactions, locking, rollback, inserts/deletes/files/plugin activation
 guarding, or arbitrary plugin/custom-table semantic safety.
 
 The storage-guarded file write smoke is the accepted lab storage-boundary slice
-for existing fixture file updates. It keeps the JIT pre-write resource hash as
-the first guard. When that hash passes, an existing fixture upload file update
-compares live file bytes/hash against the storage value observed after JIT,
-writes the planned content to a temp file in the same directory, and renames
-after the boundary comparison. Positive evidence is recorded as hash-only
-`storageGuard` data: boundary `filesystem-compare-rename`, driver, operation,
-logical fixture path, compared fields, expected resource/storage hashes,
-actual/planned storage hashes, physical path hash, and outcome `applied`.
+for fixture upload file updates, creates, and deletes. It keeps the JIT
+pre-write resource hash as the first guard. When that hash passes, existing
+fixture upload file updates and creates compare live file bytes/hash against
+the storage value observed after JIT, write planned content to a temp file in
+the same directory, and rename after the boundary comparison. Existing fixture
+upload file deletes compare the same storage value before unlinking. Positive
+evidence is recorded as hash-only `storageGuard` data: boundary
+`filesystem-compare-rename` for update/create or `filesystem-compare-unlink`
+for delete, driver, operation, logical fixture path, compared fields, expected
+resource/storage hashes, actual/planned storage hashes, physical path hash, and
+outcome `applied`.
 
 The same smoke injects deterministic file drift after the JIT hash passes and
-before the write. Apply returns `PRECONDITION_FAILED`, preserves the drifted
-file, records no `mutation-applied` for the failed file, runs no later
-mutations, and records no `apply-committed`. Same key/body replay is
-non-mutating with no fresh mutation work; same key/different body returns
-`IDEMPOTENCY_KEY_CONFLICT`. Creates and deletes stay outside this file
-`storageGuard` slice and remain fallback/JIT-only. Evidence exposes no raw file
-contents and no absolute host paths. This remains local Playground fixture
-evidence only, not production filesystem durability, storage `fsync`, a
-production filesystem CAS/lock, rollback, arbitrary file guarding, production
-Reprint HTTP mutation, or a generic WordPress filesystem safety proof. The code
-path supports named fixture plugin file paths, but this standalone smoke
-exercises an upload-file update.
+before update, create, and delete writes. Apply returns
+`PRECONDITION_FAILED`, preserves the drifted file state, records no
+`mutation-applied` for the failed file, runs no later mutations, and records no
+`apply-committed`. Same key/body replay is non-mutating with no fresh mutation
+work; same key/different body returns `IDEMPOTENCY_KEY_CONFLICT`. Evidence
+exposes no raw file contents and no absolute host paths. This remains local
+Playground fixture evidence only, not production filesystem durability, storage
+`fsync`, a production filesystem CAS/lock, rollback, arbitrary file guarding,
+production Reprint HTTP mutation, or a generic WordPress filesystem safety
+proof. The code path supports named fixture plugin file update paths, but this
+standalone smoke exercises upload-file update/create/delete only.
 
 ```bash
 npm run test:playground:db-journal-process-kill

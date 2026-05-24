@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+lanes_root="${REPRINT_PUSH_LANES_DIR:-"$HOME/reprint-experimental-push-lanes"}"
+lane="feedback-supervisor"
+worktree="$lanes_root/$lane"
+branch="lane/$lane"
+session="rp-$lane"
+prompt="$repo/supervision/lanes/$lane.md"
+output="$worktree/.lane-output/final.md"
+
+mkdir -p "$lanes_root"
+
+if ! git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git -C "$repo" worktree add -B "$branch" "$worktree" HEAD
+fi
+
+mkdir -p "$worktree/.lane-output"
+
+if tmux has-session -t "$session" 2>/dev/null; then
+  printf '%s\n' "session exists: $session"
+  exit 0
+fi
+
+tmux new-session -d -s "$session" \
+  "cd '$worktree' && codex exec -C '$worktree' --dangerously-bypass-approvals-and-sandbox -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
+printf '%s\n' "started: $session -> $worktree"

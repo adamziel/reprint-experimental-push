@@ -61,7 +61,7 @@ Run the storage-boundary guarded DB update smoke:
 npm run test:playground:storage-guarded-db-write
 ```
 
-Run the storage-boundary guarded fixture file update smoke:
+Run the storage-boundary guarded fixture file write smoke:
 
 ```bash
 npm run test:playground:storage-guarded-file-write
@@ -249,28 +249,30 @@ inserts/deletes/files/plugin activation guarding, or arbitrary
 plugin/custom-table semantic safety.
 
 The `test:playground:storage-guarded-file-write` script verifies the accepted
-lab storage-boundary guarded existing fixture file update slice. The JIT
-pre-write hash still runs first. For existing fixture file update mutations
-under accepted fixture upload paths, apply observes the storage bytes after
-JIT, writes the planned content to a temp file in the same directory, compares
-the live file storage hash against that observed storage value at the write
-boundary, and renames the temp file after the comparison. Positive evidence
-covers an existing fixture upload file update with `storageGuard.outcome:
-applied`. Drift after JIT but before the file write returns
-`PRECONDITION_FAILED`, preserves the drifted file, writes no
+lab storage-boundary guarded fixture file write slice. The JIT pre-write hash
+still runs first. For accepted fixture upload paths, existing-file updates and
+creates compare live file bytes/hash against the storage value observed after
+JIT, write planned content to a temp file in the same directory, then rename
+after the boundary comparison. Existing-file deletes compare the same storage
+value before unlinking. Positive evidence covers an existing fixture upload
+file update, a fixture upload file create, and a fixture upload file delete
+with `storageGuard.outcome: applied`.
+
+Drift after JIT but before update, create, or delete returns
+`PRECONDITION_FAILED`, preserves the drifted file state, writes no
 `mutation-applied` for the failed file, writes no later mutations, and writes
 no `apply-committed`; same key/body replay performs no fresh mutation work,
-and same key/different body conflicts. Creates and deletes remain outside this
-file `storageGuard` slice and stay fallback/JIT-only. Evidence is hash-only:
-boundary `filesystem-compare-rename`, driver, operation, logical fixture path,
-compared fields, expected resource/storage hashes, actual/planned storage
-hashes, physical path hash, and outcome. It does not expose raw file contents
-or absolute host paths. This is local Playground fixture evidence only: not
-production filesystem durability, not `fsync`, not a production filesystem
-CAS/lock, not rollback, not create/delete guarding, not arbitrary files, not
-production Reprint HTTP mutation, and not a generic WordPress filesystem safety
-proof. The code path also supports named fixture plugin file paths, but this
-standalone smoke exercises an upload-file update.
+and same key/different body conflicts. Evidence is hash-only: boundary
+`filesystem-compare-rename` for update/create or `filesystem-compare-unlink`
+for delete, driver, operation, logical fixture path, compared fields, expected
+resource/storage hashes, actual/planned storage hashes, physical path hash, and
+outcome. It does not expose raw file contents or absolute host paths. This is
+local Playground fixture evidence only: not production filesystem durability,
+not `fsync`, not a production filesystem CAS/lock, not rollback, not arbitrary
+file guarding, not production Reprint HTTP mutation, and not a generic
+WordPress filesystem safety proof. The code path also supports named fixture
+plugin file update paths, but this standalone smoke exercises upload-file
+update/create/delete only.
 
 The `test:playground:db-journal-process-kill` script runs a local-only
 Playground process-kill smoke over a host-mounted WordPress directory. It sends
