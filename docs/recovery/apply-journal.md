@@ -8,8 +8,9 @@ evidence after each append. A newer local-only Playground REST slice adds a
 fixture-scoped DB table journal for apply idempotency, concurrent duplicate
 claiming, DB-only process-kill recovery blocking, and DB-only missing-commit
 finalization, plus an all-old stale-claim safe retry lab slice. These slices
-are not production WordPress recovery: they do not prove production durability
-and do not auto-repair a partial remote.
+are useful evidence, but they are not production WordPress recovery: they do
+not prove production durability, do not provide a durable lease/fence, and do
+not auto-repair a partial remote.
 
 The production design target is a durable artifact that separates a safe retry
 from an unsafe partial push. A failed apply must leave the system classifiable
@@ -29,6 +30,19 @@ contract.
 
 Any production partial remote mutation without a `blocked-recovery` artifact is
 a release blocker.
+
+Production requirements are stricter than the current JSON and Playground lab
+evidence:
+
+- A durable journal must survive process loss through real DB rows and
+  filesystem `fsync`/rename/unlink semantics, not just in-memory or mocked
+  records.
+- A durable journal must be fenced by a lease or claim mechanism so stale
+  workers stop before mutation.
+- Recovery inspect must be reconstructable from durable artifacts alone, with
+  no dependence on transient JSON fixtures or test-only lab hooks.
+- Plugin activation and plugin-owned recovery decisions must be recorded in the
+  production journal, not inferred from the local fixture planner.
 
 For the apply contract, every failure or replay must land in exactly one of
 these recovery states:
@@ -58,6 +72,10 @@ The current lab journal records these apply boundaries:
 Completed replay validates that current remote resources still match the
 journaled after hashes. If any resource drifted after completion, replay blocks
 instead of resurrecting stale local data.
+
+That replay contract applies to the lab and to any future production journal:
+completed replay is only safe when the durable envelope is complete and the
+current remote hashes match every journaled after hash.
 
 The JSON apply model can also be given a durable journal writer with
 `appendEvent(type, payload)`. The writer receives hash-only JSONL-compatible
@@ -90,6 +108,15 @@ the apply model first writes hash-only `journal-opened` and `target-planned`
 records from the completed journal envelope, then appends `journal-replayed`.
 That makes the fresh durable artifact restart-inspectable as
 `fully-updated-remote` without reapplying inserts or stale local values.
+
+The durable recovery tests should prove one acceptable state only:
+
+- `old-remote` means the remote remained unchanged and the durable journal is
+  sufficient to retry after revalidation.
+- `fully-updated-remote` means replay found a complete completed envelope and
+  did not duplicate inserts or resurrect stale local data.
+- `blocked-recovery` means the remote is partial or drifted and the durable
+  journal plus observed remote evidence are the only safe outputs.
 
 ## Current Playground Lab Evidence
 

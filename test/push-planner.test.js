@@ -76,6 +76,15 @@ function captureError(fn) {
   assert.fail('Expected function to throw');
 }
 
+function assertRecoveryState(error, status, { journalStatus = null, hasRemoteArtifact = false } = {}) {
+  assert.equal(error.details.recovery.status, status);
+  assert.ok(error.details.recovery.artifacts?.journal, status);
+  if (journalStatus) {
+    assert.equal(error.details.recovery.artifacts.journal.status, journalStatus, status);
+  }
+  assert.equal(Boolean(error.details.recovery.artifacts?.remote), hasRemoteArtifact, status);
+}
+
 function mutationFor(plan, resourceKey) {
   return plan.mutations.find((mutation) => mutation.resourceKey === resourceKey);
 }
@@ -1584,9 +1593,9 @@ test('injected failure before mutation leaves the old remote with a journal arti
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
   assert.equal(JSON.stringify(remote), before);
-  assert.equal(error.details.recovery.status, 'old-remote');
-  assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
+  assertRecoveryState(error, 'old-remote', { journalStatus: 'opened' });
   assert.equal(error.details.recovery.artifacts.journal.entries.length, 2);
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
 });
 
 test('injected failure after staging leaves the old remote with staged rollback artifacts', () => {
@@ -1604,10 +1613,11 @@ test('injected failure after staging leaves the old remote with staged rollback 
   assert.equal(error.code, 'INJECTED_FAILURE_AFTER_STAGING');
   const journal = error.details.recovery.artifacts.journal;
   assert.equal(JSON.stringify(remote), before);
-  assert.equal(error.details.recovery.status, 'old-remote');
+  assertRecoveryState(error, 'old-remote', { journalStatus: 'staged' });
   assert.equal(journal.status, 'staged');
   assert.deepEqual(journal.entries.map((entry) => entry.status), ['staged', 'staged']);
   assert.ok(journal.entries.every((entry) => entry.beforeValue && entry.afterValue));
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
 });
 
 test('injected failure after dependency validation leaves the old remote with validated artifacts', () => {
@@ -1640,8 +1650,7 @@ test('injected failure after dependency validation leaves the old remote with va
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
   assert.equal(JSON.stringify(remote), before);
-  assert.equal(error.details.recovery.status, 'old-remote');
-  assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
+  assertRecoveryState(error, 'old-remote', { journalStatus: 'dependencies-validated' });
 });
 
 test('durable apply journal classifies pre-commit failures as old remote', () => {
@@ -1697,6 +1706,8 @@ test('durable apply journal classifies pre-commit failures as old remote', () =>
     assert.ok(error instanceof PushPlanError);
     assert.equal(error.code, scenario.code);
     assert.equal(JSON.stringify(remote), before);
+    assert.equal(error.details.recovery.status, 'old-remote', scenario.label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, scenario.label);
     assert.equal(persisted.integrity.status, 'ok');
     assert.deepEqual(persisted.records.map((record) => record.type), scenario.expectedEvents);
     assert.equal(inspection.status, 'old-remote');
@@ -1732,12 +1743,7 @@ test('durable journal write failures before commit include old-remote recovery a
     assert.equal(error.details.boundary, scenario.failType, scenario.failType);
     assert.equal(error.details.eventType, scenario.failType, scenario.failType);
     assert.equal(JSON.stringify(remote), before, scenario.failType);
-    assert.equal(error.details.recovery.status, 'old-remote', scenario.failType);
-    assert.equal(
-      error.details.recovery.artifacts.journal.status,
-      scenario.expectedJournalStatus,
-      scenario.failType,
-    );
+    assertRecoveryState(error, 'old-remote', { journalStatus: scenario.expectedJournalStatus });
   }
 });
 
@@ -1757,8 +1763,7 @@ test('old-remote injected failures keep recovery artifacts if terminal recovery-
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
   assert.equal(JSON.stringify(remote), before);
-  assert.equal(error.details.recovery.status, 'old-remote');
-  assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
+  assertRecoveryState(error, 'old-remote', { journalStatus: 'dependencies-validated' });
   assert.equal(error.details.durableRecoveryStateWriteFailed, true);
   assert.equal(error.details.durableJournalError.eventType, 'recovery-state');
 });
@@ -1778,7 +1783,7 @@ test('retrying an old-remote journal appends durable retry state without duplica
   firstWriter.close();
 
   assert.ok(firstError instanceof PushPlanError);
-  assert.equal(firstError.details.recovery.status, 'old-remote');
+  assertRecoveryState(firstError, 'old-remote', { journalStatus: 'opened' });
 
   const retryWriter = openRecoveryJournal(journalPath, { now: fixedNow });
   const retry = applyPlan(remote, plan, {
@@ -1801,6 +1806,8 @@ test('retrying an old-remote journal appends durable retry state without duplica
   assert.ok(persisted.records.some((record) => record.type === 'journal-retry-opened'));
   assert.equal(inspection.status, 'fully-updated-remote');
   assert.deepEqual(inspection.counts, { old: 0, new: 2, blockedUnknown: 0 });
+  assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(retry.recoveryState.artifacts.journal.entries.length, plan.mutations.length);
 });
 
 test('stale recovery claim fences an old worker before target mutation', () => {
@@ -1913,6 +1920,7 @@ test('replaying a completed plan does not duplicate inserts or reapply stale loc
   assert.equal(error.code, 'RECOVERY_BLOCKED');
   assert.equal(changedAfterCompletion.db.wp_posts['ID:2'].post_title, 'Remote edited after push');
   assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Remote edited after push');
 });
 
 test('completed replay on a fresh durable journal persists a restart-inspectable envelope', () => {
