@@ -816,6 +816,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
       .get('index-and-compressed-upload-queue-completes-large-upload')
       .violates.includes('chunk-receipts'),
   );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-buffer-completes-chunk-resume')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-buffer-completes-chunk-resume')
+      .violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-buffer-completes-chunk-resume')
+      .violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-buffer-completes-chunk-resume').rejectedGate,
+    'recovery',
+  );
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
@@ -867,6 +886,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-row-batch-completes-plugin-update',
     'index-and-compressed-row-batch-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-large-upload',
+    'index-and-compressed-buffer-completes-chunk-resume',
     'index-and-table-checksum-skips-batch-preconditions',
     'full-digest-completes-chunk-resume',
     'manifest-hash-completes-large-upload',

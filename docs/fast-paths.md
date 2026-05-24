@@ -61,6 +61,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus durable chunk receipts still cannot skip the live file compare before publish.
 - A fresh remote index plus cached chunk receipts still cannot skip the guarded publish finalize for a large upload.
 - A fresh remote index plus a compressed upload queue still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
+- A fresh remote index plus a compressed in-memory buffer still cannot prove chunk resume is complete, because compressed pressure relief does not replace missing chunk acknowledgements.
 - A fresh remote index plus a cached file digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
 - A compressed upload buffer still cannot stand in for per-chunk receipts or the guarded publish step.
 - A matching manifest or archive hash still cannot stand in for missing chunk receipts or the guarded publish finalize record.
@@ -390,6 +391,9 @@ under load:
   because planning evidence and batch compression cannot prove row-level
   preconditions, dependency checks, or the atomic-group commit survived a
   failure.
+- remote-index-plus-compressed-buffer-completes-chunk-resume is rejected because
+  compressed buffers and planning evidence cannot prove which chunk receipts
+  survived a crash or pause.
 
 ## Benchmark Shape
 
