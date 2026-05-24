@@ -1,46 +1,28 @@
-# Durable Journal Contract
+# Durable Recovery Journal Contract
 
-The recovery model in this lane intentionally distinguishes between:
+The recovery tests in this lane use JSON fixtures and in-memory objects to model
+apply failures, but production recovery needs a durable journal with stronger
+guarantees:
 
-- lab JSON fixtures and restart-inspection evidence
-- the production durable journal contract that must survive process loss
+- the journal must survive process exit and restart;
+- the journal must be written before the executor treats a partial apply as safe;
+- the journal must preserve enough evidence to classify `old-remote`,
+  `fully-updated-remote`, or `blocked-recovery`;
+- a partial remote mutation without a durable recovery artifact is a release
+  blocker.
 
-## Acceptable Post-Failure States
+Fixture-based evidence is still useful for proving the state machine, but it is
+not the same thing as production durability. In particular, JSON test doubles do
+not prove database row durability, fsync semantics, plugin activation fences, or
+filesystem crash recovery.
 
-An apply attempt may end in one of these states:
+Accepted recovery outcomes remain narrow:
 
-1. `old-remote`
-   - No remote mutation has become durable.
-   - Recovery artifacts must include the journal snapshot that explains why the apply stopped.
-2. `fully-updated-remote`
-   - Every planned mutation is already present on the remote.
-   - Recovery artifacts must include the completed journal snapshot.
-3. `blocked-recovery`
-   - The remote is partially applied or has drifted outside the journal envelope.
-   - Recovery artifacts must include both the journal snapshot and the inspected remote snapshot.
+- `old-remote`: no remote mutation escaped the failure boundary.
+- `fully-updated-remote`: replay observed that the completed plan already
+  matched the live remote.
+- `blocked-recovery`: the remote may be partially updated, but the journal and
+  live hashes prove the executor cannot safely infer completion.
 
-A partial remote mutation without a recovery artifact is a release blocker.
-
-## Retry Rules
-
-Retries must not:
-
-- duplicate inserts
-- resurrect stale local data from an outdated journal
-- treat a partial write without artifacts as safe to continue
-
-If a completed journal no longer matches the remote, recovery stays blocked until the operator resolves the mismatch and re-runs inspection.
-
-## Production vs Lab Evidence
-
-The lab JSON model is useful for restart inspection and failure injection, but it is not the production durability boundary.
-
-Production recovery needs explicit durable evidence for:
-
-- journal append ordering
-- fsync-backed persistence
-- plugin activation and dependency claims
-- fencing or lease invalidation when a stale worker is superseded
-- recovery inspection of the live remote before retry
-
-The durable journal must therefore carry enough metadata to prove which of those boundaries were reached before failure, without depending on ephemeral in-memory state.
+Replay must stay idempotent. If a completed plan is replayed against a matching
+remote, it must not duplicate inserts or resurrect stale local data.

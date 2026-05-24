@@ -2616,6 +2616,38 @@ test('durable dependency-validation failure remains inspectable as old-remote', 
   assert.deepEqual(inspection.counts, { old: plan.mutations.length, new: 0, blockedUnknown: 0 });
 });
 
+test('mid-apply failure after staging one mutation leaves the remote old and the journal inspectable', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      failBeforeCommitAtMutation: 1,
+      durableJournal,
+    }));
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_COMMIT');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'staging');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(inspection.status, 'old-remote');
+  assert.deepEqual(inspection.counts, { old: plan.mutations.length, new: 0, blockedUnknown: 0 });
+});
+
 test('atomic apply only accepts the documented recovery states', () => {
   const base = baseSite();
   const local = baseSite();
