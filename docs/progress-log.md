@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Release Gate Clarification
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:18:09 CEST`) and tightened the first screen so the open gates
+  read as a short checklist instead of repeated summary text.
+- The public page still treats WordPress executor, durable recovery journal,
+  Docker/Playground integration, and plugin drivers as pending until proof
+  appears.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Timestamp Sync Refresh
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
