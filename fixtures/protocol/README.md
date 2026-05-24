@@ -79,7 +79,9 @@ inspection call uses the same `push_recover` endpoint with `mode: "inspect"`
 and omits the mutating recovery idempotency key unless the implementation
 requires idempotency for all recovery requests.
 
-`push_journal` is the ambiguity resolver after a timeout or crash.
+`push_journal` is the ambiguity resolver after a timeout or crash. It reads
+durable journal rows that carry claim ownership, claim generation, lease
+expiry, and resource-level before/staged/after hashes.
 `push_recover` `mode: "inspect"` is the evidence reader that decides whether
 the next safe step is finish, rollback, retry, or block. Neither call should
 be treated as a live write lock.
@@ -161,6 +163,16 @@ should mirror the same role split with separate disposable blueprints for
 `remote-base`, `local-edited`, and `remote-changed`. In both topologies,
 browser-visible inspection must use only the sandbox-provided `8080` ingress
 through a local-only proxy, never a tunnel.
+
+The runtime split is intentionally narrow:
+
+- `remote-base` is the remote source site that produced the persisted pull
+  package.
+- `local-edited` is the imported site after local edits are applied.
+- `remote-changed` is the same remote after independent drift and exists only
+  to prove that dry-run and apply are separate.
+- the runner is the only actor allowed to compare, upload, inspect, or
+  recover.
 
 The test harness for these fixtures should use the same one-remote, one-local
 shape described in the executor docs:

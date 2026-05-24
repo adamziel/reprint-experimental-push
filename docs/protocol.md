@@ -35,9 +35,9 @@ Push is split into a read-only planning phase and a write phase:
 
 Required behavior:
 
-- `push_preflight` authenticates a push-capable credential, binds the request
-  to the pulled base identity, negotiates capabilities, and mints a short-lived
-  push session.
+- `push_preflight` authenticates a push-capable credential at least as strict
+  as the current export HMAC, binds the request to the pulled base identity,
+  negotiates capabilities, and mints a short-lived push session.
 - `push_snapshot_hashes` returns a complete, cursorable live remote hash list
   plus coverage proof for the requested scopes.
 - `push_plan_dry_run` uploads a canonical plan, validates it, and records the
@@ -70,6 +70,8 @@ Endpoint specifics:
   write. Dry-run evidence is not sufficient by itself.
 - `push_journal` is a read-only journal inspector for lost-response recovery,
   idempotency resolution, lease/fencing evidence, and apply classification.
+  It reads durable journal rows only; it does not mint a new lock or rewrite a
+  prior claim.
 - `push_recover` is the only recovery entrypoint. `inspect` must stay
   read-only; `auto`, `finish`, and `rollback` may mutate only when the journal
   and fresh live hashes prove the action.
@@ -161,11 +163,18 @@ merge base. This package is read-only evidence for later push planning:
 - the resource keys, hashes, and optional bodies observed during the pull
 - the pull-time remote coverage hash and any scope-completion proof that
   showed the base was complete enough for later mutation
+- the durable journal row fields used for claim, lease, and fencing proof
 
 If the remote cannot recognize the site identity or the plan cannot prove
 which base it was built from, `push_preflight` or `push_plan_dry_run` must
 reject. A later push may refresh live remote hashes, but it must not rewrite
 the stored pull base to make an old plan look current.
+
+The session boundary is equally strict. `push_preflight` may mint or refresh
+the short-lived push session, but only for the same remote identity, same base
+manifest lineage, and same requested scope. Any later request that changes the
+remote identity or scope must obtain a fresh session rather than reuse the old
+one.
 
 The pull-to-push handoff is linear and one-way:
 

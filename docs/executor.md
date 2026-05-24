@@ -42,6 +42,15 @@ It also must not treat journal inspection as authorization to mutate; recovery
 only becomes mutating when the journal and fresh live hashes both prove the
 same action.
 
+The executor also treats the pushed session as bounded provenance:
+
+- the session is minted by `push_preflight`
+- the session is tied to one remote identity, one base manifest lineage, and
+  one requested scope
+- the session expires instead of acting like a write lock
+- any scope or identity change requires a fresh preflight rather than a reused
+  session
+
 Acceptance criteria for the reliable executor:
 
 - It never calls `push_batch_apply` without a persisted pull base, completed
@@ -128,6 +137,11 @@ mutation when the process crashes mid-apply. If the journal shows an open
 claim, the executor treats claim generation and lease expiry as fencing
 evidence and never assumes that the old worker still owns the batch.
 
+The journal rows are part of the proof surface, not just a diagnostic trace.
+When the executor reads them, it is looking for claim ownership, claim
+generation, lease expiry, batch status, and the resource-level before/staged/
+after hashes that prove whether finish, rollback, or block is safe.
+
 ## Mapping To Existing Reprint Pull
 
 The existing pull command already knows how to run stages, save state, retry
@@ -203,6 +217,11 @@ corrupt, or from a different remote identity, push planning stops before
 preflight can become a mutation path. If the remote drifts between dry-run
 and apply, the executor must discard the old listing and repopulate live proof
 before resuming.
+
+The recovery proof still follows the same order on replay: inspect the journal
+first, inspect live hashes second, and only then decide whether the safe next
+step is finish, rollback, retry, or block. That keeps journal rows and live
+state aligned instead of letting old proof turn into permission.
 
 The executor must also respect the pull-to-push provenance boundary:
 
