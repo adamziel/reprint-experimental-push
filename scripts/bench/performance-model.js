@@ -371,6 +371,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-buffer-acknowledges-chunks',
+    proposal: 'treat compressed staging buffers as durable proof that chunk uploads reached the remote',
+    rejectedBecause: 'compression only shrinks buffered state; it does not replace per-chunk receipts or the guarded publish barrier',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'queue-empty-means-complete',
     proposal: 'advance an upstream producer because the queue is empty even though receipts are missing',
     rejectedBecause: 'an empty queue is not proof that the remote acknowledged the work',

@@ -55,6 +55,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
 - A fresh remote index plus a cached plugin package hash still cannot skip dependency checks, metadata writes, or the atomic-group barrier.
 - A fresh remote index plus a cached digest still cannot skip per-row preconditions for a database batch.
+- A compressed upload buffer still cannot stand in for per-chunk receipts or the guarded publish step.
 
 The safe version of a fast path is usually a "skip duplicate staging work" or
 "stage earlier" optimization, not a "commit earlier" optimization. The commit
