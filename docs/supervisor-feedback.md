@@ -7,8 +7,9 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-24 - Current Nudge
 
-- Going well: `70` Node tests pass, and invariants, recovery, protocol,
-  fast-path, audit, and critic lanes all sharpened lab/model gates.
+- Going well: `70` Node tests pass, no-server Playground plan/apply/protocol
+  passed in the feedback lane, and invariants, recovery, protocol, fast-path,
+  audit, and critic lanes all sharpened lab/model gates.
 - Not going well: production readiness is flat. The repo still lacks a
   production endpoint, credential binding, nonce cleanup, durable audit,
   storage guard, and general plugin driver proof.

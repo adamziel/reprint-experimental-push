@@ -15,6 +15,9 @@ linked implementation artifacts.
   replay, and different-body conflict refusal.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
   date and keeps the supervisor view short.
+- Feedback-lane verification after rebasing onto current `origin/main` passed:
+  `npm test` reported 70 tests, `npm run test:playground` passed plan, apply,
+  and protocol legs, and the local `progress.html` evidence links resolved.
 
 <details>
 <summary>Earlier progress entries</summary>
