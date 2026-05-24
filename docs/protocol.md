@@ -41,6 +41,21 @@ Push is split into a read-only planning phase and a write phase:
 - `push_recover` is the only endpoint allowed to finish, roll back, or block a
   partially applied batch after proof from the journal and live hashes.
 
+Minimal wire shapes:
+
+| Endpoint | Required request evidence | Required response evidence |
+| --- | --- | --- |
+| `push_preflight` | persisted base package, remote identity, requested scope, push-capable HMAC credential | push session, negotiated protocol version, capability set, limits, journal support, auth requirements |
+| `push_snapshot_hashes` | push session, requested scope, cursor, batch size | cursorable live hash list, coverage hash, completion proof, blocked or excluded scope evidence |
+| `push_plan_dry_run` | push session, canonical plan, canonical push signature, idempotency key, base manifest binding, snapshot binding | dry-run receipt, plan hash, eligibility state, journal or idempotency trace |
+| `push_batch_apply` | push session, accepted dry-run receipt, canonical push signature, idempotency key, batch id, fresh live evidence | batch receipt, journal cursor, per-batch outcome, precondition failure or committed proof |
+| `push_journal` | push session, dry-run id, cursor, artifact toggle | durable journal rows, claim generation, lease expiry, before/staged/after hashes, storage-guard outcomes |
+| `push_recover` | push session, mode, dry-run id, batch id, canonical push signature for mutating modes, idempotency key for mutating modes | inspect evidence or mutating recovery receipt, final journal state, blocked or committed classification |
+
+The server may reject any request that is missing the stored pull base binding
+or that reuses stale live evidence as if it were a lock. `push_batch_apply`
+must still re-read the live remote even when the dry-run receipt is valid.
+
 Dry-run and apply are separate remote operations. Dry-run proves eligibility
 only. Apply is a later live proof step and must revalidate the remote before
 every batch and again at the storage boundary. A dry-run receipt may be valid
@@ -170,6 +185,13 @@ The pull exporter/importer handoff is one-way:
 5. push dry-run uploads the canonical plan derived from base, local, and live
 6. push apply revalidates the live remote before every batch and at the storage boundary
 7. push journal and push recover inspect read durable evidence only
+
+Recovery is inspect-first:
+
+1. read the journal
+2. inspect the live hashes
+3. classify the batch as finishable, rollback-only, retryable, or blocked
+4. only then choose a mutating recovery mode
 
 ## Pull Pipeline Mapping
 

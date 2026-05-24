@@ -144,6 +144,19 @@ push resumes from the last safe state:
 - If a batch response was lost, call `push_journal` first and retry only if the journal still proves the same request is open.
 - If the server reports `RECOVERY_REQUIRED`, inspect then recover.
 
+Persisted push state should include, at minimum:
+
+- the loaded base manifest id and hash
+- the remote site identity hash and base coverage hash
+- the last `snapshot_id` and `coverage_hash`
+- the accepted `dry_run_id` and `plan_hash`
+- the latest `journal_cursor`
+- the last recovery `mode` and `proof`
+- the idempotency key and request hash for every mutating request
+
+That state is what lets the executor distinguish a lost response from a stale
+plan. It is not a substitute for fresh live evidence.
+
 On any ambiguous stop, the executor must prefer the freshest evidence path:
 
 1. Read `push_journal` first.
@@ -298,6 +311,23 @@ The test topology should stay minimal but complete:
 - one local edited site that produces the candidate plan
 - one drift witness that mutates the same remote after dry-run
 - one runner that alone is allowed to compare, upload, inspect, and recover
+
+The machine-checked topology proof should assert the same four roles directly:
+
+- `remote-base` is the authoritative source-site role that seeds the persisted
+  pull base package.
+- `local-edited` is the imported local site that holds the edits.
+- `remote-changed` is the same source site after drift and must fail stale
+  apply-time proof.
+- `runner` is the only process allowed to run preflight, snapshot listing,
+  dry-run, apply, journal inspection, and recovery.
+
+For both Docker and Playground, the test harness should prove three facts:
+
+1. one remote source site and one local edited site are separate roles
+2. dry-run and apply are separated by live drift on the remote
+3. browser-visible inspection uses only the sandbox-provided `8080` ingress
+   through a local-only proxy, never a remote tunnel
 
 The pull importer must persist a push base package so later pushes can prove
 the merge base, and it must also preserve the additional pull evidence needed

@@ -45,6 +45,12 @@ test('push protocol fixture captures the production stage order and recovery rul
 });
 
 test('push auth fixture requires push-scoped headers for mutating calls and keeps inspect read-only', () => {
+  const preflightRequest = readJson('fixtures/protocol/push-preflight-request.json');
+  const snapshotRequest = readJson('fixtures/protocol/push-snapshot-hashes-request.json');
+  const dryRunRequest = readJson('fixtures/protocol/push-dry-run-request.json');
+  const applyRequest = readJson('fixtures/protocol/push-apply-batch-request.json');
+  const journalRequest = readJson('fixtures/protocol/push-journal-request.json');
+  const recoveryRequest = readJson('fixtures/protocol/push-recovery-request.json');
   const preflight = readJson('fixtures/protocol/push-preflight-response.json');
   const headers = readJson('fixtures/protocol/push-auth-headers.json');
   const snapshot = readJson('fixtures/protocol/push-snapshot-hashes-response.json');
@@ -54,6 +60,20 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const blockedInspect = readJson('fixtures/protocol/push-recovery-inspect-blocked-response.json');
   const recoveryDecision = readJson('fixtures/protocol/push-recovery-decision.json');
 
+  assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(preflightRequest.remote_site_id, 'remote-example');
+  assert.deepEqual(preflightRequest.requested_scopes, ['files', 'database', 'plugins', 'themes']);
+  assert.equal(snapshotRequest.push_session, 'psh_01j00000000000000000000000');
+  assert.equal(snapshotRequest.batch_size, 1000);
+  assert.equal(dryRunRequest.plan_id, 'plan_2026-05-24T00:00:00Z_001');
+  assert.equal(dryRunRequest.remote_snapshot_id, 'snap_01j00000000000000000000000');
+  assert.equal(dryRunRequest.remote_coverage_hash, 'sha256:remote-coverage');
+  assert.equal(applyRequest.dry_run_id, 'dry_01j00000000000000000000000');
+  assert.equal(applyRequest.batch_id, 'batch-1');
+  assert.equal(applyRequest.dry_run_receipt_hash, 'sha256:dry-run-receipt');
+  assert.equal(journalRequest.cursor, null);
+  assert.equal(journalRequest.include_artifacts, false);
+  assert.equal(recoveryRequest.mode, 'auto');
   assert.equal(preflight.auth.required[0], 'export-hmac');
   assert.equal(preflight.auth.required[1], 'canonical-push-hmac');
   assert.equal(preflight.capabilities.journal, true);
