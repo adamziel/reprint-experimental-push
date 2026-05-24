@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - First Screen Reconciliation
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:34:46 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Reconciled the public blocker pills so they stay short and line up with the
+  four release gates instead of repeating the same pending items in different
+  words.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Status Signal Trim
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
