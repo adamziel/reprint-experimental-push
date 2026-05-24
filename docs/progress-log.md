@@ -21,13 +21,13 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 00:27 CEST.
+- Last update: 2026-05-25 00:47 CEST.
 - Status: `89` Node tests pass after supervised lane merges.
-- New proof: planner coverage checks matching independent delete/edit cases;
-  recovery has a concise acceptable-state contract; fast-path docs and tests
-  now pin benchmark workloads to hashing, chunking, row batching, and rejected
-  shortcuts; protocol docs tighten journal and recovery semantics; critic and
-  objective audits reflect the evidence.
+- New proof: planner coverage now covers independent delete/edit cases; recovery
+  keeps a concise acceptable-state contract; fast-path docs and tests pin
+  hashing, chunking, row batching, and rejected shortcuts; protocol docs keep
+  journal and recovery semantics tight; critic and objective audits match the
+  evidence.
 - Trend: no-data-loss, recovery, fast-path, reliable-executor, and audit lanes
   improved inside lab/model scope. Production readiness is still blocked.
 - Supervision: next-proof fast-path, critic, and reliable-executor outputs were
