@@ -14,12 +14,15 @@ direct proof for the objective: pushing local edits back to a live source
 WordPress site without losing concurrent source changes, while remaining
 reliable and fast.
 
-The weakest current claim is speed. The benchmark harness does not assert a
-production throughput claim; it enumerates blockers such as missing durable
+The weakest current claim is still speed, but the real release blocker is more
+specific: the benchmark harness refuses an unsupported throughput claim while
+the repository still lacks a single enforced release gate that requires the
+auth, journal, storage, graph, recovery, and benchmark checks to pass in one
+required command. The benchmark code lists blockers such as missing durable
 chunk receipts, missing live remote preconditions, missing durable journal
 integrity, missing graph-identity evidence, missing recovery evidence, and
 non-production storage or row-apply capabilities. That is a useful refusal
-mechanism, but it is still not a measured release gate.
+mechanism, but it is not yet a gate that can stop a release on its own.
 
 The honest release claim is narrower: this repository is an executable safety
 model and local Playground lab for push invariants. It does **not** yet prove
