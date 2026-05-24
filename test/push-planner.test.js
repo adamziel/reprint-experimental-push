@@ -2269,6 +2269,47 @@ test('keeps remote-only plugin changes while planning an unrelated local row del
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned row delete and matching independent edit and type swap stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base row title', post_status: 'publish' };
+  const local = baseSite();
+  delete local.db.wp_posts['ID:2'];
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent row title';
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base row title', post_status: 'publish' };
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent row title';
+  remote.plugins.forms = { version: '1.6.0', active: true };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code v1.6 */';
+
+  const plan = planFor(base, local, remote);
+  const deletion = mutationFor(plan, 'row:["wp_posts","ID:2"]');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deletion.action, 'delete');
+  assert.equal(deletion.changeKind, 'delete');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:2'), false);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Shared independent row title');
+  assert.equal(result.site.plugins.forms.version, '1.6.0');
+  assert.equal(
+    result.site.files['wp-content/plugins/forms/forms.php'],
+    '<?php /* remote-private-forms-code v1.6 */',
+  );
+});
+
 test('blocks local plugin metadata changes when remote plugin files changed', () => {
   const base = baseSite();
   const local = baseSite();
