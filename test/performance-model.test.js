@@ -282,6 +282,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('skip-plugin-validators-on-package-hash').violates.includes('plugin-preconditions'),
   );
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
+  assert.ok(
+    rejectedById.get('visible-staging-object-completes-chunk').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('blind-sql-replace').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('cross-group-row-batch').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('index-cursor-as-lock').violates.includes('live-preconditions'));

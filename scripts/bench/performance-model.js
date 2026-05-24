@@ -224,6 +224,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['known-terminal-state', 'atomic-file-publish'],
   },
   {
+    id: 'visible-staging-object-completes-chunk',
+    proposal: 'treat a visible staging object as a completed chunk without a durable receipt',
+    rejectedBecause: 'staging presence is not durable proof that the chunk reached the remote intact',
+    rejectedGate: 'recovery',
+    violates: ['durable-progress', 'chunk-receipts'],
+  },
+  {
     id: 'fresh-dry-run-authorizes-apply',
     proposal: 'skip apply preconditions when the dry-run plan is recent',
     rejectedBecause: 'remote edits after dry-run would be overwritten without a live compare',

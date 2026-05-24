@@ -78,6 +78,8 @@ The benchmark shape must stay realistic:
   decisions, and backpressure under a body size that is well beyond a toy case.
 - A plugin-install workload exercises remote indexes, row batching, staged
   plugin metadata, and the atomic group commit barrier.
+- A rejected-path workload proves that a visible staging object is not enough
+  to complete a chunk, and that a fresh dry run still does not authorize apply.
 - Rejected fast paths are modeled alongside the safe ones so the benchmark can
   prove that the tempting shortcuts were rejected for the right reason, not
   just omitted from the happy path.
