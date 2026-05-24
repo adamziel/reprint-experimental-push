@@ -673,6 +673,30 @@ test('recognizes matching independent file type swaps as already in sync', () =>
   assert.equal(decision.change.remoteChange, 'type-change');
 });
 
+test('keeps remote-only plugin changes while recognizing a matching independent restore', () => {
+  const base = baseSite();
+  delete base.files['index.php'];
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "restored";';
+  const remote = baseSite();
+  remote.files['index.php'] = '<?php echo "restored";';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const restoreDecision = decisionFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'create');
+  assert.equal(restoreDecision.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('recognizes matching independent plugin context edits as already in sync', () => {
   const base = baseSite();
   const local = baseSite();
