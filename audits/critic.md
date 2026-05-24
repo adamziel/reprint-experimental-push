@@ -40,6 +40,8 @@ protocol versioning. That is a good starting point for push, but it is not a
 mutation guarantee. The current design still needs a production mutation
 boundary with per-write preconditions, durable journal semantics, and a
 recovery artifact that survives failure across file, DB, and plugin boundaries.
+It also needs proof that the push path is not just a mirrored pull pipeline
+with write verbs attached.
 
 ### ZS-Sync
 
@@ -48,6 +50,8 @@ helps the planner know what changed. It does not prove what is safe to mutate.
 The current design still lacks a complete coverage manifest that ties scanner
 results to every core, plugin, theme, upload, generated, custom-table, and
 multisite resource the push can affect.
+Scanner cursors and bounded batches are only useful if every enumerated
+resource either has a mutation rule or a hard block.
 
 ### ForkPress
 
@@ -58,6 +62,9 @@ old, new, or blocked with artifacts. The current design borrows the vocabulary
 but not the proof. In particular, it still needs a resolution artifact that
 preserves base/local/remote evidence and forces a fresh live revalidation on
 retry.
+ForkPress is also the warning sign here: reviewed resolution is not a success
+path unless the remote is preserved for audit and the next retry re-plans from
+fresh evidence.
 
 ## Changes Required Before A Production Claim
 
@@ -94,6 +101,11 @@ or an operator-facing success message that is stronger than the proof.
 11. Publish production audit/redaction schemas and a release gate that runs the
     full safety-critical suite before the project can use production-grade
     wording.
+11. Prove the push endpoint is genuinely production-backed rather than a
+    production-shaped route that still resolves to lab or Playground code.
+12. Prove the claimed reliability wording against live source mutation, not
+    against fixture replay, route-shape smoke tests, or model-only recovery
+    classification.
 
 If any one of these remains unproved, the correct claim stays limited to
 fixture-scoped or lab-backed push evidence.
