@@ -14,15 +14,21 @@ Derived release requirements from the objective:
 6. A measured, documented speed claim, or an explicit refusal to make one.
 7. One required release command that fails closed if any safety gate still reports `labBacked: true`, fixture-only scope, or missing live-source evidence.
 
+Release interpretation:
+
+- The objective requires proof at the live-source push boundary, not just proof that the planner or lab smokes are conservative.
+- Indirect evidence is useful only when it points to a concrete executable check; it is not itself a release pass.
+- A claim is not releasable if the best available evidence is still fixture-scoped, lab-backed, or opt-in only.
+
 The repository now has meaningful lab evidence: three-way JSON snapshot
 planning, fixture-scoped Playground apply paths, authenticated local Playground
 routes, DB journal/idempotency slices, process-kill and stale-claim smokes,
 narrow storage-boundary guards for selected fixture DB rows and upload files,
 and a production-shaped `/wp-json/reprint/v1/push/*` route mounted through a
-temporary plugin package. That route still reports `labBacked: true`. It is not
-direct proof for the objective: pushing local edits back to a live source
-WordPress site without losing concurrent source changes, while remaining
-reliable and fast.
+temporary plugin package. That route still reports `labBacked: true`. This is
+good negative evidence, but it is still not direct proof for the objective:
+pushing local edits back to a live source WordPress site without losing
+concurrent source changes, while remaining reliable and fast.
 
 The weakest current claim is still speed, but the more important release
 blocker is structural: the repository still lacks one enforced release gate
@@ -131,7 +137,7 @@ release yet." It is not yet good enough to prove "release is safe."
 That split matters because a green default run still does not mean the release
 gates were exercised.
 
-| Area | Directly observed proof | Still insufficient | Next proof required |
+| Area | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
 | No-overwrite planner | Executable proof: unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. Lab/fixture proof: the Playground and route smokes exercise the same planner shape against fixtures. Docs-only proof: README and audit text describe graph safety intentions. | These proofs are still mostly JSON-model resources plus fixture policy, not WordPress graph semantics. They do not prove post/postmeta/attachment/taxonomy/menu/plugin relationships are complete, nor do they prove arbitrary plugin-owned data is safe. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
 | Recovery and idempotency | Executable proof: unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Lab/fixture proof: Playground smokes cover DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. Lab/fixture proof: the production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. Docs-only proof: script names and comments describe durability intent. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. The current suite can demonstrate blocked recovery states, but it does not prove that a live source site survives crash/retry cycles without data loss or duplicate mutation at each guarded boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
