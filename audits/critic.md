@@ -18,6 +18,13 @@ and reliability vocabulary, but none of them by themselves prove a production
 source-mutation boundary for this repository. Any claim beyond that would be an
 inference, not direct evidence.
 
+The current design also still has five unproven failure classes that matter for
+production push safety: live remote drift between dry-run and apply, create-time
+identity remapping, plugin-owned state outside the allowlist, partial file/DB/
+plugin side effects, and stale manual review artifacts. Until each one has a
+retry-safe proof or a hard block, a success message is stronger than the
+evidence.
+
 ## Blocking Gaps
 
 | Risk | Scenario | Missing proof | Why this blocks production |
@@ -30,6 +37,22 @@ inference, not direct evidence.
 | Recovery claims stop at classification | After a partial apply, the system can label the remote `old-remote`, `fully-updated-remote`, or `blocked-recovery`, but cannot complete a production repair across every boundary. | The recovery docs intentionally stop at lab evidence. They do not prove durable production journals, kill-at-every-boundary replay, or repair across DB, filesystem, plugin activation, and stale-claim lease boundaries. | Production push must survive real crashes, not just classify them after the fact. |
 | Storage boundary proof is still fixture-bounded | A remote changes after dry-run but before a MySQL update, file publish, schema write, activation side effect, or plugin publish. | The guarded write proof is limited to specific Playground fixtures and a narrow set of file/database operations. It does not cover arbitrary production inserts, deletes, schema changes, plugin activation writes, or generic compare-and-swap semantics. | Partial success at a narrow fixture boundary is not proof that arbitrary production writes are safe. |
 | Coverage gaps can hide unknown remote state | The remote contains mu-plugin settings, WooCommerce HPOS data, Action Scheduler queues, custom tables, generated assets, or multisite data outside the scanner scope. | The design says unknown coverage should block, but no completed production coverage manifest exists that binds every affected surface into the apply evidence. | If the planner cannot prove it saw the resource, it cannot safely mutate it. |
+
+## Still Unproven For Production
+
+These are the specific scenarios that still need direct proof before the branch
+can claim production-grade push support:
+
+- A remote edit lands after dry-run and before the first guarded write, and the
+  retry is rejected without losing the remote change.
+- A create path allocates, renumbers, or remaps an object identity after pull,
+  and the planner either rewrites references safely or blocks before any write.
+- A plugin owns state outside the allowlist, and the push either discovers that
+  ownership or hard-blocks without touching the unknown state.
+- A push leaves mixed file, DB, or plugin side effects, and recovery can prove
+  whether the target is old, new, or blocked using durable artifacts.
+- An operator approves manual conflict resolution once, then the live remote
+  drifts before retry, and the stale approval cannot be reused.
 
 ## What Reprint, ZS-Sync, And ForkPress Actually Contribute
 
@@ -167,6 +190,8 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - The release suite runs the production-shaped auth, storage, recovery,
   plugin, graph, and audit checks together, not as isolated smoke tests.
 - The claim text explicitly says what is proven and what remains lab-only.
+- The release notes and branch status comments never cite route shape, fixture
+  smokes, or packaged-plugin mounting as production safety proof.
 
 ## Current Bottom Line
 
