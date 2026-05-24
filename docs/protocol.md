@@ -233,6 +233,12 @@ only valid if `remote-base` and `remote-changed` are the same remote identity
 at different times, because that is what proves `push_batch_apply`
 revalidates live state instead of replaying the dry-run receipt.
 
+The compact machine-readable proof for this boundary lives in
+[`fixtures/protocol/push-contract.json`](../fixtures/protocol/push-contract.json).
+It binds the pull handoff, protocol sequence, and Docker/Playground topology
+into one contract so tests can assert the production shape without re-parsing
+the full prose spec.
+
 Recovery is inspect-first:
 
 1. read the journal

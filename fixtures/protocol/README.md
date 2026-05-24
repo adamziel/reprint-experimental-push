@@ -27,6 +27,7 @@ The normal sequence is:
 19. `push-recovery-decision.json`
 20. `push-session-journal-proof.json`
 21. `push-recovery-path.json`
+22. `push-contract.json`
 
 Failure and recovery examples:
 
@@ -71,6 +72,9 @@ Failure and recovery examples:
   classification used when a batch response is ambiguous and the executor must
   distinguish old, new, blocked, and open outcomes from journal plus live
   evidence.
+- `push-contract.json` gives the compact production contract that ties the
+  exporter/importer handoff, push stages, and Docker/Playground topology into a
+  single fixture.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

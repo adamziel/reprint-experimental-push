@@ -1,0 +1,59 @@
+{
+  "contract_id": "push-contract-production-extension",
+  "purpose": "single fixture that binds the pull handoff, push protocol, and test topology",
+  "pull_handoff": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "push_preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "push_snapshot_hashes": "lists the live remote comparison set for planning only",
+    "push_plan_dry_run": "uploads the canonical plan as eligibility evidence only",
+    "push_batch_apply": "revalidates live remote state before every batch and again at the storage boundary",
+    "push_journal": "inspects durable claim, lease, and fencing evidence without granting write authority",
+    "push_recover": "inspects first, then finishes, rolls back, or blocks only when journal evidence plus fresh live hashes prove the action"
+  },
+  "protocol_sequence": [
+    "preflight",
+    "snapshot-hashes",
+    "dry-run",
+    "apply",
+    "journal",
+    "recovery-inspect",
+    "recovery-mutate"
+  ],
+  "topology": {
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    },
+    "docker": {
+      "remote_base": "remote-base",
+      "local_edited": "local-edited",
+      "remote_changed": "remote-changed",
+      "runner": "runner",
+      "proof": [
+        "one private network",
+        "remote-base and remote-changed are the same remote identity at different times",
+        "browser-visible inspection goes through the sandbox-provided 8080 ingress"
+      ]
+    },
+    "playground": {
+      "remote_base": "remote-base",
+      "local_edited": "local-edited",
+      "remote_changed": "remote-changed",
+      "runner": "local test process",
+      "proof": [
+        "separate disposable blueprints",
+        "remote-base and remote-changed are the same remote identity at different times",
+        "browser-visible inspection goes through the sandbox-provided 8080 ingress"
+      ]
+    }
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage"
+  ]
+}

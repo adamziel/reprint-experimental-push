@@ -250,3 +250,37 @@ test('push session journal proof binds the minted session to fencing and inspect
   assert.ok(recoveryPath.mutating_modes.finish.requires.includes('fresh live hashes'));
   assert.ok(recoveryPath.required_invariants.includes('stale dry-run evidence must not be promoted into recovery authority'));
 });
+
+test('push contract fixture ties pull provenance, push stages, and topology into one proof', () => {
+  const contract = readJson('fixtures/protocol/push-contract.json');
+
+  assert.equal(contract.contract_id, 'push-contract-production-extension');
+  assert.equal(contract.pull_handoff.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(contract.pull_handoff.push_preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
+  assert.equal(contract.pull_handoff.push_snapshot_hashes, 'lists the live remote comparison set for planning only');
+  assert.equal(contract.pull_handoff.push_plan_dry_run, 'uploads the canonical plan as eligibility evidence only');
+  assert.equal(contract.pull_handoff.push_batch_apply, 'revalidates live remote state before every batch and again at the storage boundary');
+  assert.equal(contract.pull_handoff.push_journal, 'inspects durable claim, lease, and fencing evidence without granting write authority');
+  assert.equal(contract.pull_handoff.push_recover, 'inspects first, then finishes, rolls back, or blocks only when journal evidence plus fresh live hashes prove the action');
+  assert.deepEqual(contract.protocol_sequence, [
+    'preflight',
+    'snapshot-hashes',
+    'dry-run',
+    'apply',
+    'journal',
+    'recovery-inspect',
+    'recovery-mutate',
+  ]);
+  assert.equal(contract.topology.networking.ingress_port, 8080);
+  assert.equal(contract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(contract.topology.networking.tunnels, 'disallowed');
+  assert.equal(contract.topology.docker.remote_base, 'remote-base');
+  assert.equal(contract.topology.docker.remote_changed, 'remote-changed');
+  assert.equal(contract.topology.docker.runner, 'runner');
+  assert.ok(contract.topology.docker.proof.includes('one private network'));
+  assert.ok(contract.topology.docker.proof.includes('remote-base and remote-changed are the same remote identity at different times'));
+  assert.equal(contract.topology.playground.runner, 'local test process');
+  assert.ok(contract.topology.playground.proof.includes('separate disposable blueprints'));
+  assert.ok(contract.required_invariants.includes('dry-run and apply are separate remote operations'));
+  assert.ok(contract.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
+});

@@ -100,6 +100,12 @@ inspection only through the sandbox-provided `8080` ingress via a local-only
 proxy. For Playground, use the same role split with separate disposable
 blueprints and the same no-tunnel rule.
 
+The machine-readable companion for this topology is
+[`fixtures/protocol/push-contract.json`](../fixtures/protocol/push-contract.json).
+It records the same remote identity across `remote-base` and `remote-changed`
+and keeps the runner as the only actor that may compare, upload, inspect, or
+recover.
+
 The important part of the topology is not the container count. It is the
 proof boundary: `remote-base` and `remote-changed` must be the same remote
 identity at two different moments, so stale dry-run apply attempts fail for
