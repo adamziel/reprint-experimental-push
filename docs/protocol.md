@@ -1,124 +1,100 @@
 # Reprint Push Protocol Extension
 
-This document defines the production push protocol extension for Reprint. It is
-designed as an extension of the existing exporter/importer pull API, not as a
-separate synchronization system.
+This document defines the production push extension for Reprint. Push is not a
+separate synchronization system. It is the write path that extends the existing
+exporter/importer pull pipeline with a safe remote mutation protocol.
 
-The core invariant is:
+The contract is deliberately strict:
 
 1. Dry-run and apply are separate remote operations.
-2. Apply revalidates the live remote before every mutation batch and, in the
-   production contract, immediately before each storage-boundary write. The
-   earlier snapshot and dry-run receipt are evidence, not locks.
-3. A failed or interrupted apply leaves a durable journal that lets recovery
-   prove whether the remote is old, new, or blocked with artifacts.
+2. Apply revalidates the live remote before every batch and again at the
+   storage boundary for each mutation.
+3. A failed or interrupted apply leaves a durable journal that recovery can use
+   to prove whether the remote is old, new, or blocked.
+4. The remote must refuse any push it cannot prove is bound to the pulled base
+   and to the currently live remote state.
 
-Push is intentionally conservative. A server that cannot prove complete
-coverage for the requested scopes, cannot bind the push to the pull base, or
-cannot guard a mutation at its storage boundary must refuse that part of the
-plan instead of accepting a best-effort overwrite.
+## Protocol Contract
 
-## Production Contract
+The push protocol adds mutating endpoints to the existing Reprint source-site
+API. Pull remains the way a local site gets its merge base. Push is allowed
+only when the executor can prove that the pull base, the edited local site, and
+the live remote site still form a safe three-way plan.
 
-The extension adds mutating push endpoints to the existing Reprint source-site
-API. Pull remains the way a local site gets its merge base; push is allowed
-only when the local executor can prove that base, the current local state, and
-the current live remote state form a safe three-way plan.
+Required behavior:
 
-The production contract is:
-
-- `push_preflight`, `push_snapshot_hashes`, and `push_journal` are read-only for
-  target WordPress resources.
-- `push_plan_dry_run` uploads and validates a plan, but it must not write target
-  WordPress files, rows, options, schemas, plugins, themes, or runtime state.
+- `push_preflight` authenticates a push-capable credential, binds the request
+  to the pulled base identity, negotiates capabilities, and mints a short-lived
+  push session.
+- `push_snapshot_hashes` returns a complete, cursorable live remote hash list
+  plus coverage proof for the requested scopes.
+- `push_plan_dry_run` uploads a canonical plan, validates it, and records the
+  result in the journal or idempotency store without mutating target resources.
 - `push_batch_apply` is the normal mutation path and only applies an accepted
   dry-run plan in legal batches.
-- `push_recover` mutates only in `auto`, `finish`, or `rollback` modes, and
-  only after journal artifacts and live hashes prove the action.
-- Every ready mutation has a live remote precondition and an advertised storage
-  guard. A mutation without both is invalid.
-- Dry-run acceptance is never a lock. Apply revalidates the current remote
-  before staging and revalidates the target again at the storage boundary.
-- A server that cannot write a durable journal cannot accept dry-run or apply.
-- A server that cannot prove whether interrupted resources are old, new, or
-  blocked must return recovery evidence instead of reporting success.
-
-Production implementations must treat the six push endpoints as a single
-stateful protocol:
-
-| Endpoint | Production duty | Target writes allowed |
-| --- | --- | --- |
-| `push_preflight` | Authenticate a push-capable credential, bind the request to the pulled base identity, negotiate capabilities, and mint a short-lived session. | No |
-| `push_snapshot_hashes` | Return a complete, cursorable live remote hash listing plus coverage proof for the requested scopes. | No |
-| `push_plan_dry_run` | Validate a canonical client plan, record its eligibility in the journal/idempotency store, and return a dry-run receipt. | No |
-| `push_batch_apply` | Revalidate the accepted dry-run, revalidate live preconditions, write a journal entry, run storage-boundary guards, and apply only legal batches. | Yes |
-| `push_journal` | Report dry-run, apply, idempotency, and recovery state so the executor can resolve ambiguous responses. | No |
-| `push_recover` | Inspect, finish, roll back, or block an interrupted batch according to journal artifacts and live hashes. | Only in `auto`, `finish`, or `rollback` modes |
+- `push_journal` reports dry-run, apply, idempotency, and recovery state so the
+  executor can resolve ambiguous responses.
+- `push_recover` inspects, finishes, rolls back, or blocks an interrupted batch
+  only when journal artifacts and live hashes prove the action.
 
 Remote liveness is checked at apply time, not at dry-run time. A conforming
-apply performs two separate checks: first, a batch-level live hash check before
-staging; second, a mutation-local storage-boundary check immediately before the
-row, option, file, plugin, theme, or semantic driver write. A mismatch before
-any batch mutation returns `PRECONDITION_FAILED` without target writes. A
-mismatch after staging or after an earlier mutation must be represented in the
-journal and resolved as committed, rolled back, or blocked; it must not be
-reported as an ordinary success.
+apply performs two checks:
 
-## Existing Pull Pipeline Mapping
+1. A batch-level live hash check before staging.
+2. A mutation-local storage-boundary check immediately before the write.
 
-Current Reprint pull is stage-oriented and resumable:
+A mismatch before any batch mutation returns `PRECONDITION_FAILED` without
+target writes. A mismatch after staging or after an earlier mutation must be
+represented in the journal and resolved as committed, rolled back, or blocked.
+It must not be reported as an ordinary success.
 
-```text
-preflight -> files-pull -> db-pull -> db-apply -> flat-docroot -> apply-runtime -> start
-```
+## Endpoint Sequence
 
-Push uses the same transport habits but reverses the direction and raises the
-safety bar because it mutates the source site:
+The push extension is a six-step protocol with a seventh recovery mode. Only
+the apply and mutating recovery steps may change target resources.
 
-| Pull stage | Push mapping |
-| --- | --- |
-| `preflight` | `push_preflight` checks protocol support, auth scope, writable roots, database transaction support, resource budgets, and journal storage. |
-| `file_index` / `file_fetch` | `push_snapshot_hashes` lists remote file hashes and metadata without returning bodies. Optional conflict drill-down may reuse pull fetch endpoints. |
-| `sql_chunk` / `db_index` | `push_snapshot_hashes` lists database row, option, post, term, user, table-schema, and plugin-owned resource hashes. |
-| local `db-apply` | Local push planner compares the saved pull base, edited local site, and live remote hash list to produce a dry-run plan. |
-| runtime setup | Push executor validates runtime-sensitive mutations such as plugin/theme activation, generated files, object cache, cron, and maintenance mode gates before apply. |
-
-The importer already persists pull state. Push requires the pull to persist a
-base manifest: remote identity, export protocol metadata, scanner coverage,
-resource keys, hashes, schema fingerprints, WordPress paths, table prefix,
-multisite mapping, and hash algorithm metadata observed when the local site was
-created. That manifest is the merge base for later push planning.
-
-The base manifest is bound into every push through:
-
-- `base_manifest_id`: stable local identifier for the pulled base.
-- `base_manifest_hash`: canonical hash of the base manifest.
-- `remote_site_id`: remote identity observed during pull.
-- `pull_protocol_version`: exporter/importer protocol used to create the base.
-- `base_coverage_hash`: canonical hash of the pull scanner coverage manifest.
-
-If the remote cannot recognize the site identity or the plan cannot prove which
-base it was built from, `push_preflight` or `push_plan_dry_run` must reject.
-
-## Protocol Sequence
-
-The push extension is a seven-step protocol. Only the apply and mutating
-recovery steps may change target resources.
-
-| Step | Endpoint | Mutates target resources | Liveness role |
+| Step | Endpoint | Mutates target resources | Role |
 | --- | --- | --- | --- |
-| 1 | `push_preflight` | No | Authenticates the client, checks capability, and mints a short-lived push session. |
-| 2 | `push_snapshot_hashes` | No | Lists the current live remote hashes and scanner coverage for planning. |
+| 1 | `push_preflight` | No | Authenticates the client, checks capability, and mints a short-lived session. |
+| 2 | `push_snapshot_hashes` | No | Lists the current live remote hashes and coverage for planning. |
 | 3 | local planner | No | Builds a three-way plan from pull base, local site, and live remote hashes. |
-| 4 | `push_plan_dry_run` | No | Validates that the uploaded plan is eligible to attempt and records a dry-run journal entry. |
-| 5 | `push_batch_apply` | Yes | Revalidates live preconditions, then revalidates each target at the storage boundary before writing. |
+| 4 | `push_plan_dry_run` | No | Validates the uploaded plan and records a dry-run journal entry. |
+| 5 | `push_batch_apply` | Yes | Revalidates live preconditions and storage boundaries before writing. |
 | 6 | `push_journal` | No | Lets the executor resolve lost responses, crashes, and ambiguous apply states. |
 | 7 | `push_recover` | Mode-dependent | Finishes, rolls back, or blocks only when journal artifacts and live hashes prove the action. |
 
 `snapshot_id`, `coverage_hash`, and `dry_run_id` are evidence and request
 bindings. They are not remote locks. A remote edit between any non-mutating
 step and apply must be detected by apply revalidation and must preserve the
-remote edit unless an explicit, newly planned mutation covers it.
+remote edit unless a newly planned mutation explicitly covers it.
+
+## Pull Pipeline Mapping
+
+Push reuses the existing pull exporter/importer as the base truth source.
+Pull still discovers and records the merge base. Push consumes that base and
+adds live-remote revalidation and mutation journaling.
+
+| Pull stage | Push mapping |
+| --- | --- |
+| `preflight` | `push_preflight` checks protocol support, auth scope, writable roots, database transaction support, budgets, and journal storage. |
+| `file_index` / `file_fetch` | `push_snapshot_hashes` lists remote file hashes and metadata without returning bodies. Optional conflict drill-down may reuse pull fetch endpoints. |
+| `sql_chunk` / `db_index` | `push_snapshot_hashes` lists row, option, post, term, user, schema, and plugin-owned resource hashes. |
+| `db-apply` | The push planner compares the saved pull base, the edited local site, and the live remote hash list to produce a dry-run plan. |
+| runtime setup | Push apply validates runtime-sensitive mutations such as plugin/theme activation, generated files, object cache, cron, and maintenance mode gates before write. |
+
+The importer must persist a push base package so later pushes can prove the
+merge base:
+
+- `base_manifest_id`
+- `base_manifest_hash`
+- `base_coverage_hash`
+- `remote_site_id`
+- `pull_protocol_version`
+- the resource keys, hashes, and optional bodies observed during the pull
+
+If the remote cannot recognize the site identity or the plan cannot prove
+which base it was built from, `push_preflight` or `push_plan_dry_run` must
+reject.
 
 ## Authentication
 
@@ -209,8 +185,8 @@ and push. The server should expose a stable `site_id` plus hashed evidence:
 - exporter protocol and push protocol versions
 - scanner coverage hash from the pull base when available
 
-The executor may update stored remote URLs after an explicit user action, but it
-must not silently retarget a push to a different `site_id`.
+The executor may update stored remote URLs after an explicit user action, but
+it must not silently retarget a push to a different `site_id`.
 
 ### Pull Base Binding
 
