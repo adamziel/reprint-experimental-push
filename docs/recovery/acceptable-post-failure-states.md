@@ -29,6 +29,8 @@ This state is acceptable for failures before any remote mutation is committed, i
 - after staging
 - after dependency validation
 
+A partial remote mutation without a durable recovery artifact is never acceptable.
+
 ## Fully updated remote
 
 The remote matches the completed plan and replay is inert.
@@ -57,6 +59,11 @@ This is the release-blocker state if a retry would otherwise risk:
 - duplicate inserts
 - stale data resurrection
 - silent partial write reuse without a recovery artifact
+
+The artifact pair must make inspection possible:
+
+- durable journal evidence
+- remote-state evidence describing the observed drift or partial commit
 
 ## Operational rule
 
