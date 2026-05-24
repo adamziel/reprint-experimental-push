@@ -1,6 +1,11 @@
 {
   "topology_id": "push-topology-one-remote-one-local",
   "purpose": "production-shaped push executor proof",
+  "networking": {
+    "ingress_port": 8080,
+    "proxy_policy": "local-only",
+    "tunnels": "disallowed"
+  },
   "roles": {
     "remote_base": {
       "kind": "source-site",
