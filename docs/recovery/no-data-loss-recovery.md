@@ -40,7 +40,9 @@ The apply path is expected to behave consistently across these boundaries:
 
 For each of those boundaries, the remote must remain in one of the acceptable
 states above, and replay must not duplicate inserts or resurrect stale local
-data.
+data. A completed-plan replay is only acceptable when the journal still matches
+the remote after-hash envelope; otherwise the outcome is `blocked-recovery`
+with inspectable journal and remote artifacts.
 
 The completed-plan replay case is only acceptable when the journal still
 matches the remote after hashes. If the remote has drifted since completion,
@@ -72,7 +74,7 @@ the underlying store.
 ## Durable Vs. Lab Evidence
 
 The JSON evidence used in tests and model checks is only a proof artifact. It
-is not a substitute for production durability.
+is not a substitute for production durability or restart-safe recovery.
 
 Production recovery needs durable writes for:
 
