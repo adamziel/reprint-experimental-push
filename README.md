@@ -343,7 +343,7 @@ authenticated Playground slice is authenticated local Playground source-site
 mutation evidence, not production Reprint auth. No production TLS deployment,
 nonce/replay store cleanup, production session handling, production Application
 Password integration, real exporter credential binding, durable production
-audit records, or full production push exists yet.
+audit records, or production-safe push evidence exists yet.
 
 The `test:playground:plugin-atomic-install` script verifies a hard-coded
 Playground fixture plugin install atomicity slice through the local lab REST
