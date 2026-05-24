@@ -210,7 +210,7 @@ production auth, or measured speed.
    conservative behavior, but it means production plugin-owned data remains a
    release blocker until validator contracts and real plugin fixtures exist.
 
-  9. **Speed has no measured evidence.** The performance tests prove a model and
+9. **Speed has no measured evidence.** The performance tests prove a model and
    guardrails. They do not move bytes, mutate a source site, measure memory,
    measure throughput, or verify that safety checks remain enabled under load.
 
