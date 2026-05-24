@@ -6,11 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 00:53 CEST.
+- Last update: 2026-05-25 00:54 CEST.
 - Status: `89` Node tests still pass after supervised lane merges.
 - Trend: planner, recovery, fast-path, protocol, critic, and objective-audit
-  surfaces stay aligned inside lab/model scope. Production readiness is still
-  blocked.
+  surfaces stay aligned inside lab/model scope. Production readiness remains
+  blocked by missing evidence.
 - Supervision: the same-plan graph worker remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
