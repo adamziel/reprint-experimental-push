@@ -258,6 +258,11 @@ repo-specific evidence, not in lab shape or source-note comparison language:
   create that could be renumbered, aliased, or remapped on the remote.
 - Every plugin-owned surface touched by push is either enumerated in the
   coverage manifest or hard-blocked before apply.
+- A stale manual-review artifact is rejected before write, remains auditable
+  for retry review, and cannot be reused after the remote changes.
+- Route-shape smokes, packaged-plugin mounts, and fixture `finalMatchesLocal`
+  results may appear in evidence, but they cannot be cited as production proof
+  unless the same write path was exercised against a live remote after drift.
 - Partial file, DB, or plugin side effects are classified with durable
   artifacts that survive retry and preserve the remote for audit.
 - A manual-resolution artifact is bound to the exact stale snapshot it was
