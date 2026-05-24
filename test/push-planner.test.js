@@ -1388,6 +1388,46 @@ test('durable apply journal classifies pre-commit failures as old remote', () =>
   }
 });
 
+test('retrying an old-remote journal appends durable retry state without duplicating targets', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+
+  const firstWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, { failBeforeMutation: true, durableJournal: firstWriter }));
+  firstWriter.close();
+
+  assert.ok(firstError instanceof PushPlanError);
+  assert.equal(firstError.details.recovery.status, 'old-remote');
+
+  const retryWriter = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retry = applyPlan(remote, plan, {
+    journal: firstError.details.recovery.artifacts.journal,
+    durableJournal: retryWriter,
+    mutateRemote: true,
+  });
+  retryWriter.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
+  const targetRecords = persisted.records.filter((record) => record.type === 'target-planned');
+
+  assert.equal(retry.appliedMutations, 2);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(remote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(targetRecords.length, plan.mutations.length);
+  assert.ok(persisted.records.some((record) => record.type === 'journal-retry-opened'));
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.deepEqual(inspection.counts, { old: 0, new: 2, blockedUnknown: 0 });
+});
+
 test('replaying a completed plan does not duplicate inserts or reapply stale local data', () => {
   const base = baseSite();
   const local = baseSite();
