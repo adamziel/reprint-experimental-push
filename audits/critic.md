@@ -558,15 +558,16 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   merge vocabulary; the repo still needs its own live mutation evidence on the
   same request path.
 - A comparison note from Reprint, ZS-Sync, or ForkPress can justify a design
-  choice, but it cannot be promoted into current proof without a live remote
-  revalidation on this repo's write path after drift. The note remains context,
-  not authority, even if the same endpoint name or route shape appears in a
-  smoke.
+  choice, but it cannot be promoted into current proof without fresh upstream
+  verification and a live remote revalidation on this repo's write path after
+  drift. The note remains context, not authority, even if the same endpoint
+  name or route shape appears in a smoke.
 - Reprint, ZS-Sync, and ForkPress source notes are comparison evidence only;
   they do not transfer safety proof to this repository by resemblance alone.
   Their notes can justify transport shape, scanner shape, or reliability
   vocabulary, but they do not prove this repo's live write path, identity
-  reservation, plugin ownership enforcement, or stale-artifact rejection.
+  reservation, plugin ownership enforcement, stale-artifact rejection, or
+  crash recovery.
 - No design claim may cite those notes as proof that this repo has already
   matched their safety bars; the repo still needs its own live drift,
   identity, plugin-ownership, and crash-recovery proof at the mutation
@@ -617,6 +618,10 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   artifacts cannot authorize a retry.
 - A partial conflict resolution cannot be widened on retry; the next apply must
   revalidate the exact approved scope or reject before any write.
+- A release gate is not satisfied by a route-shape smoke, packaged-plugin
+  mount, or `finalMatchesLocal` result unless the same live write path also
+  proved stale-approval rejection, remote preservation, and fresh-snapshot
+  retry after drift.
 - Route-shape matches, packaged-plugin mounting, and `finalMatchesLocal`
   results are compatibility evidence only. They must not be used as proof of
   production mutation safety, live-remote drift handling, or current-release
