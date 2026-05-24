@@ -25,9 +25,9 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and links to the detailed evidence. In this lane, the page becomes live
   only after merge to `main`.
-- Refresh note: timestamp-only update. The evidence gap and blocked production
-  gates did not change. The lane copy on GitHub Pages updates only after this
-  branch merges to `main`.
+- Refresh note: timestamp-only update. The evidence gap and blocked-by-missing-
+  evidence production gates did not change. The lane copy on GitHub Pages
+  updates only after this branch merges to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>
