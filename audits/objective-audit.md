@@ -72,7 +72,7 @@ gates were exercised.
 | --- | --- | --- | --- |
 | No-overwrite planner | Unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. | These are JSON-model resources plus fixture policy, not WordPress graph semantics. The tests cannot prove post/postmeta/attachment/taxonomy/menu/plugin relationships are complete or safe. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
 | Recovery and idempotency | Unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Playground smoke source covers DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. The production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
-| Speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, and no memory ceiling or throughput target is measured against a real push path. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, and memory/runtime measurements. |
+| Speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and benchmark evidence gates. They also block unsupported production throughput claims until live measurements exist. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no benchmark evidence yet proves the claim at the production boundary. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, memory/runtime measurements, and an explicit pass/fail threshold for production throughput claims. |
 
 ## Explicit Requirements From The Objective
 
@@ -243,9 +243,12 @@ invocation and can be skipped while `npm test` remains green.
    conservative behavior, but it means production plugin-owned data remains a
    release blocker until validator contracts and real plugin fixtures exist.
 
-9. **Speed has no measured evidence.** The performance tests prove a model and
-   guardrails. They do not move bytes, mutate a source site, measure memory,
-   measure throughput, or verify that safety checks remain enabled under load.
+9. **Speed has no measured evidence at the production boundary.** The
+   performance tests prove a model, claim gates, and guardrails. They do not
+   move bytes, mutate a source site, measure memory, measure throughput, or
+   verify that safety checks remain enabled under load. The current proof is
+   enough to block unsupported speed claims, not to justify a "fast"
+   release claim.
 
 10. **The release surface is real but fragmented.** The repository already
     exposes high-value smokes for auth, journal durability, storage guards,
@@ -275,7 +278,7 @@ invocation and can be skipped while `npm test` remains green.
     not measure a real push path against a live WordPress site, do not report
     a throughput target, and do not establish a memory ceiling under load.
     Until a production-shaped benchmark runs the executor end to end, "fast"
-    remains an unproven aspiration rather than a release fact.
+    remains blocked as a release claim, not merely unproven.
 
 ## Required Release Gates
 
