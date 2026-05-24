@@ -6,18 +6,19 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 00:14 CEST.
+- Last update: 2026-05-25 00:20 CEST.
 - Status: `89` Node tests pass after supervised lane merges.
-- New proof: planner coverage now checks matching independent delete/edit
-  cases; recovery covers replay and injected failure states; fast-path docs
-  name rejected shortcuts and broken safety gates; protocol docs tighten push
-  signature binding and name the production push flow; critic and objective
-  audits reflect the evidence.
+- New proof: planner coverage checks matching independent delete/edit cases;
+  recovery now has a concise acceptable-state contract; fast-path docs name the
+  approved shortcut families and broken safety gates; protocol docs tighten
+  journal and recovery semantics; critic and objective audits reflect the
+  evidence.
 - Trend: no-data-loss, recovery, fast-path, reliable-executor, and audit lanes
   improved inside lab/model scope. Production readiness is still blocked.
-- Supervision: four fast-mode workers were launched in isolated lane worktrees.
-  Recovery, fast paths, and reliable executor finished and were integrated;
-  same-plan graph remains active and unmerged.
+- Supervision: five fast-mode worker outputs were reviewed and integrated from
+  the next-proof cycle: recovery, reliable executor, fast paths, independent
+  auditor, and critic. The same-plan graph worker remains active and unmerged
+  while it fixes the remaining HTTP smoke failure.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
   and arbitrary plugin drivers remain unproven.
