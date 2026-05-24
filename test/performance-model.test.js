@@ -507,6 +507,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(rejectedById.get('fingerprint-as-apply-authority').rejectedGate, 'live');
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
   assert.equal(rejectedById.get('split-plugin-install').rejectedGate, 'group');
+  assert.ok(rejectedById.get('parallel-commit-widening').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('parallel-commit-widening').violates.includes('parallelism-limits'));
+  assert.equal(rejectedById.get('parallel-commit-widening').rejectedGate, 'group');
   assert.ok(
     rejectedById.get('skip-plugin-validators-on-package-hash').violates.includes('plugin-preconditions'),
   );

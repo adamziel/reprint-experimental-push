@@ -315,6 +315,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'durable-progress'],
   },
   {
+    id: 'parallel-commit-widening',
+    proposal: 'publish independent work from multiple atomic groups in one wider commit for throughput',
+    rejectedBecause: 'parallel staging is fine, but widening the visibility boundary hides which group owns a partial failure',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'parallelism-limits'],
+  },
+  {
     id: 'staged-bytes-as-published',
     proposal: 'treat complete-looking staged chunks or row batches as visible without guarded finalize or commit',
     rejectedBecause: 'staging presence does not prove the live preconditions or group commit have completed',

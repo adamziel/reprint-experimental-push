@@ -110,6 +110,8 @@ fails in a different way:
 - Compression cannot change the canonical hash or replace the compare-and-swap
   precondition on the uncompressed value.
 - Parallelism cannot bypass the atomic group commit barrier.
+- Parallelism cannot widen the atomic group commit barrier to make two groups
+  visible together, because recovery would lose the owner of a partial result.
 - Backpressure cannot drop evidence, because the missing receipts are what make
   recovery unambiguous after pause or crash.
 
@@ -185,6 +187,9 @@ The rejected examples are not abstract lint. They are concrete failure modes:
   encoding and resource identity are different facts.
 - Parallel commits cannot be widened across atomic groups because the commit
   barrier is the visibility boundary.
+- Parallel staging cannot be merged into one wider commit across atomic groups
+  because the recovery record would no longer tell which group owns a partial
+  failure.
 - Chunk uploads cannot become visible across atomic groups as soon as receipts
   arrive, because the owning group barrier still has to keep the upload set
   classifiable after crash or retry.
