@@ -5,7 +5,10 @@ The atomic apply path has two kinds of evidence:
 - in-memory JSON fixtures used by tests, model checks, and recovery inspection
 - durable journal records written to storage and meant to survive process restarts
 
-They serve different purposes.
+They serve different purposes. The JSON-model evidence is useful for tests and
+recovery inspection; the durable journal is the production-shaped artifact that
+must survive restarts and let a later inspector classify the outcome without
+guessing from local state.
 
 Fixture evidence is acceptable for proving the model in unit tests and for
 describing recovery behavior in docs. It is not enough to claim production
@@ -34,6 +37,10 @@ Every failure or replay must end in one of these states:
    - Recovery artifacts are required.
    - Retry must fail closed until fresh recovery evidence proves the site is
      safe.
+
+Anything outside those states is a recovery bug. A partial remote mutation
+without a recovery artifact is a release blocker, even if a later retry would
+appear to succeed.
 
 ## Production durability requirements
 
