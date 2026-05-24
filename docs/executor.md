@@ -735,6 +735,19 @@ WP-CLI is unavailable in the sandbox. In both cases, the remote and local
 sites stay distinct: one remote source of truth, one edited local pull target,
 and one separate drift witness.
 
+The push executor maps directly onto the existing pull pipeline:
+
+1. Pull exporter/importer creates the immutable base package and coverage
+   evidence.
+2. Push preflight binds that package to the live remote identity and a short
+   lived push session.
+3. Push snapshot hashes record the live comparison set used for planning.
+4. Push dry-run uploads the canonical three-way plan without mutating state.
+5. Push apply revalidates the live remote before each batch and again at the
+   storage boundary.
+6. Push journal and recover inspect read durable evidence only until the
+   journal proves a safe finish, rollback, or block.
+
 The machine-readable fixture [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
 captures the same role split for test code, and
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
@@ -838,6 +851,12 @@ Use the topology to prove the remote and local roles are separate:
 - `local-edited` is the edited local mirror that feeds the planner.
 - A separate `remote-changed` state is required for the stale-apply case so dry-run and apply are not conflated.
 - Apply must revalidate against the live remote again even when the dry-run receipt is valid.
+
+Recovery should always begin with `push_journal` or `push_recover` in
+`inspect` mode before any mutating retry. If the remote cannot prove the same
+claim, session, and live hashes that were present when the batch opened, the
+executor must treat the attempt as blocked and stop rather than replaying a
+stale dry-run receipt.
 
 ## Playground Test Topology
 

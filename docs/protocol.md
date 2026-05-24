@@ -313,6 +313,11 @@ the pull contract while making push strictly more restrictive.
 Push-capable servers may still require the export HMAC on every push request
 because push builds on the same authentication floor as pull.
 
+`push_preflight` is the only step that may mint a push session. It must bind
+that session to the authenticated remote site identity, the persisted pull base
+package, and the negotiated push protocol version before any planning or
+mutation call can proceed.
+
 Endpoint authentication requirements:
 
 | Endpoint | Target resource mutation | Minimum auth |
@@ -415,6 +420,18 @@ Recovery is inspect-first. `push_recover` in `inspect` mode is read-only and
 must explain why later mutating recovery is safe, unsafe, or blocked. Mutating
 recovery modes use the same auth and idempotency rules as apply, and they
 revalidate the live remote again before changing target state.
+
+The recovery journal evidence must be sufficient to classify the attempt as
+one of four outcomes without reusing dry-run receipts as locks:
+
+- `never_started`
+- `committed`
+- `recoverable_open`
+- `blocked`
+
+If the server cannot prove a safe finish or rollback from the journal plus
+fresh live hashes, `push_recover inspect` must return a blocked result rather
+than guessing.
 
 ### Snapshot Coverage
 
