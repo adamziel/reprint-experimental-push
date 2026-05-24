@@ -243,6 +243,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   audit, the review artifact is bound to the exact live snapshot that was
   approved, and the next retry re-plans from fresh evidence. A stale approval
   that merely “looks reasonable” is not production proof.
+- A rejected manual-review artifact must remain readable for audit, but it
+  cannot be widened, repurposed, or reused to authorize a broader retry scope
+  after remote drift or partial apply recovery.
 - A stale approval, stale snapshot, or stale manual-review artifact cannot be
   recycled as evidence for a new apply, even if the plan hash or endpoint name
   has not changed.
