@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Progress Publisher Refresh
 
-- Last update: 2026-05-25 00:33 CEST.
+- Last update: 2026-05-25 00:36 CEST.
 - Status: public progress view refreshed to keep the visible timestamp current
   and the summary concise. No new executor, recovery-journal, Docker/
   Playground, or plugin-driver proof was added in this pass.
@@ -18,8 +18,7 @@ linked implementation artifacts.
   proven with executable evidence.
 
 ## 2026-05-25 - Current Supervisor Snapshot
-
-- Last update: 2026-05-25 00:33 CEST.
+- Last update: 2026-05-25 00:36 CEST.
 - Public page refreshed: [progress.html](../progress.html) keeps the visible
   update stamp, the evidence summary, and the pending-gate list in one screen.
 - History kept conservative: [docs/supervisor-feedback.md](supervisor-feedback.md)
