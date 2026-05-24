@@ -68,7 +68,9 @@ is not just a mirrored pull pipeline with write verbs attached or a route
 shape that happens to return the expected endpoint. A route that only proves
 endpoint shape, replay behavior, or packaged-plugin mounting still does not
 prove live remote drift handling, identity remapping, or production storage
-durability.
+durability. Reprint's stage-oriented pull notes are useful context, but they
+do not prove a retry-safe manual override model for source mutation or a live
+approval artifact that expires on remote drift.
 
 ### ZS-Sync
 
@@ -82,7 +84,9 @@ hard block. Scanner evidence is planning input, not a write-safety proof, and
 it does not prove remote drift handling, create-time identity allocation, or
 plugin-owned side effects outside the scanned set.
 It also does not prove that a ready plan remains safe after the remote changes
-between scan and write.
+between scan and write. That matters for manual resolution too: the scanner
+can tell us what changed, but it cannot prove that an operator approval stays
+valid after a fresh live snapshot diverges.
 
 ### ForkPress
 
@@ -97,7 +101,10 @@ success path unless the remote is preserved for audit and the next retry
 re-plans from fresh evidence. ForkPress is the comparison point, not a
 guarantee that this branch has matched it. Its merge and crash-consistency
 vocabulary is therefore a bar for auditability, not proof that a lab-backed
-push endpoint can safely claim production support.
+push endpoint can safely claim production support. ForkPress's notes are still
+missing the repo-specific proof we need here: a durable reviewed-resolution
+artifact, expiry on stale approvals, and a remote-preserving retry path after
+a second drift.
 
 ## Production Claim Checklist
 
