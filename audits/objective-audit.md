@@ -189,7 +189,8 @@ The repository currently has optional proof commands, not an enforced release
 gate. `package.json` confirms the split: the default suite is `npm test`, the
 bundled lab chain is `npm run test:playground`, and the stronger auth,
 journal, storage, recovery, plugin, and benchmark checks are only available
-as separate opt-ins.
+as separate opt-ins. That means a green run can still omit the exact proof the
+objective needs.
 
 - `npm test` is the default automated suite, but it only covers the model and
   selected fixture logic.
@@ -204,8 +205,8 @@ as separate opt-ins.
   `npm run test:playground:production-plugin-package`.
   Those commands are individually useful, but they are not chained into one
   required release command.
-- There is no `npm run release`, `npm run verify`, or CI workflow in the
-  inspected `package.json` that forces the full safety matrix before a push
+- There is no `npm run release`, `npm run verify`, or checked-in CI workflow
+  in the repository tree that forces the full safety matrix before a push
   claim. The existing bundled entrypoint stops at
   `npm run test:playground:push-protocol`, so the auth/session, durable
   journal, storage-boundary, graph-identity, plugin-driver, real-topology,
