@@ -462,6 +462,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'index-and-compressed-upload-queue-completes-large-upload',
+    proposal: 'treat a fresh remote index plus a compressed upload queue as proof that a large upload already finished',
+    rejectedBecause: 'planning evidence and queue compression can reduce work, but they cannot prove the live file compare or durable chunk receipts survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'live-preconditions', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
