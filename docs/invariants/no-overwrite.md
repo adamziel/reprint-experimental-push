@@ -7,7 +7,8 @@ the live remote immediately before apply.
 ## May Apply Automatically
 
 - Local creates, updates, deletions, and file type changes when the same remote
-  resource still hashes exactly like the pull base.
+  resource still hashes exactly like the pull base and the file topology check
+  proves no live remote ancestor or descendant would be hidden.
 - Independent local changes while other remote-only resources changed.
 - Matching independent edits where local and remote changed a resource to the
   same hash; these produce `already-in-sync` decisions, not mutations.
@@ -22,8 +23,9 @@ the resource key, the live remote hash observed during planning, and the
 
 - Any remote-only resource change when local still matches the pull base.
 - Remote-only plugin metadata, plugin files, activation state, and removals.
-- Remote descendants that would be hidden by a local file type swap unless the
-  plan also proves the descendant is an unchanged base resource being deleted.
+- Remote descendants that would be hidden by a local file deletion or type swap
+  unless the plan also proves the descendant is an unchanged base resource
+  being deleted.
 - Conflict evidence must identify resources, hashes, change kinds, presence,
   and file types, but not raw file bodies, row contents, option values, or
   plugin configuration payloads.
@@ -33,8 +35,10 @@ the resource key, the live remote hash observed during planning, and the
 - Local and remote changed the same resource to different hashes.
 - Local deletion versus remote update, local update versus remote deletion, and
   plugin-owned data changes without a plugin-specific merge policy.
+- Plugin-owned data changes whose declared driver does not match the resource
+  table, such as `wp-option` for a `wp_postmeta` row.
 - File topology conflicts where applying a local file or type change would
-  require overwriting or hiding a live remote ancestor or descendant.
+  require overwriting, removing, or hiding a live remote ancestor or descendant.
 - Atomic groups with missing plugin dependencies after considering the expected
   post-apply remote state and planned plugin mutations.
 - Any internally generated mutation that lacks a matching live remote

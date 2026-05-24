@@ -181,6 +181,28 @@ test('stops a local deletion when the remote edited the same resource', () => {
   assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote secret editorial update');
 });
 
+test('stops a local directory deletion that would remove a remote-only descendant', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.files['wp-content/uploads/gallery'];
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/remote-only.jpg'] = 'remote private image bytes';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery');
+  assert.equal(conflict.relatedResourceKey, 'file:wp-content/uploads/gallery/remote-only.jpg');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.equal(JSON.stringify(conflict).includes('remote private image bytes'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote private image bytes');
+});
+
 test('stops file type swaps that would hide remote-only descendants', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
@@ -324,6 +346,47 @@ test('allows plugin-owned option rows only with explicit snapshot driver policy'
 
   assert.equal(readyPlan.status, 'ready');
   assert.equal(mutationFor(readyPlan, resourceKey).changeKind, 'update');
+});
+
+test('blocks plugin-owned resources when the declared driver does not match the table', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:7': {
+      meta_id: 7,
+      post_id: 1,
+      meta_key: '_forms_payload',
+      meta_value: 'base-private-meta',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_postmeta['meta_id:7'].meta_value = 'local-private-meta';
+  local.pushIntents = [
+    {
+      id: 'update-forms-postmeta',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      ),
+    },
+  ];
+  const remote = JSON.parse(JSON.stringify(base));
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.driver, 'wp-option');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.match(blocker.reason, /driver does not match/);
+  assert.equal(blockerJson.includes('base-private-meta'), false);
+  assert.equal(blockerJson.includes('local-private-meta'), false);
 });
 
 test('allows plugin-owned postmeta-like rows with explicit push intent policy', () => {
