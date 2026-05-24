@@ -60,6 +60,31 @@ linked implementation artifacts.
 <details>
 <summary>Earlier progress entries</summary>
 
+## 2026-05-24 - Core Evidence Recheck
+
+- `npm test` passed in this lane with `55` Node scenarios. Evidence:
+  [package.json](../package.json),
+  [test/push-planner.test.js](../test/push-planner.test.js),
+  [test/recovery-journal.test.js](../test/recovery-journal.test.js), and
+  [test/performance-model.test.js](../test/performance-model.test.js).
+- `npm run test:playground` passed in this lane. The plan leg reported
+  conflict status with five expected conflicts across row, file, and
+  plugin-data classes; the guarded apply leg verified eight fixture mutations;
+  the protocol leg verified missing/tampered receipt refusal, stale
+  precondition refusal, conflict refusal, and eight verified ready mutations.
+  Evidence:
+  [scripts/playground/plan-from-blueprints.mjs](../scripts/playground/plan-from-blueprints.mjs),
+  [scripts/playground/apply-ready-plan.mjs](../scripts/playground/apply-ready-plan.mjs),
+  [scripts/playground/push-protocol-smoke.mjs](../scripts/playground/push-protocol-smoke.mjs), and
+  [docs/playground-topology.md](playground-topology.md).
+- `docker --version` failed with `command not found` in this sandbox. Docker
+  and full Playground integration remain pending rather than counted as proven
+  progress.
+- Percentages and proof gates remained unchanged. The verified slice was still
+  the deterministic Node model plus bundled no-server Playground fixtures; the
+  real WordPress push executor, production recovery journal, full Docker or
+  Playground integration, and arbitrary plugin drivers remained pending.
+
 ## 2026-05-24 - Integrated Feedback And Verification Refresh
 
 - Integrated the feedback supervisor progress refresh into `main`.
