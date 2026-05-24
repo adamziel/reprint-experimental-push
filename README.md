@@ -230,6 +230,10 @@ row mutation, custom-table apply, and arbitrary plugin-owned data remain
 blocked. Failure injection proves a before-commit failure preserves the old
 remote, while during-publish and activation failures classify blocked recovery
 instead of proving rollback.
+The row-only bypass case rejects with `ATOMIC_GROUP_DEPENDENCY_UNDECLARED`;
+this is not arbitrary production plugin install/update/activation, and it
+provides no production rollback, no custom-table/plugin semantic drivers, and
+no arbitrary plugin-owned data safety.
 
 The `test:playground:recovery` script exercises the lab-only failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The
