@@ -124,6 +124,27 @@ fresh mutation work, or returns a conservative recovery block. Same key with a
 different body remains `409 IDEMPOTENCY_KEY_CONFLICT`. Missing-commit
 finalization must not turn a partial JIT rejection into a commit.
 
+`npm run test:playground:storage-guarded-db-write` verifies the storage
+boundary immediately after that JIT hash passes for a fixture-scoped update
+set: existing `wp_posts` fixture rows, allowlisted `wp_options`, allowlisted
+single-row `wp_postmeta`, and exact positive-id
+`wp_reprint_push_forms_lab` rows. The write path uses one guarded
+`$wpdb->query($wpdb->prepare(...))` `UPDATE` with expected stored-column
+predicates. Journal and response evidence add hash-only `storageGuard` fields:
+boundary, driver, logical and physical table, operation, compared column names,
+expected resource hash, expected storage hash, rows affected, outcome, and SQL
+shape hash.
+
+If storage drifts after JIT but before SQL, including marker-empty ownership
+drift for posts or postmeta parent posts, the guarded update affects zero rows,
+returns `PRECONDITION_FAILED`, preserves the drifted target, records no
+`mutation-applied` for the failed target, records no later mutations, and
+records no `apply-committed`. Same key/body replay remains non-mutating with no
+fresh mutation work, and same key/different body remains
+`IDEMPOTENCY_KEY_CONFLICT`. The failure evidence uses the post-failure current
+hash for observed/actual/recovery state while retaining the pre-write hash that
+proves the JIT check passed.
+
 The verified replay behavior is idempotent for the fixture batch: same key plus
 same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`,
 does no fresh mutation work, adds no extra per-mutation events, and leaves the
@@ -159,15 +180,17 @@ after hash, appends the missing commit row, returns
 `BATCH_RECOVERY_FINALIZED`, reports `fully-updated-remote`, and performs zero
 fresh mutation work. A later replay returns `BATCH_ALREADY_COMMITTED`.
 
-This is useful DB-table shape evidence, but it is still local Playground
-SQLite/host-mount lab evidence, not production durable recovery or
-storage-level crash proof. It does not prove storage `fsync`, rollback,
-exactly-once production writes, arbitrary plugin data safety, or full
-MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
-conservative/not fully solved, tests mostly count mutation evidence rows rather
-than deeply asserting every observed hash, and production auth, live source
-mutation, and full push remain pending. Redaction is checked through forbidden
-keys and fixture values, not by a formal sanitizer for arbitrary future journal
+This is useful DB-table shape and fixture storage-boundary evidence, but it is
+still local Playground SQLite/host-mount lab evidence, not production durable
+recovery, production source mutation, or storage-level crash proof. It does not
+prove storage `fsync`, rollback, transactions, locking, exactly-once
+production writes, generic MySQL/InnoDB compare-and-swap behavior, arbitrary
+plugin data safety, or storage guarding for inserts/deletes/files/plugin
+activation. The all-old stale-claim safe retry case remains conservative/not
+fully solved, tests mostly count mutation evidence rows rather than deeply
+asserting every observed hash, and production auth, live source mutation, and
+full push remain pending. Redaction is checked through forbidden keys and
+fixture values, not by a formal sanitizer for arbitrary future journal
 messages.
 
 ## Current Fixture Plugin Atomicity Failure Evidence

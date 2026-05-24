@@ -224,7 +224,79 @@ function reprint_push_protocol_run_payload(
             if (isset($pre_write_check['preWriteStagingProof']) && is_array($pre_write_check['preWriteStagingProof'])) {
                 $pre_write_evidence['preWriteStagingProof'] = $pre_write_check['preWriteStagingProof'];
             }
-            reprint_push_apply_resource($mutation['resource'], $mutation['value']);
+            reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'mutation-storage-write-ready', $journal_context + $plan_evidence + [
+                'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                'startedCursor' => $started_entry['cursor'],
+                'index' => (int) $index,
+                'mutationId' => $mutation_id,
+                'resource' => $mutation['resource'],
+                'resourceKey' => (string) $mutation['resourceKey'],
+                'resourceType' => (string) ($mutation['resource']['type'] ?? ''),
+                'beforeHash' => $before_hash,
+                'plannedAfterHash' => $planned_after_hash,
+                'phase' => 'storage-write-boundary',
+                'status' => 'pending',
+                'appliedCount' => $applied,
+            ] + $pre_write_evidence);
+
+            $apply_result = reprint_push_apply_resource_with_storage_guard(
+                $mutation['resource'],
+                $mutation['value'],
+                isset($pre_write_check['resourceValue']) && is_array($pre_write_check['resourceValue'])
+                    ? $pre_write_check['resourceValue']
+                    : ['exists' => false, 'value' => null],
+                isset($pre_write_check['storageValue']) && is_array($pre_write_check['storageValue'])
+                    ? $pre_write_check['storageValue']
+                    : null
+            );
+            $storage_guard = isset($apply_result['storageGuard']) && is_array($apply_result['storageGuard'])
+                ? $apply_result['storageGuard']
+                : null;
+            if ($storage_guard !== null) {
+                $pre_write_evidence['storageGuard'] = $storage_guard;
+                $pre_write_evidence['preconditionCheck'] = 'storage-boundary-cas';
+            }
+            if (($apply_result['applied'] ?? true) !== true) {
+                $post_failure_snapshot = reprint_push_export_snapshot();
+                $post_failure_hash = reprint_push_hash_resource($post_failure_snapshot, $mutation['resource']);
+                $recovery_entries = reprint_push_protocol_mark_recovery_entry(
+                    $recovery_entries,
+                    $mutation_id,
+                    'precondition-failed',
+                    $post_failure_hash
+                );
+                $failure_evidence = $journal_context + $plan_evidence + [
+                    'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                    'startedCursor' => $started_entry['cursor'],
+                    'index' => (int) $index,
+                    'mutationId' => $mutation_id,
+                    'resourceKey' => (string) $mutation['resourceKey'],
+                    'resourceType' => (string) ($mutation['resource']['type'] ?? ''),
+                    'beforeHash' => $before_hash,
+                    'plannedAfterHash' => $planned_after_hash,
+                    'observedHash' => $post_failure_hash,
+                    'actualHash' => $post_failure_hash,
+                    'phase' => 'storage-write-boundary',
+                    'status' => 'rejected',
+                    'appliedCount' => $applied,
+                    'recoveryPlan' => $recovery_entries,
+                ] + $pre_write_evidence;
+                reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'mutation-precondition-failed', $failure_evidence);
+                reprint_push_protocol_append_journal_event('mutation-precondition-failed', $failure_evidence);
+                reprint_push_protocol_fail([
+                    'ok' => false,
+                    'code' => 'PRECONDITION_FAILED',
+                    'message' => 'Storage-boundary precondition failed for ' . (string) $mutation['resourceKey'] . '.',
+                    'resourceKey' => (string) $mutation['resourceKey'],
+                    'mutationId' => $mutation_id,
+                    'expectedHash' => $before_hash,
+                    'actualHash' => $post_failure_hash,
+                    'preWriteExpectedHash' => $before_hash,
+                    'preWriteActualHash' => $pre_write_hash,
+                    'preconditionCheck' => 'storage-boundary-cas',
+                    'storageGuard' => $storage_guard,
+                ]);
+            }
             $applied++;
 
             $observed_snapshot = reprint_push_export_snapshot();
@@ -402,6 +474,8 @@ function reprint_push_protocol_recheck_mutation_precondition(
         return [
             'actualHash' => $actual_hash,
             'preconditionCheck' => 'just-in-time',
+            'resourceValue' => reprint_push_get_resource($snapshot, $mutation['resource']),
+            'storageValue' => reprint_push_get_storage_resource($mutation['resource']),
         ];
     }
 
@@ -1607,7 +1681,7 @@ function reprint_push_protocol_sanitize_journal_context(array $context): array
     $safe = [];
     foreach ($context as $key => $value) {
         $key = (string) $key;
-        if (in_array($key, ['value', 'content', 'payload', 'currentSnapshot', 'afterSnapshot', 'beforeSnapshot'], true)) {
+        if (in_array($key, ['value', 'content', 'payload', 'option_value', 'post_content', 'meta_value', 'currentSnapshot', 'afterSnapshot', 'beforeSnapshot'], true)) {
             continue;
         }
         $safe[$key] = reprint_push_protocol_sanitize_journal_value($value);
@@ -1621,7 +1695,7 @@ function reprint_push_protocol_sanitize_journal_value($value)
         $safe = [];
         foreach ($value as $key => $inner_value) {
             $key = (string) $key;
-            if (in_array($key, ['value', 'content', 'payload', 'option_value', 'post_content'], true)) {
+            if (in_array($key, ['value', 'content', 'payload', 'option_value', 'post_content', 'meta_value'], true)) {
                 continue;
             }
             $safe[$key] = reprint_push_protocol_sanitize_journal_value($inner_value);

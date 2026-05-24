@@ -55,6 +55,12 @@ Run the mid-apply drift JIT pre-write smoke:
 npm run test:playground:mid-apply-drift
 ```
 
+Run the storage-boundary guarded DB update smoke:
+
+```bash
+npm run test:playground:storage-guarded-db-write
+```
+
 Run the DB-backed process-kill/restart smoke:
 
 ```bash
@@ -210,6 +216,25 @@ and writes no `apply-committed`. DB replay of the same key/body returns the
 same rejected result with `idempotency.replayed: true` and no fresh mutation
 work; the same key with a different body conflicts. The evidence is hash-only
 and lab-scoped, not storage-level compare-and-swap or locking.
+
+The `test:playground:storage-guarded-db-write` script verifies the accepted
+lab storage-boundary guarded DB update slice. The existing JIT pre-write hash
+still runs first. For existing fixture DB row update mutations in `wp_posts`,
+allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact
+fixture `wp_reprint_push_forms_lab` positive rows, apply then uses one guarded
+`$wpdb->query($wpdb->prepare(...))` `UPDATE` whose `WHERE` compares expected
+stored columns at the SQL write boundary. Hash-only `storageGuard` evidence
+records boundary, driver, logical and physical table, operation, compared
+column names, expected resource and storage hashes, rows affected, outcome, and
+SQL shape hash. Drift after JIT but before SQL, including marker-empty
+ownership drift for posts and postmeta parents, returns
+`PRECONDITION_FAILED`, preserves the drifted target, writes no
+`mutation-applied` for the failed target, writes no later mutations, and writes
+no `apply-committed`. This is local Playground/SQLite fixture evidence only:
+not production DB durability, production Reprint HTTP mutation, generic
+MySQL/InnoDB compare-and-swap proof, transactions, locking, rollback,
+inserts/deletes/files/plugin activation guarding, or arbitrary
+plugin/custom-table semantic safety.
 
 The `test:playground:db-journal-process-kill` script runs a local-only
 Playground process-kill smoke over a host-mounted WordPress directory. It sends

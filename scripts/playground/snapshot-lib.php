@@ -48,6 +48,7 @@ function reprint_push_export_snapshot(): array
          FROM {$wpdb->posts} p
          INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID
          WHERE pm.meta_key = 'reprint_push_fixture'
+           AND pm.meta_value <> ''
          ORDER BY p.ID ASC",
         ARRAY_A
     );
@@ -302,6 +303,379 @@ function reprint_push_apply_resource(array $resource, array $payload): void
     throw new RuntimeException('Unsupported apply resource type: ' . (string) $type);
 }
 
+function reprint_push_apply_resource_with_storage_guard(array $resource, array $payload, array $expected_resource_value, ?array $expected_storage_value = null): array
+{
+    if (($resource['type'] ?? null) !== 'row' || !empty($payload['absent'])) {
+        reprint_push_apply_resource($resource, $payload);
+        return [
+            'applied' => true,
+            'storageGuard' => null,
+        ];
+    }
+
+    if (($expected_resource_value['exists'] ?? false) !== true || !is_array($expected_resource_value['value'] ?? null)) {
+        reprint_push_apply_resource($resource, $payload);
+        return [
+            'applied' => true,
+            'storageGuard' => null,
+        ];
+    }
+
+    $table = (string) ($resource['table'] ?? '');
+    $id = (string) ($resource['id'] ?? '');
+    $value = $payload['value'] ?? null;
+    if (!is_array($value)) {
+        reprint_push_apply_resource($resource, $payload);
+        return [
+            'applied' => true,
+            'storageGuard' => null,
+        ];
+    }
+
+    if ($table === 'wp_posts') {
+        return reprint_push_guarded_update_existing_post_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
+    }
+    if ($table === 'wp_options') {
+        return reprint_push_guarded_update_existing_option_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
+    }
+    if ($table === 'wp_postmeta') {
+        return reprint_push_guarded_update_existing_postmeta_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
+    }
+    if ($table === 'wp_reprint_push_forms_lab') {
+        return reprint_push_guarded_update_existing_forms_lab_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
+    }
+
+    reprint_push_apply_resource($resource, $payload);
+    return [
+        'applied' => true,
+        'storageGuard' => null,
+    ];
+}
+
+function reprint_push_guarded_update_existing_post_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    $post_id = reprint_push_numeric_id($id, 'ID');
+    $columns = ['ID', 'post_title', 'post_name', 'post_content', 'post_status', 'post_type', 'post_parent', 'post_author'];
+    foreach ($columns as $column) {
+        if (!array_key_exists($column, $expected) || !array_key_exists($column, $value)) {
+            throw new RuntimeException('Post row payload must include guarded column: ' . $column);
+        }
+    }
+
+    $table = reprint_push_quote_identifier($wpdb->posts);
+    $postmeta_table = reprint_push_quote_identifier($wpdb->postmeta);
+    $expected_fixture_marker_id = (int) ($expected_storage_value['value']['fixture_marker_meta_id'] ?? 0);
+    $expected_fixture_marker = (string) ($expected_storage_value['value']['fixture_marker_meta_value'] ?? '');
+    $shape = "UPDATE {$table} SET post_title = %s, post_name = %s, post_content = %s, post_status = %s, post_type = %s, post_parent = %d, post_author = %d WHERE ID = %d AND post_title = %s AND post_name = %s AND post_content = %s AND post_status = %s AND post_type = %s AND post_parent = %d AND post_author = %d AND EXISTS (SELECT 1 FROM {$postmeta_table} reprint_push_fixture_marker WHERE reprint_push_fixture_marker.meta_id = %d AND reprint_push_fixture_marker.post_id = {$table}.ID AND reprint_push_fixture_marker.meta_key = %s AND reprint_push_fixture_marker.meta_value = %s AND reprint_push_fixture_marker.meta_value <> '')";
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        (string) $value['post_title'],
+        (string) $value['post_name'],
+        (string) $value['post_content'],
+        (string) $value['post_status'],
+        (string) $value['post_type'],
+        (int) $value['post_parent'],
+        (int) $value['post_author'],
+        $post_id,
+        (string) $expected['post_title'],
+        (string) $expected['post_name'],
+        (string) $expected['post_content'],
+        (string) $expected['post_status'],
+        (string) $expected['post_type'],
+        (int) $expected['post_parent'],
+        (int) $expected['post_author'],
+        $expected_fixture_marker_id,
+        'reprint_push_fixture',
+        $expected_fixture_marker
+    ));
+    if ($rows === false) {
+        throw new RuntimeException('Could not apply guarded post row update: ' . $wpdb->last_error);
+    }
+    if ((int) $rows === 1) {
+        clean_post_cache($post_id);
+    }
+
+    return reprint_push_storage_guard_result('wp-post', 'wp_posts', $wpdb->posts, 'update', array_merge($columns, ['fixture_marker']), $expected, $expected_storage_value['value'] ?? $expected, $rows, $shape);
+}
+
+function reprint_push_guarded_update_existing_option_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    $option_name = reprint_push_option_name($id);
+    if (!in_array($option_name, reprint_push_allowed_plugin_option_names(), true)) {
+        throw new RuntimeException('Refusing to mutate non-fixture option: ' . $option_name);
+    }
+    if (!array_key_exists('option_value', $expected) || !array_key_exists('option_value', $value)) {
+        throw new RuntimeException('Option row payload must include option_value');
+    }
+
+    $expected_storage = [
+        'option_name' => $option_name,
+        'option_value' => maybe_serialize($expected['option_value']),
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true && is_array($expected_storage_value['value'] ?? null)) {
+        $expected_storage = $expected_storage_value['value'];
+    }
+    $table = reprint_push_quote_identifier($wpdb->options);
+    $shape = "UPDATE {$table} SET option_value = %s WHERE option_name = %s AND option_value = %s";
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        maybe_serialize($value['option_value']),
+        $option_name,
+        $expected_storage['option_value']
+    ));
+    if ($rows === false) {
+        throw new RuntimeException('Could not apply guarded option row update: ' . $wpdb->last_error);
+    }
+    if ((int) $rows === 1) {
+        wp_cache_delete($option_name, 'options');
+        wp_cache_delete('alloptions', 'options');
+        wp_cache_delete('notoptions', 'options');
+    }
+
+    return reprint_push_storage_guard_result('wp-option', 'wp_options', $wpdb->options, 'update', ['option_name', 'option_value'], $expected, $expected_storage, $rows, $shape);
+}
+
+function reprint_push_guarded_update_existing_postmeta_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    [$post_id, $meta_key] = reprint_push_parse_postmeta_row_id($id);
+    if ((int) ($expected['post_id'] ?? 0) !== $post_id
+        || (string) ($expected['meta_key'] ?? '') !== $meta_key
+        || !array_key_exists('meta_value', $expected)
+        || !array_key_exists('meta_value', $value)
+        || (int) ($value['post_id'] ?? 0) !== $post_id
+        || (string) ($value['meta_key'] ?? '') !== $meta_key
+    ) {
+        throw new RuntimeException('Postmeta row payload does not match row id: ' . $id);
+    }
+
+    $expected_storage = [
+        'post_id' => $post_id,
+        'meta_key' => $meta_key,
+        'meta_value' => maybe_serialize($expected['meta_value']),
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true && is_array($expected_storage_value['value'] ?? null)) {
+        $expected_storage = $expected_storage_value['value'];
+    }
+    $table = reprint_push_quote_identifier($wpdb->postmeta);
+    $posts_table = reprint_push_quote_identifier($wpdb->posts);
+    $expected_parent_fixture_marker_id = (int) ($expected_storage['parent_fixture_marker_meta_id'] ?? 0);
+    $expected_parent_fixture_marker = (string) ($expected_storage['parent_fixture_marker_meta_value'] ?? '');
+    $shape = "UPDATE {$table} SET meta_value = %s WHERE post_id = %d AND meta_key = %s AND meta_value = %s AND (SELECT COUNT(*) FROM (SELECT meta_id FROM {$table} WHERE post_id = %d AND meta_key = %s) AS reprint_push_guard_postmeta_count) = 1 AND (SELECT COUNT(*) FROM (SELECT marker.meta_id FROM {$table} marker INNER JOIN {$posts_table} p ON p.ID = marker.post_id WHERE marker.meta_id = %d AND p.ID = %d AND marker.meta_key = %s AND marker.meta_value = %s AND marker.meta_value <> '') AS reprint_push_guard_parent_marker_count) >= 1";
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        maybe_serialize($value['meta_value']),
+        $post_id,
+        $meta_key,
+        $expected_storage['meta_value'],
+        $post_id,
+        $meta_key,
+        $expected_parent_fixture_marker_id,
+        $post_id,
+        'reprint_push_fixture',
+        $expected_parent_fixture_marker
+    ));
+    if ($rows === false) {
+        throw new RuntimeException('Could not apply guarded postmeta row update: ' . $wpdb->last_error);
+    }
+    if ((int) $rows === 1) {
+        wp_cache_delete($post_id, 'post_meta');
+    }
+
+    return reprint_push_storage_guard_result('wp-postmeta', 'wp_postmeta', $wpdb->postmeta, 'update', ['post_id', 'meta_key', 'meta_value', 'parent_fixture_marker'], $expected, $expected_storage, $rows, $shape);
+}
+
+function reprint_push_guarded_update_existing_forms_lab_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    reprint_push_validate_forms_lab_row_value($id, $value);
+    $row_id = reprint_push_forms_lab_row_id($id);
+    if ((int) ($expected['id'] ?? 0) !== $row_id) {
+        throw new RuntimeException('Forms lab expected row does not match row id: ' . $id);
+    }
+
+    $table_name = reprint_push_forms_lab_table_name();
+    $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+    $expected_payload_json = wp_json_encode(reprint_push_normalize_snapshot_value($expected['payload'] ?? null));
+    $payload_json = wp_json_encode(reprint_push_normalize_snapshot_value($value['payload'] ?? null));
+    if (!is_string($expected_payload_json) || !is_string($payload_json)) {
+        throw new RuntimeException('Could not encode forms lab row payload: ' . $id);
+    }
+
+    $expected_storage = [
+        'id' => $row_id,
+        'form_slug' => (string) ($expected['form_slug'] ?? ''),
+        'payload_json' => $expected_payload_json,
+        'updated_marker' => (string) ($expected['updated_marker'] ?? ''),
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true && is_array($expected_storage_value['value'] ?? null)) {
+        $expected_storage = $expected_storage_value['value'];
+    }
+    $table = reprint_push_quote_identifier($table_name);
+    $shape = "UPDATE {$table} SET form_slug = %s, payload_json = %s, updated_marker = %s WHERE id = %d AND form_slug = %s AND payload_json = %s AND updated_marker = %s";
+    if ($exists !== $table_name) {
+        return reprint_push_storage_guard_result('fixture-forms-lab-table', 'wp_reprint_push_forms_lab', $table_name, 'update', ['id', 'form_slug', 'payload_json', 'updated_marker'], $expected, $expected_storage, 0, $shape);
+    }
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        (string) $value['form_slug'],
+        $payload_json,
+        (string) $value['updated_marker'],
+        $row_id,
+        $expected_storage['form_slug'],
+        $expected_storage['payload_json'],
+        $expected_storage['updated_marker']
+    ));
+    if ($rows === false) {
+        throw new RuntimeException('Could not apply guarded forms lab row update: ' . $wpdb->last_error);
+    }
+
+    return reprint_push_storage_guard_result('fixture-forms-lab-table', 'wp_reprint_push_forms_lab', $table_name, 'update', ['id', 'form_slug', 'payload_json', 'updated_marker'], $expected, $expected_storage, $rows, $shape);
+}
+
+function reprint_push_storage_guard_result(
+    string $driver,
+    string $logical_table,
+    string $physical_table,
+    string $operation,
+    array $compared_columns,
+    array $expected_resource,
+    array $expected_storage,
+    $rows,
+    string $sql_shape
+): array {
+    $affected = (int) $rows;
+    return [
+        'applied' => $affected === 1,
+        'storageGuard' => [
+            'boundary' => 'wpdb-single-statement-cas',
+            'driver' => $driver,
+            'logicalTable' => $logical_table,
+            'physicalTable' => $physical_table,
+            'operation' => $operation,
+            'comparedColumns' => array_values($compared_columns),
+            'expectedResourceHash' => hash('sha256', reprint_push_stable_json(reprint_push_normalize_snapshot_value($expected_resource))),
+            'expectedStorageHash' => hash('sha256', reprint_push_stable_json(reprint_push_normalize_snapshot_value($expected_storage))),
+            'rowsAffected' => $affected,
+            'outcome' => $affected === 1 ? 'applied' : 'stale-at-write',
+            'sqlShapeHash' => hash('sha256', $sql_shape),
+        ],
+    ];
+}
+
+function reprint_push_quote_identifier(string $identifier): string
+{
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $identifier)) {
+        throw new RuntimeException('Unsafe SQL identifier for fixture write.');
+    }
+    return '`' . $identifier . '`';
+}
+
+function reprint_push_get_storage_resource(array $resource): array
+{
+    global $wpdb;
+
+    if (($resource['type'] ?? null) !== 'row') {
+        return ['exists' => false, 'value' => null];
+    }
+
+    $table = (string) ($resource['table'] ?? '');
+    $id = (string) ($resource['id'] ?? '');
+    if ($table === 'wp_posts') {
+        $post_id = reprint_push_numeric_id($id, 'ID');
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT ID, post_title, post_name, post_content, post_status, post_type, post_parent, post_author FROM {$wpdb->posts} WHERE ID = %d",
+                $post_id
+            ),
+            ARRAY_A
+        );
+        if (!is_array($row)) {
+            return ['exists' => false, 'value' => null];
+        }
+        $row['ID'] = (int) $row['ID'];
+        $row['post_parent'] = (int) $row['post_parent'];
+        $row['post_author'] = (int) $row['post_author'];
+        $marker = reprint_push_fixture_marker_storage_row($post_id);
+        $row['fixture_marker_meta_id'] = is_array($marker) ? (int) $marker['meta_id'] : 0;
+        $row['fixture_marker_meta_value'] = is_array($marker) ? (string) $marker['meta_value'] : '';
+        return ['exists' => true, 'value' => $row];
+    }
+    if ($table === 'wp_options') {
+        $option_name = reprint_push_option_name($id);
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name = %s",
+                $option_name
+            ),
+            ARRAY_A
+        );
+        return is_array($row) ? ['exists' => true, 'value' => $row] : ['exists' => false, 'value' => null];
+    }
+    if ($table === 'wp_postmeta') {
+        [$post_id, $meta_key] = reprint_push_parse_postmeta_row_id($id);
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s ORDER BY meta_id ASC",
+                $post_id,
+                $meta_key
+            ),
+            ARRAY_A
+        ) ?: [];
+        if (count($rows) !== 1) {
+            return ['exists' => false, 'value' => null, 'rowCount' => count($rows)];
+        }
+        $rows[0]['post_id'] = (int) $rows[0]['post_id'];
+        $marker = reprint_push_fixture_marker_storage_row($post_id);
+        $rows[0]['parent_fixture_marker_meta_id'] = is_array($marker) ? (int) $marker['meta_id'] : 0;
+        $rows[0]['parent_fixture_marker_meta_value'] = is_array($marker) ? (string) $marker['meta_value'] : '';
+        return ['exists' => true, 'value' => $rows[0], 'rowCount' => 1];
+    }
+    if ($table === 'wp_reprint_push_forms_lab') {
+        $row_id = reprint_push_forms_lab_row_id($id);
+        $table_name = reprint_push_forms_lab_table_name();
+        $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+        if ($exists !== $table_name) {
+            return ['exists' => false, 'value' => null];
+        }
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                'SELECT id, form_slug, payload_json, updated_marker FROM ' . reprint_push_quote_identifier($table_name) . ' WHERE id = %d',
+                $row_id
+            ),
+            ARRAY_A
+        );
+        if (!is_array($row)) {
+            return ['exists' => false, 'value' => null];
+        }
+        $row['id'] = (int) $row['id'];
+        return ['exists' => true, 'value' => $row];
+    }
+
+    return ['exists' => false, 'value' => null];
+}
+
+function reprint_push_fixture_marker_storage_row(int $post_id): ?array
+{
+    global $wpdb;
+
+    $row = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT meta_id, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s ORDER BY meta_id ASC LIMIT 1",
+            $post_id,
+            'reprint_push_fixture'
+        ),
+        ARRAY_A
+    );
+    return is_array($row) ? $row : null;
+}
+
 function reprint_push_assert_supported_apply_resource(array $resource): void
 {
     $type = $resource['type'] ?? null;
@@ -546,6 +920,42 @@ function reprint_push_apply_forms_lab_row(string $id, bool $is_delete, $value): 
     if ($is_delete) {
         throw new RuntimeException('Fixture forms lab table driver does not support deletes: ' . $id);
     }
+    reprint_push_validate_forms_lab_row_value($id, $value);
+    $form_slug = (string) ($value['form_slug'] ?? '');
+    $updated_marker = (string) ($value['updated_marker'] ?? '');
+
+    $table_name = reprint_push_forms_lab_table_name();
+    $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+    if ($exists !== $table_name) {
+        $wpdb->query(
+            'CREATE TABLE `' . $table_name . '` ' .
+            '(id bigint(20) unsigned NOT NULL, form_slug varchar(191) NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (id)) ' .
+            $wpdb->get_charset_collate()
+        );
+    }
+
+    $payload_json = wp_json_encode(reprint_push_normalize_snapshot_value($value['payload'] ?? null));
+    if (!is_string($payload_json)) {
+        throw new RuntimeException('Could not encode forms lab row payload: ' . $id);
+    }
+
+    $sql = $wpdb->prepare(
+        'INSERT INTO `' . $table_name . '` (id, form_slug, payload_json, updated_marker)
+         VALUES (%d, %s, %s, %s)
+         ON DUPLICATE KEY UPDATE form_slug = VALUES(form_slug), payload_json = VALUES(payload_json), updated_marker = VALUES(updated_marker)',
+        $row_id,
+        $form_slug,
+        $payload_json,
+        $updated_marker
+    );
+    if ($wpdb->query($sql) === false) {
+        throw new RuntimeException('Could not apply forms lab row: ' . $wpdb->last_error);
+    }
+}
+
+function reprint_push_validate_forms_lab_row_value(string $id, $value): void
+{
+    $row_id = reprint_push_forms_lab_row_id($id);
     if (!is_array($value)) {
         throw new RuntimeException('Forms lab row payload must be an object');
     }
@@ -574,34 +984,6 @@ function reprint_push_apply_forms_lab_row(string $id, bool $is_delete, $value): 
     $updated_marker = (string) ($value['updated_marker'] ?? '');
     if (!preg_match('/^[a-z0-9_-]{1,32}$/', $updated_marker)) {
         throw new RuntimeException('Unsupported forms lab row updated_marker: ' . $updated_marker);
-    }
-
-    $table_name = reprint_push_forms_lab_table_name();
-    $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
-    if ($exists !== $table_name) {
-        $wpdb->query(
-            'CREATE TABLE `' . $table_name . '` ' .
-            '(id bigint(20) unsigned NOT NULL, form_slug varchar(191) NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (id)) ' .
-            $wpdb->get_charset_collate()
-        );
-    }
-
-    $payload_json = wp_json_encode(reprint_push_normalize_snapshot_value($value['payload'] ?? null));
-    if (!is_string($payload_json)) {
-        throw new RuntimeException('Could not encode forms lab row payload: ' . $id);
-    }
-
-    $sql = $wpdb->prepare(
-        'INSERT INTO `' . $table_name . '` (id, form_slug, payload_json, updated_marker)
-         VALUES (%d, %s, %s, %s)
-         ON DUPLICATE KEY UPDATE form_slug = VALUES(form_slug), payload_json = VALUES(payload_json), updated_marker = VALUES(updated_marker)',
-        $row_id,
-        $form_slug,
-        $payload_json,
-        $updated_marker
-    );
-    if ($wpdb->query($sql) === false) {
-        throw new RuntimeException('Could not apply forms lab row: ' . $wpdb->last_error);
     }
 }
 

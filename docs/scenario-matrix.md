@@ -53,6 +53,8 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground DB stale rejection replay | A stale precondition failure is journaled as a rejected terminal result; same key/body replay returns `PRECONDITION_FAILED` with `idempotency.replayed: true` and no fresh mutation work, while a different body with the same key conflicts. | `npm run test:playground:db-journal-idempotency` |
 | Playground mid-apply JIT drift | A lab drift after dry-run and initial apply validation but before mutation `N` writes returns `412 PRECONDITION_FAILED`, preserves the drifted target, records hash-only `mutation-precondition-failed` evidence, writes no `mutation-applied` for `N`, writes no later mutations, and writes no `apply-committed`. | `npm run test:playground:mid-apply-drift` |
 | Playground mid-apply rejected replay | Same key/body after the mid-apply JIT rejection replays the rejected result with `idempotency.replayed: true` and no fresh mutation work; same key/different body returns `409 IDEMPOTENCY_KEY_CONFLICT`; recovery inspect is non-mutating. | `npm run test:playground:mid-apply-drift` |
+| Playground storage-boundary guarded DB updates | After the JIT pre-write hash passes, existing fixture row updates for `wp_posts`, allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact positive-id `wp_reprint_push_forms_lab` rows use a single guarded `wpdb` update comparing expected stored columns at the SQL write boundary. Evidence is hash-only `storageGuard` with boundary, driver, logical/physical table, operation, compared columns, expected resource/storage hashes, rows affected, outcome, and SQL shape hash. | `npm run test:playground:storage-guarded-db-write` |
+| Playground storage-boundary drift failures | Value drift on each supported table, marker-empty ownership drift for posts and postmeta parents, and absent/delete drift fail closed with rows affected `0`, outcome `stale-at-write`, `PRECONDITION_FAILED`, drift preserved, no `mutation-applied` for the failed target, no later mutations, and no `apply-committed`. | `npm run test:playground:storage-guarded-db-write` |
 | Playground DB idempotency concurrent same-body first apply | A unique `claim_key_hash` opens exactly one claim before mutation; concurrent same-key/same-body first applies produce one fresh mutation executor and the duplicate returns safe in-progress/retry/replay behavior without mutation. | `npm run test:playground:db-journal-idempotency` |
 | Playground DB idempotency concurrent different-body first apply | Concurrent same-key/different-body requests reject the conflicting request with `409 IDEMPOTENCY_KEY_CONFLICT` before mutation while the original request is the only fresh mutation executor. | `npm run test:playground:db-journal-idempotency` |
 | Playground DB process-kill persistence | A real `SIGKILL` during an in-flight DB-journaled REST apply leaves persisted DB `idempotency-opened`/`apply-started` rows after host-mounted Playground restart without a false `apply-committed`. | `npm run test:playground:db-journal-process-kill` |
@@ -89,8 +91,14 @@ The first executable matrix lives in `test/push-planner.test.js`.
   production push.
 - File body streaming with large upload chunks.
 - Database transaction boundaries on MySQL and SQLite.
-- Storage-level compare-and-swap or locking around the final target write; the
-  current JIT pre-write hash check is lab evidence, not a storage primitive.
+- Production storage-level compare-and-swap or locking around final target
+  writes. The current JIT pre-write hash check plus
+  `npm run test:playground:storage-guarded-db-write` proves only a local
+  Playground/SQLite, fixture-scoped, update-only guarded SQL slice for existing
+  `wp_posts`, allowlisted `wp_options`, single-row `wp_postmeta`, and exact
+  `wp_reprint_push_forms_lab` rows. It is not generic MySQL/InnoDB CAS,
+  transactions/locking, rollback, inserts/deletes/files/plugin activation
+  guarding, or production Reprint HTTP mutation.
 - Production plugin activation/update with dependency and recovery checks.
 - Object-cache, cron, generated files, and maintenance-mode interactions.
 - Plugin validator and merge-driver contracts with real plugin fixtures; the

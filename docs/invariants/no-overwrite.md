@@ -41,6 +41,9 @@ the resource key, the live remote hash observed during planning, and the
   precondition.
 - Any mutation whose target hash drifts after dry-run or initial apply
   validation but before that specific mutation write.
+- Any supported fixture DB update whose stored row columns or required fixture
+  ownership marker drift after the JIT hash check but before the guarded SQL
+  `UPDATE`.
 
 Stopping means the plan status is `conflict` or `blocked`; apply must refuse
 the plan and leave the remote snapshot unchanged.
@@ -70,5 +73,24 @@ covered by the declared ready atomic group. Forged mutation-local group ids,
 missing declared group coverage, and planned inactive plugin mutations must not
 use this exception.
 
-This is lab no-overwrite evidence, not storage-level compare-and-swap, locking,
-rollback, production DB durability, or generic plugin/custom-table safety.
+The storage-boundary DB update smoke adds a narrow guarded SQL write proof
+after the JIT hash passes. Existing fixture row update mutations in `wp_posts`,
+allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact
+fixture `wp_reprint_push_forms_lab` positive rows use one
+`$wpdb->query($wpdb->prepare(...))` `UPDATE` whose `WHERE` compares expected
+stored columns. For posts and postmeta parent ownership, marker-empty drift is
+also checked at the SQL boundary. A zero-row guarded update is stale-at-write:
+apply returns `PRECONDITION_FAILED`, preserves the drifted or absent target,
+writes no `mutation-applied` for the failed target, writes no later mutations,
+and writes no `apply-committed`.
+
+The `storageGuard` evidence is hash-only: boundary, driver, logical and
+physical table, operation, compared column names, expected resource and storage
+hashes, rows affected, outcome, and SQL shape hash. It does not include raw SQL
+values, post content, option values, meta values, forms payloads, snapshots, or
+plugin payloads.
+
+This is lab no-overwrite evidence, not production DB durability, production
+Reprint HTTP mutation, generic MySQL/InnoDB compare-and-swap proof,
+transactions, locking, rollback, inserts/deletes/files/plugin activation
+storage guarding, or arbitrary plugin/custom-table semantic safety.

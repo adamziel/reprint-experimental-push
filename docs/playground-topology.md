@@ -256,6 +256,7 @@ production response contract.
 ```bash
 npm run test:playground:db-journal-idempotency
 npm run test:playground:mid-apply-drift
+npm run test:playground:storage-guarded-db-write
 npm run test:playground:db-journal-missing-commit-finalization
 ```
 
@@ -298,6 +299,30 @@ writes no `apply-committed`. Same key/body replay is non-mutating and replays
 the rejection; same key/different body conflicts. This proves the lab gap is
 closed for the fixture path, not storage-level compare-and-swap, locking, or
 production durability.
+
+The storage-guarded DB write smoke is the accepted lab storage-boundary slice.
+It keeps the JIT pre-write resource hash as the first guard. When that hash
+passes, supported update mutations for existing fixture rows in `wp_posts`,
+allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact
+positive-id `wp_reprint_push_forms_lab` rows use one guarded
+`$wpdb->query($wpdb->prepare(...))` `UPDATE` with predicates over the expected
+stored columns at the SQL write boundary. Positive evidence is recorded as
+hash-only `storageGuard` data: boundary, driver, logical table, physical table,
+operation, compared column names, expected resource hash, expected storage
+hash, rows affected, outcome, and SQL shape hash.
+
+The same smoke injects deterministic drift after the JIT hash passes and before
+the guarded SQL write. Value drift on each supported table, marker-empty
+ownership drift for posts and postmeta parent posts, and absent/delete drift
+fail closed with rows affected `0`, outcome `stale-at-write`,
+`PRECONDITION_FAILED`, drift preserved, no `mutation-applied` for the failed
+target, no later mutations, and no `apply-committed`. Same key/body replay is
+non-mutating with no fresh mutation work; same key/different body returns
+`IDEMPOTENCY_KEY_CONFLICT`. Evidence is redacted and hash-only. This remains
+local Playground/SQLite fixture evidence only, not production DB durability,
+production Reprint HTTP mutation, generic MySQL/InnoDB CAS proof,
+transactions, locking, rollback, inserts/deletes/files/plugin activation
+guarding, or arbitrary plugin/custom-table semantic safety.
 
 ```bash
 npm run test:playground:db-journal-process-kill

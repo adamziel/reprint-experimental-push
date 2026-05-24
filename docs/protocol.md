@@ -9,6 +9,8 @@ The core invariant is:
 1. Dry-run and apply are separate remote operations.
 2. Apply revalidates the live remote before every mutation batch and, in the
    current lab apply path, re-hashes each target immediately before its write.
+   The accepted lab DB update slice then adds storage-boundary guarded SQL
+   updates for a narrow fixture row set.
 3. A failed or interrupted apply leaves a durable journal that lets recovery
    prove whether the remote is old, new, or blocked with artifacts.
 
@@ -166,6 +168,25 @@ and plugin mutation. The journal marks that case with
 mutation-local group ids without declared group coverage and planned inactive
 plugin mutations do not use the exception. This is lab protocol evidence, not
 generic production plugin support.
+
+For the accepted storage-boundary DB update slice, that JIT hash check still
+runs first. If it passes, existing fixture row updates for `wp_posts`,
+allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact
+positive-id `wp_reprint_push_forms_lab` rows use one guarded
+`$wpdb->query($wpdb->prepare(...))` `UPDATE` with expected stored-column
+predicates at the SQL write boundary. The evidence is hash-only
+`storageGuard` data: boundary, driver, logical and physical table, operation,
+compared column names, expected resource hash, expected storage hash, rows
+affected, outcome, and SQL shape hash. If the row storage drifts after JIT but
+before SQL, including marker-empty ownership drift for posts or postmeta parent
+posts, the guarded update affects zero rows and apply returns
+`PRECONDITION_FAILED` without `mutation-applied` for that failed target,
+without later mutations, and without `apply-committed`. This is local
+Playground/SQLite fixture evidence only. It is not production DB durability,
+not production Reprint HTTP mutation, not generic MySQL/InnoDB CAS proof, not
+transactions or locking, not rollback, and not storage guarding for
+inserts/deletes/files/plugin activation or arbitrary plugin/custom-table
+semantics.
 
 ## Resource Model
 

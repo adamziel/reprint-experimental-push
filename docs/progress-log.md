@@ -352,13 +352,49 @@ linked implementation artifacts.
   production Reprint push, generic plugin/custom-table safety, or arbitrary
   production plugin install/update/activation support.
 
+## 2026-05-24 - Storage-Boundary Guarded DB Update Slice
+
+- `npm run test:playground:storage-guarded-db-write` passed as a standalone
+  local-only Playground/SQLite smoke for fixture-scoped update-only guarded DB
+  row writes.
+- The existing JIT pre-write resource hash still runs first. After it passes,
+  supported update mutations use one guarded
+  `$wpdb->query($wpdb->prepare(...))` SQL `UPDATE` with `WHERE` predicates over
+  the expected storage representation observed after JIT.
+- Positive coverage exists for existing fixture `wp_posts` rows, allowlisted
+  `wp_options` rows, allowlisted single-row `wp_postmeta` rows, and exact
+  positive-id `wp_reprint_push_forms_lab` fixture rows.
+- Hash-only evidence is returned in responses and DB journal rows as
+  `storageGuard`: boundary, driver, logical table, physical table, operation,
+  compared column names, expected resource hash, expected storage hash, rows
+  affected, outcome, and SQL shape hash. It does not include raw SQL values,
+  post content, option values, meta values, forms payloads, snapshots, or
+  plugin payloads.
+- Drift after JIT but before SQL fails closed with
+  `PRECONDITION_FAILED`, including value drift for each supported table,
+  marker-empty ownership drift for posts/postmeta parents, and absent/delete
+  drift. The drifted target is preserved, the guarded write reports rows
+  affected `0` and outcome `stale-at-write`, no `mutation-applied` is written
+  for the failed target, no later mutations run, and no `apply-committed` is
+  written.
+- Same key/body replay after a storage-boundary rejection is non-mutating with
+  no fresh mutation work, and same key/different body returns
+  `IDEMPOTENCY_KEY_CONFLICT`. Failure/recovery evidence keeps the JIT proof
+  (`preWriteActualHash === expectedHash`) while using the fresh post-failure
+  current hash for actual/observed/recovery state.
+- Caveats remain explicit: this is local Playground/SQLite fixture evidence
+  only. It is not production DB durability, production Reprint HTTP mutation,
+  generic MySQL/InnoDB CAS proof, transactions, locking, rollback,
+  inserts/deletes/files/plugin activation storage guarding, arbitrary
+  plugin/custom-table semantic safety, or a production crash/fsync proof.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
-| Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling, the exact `wp_reprint_push_forms_lab` driver through `npm run test:playground:forms-lab-table`, detection-only plugin metadata, JIT pre-write drift rejection through `npm run test:playground:mid-apply-drift`, and `npm run test:playground:plugin-atomic-install` fixture plugin install atomicity/staged-proof evidence | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, storage-level CAS/locking, production plugin semantics |
-| Recovery boundaries | 22% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization`; rejected JIT replay with no fresh mutation work through `npm run test:playground:mid-apply-drift` | Production DB table journal durability, production WordPress crash-boundary proof, storage-level `fsync`, all-old stale-claim safe retry, auto-repair policy |
-| Reliable executor and protocol | 22% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, authenticated local Playground source-site mutation slice under `/authenticated/*`, DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key`, and per-mutation pre-write hash evidence | Production Reprint protocol extension, production Reprint auth/HMAC/TLS/session/nonce proof, real exporter credential binding, real WordPress mutation executor, remote audit records, storage-level compare-and-swap/locking |
+| Merge invariants | 37% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling, the exact `wp_reprint_push_forms_lab` driver through `npm run test:playground:forms-lab-table`, detection-only plugin metadata, JIT pre-write drift rejection through `npm run test:playground:mid-apply-drift`, fixture DB update storage-boundary stale-at-write rejection through `npm run test:playground:storage-guarded-db-write`, and `npm run test:playground:plugin-atomic-install` fixture plugin install atomicity/staged-proof evidence | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production storage-level CAS/locking, production plugin semantics |
+| Recovery boundaries | 23% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization`; rejected JIT replay with no fresh mutation work through `npm run test:playground:mid-apply-drift`; storage-boundary stale-at-write replay/recovery evidence through `npm run test:playground:storage-guarded-db-write` | Production DB table journal durability, production WordPress crash-boundary proof, storage-level `fsync`, all-old stale-claim safe retry, auto-repair policy |
+| Reliable executor and protocol | 24% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, authenticated local Playground source-site mutation slice under `/authenticated/*`, DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key`, per-mutation pre-write hash evidence, and hash-only `storageGuard` evidence for lab fixture DB update writes | Production Reprint protocol extension, production Reprint auth/HMAC/TLS/session/nonce proof, real exporter credential binding, real WordPress mutation executor, remote audit records, production storage-level compare-and-swap/locking |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
 
@@ -381,10 +417,13 @@ linked implementation artifacts.
   proves `BATCH_RECOVERY_FINALIZED` for same key/body when all live target
   hashes already match planned after hashes and `apply-committed` is missing.
   The JIT drift smoke proves a mid-apply `PRECONDITION_FAILED` rejection is
-  replayed without fresh mutation work rather than finalized as a commit.
-  This still does not prove production durability, storage `fsync`, rollback,
-  exactly-once production writes, arbitrary plugin data safety, full
-  MySQL/InnoDB behavior, all-old stale-claim safe retry, or production repair.
+  replayed without fresh mutation work rather than finalized as a commit. The
+  storage-boundary guarded DB write smoke proves fixture update-only stale
+  writes fail closed after JIT and before SQL without mutation-applied, later
+  mutations, or apply-committed. This still does not prove production
+  durability, storage `fsync`, rollback, exactly-once production writes,
+  arbitrary plugin data safety, full MySQL/InnoDB behavior, all-old stale-claim
+  safe retry, or production repair.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test,
   export planner snapshots, run guarded apply into a fresh Playground source,
   exercise a lab-only fixture protocol endpoint with WordPress-visible readback,
@@ -392,8 +431,12 @@ linked implementation artifacts.
   authenticated local Playground source-site mutation under `/authenticated/*`
   with auth-bound receipts, `manage_options`, idempotency, stale refusal, and
   fresh authenticated snapshot readback. The mid-apply drift smoke verifies
-  per-mutation pre-write target rehashing in the lab apply path. The fixture
-  plugin install atomicity
+  per-mutation pre-write target rehashing in the lab apply path. The
+  storage-boundary guarded DB write smoke verifies local Playground/SQLite
+  fixture guarded SQL updates for existing `wp_posts`, allowlisted
+  `wp_options`, single-row `wp_postmeta`, and exact
+  `wp_reprint_push_forms_lab` rows, including marker-empty ownership drift
+  failure for posts/postmeta parents. The fixture plugin install atomicity
   smoke adds hard-coded Playground evidence for exact allowlisted fixture plugin
   file/resource writes, dependency/dependent activation in one atomic group,
   row-only bypass rejection, forged ready-plan rejection, stale dependency

@@ -584,6 +584,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
         $options['mutationEventCallback'] = reprint_push_lab_rest_compose_mutation_callbacks([
             reprint_push_lab_rest_db_journal_mutation_callback($context, $started_entry),
             reprint_push_lab_rest_lab_drift_after_prepared_callback($options),
+            reprint_push_lab_rest_lab_drift_before_storage_write_callback($options),
         ]);
         $result = reprint_push_protocol_run_payload('apply', $plan, $receipt, [
             'transport' => 'wordpress-rest',
@@ -809,6 +810,119 @@ function reprint_push_lab_rest_lab_drift_after_prepared_callback(array $options)
 
         reprint_push_assert_supported_apply_resource($resource);
         reprint_push_apply_resource($resource, $payload);
+        $did_drift = true;
+    };
+}
+
+function reprint_push_lab_rest_lab_drift_before_storage_write_callback(array $options): ?callable
+{
+    if (!array_key_exists('labDriftBeforeStorageWrite', $options)) {
+        return null;
+    }
+
+    return reprint_push_lab_rest_drift_mutation_callback(
+        $options['labDriftBeforeStorageWrite'],
+        'labDriftBeforeStorageWrite',
+        'mutation-storage-write-ready'
+    );
+}
+
+function reprint_push_lab_rest_drift_mutation_callback($spec, string $option_name, string $target_event): callable
+{
+    if (!is_array($spec)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => $option_name . ' must be an object when supplied.',
+        ]);
+    }
+
+    $mutation_id = isset($spec['mutationId']) ? (string) $spec['mutationId'] : '';
+    $resource_key = isset($spec['resourceKey']) ? (string) $spec['resourceKey'] : '';
+    if ($mutation_id === '' && $resource_key === '') {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => $option_name . ' requires mutationId or resourceKey.',
+        ]);
+    }
+    if (!array_key_exists('value', $spec) && !array_key_exists('absent', $spec) && !array_key_exists('clearFixtureMarkerForPostId', $spec)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => $option_name . ' requires value, absent, or clearFixtureMarkerForPostId.',
+        ]);
+    }
+
+    $payload = [];
+    if (array_key_exists('absent', $spec)) {
+        $payload['absent'] = $spec['absent'] === true || $spec['absent'] === 1 || $spec['absent'] === '1';
+    }
+    if (array_key_exists('value', $spec)) {
+        $payload['value'] = $spec['value'];
+    }
+    $clear_fixture_marker_for_post_id = null;
+    if (array_key_exists('clearFixtureMarkerForPostId', $spec)) {
+        if (!is_int($spec['clearFixtureMarkerForPostId']) && !(is_string($spec['clearFixtureMarkerForPostId']) && preg_match('/^\d+$/', $spec['clearFixtureMarkerForPostId']))) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_ARGUMENT',
+                'message' => $option_name . ' clearFixtureMarkerForPostId must be a positive integer.',
+            ]);
+        }
+        $clear_fixture_marker_for_post_id = (int) $spec['clearFixtureMarkerForPostId'];
+        if ($clear_fixture_marker_for_post_id < 1) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_ARGUMENT',
+                'message' => $option_name . ' clearFixtureMarkerForPostId must be a positive integer.',
+            ]);
+        }
+    }
+    $resource_override = isset($spec['resource']) && is_array($spec['resource']) ? $spec['resource'] : null;
+
+    $did_drift = false;
+    return static function (string $event, array $evidence) use ($mutation_id, $resource_key, $payload, $resource_override, $option_name, $target_event, $clear_fixture_marker_for_post_id, &$did_drift): void {
+        if ($did_drift || $event !== $target_event) {
+            return;
+        }
+        if ($mutation_id !== '' && (string) ($evidence['mutationId'] ?? '') !== $mutation_id) {
+            return;
+        }
+        if ($resource_key !== '' && (string) ($evidence['resourceKey'] ?? '') !== $resource_key) {
+            return;
+        }
+
+        if ($clear_fixture_marker_for_post_id !== null) {
+            global $wpdb;
+
+            $updated = $wpdb->query($wpdb->prepare(
+                "UPDATE {$wpdb->postmeta} SET meta_value = '' WHERE post_id = %d AND meta_key = %s",
+                $clear_fixture_marker_for_post_id,
+                'reprint_push_fixture'
+            ));
+            if ($updated === false) {
+                reprint_push_protocol_fail([
+                    'ok' => false,
+                    'code' => 'LAB_DRIFT_FAILED',
+                    'message' => $option_name . ' could not clear the fixture marker.',
+                ]);
+            }
+        }
+
+        if (array_key_exists('value', $payload) || array_key_exists('absent', $payload)) {
+            $resource = $resource_override ?? ($evidence['resource'] ?? null);
+            if (!is_array($resource)) {
+                reprint_push_protocol_fail([
+                    'ok' => false,
+                    'code' => 'INVALID_ARGUMENT',
+                    'message' => $option_name . ' could not resolve the prepared mutation resource.',
+                ]);
+            }
+
+            reprint_push_assert_supported_apply_resource($resource);
+            reprint_push_apply_resource($resource, $payload);
+        }
         $did_drift = true;
     };
 }
@@ -2084,6 +2198,9 @@ function reprint_push_lab_rest_lab_options(array $payload): array
     }
     if (array_key_exists('labDriftAfterPrepared', $payload)) {
         $options['labDriftAfterPrepared'] = $payload['labDriftAfterPrepared'];
+    }
+    if (array_key_exists('labDriftBeforeStorageWrite', $payload)) {
+        $options['labDriftBeforeStorageWrite'] = $payload['labDriftBeforeStorageWrite'];
     }
     return $options;
 }

@@ -475,7 +475,7 @@ function reprint_push_lab_db_journal_compact_result(array $result): array
     $compact = [
         'ok' => (bool) ($result['ok'] ?? false),
     ];
-    foreach (['mode', 'code', 'message', 'applied', 'verifiedKeys', 'verifiedPreconditions', 'recovery'] as $key) {
+    foreach (['mode', 'code', 'message', 'applied', 'verifiedKeys', 'verifiedPreconditions', 'recovery', 'storageGuard'] as $key) {
         if (array_key_exists($key, $result)) {
             $compact[$key] = $result[$key];
         }
@@ -630,6 +630,9 @@ function reprint_push_lab_db_journal_mutation_evidence(array $mutation, ?string 
     }
     if (isset($mutation['preWriteStagingProof']) && is_array($mutation['preWriteStagingProof'])) {
         $evidence['preWriteStagingProof'] = $mutation['preWriteStagingProof'];
+    }
+    if (isset($mutation['storageGuard']) && is_array($mutation['storageGuard'])) {
+        $evidence['storageGuard'] = $mutation['storageGuard'];
     }
     if ($observed_hash !== null) {
         $evidence['observedHash'] = $observed_hash;
