@@ -19,6 +19,11 @@ The atomic apply path is only acceptable if a failure leaves one of these states
 
 Anything else is a recovery bug.
 
+A partial remote mutation without a recovery artifact is a release blocker, even
+if the write path eventually reports success on a later retry. The retry path
+must never duplicate inserts or resurrect stale local data from an outdated
+journal.
+
 ## Failure Boundaries
 
 The atomic apply boundary checks must keep these failure modes inside the contract above:
