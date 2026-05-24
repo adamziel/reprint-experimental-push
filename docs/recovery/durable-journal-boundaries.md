@@ -67,3 +67,21 @@ durable sink, but the post-failure classification requirements do not change.
 
 If a remote mutation is visible but there is no durable recovery artifact that
 can explain the state, treat that as a release blocker.
+
+## Model evidence versus durable evidence
+
+The test suite can prove the recovery contract with in-memory JSON fixtures and
+inspection helpers, but that only establishes the model. Production safety
+requires the same boundary states to survive restart in durable storage.
+
+Use the JSON model to prove:
+
+- `old-remote` stays old, even when failure happens before mutation, after
+  staging, or after dependency validation
+- `fully-updated-remote` replay stays idempotent and does not duplicate inserts
+  or revive stale local data
+- `blocked-recovery` always carries artifacts that explain the partial state
+
+Use the durable journal to prove the same states are recoverable after process
+exit. If the durable path cannot preserve the recovery artifact, the model
+result is not enough to ship.
