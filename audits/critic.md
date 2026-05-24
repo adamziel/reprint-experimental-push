@@ -37,11 +37,11 @@ inference, not direct evidence.
 
 Reprint gives the transport skeleton: preflight, chunking, resumability, and
 protocol versioning. That is a good starting point for push, but it is not a
-mutation guarantee. The current design still needs a production mutation
-boundary with per-write preconditions, durable journal semantics, and a
-recovery artifact that survives failure across file, DB, and plugin boundaries.
-It also needs proof that the push path is not just a mirrored pull pipeline
-with write verbs attached.
+proof of live-source safety or rollout behavior. The current design still
+needs a production mutation boundary with per-write preconditions, durable
+journal semantics, and a recovery artifact that survives failure across file,
+DB, and plugin boundaries. It also needs proof that the push path is not just
+a mirrored pull pipeline with write verbs attached.
 
 ### ZS-Sync
 
@@ -49,9 +49,9 @@ ZS-Sync contributes scanner composition and bounded resource enumeration. That
 helps the planner know what changed. It does not prove what is safe to mutate.
 The current design still lacks a complete coverage manifest that ties scanner
 results to every core, plugin, theme, upload, generated, custom-table, and
-multisite resource the push can affect.
-Scanner cursors and bounded batches are only useful if every enumerated
-resource either has a mutation rule or a hard block.
+multisite resource the push can affect. Scanner cursors and bounded batches
+are only useful if every enumerated resource either has a mutation rule or a
+hard block. Scanner evidence is planning input, not a write-safety proof.
 
 ### ForkPress
 
@@ -61,10 +61,10 @@ plugin-specific validators, and crash consistency that classifies failure as
 old, new, or blocked with artifacts. The current design borrows the vocabulary
 but not the proof. In particular, it still needs a resolution artifact that
 preserves base/local/remote evidence and forces a fresh live revalidation on
-retry.
-ForkPress is also the warning sign here: reviewed resolution is not a success
-path unless the remote is preserved for audit and the next retry re-plans from
-fresh evidence.
+retry. ForkPress is also the warning sign here: reviewed resolution is not a
+success path unless the remote is preserved for audit and the next retry
+re-plans from fresh evidence. ForkPress is the comparison point, not a
+guarantee that this branch has matched it.
 
 ## Changes Required Before A Production Claim
 
@@ -112,13 +112,39 @@ or an operator-facing success message that is stronger than the proof.
 If any one of these remains unproved, the correct claim stays limited to
 fixture-scoped or lab-backed push evidence.
 
+## Production Release Gate
+
+Use this as the minimum bar before any doc, PR, branch, or status note says
+`production-grade`, `production support`, or any equivalent claim.
+
+- The push path is a real production endpoint and does not resolve to
+  Playground, fixture, or copied lab internals.
+- The live remote is revalidated immediately before apply, and any stale
+  retry starts from a fresh snapshot rather than reusing old approval.
+- Every mutation surface has an explicit coverage manifest entry, or the push
+  hard-blocks before apply.
+- Every plugin-owned resource has a declared contract, or the push hard-blocks
+  before apply.
+- Every graph-bearing row class either has a proven rewrite rule or is
+  rejected before mutation.
+- Every conflict resolution writes a reviewed artifact with base, local,
+  remote, reviewer, action, and fresh revalidation evidence.
+- Every apply boundary has durable recovery evidence that can classify the
+  target as old, new, or blocked after a crash.
+- Every partial side effect path is either rolled back, fenced, or preserved
+  for audit and retry with no false success claim.
+- The release suite runs the production-shaped auth, storage, recovery,
+  plugin, graph, and audit checks together, not as isolated smoke tests.
+- The claim text explicitly says what is proven and what remains lab-only.
+
 ## Current Bottom Line
 
 The project still has credible lab evidence for no-overwrite behavior, staged
 recovery, and some guarded writes. It does not yet have the proofs needed to
 promise safe production push support for arbitrary live WordPress source sites.
 The honest claim remains: fixture-scoped and lab-backed push evidence, blocked
-for production until the missing proofs above exist.
+for production until the missing proofs above exist. Anything stronger is a
+false reliability claim.
 
 ## 2026-05-24 Auth And Graph Hardening Re-Audit
 
