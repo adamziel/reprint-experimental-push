@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "dry_run_id": "dry_01j00000000000000000000000",
+  "batch_id": "batch-1",
+  "state": "inspect",
+  "proof": "journal-and-live-hashes-reviewed",
+  "target_state_counts": {
+    "old": 0,
+    "new": 0,
+    "blocked": 0,
+    "unknown": 2
+  },
+  "actions": ["inspected-journal", "inspected-live-hashes"],
+  "next": "finish|rollback|retry|block"
+}

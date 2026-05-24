@@ -18,6 +18,8 @@ The normal sequence is:
 10. `push-journal-response.json`
 11. `push-recovery-request.json`
 12. `push-recovery-response.json`
+13. `push-recovery-inspect-request.json`
+14. `push-recovery-inspect-response.json`
 
 Failure and recovery examples:
 
@@ -28,6 +30,8 @@ Failure and recovery examples:
   decision.
 - `push-recovery-request.json` and `push-recovery-response.json` show a
   successful recovery finalization after a read-only inspect step.
+- `push-recovery-inspect-request.json` and `push-recovery-inspect-response.json`
+  show the read-only evidence lookup used before any mutating recovery mode.
 - `push-recovery-blocked-response.json` shows the evidence returned when the
   remote cannot prove a safe finish or rollback.
 - `push-auth-headers.json` shows the required authentication header families
@@ -59,10 +63,10 @@ inspection call uses the same `push_recover` endpoint with `mode: "inspect"`
 and omits the mutating recovery idempotency key unless the implementation
 requires idempotency for all recovery requests.
 
-`push_journal` is the ambiguity resolver after a timeout or crash. `push_recover`
-`mode: "inspect"` is the evidence reader that decides whether the next safe step
-is finish, rollback, retry, or block. Neither call should be treated as a live
-write lock.
+`push_journal` is the ambiguity resolver after a timeout or crash.
+`push_recover` `mode: "inspect"` is the evidence reader that decides whether
+the next safe step is finish, rollback, retry, or block. Neither call should
+be treated as a live write lock.
 
 The fixtures are intentionally paired so tests can verify the full sequence:
 preflight, remote snapshot hash listing, dry-run upload, batched apply,
