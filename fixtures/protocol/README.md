@@ -95,22 +95,22 @@ The topology proof is intentionally asymmetric:
 
 - `remote-base` is the source site that produced the persisted pull base.
 - `local-edited` is the imported local clone after user edits.
-- `remote-changed` is a separate live instance that drifts after dry-run.
+- `remote-changed` is the same remote site after it drifts between dry-run and apply.
 - the runner is the only process that can compare, upload, inspect, or
   recover.
 
-The test only proves the production rule if `remote-base` and
-`remote-changed` are different live instances. Reusing one remote for both
-roles turns the drift case into a stale snapshot replay and weakens the proof
-that apply revalidates live state.
+The test only proves the production rule if the remote changes after dry-run.
+Reusing a stale snapshot as the apply target turns the drift case into a
+replay of old state and weakens the proof that apply revalidates live state.
 
 For integration tests, the fixtures are meant to be exercised in the same
 one-remote, one-local topology described in the executor docs:
 
 - `remote-base` is the remote source site that produced the pull base package.
 - `local-edited` is the locally edited site used to build the candidate plan.
-- `remote-changed` is the live drift case used to prove apply-time
-  revalidation, journal inspection, and recovery are distinct from dry-run.
+- `remote-changed` is the same remote after live drift and is used to prove
+  apply-time revalidation, journal inspection, and recovery are distinct from
+  dry-run.
 
 That topology is the minimal production-shaped test setup because it keeps the
 planning remote and the drift remote separate while the runner remains the
@@ -130,23 +130,23 @@ shape described in the executor docs:
   package.
 - `local-edited` supplies the edited local state that becomes the candidate
   dry-run plan.
-- `remote-changed` supplies the live drift case that must fail apply-time
-  revalidation.
+- `remote-changed` supplies the same remote after drift and must fail
+  apply-time revalidation.
 
 The topology is asymmetric on purpose:
 
 - `remote-base` is the pulled merge base and the persisted push provenance.
 - `local-edited` is the edited local source used to build the candidate plan.
-- `remote-changed` is the independent live remote that proves apply-time
+- `remote-changed` is the same remote after drift that proves apply-time
   revalidation, journal inspection, and recovery are separate from dry-run.
 
 For Docker verification, mirror the same shape with one source-site container,
 one edited local-site container, and one runner container that holds the
 persisted pull base package. For Playground verification, mirror it with one
 `playground-remote` server, one `playground-local` server, and the same runner
-process. In both cases, keep the live drift state separate from the planning
-remote so stale-apply tests prove a fresh revalidation boundary instead of a
-reused dry-run receipt.
+process. In both cases, keep the live drift state on the same remote site so
+stale-apply tests prove a fresh revalidation boundary instead of a reused
+dry-run receipt.
 
 The same topology is captured in `push-topology.json` so focused tests can
 assert the intended role split without re-encoding prose assumptions.
@@ -155,6 +155,6 @@ The fixture contract is intentionally one remote, one local, one runner:
 
 - `remote_base` is the persisted pull source of truth.
 - `local_edited` is the imported and edited local site.
-- `remote_changed` is the live drift target that forces apply-time
+- `remote_changed` is the same remote site after drift and forces apply-time
   revalidation.
 - `runner` is the only actor that may compare, upload, inspect, or recover.

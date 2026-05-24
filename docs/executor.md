@@ -209,13 +209,14 @@ edited site, and one runner. That is the minimum one-remote, one-local shape
 the protocol is expected to support. The remote remains the source of truth
 for the push protocol; the local site is the pull target that was edited after
 import. The runner owns the protocol flow and is the only process that talks
-to both sites. The test must prove remote drift, meaning the remote can change
-independently between dry-run and apply and the executor still rejects stale
+to both sites. The test must prove remote drift, meaning the same remote site
+can change between dry-run and apply and the executor still rejects stale
 work. The topology should be explicit about role separation:
 
 - `remote-base` is the source of truth used to produce the pull base package.
 - `local-edited` is the imported local site after user edits.
-- `remote-changed` is a live drift case that changes between dry-run and apply.
+- `remote-changed` is the same remote site after independent live drift between
+  dry-run and apply.
 - the runner is the only process that compares, uploads, inspects, and recovers.
 
 The test story is intentionally asymmetric:
@@ -233,13 +234,13 @@ The topology proves the production rule that dry-run and apply are separate:
    `remote-base`.
 4. Build and upload the dry-run plan from `remote-base`, `local-edited`, and
    the live hash listing.
-5. Mutate `remote-changed` only after it drifts independently, so apply must
-   revalidate and reject stale work.
+5. Let `remote-base` drift into `remote-changed` after dry-run, so apply must
+   revalidate the same remote and reject stale work.
 6. Use `push_journal` and `push_recover` to resolve any lost-response or crash
    ambiguity before retrying.
-7. Keep `remote-base` as the persisted pull source and `remote-changed` as the
-   live drift target so the executor proves it is comparing, not replaying, a
-   stale snapshot.
+7. Keep `remote-base` as the persisted pull source and treat `remote-changed`
+   as the same remote site observed later, so the executor proves it is
+   comparing live state rather than replaying a stale snapshot.
 
 ### Docker Topology
 
@@ -256,8 +257,8 @@ local-wp       edited local WordPress site created from the pull base
 runner         Node/PHP runner that orchestrates pull, plan, dry-run, apply
 ```
 
-Only the runner talks to both sites. No WordPress container publishes a public
-port. If browser inspection is needed, expose at most the sandbox-provided
+Only the runner talks to the remote and local sites. No WordPress container
+publishes a public port. If browser inspection is needed, expose at most the sandbox-provided
 `8080` ingress through an optional local-only proxy. Do not use ngrok,
 cloudflared, localtunnel, serveo, localhost.run, Tailscale Funnel, or any
 equivalent tunnel.
