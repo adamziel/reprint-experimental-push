@@ -14,20 +14,20 @@ direct proof for the objective: pushing local edits back to a live source
 WordPress site without losing concurrent source changes, while remaining
 reliable and fast.
 
-The weakest current claim is still speed, but the real release blocker is more
-specific: the benchmark harness refuses an unsupported throughput claim while
-the repository still lacks a single enforced release gate that requires the
-auth, journal, storage, graph, recovery, and benchmark checks to pass in one
-required command. The benchmark code lists blockers such as missing durable
-chunk receipts, missing live remote preconditions, missing durable journal
-integrity, missing graph-identity evidence, missing recovery evidence, and
-non-production storage or row-apply capabilities. That is a useful refusal
-mechanism, but it is still only a guardrail. It does not create the required
-release boundary, so the repo can still present a green default test run while
-the strongest claims remain skipped. In other words, the suite can reject
-unsafe release claims, but it does not yet enforce the full release claim.
-That means the current test story is strongest as a blocker generator, not as
-release-grade proof of no data loss, reliability, or speed.
+The weakest current claim is still speed, but the more important release
+blocker is structural: the benchmark harness refuses an unsupported throughput
+claim while the repository still lacks a single enforced release gate that
+requires the auth, journal, storage, graph, recovery, and benchmark checks to
+pass in one required command. The benchmark code lists blockers such as
+missing durable chunk receipts, missing live remote preconditions, missing
+durable journal integrity, missing graph-identity evidence, missing recovery
+evidence, and non-production storage or row-apply capabilities. That is a
+useful refusal mechanism, but it is still only a guardrail. It does not create
+the required release boundary, so the repo can still present a green default
+test run while the strongest claims remain skipped. In other words, the suite
+can reject unsafe release claims, but it does not yet enforce the full release
+claim. That means the current test story is strongest as a blocker generator,
+not as release-grade proof of no data loss, reliability, or speed.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -312,7 +312,9 @@ invocation and can be skipped while `npm test` remains green.
    `npm test` is useful because it proves the model and several fixture
    assumptions fail closed, but it still does not exercise the production-backed
    push path or the strongest smoke scripts. A green default suite is therefore
-   necessary evidence, not sufficient evidence, for any live-source claim.
+   necessary evidence, not sufficient evidence, for any live-source claim. It
+   proves that some unsafe states are rejected; it does not prove the absence of
+   data loss or the presence of production reliability.
 
 3. **The lab smokes are still boundary-specific, not end-to-end production proof.**
    `npm run test:playground:production-shaped-push` and
