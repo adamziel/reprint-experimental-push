@@ -308,6 +308,41 @@ test('recognizes matching independent edits as already in sync', () => {
   assert.equal(decision.change.remoteChange, 'update');
 });
 
+test('recognizes matching independent deletions as already in sync', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete local.files['index.php'];
+  delete remote.files['index.php'];
+
+  const plan = planFor(base, local, remote);
+  const decision = decisionFor(plan, 'file:index.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decision.decision, 'already-in-sync');
+  assert.equal(decision.change.localChange, 'delete');
+  assert.equal(decision.change.remoteChange, 'delete');
+});
+
+test('recognizes matching independent file edits as already in sync', () => {
+  const base = baseSite();
+  base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
+  const local = baseSite();
+  local.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  const remote = baseSite();
+  remote.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+
+  const plan = planFor(base, local, remote);
+  const decision = decisionFor(plan, 'file:wp-content/themes/theme/style.css');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decision.decision, 'already-in-sync');
+  assert.equal(decision.change.localChange, 'update');
+  assert.equal(decision.change.remoteChange, 'update');
+});
+
 test('preserves remote-only plugin changes', () => {
   const base = baseSite();
   const remote = baseSite();
