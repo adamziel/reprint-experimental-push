@@ -146,6 +146,8 @@ The canonical signature is:
 
 ```text
 HMAC-SHA256(
+  "REPRINT-PUSH-V1" + "\n" +
+  push_protocol_version + "\n" +
   method + "\n" +
   endpoint + "\n" +
   canonical_query + "\n" +
@@ -158,6 +160,10 @@ HMAC-SHA256(
 
 Rules:
 
+- The first line is a fixed domain separator. It must not be reused by pull
+  export signatures, lab-only route profiles, or future incompatible push
+  versions.
+- `push_protocol_version` is the version negotiated by `push_preflight`.
 - `content_hash` must match `X-Auth-Content-Hash`.
 - `push_session` is minted by `push_preflight` and expires quickly.
 - `idempotency_key` is unique per dry-run upload or apply batch.
@@ -184,9 +190,10 @@ Endpoint authentication requirements:
 
 The canonical query string must be built from the actual received route and
 query parameters after URL decoding rules are fixed by the server. The endpoint
-name, method, query, body hash, session, and idempotency key are part of the
-signature so a signed dry-run body cannot be replayed as apply, against another
-route, or under another session.
+name, method, query, body hash, session, negotiated protocol version, domain
+separator, and idempotency key are part of the signature so a signed dry-run
+body cannot be replayed as apply, against another route, under another session,
+or across a different Reprint signing protocol.
 
 ## Identity, Idempotency, And Coverage
 
@@ -259,9 +266,9 @@ The lab verifier checks signatures before JSON parsing, receipt validation,
 idempotency lookup or claim, journal writes, or mutation. `X-Auth-Content-Hash`
 is SHA-256 over the raw request body bytes. The auth signature covers
 `X-Auth-Nonce`, `X-Auth-Timestamp`, and the content hash. The push signature
-binds the method, actual path, canonical query, content hash, server-minted lab
-push session, and idempotency key. Preflight mints short-lived lab push
-sessions; dry-run and apply require the session plus
+binds the lab domain separator, method, actual path, canonical query, content
+hash, server-minted lab push session, and idempotency key. Preflight mints
+short-lived lab push sessions; dry-run and apply require the session plus
 `X-Reprint-Push-Idempotency-Key`. Nonce replay rejects before idempotency
 replay, while replay with a fresh nonce/signature still works with zero fresh
 mutation work.
