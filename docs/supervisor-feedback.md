@@ -1,72 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:14:41 CEST
+Last updated: 2026-05-25 01:15:18 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 01:14:41 CEST - Supervisor Snapshot
+## 2026-05-25 01:15:18 CEST - Supervisor Snapshot
 
 - Going well: the visible page and log still agree, and the top of the page stays scan-friendly.
 - Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
-- Progress change: no new evidence landed; this pass only tightened the status surfaces.
-- Next nudge: keep each lane tied to one production-backed test and avoid readiness language until the proof exists.
-
-## 2026-05-25 01:10:30 CEST - Supervisor Snapshot
-
-- Going well: the visible page and log still agree, and the first screen stays compact.
-- Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
-- Progress change: timestamp-only refresh; no evidence moved a gate.
-- Next nudge: keep each lane tied to one production-backed test and do not overstate readiness.
-
-## 2026-05-25 01:08:54 CEST - Supervisor Snapshot
-
-- Going well: the visible page and log still agree, and the first screen stays compact.
-- Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
-- Progress change: timestamp refresh only; no evidence moved a gate.
-- Next nudge: keep each lane tied to one production-backed test and stop refreshing status without proof.
-
-## 2026-05-25 01:09:53 CEST - Supervisor Snapshot
-
-- Going well: the visible page and log still agree, and the first screen stays compact.
-- Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
-- Progress change: timestamp-only refresh; no evidence moved a gate.
-- Next nudge: keep each lane tied to one production-backed test and do not overstate readiness.
-
-## 2026-05-25 01:08:22 CEST - Supervisor Snapshot
-
-- Going well: the visible page and log still agree, and the first screen stays compact.
-- Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
-- Progress change: timestamp-only refresh; no evidence moved a gate.
-- Next nudge: ask each lane for one production-backed test, then stop refreshing status without proof.
-
-## 2026-05-25 01:05:23 CEST - Supervisor Snapshot
-
-- Going well: the visible page and log still match, and the first screen stays compact.
-- Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
-- Progress change: timestamp-only refresh; no evidence moved a gate.
-- Next nudge: ask each lane for one production-backed test, not another status refresh.
-
-## 2026-05-25 01:02 CEST - Supervisor Snapshot
-
-- Going well: the page and log still agree, and the first view stays compact.
-- Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
-- Progress change: timestamp-only refresh again; no new evidence moved a gate.
-- Next nudge: ask each lane for one production-backed test, not another summary refresh.
-
-## 2026-05-25 01:01 CEST - Supervisor Snapshot
-
-- Going well: the visible page and log still match on the blocked gates.
-- Not going well: no new production evidence landed; auth, journal durability, graph identity, leases, integration, and plugin drivers remain blocked.
-- Progress change: timestamp-only refresh; the proof gap did not move.
-- Next nudge: keep the next update tied to one concrete production-backed test, not another status refresh.
-
-## 2026-05-25 01:00 CEST - Supervisor Snapshot
-
-- Going well: the status surfaces still agree on the blocked gates and keep the detail out of the first view.
-- Not going well: no new production evidence landed; auth, journal durability, graph identity, leases, integration, and plugin drivers remain blocked.
-- Progress change: timestamp-only refresh; the proof gap did not move.
-- Next nudge: keep the next update tied to one concrete production-backed test, not a status refresh.
+- Progress change: no new evidence landed; this pass only trimmed repeated status noise.
+- Next nudge: keep each lane tied to one production-backed test and avoid readiness language until proof exists.
 
 ## 2026-05-25 00:59 CEST - Supervisor Snapshot
 
