@@ -191,6 +191,9 @@ production-grade push support:
 - Auditability: the review artifact must bind to the exact base/local/remote
   hashes, reviewer identity, live snapshot timestamp, and retry scope so the
   remote can be preserved and the operator can safely retry or inspect later.
+- Stale-approval handling: if the remote changes after review, the old
+  approval must stay readable for audit but the retry must be rejected before
+  any write and forced to start from a fresh live snapshot.
 - Evidence standard: fixture replay, route-shape smoke, and packaged-plugin
   mounting are compatibility checks only; none may be cited as proof of
   production safety.
