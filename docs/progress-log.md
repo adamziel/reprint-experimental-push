@@ -6,6 +6,21 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Public Status Refresh
 
+- Refreshed [progress.html](../progress.html) with a visible last-updated
+  stamp, a compact status summary, and evidence-linked pending gates.
+- Kept the public page conservative: 82 Node tests remain the only quantified
+  proof claim, while real WordPress executor, recovery journal durability,
+  Docker/full Playground integration, and general plugin drivers stay marked
+  pending.
+- Newest concise evidence links remain the same entry points:
+  [docs/protocol.md](protocol.md), [docs/playground-topology.md](playground-topology.md),
+  [audits/objective-audit.md](../audits/objective-audit.md), and
+  [audits/critic.md](../audits/critic.md).
+- No new production gate was proven in this refresh. The status page now points
+  readers to the fuller history below.
+
+## 2026-05-25 - Current Supervisor Snapshot
+
 - Updated [progress.html](../progress.html) with a fresh visible last-updated
   stamp and a tighter summary of the current evidence boundary.
 - The public page now states the known pending gates directly: real WordPress
