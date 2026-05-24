@@ -45,10 +45,10 @@ remain green even when the strongest checks are skipped, so the repo can look
 healthy while the objective remains unproven. The current test story is
 therefore strongest as a blocker generator, not as release-grade proof of no
 data loss, reliability, or speed.
-The next actionable gap is a required `verify:release`-style command that
-fails closed on `labBacked: true`, fixture-only scope, missing live-topology
-evidence, or an unmeasured speed claim instead of leaving those checks as
-optional scripts.
+The next actionable gap is a required `verify:release`-style command, wired
+into CI or an equivalent enforced entrypoint, that fails closed on
+`labBacked: true`, fixture-only scope, missing live-topology evidence, or an
+unmeasured speed claim instead of leaving those checks as optional scripts.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -207,7 +207,7 @@ these release requirements:
 | R13 | Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope. |
 | R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
 | R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets, a documented measurement environment, and a release threshold that cannot be skipped by accident. A model that only refuses unsupported claims is not enough. |
-| R16 | Provide one enforced release gate that runs the safety, recovery, auth/session, storage, plugin-data-driver, graph-identity, real topology, crash-boundary, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough, and a green default suite is not a substitute. A release path that requires manual script assembly is still not a release gate. |
+| R16 | Provide one enforced release gate that runs the safety, recovery, auth/session, storage, plugin-data-driver, graph-identity, real topology, crash-boundary, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough, and a green default suite is not a substitute. A release path that requires manual script assembly, or that is not wired into CI or another enforced entrypoint, is still not a release gate. |
 
 The most important release requirement is not one individual check; it is the
 end-to-end enforcement of the full safety matrix before any live-source push is
