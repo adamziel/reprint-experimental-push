@@ -98,6 +98,9 @@ This pass treats docs and script names as leads, not proof. Fresh local
 verification on 2026-05-25:
 
 - `npm test` passed with 89 tests, 0 failures, and 0 skips.
+- `npm run test:playground:production-shaped-push` is a stronger route smoke,
+  but it is still lab-backed by design and therefore remains evidence, not a
+  release gate.
 - `npm run test:playground:production-shaped-push` passed against
   `/wp-json/reprint/v1/push/*`, reported `labBacked: true`, applied 7 fixture
   mutations, replayed with zero fresh mutation work, rejected cross-route
@@ -123,6 +126,10 @@ separate entrypoints:
 - Stronger manual opt-ins: authenticated HTTP/CLI, DB journal, storage guard,
   process-kill recovery, stale-claim recovery, plugin atomicity, production-
   shaped route/package, mid-apply drift, and benchmark smokes
+
+The unresolved release issue is not the absence of interesting tests. It is the
+absence of one enforced command that composes the strongest checks and fails
+closed when any required proof remains lab-backed, fixture-scoped, or missing.
 
 ## Test Audit
 
