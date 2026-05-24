@@ -164,6 +164,27 @@ Evidence classes used below:
 | R15 speed | Executable proof: `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, backpressure triggers, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no release threshold is tied to a documented benchmark environment. The current evidence can justify refusing unsupported speed claims; it cannot justify saying the push path is fast or production-scaled. | Yes for any speed claim |
 | R16 release suite | Executable proof: `npm test` passed with 89 tests, 0 failures, and 0 skips. Lab/fixture proof: `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. The repo exposes named opt-in gates for auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomicity, forms lab, authenticated CLI, production-shaped routing/package, mid-apply drift, recovery, and the benchmark refusal path. | No CI workflow or release aggregator was found. The only bundled release-like script is `npm run test:playground`, and it still stops after plan/apply/push-protocol. The stronger gates are not chained into any enforced command, so release evidence is still a manual assembly of optional scripts. The production-shaped smoke itself still reports `labBacked: true`, so route-shaped success is not production proof. There is no single enforced command that proves safety, durability, graph identity, and performance together before release, and no test currently fails a release if the stronger gates are omitted. The current default test pass is therefore only a model-and-fixture checkpoint, not a release gate. | Yes |
 
+### Release Gate Gap
+
+The repository currently has optional proof commands, not an enforced release
+gate.
+
+- `npm test` is the default automated suite, but it only covers the model and
+  selected fixture logic.
+- `npm run test:playground` is bundled, but it stops after plan/apply/protocol
+  and does not invoke the stronger auth, storage, recovery, plugin, graph, or
+  benchmark smokes.
+- The stronger checks are available only as separate opt-ins such as
+  `npm run test:playground:authenticated-http-push`,
+  `npm run test:playground:db-journal-idempotency`,
+  `npm run test:playground:storage-guarded-db-write`,
+  `npm run test:playground:production-shaped-push`, and
+  `npm run test:playground:production-plugin-package`.
+
+That means the repo can still look healthy while the exact proof needed for a
+release claim has not been run. For this objective, that is a release blocker,
+not just a documentation gap.
+
 ## Test Audit
 
 ### What The Default Tests Prove
