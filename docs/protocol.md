@@ -196,6 +196,11 @@ The pull exporter/importer handoff is one-way:
 6. push apply revalidates the live remote before every batch and at the storage boundary
 7. push journal and push recover inspect read durable evidence only
 
+That handoff is intentionally asymmetric. Export/import proves the merge base
+and scope coverage. Push consumes that base as provenance, then proves remote
+liveness again at apply time instead of promoting the snapshot listing into a
+write lock.
+
 The pull package stays immutable throughout this handoff:
 
 - exporter/importer creates the persisted merge base and coverage proof
@@ -234,6 +239,20 @@ Recovery is inspect-first:
 2. inspect the live hashes
 3. classify the batch as finishable, rollback-only, retryable, or blocked
 4. only then choose a mutating recovery mode
+
+The recovery modes have distinct authority:
+
+- `inspect` is always read-only and may only surface journal and live-hash
+  evidence.
+- `auto` may mutate only when the journal and fresh live hashes prove the
+  repair is safe without further operator choice.
+- `finish` may mutate only when the journal shows the batch can be completed
+  without violating the latest live state.
+- `rollback` may mutate only when the journal and live hashes prove the
+  target can be returned to the prior state without ambiguity.
+- `blocked` is a terminal evidence result, not a repair mode. It means the
+  remote cannot prove a safe finish or rollback with the evidence currently
+  available.
 
 ## Pull Pipeline Mapping
 

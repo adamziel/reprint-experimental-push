@@ -164,6 +164,21 @@ The fixture topology encodes the exact proof order the executor must preserve:
 5. `push_journal` resolves lost responses and crash ambiguity without authorizing a write.
 6. `push_recover inspect` reads evidence first, and mutating recovery modes only proceed when the journal and live hashes prove the action.
 
+The fixture set is meant to be read as one production contract:
+
+- `push-preflight-*` fixtures bind the persisted pull base to the live remote
+  identity and a short-lived push session.
+- `push-snapshot-hashes-*` fixtures show the cursorable live planning view and
+  the coverage proof for the requested scope.
+- `push-dry-run-*` fixtures show the canonical plan upload and the resulting
+  eligibility receipt, not a lock.
+- `push-apply-batch-*` fixtures prove apply-time live revalidation on a batch
+  boundary.
+- `push-journal-*` fixtures expose durable claim, lease, and fencing evidence
+  for lost-response recovery.
+- `push-recovery-*` fixtures keep `inspect` read-only and require fresh live
+  proof before any mutating repair.
+
 The harness topology is the same proof in two packaging styles:
 
 - Docker uses one private network with `remote-base`, `local-edited`,
