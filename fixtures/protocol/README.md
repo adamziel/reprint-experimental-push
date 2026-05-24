@@ -16,10 +16,11 @@ The normal sequence is:
 8. `push-apply-batch-response.json`
 9. `push-journal-request.json`
 10. `push-journal-response.json`
-11. `push-recovery-request.json`
-12. `push-recovery-response.json`
-13. `push-recovery-inspect-request.json`
-14. `push-recovery-inspect-response.json`
+11. `push-journal-open-response.json`
+12. `push-recovery-request.json`
+13. `push-recovery-response.json`
+14. `push-recovery-inspect-request.json`
+15. `push-recovery-inspect-response.json`
 
 Failure and recovery examples:
 
@@ -28,6 +29,9 @@ Failure and recovery examples:
 - `push-journal-request.json` and `push-journal-response.json` show the
   read-only inspection step used before any lost-response retry or recovery
   decision.
+- `push-journal-open-response.json` shows an in-progress claim with fenced
+  writer evidence, which is the proof the executor needs before it retries or
+  recovers an interrupted apply.
 - `push-recovery-request.json` and `push-recovery-response.json` show a
   successful recovery finalization after a read-only inspect step.
 - `push-recovery-inspect-request.json` and `push-recovery-inspect-response.json`

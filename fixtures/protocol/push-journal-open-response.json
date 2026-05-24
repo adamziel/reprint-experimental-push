@@ -1,0 +1,57 @@
+{
+  "ok": true,
+  "cursor": null,
+  "complete": true,
+  "entries": [
+    {
+      "journal_id": "jrnl_01j00000000000000000000001",
+      "dry_run_id": "dry_01j00000000000000000000000",
+      "plan_id": "plan_2026-05-24T00:00:00Z_001",
+      "batch_id": "batch-1",
+      "idempotency_key": "idem_apply_01j000000000000000000",
+      "request_hash": "sha256:apply-request",
+      "state": "in_progress",
+      "claim_owner": "worker-17",
+      "claim_generation": 4,
+      "lease_expires_at": "2026-05-24T00:00:09Z",
+      "created_at": "2026-05-24T00:00:05Z",
+      "updated_at": "2026-05-24T00:00:08Z",
+      "resources": [
+        {
+          "resource_key": "file:index.php",
+          "before_hash": "sha256:base-index",
+          "staged_hash": "sha256:local-index",
+          "after_hash": null
+        },
+        {
+          "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+          "before_hash": "sha256:base-post-1",
+          "staged_hash": "sha256:local-post-1",
+          "after_hash": null
+        }
+      ],
+      "storage_guards": [
+        {
+          "resource_key": "file:index.php",
+          "guard": "filesystem-compare-rename",
+          "expected_hash": "sha256:base-index",
+          "observed_hash": "sha256:base-index",
+          "outcome": "claimed"
+        },
+        {
+          "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+          "guard": "mysql-transaction-row-lock",
+          "expected_hash": "sha256:base-post-1",
+          "observed_hash": "sha256:base-post-1",
+          "outcome": "claimed"
+        }
+      ],
+      "artifacts": [
+        {
+          "type": "claim",
+          "claim_key_hash": "sha256:claim-key"
+        }
+      ]
+    }
+  ]
+}

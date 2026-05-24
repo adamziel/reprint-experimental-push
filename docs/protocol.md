@@ -44,8 +44,8 @@ Required behavior:
   result in the journal or idempotency store without mutating target resources.
 - `push_batch_apply` is the normal mutation path and only applies an accepted
   dry-run plan in legal batches.
-- `push_journal` reports dry-run, apply, idempotency, and recovery state so the
-  executor can resolve ambiguous responses.
+- `push_journal` reports dry-run, apply, idempotency, claim, lease, fencing,
+  and recovery state so the executor can resolve ambiguous responses.
 - `push_recover` has a read-only `inspect` mode plus mutating `auto`,
   `finish`, and `rollback` modes. It inspects, finishes, rolls back, or
   blocks an interrupted batch only when journal artifacts and live hashes
@@ -160,7 +160,10 @@ The remote snapshot listing is the planning view, not the write lock. Any
 remote change after snapshot listing, dry-run, or journal inspection must be
 considered live until apply revalidates the batch at the storage boundary.
 `push_journal` and `push_recover inspect` reuse durable evidence only; neither
-call creates a lock or authorizes a later mutation by itself.
+call creates a lock or authorizes a later mutation by itself. They can surface
+an open claim, a claim generation, and a lease expiry so the executor can tell
+whether a worker was fenced before a mutation boundary, but that evidence is
+still only proof, not permission.
 
 The existing pull exporter/importer still owns the base package format. Push
 does not invent a second notion of truth; it layers live remote verification

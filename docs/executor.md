@@ -114,7 +114,9 @@ Resume decisions are conservative:
 The executor also persists the last seen journal cursor and recovery proof so a
 restart can distinguish "lost HTTP response" from "server committed but client
 did not observe it". This is the boundary that prevents accidental double
-mutation when the process crashes mid-apply.
+mutation when the process crashes mid-apply. If the journal shows an open
+claim, the executor treats claim generation and lease expiry as fencing
+evidence and never assumes that the old worker still owns the batch.
 
 ## Mapping To Existing Reprint Pull
 
