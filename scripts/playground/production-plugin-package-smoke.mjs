@@ -20,6 +20,11 @@ const credentials = {
   password: 'reprint-push-admin-app-password',
 };
 
+const alternateCredentials = {
+  username: 'reprint_push_alt_admin',
+  password: 'reprint-push-alt-admin-app-password',
+};
+
 const fixtures = {
   base: 'fixtures/playground/remote-base.blueprint.json',
   local: 'fixtures/playground/local-edited.blueprint.json',
@@ -64,6 +69,16 @@ try {
     const labRoute = await requestJson(server.baseUrl, 'GET', '/wp-json/reprint-push-lab/v1/snapshot');
     assert.equal(labRoute.status, 404);
     assert.equal(labRoute.body.code, 'rest_no_route');
+
+    const unprovisionedAlternatePreflight = await requestJson(
+      server.baseUrl,
+      'GET',
+      '/wp-json/reprint/v1/push/preflight',
+      undefined,
+      signedHeadersForPreflight(alternateCredentials),
+    );
+    assert.equal(unprovisionedAlternatePreflight.status, 401);
+    assert.equal(unprovisionedAlternatePreflight.body.code, 'reprint_push_lab_auth_required');
 
     const preflight = await requestJson(
       server.baseUrl,
@@ -121,6 +136,8 @@ try {
       namespace: preflight.body.routeProfile.restNamespace,
       labNamespaceDisabled: labRoute.status === 404,
       profile: preflight.body.routeProfile.profile,
+      authBootstrapDisabled: true,
+      unprovisionedAlternateStatus: unprovisionedAlternatePreflight.status,
       signedStoreCleanup: {
         deletedExpiredTotal: preflight.body.sessionStore.cleanup.deletedExpiredTotal,
         sessionsDeleted: preflight.body.sessionStore.cleanup.sessionOptions.deletedExpired,
@@ -169,6 +186,26 @@ function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
     title: 'Reprint Push Production Plugin Package',
     description: 'Remote base fixture with the packaged Reprint Push plugin activated.',
   };
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      "$login = 'reprint_push_admin';",
+      "$app_password = 'reprint-push-admin-app-password';",
+      "$slug = 'primary-admin';",
+      '$stable_uuid = static function (string $seed): string { $hex = md5($seed); return substr($hex, 0, 8) . \'-\' . substr($hex, 8, 4) . \'-\' . substr($hex, 12, 4) . \'-\' . substr($hex, 16, 4) . \'-\' . substr($hex, 20, 12); };',
+      '$user = get_user_by(\'login\', $login);',
+      'if (!$user) { $user_id = wp_insert_user(array(\'user_login\' => $login, \'user_pass\' => wp_generate_password(32, true, true), \'user_email\' => sanitize_user($login, true) . \'@example.test\', \'display_name\' => $login, \'role\' => \'administrator\')); if (is_wp_error($user_id)) { throw new RuntimeException($user_id->get_error_message()); } } else { $user_id = (int) $user->ID; $wp_user = new WP_User($user_id); $wp_user->set_role(\'administrator\'); }',
+      '$uuid = $stable_uuid(\'reprint-push-lab-\' . $slug);',
+      '$app_id = $stable_uuid(\'reprint-push-lab-app-\' . $slug);',
+      '$items = get_user_meta($user_id, \'_application_passwords\', true);',
+      '$items = is_array($items) ? array_values($items) : array();',
+      '$items = array_values(array_filter($items, static function ($item) use ($uuid, $app_id): bool { return !is_array($item) || ((string) ($item[\'uuid\'] ?? \'\') !== $uuid && (string) ($item[\'app_id\'] ?? \'\') !== $app_id); }));',
+      '$items[] = array(\'uuid\' => $uuid, \'app_id\' => $app_id, \'name\' => \'Reprint Push Package Smoke\', \'password\' => wp_hash_password(preg_replace(\'/[^a-zA-Z0-9]/\', \'\', $app_password)), \'created\' => time(), \'last_used\' => null, \'last_ip\' => null);',
+      'update_user_meta($user_id, \'_application_passwords\', $items);',
+    ].join(' '),
+  });
   blueprint.steps.push({
     step: 'runPHP',
     code: [
@@ -415,11 +452,11 @@ async function requestJsonOnce(baseUrl, method, pathname, body = undefined, head
   };
 }
 
-function signedHeadersForPreflight() {
+function signedHeadersForPreflight(auth = credentials) {
   const contentHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
   const timestamp = String(Math.floor(Date.now() / 1000));
-  const nonce = `production-plugin-package-${Date.now()}`;
-  const signingKey = hmacHex(credentials.password, `reprint-push-lab-v1\n${credentials.username}`);
+  const nonce = `production-plugin-package-${auth.username}-${Date.now()}`;
+  const signingKey = hmacHex(auth.password, `reprint-push-lab-v1\n${auth.username}`);
   const authString = `${nonce}${timestamp}${contentHash}`;
   const canonical = [
     'REPRINT-PUSH-LAB-V1',
@@ -431,7 +468,7 @@ function signedHeadersForPreflight() {
     '',
   ].join('\n');
   return {
-    ...authHeaders(),
+    ...authHeaders(auth),
     'X-Auth-Content-Hash': contentHash,
     'X-Auth-Timestamp': timestamp,
     'X-Auth-Nonce': nonce,
@@ -440,9 +477,9 @@ function signedHeadersForPreflight() {
   };
 }
 
-function authHeaders() {
+function authHeaders(auth = credentials) {
   return {
-    authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`, 'utf8').toString('base64')}`,
+    authorization: `Basic ${Buffer.from(`${auth.username}:${auth.password}`, 'utf8').toString('base64')}`,
   };
 }
 

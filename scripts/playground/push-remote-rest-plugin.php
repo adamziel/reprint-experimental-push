@@ -2385,6 +2385,10 @@ function reprint_push_lab_rest_upsert_auth_user(string $login, string $app_passw
 
 function reprint_push_lab_rest_auth_bootstrap_enabled(): bool
 {
+    if (defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP') && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true) {
+        return false;
+    }
+
     // This plugin is a disposable Playground fixture. The Basic verifier below
     // is deliberately lab-only and must not be treated as production auth.
     return true;

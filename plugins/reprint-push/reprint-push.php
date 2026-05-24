@@ -14,6 +14,10 @@ if (!defined('REPRINT_PUSH_DISABLE_LAB_ROUTES')) {
     define('REPRINT_PUSH_DISABLE_LAB_ROUTES', true);
 }
 
+if (!defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP')) {
+    define('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP', true);
+}
+
 $reprint_push_candidates = [
     __DIR__ . '/includes/push-remote-rest-plugin.php',
     dirname(__DIR__, 2) . '/scripts/playground/push-remote-rest-plugin.php',
