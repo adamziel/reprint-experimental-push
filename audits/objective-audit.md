@@ -17,6 +17,8 @@ reliable and fast.
 The honest release claim is narrower: this repository is an executable safety
 model and local Playground lab for push invariants. It does **not** yet prove
 production no-data-loss, production reliability, or measured speed.
+It also does not yet have one enforced release gate that makes those claims
+non-optional before a public or production push.
 
 ## Evidence Standard
 
@@ -111,7 +113,8 @@ these release requirements:
 
 The most important release requirement is not one individual check; it is the
 end-to-end enforcement of the full safety matrix before any live-source push is
-allowed. Without that, the remaining proof stays advisory.
+allowed. Without that, the remaining proof stays advisory, even when several
+individual smokes pass.
 
 ## Evidence Table
 
