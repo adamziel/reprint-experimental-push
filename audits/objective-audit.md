@@ -360,10 +360,11 @@ invocation and can be skipped while `npm test` remains green.
     alone, yet still weaker than a release-ready matrix because the strongest
     claims stay manual and easy to skip. The blocker is specific: without one
     required command or CI job that fails when auth, storage, recovery,
-    plugin, and performance gates are omitted, release readiness is still a
-    manual judgment, not an enforced property. The missing evidence is not
-    another opt-in smoke; it is a single mandatory command that composes the
-    existing ones into release-proof order.
+    plugin, graph, and performance gates are omitted, release readiness is
+    still a manual judgment, not an enforced property. The missing evidence is
+    not another opt-in smoke; it is a single mandatory command that composes
+    the existing ones into release-proof order and fails closed if any step is
+    skipped or downgraded to lab-only proof.
 
 16. **The highest-value missing edge case is a real crash matrix on the live
     write boundaries.** The current smoke suite can show one process-kill path
@@ -380,10 +381,10 @@ invocation and can be skipped while `npm test` remains green.
    deliberately, and nothing in the repository currently enforces that matrix
    before release. There is also no checked-in CI workflow or release wrapper
    that fails the build when the strongest auth, storage, recovery, plugin,
-   and performance smokes are skipped. Until that changes, release readiness
-   remains a manual judgment, not an evidence-backed property of the repo.
-   The actionable fix is a single release gate command plus CI that runs it
-   in order and fails closed on any skipped mandatory smoke.
+   graph, and performance smokes are skipped. Until that changes, release
+   readiness remains a manual judgment, not an evidence-backed property of
+   the repo. The actionable fix is a single release gate command plus CI that
+   runs it in order and fails closed on any skipped mandatory smoke.
 
 18. **The live-source no-data-loss claim is still blocked by missing crash
     coverage at the actual write boundaries.** The current smoke suite can
@@ -429,6 +430,30 @@ The actionable next proof is a non-bypassable release gate plus a kill matrix
 at every guarded write boundary on the production-backed path. Until then, the
 repository can truthfully claim lab evidence for push-safety invariants, but
 not a production-safe live WordPress push or a measured fast path.
+
+### Release Gate Gap
+
+The repo still lacks a mandatory release command that makes the safety matrix
+non-optional. Today, the strongest checks are available only as separate
+opt-in scripts:
+
+- `npm test`
+- `npm run test:playground`
+- `npm run test:playground:authenticated-http-push`
+- `npm run test:playground:authenticated-cli-push`
+- `npm run test:playground:db-journal-idempotency`
+- `npm run test:playground:storage-guarded-db-write`
+- `npm run test:playground:storage-guarded-file-write`
+- `npm run test:playground:db-journal-process-kill`
+- `npm run test:playground:db-journal-missing-commit-finalization`
+- `npm run test:playground:db-journal-stale-claim-all-old`
+- `npm run test:playground:production-shaped-push`
+- `npm run test:playground:production-plugin-package`
+
+That is not a release gate. It is a menu of optional proofs. The release
+blocker is the absence of one top-level command or CI workflow that chains the
+required auth, storage, recovery, plugin, graph, and performance checks in a
+fixed order and fails if any mandatory step is absent or only lab-backed.
 
 ## Required Release Gates
 
