@@ -7,8 +7,8 @@ The repository is **not releasable as a production WordPress push path**.
 The codebase has credible lab evidence for planner behavior, recovery
 classification, redaction, and several fixture-scoped WordPress smokes. It does
 **not** yet prove the objective claim: safely pushing local edits back to a live
-source WordPress site without losing concurrent source changes, while also
-being reliable and fast.
+source WordPress site without losing concurrent source changes, while also being
+reliable and fast.
 
 The current strongest proof is still mostly indirect:
 
