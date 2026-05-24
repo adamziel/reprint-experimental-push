@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:24:00 CEST.
+- Last update: 2026-05-25 01:24:38 CEST.
 - Status: `89` Node tests still pass.
 - Trend: the visible page and this log stay aligned, and the scan view stays
   compact, but production readiness is still blocked by missing evidence.
@@ -24,8 +24,8 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and links to the detailed evidence. In this lane, the page becomes live
   only after merge to `main`.
-- Refresh note: the scan view was tightened; the evidence gap and blocked
-  production gates did not change.
+- Refresh note: the scan view was tightened, and the newest supervisor entry
+  now includes terse lane nudges; the evidence gap did not change.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
