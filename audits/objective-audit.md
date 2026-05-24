@@ -96,6 +96,19 @@ fixture-scoped Playground smokes, route-shape tests that still run a lab-backed
 implementation, benchmark models that do not measure wall-clock throughput or
 memory, and README claims that are stronger than the executed proof.
 
+## Evidence Ledger Rules
+
+Every requirement below is tracked in four buckets:
+
+- `Executable proof` means the test or command exercises the claimed behavior
+  directly.
+- `Lab/fixture proof` means the check is useful but still scoped to fixtures,
+  local Playground, or a temporary package route.
+- `Docs-only proof` means the claim appears in prose, script names, or
+  diagrams, but not in a required executable gate.
+- `Release blocker` means the objective still fails closed until stronger
+  proof exists.
+
 ## Follow-up Audit Pass
 
 This pass treats docs and script names as leads, not proof. Fresh local
@@ -243,10 +256,9 @@ bundled lab chain is `npm run test:playground`, and the stronger auth,
 journal, storage, recovery, plugin, and benchmark checks are only available
 as separate opt-ins. There is no `npm run release`, `npm run verify`, or CI
 workflow that chains those checks into one required release path, so a green
-run can still omit the exact proof the objective needs. This should be the
-next implementation target: a single required command that executes the full
-release matrix and fails closed when any safety or performance gate reports
-fixture-only, lab-backed, or missing-live-topology evidence.
+run can still omit the exact proof the objective needs. This is a release
+blocker, not a documentation gap: until one required command exists, the
+project can keep producing passing lab runs without proving production safety.
 
 - `npm test` is the default automated suite, but it only covers the model and
   selected fixture logic.
@@ -719,11 +731,12 @@ proof gates:
    the current top release blocker. The gate must fail if any mandatory smoke
    is omitted, not merely document that it could have been run.
 8. Runtime benchmarks for large uploads and large DB changes with concrete
-   throughput, memory, retry, and recovery measurements.
+   throughput, memory, retry, and recovery measurements, plus a documented
+   environment that the release gate can refuse if it is missing.
 
 Until these gates exist, public documentation should keep the claim scoped to:
 **lab evidence for push safety invariants, not production-safe live WordPress
-push.**
+push.** Anything stronger is a blocked claim, not a conservative phrasing.
 
 ## Weakest Current Claim
 
@@ -733,7 +746,8 @@ blocked, but the no-data-loss claim is the broader release blocker because it
 depends on the same write-boundary evidence the repo still lacks. Right now the
 repo only proves that selected fixtures survive selected lab paths, and those
 paths do not yet cover the same auth, storage, journal, and graph boundaries
-as a real source mutation.
+as a real source mutation. This means the current evidence is enough to reject
+unsafe optimism, but not enough to authorize a release.
 
 To make the claim release-grade, the next proof must be a kill matrix that
 covers every guarded write boundary on a real push path, with live before/after
