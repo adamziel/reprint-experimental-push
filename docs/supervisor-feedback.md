@@ -1,9 +1,20 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:17:12 CEST
+Last updated: 2026-05-25 01:17:44 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 01:17:44 CEST - Supervisor Snapshot
+
+- Going well: the page still stays compact, and the detailed evidence links are
+  easy to find from the first screen.
+- Not going well: the visible page still repeats the same blocked gates in a
+  few places, which makes the scan noisier than it needs to be.
+- Progress change: no evidence delta; this pass is a readability cleanup and
+  status reconciliation.
+- Next nudge: let each lane name one proof gap, one next test, and one owner
+  without repeating the full blocker list.
 
 ## 2026-05-25 01:17:12 CEST - Supervisor Snapshot
 
