@@ -18,6 +18,17 @@ changed, what is helping, what is not helping, and the next nudge.
 - Next nudge: prove production-backed auth/journal storage and graph identity
   mapping before any readiness claim changes.
 
+## 2026-05-25 00:57 CEST - Supervisor Snapshot Refresh
+
+- Going well: the visible page, progress log, and feedback note still agree on
+  the blocked production gates.
+- Not going well: no new production evidence landed; auth, journal durability,
+  graph identity, leases, integration, and plugin drivers remain blocked.
+- Progress change: no evidence delta, only a timestamp refresh for the lane
+  status surfaces.
+- Next nudge: keep the next update tied to a concrete proof gap, not a
+  readiness claim.
+
 ## 2026-05-25 00:56 CEST - Supervisor Snapshot Refresh
 
 - Going well: the visible page, progress log, and supervisor notes still agree
