@@ -1,9 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:35 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 00:35 CEST - Lane Page Alignment
+
+- Going well: the visible progress page already stays scan-friendly and points
+  to detailed evidence instead of embedding long audit text.
+- Not going well: the lane copy still needs an explicit note that it becomes
+  live only after merge to `main`; production gates remain unproven.
+- Progress change: no new proof moved, but the status surfaces now need a
+  timestamp and wording refresh so they match the current lane state.
+- Next nudge: keep the page concise, date it with the real clock, and leave
+  the production push blocked until the missing evidence lands.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Finish same-plan graph HTTP smoke before merge. |
+| Recovery | Move model replay/failure proof into production journal storage. |
+| Reliable executor | Turn protocol docs into production push credentials and journal rows. |
+| Fast paths | Run guarded benchmark proof against a real large site. |
+| Audit and critic | Re-audit current proof while implementation lanes run. |
+| Progress publisher | Keep Pages dated, concise, and explicit that lane copies go live only after merge. |
 
 ## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
 
