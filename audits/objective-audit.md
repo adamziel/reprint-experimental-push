@@ -99,7 +99,7 @@ these release requirements:
 | R13 | Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope. |
 | R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
 | R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets and a release threshold that cannot be skipped by accident. |
-| R16 | Provide a release test suite that actually runs the safety, recovery, auth, storage, plugin, and performance gates intended to support public claims, not merely helper scripts or opt-in scripts that can be skipped or selectively omitted. |
+| R16 | Provide a release test suite that actually runs the safety, recovery, auth, storage, plugin, and performance gates intended to support public claims, not merely helper scripts or opt-in scripts that can be skipped, omitted, or invoked out of order. |
 
 The most important release requirement is not one individual check; it is the
 end-to-end enforcement of the full safety matrix before any live-source push is
