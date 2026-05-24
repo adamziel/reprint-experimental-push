@@ -10,6 +10,8 @@ the live remote immediately before apply.
   resource still hashes exactly like the pull base and the file topology check
   proves no live remote ancestor or descendant would be hidden.
 - Independent local changes while other remote-only resources changed.
+- Remote-only plugin metadata and file changes are preserved while unrelated
+  local mutations on other resources are still eligible for planning.
 - Matching independent edits where local and remote changed a resource to the
   same hash, including deletions and file edits; these produce
   `already-in-sync` decisions, not mutations.
@@ -43,6 +45,9 @@ the resource key, the live remote hash observed during planning, and the
 - Remote-only plugin context changes when local wants to mutate another file or
   metadata resource for the same plugin. The planner must preserve the remote
   plugin context and refuse the stale local plugin mutation.
+- Remote-only plugin context changes must not block unrelated local mutations
+  on different resources when those mutations still satisfy the live remote
+  precondition rule.
 - Remote-only owner plugin context changes when local wants to mutate data owned
   by that plugin. The planner must preserve the remote plugin context and refuse
   the stale plugin-owned data mutation.
