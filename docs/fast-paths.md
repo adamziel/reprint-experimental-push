@@ -66,6 +66,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed manifest or package summary still cannot prove a plugin install finished, because dependency checks, metadata writes, row receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row batch still cannot prove a plugin install finished, because per-row preconditions, dependency checks, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row batch still cannot prove plugin activation finished, because the activation state change, per-row receipts, and atomic-group commit still need durable evidence.
+- A fresh remote index plus a compressed row batch still cannot skip per-row preconditions, because planning evidence and batch compression cannot replace the live compare-and-swap predicate on each row.
 - A fresh remote index plus a compressed row summary still cannot prove plugin activation finished, because the per-row receipts, activation state change, and atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row summary still cannot prove plugin install finished, because dependency checks, row receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row batch still cannot skip backpressure for a plugin update, because queue pressure can pause work without proving the paused rows, validators, or group commit survived failure.

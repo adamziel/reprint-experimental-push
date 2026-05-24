@@ -204,6 +204,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(
     model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'index-and-compressed-row-batch-skips-row-preconditions',
+    ),
+    'model rejects treating a compressed row batch plus a fresh remote index as a way to skip row preconditions',
+  );
+  assert.ok(
+    model.rejectedFastPaths.some(
       (rejection) => rejection.id === 'index-and-compressed-chunk-receipts-completes-large-upload',
     ),
     'model rejects treating compressed chunk receipts plus a fresh remote index as large-upload completion',
@@ -1608,6 +1614,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-upload-queue-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-plugin-update',
     'index-and-compressed-row-batch-completes-plugin-update',
+    'index-and-compressed-row-batch-skips-row-preconditions',
     'index-and-compressed-row-batch-completes-plugin-install',
     'index-and-compressed-row-batch-completes-plugin-activation',
     'index-and-compressed-package-cache-completes-plugin-update',
