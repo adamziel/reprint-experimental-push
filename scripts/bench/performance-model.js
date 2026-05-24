@@ -461,6 +461,7 @@ export function buildBenchmarkModel(overrides = {}) {
   const workloads = [
     largeUploadWorkload(),
     pluginInstallWorkload(),
+    pluginUpdateWorkload(),
   ];
   const schedules = workloads.map((workload) => scheduleWorkload(workload, limits));
 
@@ -574,6 +575,59 @@ function pluginInstallWorkload() {
         resourceKey: 'plugin:commerce',
         remoteBeforeHash: 'sha256:absent',
         localHash: 'sha256:commerce-1.0.0-active',
+        atomicGroupId: atomicGroup.id,
+      },
+    ],
+  };
+}
+
+function pluginUpdateWorkload() {
+  const atomicGroup = {
+    id: 'update-commerce-stack',
+    kind: 'plugin-update',
+    dependencies: ['payments', 'subscriptions'],
+    commitPolicy: 'all-or-nothing',
+  };
+
+  return {
+    id: 'plugin-update-commerce-stack',
+    kind: 'plugin-update',
+    description: 'A dependency-heavy plugin update with remote indexes, file staging, and row batching.',
+    planId: 'plan-plugin-update-commerce-stack-v1',
+    atomicGroup,
+    files: [
+      pluginFile('file:wp-content/plugins/commerce/commerce.php', 3 * MIB, 'text/x-php', true, atomicGroup.id),
+      pluginFile('file:wp-content/plugins/commerce/assets/admin.css', 9 * MIB, 'text/css', true, atomicGroup.id),
+      pluginFile(
+        'file:wp-content/plugins/commerce/assets/catalog-sync.bin',
+        64 * MIB,
+        'application/octet-stream',
+        false,
+        atomicGroup.id,
+      ),
+    ],
+    rowGroups: [
+      rowGroup('wp_options', 180, 900, atomicGroup.id),
+      rowGroup('wp_postmeta', 5400, 640, atomicGroup.id),
+      rowGroup('wp_termmeta', 1400, 520, atomicGroup.id),
+    ],
+    pluginResources: [
+      {
+        resourceKey: 'plugin:payments',
+        remoteBeforeHash: 'sha256:payments-2.1.0-active',
+        localHash: 'sha256:payments-2.1.1-active',
+        atomicGroupId: atomicGroup.id,
+      },
+      {
+        resourceKey: 'plugin:subscriptions',
+        remoteBeforeHash: 'sha256:subscriptions-1.4.0-active',
+        localHash: 'sha256:subscriptions-1.5.0-active',
+        atomicGroupId: atomicGroup.id,
+      },
+      {
+        resourceKey: 'plugin:commerce',
+        remoteBeforeHash: 'sha256:commerce-1.0.0-active',
+        localHash: 'sha256:commerce-1.1.0-active',
         atomicGroupId: atomicGroup.id,
       },
     ],

@@ -13,9 +13,11 @@ test('benchmark model covers large uploads and plugin installs', () => {
   const model = buildBenchmarkModel();
   const largeUpload = model.schedules.find((schedule) => schedule.kind === 'large-upload');
   const pluginInstall = model.schedules.find((schedule) => schedule.kind === 'plugin-install');
+  const pluginUpdate = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
 
   assert.ok(largeUpload, 'large upload workload exists');
   assert.ok(pluginInstall, 'plugin install workload exists');
+  assert.ok(pluginUpdate, 'plugin update workload exists');
   assert.ok(largeUpload.totals.uploadBytes >= 1024 * MIB, 'large upload is at least 1 GiB');
   assert.ok(largeUpload.totals.uploadChunks > 100, 'large upload is chunked enough to exercise resumability');
   assert.ok(
@@ -46,6 +48,7 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
+  assert.ok(pluginUpdate.totals.dbRows >= 6_000, 'plugin update includes dependency-heavy row batches');
   assert.ok(
     pluginInstall.totals.uploadChunks > 10,
     'plugin install includes enough chunked file work to exercise staged retries',
@@ -55,16 +58,28 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin install includes multiple files crossing the group barrier',
   );
   assert.equal(pluginInstall.atomicGroupId, 'install-commerce-stack');
+  assert.equal(pluginUpdate.atomicGroupId, 'update-commerce-stack');
   assert.equal(pluginInstall.totals.groupStagingFinalizes, 1);
+  assert.equal(pluginUpdate.totals.groupStagingFinalizes, 1);
   assert.equal(pluginInstall.totals.atomicGroupCommits, 1);
+  assert.equal(pluginUpdate.totals.atomicGroupCommits, 1);
   assert.equal(pluginInstall.backpressure.onPressure, 'pause-upstream-producers');
+  assert.equal(pluginUpdate.backpressure.onPressure, 'pause-upstream-producers');
   assert.ok(
     pluginInstall.backpressure.resumeRequires.includes('database-batch-commit-records'),
     'plugin install backpressure resumes only from durable batch evidence',
   );
   assert.ok(
+    pluginUpdate.backpressure.resumeRequires.includes('database-batch-commit-records'),
+    'plugin update backpressure resumes only from durable batch evidence',
+  );
+  assert.ok(
     pluginInstall.backpressure.resumeRequires.includes('durable-chunk-receipts'),
     'plugin install backpressure resumes only from durable chunk evidence',
+  );
+  assert.ok(
+    pluginUpdate.backpressure.resumeRequires.includes('durable-chunk-receipts'),
+    'plugin update backpressure resumes only from durable chunk evidence',
   );
   assert.ok(
     largeUpload.actions.some((action) => action.type === 'compression-decision'),
@@ -85,8 +100,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin install models database row batching',
   );
   assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'db-row-batch'),
+    'plugin update models database row batching',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'group-staging-finalize'),
     'plugin install models the group staging finalize barrier',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'group-staging-finalize'),
+    'plugin update models the group staging finalize barrier',
   );
   assert.ok(
     pluginInstall.actions.some(
@@ -94,11 +117,21 @@ test('benchmark model covers large uploads and plugin installs', () => {
     ),
     'plugin install models the final atomic-group commit as the only visibility point',
   );
+  assert.ok(
+    pluginUpdate.actions.some(
+      (action) => action.type === 'atomic-group-commit' && action.canonicalVisible === true,
+    ),
+    'plugin update models the final atomic-group commit as the only visibility point',
+  );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
   assert.ok(
     pluginInstall.backpressure.pauseWhen.includes('staging-disk-budget-hit'),
     'plugin install backpressure should cover staging disk pressure',
+  );
+  assert.ok(
+    pluginUpdate.backpressure.pauseWhen.includes('staging-disk-budget-hit'),
+    'plugin update backpressure should cover staging disk pressure',
   );
   assert.ok(
     pluginInstall.backpressure.resumeRequires.includes('database-batch-commit-records'),

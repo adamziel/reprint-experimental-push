@@ -98,6 +98,9 @@ The benchmark shape must stay realistic:
   decisions, and backpressure under a body size that is well beyond a toy case.
 - A plugin-install workload exercises remote indexes, row batching, staged
   plugin metadata, and the atomic group commit barrier.
+- A dependency-heavy plugin-update workload exercises the same barrier with
+  nontrivial dependency evidence, staged rows, and a second atomic-group
+  commit path.
 - A rejected-path workload proves that a visible staging object is not enough
   to complete a chunk, and that a fresh dry run still does not authorize apply.
 - Large uploads and plugin installs must both include recovery edges, not just
@@ -466,6 +469,9 @@ The model exposes three contract lists that tests should keep current:
   canonical hashes with transport encoding, or lose durable progress evidence.
   Each rejection names the broken gate so precondition bypasses and atomic group
   splits stay visible in benchmark review.
+- The workload list includes a large upload, a dependency-heavy plugin install,
+  and a dependency-heavy plugin update so the model covers both first-time
+  installs and subsequent coupled changes.
 - `failureInjectionBoundaries` names the durable transitions that benchmarks
   must exercise: chunk ack, database batch commit, group staging finalize, and
   atomic group commit.
