@@ -1698,6 +1698,37 @@ test('blocks local plugin file changes when remote plugin metadata changed', () 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.0 */');
 });
 
+test('blocks stale plugin file changes while preserving an unrelated safe deletion as evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* local-private-forms-code */';
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const deletion = mutationFor(plan, 'file:index.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deletion.action, 'delete');
+  assert.equal(deletion.changeKind, 'delete');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(mutationFor(plan, 'file:wp-content/plugins/forms/forms.php'), undefined);
+  assert.equal(conflict.class, 'plugin-data-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/plugins/forms/forms.php');
+  assert.equal(conflict.pluginOwner, 'forms');
+  assert.equal(conflict.relatedResource, null);
+  assert.equal(conflict.relatedChange, null);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(Object.hasOwn(remote.files, 'index.php'), true);
+  assert.equal(remote.plugins.forms.version, '1.1.0');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
 test('allows plugin file changes when plugin metadata independently matches remote', () => {
   const base = baseSite();
   const local = baseSite();
