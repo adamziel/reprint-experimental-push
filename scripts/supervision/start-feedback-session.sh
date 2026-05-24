@@ -10,6 +10,8 @@ session="rp-$lane"
 prompt="$repo/supervision/lanes/$lane.md"
 output="$worktree/.lane-output/final.md"
 tmux_socket_dir="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)"
+codex_fast_model="${CODEX_FAST_MODEL:-gpt-5.4-mini}"
+codex_fast_reasoning_effort="${CODEX_FAST_REASONING_EFFORT:-low}"
 
 mkdir -p "$lanes_root"
 mkdir -p "$tmux_socket_dir"
@@ -53,5 +55,6 @@ fi
 mkdir -p "$worktree/.lane-output"
 
 tmux new-session -d -s "$session" \
-  "cd '$worktree' && codex exec -C '$worktree' --dangerously-bypass-approvals-and-sandbox -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
+  "cd '$worktree' && codex exec -m '$codex_fast_model' -c 'model_reasoning_effort=\"$codex_fast_reasoning_effort\"' -C '$worktree' --dangerously-bypass-approvals-and-sandbox -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
 printf '%s\n' "started: $session -> $worktree"
+printf '%s\n' "fast mode: model=$codex_fast_model reasoning=$codex_fast_reasoning_effort"
