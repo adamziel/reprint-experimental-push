@@ -138,6 +138,9 @@ evidence for all of these, not just a plausible design:
   revalidation, durable recovery, remote-preserving retry after drift, stale
   manual-review artifact rejection, or a production write boundary in this
   repo.
+- Those notes also do not prove that a stale approval stays auditable while a
+  retry preserves the remote, re-plans from fresh evidence, and rejects any
+  widened scope before write.
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
