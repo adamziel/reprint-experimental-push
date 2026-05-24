@@ -2968,6 +2968,43 @@ test('pre-commit failures and completed replay only produce the documented recov
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
 });
 
+test('failure boundaries and replay land only in acceptable recovery states', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true }],
+    ['after staging', { failAfterStaging: true }],
+    ['after dependency validation', { failAfterDependencyValidation: true }],
+  ]) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('stale completed replay blocks instead of duplicating inserts or reviving stale local data', () => {
   const base = baseSite();
   const local = baseSite();
