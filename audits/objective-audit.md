@@ -427,7 +427,9 @@ enough.
 
 To make the claim release-grade, the next proof must be a kill matrix that
 covers every guarded write boundary on a real push path, with live before/after
-state and journal evidence for each case:
+state and journal evidence for each case. The claim should stay blocked until
+all of the following are shown on the production-backed path, not just in a
+fixture:
 
 - DB row update, insert, and delete
 - file create, update, and delete
@@ -436,8 +438,9 @@ state and journal evidence for each case:
 - replay after restart or duplicate request
 - stale claim or lease expiry
 
-If any boundary is still only covered by a model or fixture smoke, the
-no-data-loss claim stays blocked.
+If any one of these boundaries is still only covered by a model or fixture
+smoke, the no-data-loss claim stays blocked and should not be softened in the
+README, release notes, or status comments.
 
 The current suite is therefore good at rejecting regressions, but it is not
 yet good enough to justify the live-source production claims. The most
