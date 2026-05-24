@@ -305,6 +305,10 @@ production-grade push support:
 - A production claim must fail closed on partial file/DB/plugin side effects;
   a split remote state is not success unless the remote is preserved for audit
   and the retry path can prove safe recovery from fresh evidence.
+- A production claim must not cite Reprint, ZS-Sync, or ForkPress notes as
+  current upstream proof. Those notes can justify comparison language only;
+  they do not prove today's upstream behavior or this repo's live mutation
+  boundary.
 - A stale manual-review artifact may stay readable for audit, but it must not
   be treated as current authority after remote drift or partial apply.
 - Production push endpoint: the exercised write path must be the real
