@@ -130,7 +130,7 @@ these release requirements:
 | R13 | Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope. |
 | R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
 | R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets, a documented measurement environment, and a release threshold that cannot be skipped by accident. A model that only refuses unsupported claims is not enough. |
-| R16 | Provide one enforced release gate that runs the safety, recovery, auth/session, storage, plugin-data-driver, graph-identity, real topology, crash-boundary, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough, and a green default suite is not a substitute. |
+| R16 | Provide one enforced release gate that runs the safety, recovery, auth/session, storage, plugin-data-driver, graph-identity, real topology, crash-boundary, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough, and a green default suite is not a substitute. A release path that requires manual script assembly is still not a release gate. |
 
 The most important release requirement is not one individual check; it is the
 end-to-end enforcement of the full safety matrix before any live-source push is
@@ -194,6 +194,10 @@ as separate opt-ins.
   `npm run test:playground:production-plugin-package`.
   Those commands are individually useful, but they are not chained into one
   required release command.
+- There is no `npm run release`, `npm run verify`, or CI workflow in the
+  inspected `package.json` that forces the full safety matrix before a push
+  claim. That absence matters because the repo can still look healthy while
+  the strongest proof remains opt-in.
 
 That means the repo can still look healthy while the exact proof needed for a
 release claim has not been run. For this objective, that is a release blocker,
@@ -358,15 +362,18 @@ invocation and can be skipped while `npm test` remains green.
    production executor, nor do they prove leases, fencing, or exactly-once
    behavior on a live source site. Passing them only proves that some failure
    states are detected; it does not prove the live write path is restart-safe.
+6. **This audit is not a release checklist.** The current scripts prove slices
+   of the safety matrix, but they do not compose into one required gate that a
+   release must pass.
 
-6. **Speed evidence is modeled, not measured for release.**
+7. **Speed evidence is modeled, not measured for release.**
    The benchmark tests are useful because they reject unsupported speed claims
    and encode guardrails, but they do not move bytes through a production
    executor, measure a live source site, or establish a release throughput
    threshold on a documented environment. The suite can block a false "fast"
    claim, but it cannot authorize a real one.
 
-7. **No test exercises the complete production-backed path.** The
+8. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
    still lab-backed. There is no single test that starts with a Reprint pull
    base, edits a local WordPress site, fetches a live source snapshot through
