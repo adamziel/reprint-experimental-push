@@ -29,6 +29,9 @@ the live remote immediately before apply.
   remote. This is a narrow stale-reference guard, not a proof of general
   identity remapping.
 
+Every automatic mutation still needs a live remote precondition bound to the
+mutation id, resource key, and the remote hash seen during planning.
+
 Every automatic mutation must include a precondition tied to the mutation id,
 the resource key, the live remote hash observed during planning, and the
 `checkedAgainst: live-remote` marker.
@@ -61,6 +64,10 @@ the resource key, the live remote hash observed during planning, and the
   and target resource keys, target hashes, and change kinds only. It must not
   copy raw post content, postmeta values, term payloads, serialized blocks, menu
   payloads, GUID values, option values, or raw row contents.
+- Remote-only plugin removals, metadata changes, and file changes are preserved
+  the same way as other remote-only plugin context changes. Local edits to
+  unrelated resources may still proceed if their own live remote preconditions
+  are satisfied.
 
 ## Must Stop
 
