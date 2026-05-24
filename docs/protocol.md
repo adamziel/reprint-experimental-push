@@ -32,6 +32,23 @@ The proof is only valid when `remote-base` and `remote-changed` are the same
 remote identity observed at two different times, because that is what
 demonstrates apply-time revalidation instead of replaying dry-run evidence.
 
+The pull/export/import pipeline maps to push as a one-way provenance handoff:
+
+1. exporter scans the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. `push_preflight` binds that package to the live remote identity and a
+   short-lived push session
+4. `push_snapshot_hashes` lists the live remote comparison set for planning
+5. `push_plan_dry_run` uploads the canonical plan as eligibility evidence only
+6. `push_batch_apply` revalidates the live remote before every batch and at
+   the storage boundary
+7. `push_journal` and `push_recover` inspect durable evidence first, then
+   allow mutating recovery only when fresh live hashes prove the action
+
+For machine-readable verification, the compact contract fixture at
+[`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
+binds the pull handoff, push stages, and test topology into one proof object.
+
 Push is split into a read-only planning phase and a write phase:
 
 - `push_preflight` authenticates and negotiates session and capability state.

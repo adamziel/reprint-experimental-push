@@ -25,6 +25,18 @@ Dry-run and apply are therefore separate remote calls. A valid dry-run receipt
 is not a lock, and a later apply must still fail if the remote changed after
 the snapshot listing or after the plan was accepted.
 
+The executor also preserves the pull/export/import boundary instead of
+recomputing provenance locally:
+
+1. exporter scans the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. preflight binds the persisted base to a live remote identity and session
+4. snapshot hashes provide a fresh planning-only comparison set
+5. dry-run uploads the canonical three-way plan as an eligibility receipt
+6. apply revalidates the live remote before every batch and at the storage boundary
+7. journal and recover inspect durable evidence first, then permit mutating
+   recovery only when fresh live hashes prove the action
+
 ## Executor Responsibilities
 
 The executor is the client-side orchestrator. It runs after a site was pulled,
@@ -1126,7 +1138,9 @@ Minimum topology matrix:
 | Interrupted batch | Server exits after staging or partial write | Recovery reports committed, rolled back, or blocked with resource evidence. |
 | Read-only credential | Export secret lacks push scope | Preflight or dry-run rejects before mutation. |
 
-For the production-shaped push lane, keep the test topology deliberately small:
+For the production-shaped push lane, keep the test topology deliberately small
+and constrained to one remote source, one local edited site, and one drift
+witness:
 
 | Role | Docker topology | Playground topology |
 | --- | --- | --- |
@@ -1135,7 +1149,13 @@ For the production-shaped push lane, keep the test topology deliberately small:
 | Runner | `push-runner` container or host process that signs requests, uploads dry-run plans, and reads journals | Same runner process, bound to the sandbox-provided `8080` ingress only when browser inspection is needed |
 | Drift witness | `remote-changed` mutation against the remote site after snapshot listing | `remote-changed` Playground state change after snapshot listing |
 
-Use the topology to prove the remote and local roles are separate:
+In both topologies, `remote-base` and `remote-changed` must represent the same
+remote identity observed at different times. That is the proof that dry-run
+and apply are separate and that apply revalidates live state instead of
+reusing stale planning evidence.
+
+Use the topology to prove the remote and local roles are separate and that
+the pull package remains immutable provenance:
 
 - `remote-base` is the authoritative live remote for preflight, snapshot listing, dry-run eligibility, apply-time revalidation, journal inspection, and recovery.
 - `local-edited` is the edited local mirror that feeds the planner.
