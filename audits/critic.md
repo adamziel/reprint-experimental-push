@@ -13,7 +13,7 @@ side effect, stale retry, or graph rewrite can silently lose remote state while
 the system reports a plausible success.
 
 The comparison against Reprint, ZS-Sync, and ForkPress is intentionally
-conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages, not live mutation safety. ZS-Sync shows bounded change discovery, not write policy. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety, remote-preserving retry, manual-review artifact expiry, or production write-path durability. A packaged-plugin mount only proves the route can be loaded in that packaging shape; it does not prove the write path is the production executor rather than a lab-backed stand-in.
+conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages, not live mutation safety. ZS-Sync shows bounded change discovery, not write policy. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety, remote-preserving retry, manual-review artifact expiry, or production write-path durability. A packaged-plugin mount only proves the route can be loaded in that packaging shape; it does not prove the write path is the production executor rather than a lab-backed stand-in, and it does not prove that the exercised route is free of fixture-only storage, lab-only auth, or copied lab internals.
 No source note proves that a stale manual-review artifact can survive a live
 drift and still authorize apply, so any retry claim has to be backed by a
 fresh snapshot, a fresh plan, and a rejected old artifact that remains
@@ -150,6 +150,9 @@ evidence for all of these, not just a plausible design:
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
   write safety, credential isolation, or durable retry behavior.
+- Manual resolution is only acceptable if the remote is preserved for audit,
+  the stale approval stays readable but unusable, and the retry starts from a
+  fresh snapshot and fresh plan after a live revalidation failure.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
   outputs are compatibility evidence only; they are never sufficient by
   themselves to claim production mutation safety, credential isolation, or
