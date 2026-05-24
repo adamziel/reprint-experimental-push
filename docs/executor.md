@@ -518,26 +518,31 @@ Port rules:
 - Publish only `127.0.0.1:8080` from `proxy-8080` when browser inspection is
   needed.
 - Keep `remote-wp`, `local-wp`, and databases on the Docker network only.
-- The runner calls `http://remote-wp/` and `http://local-wp/` by service name.
-- Do not use ngrok, cloudflared tunnels, localtunnel, serveo, localhost.run,
-  Tailscale Funnel, or equivalent remote tunnel services.
+- The runner should be the only container that talks to both sites.
 
 ### Playground Topology
 
-Use WordPress Playground when Docker or WP-CLI is unavailable in the sandbox.
-Model the same one-remote, one-local shape with two disposable blueprints:
+Use Playground when the test environment needs a disposable local-only pair of
+sites. Keep the same one-remote, one-local shape:
 
-| Site | Blueprint | Role |
+| Site | Blueprint role | Purpose |
 | --- | --- | --- |
-| Remote base | `fixtures/playground/remote-base.blueprint.json` | Pulled source base and push source of truth. |
-| Local edited | `fixtures/playground/local-edited.blueprint.json` | Pulled local site after local edits. |
-| Remote changed | `fixtures/playground/remote-changed.blueprint.json` | Live remote after independent edits. |
+| Remote site | `fixtures/playground/remote-base.blueprint.json` | Pulled source truth that the push session was derived from. |
+| Local site | `fixtures/playground/local-edited.blueprint.json` | Edited local site that produced the push plan. |
+| Drift site | `fixtures/playground/remote-changed.blueprint.json` | Independent live-remote edit used to prove apply-time revalidation and recovery. |
 
-The runner executes the blueprints without opening a network port, exports the
-base manifest from `remote-base`, builds the local plan from `local-edited`,
-and uses `remote-changed` as the liveness drift case for
-`PRECONDITION_FAILED` and recovery coverage. This proves the one-remote,
-one-local shape without external network exposure.
+The runner launches the blueprints separately, exports the remote base
+manifest, imports it into the local site, applies local edits, and then compares
+the local plan against the drift site for `PRECONDITION_FAILED` and recovery
+coverage. This mirrors the Docker topology without requiring external network
+exposure.
+In the Docker topology, the runner calls `http://remote-wp/` and
+`http://local-wp/` by service name, and the environment must not use ngrok,
+cloudflared tunnels, localtunnel, serveo, localhost.run, Tailscale Funnel, or
+equivalent remote tunnel services.
+
+The same shape can also be expressed with WordPress Playground when Docker or
+WP-CLI is unavailable in the sandbox.
 
 Minimal Compose shape:
 
