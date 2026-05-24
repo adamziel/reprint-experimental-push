@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:34 CEST.
+- Last update: 2026-05-25 01:38 CEST.
 - Status: `89` Node tests pass after supervised lane merges, and the swarm is
   still active.
 - New proof: planner coverage still pins independent delete/edit cases;
@@ -21,8 +21,8 @@ linked implementation artifacts.
   arbitrary plugin drivers remain unproven.
 - Next nudge: keep production gates blocked until a worker proves production
   auth/session/journal internals, graph identity mapping, and a release gate.
-- Public page: [progress.html](../progress.html) carries the visible update
-  date and keeps details behind links.
+- Public page: [progress.html](../progress.html) now carries the visible
+  01:38 CEST update and keeps details behind links.
 
 <details>
 <summary>Earlier progress entries</summary>
