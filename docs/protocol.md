@@ -59,15 +59,18 @@ same mutation is safe. Apply must therefore treat the dry-run receipt as
 evidence only and re-run the live preconditions before every write.
 
 Remote liveness is checked at apply time, not at dry-run time. A conforming
-apply performs two checks:
+apply performs two checks and must refresh live evidence before every batch:
 
-1. A batch-level live hash check before staging.
+1. A batch-level live hash check before staging, based on a fresh live remote
+   read or hash listing.
 2. A mutation-local storage-boundary check immediately before the write.
 
 A mismatch before any batch mutation returns `PRECONDITION_FAILED` without
 target writes. A mismatch after staging or after an earlier mutation must be
 represented in the journal and resolved as committed, rolled back, or blocked.
-It must not be reported as an ordinary success.
+It must not be reported as an ordinary success. Dry-run never relaxes this
+requirement; it only establishes that the uploaded plan is eligible to reach
+apply.
 
 ## Endpoint Sequence
 
@@ -90,6 +93,8 @@ batch.
 and request bindings. They are not remote locks. A remote edit between any
 non-mutating step and apply must be detected by apply revalidation and must
 preserve the remote edit unless a newly planned mutation explicitly covers it.
+The live evidence used for apply must be fetched fresh, not copied from the
+dry-run receipt.
 
 ## Pull Pipeline Mapping
 

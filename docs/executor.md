@@ -25,7 +25,8 @@ The executor must not mutate the remote during planning. It may fetch remote
 content for conflict display, but mutation starts only at `push_batch_apply`.
 Dry-run success is a permission and eligibility receipt, not a liveness lock.
 The executor must expect apply to fail if the remote changes between dry-run and
-the storage-boundary guard.
+the storage-boundary guard, and it must treat the dry-run response as stale as
+soon as a fresh remote listing shows new live state.
 
 The executor treats the push protocol as a three-sided merge:
 
@@ -58,7 +59,7 @@ Executor gates:
 | Preflight accepted | `push_snapshot_hashes` | Push-scoped HMAC credential, active session, journal support, hash listing, idempotency, and required storage guards are advertised. | Stop before planning. |
 | Remote listing complete | `push_plan_dry_run` | All requested scopes are complete, blocked resources are absent or irrelevant, and the coverage hash is persisted. | Mark blocked; do not upload a ready plan. |
 | Local plan ready | `push_plan_dry_run` | Every mutation has base, local, and live remote hashes plus a storage guard or semantic driver. | Report conflict or blocker. |
-| Dry-run ready | `push_batch_apply` | Remote accepted the same canonical plan hash and returned a ready dry-run receipt. | Stop unless status is `ready`. |
+| Dry-run ready | `push_batch_apply` | Remote accepted the same canonical plan hash and returned a ready dry-run receipt. | Stop unless status is `ready`; re-read live hashes before each batch. |
 | Apply ambiguous | `push_journal` | Any timeout, closed connection, process restart, or `RECOVERY_REQUIRED` happens before a committed receipt is persisted. | Inspect journal before retrying. |
 | Journal complete | none | Every planned batch is committed and final hashes match the plan. | Mark the local attempt complete. |
 
@@ -91,7 +92,7 @@ push resumes from the last safe state:
 
 - If only planning completed, rebuild or re-upload dry-run.
 - If dry-run was accepted, inspect its journal before applying.
-- If a batch response was lost, retry with the same idempotency key.
+- If a batch response was lost, call `push_journal` first and retry only if the journal still proves the same request is open.
 - If the server reports `RECOVERY_REQUIRED`, inspect then recover.
 
 Resume decisions are conservative:
