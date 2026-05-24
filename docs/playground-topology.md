@@ -21,6 +21,16 @@ rows, and `reprint-push-forms-fixture` plugin metadata. They are intentionally
 small because this topology proves snapshot extraction and planning, not the
 final transport.
 
+The role split maps directly to the push protocol contract:
+
+- `remote-base` is the pulled merge base and the source for
+  `push_preflight`/`push_snapshot_hashes`.
+- `local-edited` is the imported local site that becomes the plan candidate.
+- `remote-changed` is the live drift site that must cause apply-time
+  revalidation to fail if it changes after dry-run.
+- the runner is the only process that compares the base, uploads the dry-run
+  plan, inspects the journal, and requests recovery.
+
 ## Smoke Command
 
 ```bash
@@ -175,6 +185,18 @@ lab-only and fixture-scoped: the REST plugin is public only inside the local
 Playground runtime, and it does not prove production auth, sessions, nonce
 checks, signed receipts, durable journals, crash recovery, or live source-site
 mutation safety.
+
+For production-shaped push proof, the harness should keep one remote and one
+local site plus a live drift variant:
+
+1. Pull the base from `remote-base`.
+2. Restore `local-edited` from the pull base and apply local edits.
+3. Drive dry-run against `remote-base` using the base package plus the live
+   hash listing.
+4. Switch the apply target to `remote-changed` after it diverges so the executor
+   must reject stale work.
+5. Use `push_journal` and `push_recover` to classify lost responses, fenced
+   claims, and interrupted apply attempts.
 
 ## Authenticated Local-Only REST Lab Harness
 

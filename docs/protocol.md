@@ -156,6 +156,21 @@ An implementation may reuse the pull transport, cursoring, budgeting, and HMAC
 helpers, but it must not reuse the pull streaming export format as the push
 mutation format.
 
+The persisted pull package is therefore evidence, not authority:
+
+- `base_manifest_id` and `base_manifest_hash` prove which exported lineage the
+  local site came from.
+- `base_coverage_hash` proves the pull scope was complete enough for later
+  push planning.
+- `remote_site_id` and the pull-time resource hashes prove the plan is bound to
+  one remote identity.
+- `push_snapshot_hashes` supplies the live remote comparison set.
+- `push_plan_dry_run` proves only that the uploaded plan was eligible.
+- `push_batch_apply` must still re-read and revalidate the live remote before
+  each batch and again at the storage boundary.
+- `push_journal` and `push_recover inspect` only explain what happened; they do
+  not turn an old proof into a current lock.
+
 The remote snapshot listing is the planning view, not the write lock. Any
 remote change after snapshot listing, dry-run, or journal inspection must be
 considered live until apply revalidates the batch at the storage boundary.
@@ -164,6 +179,11 @@ call creates a lock or authorizes a later mutation by itself. They can surface
 an open claim, a claim generation, and a lease expiry so the executor can tell
 whether a worker was fenced before a mutation boundary, but that evidence is
 still only proof, not permission.
+
+The hash listing is also how the executor proves scope completeness before it
+uploads a dry-run plan. If the live listing is partial, blocked, or incomplete
+for the requested scope, the executor must stop before dry-run and refresh the
+remote view rather than guessing from the persisted pull base.
 
 The existing pull exporter/importer still owns the base package format. Push
 does not invent a second notion of truth; it layers live remote verification

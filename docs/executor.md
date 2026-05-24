@@ -137,6 +137,22 @@ The push executor should not reuse the pull streaming SQL dump as a mutation
 format. SQL replay is too coarse for a live remote. It can reuse pull transport,
 budgeting, cursoring, multipart handling, and HMAC helpers.
 
+The persisted pull base package is the executor's provenance anchor, not a
+remote lock:
+
+- `base_manifest_id` and `base_manifest_hash` identify the lineage that was
+  pulled.
+- `base_coverage_hash` proves the exported scope was complete enough for a
+  later push.
+- `remote_site_id` and the base resource hashes bind the plan to one source
+  site identity.
+- `push_snapshot_hashes` is the live planning view.
+- `push_plan_dry_run` is only an eligibility receipt.
+- `push_batch_apply` must revalidate the live remote before every batch and at
+  the storage boundary.
+- `push_journal` and `push_recover inspect` are evidence readers, not write
+  permissions.
+
 Mapping summary:
 
 - pull preflight becomes push preflight plus capability negotiation for write
@@ -186,6 +202,19 @@ The test story is intentionally asymmetric:
 2. `local-edited` provides the edited local content that becomes the candidate plan.
 3. `remote-changed` introduces live drift after dry-run so apply can prove
    liveness revalidation is separate from planning.
+
+The topology proves the production rule that dry-run and apply are separate:
+
+1. Pull `remote-base` and persist the merge-base package.
+2. Restore `local-edited` from that pull base and apply user edits.
+3. Have the runner call `push_preflight` and `push_snapshot_hashes` against
+   `remote-base`.
+4. Build and upload the dry-run plan from `remote-base`, `local-edited`, and
+   the live hash listing.
+5. Mutate `remote-changed` only after it drifts independently, so apply must
+   revalidate and reject stale work.
+6. Use `push_journal` and `push_recover` to resolve any lost-response or crash
+   ambiguity before retrying.
 
 ### Docker Topology
 

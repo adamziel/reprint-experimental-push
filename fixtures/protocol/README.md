@@ -78,6 +78,16 @@ journal inspection, and recovery. They should be treated as wire-contract
 examples only; the production executor must still revalidate the live remote
 between dry-run and every apply batch.
 
+The hash-listing fixture is the planning boundary:
+
+- `push-snapshot-hashes-request.json` binds the live remote scope used for
+  planning.
+- `push-snapshot-hashes-response.json` proves the remote returned a complete
+  cursorable hash view for the requested scopes.
+- dry-run may only consume that listing as evidence; it is never the write
+  lock.
+- apply must fetch fresh live evidence again before each batch.
+
 The test harness for these fixtures should use the same one-remote, one-local
 shape described in the executor docs:
 
