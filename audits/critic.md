@@ -125,6 +125,11 @@ evidence for all of these, not just a plausible design:
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
   outputs are compatibility evidence only; they are never sufficient by
   themselves to claim production mutation safety.
+- A route that reports `finalMatchesLocal`, committed replay, or packaged
+  plugin success on a fixture must still prove fresh live-remote
+  revalidation; those results do not prove create-time identity remapping,
+  plugin-owned state outside the allowlist, or protection from partial
+  file/DB/plugin side effects.
 - `finalMatchesLocal`, committed replay, or packaged-plugin success on a
   fixture never prove the same path is safe against live remote drift in
   plugin metadata, graph identity, custom-table state, or create-time identity
@@ -142,6 +147,9 @@ evidence for all of these, not just a plausible design:
   bearing row class that can silently rewire references.
 - Reviewed conflict artifacts that preserve base/local/remote evidence,
   reviewer identity, chosen action, and fresh revalidation data.
+- Rejected retries must stay auditable, but they must not be allowed to
+  execute from the old approval record, and a partial approval must never be
+  widened to unrelated rows or files on retry.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
 - A release gate that runs the full safety-critical suite before any
@@ -346,6 +354,8 @@ remote still has unscanned state that can be corrupted by the push.
 Missing proof: no completed coverage manifest ties the scanner to every plugin,
 mu-plugin, theme, upload derivative, generated artifact, custom table, and
 multisite scope that push can affect.
+That leaves room for plugin-owned state outside the scanner allowlist, such as
+runtime-only registries or migration-owned rows that only appear during apply.
 
 Required change: use ZS-Sync-style scanning as planning input only. A ready
 push must block on unknown or incomplete coverage.
@@ -370,6 +380,9 @@ remote hashes. It also does not show a server-side rejection path that keeps
 the audit trail intact while refusing to apply the stale approval or a
 recovery path that prevents old manual permission from being reused after a
 partial apply.
+Manual resolution also needs explicit scope fencing: a partial approval for
+one object or file must not be treated as permission to apply unrelated rows,
+relationships, or plugin state on retry.
 
 Required change: adopt the ForkPress-grade lifecycle before making
 ForkPress-grade claims. Manual resolution is acceptable only when the remote
