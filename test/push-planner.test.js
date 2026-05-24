@@ -964,6 +964,52 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('keeps remote-only plugin changes while matching deletion, create, edit, and type swap stay already in sync', () => {
+  const base = baseSite();
+  base.files['index.php'] = '<?php echo "base";';
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared create";';
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  const remote = baseSite();
+  delete remote.files['index.php'];
+  remote.files['about.php'] = '<?php echo "shared create";';
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const createDecision = decisionFor(plan, 'file:about.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const editDecision = decisionFor(plan, 'file:wp-content/themes/theme/style.css');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(deleteDecision.change.localChange, 'delete');
+  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(createDecision.decision, 'already-in-sync');
+  assert.equal(createDecision.change.localChange, 'create');
+  assert.equal(createDecision.change.remoteChange, 'create');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(remote.plugins.forms.version, '1.1.0');
+  assert.equal(remote.plugins.forms.active, false);
+});
+
 test('recognizes matching independent file edits as already in sync', () => {
   const base = baseSite();
   base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
