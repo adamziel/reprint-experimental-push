@@ -16,13 +16,15 @@ The normal sequence is:
 8. `push-apply-batch-response.json`
 9. `push-journal-request.json`
 10. `push-journal-response.json`
+11. `push-recovery-request.json`
+12. `push-recovery-response.json`
 
 Failure and recovery examples:
 
 - `push-precondition-failed-response.json` shows apply-time liveness
   revalidation rejecting a stale target.
 - `push-recovery-request.json` and `push-recovery-response.json` show a
-  successful recovery finalization.
+  successful recovery finalization after a read-only inspect step.
 - `push-recovery-blocked-response.json` shows the evidence returned when the
   remote cannot prove a safe finish or rollback.
 - `push-auth-headers.json` shows the required authentication header families
