@@ -105,7 +105,7 @@ these release requirements:
 | R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
 | R15 speed | `test/performance-model.test.js` proves a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, remote indexes as planning-only, and backpressure triggers. | No runtime benchmark, no transfer implementation proof, no memory ceiling, no latency/throughput target, no large-site run, and no proof that the model is wired into the executor. | Yes for any speed claim |
-| R16 release suite | `npm test` passed 82 tests during this audit. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol and excludes auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes unless invoked separately. | Yes |
+| R16 release suite | `npm test` passed with 89 tests, 0 failures, and 0 skips. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol. That means auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes all remain opt-in rather than release-gated. | Yes |
 
 ## Test Audit
 
@@ -113,7 +113,7 @@ these release requirements:
 
 `npm test` passed during this audit:
 
-- 82 passing tests.
+- 89 passing tests.
 - Planner no-overwrite invariants for simplified JSON snapshots, including
   deletion preconditions, delete/update conflicts, directory-descendant
   topology conflicts, and file type swap conflicts.
@@ -163,8 +163,11 @@ production auth, or measured speed.
 
 1. **The strongest evidence is not wired into a release suite.** There is no
    CI workflow in the repository. The default `npm test` command does not run
-   the long Playground smokes that support most README claims. A release claim
-   cannot rely on tests that are optional and manually invoked.
+   the long Playground smokes that support most README claims, and the shorter
+   `npm run test:playground` path omits auth, HTTP, DB journal, storage
+   guards, process kill, stale claim, plugin atomic, forms lab, authenticated
+   CLI, production-shaped route/package, and recovery coverage. A release
+   claim cannot rely on tests that are optional and manually invoked.
 
 2. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
