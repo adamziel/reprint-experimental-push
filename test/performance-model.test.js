@@ -420,6 +420,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'live',
   );
   assert.ok(
+    rejectedById.get('index-and-table-checksum-skips-batch-preconditions').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-table-checksum-skips-batch-preconditions').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-table-checksum-skips-batch-preconditions').violates.includes('live-preconditions'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-table-checksum-skips-batch-preconditions').rejectedGate,
+    'live',
+  );
+  assert.ok(
     rejectedById.get('index-and-digest-completes-apply').violates.includes('remote-index-planning-only'),
   );
   assert.ok(
@@ -501,6 +514,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-digest-completes-apply',
     'index-and-package-hash-completes-plugin-install',
     'index-and-package-hash-skips-plugin-validators',
+    'index-and-table-checksum-skips-batch-preconditions',
     'full-digest-completes-chunk-resume',
     'manifest-hash-completes-large-upload',
   ]) {

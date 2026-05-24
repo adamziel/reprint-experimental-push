@@ -413,6 +413,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'row-preconditions', 'live-preconditions'],
   },
   {
+    id: 'index-and-table-checksum-skips-batch-preconditions',
+    proposal: 'use a fresh remote index plus a table checksum to skip row-batch preconditions or plugin metadata checks',
+    rejectedBecause: 'planning evidence and table-level metadata can shorten lookup work, but they cannot replace live per-row or per-member preconditions at mutation time',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'row-preconditions', 'plugin-preconditions', 'live-preconditions'],
+  },
+  {
     id: 'index-and-package-hash-completes-plugin-install',
     proposal: 'treat a fresh remote index plus a cached plugin package hash as proof that the install can skip its live boundary',
     rejectedBecause: 'planning evidence and a package hash do not prove dependency checks, metadata writes, or atomic-group commit completion',
