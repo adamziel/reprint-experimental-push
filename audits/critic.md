@@ -281,6 +281,10 @@ following on the live push path, not on a fixture or route-shape smoke:
 - A review artifact that binds the exact base, local, remote, reviewer, live
   snapshot timestamp, and retry scope, and that cannot be widened to a different
   row, file, or plugin-owned surface.
+- Source notes from Reprint, ZS-Sync, and ForkPress remain comparison evidence
+  only. They can explain why a design choice is plausible, but they do not
+  prove this repo has a live mutation boundary, stale-artifact rejection, or
+  remote-preserving retry at the production executor.
 
 If any one of those proofs is missing, the branch can describe the design, but
 it cannot claim production-grade push support.
