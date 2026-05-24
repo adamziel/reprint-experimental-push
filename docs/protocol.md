@@ -181,6 +181,13 @@ manifest lineage, and same requested scope. Any later request that changes the
 remote identity or scope must obtain a fresh session rather than reuse the old
 one.
 
+Authentication is also one-way. A credential that can only prove the read-only
+export HMAC may still be enough for pull endpoints and snapshot listing, but it
+must not unlock dry-run upload, batched apply, journal repair, or mutating
+recovery. Those calls require the push session plus the canonical push
+signature, and the server must recheck them against the live remote before any
+write.
+
 The pull-to-push handoff is linear and one-way:
 
 1. Pull exports the base package and coverage evidence.

@@ -137,6 +137,16 @@ mutation when the process crashes mid-apply. If the journal shows an open
 claim, the executor treats claim generation and lease expiry as fencing
 evidence and never assumes that the old worker still owns the batch.
 
+The journal evidence is only useful when it is read in the right order:
+
+1. Read the open or committed journal row.
+2. Check the claim generation and lease expiry.
+3. Compare the resource-level before, staged, and after hashes.
+4. Re-read live hashes before any retry or recovery mutation.
+
+That sequence keeps recovery from turning a stale journal row into an implied
+write lock.
+
 The journal rows are part of the proof surface, not just a diagnostic trace.
 When the executor reads them, it is looking for claim ownership, claim
 generation, lease expiry, batch status, and the resource-level before/staged/

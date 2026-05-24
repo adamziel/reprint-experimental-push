@@ -37,10 +37,15 @@ test('push protocol fixture captures the production stage order and recovery rul
 });
 
 test('push auth fixture requires push-scoped headers for mutating calls and keeps inspect read-only', () => {
+  const preflight = readJson('fixtures/protocol/push-preflight-response.json');
   const headers = readJson('fixtures/protocol/push-auth-headers.json');
   const journalOpen = readJson('fixtures/protocol/push-journal-open-response.json');
   const inspectRequest = readJson('fixtures/protocol/push-recovery-inspect-request.json');
 
+  assert.equal(preflight.auth.required[0], 'export-hmac');
+  assert.equal(preflight.auth.required[1], 'canonical-push-hmac');
+  assert.equal(preflight.capabilities.journal, true);
+  assert.equal(preflight.capabilities.recovery, true);
   assert.ok(headers.read_only_request_headers['X-Auth-Signature'].startsWith('hmac-sha256:'), 'read-only auth must stay HMAC-based');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Session'], 'mutating requests must carry a push session');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Idempotency-Key'], 'mutating requests must carry an idempotency key');
@@ -49,6 +54,8 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(!('idempotency_key' in inspectRequest), 'inspect must not require a mutating idempotency key');
   assert.equal(journalOpen.entries[0].claim_generation, 4);
   assert.equal(journalOpen.entries[0].lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(journalOpen.entries[0].resources[0].before_hash, 'sha256:base-index');
+  assert.equal(journalOpen.entries[0].resources[0].staged_hash, 'sha256:local-index');
   assert.equal(journalOpen.entries[0].storage_guards[0].outcome, 'claimed');
 });
 
