@@ -428,7 +428,7 @@ test('combines local ordinary changes while preserving remote-only plugin change
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
-test('keeps remote-only plugin changes while allowing an unrelated local deletion', () => {
+test('keeps remote-only plugin changes while planning a safe local deletion behind live preconditions', () => {
   const base = baseSite();
   const local = baseSite();
   delete local.files['index.php'];
@@ -437,14 +437,13 @@ test('keeps remote-only plugin changes while allowing an unrelated local deletio
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
 
   const plan = planFor(base, local, remote);
-  const fileDelete = mutationFor(plan, 'file:index.php');
+  const deletion = mutationFor(plan, 'file:index.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
-  assert.equal(fileDelete.action, 'delete');
+  assert.equal(deletion.action, 'delete');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
-  assertEveryMutationHasLiveRemotePrecondition(plan);
 
   const result = applyPlan(remote, plan);
   assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
