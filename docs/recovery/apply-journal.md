@@ -27,6 +27,18 @@ as only one of these states:
 Any production partial remote mutation without a `blocked-recovery` artifact is
 a release blocker.
 
+For the apply contract, every failure or replay must land in exactly one of
+these recovery states:
+
+- `old-remote`: no remote mutation was committed, and the recovery artifact is
+  the journal that proves the plan can be retried after revalidation.
+- `fully-updated-remote`: all planned mutations are already present, and the
+  replay artifact proves the executor must not reapply inserts or stale local
+  data.
+- `blocked-recovery`: the remote is partial, drifted, or otherwise ambiguous,
+  and the recovery artifact set must include the journal plus any observed
+  remote evidence needed to stop unsafe retry.
+
 ## Boundaries
 
 The current lab journal records these apply boundaries:
