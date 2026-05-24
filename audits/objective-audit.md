@@ -17,17 +17,19 @@ reliable and fast.
 The weakest current claim is still speed, but the more important release
 blocker is structural: the benchmark harness refuses an unsupported throughput
 claim while the repository still lacks a single enforced release gate that
-requires the auth, journal, storage, graph, recovery, and benchmark checks to
-pass in one required command. The benchmark code lists blockers such as
-missing durable chunk receipts, missing live remote preconditions, missing
-durable journal integrity, missing graph-identity evidence, missing recovery
-evidence, and non-production storage or row-apply capabilities. That is a
-useful refusal mechanism, but it is still only a guardrail. It does not create
-the required release boundary, so the repo can still present a green default
-test run while the strongest claims remain skipped. In other words, the suite
-can reject unsafe release claims, but it does not yet enforce the full release
-claim. That means the current test story is strongest as a blocker generator,
-not as release-grade proof of no data loss, reliability, or speed.
+requires the auth/session, durable journal, storage, graph identity,
+plugin-data driver, real remote/local topology, crash-boundary, recovery, and
+benchmark checks to pass in one required command. The benchmark code lists
+blockers such as missing durable chunk receipts, missing live remote
+preconditions, missing durable journal integrity, missing graph-identity
+evidence, missing recovery evidence, and non-production storage or row-apply
+capabilities. That is a useful refusal mechanism, but it is still only a
+guardrail. It does not create the required release boundary, so the repo can
+still present a green default test run while the strongest claims remain
+skipped. In other words, the suite can reject unsafe release claims, but it
+does not yet enforce the full release claim. That means the current test story
+is strongest as a blocker generator, not as release-grade proof of no data
+loss, reliability, or speed.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -128,7 +130,7 @@ these release requirements:
 | R13 | Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope. |
 | R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
 | R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets, a documented measurement environment, and a release threshold that cannot be skipped by accident. A model that only refuses unsupported claims is not enough. |
-| R16 | Provide one enforced release gate that runs the safety, recovery, auth, storage, plugin, graph-identity, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough. |
+| R16 | Provide one enforced release gate that runs the safety, recovery, auth/session, storage, plugin-data-driver, graph-identity, real topology, crash-boundary, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough. |
 
 The most important release requirement is not one individual check; it is the
 end-to-end enforcement of the full safety matrix before any live-source push is
@@ -169,7 +171,7 @@ Evidence classes used below:
 | R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
 | R15 speed | Executable proof: `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, backpressure triggers, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no release threshold is tied to a documented benchmark environment. The current evidence can justify refusing unsupported speed claims; it cannot justify saying the push path is fast or production-scaled. | Yes for any speed claim |
-| R16 release suite | Executable proof: `npm test` passed with 89 tests, 0 failures, and 0 skips. Lab/fixture proof: `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. The repo exposes named opt-in gates for auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomicity, forms lab, authenticated CLI, production-shaped routing/package, mid-apply drift, recovery, and the benchmark refusal path. | No CI workflow or release aggregator was found. The only bundled release-like script is `npm run test:playground`, and it still stops after plan/apply/push-protocol. The stronger gates are not chained into any enforced command, so release evidence is still a manual assembly of optional scripts. The production-shaped smoke itself still reports `labBacked: true`, so route-shaped success is not production proof. There is no single enforced command that proves safety, durability, graph identity, and performance together before release, and no test currently fails a release if the stronger gates are omitted. The current default test pass is therefore only a model-and-fixture checkpoint, not a release gate. | Yes |
+| R16 release suite | Executable proof: `npm test` passed with 89 tests, 0 failures, and 0 skips. Lab/fixture proof: `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. The repo exposes named opt-in gates for auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomicity, forms lab, authenticated CLI, production-shaped routing/package, mid-apply drift, recovery, and the benchmark refusal path. | No CI workflow or release aggregator was found. The only bundled release-like script is `npm run test:playground`, and it still stops after plan/apply/push-protocol. The stronger gates are not chained into any enforced command, so release evidence is still a manual assembly of optional scripts. The production-shaped smoke itself still reports `labBacked: true`, so route-shaped success is not production proof. There is no single enforced command that proves auth/session, durable journal, leases/fencing, graph identity, plugin-data drivers, real remote/local topology, crash boundaries, safety, and performance together before release, and no test currently fails a release if the stronger gates are omitted. The current default test pass is therefore only a model-and-fixture checkpoint, not a release gate. | Yes |
 
 ### Release Gate Gap
 
