@@ -7,6 +7,19 @@ linked implementation artifacts.
 ## 2026-05-25 - Progress Publisher Refresh
 
 - Last update: 2026-05-25 00:33 CEST.
+- Status: public progress view refreshed to keep the visible timestamp current
+  and the summary concise. No new executor, recovery-journal, Docker/
+  Playground, or plugin-driver proof was added in this pass.
+- Evidence links: [progress.html](../progress.html), [executor docs](executor.md),
+  [recovery journal notes](recovery/apply-journal.md),
+  [Playground topology](playground-topology.md), and
+  [supervisor feedback](supervisor-feedback.md).
+- Reminder: keep production gates blocked until those pending systems are
+  proven with executable evidence.
+
+## 2026-05-25 - Current Supervisor Snapshot
+
+- Last update: 2026-05-25 00:33 CEST.
 - Public page refreshed: [progress.html](../progress.html) keeps the visible
   update stamp, the evidence summary, and the pending-gate list in one screen.
 - History kept conservative: [docs/supervisor-feedback.md](supervisor-feedback.md)
