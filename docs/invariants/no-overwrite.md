@@ -40,6 +40,10 @@ the resource key, the live remote hash observed during planning, and the
 - Remote descendants that would be hidden by a local file deletion or type swap
   unless the plan also proves the descendant is an unchanged base resource
   being deleted.
+- Unsafe file topology mutations are not emitted once a stop condition is
+  found. Independent mutations may remain in the conflicted plan as
+  hash-preconditioned audit evidence, but apply must refuse the whole non-ready
+  plan.
 - Conflict evidence must identify resources, hashes, change kinds, presence,
   and file types, but not raw file bodies, row contents, option values, or
   plugin configuration payloads.
@@ -58,6 +62,8 @@ the resource key, the live remote hash observed during planning, and the
   table, such as `wp-option` for a `wp_postmeta` row.
 - File topology conflicts where applying a local file or type change would
   require overwriting, removing, or hiding a live remote ancestor or descendant.
+  The conflicting file mutation and its precondition must be suppressed rather
+  than left as an apply candidate.
 - Atomic groups with missing plugin dependencies after considering the expected
   post-apply remote state and planned plugin mutations.
 - Any internally generated mutation that lacks a matching live remote

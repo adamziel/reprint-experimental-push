@@ -1151,6 +1151,7 @@ function addConflict(plan, {
 function addFileTopologyConflicts(plan, resources, base, local, remote) {
   const fileResources = resources.filter((resource) => resource.type === 'file');
   const mutationByKey = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+  const unsafeMutationKeys = new Set();
   const added = new Set();
 
   for (const mutation of plan.mutations) {
@@ -1176,6 +1177,7 @@ function addFileTopologyConflicts(plan, resources, base, local, remote) {
           (mutationAfter === ABSENT || mutationAfterType !== 'directory')
           && shouldStopForDescendant(mutationByKey, other, base, remote)
         ) {
+          unsafeMutationKeys.add(mutation.resourceKey);
           addTopologyConflict(
             plan,
             added,
@@ -1201,6 +1203,7 @@ function addFileTopologyConflicts(plan, resources, base, local, remote) {
           && fileValueType(ancestorAfter) !== 'directory'
           && shouldStopForAncestor(ancestorMutation, other, base, remote)
         ) {
+          unsafeMutationKeys.add(mutation.resourceKey);
           addTopologyConflict(
             plan,
             added,
@@ -1216,6 +1219,8 @@ function addFileTopologyConflicts(plan, resources, base, local, remote) {
       }
     }
   }
+
+  removeUnsafeMutations(plan, unsafeMutationKeys);
 }
 
 function shouldStopForDescendant(mutationByKey, descendant, base, remote) {
@@ -1274,6 +1279,23 @@ function addTopologyConflict(plan, added, mode, resource, relatedResource, base,
       resourceHash(remote, relatedResource),
     ),
   });
+}
+
+function removeUnsafeMutations(plan, unsafeMutationKeys) {
+  if (unsafeMutationKeys.size === 0) {
+    return;
+  }
+
+  const removedMutationIds = new Set();
+  plan.mutations = plan.mutations.filter((mutation) => {
+    if (!unsafeMutationKeys.has(mutation.resourceKey)) {
+      return true;
+    }
+    removedMutationIds.add(mutation.id);
+    return false;
+  });
+  plan.preconditions = plan.preconditions.filter((precondition) =>
+    !removedMutationIds.has(precondition.mutationId));
 }
 
 function enforceMutationPreconditionInvariant(plan) {
