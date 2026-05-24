@@ -311,6 +311,10 @@ production-grade push support:
   boundary.
 - A stale manual-review artifact may stay readable for audit, but it must not
   be treated as current authority after remote drift or partial apply.
+- A stale manual-review artifact must be shown rejected against the live
+  remote before any retry or production wording can be claimed; a lab-shaped
+  route, packaged-plugin mount, or `finalMatchesLocal` smoke cannot stand in
+  for that rejection.
 - Production push endpoint: the exercised write path must be the real
   production-backed source mutation path, not a Playground proxy, route-shape
   stand-in, or copied lab executor.
@@ -332,6 +336,10 @@ production-grade push support:
 - Audit-boundary proof: a rejected stale approval must remain readable for
   audit while being unusable for write authorization, and the retry must be
   tied to the new live hashes.
+- False-reliability proof: if the only evidence is a route-shaped response,
+  packaged-plugin mount, or fixture replay, the branch must say lab-backed
+  only and may not imply production safety, retry safety, or remote-
+  preserving behavior.
 - Identity safety: create paths must either reserve stable identities or
   block; a retry may not renumber or remap identities from stale local
   assumptions.
