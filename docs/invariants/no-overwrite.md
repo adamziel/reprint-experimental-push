@@ -73,6 +73,10 @@ the resource key, the live remote hash observed during planning, and the
 - Remote-only plugin metadata and plugin files when local deletes or updates an
   ordinary non-plugin resource. Those remote-only plugin changes remain
   `keep-remote` decisions.
+- Remote-only plugin removals behave the same way as other remote-only plugin
+  drift when local mutations touch unrelated ordinary resources. The planner
+  must preserve the remote plugin removal while still auto-applying only the
+  safe unrelated mutation.
 - Unsafe file topology mutations are not emitted once a stop condition is
   found. Independent mutations may remain in the conflicted plan as
   hash-preconditioned audit evidence, but apply must refuse the whole non-ready
