@@ -3510,3 +3510,33 @@ test('durable recovery boundaries preserve the same three acceptable post-failur
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
+
+test('blocked partial recovery keeps inspectable artifacts instead of pretending the remote is safe', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+      durableJournal,
+    }));
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'blocked');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked recovery must carry remote artifacts');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state');
+});
