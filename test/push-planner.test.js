@@ -1439,6 +1439,7 @@ test('preserves remote-only plugin removals while matching independent delete, e
   const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.mutations, 0);
@@ -1447,6 +1448,9 @@ test('preserves remote-only plugin removals while matching independent delete, e
   assert.equal(editDecision.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
 test('refuses direct conflicts and preserves the remote snapshot', () => {
