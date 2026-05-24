@@ -456,6 +456,35 @@ test('large uploads and plugin work retain the required fast-path evidence', () 
     assert.ok(filePublishes.every((action) => action.durableEvidence));
     assert.ok(filePublishes.every((action) => action.requiresCompleteChunkReceipts > 0));
   }
+
+  const largeUpload = model.schedules.find((schedule) => schedule.kind === 'large-upload');
+  const pluginInstall = model.schedules.find((schedule) => schedule.kind === 'plugin-install');
+  const pluginUpdate = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
+
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'file-publish' && action.publishMode === 'compare-and-swap'),
+    'large uploads should keep publish visibility behind a guarded compare-and-swap',
+  );
+  assert.ok(
+    largeUpload.actions.every((action) => action.type !== 'atomic-group-commit'),
+    'large uploads should not invent an atomic-group commit that does not exist',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'group-staging-finalize'),
+    'plugin install should model the group staging barrier',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'group-staging-finalize'),
+    'plugin update should model the group staging barrier',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'atomic-group-commit' && action.canonicalVisible === true),
+    'plugin update should only become visible at the atomic-group commit',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'remote-index-probe' && action.applyMustRevalidate === true),
+    'plugin update should keep remote indexes planning-only',
+  );
 });
 
 test('rejected fast paths cover precondition bypasses and atomic group splits', () => {
