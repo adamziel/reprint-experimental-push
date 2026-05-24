@@ -132,6 +132,10 @@ these release requirements:
 This is useful evidence. It does not exercise a production source site, a
 production push endpoint, real production credentials, production DB/file
 durability, real concurrent WordPress traffic, or arbitrary plugin data.
+It also does not prove no-data-loss at the WordPress graph boundary: the
+default suite can show that selected modeled resources are preserved, but not
+that a live posts/postmeta/attachment/taxonomy/plugin graph survives a failed
+push without silent loss or duplication.
 
 ### What The Standalone Smokes Prove
 
@@ -162,6 +166,8 @@ fixtures, deterministic failure hooks, and production-shaped routing. They do
 not prove production durability, arbitrary WordPress resources, arbitrary
 plugins, real MySQL/InnoDB behavior, real filesystem crash semantics,
 production auth, or measured speed.
+They are also not yet a release gate; the strongest scripts still need manual
+invocation and can be skipped while `npm test` remains green.
 
 ### Test Gaps That Block Release Claims
 
@@ -236,6 +242,13 @@ production auth, or measured speed.
    before release. There is also no checked-in CI workflow or release wrapper
    that fails the build when the strongest auth, storage, recovery, plugin,
    and performance smokes are skipped.
+
+12. **The speed claim is still only a model.** The benchmark tests verify
+    evidence structure, guardrail placement, and failure gates, but they do
+    not measure a real push path against a live WordPress site, do not report
+    a throughput target, and do not establish a memory ceiling under load.
+    Until a production-shaped benchmark runs the executor end to end, "fast"
+    remains an unproven aspiration rather than a release fact.
 
 ## Required Release Gates
 
