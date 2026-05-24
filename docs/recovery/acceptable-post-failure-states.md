@@ -18,3 +18,13 @@ The atomic apply path is only acceptable if a failure leaves one of these states
    - Retrying must fail closed until fresh recovery evidence proves the site is safe to finish or abandon.
 
 Anything else is a recovery bug.
+
+## Failure Boundaries
+
+The atomic apply boundary checks must keep these failure modes inside the contract above:
+
+- Failure before mutation must leave `old-remote` plus a recovery artifact.
+- Failure after staging must still leave `old-remote` plus a recovery artifact.
+- Failure after dependency validation must still leave `old-remote` plus a recovery artifact.
+- Replaying a completed plan must return `fully-updated-remote`, not a second write path.
+- If a completed journal no longer matches the remote, the result must be `blocked-recovery` with artifacts, never a silent retry.
