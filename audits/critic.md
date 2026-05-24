@@ -434,6 +434,9 @@ source-site mutation proof. That is a good transport primitive for push, but
 it is not a mutation proof. Reprint proves that a staged workflow can be
 structured, not that a remote WordPress source can survive mid-apply drift,
 partial writes, or plugin-owned side effects without losing auditability.
+Nothing in the route shape, package layout, or fixture replay proves live
+remote preservation unless the same path also revalidates the remote and
+classifies every boundary write.
 
 Scenario: push applies plugin files, then the process dies before the related
 options, custom-table rows, or activation state are committed. The file side is
@@ -505,6 +508,8 @@ relationships, or plugin state on retry.
 Manual review is not production proof unless the remote is preserved for audit,
 the reviewed scope still matches the live hashes at apply time, and the retry
 path can prove it rejected stale scope before any write.
+If the approval artifact cannot be tied to a fresh live snapshot, it must be
+treated as stale evidence, not as permission to continue.
 
 Required change: adopt the ForkPress-grade lifecycle before making
 ForkPress-grade claims. Manual resolution is acceptable only when the remote
@@ -537,6 +542,8 @@ would reasonably read as equivalent.
   remote, reviewer, action, and fresh revalidation evidence.
 - Any stale manual-review artifact or stale approval hash is rejected before
   write, but still kept readable for audit and retry.
+- A stale approval artifact is never treated as live permission, even when the
+  route name, package name, or lab smoke output still looks correct.
 - A retry always starts from fresh live evidence and cannot reuse an old
   approval for unrelated rows, files, or plugin state, including plugin-owned
   surfaces that drifted after the review.
