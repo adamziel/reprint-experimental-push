@@ -51,8 +51,8 @@ The remote is partially or suspiciously updated and must not be treated as safe 
 
 Required artifacts:
 
-- durable journal evidence
-- remote-state evidence describing the observed drift or partial commit
+- Durable journal evidence.
+- Remote-state evidence describing the observed drift or partial commit.
 
 This is the release-blocker state if a retry would otherwise risk:
 
@@ -62,8 +62,8 @@ This is the release-blocker state if a retry would otherwise risk:
 
 The artifact pair must make inspection possible:
 
-- durable journal evidence
-- remote-state evidence describing the observed drift or partial commit
+- Durable journal evidence.
+- Remote-state evidence describing the observed drift or partial commit.
 
 ## Operational rule
 
