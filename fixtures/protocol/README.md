@@ -101,7 +101,8 @@ The hash-listing fixture is the planning boundary:
   lock.
 - apply must fetch fresh live evidence again before each batch.
 
-The topology proof is intentionally asymmetric:
+The topology proof is intentionally asymmetric and mirrors the production
+sequence exactly:
 
 - `remote-base` is the source site that produced the persisted pull base.
 - `local-edited` is the imported local clone after user edits.
@@ -109,7 +110,8 @@ The topology proof is intentionally asymmetric:
 - the runner is the only process that can compare, upload, inspect, or
   recover.
 
-The test only proves the production rule if the remote changes after dry-run.
+The test only proves the production rule if the remote changes after dry-run
+and before `push_batch_apply`.
 Reusing a stale snapshot as the apply target turns the drift case into a
 replay of old state and weakens the proof that apply revalidates live state.
 
@@ -137,10 +139,10 @@ The fixture topology encodes the exact proof order the executor must preserve:
 
 Docker harnesses should wire this as one private network with a remote site
 pair, a local site pair, and one runner container. Playground harnesses
-should mirror the same role split with separate disposable blueprints for the
-remote base, local edited site, and remote changed drift case. In both
-topologies, browser-visible inspection must use only the sandbox-provided
-`8080` ingress through a local-only proxy, never a tunnel.
+should mirror the same role split with separate disposable blueprints for
+`remote-base`, `local-edited`, and `remote-changed`. In both topologies,
+browser-visible inspection must use only the sandbox-provided `8080` ingress
+through a local-only proxy, never a tunnel.
 
 The test harness for these fixtures should use the same one-remote, one-local
 shape described in the executor docs:

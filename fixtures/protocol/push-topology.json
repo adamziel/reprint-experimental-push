@@ -7,7 +7,7 @@
       "role": "pulled merge base and persisted push provenance",
       "examples": {
         "docker": "remote-wp",
-        "playground": "playground-remote"
+        "playground": "remote-base"
       }
     },
     "local_edited": {
@@ -15,7 +15,7 @@
       "role": "local plan source after user edits",
       "examples": {
         "docker": "local-wp",
-        "playground": "playground-local"
+        "playground": "local-edited"
       }
     },
     "remote_changed": {
