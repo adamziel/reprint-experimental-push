@@ -52,11 +52,11 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.pull_handoff.importer, 'persists the base package as immutable provenance');
   assert.equal(
     contract.pull_handoff.push_snapshot_hashes,
-    'lists the live remote comparison set for planning only',
+    'lists the live remote comparison set for planning only and never acts as a lock',
   );
   assert.equal(
     contract.pull_handoff.push_plan_dry_run,
-    'uploads the canonical dry-run plan as eligibility evidence only',
+    'uploads the canonical plan as eligibility evidence and returns a receipt without mutating target resources',
   );
   assert.equal(
     contract.pull_handoff.push_batch_apply,

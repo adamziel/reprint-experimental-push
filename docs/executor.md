@@ -12,7 +12,7 @@ The production sequence is fixed:
 3. The local planner builds the canonical three-way plan from base, local, and
    live remote evidence.
 4. `push_plan_dry_run` uploads that canonical plan as eligibility evidence
-   only.
+   only and returns a receipt, not a lock.
 5. `push_batch_apply` revalidates the live remote before every batch and again
    at the storage boundary.
 6. `push_journal` resolves lost responses and ambiguity without authorizing a

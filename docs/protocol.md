@@ -39,7 +39,7 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 3. `push_preflight` binds that package to the live remote identity and a
    short-lived push session
 4. `push_snapshot_hashes` lists the live remote comparison set for planning
-5. `push_plan_dry_run` uploads the canonical plan as eligibility evidence only
+5. `push_plan_dry_run` uploads the canonical plan as eligibility evidence only and returns a receipt, not a lock
 6. `push_batch_apply` revalidates the live remote before every batch and at
    the storage boundary
 7. `push_journal` and `push_recover` inspect durable evidence first, then
@@ -54,7 +54,7 @@ Push is split into a read-only planning phase and a write phase:
 - `push_preflight` authenticates and negotiates session and capability state.
 - `push_snapshot_hashes` records the live remote hash view used for planning.
 - `push_plan_dry_run` uploads a canonical plan and records a non-mutating
-  receipt.
+  receipt, not a lock.
 - `push_batch_apply` executes accepted plans in bounded batches with live
   revalidation before every write.
 - `push_journal` resolves lost responses and crash ambiguity.
@@ -105,10 +105,10 @@ Required behavior:
 - `push_recover` has a read-only `inspect` mode plus mutating `auto`,
   `finish`, and `rollback` modes. It inspects, finishes, rolls back, or
   blocks an interrupted batch only when journal artifacts and live hashes
-  prove the action. `inspect` may surface the evidence needed to decide the
-  next step, but it must not mutate the remote or imply recovery safety. A
-  blocked inspection result is required when the server cannot prove a safe
-  finish or rollback.
+  prove the action. `inspect` must happen first, may surface the evidence
+  needed to decide the next step, and must not mutate the remote or imply
+  recovery safety. A blocked inspection result is required when the server
+  cannot prove a safe finish or rollback.
 
 Endpoint specifics:
 
