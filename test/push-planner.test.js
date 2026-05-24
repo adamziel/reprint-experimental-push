@@ -1305,6 +1305,36 @@ test('remote-only plugin removal blocks stale local dependency assumptions', () 
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
 
+test('preserves remote-only plugin removals while matching independent delete, edit, and type swap stay already in sync', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  const remote = baseSite();
+  delete remote.files['index.php'];
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('refuses direct conflicts and preserves the remote snapshot', () => {
   const base = baseSite();
   const local = baseSite();
