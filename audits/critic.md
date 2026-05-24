@@ -775,6 +775,11 @@ would reasonably read as equivalent.
   never treated as production proof unless the same path also proves live
   remote revalidation, stale-approval rejection, and safe retry from a fresh
   snapshot with the exact approved scope.
+- A production claim also requires proof that a stale approval cannot be
+  replayed through the same route against a new live snapshot and accidentally
+  widen into unrelated rows, files, relationship-bearing records, or
+  plugin-owned surfaces; auditability alone is not enough unless the retry
+  fails closed before mutation.
 - `finalMatchesLocal` on its own is explicitly non-evidence for remote
   preservation, identity stability, plugin ownership safety, or crash
   recovery.
@@ -861,8 +866,9 @@ Before any production-grade push claim, the project needs all of these:
     ownership, plugin-owned state outside allowlists, partial file/DB/plugin
     side effects, route-shape-only evidence, fixture replay alone,
     `finalMatchesLocal` alone, any claim that only restates the lab route
-    shape, or any create path that can renumber, alias, or reassign target
-    identity without a live remap proof.
+    shape, any stale approval that can be reused against a new snapshot, or
+    any create path that can renumber, alias, or reassign target identity
+    without a live remap proof.
 
 The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
