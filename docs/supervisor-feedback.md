@@ -1,9 +1,30 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:38 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 00:38 CEST - Lane Copy Alignment
+
+- Going well: the visible page and the detailed docs still agree that
+  production push is blocked by missing evidence, not by optimism.
+- Not going well: the lane copy still needs a crisp public note that it goes
+  live only after merge to `main`; production auth, journal durability, and
+  graph identity remain unproven.
+- Progress change: no new proof landed in this lane; the useful change is
+  tighter wording and a current timestamp.
+- Next nudge: keep the supervisor page short, dated, and linked to the audit
+  trail; do not widen the claim surface.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep the graph smoke gap explicit until a real identity fixture lands. |
+| Recovery | Prove production-backed journal durability, not just replay shape. |
+| Reliable executor | Keep auth and journal wording tied to missing production proof. |
+| Fast paths | Leave the benchmark claim blocked until a live large-site run exists. |
+| Audit and critic | Re-audit only after new production-backed evidence arrives. |
+| Progress publisher | Keep the public page scan-friendly and merge-gated. |
 
 ## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
 
