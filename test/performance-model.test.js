@@ -510,6 +510,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('skip-plugin-validators-on-package-hash').violates.includes('plugin-preconditions'),
   );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-package-cache-skips-plugin-validators')
+      .violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-package-cache-skips-plugin-validators')
+      .violates.includes('compression'),
+  );
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
   assert.ok(
     rejectedById.get('live-chunk-publish').violates.includes('atomic-file-publish'),
