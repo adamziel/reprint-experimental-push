@@ -25,6 +25,13 @@ Start or resume all lanes:
 scripts/supervision/start-lanes.sh
 ```
 
+The launchers default workers to Codex fast mode:
+
+```bash
+CODEX_FAST_MODEL=gpt-5.4-mini
+CODEX_FAST_REASONING_EFFORT=low
+```
+
 Start or resume only the feedback supervisor session:
 
 ```bash
@@ -35,6 +42,7 @@ Check sessions and branch state:
 
 ```bash
 scripts/supervision/status.sh
+scripts/supervision/accountability.sh
 ```
 
 The scripts create worktrees under
@@ -48,6 +56,7 @@ Use these commands from the main worktree:
 
 ```bash
 scripts/supervision/status.sh
+scripts/supervision/accountability.sh
 tmux capture-pane -pt rp-feedback-supervisor:0 -S -120
 tmux attach -t rp-feedback-supervisor
 git -C ~/reprint-experimental-push-lanes/feedback-supervisor status --short --branch
@@ -64,6 +73,9 @@ assignment.
 - Do not edit another lane's owned files unless the prompt explicitly allows it.
 - Push finished lane work to the remote branch.
 - Leave the worktree clean after pushing.
+- Keep implementation work in worker lanes. The supervisor runs
+  `scripts/supervision/accountability.sh` and treats non-supervision drift in
+  `main` as a stop-and-delegate warning.
 - The feedback lane should keep a short "what changed / what is stuck / next
   nudge" record and make sure `progress.html` has a visible last-updated date.
 - Do not use remote tunnel services. Use only local processes and the sandbox
