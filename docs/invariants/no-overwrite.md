@@ -14,6 +14,10 @@ the live remote immediately before apply.
   same hash; these produce `already-in-sync` decisions, not mutations.
 - Plugin installs or data updates whose declared dependencies are already on
   the expected post-apply remote, or are installed by the same plan.
+- Plugin metadata or plugin file mutations only when the rest of that plugin's
+  live remote context still matches the pull base, or local independently
+  matches the live remote context. Plugin context means the plugin metadata
+  resource plus files under that plugin's directory.
 - Plugin-owned data updates only when the owning plugin context in local
   matches the live remote context, or the live remote plugin files and metadata
   still match the pull base. Owner plugin context means plugin metadata plus
@@ -27,6 +31,9 @@ the resource key, the live remote hash observed during planning, and the
 
 - Any remote-only resource change when local still matches the pull base.
 - Remote-only plugin metadata, plugin files, activation state, and removals.
+- Remote-only plugin context changes when local wants to mutate another file or
+  metadata resource for the same plugin. The planner must preserve the remote
+  plugin context and refuse the stale local plugin mutation.
 - Remote-only owner plugin context changes when local wants to mutate data owned
   by that plugin. The planner must preserve the remote plugin context and refuse
   the stale plugin-owned data mutation.
@@ -42,6 +49,9 @@ the resource key, the live remote hash observed during planning, and the
 - Local and remote changed the same resource to different hashes.
 - Local deletion versus remote update, local update versus remote deletion, and
   plugin-owned data changes without a plugin-specific merge policy.
+- Plugin metadata or plugin file changes when another live remote context
+  resource for that plugin changed since the pull base and local does not match
+  that live owner context.
 - Plugin-owned data changes when the live remote owner plugin files or metadata
   changed since the pull base and local does not match that live owner context.
 - Plugin-owned data changes whose declared driver does not match the resource

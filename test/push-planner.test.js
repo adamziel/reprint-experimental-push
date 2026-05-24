@@ -279,6 +279,78 @@ test('preserves remote-only plugin changes', () => {
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.1 */');
 });
 
+test('blocks local plugin metadata changes when remote plugin files changed', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.plugins.forms = { version: '1.0.0', active: false };
+  const remote = baseSite();
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+  assert.equal(mutationFor(plan, 'plugin:forms'), undefined);
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.resourceKey, 'plugin:forms');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.ownerContext[0].resourceKey, 'file:wp-content/plugins/forms/forms.php');
+  assert.equal(blocker.ownerContext[0].change.remoteChange, 'update');
+  assert.equal(blockerJson.includes('remote-private-forms-code'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.plugins.forms.active, true);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
+test('blocks local plugin file changes when remote plugin metadata changed', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* local-private-forms-code */';
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(mutationFor(plan, 'file:wp-content/plugins/forms/forms.php'), undefined);
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.resourceKey, 'file:wp-content/plugins/forms/forms.php');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.ownerContext[0].resourceKey, 'plugin:forms');
+  assert.equal(blocker.ownerContext[0].change.remoteChange, 'update');
+  assert.equal(blockerJson.includes('local-private-forms-code'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.plugins.forms.version, '1.1.0');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.0 */');
+});
+
+test('allows plugin file changes when plugin metadata independently matches remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.plugins.forms = { version: '1.1.0', active: true };
+  remote.plugins.forms = { version: '1.1.0', active: true };
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* local forms 1.1 file */';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'already-in-sync');
+  assert.equal(mutation.action, 'put');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* local forms 1.1 file */');
+});
+
 test('blocks plugin-owned data when owner plugin files changed only on remote', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();

@@ -98,6 +98,31 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
 
     if (localHash !== baseHash && remoteHash === baseHash) {
+      if (isPluginContextMutationResource(resource, owner)) {
+        const pluginContextSupport = pluginContextMutationSupport({
+          resource,
+          owner,
+          resources,
+          base,
+          local,
+          remote,
+        });
+        if (!pluginContextSupport.supported) {
+          addPluginContextBlocker(plan, {
+            resource,
+            owner,
+            support: pluginContextSupport,
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+          continue;
+        }
+      }
+
       if (isPluginOwnedDataResource(resource, owner)) {
         const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
         if (!support.supported) {
@@ -876,6 +901,43 @@ function isPluginOwnedDataResource(resource, owner) {
   return resource.type === 'row' && Boolean(owner);
 }
 
+function isPluginContextMutationResource(resource, owner) {
+  return Boolean(owner)
+    && (resource.type === 'plugin' || (resource.type === 'file' && isPluginOwnerContextResource(resource, owner)));
+}
+
+function pluginContextMutationSupport({
+  resource,
+  owner,
+  resources,
+  base,
+  local,
+  remote,
+}) {
+  const staleContext = pluginOwnerContextEvidence({
+    owner,
+    resources,
+    base,
+    local,
+    remote,
+  })
+    .filter((context) => context.resourceKey !== resource.key)
+    .filter((context) =>
+      context.remoteHash !== context.baseHash
+      && context.localHash !== context.remoteHash);
+
+  if (staleContext.length === 0) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'stale-plugin-owner-context',
+    reason: `Plugin context resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
+    ownerContext: staleContext,
+  };
+}
+
 function pluginOwnedOwnerContextSupport({
   resource,
   owner,
@@ -895,33 +957,14 @@ function pluginOwnedOwnerContextSupport({
     return { supported: true };
   }
 
-  const staleContext = resources
-    .filter((candidate) => isPluginOwnerContextResource(candidate, owner))
+  const staleContext = pluginOwnerContextEvidence({
+    owner,
+    resources,
+    base,
+    local,
+    remote,
+  })
     .filter((candidate) => !(ownerDependencyDeclared && candidate.type === 'plugin'))
-    .map((contextResource) => {
-      const baseValue = getResource(base, contextResource);
-      const localValue = getResource(local, contextResource);
-      const remoteValue = getResource(remote, contextResource);
-      const baseHash = resourceHash(base, contextResource);
-      const localHash = resourceHash(local, contextResource);
-      const remoteHash = resourceHash(remote, contextResource);
-      return {
-        resource: contextResource,
-        resourceKey: contextResource.key,
-        baseHash,
-        localHash,
-        remoteHash,
-        change: changeEvidence(
-          contextResource,
-          baseValue,
-          localValue,
-          remoteValue,
-          baseHash,
-          localHash,
-          remoteHash,
-        ),
-      };
-    })
     .filter((context) =>
       context.remoteHash !== context.baseHash
       && context.localHash !== context.remoteHash);
@@ -936,6 +979,42 @@ function pluginOwnedOwnerContextSupport({
     reason: `Plugin-owned resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
   };
+}
+
+function pluginOwnerContextEvidence({
+  owner,
+  resources,
+  base,
+  local,
+  remote,
+}) {
+  return resources
+    .filter((candidate) => isPluginOwnerContextResource(candidate, owner))
+    .map((contextResource) => {
+      const baseValue = getResource(base, contextResource);
+      const localValue = getResource(local, contextResource);
+      const remoteValue = getResource(remote, contextResource);
+      const baseHash = resourceHash(base, contextResource);
+      const localHash = resourceHash(local, contextResource);
+      const remoteHash = resourceHash(remote, contextResource);
+      return {
+        resource: contextResource,
+        type: contextResource.type,
+        resourceKey: contextResource.key,
+        baseHash,
+        localHash,
+        remoteHash,
+        change: changeEvidence(
+          contextResource,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        ),
+      };
+    });
 }
 
 function isPluginOwnerContextResource(resource, owner) {
@@ -979,6 +1058,40 @@ function addPluginOwnedResourceBlocker(plan, {
     policySource: support.policySource || null,
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
+function addPluginContextBlocker(plan, {
+  resource,
+  owner,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-plugin-context-${plan.blockers.length + 1}`,
+    class: support.className || 'stale-plugin-owner-context',
+    resource,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    ownerContext: support.ownerContext || [],
+    reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,
     remoteHash,
