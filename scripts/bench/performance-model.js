@@ -245,6 +245,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['strong-resource-hashes'],
   },
   {
+    id: 'digest-as-authority',
+    proposal: 'treat a cached digest or index entry as a substitute for the live compare',
+    rejectedBecause: 'a shortcut digest can skip work, but it cannot authorize the mutation boundary',
+    rejectedGate: 'live',
+    violates: ['live-preconditions'],
+  },
+  {
     id: 'split-plugin-install',
     proposal: 'publish plugin files before database rows, metadata, dependency checks, and activation state',
     rejectedBecause: 'the plugin can become half-installed and cannot be classified as old or new',
@@ -264,6 +271,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'transport encoding changes would look like content changes or hide them',
     rejectedGate: 'live',
     violates: ['canonical-resource-hashes'],
+  },
+  {
+    id: 'compression-skips-precondition',
+    proposal: 'use compression to skip the live precondition that guards the uncompressed value',
+    rejectedBecause: 'encoding efficiency does not replace the mutation precondition on the canonical resource',
+    rejectedGate: 'live',
+    violates: ['live-preconditions'],
   },
   {
     id: 'unbounded-parallelism',
@@ -304,6 +318,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     id: 'backpressure-drops-evidence',
     proposal: 'summarize or drop queued precondition evidence when upload or journal queues are over budget',
     rejectedBecause: 'pressure handling must pause producers, not erase the evidence needed to classify recovery',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'durable-progress'],
+  },
+  {
+    id: 'queue-empty-means-complete',
+    proposal: 'advance an upstream producer because the queue is empty even though receipts are missing',
+    rejectedBecause: 'an empty queue is not proof that the remote acknowledged the work',
     rejectedGate: 'recovery',
     violates: ['backpressure', 'durable-progress'],
   },

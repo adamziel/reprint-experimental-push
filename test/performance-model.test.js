@@ -290,6 +290,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('backpressure'));
   assert.ok(rejectedById.get('unbounded-parallelism').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('digest-as-authority').violates.includes('live-preconditions'));
+  assert.ok(rejectedById.get('compression-skips-precondition').violates.includes('live-preconditions'));
+  assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(rejectedById.get('live-chunk-publish').proposal.includes('live file path'));
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));

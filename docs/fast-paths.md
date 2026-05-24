@@ -99,6 +99,10 @@ file only if `file:path` still has `remoteBeforeHash`.
 Reject mtime-only, size-only, or path-only equality. They are useful cache
 lookups, not data-loss guards.
 
+Also reject any hash shortcut that makes the digest itself the authority. A
+cached digest can skip a rehash, but it cannot replace the live compare on the
+remote resource.
+
 ## Chunk Upload
 
 Chunk upload should be staged under a tuple like:
@@ -148,6 +152,10 @@ staging operations. The atomic group commit is the visibility boundary.
 Reject blind `REPLACE INTO`, unordered SQL replay, and batches that use one
 table-level timestamp as a substitute for per-row preconditions.
 
+Also reject batch shapes that cross plugin owners or atomic groups to chase a
+fatter batch. That creates a faster failure mode, not a safe one, because the
+recovery record can no longer prove which coupled rows belong together.
+
 Do not merge rows from different plugin owners or atomic groups into the same
 visibility batch just because their SQL shape matches. The executor can share a
 prepared statement shape and still issue separate group-scoped batches. That
@@ -181,6 +189,10 @@ should use canonical uncompressed values. Good candidates are JSON manifests,
 row batches, text assets, and SQL-like payloads. Poor candidates are zip files,
 images, video, gzip streams, and already-compressed plugin packages.
 
+Reject any shortcut that treats compressed bytes as the canonical resource
+value, or that uses compression to bypass a live resource hash check. Encoding
+can change wire efficiency, but it does not change the mutation precondition.
+
 The receiver should record both the canonical digest and the encoded payload
 digest. The canonical digest protects correctness; the encoded digest protects
 wire/storage integrity.
@@ -203,6 +215,11 @@ count, remote error rate, latency, staging disk usage, and journal lag. When a
 budget is hit, upstream producers pause. They do not drop evidence, skip hashes,
 or mark work complete before durable acknowledgement.
 
+Reject any "fast" pressure response that sheds receipts, advances the cursor
+without acknowledgment, or declares a sender complete because the queue was
+drained into memory. Those choices lose the only evidence that makes recovery
+unambiguous.
+
 The important fast path is selective idling. Hashing can pause while uploads
 drain, database batch construction can pause while row commits catch up, and
 compression can stop feeding the upload queue while staging disk is high. Work
@@ -222,6 +239,8 @@ validators, and the final durable commit record.
 - Treating a remote index generation as permission to mutate.
 - Using mtime, size, row count, or table checksum instead of strong resource
   hashes for conflict checks.
+- Treating a cached digest or index entry as a substitute for the live compare
+  that guards a mutation.
 - Splitting a plugin install so files publish before database rows, dependency
   checks, plugin metadata, and activation state are ready.
 - Activating or upgrading a plugin before validators and dependency
@@ -234,10 +253,12 @@ validators, and the final durable commit record.
   batch because the SQL shape matches.
 - Using index freshness, cursor freshness, tombstone state, or a successful dry run as a live
   mutation authorization.
+- Comparing compressed bytes as the canonical resource hash, or using
+  compression to skip the precondition that guards the uncompressed value.
 - Retrying non-idempotent mutations without a plan id, resource key, and batch
   idempotency key.
-- Compressing payloads and then comparing compressed bytes as the canonical
-  resource hash.
+- Advancing an upstream producer because the queue is empty while receipts or
+  journal records are still missing.
 - Raising concurrency without an in-flight byte budget and durable progress
   journal.
 - Reporting success when staged bytes, staged rows, or an atomic group commit
