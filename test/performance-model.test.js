@@ -1591,6 +1591,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'full-digest-completes-chunk-resume',
     'manifest-hash-completes-large-upload',
     'parallelize-atomic-group-commit',
+    'parallelize-finalize-across-groups',
     'parallelize-db-batch-visibility-across-groups',
     'parallelize-chunk-visibility-across-groups',
   ]) {
@@ -1682,6 +1683,7 @@ test('rejected fast paths keep unsafe shortcuts out of the safe families', () =>
   assert.equal(rejectedById.get('compressed-canonical-hash').rejectedGate, 'live');
   assert.equal(rejectedById.get('compressed-package-cache-skips-plugin-preconditions').rejectedGate, 'group');
   assert.equal(rejectedById.get('parallelize-atomic-group-commit').rejectedGate, 'group');
+  assert.equal(rejectedById.get('parallelize-finalize-across-groups').rejectedGate, 'group');
   assert.equal(rejectedById.get('backpressure-drops-evidence').rejectedGate, 'recovery');
 
   for (const entry of model.rejectedFastPaths) {

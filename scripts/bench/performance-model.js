@@ -322,6 +322,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['atomic-groups', 'parallelism-limits'],
   },
   {
+    id: 'parallelize-finalize-across-groups',
+    proposal: 'finalize large uploads and plugin changes from multiple atomic groups in parallel and treat the combined drain as completion',
+    rejectedBecause: 'parallel work can overlap staging, but it cannot merge finalization across groups without hiding which receipt or commit record belongs to the partial failure',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'staged-bytes-as-published',
     proposal: 'treat complete-looking staged chunks or row batches as visible without guarded finalize or commit',
     rejectedBecause: 'staging presence does not prove the live preconditions or group commit have completed',

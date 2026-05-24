@@ -200,6 +200,9 @@ The rejected examples are not abstract lint. They are concrete failure modes:
 - Parallel staging cannot be merged into one wider commit across atomic groups
   because the recovery record would no longer tell which group owns a partial
   failure.
+- Parallel finalization across atomic groups cannot be treated as completion,
+  because the receipt and commit records still need to identify each group's
+  own failure boundary after a crash or lost response.
 - Chunk uploads cannot become visible across atomic groups as soon as receipts
   arrive, because the owning group barrier still has to keep the upload set
   classifiable after crash or retry.
