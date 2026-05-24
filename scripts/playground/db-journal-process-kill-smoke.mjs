@@ -54,13 +54,12 @@ const summary = {
     'real SIGKILL of the local Playground server process group during an in-flight DB-journaled REST apply',
     'host-mounted WordPress directory preserves DB rows and target data across restart',
     'DB journal rows after restart show opened/started and no committed state',
-    'live target hashes classify every planned target as old or new, with no silent divergence',
+    'DB-native planned/pre-write/post-write hash evidence plus live target hashes classify every planned target as old or new, with no silent divergence',
     'retry after missing commit is blocked and does not overwrite partial/ambiguous state',
   ],
   residualRisks: [
-    'the current REST DB wrapper appends DB mutation-applied rows after the core protocol returns, so a hard kill can leave DB-native per-mutation evidence short',
     'this smoke does not prove production durability guarantees beyond the local Playground SQLite/host-mount harness',
-    'this smoke does not prove safe finalization when every target hash equals the planned after hash but apply-committed is missing; that needs an explicit recovery/finalize path or hook',
+    'this smoke proves mixed-state blocking after a real kill; all-old retry and all-targets-updated finalization are covered by separate deterministic paths',
   ],
 };
 
@@ -102,11 +101,14 @@ try {
     .catch((error) => ({ settled: true, error: error.message }));
 
   await waitForDbJournalEvent(server, 'apply-started', evidenceTimeoutMs);
-  const preKillOptionEvidence = await waitForOptionJournalEvent(server, 'mutation-applied', evidenceTimeoutMs);
+  const preKillMutationEvidence = await waitForDbJournalEvent(server, 'mutation-applied', evidenceTimeoutMs);
+  const preKillOptionEvidence = await getOptionMutationEvidence(server);
   const preKillDbJournal = await getDbJournal(server);
   const preKillDbEvents = journalEntries(preKillDbJournal.body).map(journalEvent);
   assert.ok(preKillDbEvents.includes('idempotency-opened'), 'pre-kill DB journal missing idempotency-opened');
   assert.ok(preKillDbEvents.includes('apply-started'), 'pre-kill DB journal missing apply-started');
+  assert.ok(preKillDbEvents.includes('mutation-prepared'), 'pre-kill DB journal missing mutation-prepared');
+  assert.ok(preKillDbEvents.includes('mutation-applied'), 'pre-kill DB journal missing mutation-applied');
   assert.ok(!preKillDbEvents.includes('apply-committed'), 'apply committed before SIGKILL could be issued');
 
   const killResult = await killPlaygroundServer(server, 'SIGKILL');
@@ -118,6 +120,7 @@ try {
     exitCode: killResult.exitCode,
     portClosed: !(await isPortAccepting(server.port)),
     optionMutationEvidenceBeforeKill: preKillOptionEvidence.count,
+    dbMutationEvidenceBeforeKill: countJournalEvents(preKillMutationEvidence.entries, 'mutation-applied'),
     dbEventsBeforeKill: preKillDbEvents,
   };
 
@@ -150,11 +153,23 @@ try {
   assert.ok(dbEventsAfterRestart.includes('apply-started'), 'restarted DB journal missing apply-started');
   assert.ok(!dbEventsAfterRestart.includes('apply-committed'), 'restarted DB journal falsely reports apply-committed');
   assert.ok(!dbEventsAfterRestart.includes('apply-replayed'), 'restarted DB journal falsely reports replay');
+  assert.ok(dbEventsAfterRestart.includes('mutation-prepared'), 'restarted DB journal missing pre-write mutation evidence');
   const dbMutationRowsAfterRestart = countJournalEvents(dbRowsAfterRestart, 'mutation-applied');
+  const dbPreparedRowsAfterRestart = countJournalEvents(dbRowsAfterRestart, 'mutation-prepared');
   assert.ok(
     dbMutationRowsAfterRestart <= restartClassifications.new,
     'DB mutation evidence cannot exceed live new target count after SIGKILL',
   );
+  assert.ok(
+    dbPreparedRowsAfterRestart >= dbMutationRowsAfterRestart,
+    'DB pre-write mutation evidence cannot be shorter than DB post-write mutation evidence',
+  );
+
+  const dbOnlyRecovery = classifyTargetsFromDbJournal(crashPlan, afterRestartSnapshot.body.snapshot, dbRowsAfterRestart);
+  assert.deepEqual(dbOnlyRecovery.counts, publicCounts(restartClassifications), 'DB journal plus live hashes must match live classification counts');
+  assert.equal(dbOnlyRecovery.state, 'blocked-recovery', 'partial DB journal recovery must block');
+  assert.equal(dbOnlyRecovery.action, 'block-non-mutating', 'partial DB journal recovery must be non-mutating');
+  assert.equal(dbOnlyRecovery.usedOptionJournal, false, 'DB recovery proof must not use legacy option journal');
 
   const optionJournalAfterRestart = await getOptionJournal(server);
   const optionEventsAfterRestart = optionJournalAfterRestart.body.journal.entries.map((entry) => entry.event);
@@ -178,6 +193,8 @@ try {
     dbEventsAfterRestart,
     optionEventsAfterRestart,
     dbMutationRowsAfterRestart,
+    dbPreparedRowsAfterRestart,
+    dbOnlyRecovery,
     liveClassifications: publicCounts(restartClassifications),
     recoveryState: inspect.body.recovery.state,
     recoveryCounts: inspect.body.recovery.counts,
@@ -206,8 +223,10 @@ try {
   const dbJournalAfterRetry = await getDbJournal(server);
   const dbEventsAfterRetry = journalEntries(dbJournalAfterRetry.body).map(journalEvent);
   assert.ok(
-    dbEventsAfterRetry.includes('apply-rejected') || dbEventsAfterRetry.includes('idempotency-in-progress'),
-    'DB journal should record retry rejection or persisted in-progress claim',
+    dbEventsAfterRetry.includes('apply-rejected')
+      || dbEventsAfterRetry.includes('idempotency-in-progress')
+      || dbEventsAfterRetry.includes('recovery-blocked'),
+    'DB journal should record retry rejection, persisted in-progress claim, or blocked recovery',
   );
   assert.ok(!dbEventsAfterRetry.includes('apply-committed'), 'retry falsely recorded apply-committed');
 
@@ -224,7 +243,7 @@ try {
     targetDataPersistedAcrossRestart: true,
     noFalseCommittedState: true,
     targetStateExplainable: true,
-    dbPerMutationEvidenceLimitObserved: dbMutationRowsAfterRestart < restartClassifications.new,
+    dbOnlyRecoveryProof: true,
   };
 
   success = true;
@@ -473,6 +492,15 @@ async function waitForOptionJournalEvent(currentServer, event, timeoutMs) {
   throw new Error(`Timed out waiting for option journal event ${event}`);
 }
 
+async function getOptionMutationEvidence(currentServer) {
+  const response = await getOptionJournal(currentServer);
+  const entries = response.body.journal?.entries || [];
+  return {
+    entries,
+    count: entries.filter((entry) => entry.event === 'mutation-applied').length,
+  };
+}
+
 async function findLocalPort() {
   return new Promise((resolve, reject) => {
     const listener = net.createServer();
@@ -564,7 +592,7 @@ async function getSnapshot(currentServer) {
 }
 
 async function getDbJournal(currentServer) {
-  return getLab(currentServer, '/db-journal?limit=80');
+  return getLab(currentServer, '/db-journal?limit=500');
 }
 
 async function getOptionJournal(currentServer) {
@@ -668,6 +696,94 @@ function classifyTargets(plan, snapshot) {
   }
 
   return counts;
+}
+
+function classifyTargetsFromDbJournal(plan, snapshot, rows) {
+  const plannedEvidence = dbPlannedMutationEvidence(rows);
+  assert.equal(plannedEvidence.size, plan.mutations.length, 'DB apply-started planned mutation evidence must cover every target');
+
+  const counts = {
+    old: 0,
+    new: 0,
+    blockedUnknown: 0,
+    total: plan.mutations.length,
+  };
+  const targets = [];
+
+  for (const mutation of plan.mutations) {
+    const evidence = plannedEvidence.get(mutation.id);
+    assert.ok(evidence, `missing DB planned evidence for ${mutation.id}`);
+    assert.equal(evidence.resourceKey, mutation.resourceKey, `DB resource key mismatch for ${mutation.id}`);
+    assert.equal(evidence.resourceType, mutation.resource.type, `DB resource type mismatch for ${mutation.id}`);
+
+    const currentHash = resourceHash(snapshot, mutation.resource);
+    let classification = 'blockedUnknown';
+    if (currentHash === evidence.beforeHash) {
+      classification = 'old';
+      counts.old++;
+    } else if (currentHash === evidence.plannedAfterHash) {
+      classification = 'new';
+      counts.new++;
+    } else {
+      counts.blockedUnknown++;
+    }
+
+    targets.push({
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      resourceType: mutation.resource.type,
+      currentHash,
+      beforeHash: evidence.beforeHash,
+      plannedAfterHash: evidence.plannedAfterHash,
+      classification,
+    });
+  }
+
+  let state = 'blocked-recovery';
+  let action = 'block-non-mutating';
+  if (counts.blockedUnknown === 0 && counts.old === counts.total) {
+    state = 'old-remote';
+    action = 'safe-retry-after-revalidation';
+  } else if (counts.blockedUnknown === 0 && counts.new === counts.total) {
+    state = 'fully-updated-remote';
+    action = 'finalization-eligible';
+  }
+
+  return {
+    source: 'db-journal-plus-live-hashes',
+    usedOptionJournal: false,
+    state,
+    action,
+    counts,
+    targets,
+  };
+}
+
+function dbPlannedMutationEvidence(rows) {
+  const planned = new Map();
+  for (const row of rows) {
+    const evidence = row.resourceHashEvidence || {};
+    const plannedMutations = Array.isArray(evidence.plannedMutations) ? evidence.plannedMutations : [];
+    for (const item of plannedMutations) {
+      const mutation = normalizeDbMutationEvidence(item);
+      if (mutation.mutationId) {
+        planned.set(mutation.mutationId, mutation);
+      }
+    }
+  }
+  return planned;
+}
+
+function normalizeDbMutationEvidence(item) {
+  const mutation = item?.mutation && typeof item.mutation === 'object' ? item.mutation : item;
+  return {
+    mutationOrder: Number(mutation?.mutationOrder ?? mutation?.index ?? 0),
+    mutationId: String(mutation?.mutationId ?? mutation?.id ?? ''),
+    resourceKey: String(mutation?.resourceKey ?? ''),
+    resourceType: String(mutation?.resourceType ?? mutation?.resource?.type ?? ''),
+    beforeHash: String(mutation?.beforeHash ?? mutation?.expectedBeforeHash ?? ''),
+    plannedAfterHash: String(mutation?.plannedAfterHash ?? mutation?.afterHash ?? ''),
+  };
 }
 
 function assertClassifications(actual, expected) {

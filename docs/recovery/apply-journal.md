@@ -6,9 +6,9 @@ without storing raw before/after values. The JSON-model lab also has a
 file-backed append-only JSONL journal with monotonic sequences and `fsync`
 evidence after each append. A newer local-only Playground REST slice adds a
 fixture-scoped DB table journal for apply idempotency, concurrent duplicate
-claiming, and local process-kill inspection. These slices are not production
-WordPress recovery: they do not prove production durability and do not
-auto-repair a partial remote.
+claiming, DB-only process-kill recovery blocking, and DB-only missing-commit
+finalization. These slices are not production WordPress recovery: they do not
+prove production durability and do not auto-repair a partial remote.
 
 The production design target is a durable artifact that separates a safe retry
 from an unsafe partial push. A failed apply must leave the system classifiable
@@ -99,8 +99,12 @@ legacy `GET /journal`; `/journal` still exists for the option-backed evidence.
 `POST /apply` requires `X-Reprint-Push-Idempotency-Key`. A missing key returns
 `400 MISSING_IDEMPOTENCY_KEY` before mutation. With a key, the table
 `wp_reprint_push_lab_push_journal` records `idempotency-opened`,
-`apply-started`, per-mutation `mutation-applied`, `apply-committed`,
-`apply-replayed`, and conflict evidence.
+`apply-started`, per-mutation `mutation-prepared` before each target write,
+per-mutation `mutation-applied` after observed hash calculation,
+`apply-committed`, `apply-replayed`, and conflict evidence. Compact DB mutation
+evidence stores hashes and metadata only: mutation order/id/resource key/type,
+before hash, planned after hash, observed hash, phase/status, and
+request/plan/receipt/idempotency hashes.
 
 The verified replay behavior is idempotent for the fixture batch: same key plus
 same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`,
@@ -122,14 +126,28 @@ Playground server process group during an in-flight DB-journaled REST apply,
 restarts against the same WordPress mount, and verifies that DB
 `idempotency-opened`/`apply-started` rows persist with no false
 `apply-committed` or replay state. Live target hashes are explainable as old or
-new, recovery inspection reports `blocked-recovery`, and retry does not
-overwrite the partial state.
+new from DB planned evidence plus live hashes, recovery inspection returns the
+non-mutating `RECOVERY_BLOCKED` result, and retry does not overwrite the
+partial state. The smoke does not rely on the legacy option journal for this
+classification.
+
+`npm run test:playground:db-journal-missing-commit-finalization` verifies the
+DB-only missing-commit finalization path. A deterministic lab hook performs the
+fixture target writes and DB mutation evidence, but omits the terminal
+`apply-committed` row. Before finalization, the same key with a different body
+still returns `409 IDEMPOTENCY_KEY_CONFLICT` without mutating. The same key with
+the same body observes that every live target hash already matches the planned
+after hash, appends the missing commit row, returns
+`BATCH_RECOVERY_FINALIZED`, reports `fully-updated-remote`, and performs zero
+fresh mutation work. A later replay returns `BATCH_ALREADY_COMMITTED`.
 
 This is useful DB-table shape evidence, but it is still local Playground
 SQLite/host-mount lab evidence, not production durable recovery or
-storage-level crash proof. DB-native per-mutation evidence can be short after
-hard kill because mutation rows append after protocol return; option-journal
-entries and live hashes carry partial evidence today. Missing-commit
-finalization/replay remains pending. Redaction is checked through forbidden
+storage-level crash proof. It does not prove storage `fsync`, rollback,
+exactly-once production writes, arbitrary plugin data safety, or full
+MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
+conservative/not fully solved, tests mostly count mutation evidence rows rather
+than deeply asserting every observed hash, and production auth, live source
+mutation, and full push remain pending. Redaction is checked through forbidden
 keys and fixture values, not by a formal sanitizer for arbitrary future journal
 messages.

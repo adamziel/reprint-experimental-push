@@ -49,6 +49,12 @@ Run the DB-backed process-kill/restart smoke:
 npm run test:playground:db-journal-process-kill
 ```
 
+Run the DB-backed missing-commit finalization smoke:
+
+```bash
+npm run test:playground:db-journal-missing-commit-finalization
+```
+
 Run the lab recovery inspection harness:
 
 ```bash
@@ -100,8 +106,12 @@ DB-native lab journal for `POST /apply`. Apply now requires
 `X-Reprint-Push-Idempotency-Key`; a missing key returns
 `400 MISSING_IDEMPOTENCY_KEY` before mutation. The table
 `wp_reprint_push_lab_push_journal` records DB-native events including
-`idempotency-opened`, `apply-started`, per-mutation `mutation-applied`,
-`apply-committed`, replay evidence, and conflict evidence. Same key plus same
+`idempotency-opened`, `apply-started`, `mutation-prepared` before each target
+write, `mutation-applied` after observed hash calculation, `apply-committed`,
+replay evidence, and conflict evidence. Compact DB mutation evidence stores
+hashes and metadata only: mutation order/id/resource key/type, before hash,
+planned after hash, observed hash, phase/status, and
+request/plan/receipt/idempotency hashes. Same key plus same
 body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`, no
 fresh mutation work, no extra mutation events, and an unchanged snapshot. Same
 key plus a different body returns `409 IDEMPOTENCY_KEY_CONFLICT` before
@@ -120,12 +130,26 @@ a real `SIGKILL` to the localhost Playground server during an in-flight
 DB-journaled REST apply, restarts against the same mount, and verifies DB
 `idempotency-opened`/`apply-started` rows persist without a false
 `apply-committed`, live target hashes are explainable as old/new with no silent
-divergence, `GET /recovery/inspect` reports `blocked-recovery`, and retry does
-not overwrite the partial state. This is local Playground SQLite/host-mount lab
-evidence only, not production durability. DB-native per-mutation evidence can be
-short after hard kill because mutation rows append after protocol return;
-option-journal/live hashes carry partial evidence today. Missing-commit
-finalization/replay remains pending.
+divergence, `GET /recovery/inspect` returns non-mutating `RECOVERY_BLOCKED`,
+and retry does not overwrite the partial state. Recovery uses DB planned
+evidence plus live hashes and does not rely on the legacy option journal.
+
+The `test:playground:db-journal-missing-commit-finalization` script verifies
+the DB-only missing-commit finalization path. A lab hook applies the same ready
+fixture target writes and records DB mutation evidence, but leaves the
+`apply-committed` row missing. The same key with a different body still rejects
+with `409 IDEMPOTENCY_KEY_CONFLICT` before finalization. The same key with the
+same body sees all live target hashes already at the planned after hashes,
+returns `BATCH_RECOVERY_FINALIZED`, appends the missing commit row, and performs
+zero fresh mutation work; a later replay returns `BATCH_ALREADY_COMMITTED`.
+
+These DB journal smokes are local Playground SQLite/host-mount lab evidence
+only, not production durability. They do not prove storage fsync, rollback,
+exactly-once production writes, arbitrary plugin data safety, or full
+MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
+conservative/not fully solved, tests mostly count mutation evidence rows rather
+than deeply asserting every observed hash, and production auth, live source
+mutation, and the full push path remain pending.
 
 The `test:playground:recovery` script exercises the lab-only failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The

@@ -103,6 +103,7 @@ function reprint_push_lab_db_journal_schema(): array
             'updated_at' => 'UTC event timestamp',
         ],
         'redaction' => [
+            'mutationEvidence' => 'per-mutation rows store order/id/resource key/type, before/planned/observed hashes, phase/status, and request/plan/receipt hashes only',
             'omits' => [
                 'value',
                 'content',
@@ -396,7 +397,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
 
     reprint_push_lab_db_journal_ensure_table();
 
-    $limit = max(1, min(80, $limit));
+    $limit = max(1, min(500, $limit));
     $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
     $row_count = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$quoted_table}");
     $latest = $wpdb->get_results(
@@ -558,12 +559,75 @@ function reprint_push_lab_db_journal_resource_hash_evidence(array $result): arra
     return reprint_push_lab_db_journal_sanitize_value($evidence);
 }
 
-function reprint_push_lab_db_journal_mutation_evidence(array $mutation, string $observed_hash): array
+function reprint_push_lab_db_journal_planned_mutation_evidence(array $mutations, array $preconditions = []): array
 {
-    return reprint_push_lab_db_journal_sanitize_value([
-        'mutationId' => isset($mutation['id']) ? (string) $mutation['id'] : '',
+    $preconditions_by_mutation = [];
+    foreach ($preconditions as $precondition) {
+        if (!is_array($precondition) || !isset($precondition['mutationId'])) {
+            continue;
+        }
+        $preconditions_by_mutation[(string) $precondition['mutationId']] = $precondition;
+    }
+
+    $evidence = [];
+    foreach (array_values($mutations) as $index => $mutation) {
+        if (!is_array($mutation)) {
+            continue;
+        }
+        $mutation_id = isset($mutation['id']) ? (string) $mutation['id'] : '';
+        $precondition = $preconditions_by_mutation[$mutation_id] ?? [];
+        $evidence[] = reprint_push_lab_db_journal_mutation_evidence([
+            'index' => (int) $index,
+            'mutationId' => $mutation_id,
+            'resourceKey' => isset($mutation['resourceKey']) ? (string) $mutation['resourceKey'] : '',
+            'resourceType' => isset($mutation['resource']) && is_array($mutation['resource'])
+                ? (string) ($mutation['resource']['type'] ?? '')
+                : '',
+            'beforeHash' => (string) ($precondition['expectedHash'] ?? $mutation['remoteBeforeHash'] ?? $mutation['baseHash'] ?? ''),
+            'plannedAfterHash' => (string) ($mutation['localHash'] ?? ''),
+            'phase' => 'planned',
+            'status' => 'planned',
+        ]);
+    }
+
+    return $evidence;
+}
+
+function reprint_push_lab_db_journal_mutation_evidence(array $mutation, ?string $observed_hash = null): array
+{
+    $resource = isset($mutation['resource']) && is_array($mutation['resource']) ? $mutation['resource'] : [];
+    $evidence = [
+        'mutationOrder' => (int) ($mutation['mutationOrder'] ?? $mutation['index'] ?? 0),
+        'mutationId' => isset($mutation['mutationId'])
+            ? (string) $mutation['mutationId']
+            : (isset($mutation['id']) ? (string) $mutation['id'] : ''),
         'resourceKey' => isset($mutation['resourceKey']) ? (string) $mutation['resourceKey'] : '',
-        'observedHash' => $observed_hash,
+        'resourceType' => isset($mutation['resourceType'])
+            ? (string) $mutation['resourceType']
+            : (string) ($resource['type'] ?? ''),
+        'beforeHash' => (string) ($mutation['beforeHash'] ?? $mutation['expectedBeforeHash'] ?? $mutation['remoteBeforeHash'] ?? $mutation['baseHash'] ?? ''),
+        'plannedAfterHash' => (string) ($mutation['plannedAfterHash'] ?? $mutation['afterHash'] ?? $mutation['localHash'] ?? ''),
+        'phase' => (string) ($mutation['phase'] ?? ''),
+        'status' => (string) ($mutation['status'] ?? ''),
+    ];
+
+    foreach (['idempotencyKeyHash', 'requestHash', 'planHash', 'receiptHash', 'planFingerprint', 'startedCursor'] as $key) {
+        if (isset($mutation[$key])) {
+            $evidence[$key] = (string) $mutation[$key];
+        }
+    }
+
+    if (isset($mutation['appliedCount'])) {
+        $evidence['appliedCount'] = max(0, (int) $mutation['appliedCount']);
+    }
+    if ($observed_hash !== null) {
+        $evidence['observedHash'] = $observed_hash;
+    } elseif (isset($mutation['observedHash'])) {
+        $evidence['observedHash'] = (string) $mutation['observedHash'];
+    }
+
+    return reprint_push_lab_db_journal_sanitize_value([
+        'mutation' => $evidence,
     ]);
 }
 

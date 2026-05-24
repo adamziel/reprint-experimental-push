@@ -157,6 +157,7 @@ function reprint_push_protocol_run_payload(
     }
 
     $lab_fail_after_mutations = reprint_push_protocol_lab_fail_after_mutations($options);
+    $mutation_event_callback = reprint_push_protocol_mutation_event_callback($options);
     $recovery_entries = reprint_push_protocol_recovery_entries($mutations, $preconditions);
     $started_entry = reprint_push_protocol_append_journal_event('apply-started', $journal_context + $plan_evidence + [
         'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
@@ -179,6 +180,25 @@ function reprint_push_protocol_run_payload(
         }
 
         foreach ($mutations as $index => $mutation) {
+            $mutation_id = (string) $mutation['id'];
+            $precondition = $preconditions[$mutation_id] ?? [];
+            $before_hash = (string) ($precondition['expectedHash'] ?? '');
+            $planned_after_hash = (string) ($mutation['localHash'] ?? '');
+
+            reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'mutation-prepared', $journal_context + $plan_evidence + [
+                'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                'startedCursor' => $started_entry['cursor'],
+                'index' => (int) $index,
+                'mutationId' => $mutation_id,
+                'resourceKey' => (string) $mutation['resourceKey'],
+                'resourceType' => (string) ($mutation['resource']['type'] ?? ''),
+                'beforeHash' => $before_hash,
+                'plannedAfterHash' => $planned_after_hash,
+                'phase' => 'before-write',
+                'status' => 'pending',
+                'appliedCount' => $applied,
+            ]);
+
             reprint_push_apply_resource($mutation['resource'], $mutation['value']);
             $applied++;
 
@@ -191,11 +211,26 @@ function reprint_push_protocol_run_payload(
                 $observed_hash
             );
 
+            reprint_push_protocol_emit_mutation_event($mutation_event_callback, 'mutation-applied', $journal_context + $plan_evidence + [
+                'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                'startedCursor' => $started_entry['cursor'],
+                'index' => (int) $index,
+                'mutationId' => $mutation_id,
+                'resourceKey' => (string) $mutation['resourceKey'],
+                'resourceType' => (string) ($mutation['resource']['type'] ?? ''),
+                'beforeHash' => $before_hash,
+                'plannedAfterHash' => $planned_after_hash,
+                'observedHash' => $observed_hash,
+                'phase' => 'after-write',
+                'status' => 'applied',
+                'appliedCount' => $applied,
+            ]);
+
             reprint_push_protocol_append_journal_event('mutation-applied', $journal_context + $plan_evidence + [
                 'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
                 'startedCursor' => $started_entry['cursor'],
                 'index' => (int) $index,
-                'mutationId' => (string) $mutation['id'],
+                'mutationId' => $mutation_id,
                 'resourceKey' => (string) $mutation['resourceKey'],
                 'observedHash' => $observed_hash,
                 'recoveryPlan' => $recovery_entries,
@@ -357,6 +392,29 @@ function reprint_push_protocol_lab_fail_after_mutations(array $options): ?int
     }
 
     return $after;
+}
+
+function reprint_push_protocol_mutation_event_callback(array $options)
+{
+    if (!array_key_exists('mutationEventCallback', $options) || $options['mutationEventCallback'] === null) {
+        return null;
+    }
+    if (!is_callable($options['mutationEventCallback'])) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'mutationEventCallback must be callable when supplied.',
+        ]);
+    }
+    return $options['mutationEventCallback'];
+}
+
+function reprint_push_protocol_emit_mutation_event($callback, string $event, array $evidence): void
+{
+    if ($callback === null) {
+        return;
+    }
+    $callback($event, reprint_push_protocol_sanitize_journal_context($evidence));
 }
 
 function reprint_push_protocol_recovery_entries(array $mutations, array $preconditions): array

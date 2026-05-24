@@ -149,6 +149,7 @@ mutation safety.
 
 ```bash
 npm run test:playground:db-journal-idempotency
+npm run test:playground:db-journal-missing-commit-finalization
 ```
 
 This standalone local-only REST harness verifies a DB-native apply journal in
@@ -158,8 +159,11 @@ the disposable Playground source site. It is separate from the legacy
 `POST /apply` requires `X-Reprint-Push-Idempotency-Key`. A missing key returns
 `400 MISSING_IDEMPOTENCY_KEY` before mutation. When the key is present, the lab
 table `wp_reprint_push_lab_push_journal` records `idempotency-opened`,
-`apply-started`, per-mutation `mutation-applied`, `apply-committed`,
-`apply-replayed`, and conflict evidence.
+`apply-started`, per-mutation `mutation-prepared`, per-mutation
+`mutation-applied`, `apply-committed`, `apply-replayed`, and conflict
+evidence. Compact mutation rows store hashes and metadata only: mutation
+order/id/resource key/type, before hash, planned after hash, observed hash,
+phase/status, and request/plan/receipt/idempotency hashes.
 
 The harness verifies that replaying the same body with the same idempotency key
 returns `BATCH_ALREADY_COMMITTED` and `idempotency.replayed: true`, does not run
@@ -187,15 +191,29 @@ directory, and verifies that DB rows and target data persisted.
 
 After restart the DB journal must not contain `apply-committed` or replay
 evidence. Live target hashes are classified as old/new with no blocked-unknown
-targets, recovery inspection reports `blocked-recovery`, and retry over the
-same idempotency key is blocked without changing the partial target state. The
-smoke intentionally keeps this as local Playground SQLite/host-mount evidence:
-it does not prove production durability, storage-level crash behavior, or
-safe missing-commit finalization/replay. DB-native per-mutation rows can be
-short after a hard kill because mutation-applied rows append after the core
-protocol returns; option-journal evidence and live hashes carry partial state
-evidence today. Redaction checks are key-based plus fixture-value smoke checks,
-not a formal sanitizer for arbitrary future messages.
+targets from DB planned evidence plus live hashes, recovery inspection returns
+non-mutating `RECOVERY_BLOCKED`, and retry over the same idempotency key is
+blocked without changing the partial target state. The smoke does not rely on
+the legacy option journal for this recovery classification.
+
+The missing-commit finalization smoke uses a deterministic lab hook, not a hard
+kill, to leave target writes visible and DB mutation evidence present while
+omitting the terminal `apply-committed` row. Before finalization, the same key
+with a different body still rejects with `409 IDEMPOTENCY_KEY_CONFLICT`. The
+same key with the same body observes all live target hashes at their planned
+after hashes, appends the missing commit row, returns
+`BATCH_RECOVERY_FINALIZED`, and performs zero fresh mutation work; later replay
+returns `BATCH_ALREADY_COMMITTED`.
+
+These smokes intentionally stay local Playground SQLite/host-mount evidence:
+they do not prove production durability, storage-level `fsync`, rollback,
+exactly-once production writes, arbitrary plugin data safety, or full
+MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
+conservative/not fully solved, tests mostly count mutation evidence rows rather
+than deeply asserting every observed hash, and production auth/live source
+mutation/full push remains pending. Redaction checks are key-based plus
+fixture-value smoke checks, not a formal sanitizer for arbitrary future
+messages.
 
 ## Lab Recovery Harness
 
@@ -257,8 +275,8 @@ forbidden-key/fixture-string based rather than a full allowlist schema.
   storage around the accepted remote snapshot.
 - Promote the fixture-scoped DB journal/idempotency slice into a production
   DB-table journal with production storage-level recovery proof,
-  missing-commit finalization/replay, and WordPress commit-boundary coverage
-  before claiming durable production recovery.
+  stale-claim retry coverage, and WordPress commit-boundary coverage before
+  claiming durable production recovery.
   The JSONL lab journal has per-append `fsync` evidence, but no production
   WordPress crash boundary.
 - Add real plugin activation, custom-table driver, recovery, and auth proof

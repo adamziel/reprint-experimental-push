@@ -143,8 +143,12 @@ linked implementation artifacts.
 - `POST /apply` now requires `X-Reprint-Push-Idempotency-Key`; missing keys
   return `400 MISSING_IDEMPOTENCY_KEY` before mutation.
 - The table `wp_reprint_push_lab_push_journal` records DB-native events:
-  `idempotency-opened`, `apply-started`, per-mutation `mutation-applied`,
-  `apply-committed`, `apply-replayed`, and conflict evidence.
+  `idempotency-opened`, `apply-started`, per-mutation `mutation-prepared`
+  before each target write, per-mutation `mutation-applied` after observed hash
+  calculation, `apply-committed`, `apply-replayed`, and conflict evidence.
+  Compact mutation evidence stores hashes/metadata only: mutation
+  order/id/resource key/type, before hash, planned after hash, observed hash,
+  phase/status, and request/plan/receipt/idempotency hashes.
 - Same key plus same body returns `BATCH_ALREADY_COMMITTED` with
   `idempotency.replayed: true`, performs no fresh mutation work, writes no
   extra per-mutation events, and leaves the snapshot unchanged. Same key plus a
@@ -171,14 +175,34 @@ linked implementation artifacts.
   Playground server process group, and restarts against the same mount.
 - After restart, DB opened/started rows and target data persist, the DB journal
   does not falsely report `apply-committed` or replay, live target hashes are
-  explainable as old/new with no blocked-unknown targets, recovery inspection
-  reports `blocked-recovery`, and retry over the same key is blocked without
-  overwriting the partial state.
+  explainable as old/new from DB planned evidence plus live hashes, recovery
+  inspection returns non-mutating `RECOVERY_BLOCKED`, and retry over the same
+  key is blocked without overwriting the partial state. This path no longer
+  relies on the legacy option journal for recovery classification.
 - Caveats remain: this is local Playground lab evidence, not production
-  durability. DB-native per-mutation evidence can be short after hard kill
-  because mutation rows append after protocol return; option-journal evidence
-  and live hashes carry partial evidence today. Missing-commit
-  finalization/replay remains pending.
+  durability, storage `fsync`, rollback, exactly-once production writes,
+  arbitrary plugin data safety, or full MySQL/InnoDB behavior.
+
+## 2026-05-24 - DB Journal Missing-Commit Finalization Smoke
+
+- `npm run test:playground:db-journal-missing-commit-finalization` passed as a
+  local-only Playground smoke for DB-native missing-commit finalization.
+- The smoke uses a deterministic lab hook to apply fixture target writes and DB
+  mutation evidence while omitting the terminal `apply-committed` row. It then
+  verifies every live target hash is already at the planned after hash.
+- Before finalization, the same idempotency key with a different body still
+  rejects with `409 IDEMPOTENCY_KEY_CONFLICT` and does not mutate or finalize.
+- Replaying the same key/body returns `BATCH_RECOVERY_FINALIZED`, appends the
+  missing commit row, reports `fully-updated-remote`, performs zero fresh
+  mutation work, and does not add new mutation rows. A later replay returns
+  `BATCH_ALREADY_COMMITTED`.
+- Residual risks remain explicit: this is Playground/local DB lab evidence only
+  and not proof of production durability, storage `fsync`, rollback,
+  exactly-once production writes, arbitrary plugin data safety, or full
+  MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
+  conservative/not fully solved, tests mostly count mutation evidence rows
+  rather than deeply asserting every observed hash, and production auth, live
+  source mutation, and full push remain pending.
 
 ## 2026-05-24 - Plugin-Owned Forms Fixture Slice
 
@@ -206,7 +230,7 @@ linked implementation artifacts.
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
 | Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling and detection-only custom-table/plugin metadata | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
-| Recovery boundaries | 20% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground process-kill smoke through `npm run test:playground:db-journal-process-kill` | Production DB table journal durability, production WordPress crash-boundary proof, missing-commit finalization/replay, auto-repair policy |
+| Recovery boundaries | 22% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization` | Production DB table journal durability, production WordPress crash-boundary proof, all-old stale-claim safe retry, auto-repair policy |
 | Reliable executor and protocol | 20% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, and DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key` | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
@@ -225,8 +249,13 @@ linked implementation artifacts.
   records fixture-scoped apply/replay/conflict events and concurrent duplicate
   first-apply behavior in `wp_reprint_push_lab_push_journal`, and the
   process-kill smoke proves local Playground opened/started rows survive
-  `SIGKILL`/restart without false commit. This still does not prove production
-  durability, missing-commit finalization/replay, or production repair.
+  `SIGKILL`/restart without false commit while DB planned evidence plus live
+  hashes returns `RECOVERY_BLOCKED`. The missing-commit finalization smoke
+  proves `BATCH_RECOVERY_FINALIZED` for same key/body when all live target
+  hashes already match planned after hashes and `apply-committed` is missing.
+  This still does not prove production durability, storage `fsync`, rollback,
+  exactly-once production writes, arbitrary plugin data safety, full
+  MySQL/InnoDB behavior, all-old stale-claim safe retry, or production repair.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test,
   export planner snapshots, run guarded apply into a fresh Playground source,
   exercise a lab-only fixture protocol endpoint with WordPress-visible readback,
