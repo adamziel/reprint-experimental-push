@@ -160,6 +160,17 @@ The fixture topology encodes the exact proof order the executor must preserve:
 5. `push_journal` resolves lost responses and crash ambiguity without authorizing a write.
 6. `push_recover inspect` reads evidence first, and mutating recovery modes only proceed when the journal and live hashes prove the action.
 
+The harness topology is the same proof in two packaging styles:
+
+- Docker uses one private network with `remote-base`, `local-edited`,
+  `remote-changed`, and `runner`.
+- Playground uses the same role split with disposable blueprints instead of
+  long-lived containers.
+- In both harnesses, browser-visible inspection must go through the sandbox
+  `8080` ingress and a local-only proxy, never through a remote tunnel.
+- `remote-base` and `remote-changed` must be the same remote identity at
+  different times so the stale-apply rejection proves live revalidation.
+
 The pull handoff is equally explicit:
 
 - exporter and importer create the immutable base package that push preflight

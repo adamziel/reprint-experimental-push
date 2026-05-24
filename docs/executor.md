@@ -63,6 +63,19 @@ local edited site, and one drift witness:
 - `runner` is the only process that may run preflight, snapshot listing,
   dry-run, apply, journal inspection, and recovery
 
+Docker and Playground use the same proof boundary:
+
+- `remote-base` seeds the persisted pull base and the live source identity.
+- `local-edited` is the imported local clone after user edits.
+- `remote-changed` is the same remote site after live drift and must fail any
+  stale apply attempt.
+- `runner` is the only process that may compare, upload, inspect, or recover.
+
+The only networking rule that matters for the test harness is that browser
+inspection stays on the sandbox-provided `8080` ingress through a local-only
+proxy. No remote tunnel is allowed, because the proof depends on keeping the
+remote and local roles inside the sandbox boundary.
+
 For Docker, keep those roles on one private network and expose browser-visible
 inspection only through the sandbox-provided `8080` ingress via a local-only
 proxy. For Playground, use the same role split with separate disposable
@@ -88,6 +101,18 @@ The mapping to the existing pull pipeline is one-way:
 - push batch apply revalidates the live remote before every batch and at the
   storage boundary
 - push journal and push recover inspect read durable evidence only
+
+The executor should preserve this pull-to-push provenance boundary:
+
+- the exporter/importer create the immutable base package
+- preflight binds that package to the live remote identity and a short-lived
+  push session
+- snapshot hashing provides fresh planning evidence only
+- dry-run uploads the canonical plan and records eligibility only
+- apply revalidates the live remote before every batch and at the storage
+  boundary
+- journal inspection and recovery inspection read durable evidence first and
+  only mutating recovery can change state
 
 The executor should persist the following proof tuple so a restart can
 distinguish fresh planning evidence from replay evidence:

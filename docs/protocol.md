@@ -192,6 +192,24 @@ The pull exporter/importer handoff is one-way:
 6. push apply revalidates the live remote before every batch and at the storage boundary
 7. push journal and push recover inspect read durable evidence only
 
+The production test topology is the same in Docker and Playground, only the
+packaging differs:
+
+- `remote-base` is the remote source site that produced the persisted pull
+  base package.
+- `local-edited` is the imported site after user edits.
+- `remote-changed` is the same remote site observed later after independent
+  drift.
+- `runner` is the only actor allowed to compare, upload, inspect, or recover.
+
+For Docker, keep the three site roles on one private network and expose only
+browser-visible inspection through the sandbox-provided `8080` ingress via a
+local-only proxy. For Playground, use separate disposable blueprints for the
+same three roles and keep the same no-tunnel rule. In both cases, the test is
+only valid if `remote-base` and `remote-changed` are the same remote identity
+at different times, because that is what proves `push_batch_apply`
+revalidates live state instead of replaying the dry-run receipt.
+
 Recovery is inspect-first:
 
 1. read the journal
