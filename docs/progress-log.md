@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:20:58 CEST.
+- Last update: 2026-05-25 01:21:30 CEST.
 - Status: `89` Node tests still pass.
-- Trend: the visible page is still easy to scan, but production readiness is
-  blocked by missing evidence.
+- Trend: the visible page and this log stay aligned, but production readiness
+  is still blocked by missing evidence.
 - Supervision: the same-plan graph worker remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
@@ -24,7 +24,7 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and links to the detailed evidence. In this lane, the page becomes live
   only after merge to `main`.
-- Refresh note: timestamp refresh only. The evidence gap and blocked
+- Refresh note: the scan view was tightened; the evidence gap and blocked
   production gates did not change.
 
 ## 2026-05-25 - Current Supervisor Snapshot

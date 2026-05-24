@@ -475,7 +475,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Lab/model evidence still holds: 89 Node tests pass, production gates stay blocked, and the detailed proof is linked below.</p>
-        <time class="update-stamp" datetime="2026-05-25T01:20:58+02:00">Last updated: May 25, 2026, 01:20:58 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T01:21:30+02:00">Last updated: May 25, 2026, 01:21:30 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">89 Node tests passing</span>
           <span class="pill">Production gates blocked by missing evidence</span>
@@ -485,7 +485,7 @@
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>Scan view only. Detailed evidence lives in the linked docs. This lane copy becomes live on GitHub Pages after merge to `main`.</p>
+        <p>Scan view only. Detailed evidence lives in the linked docs, and this lane copy becomes live on GitHub Pages after merge to `main`.</p>
       </div>
     </header>
 
@@ -518,31 +518,31 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">45%</span></div>
           <div class="bar" aria-label="No data loss merge invariants 45 percent"><div class="fill green" style="width:45%"></div></div>
-          <p class="note">Matching independent delete/edit cases are covered in lab evidence. Gap: real graph identity mapping on a production site.</p>
+          <p class="note">Lab delete/edit cases still match. Gap: prove graph identity mapping on a production site.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">29%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 29 percent"><div class="fill green" style="width:29%"></div></div>
-          <p class="note">Replay and failure-state coverage is sharper in the model only. Gap: production journal durability.</p>
+          <p class="note">Replay and failure-state coverage is model-only. Gap: production journal durability.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">42%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 42 percent"><div class="fill amber" style="width:42%"></div></div>
-          <p class="note">Protocol/executor docs name the production push flow, but the proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
+          <p class="note">Protocol docs name the flow, but the proof is still local. Gap: production auth, journal, and leases.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">19%</span></div>
           <div class="bar" aria-label="Fast path and chunking 19 percent"><div class="fill" style="width:19%"></div></div>
-          <p class="note">Rejected fast paths now name the broken safety gate. Gap: real large-site runtime benchmark and rollout proof.</p>
+          <p class="note">Rejected fast paths now name the safety gate. Gap: real large-site benchmark and rollout proof.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">30%</span></div>
           <div class="bar" aria-label="Independent evidence and critique 30 percent"><div class="fill red" style="width:30%"></div></div>
-          <p class="note">Objective and critic audits reflect the latest evidence. Gap: re-audit production-backed internals and graph/plugin proof.</p>
+          <p class="note">Objective and critic audits match the current evidence. Gap: re-audit production-backed internals and graph/plugin proof.</p>
         </div>
       </section>
 
@@ -552,7 +552,7 @@
           <ul class="compact-list">
             <li><strong>Going well</strong><span>The visible page and log still agree, and the first screen stays easy to scan.</span></li>
             <li><strong>Not going well</strong><span>Production auth, journal durability, leases, graph mapping, integration, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>Timestamp refreshed; no gate moved.</span></li>
+            <li><strong>Progress change</strong><span>Scan view tightened; no gate moved.</span></li>
             <li><strong>Next nudge</strong><span>Keep each lane to one proof gap, one next test, and one owner.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
