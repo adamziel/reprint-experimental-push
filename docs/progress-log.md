@@ -7,13 +7,13 @@ linked implementation artifacts.
 ## 2026-05-25 - Public Status Refresh
 
 - Refreshed [progress.html](../progress.html) with the current visible last-
-  updated stamp from `date` (`2026-05-25 00:50 CEST`) and left the public
+  updated stamp from `date` (`2026-05-25 00:51 CEST`) and left the public
   summary conservative.
 - No new production proof was added. WordPress executor, durable recovery
   journal, Docker/Playground integration, and plugin drivers remain pending.
 
 - [progress.html](../progress.html) now shows a visible last-updated stamp for
-  `2026-05-25 00:50 CEST` and keeps the public summary concise.
+  `2026-05-25 00:51 CEST` and keeps the public summary concise.
 - The page still treats production push, durable recovery, Docker/Playground
   integration, and general plugin drivers as pending. The newest public view
   points back to the existing evidence set instead of implying new production
