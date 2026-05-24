@@ -274,13 +274,13 @@ invocation and can be skipped while `npm test` remains green.
 
 11. **The release surface is real but fragmented.** The repository already
     exposes high-value smokes for auth, journal durability, storage guards,
-    and production-shaped routing, but they are not collected under a single
+    and production-shaped routing, but they are not collected under one
     enforced gate. That means the current proof set is larger than `npm test`
     alone, yet still weaker than a release-ready matrix because the strongest
-    claims stay manual and easy to skip. The release blocker is not "more
-    tests" in the abstract; it is one enforced aggregator that fails if the
-    required auth, storage, recovery, plugin, and performance gates are not
-    executed.
+    claims stay manual and easy to skip. The blocker is specific: without one
+    required command or CI job that fails when auth, storage, recovery,
+    plugin, and performance gates are omitted, release readiness is still a
+    manual judgment, not an enforced property.
 
 12. **The highest-value missing edge case is a real crash matrix on the live
     write boundaries.** The current smoke suite can show one process-kill path
@@ -299,8 +299,8 @@ invocation and can be skipped while `npm test` remains green.
    that fails the build when the strongest auth, storage, recovery, plugin,
    and performance smokes are skipped. Until that changes, release readiness
    remains a manual judgment, not an evidence-backed property of the repo.
-   The actionable fix is to add a single release gate command plus CI that
-   runs it, rather than relying on separate opt-in scripts.
+   The actionable fix is a single release gate command plus CI that runs it
+   in order and fails closed on any skipped mandatory smoke.
 
 14. **The speed claim is still only a model.** The benchmark tests verify
     evidence structure, guardrail placement, and failure gates, but they do
@@ -334,12 +334,12 @@ proof gates:
    fixture and a conservative fallback that preserves remote state and blocks.
 7. A release test aggregator and CI workflow that run the safety-critical
    unit, Playground, auth, storage, recovery, idempotency, plugin, and
-   performance gates or explicitly label excluded tests as non-release proof.
-   Right now `npm test` plus `npm run test:playground` still stop at the
-   lighter plan/apply/protocol path, while the stronger auth, HTTP, DB
-   journal, storage, recovery, production-shaped route/package, and plugin
-   smokes remain manual opt-ins. The repository cannot yet claim that release
-   evidence is actually enforced. Release readiness remains a manual
+   performance gates in a required order or explicitly label excluded tests
+   as non-release proof. Right now `npm test` plus `npm run test:playground`
+   still stop at the lighter plan/apply/protocol path, while the stronger
+   auth, HTTP, DB journal, storage, recovery, production-shaped route/package,
+   and plugin smokes remain manual opt-ins. The repository cannot yet claim
+   that release evidence is enforced. Release readiness remains a manual
    judgment call until that aggregator exists, and that missing aggregator is
    the current top release blocker.
 8. Runtime benchmarks for large uploads and large DB changes with concrete
