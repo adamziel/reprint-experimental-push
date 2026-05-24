@@ -809,6 +809,9 @@ The machine-readable fixture [`fixtures/protocol/push-topology.json`](/home/clau
 captures the same one-remote, one-local, one-drift-witness split for test code, and
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
 captures the pull-to-push handoff that the executor must preserve.
+[`fixtures/protocol/push-recovery-decision.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-decision.json)
+captures the inspect-first recovery gate that keeps mutating repair behind
+fresh live proof.
 [`fixtures/protocol/push-flow.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-flow.json)
 captures the exact stage order and recovery boundary for focused tests.
 

@@ -237,6 +237,11 @@ at
 [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
 captures the one-remote, one-local, one-drift-witness test shape plus the
 sandbox-only `8080` ingress rule used for Docker or Playground proof.
+The recovery decision fixture at
+[`fixtures/protocol/push-recovery-decision.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-decision.json)
+captures the inspect-first rule that keeps `push_recover` read-only until
+fresh live hashes and journal evidence justify `finish`, `rollback`, or
+`auto`.
 
 The pull exporter/importer owns the persisted base package and the base
 coverage evidence. Push never asks pull to become a write lock. Instead, push

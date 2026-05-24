@@ -24,6 +24,7 @@ The normal sequence is:
 16. `push-recovery-inspect-blocked-response.json`
 17. `push-topology.json`
 18. `push-flow.json`
+19. `push-recovery-decision.json`
 
 Failure and recovery examples:
 
@@ -53,6 +54,9 @@ Failure and recovery examples:
   shape for Docker and Playground test harnesses.
 - `push-flow.json` gives a machine-readable stage order for preflight,
   snapshot listing, dry-run, apply, journal inspection, and recovery.
+- `push-recovery-decision.json` gives the inspect-first recovery decision
+  matrix that keeps `inspect` read-only and requires fresh live proof before
+  any mutating recovery mode.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

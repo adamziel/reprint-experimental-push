@@ -1,0 +1,47 @@
+{
+  "decision_id": "push-recovery-decision-inspect-first",
+  "purpose": "machine-readable recovery decision matrix for inspect-first repair",
+  "inspect": {
+    "mode": "inspect",
+    "mutates": false,
+    "proof": "journal-and-live-hashes-reviewed",
+    "next": "finish|rollback|retry|block"
+  },
+  "mutating_modes": {
+    "auto": {
+      "mutates": true,
+      "requires": [
+        "inspect proof",
+        "fresh live hashes",
+        "journal evidence"
+      ]
+    },
+    "finish": {
+      "mutates": true,
+      "requires": [
+        "inspect proof",
+        "fresh live hashes",
+        "journal evidence"
+      ]
+    },
+    "rollback": {
+      "mutates": true,
+      "requires": [
+        "inspect proof",
+        "fresh live hashes",
+        "journal evidence"
+      ]
+    }
+  },
+  "blocked_case": {
+    "code": "RECOVERY_BLOCKED",
+    "mutates": false,
+    "proof": "unsafe-finish-or-rollback-cannot-be-proved"
+  },
+  "required_invariants": [
+    "inspect is read-only",
+    "mutating recovery requires inspect evidence before finish or rollback",
+    "fresh live hashes are required again before any mutating recovery",
+    "blocked recovery must not be treated as a hidden success"
+  ]
+}

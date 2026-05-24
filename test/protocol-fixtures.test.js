@@ -111,6 +111,7 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
 test('push recovery inspect fixture distinguishes safe evidence from blocked recovery', () => {
   const inspect = readJson('fixtures/protocol/push-recovery-inspect-response.json');
   const blocked = readJson('fixtures/protocol/push-recovery-inspect-blocked-response.json');
+  const decision = readJson('fixtures/protocol/push-recovery-decision.json');
 
   assert.equal(inspect.state, 'inspect');
   assert.equal(inspect.proof, 'journal-and-live-hashes-reviewed');
@@ -123,4 +124,8 @@ test('push recovery inspect fixture distinguishes safe evidence from blocked rec
     'Inspection proved the batch cannot be safely finished or rolled back.',
   );
   assert.equal(blocked.details.target_state_counts.blocked, 1);
+  assert.equal(decision.inspect.mutates, false);
+  assert.equal(decision.inspect.next, 'finish|rollback|retry|block');
+  assert.ok(decision.mutating_modes.finish.requires.includes('fresh live hashes'));
+  assert.ok(decision.required_invariants.includes('inspect is read-only'));
 });
