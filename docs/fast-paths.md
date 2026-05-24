@@ -62,6 +62,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus durable chunk receipts still cannot skip the live file compare before publish.
 - A fresh remote index plus cached chunk receipts still cannot skip the guarded publish finalize for a large upload.
 - A dependency-heavy plugin update still cannot use a fresh remote index or a cached package hash to skip dependency preconditions at the atomic-group barrier.
+- A fresh remote index plus a compressed in-memory buffer still cannot prove a plugin install finished, because dependency checks, metadata writes, file receipts, and the atomic-group commit still need durable evidence.
 - A local fingerprint match still cannot skip the live file compare before publish, because size, mtime, inode, or mode can only skip a rehash and cannot authorize the mutation boundary.
 - A fresh remote index plus a compressed upload queue still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove chunk resume is complete, because compressed pressure relief does not replace missing chunk acknowledgements.
