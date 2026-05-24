@@ -10,6 +10,25 @@ The acceptable post-failure outcomes are limited to:
 Anything else is a release blocker, especially a partial remote mutation that
 does not leave inspectable recovery evidence.
 
+## Post-Failure Contract
+
+Every interrupted apply must classify into exactly one of these states:
+
+- `old-remote`: the remote stayed on the pre-apply side of the failure boundary.
+- `fully-updated-remote`: the full plan was already committed and replay is inert.
+- `blocked-recovery` with artifacts: the remote or journal is not safe to trust
+  without inspection.
+
+That contract is strict enough to prevent the unsafe cases this lane is meant to
+reject:
+
+- no duplicate inserts on retry
+- no resurrection of stale local data
+- no silent reuse of a partial write that lacks recovery evidence
+
+If a failure path cannot be classified from recovery artifacts alone, it is not
+acceptable for release.
+
 ## Recovery Boundaries
 
 The apply path is expected to behave consistently across these boundaries:
@@ -39,6 +58,11 @@ distinguish:
 - an untouched remote that can be retried
 - a fully applied remote that can be replayed idempotently
 - a blocked recovery state that requires inspection before retry
+
+In production, those artifacts need durable storage behavior, not just a model
+object in memory. A safe implementation needs the same recovery classification
+after restart, including any fsync, row commit, or fencing behavior required by
+the underlying store.
 
 ## Durable Vs. Lab Evidence
 
