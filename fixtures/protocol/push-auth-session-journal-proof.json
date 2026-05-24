@@ -1,0 +1,55 @@
+{
+  "proof_id": "push-auth-session-journal-proof-one-remote-one-local",
+  "purpose": "binds push-scoped auth, session minting, journal rows, lease fencing, and inspect-first recovery",
+  "auth": {
+    "export_hmac_family": "hmac-sha256",
+    "push_hmac_family": "hmac-sha256",
+    "push_requires": [
+      "push session",
+      "canonical push signature",
+      "idempotency key"
+    ],
+    "inspect_requires": [
+      "HMAC-authenticated request",
+      "no mutating idempotency key"
+    ]
+  },
+  "session": {
+    "push_session": "psh_01j00000000000000000000000",
+    "remote_site_id": "remote-example",
+    "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+    "identity_hash": "sha256:remote-identity",
+    "expires_at": "2026-05-24T00:10:00Z"
+  },
+  "journal_row": {
+    "journal_cursor": "journal:dry_01j00000000000000000000000:1",
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+    "before_hash": "sha256:base-post-1",
+    "staged_hash": "sha256:local-post-1",
+    "after_hash": "sha256:remote-post-1",
+    "storage_guard": "mysql-transaction-row-lock"
+  },
+  "inspect": {
+    "mode": "inspect",
+    "mutates": false,
+    "requires": [
+      "read journal",
+      "inspect live hashes",
+      "classify finish|rollback|retry|block"
+    ],
+    "blocked_when": [
+      "fresh live hashes do not match the journaled target",
+      "the journal cannot prove a safe finish or rollback"
+    ]
+  },
+  "required_invariants": [
+    "push auth must be at least as strict as the current export HMAC family",
+    "mutating push requests must carry a push session, idempotency key, and canonical push signature",
+    "journal claim generation and lease expiry fence stale workers before mutation",
+    "inspect is read-only and must come before any mutating recovery mode",
+    "fresh live hashes must still be checked before finish, rollback, or auto"
+  ]
+}

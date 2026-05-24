@@ -251,6 +251,41 @@ test('push session journal proof binds the minted session to fencing and inspect
   assert.ok(recoveryPath.required_invariants.includes('stale dry-run evidence must not be promoted into recovery authority'));
 });
 
+test('push auth session journal proof binds push-scoped auth to journal fencing and inspect-first recovery', () => {
+  const proof = readJson('fixtures/protocol/push-auth-session-journal-proof.json');
+
+  assert.equal(proof.proof_id, 'push-auth-session-journal-proof-one-remote-one-local');
+  assert.equal(proof.auth.export_hmac_family, 'hmac-sha256');
+  assert.equal(proof.auth.push_hmac_family, 'hmac-sha256');
+  assert.deepEqual(proof.auth.push_requires, [
+    'push session',
+    'canonical push signature',
+    'idempotency key',
+  ]);
+  assert.ok(proof.auth.inspect_requires.includes('HMAC-authenticated request'));
+  assert.equal(proof.session.push_session, 'psh_01j00000000000000000000000');
+  assert.equal(proof.session.remote_site_id, 'remote-example');
+  assert.equal(proof.session.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(proof.session.identity_hash, 'sha256:remote-identity');
+  assert.equal(proof.journal_row.claim_owner, 'worker-17');
+  assert.equal(proof.journal_row.claim_generation, 4);
+  assert.equal(proof.journal_row.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(proof.journal_row.resource_key, 'row:["wp_posts","ID:1"]');
+  assert.equal(proof.journal_row.before_hash, 'sha256:base-post-1');
+  assert.equal(proof.journal_row.staged_hash, 'sha256:local-post-1');
+  assert.equal(proof.journal_row.after_hash, 'sha256:remote-post-1');
+  assert.equal(proof.journal_row.storage_guard, 'mysql-transaction-row-lock');
+  assert.equal(proof.inspect.mode, 'inspect');
+  assert.equal(proof.inspect.mutates, false);
+  assert.deepEqual(proof.inspect.requires, [
+    'read journal',
+    'inspect live hashes',
+    'classify finish|rollback|retry|block',
+  ]);
+  assert.ok(proof.inspect.blocked_when.includes('fresh live hashes do not match the journaled target'));
+  assert.ok(proof.required_invariants.includes('mutating push requests must carry a push session, idempotency key, and canonical push signature'));
+});
+
 test('push contract fixture ties pull provenance, push stages, and topology into one proof', () => {
   const contract = readJson('fixtures/protocol/push-contract.json');
 
