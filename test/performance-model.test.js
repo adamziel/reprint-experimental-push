@@ -26,6 +26,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
     largeUpload.actions.some((action) => action.type === 'chunk-upload'),
     'large upload models chunk uploads',
   );
+  assert.ok(
+    largeUpload.actions.some(
+      (action) => action.type === 'file-publish' && action.publishMode === 'compare-and-swap',
+    ),
+    'large upload still ends in a guarded publish step',
+  );
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
   assert.ok(
@@ -65,6 +71,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'group-staging-finalize'),
     'plugin install models the group staging finalize barrier',
+  );
+  assert.ok(
+    pluginInstall.actions.some(
+      (action) => action.type === 'atomic-group-commit' && action.canonicalVisible === true,
+    ),
+    'plugin install models the final atomic-group commit as the only visibility point',
   );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
@@ -198,6 +210,7 @@ test('chunk uploads stay staged until a guarded publish step', () => {
   assert.ok(
     filePublishes.every((action) => action.requiresCompleteChunkReceipts === action.chunkCount),
   );
+  assert.ok(filePublishes.some((action) => action.canonicalVisible === false));
   assert.ok(filePublishes.every((action) => action.assembledHash?.startsWith('sha256:')));
   assert.ok(filePublishes.every((action) => action.durableEvidence));
   assert.ok(filePublishes.every((action) => action.idempotencyKey));
@@ -328,6 +341,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('parallelize-atomic-group-commit').violates.includes('atomic-groups'),
   );
+  assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
@@ -350,6 +365,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('metadata-only-conflict-check').violates.includes('strong-resource-hashes'));
   assert.ok(rejectedById.get('remote-index-authorizes-mutation').proposal.includes('permission'));
+  assert.ok(
+    rejectedById.get('staged-bytes-as-published').proposal.includes('visible without guarded finalize'),
+  );
 
   const rejectedIds = new Set(model.rejectedFastPaths.map((fastPath) => fastPath.id));
   for (const id of [
@@ -359,6 +377,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'split-plugin-install',
     'blind-sql-replace',
     'backpressure-drops-evidence',
+    'queue-empty-means-complete',
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);
   }
