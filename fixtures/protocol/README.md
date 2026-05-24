@@ -91,6 +91,19 @@ The hash-listing fixture is the planning boundary:
   lock.
 - apply must fetch fresh live evidence again before each batch.
 
+The topology proof is intentionally asymmetric:
+
+- `remote-base` is the source site that produced the persisted pull base.
+- `local-edited` is the imported local clone after user edits.
+- `remote-changed` is a separate live instance that drifts after dry-run.
+- the runner is the only process that can compare, upload, inspect, or
+  recover.
+
+The test only proves the production rule if `remote-base` and
+`remote-changed` are different live instances. Reusing one remote for both
+roles turns the drift case into a stale snapshot replay and weakens the proof
+that apply revalidates live state.
+
 For integration tests, the fixtures are meant to be exercised in the same
 one-remote, one-local topology described in the executor docs:
 
@@ -102,6 +115,13 @@ one-remote, one-local topology described in the executor docs:
 That topology is the minimal production-shaped test setup because it keeps the
 planning remote and the drift remote separate while the runner remains the
 only process that can compare, upload, and recover.
+
+Docker harnesses should wire this as one private network with a remote site
+pair, a local site pair, and one runner container. Playground harnesses
+should mirror the same role split with separate disposable blueprints for the
+remote base, local edited site, and remote changed drift case. In both
+topologies, browser-visible inspection must use only the sandbox-provided
+`8080` ingress through a local-only proxy, never a tunnel.
 
 The test harness for these fixtures should use the same one-remote, one-local
 shape described in the executor docs:
