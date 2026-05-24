@@ -19,8 +19,9 @@ source-mutation boundary for this repository. Reprint shows transport stages,
 not live mutation safety. ZS-Sync shows bounded change discovery, not write
 policy. ForkPress shows the reliability bar, but only as a comparison point
 until this repo proves the same lifecycle. Any claim beyond that would be an
-inference, not direct evidence, and no route-shape, packaged-plugin, or
-`finalMatchesLocal` smoke should be read as proof of live source-site safety.
+inference, not direct evidence. Route-shape, packaged-plugin, and
+`finalMatchesLocal` smokes are compatibility evidence only; they should not
+be read as proof of live source-site safety.
 None of the three source notes prove remote-drift rejection at apply time,
 stable identity reservation for creates, or revalidation of plugin-owned
 ownership changes immediately before write.
