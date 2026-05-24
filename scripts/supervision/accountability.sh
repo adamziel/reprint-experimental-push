@@ -8,7 +8,8 @@ codex_fast_reasoning_effort="${CODEX_FAST_REASONING_EFFORT:-low}"
 printf '%s\n' "supervisor accountability:"
 printf 'fast mode default: model=%s reasoning=%s\n' "$codex_fast_model" "$codex_fast_reasoning_effort"
 
-session_count="$(tmux list-sessions 2>/dev/null | sed -n '/^rp-/p' | wc -l | tr -d ' ')"
+sessions="$(tmux list-sessions 2>/dev/null || true)"
+session_count="$(printf '%s\n' "$sessions" | sed -n '/^rp-/p' | wc -l | tr -d ' ')"
 printf 'rp tmux sessions: %s\n' "$session_count"
 
 if tmux list-panes -a -F '#{session_name}	#{pane_current_command}	#{pane_pid}' 2>/dev/null | sed -n '/^rp-/p' >/tmp/reprint-supervision-panes.$$; then
