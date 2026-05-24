@@ -1,33 +1,43 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 23:04 CEST
+Last updated: 2026-05-24 23:09 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-24 23:04 CEST - Auth Bootstrap And Redaction Refresh
+## 2026-05-24 23:09 CEST - Auth Graph Check
 
-- Going well: `77` Node tests pass. The packaged plugin now disables lab auth
-  bootstrap, requires explicit credentials, rejects an unprovisioned alternate
-  credential with `401`, and still passes signed cleanup plus eight-mutation
-  apply.
-- Also merged: push plans redact raw dependency payloads and keep unsafe
-  topology mutations suppressed.
-- Not going well: auth, sessions, journal storage, leases, graph identity, and
-  plugin drivers are still lab/model proof, not production proof.
-- Progress change: reliable executor and invariants nudged up; production
-  readiness stayed blocked.
-- Next nudge: replace lab-backed auth/session/journal internals with production
-  lifecycle and durable storage while preserving replay/conflict refusal.
+- Going well: `npm test` passes with `77` Node scenarios. Both
+  `npm run test:playground:production-shaped-push` and
+  `npm run test:playground:production-plugin-package` pass on current HEAD. The
+  packaged plugin disables lab auth bootstrap, the public lab namespace stays
+  disabled, an unprovisioned alternate preflight returns `401`, signed-store
+  cleanup reports `deletedExpiredTotal: 2`, `sessionsDeleted: 1`,
+  `noncesDeleted: 1`, and apply still reports `applied: 8` with
+  `finalMatchesLocal: true`.
+- Also improved: atomic dependency evidence now omits raw dependency payloads,
+  the reliable executor docs define gated remote-call and restart decisions, and
+  the critic audit names packaging, auth cleanup, graph identity, hidden side
+  effects, and stale manual resolution as production claim traps.
+- Not going well: this is still lab-backed endpoint evidence. The package smoke
+  provisions one known credential in the blueprint; production credential
+  lifecycle, durable journal storage, leases/fencing, WordPress graph identity,
+  and arbitrary plugin drivers remain blocked by missing evidence.
+- Progress change: package discipline, invariant redaction, reliable-executor
+  gating, and critic review moved up in lab/docs/audit scope. Production
+  readiness is flat.
+- Next nudge: replace blueprint-provisioned lab auth/session/journal internals
+  with production lifecycle and durable storage behavior while preserving
+  replay/conflict refusal.
 
-| Lane | Nudge |
-| --- | --- |
-| Invariants | Add real graph fixtures before widening automatic apply. |
-| Recovery | Prove kill-at-boundary journal durability on production storage. |
-| Reliable executor | Prove production credential lifecycle and journal rows. |
-| Fast paths | Measure chunking without weakening receipts or preconditions. |
-| Audit and critic | Re-audit the next production-backed mutation slice, not just route shape. |
-| Progress publisher | Keep Pages concise and dated after each proof change. |
+| Owner | Proof gap | Next test |
+| --- | --- | --- |
+| Invariants | WordPress graph identity and reference rewrite. | Keep the new dependency redaction; add a real graph fixture with post, postmeta, attachment, taxonomy, relationships, and remote drift. |
+| Recovery | Durable production journal plus leases/fencing. | Kill packaged apply at each DB, file, and journal boundary, then inspect old/new/blocked from durable storage. |
+| Reliable executor | Production credential lifecycle and endpoint internals. | Turn the documented gates into a runnable executor over real auth/session/nonce storage, no blueprint credential bootstrap, and replay/conflict checks. |
+| Fast paths | Measured guarded chunking. | Benchmark large uploads/tables with receipts, preconditions, resume cursors, and backpressure. |
+| Audit and critic | Production claim gate. | Re-audit only after a production-backed mutation slice lands; keep readiness wording blocked until then. |
+| Progress publisher | Published page freshness. | After this lane merges to `main`, verify the deployed Pages copy and keep details linked, not embedded. |
 
 <details>
 <summary>Earlier feedback entries</summary>

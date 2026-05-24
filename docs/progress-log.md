@@ -6,24 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Current Supervisor Snapshot
 
-- Status: `77` Node tests pass. The production-shaped and packaged-plugin
-  smokes pass against `/wp-json/reprint/v1/push/*`.
-- New proof: the packaged plugin disables lab auth bootstrap
-  (`authBootstrapDisabled: true`), requires explicit credential provisioning,
-  rejects an unprovisioned alternate credential with `401`, cleans two expired
-  signed store artifacts, applies eight fixture mutations, and ends with the
-  local snapshot matched.
-- Also merged: raw dependency payload redaction in push plans, no-overwrite
-  topology suppression, recovery replay envelopes, protocol route binding,
-  fast-path proof obligations, and refreshed audits.
-- Trend: reliable executor and merge invariants improved within lab/model
-  scope. Production readiness is still blocked.
-- Blocker: production credential lifecycle, durable storage, leases/fencing,
-  WordPress graph identity, and arbitrary plugin drivers remain unproven.
-- Next nudge: replace lab-backed auth/session/journal internals with
-  production lifecycle and durable journal guarantees.
-- Public page: [progress.html](../progress.html) carries the visible update
-  date and keeps details behind links.
+- Status: `npm test` passes with `77` Node scenarios. Both
+  `npm run test:playground:production-shaped-push` and
+  `npm run test:playground:production-plugin-package` pass against
+  `/wp-json/reprint/v1/push/*`.
+- Latest package evidence: the packaged plugin sets
+  `REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP`, the public lab namespace returns
+  `404`, an unprovisioned alternate preflight returns `401`, signed-store
+  cleanup reports `deletedExpiredTotal: 2`, `sessionsDeleted: 1`,
+  `noncesDeleted: 1`, apply reports `applied: 8`, and
+  `finalMatchesLocal: true`.
+- Additional merged evidence: atomic dependency blockers and atomic-group
+  dependency summaries now omit raw dependency payload fields; reliable
+  executor docs now define gated remote calls and conservative restart
+  decisions; and the critic audit added current branch claim traps for packaged
+  lab internals, auth cleanup, graph identity, hidden side effects, and stale
+  manual resolution.
+- Trend: package discipline, invariant redaction, reliable-executor gating, and
+  critic review improved in lab/docs/audit scope. Production readiness is still
+  blocked.
+- Blocker: the packaged endpoint still uses lab-backed internals, and the smoke
+  provisions one known credential in the test blueprint. Production credential
+  lifecycle, durable storage, leases/fencing, WordPress graph identity, and
+  arbitrary plugin drivers are still unproven.
+- Next nudge: replace blueprint-provisioned lab internals with production
+  auth/session lifecycle and durable journal guarantees under the packaged
+  plugin.
+- Public page: [progress.html](../progress.html) shows a visible last-updated
+  date and keeps the supervisor view short. This update was prepared on a lane;
+  the public GitHub Pages copy becomes live only after the lane is merged to
+  `main`.
 
 <details>
 <summary>Earlier progress entries</summary>
