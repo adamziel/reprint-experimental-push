@@ -51,6 +51,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin install backpressure resumes only from durable batch evidence',
   );
   assert.ok(
+    pluginInstall.backpressure.resumeRequires.includes('durable-chunk-receipts'),
+    'plugin install backpressure resumes only from durable chunk evidence',
+  );
+  assert.ok(
     largeUpload.actions.some((action) => action.type === 'compression-decision'),
     'large upload models compression decisions',
   );
@@ -337,12 +341,15 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('unbounded-parallelism').violates.includes('backpressure'));
   assert.ok(rejectedById.get('digest-as-authority').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compression-skips-precondition').violates.includes('live-preconditions'));
+  assert.ok(rejectedById.get('compressed-canonical-hash').violates.includes('canonical-resource-hashes'));
+  assert.ok(rejectedById.get('unbounded-parallelism').violates.includes('backpressure'));
   assert.equal(rejectedById.get('parallelize-atomic-group-commit').rejectedGate, 'group');
   assert.ok(
     rejectedById.get('parallelize-atomic-group-commit').violates.includes('atomic-groups'),
   );
   assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('backpressure'));
   assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('queue-empty-means-complete').proposal.includes('queue is empty'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(
     model.rejectedFastPaths.every((fastPath) =>

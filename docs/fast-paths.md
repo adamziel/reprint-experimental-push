@@ -43,6 +43,15 @@ the safe list even when they improve a throughput metric.
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
 
+Concrete failure modes stay rejected even when the throughput gain looks tempting:
+
+- A chunk upload that looks complete in staging but lacks a durable receipt is not complete.
+- A plugin install that has finished file staging but not validator, metadata, and row receipts is still not visible.
+- A compressed payload can reduce wire bytes, but it cannot stand in for the canonical uncompressed hash.
+- A remote index cursor can guide planning, but it cannot authorize a live write.
+- Extra parallelism is only safe while it preserves the same preconditions, receipts, and atomic barrier.
+- Backpressure must pause producers; it cannot claim success by draining evidence into memory.
+
 The safe version of a fast path is usually a "skip duplicate staging work" or
 "stage earlier" optimization, not a "commit earlier" optimization. The commit
 point is where no-data-loss guarantees are easiest to lose, so it stays narrow,
