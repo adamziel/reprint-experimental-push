@@ -71,7 +71,9 @@ It must not be reported as an ordinary success.
 ## Endpoint Sequence
 
 The push extension is a six-step protocol with a seventh recovery mode. Only
-the apply and mutating recovery steps may change target resources.
+the apply and mutating recovery steps may change target resources. Dry-run is
+always non-mutating, and apply must revalidate the live remote before each
+batch.
 
 | Step | Endpoint | Mutates target resources | Role |
 | --- | --- | --- | --- |

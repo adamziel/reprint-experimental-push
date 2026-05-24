@@ -133,8 +133,10 @@ preflight can become a mutation path.
 ## One-Remote, One-Local Test Topology
 
 The recommended integration test topology is one live remote site, one local
-edited site, and one runner. The remote remains the source of truth for the
-push protocol; the local site is the pull target that was edited after import.
+edited site, and one runner. That is the minimum one-remote, one-local shape
+the protocol is expected to support. The remote remains the source of truth
+for the push protocol; the local site is the pull target that was edited after
+import.
 
 ### Docker Topology
 
