@@ -73,8 +73,8 @@ Failure and recovery examples:
   distinguish old, new, blocked, and open outcomes from journal plus live
   evidence.
 - `push-contract.json` gives the compact production contract that ties the
-  exporter/importer handoff, push stages, and Docker/Playground topology into a
-  single fixture.
+  exporter/importer handoff, push stages, auth/session proofs, and
+  Docker/Playground topology into a single fixture.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

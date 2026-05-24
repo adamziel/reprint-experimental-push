@@ -102,9 +102,9 @@ blueprints and the same no-tunnel rule.
 
 The machine-readable companion for this topology is
 [`fixtures/protocol/push-contract.json`](../fixtures/protocol/push-contract.json).
-It records the same remote identity across `remote-base` and `remote-changed`
-and keeps the runner as the only actor that may compare, upload, inspect, or
-recover.
+It records the same remote identity across `remote-base` and `remote-changed`,
+keeps the runner as the only actor that may compare, upload, inspect, or
+recover, and binds the auth/session/journal proof fixtures into one contract.
 
 The important part of the topology is not the container count. It is the
 proof boundary: `remote-base` and `remote-changed` must be the same remote

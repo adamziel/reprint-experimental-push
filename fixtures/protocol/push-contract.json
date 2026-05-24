@@ -49,6 +49,12 @@
       ]
     }
   },
+  "proofs": {
+    "auth": "push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery",
+    "session_journal": "push-session-journal-proof.json binds the minted push session to the journal claim, lease fence, and inspect-first recovery path",
+    "recovery_decision": "push-recovery-decision.json keeps inspect read-only and requires fresh live hashes before finish, rollback, or auto",
+    "recovery_path": "push-recovery-path.json classifies the ambiguous apply outcomes as old, new, blocked, or open"
+  },
   "required_invariants": [
     "dry-run and apply are separate remote operations",
     "apply must revalidate the live remote before every batch and at the storage boundary",

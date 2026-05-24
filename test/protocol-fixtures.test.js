@@ -281,6 +281,10 @@ test('push contract fixture ties pull provenance, push stages, and topology into
   assert.ok(contract.topology.docker.proof.includes('remote-base and remote-changed are the same remote identity at different times'));
   assert.equal(contract.topology.playground.runner, 'local test process');
   assert.ok(contract.topology.playground.proof.includes('separate disposable blueprints'));
+  assert.ok(contract.proofs.auth.includes('push session'));
+  assert.ok(contract.proofs.session_journal.includes('inspect-first recovery path'));
+  assert.ok(contract.proofs.recovery_decision.includes('fresh live hashes'));
+  assert.ok(contract.proofs.recovery_path.includes('old, new, blocked, or open'));
   assert.ok(contract.required_invariants.includes('dry-run and apply are separate remote operations'));
   assert.ok(contract.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
 });
