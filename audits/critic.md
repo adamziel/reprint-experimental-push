@@ -866,6 +866,9 @@ would reasonably read as equivalent.
 - Manual resolution is not a success condition unless the remote remains
   preserved for audit and the retry can be replayed safely from fresh live
   evidence.
+- Manual resolution is not production proof by itself; if the remote cannot be
+  preserved for audit and the stale approval cannot be rejected in a
+  retryable, user-auditable way before any write, the push must fail closed.
 - A retry always starts from fresh live evidence and cannot reuse an old
   approval for unrelated rows, files, or plugin state, including plugin-owned
   surfaces that drifted after the review or were only partially approved in a
