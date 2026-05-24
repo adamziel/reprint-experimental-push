@@ -144,6 +144,12 @@ considered live until apply revalidates the batch at the storage boundary.
 `push_journal` and `push_recover inspect` reuse durable evidence only; neither
 call creates a lock or authorizes a later mutation by itself.
 
+The existing pull exporter/importer still owns the base package format. Push
+does not invent a second notion of truth; it layers live remote verification
+and mutation receipts on top of the pull artifacts already persisted on disk.
+The only new persistent push-side evidence is the attempt state directory and
+the durable journal rows that describe dry-run, batch apply, and recovery.
+
 ## Authentication
 
 All push endpoints require authentication at least as strict as current Reprint

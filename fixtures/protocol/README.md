@@ -69,3 +69,13 @@ preflight, remote snapshot hash listing, dry-run upload, batched apply,
 journal inspection, and recovery. They should be treated as wire-contract
 examples only; the production executor must still revalidate the live remote
 between dry-run and every apply batch.
+
+The test harness for these fixtures should use the same one-remote, one-local
+shape described in the executor docs:
+
+- `remote-base` supplies the pulled merge base and the persisted push base
+  package.
+- `local-edited` supplies the edited local state that becomes the candidate
+  dry-run plan.
+- `remote-changed` supplies the live drift case that must fail apply-time
+  revalidation.
