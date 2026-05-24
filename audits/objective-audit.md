@@ -4,103 +4,94 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The release gate stays closed because the live boundary is still not proven where it matters: this checkout does not yet own a checked, in-tree production verdict for auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift at the live apply boundary. The current remote release verifier tip on `origin/lane/reliable-executor` is `536015fb`; it strengthens the proof with a retained-source preflight, dry-run, apply, recovery inspect, durable journal readback, restart smoke, apply revalidation, drift revalidation, persistent journal-file checks, `filesystem-compare-rename` lease fencing, `fsync` evidence, monotonic sequence behavior, the explicit `protocolExtension` contract, and an explicit durable-journal boundary verdict, but it still ends on `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` and `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`. The current remote tips on `origin/lane/no-data-loss-invariants`, `origin/lane/critic`, and `origin/lane/independent-auditor` are `727a0b50`, `deecbcc3`, and `2e930036`; the independent-auditor tip is this audit refresh and does not add release proof.
+Fresh remote heads after restart:
 
-Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and real topology still need production-boundary proof too. The remote drift-rejection fixture tightens the upstream contract; it does not open the gate here.
+- `origin/lane/reliable-executor` is `b725b2d3`
+- `origin/lane/no-data-loss-invariants` is `b9aebe71`
+- `origin/lane/no-data-loss-recovery` is `134d0401`
+- `origin/lane/critic` is `1e545163`
+- `origin/lane/independent-auditor` is `781888d9`
+- `origin/lane/progress-publisher` is `11aca375`
 
-## 12h Delta
+The last 12 hours changed evidence, not the gate status. New release-boundary and no-data-loss material exists, including an explicit `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` verdict and stronger release-surface planner/recovery proof. But the proof still stops short of the production auth/session lifecycle and durable production journal ownership with lease/fencing that the objective requires.
 
-Remote evidence moved and the gate stayed closed: `origin/lane/reliable-executor` is now `536015fb`, `origin/lane/no-data-loss-invariants` is now `727a0b50`, `origin/lane/critic` is now `deecbcc3`, and `origin/lane/independent-auditor` is now `2e930036`. The reliable-executor tip now carries the stronger retained-source release verifier, including the explicit durable-journal boundary verdict, but it still ends on `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` and `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
-
-Release gates stay `0/4` because the proof is still upstream-only at the live boundary. The exact proof that would move one gate is a checked `npm run verify:release` from this checkout that, in one run, emits apply-time auth/session validation, durable journal readback from production storage, recovery inspect evidence, live-source topology proof, preserved-remote drift evidence, and an explicit machine-checkable verdict that closes a remaining production boundary instead of only restating the open ones. The next command to demand is that same `npm run verify:release` run from this worktree.
+That means the honest release claim is still narrower: this repository is a strong lab and release-surface safety model for push invariants. It does **not** yet prove production-safe live WordPress push without data loss, with production reliability, and with measured speed.
 
 ## Explicit Requirements
 
-The objective implies these minimum release requirements:
+The objective is to push local changes back to the original WordPress source site after a pull, while that source may still be live and may have changed. The release requirements implied by that objective are:
 
-1. One-way pull from the base, then one-way push back to the live source. The direction matters.
-2. Apply-time revalidation against the live source before mutation.
-3. No data loss across rows, files, plugin-owned data, serialized payloads, and graph identity.
-4. Crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart must not drop, duplicate, or reorder writes.
-5. Production auth/session lifecycle and durable journal semantics must be proven at the release boundary, not only in helper tests or Playground smokes.
-6. Graph identity, plugin-driver behavior, leases/fencing, preserved-remote drift, and real topology must also be proven at the release boundary.
-7. Either a measured live-path speed claim with an explicit threshold or an explicit refusal to claim speed.
-8. One required release command must fail closed when any safety gate is still lab-backed, fixture-only, or missing live-source proof.
-9. CI or another default entrypoint must run that gate.
+1. Persist a complete pull-base manifest with stable resource identities, hashes, ownership hints, schema fingerprints, and protocol metadata.
+2. Read the current live remote state before planning and compare base, local, and remote in a three-way plan.
+3. Preserve remote-only changes by default, including deletes, plugin state, files, rows, and related resources.
+4. Stop on local/remote conflicts with durable, redacted evidence that an operator can inspect.
+5. Apply every mutation only behind a live precondition that is rechecked immediately before the write.
+6. Enforce storage-boundary guarded writes, or an equivalent compare-and-swap primitive, for every production DB and filesystem mutation.
+7. Treat coupled file, DB, plugin, option, activation, and schema changes as atomic groups. Never report success for a split plugin/application state.
+8. Reject plugin-owned, serialized, custom-table, or schema-sensitive data unless an explicit validator or semantic driver proves the mutation.
+9. Authenticate and authorize source-site mutation with production credentials, scoped push permissions, replay protection, and TLS outside local-only tests.
+10. Keep dry-run honest: dry-run is planning evidence only; apply must still refuse stale or changed remote state.
+11. Persist a durable production journal sufficient to classify failure as old remote, fully updated remote, or blocked recovery.
+12. Make apply idempotent and resumable across duplicate requests, chunks, process failures, stale claims, and operator retries.
+13. Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope.
+14. Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts.
+15. Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard.
+16. Provide a release test suite that actually runs the safety, recovery, auth, storage, plugin, and performance gates intended to support public claims.
 
 ## Evidence Table
 
-Evidence buckets:
-
-- `Executable proof`: a checked command reaches the live-source boundary and can fail the release in this checkout.
-- `Lab / fixture proof`: real execution, but still scoped to local fixtures, Playground, or model-only storage.
-- `Docs-only proof`: prose or audit statements with no executable boundary.
-- `Missing proof`: no current evidence for the requirement at the release boundary.
-- `Release blocker`: why the requirement still prevents a production claim.
-
 | Requirement | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| One-way pull base then one-way push to live source | Local planner and apply tests model the direction correctly; remote release verifier `536015fb` preserves the pull-to-push ladder, live-source source URL binding, surfaced `remoteSnapshotHashes`, and the explicit `protocolExtension` contract | A checked command in this checkout that proves the push back to the retained live source | No in-tree live-source apply verdict |
-| Apply-time revalidation | Planner tests require live-remote preconditions before mutation | A checked live-boundary run that revalidates immediately before mutation | Preflight-only or fixture-only revalidation is insufficient |
-| No data loss | [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) and [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) prove local ordering, restart classification, redaction, and journal integrity; [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves staged evidence behavior | End-to-end mutation on production storage across touched WordPress data shapes, including live apply and recovery on real storage | Local ordering is not a no-loss proof for live WordPress state |
-| Reliability | Local tests prove refusal paths, journal guardrails, and restart classification; upstream verifier reports live preflight/dry-run/apply/recovery/journal checks plus apply revalidation | One enforced release gate that composes auth/session lifecycle, durable journal semantics, leases/fencing, graph identity, plugin-driver checks, and preserved-remote drift on the live boundary | Production reliability is still unproven where the release decision matters |
-| Speed | [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) refuses to claim production throughput; [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) blocks unsupported throughput claims | A measured live-path throughput result or an enforced `speed unclaimed` verdict from the live release gate | There is no live-path speed proof |
-| Production auth/session lifecycle | `test:playground:authenticated-http-push` and `test:playground:production-shaped-push` cover authenticated and production-shaped lab routes; the remote release verifier on `origin/lane/reliable-executor` at `536015fb` still reports `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` | A checked release command in this checkout that proves auth/session lifecycle at apply time against the retained live source endpoint | Lab-only auth/session evidence does not certify the production boundary here |
-| Durable journal semantics | [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js), `test:playground:db-journal-idempotency`, `test:playground:db-journal-process-kill`, and the remote release verifier path on `origin/lane/reliable-executor` `536015fb` prove restart classification, redaction, readback, persistent journal-file checks, `filesystem-compare-rename` lease fencing, `fsync` evidence, monotonic sequence behavior, the `protocolExtension` release contract, and an explicit durable-journal boundary verdict in the failure path | Production journal storage, lease, fencing, and recovery proof at the live apply boundary | Lab and remote release durability are still not production durability |
-| Graph identity | [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves stable remote identity in a benchmark model | A checked live-boundary verdict that identity mapping survives the real push path | Graph identity remains lab-backed |
-| Plugin-driver behavior | [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) models plugin install batching and atomic groups | Production plugin-driver behavior on the live apply path | Plugin behavior is still modeled, not proven at release boundary |
-| Real topology and preserved-remote drift | Remote verifier starts retained-source Playground sites and reports live drift evidence between base and changed fixtures on `origin/lane/reliable-executor` (`536015fb`), with the verifier bound to the supplied source URL, surfacing `remoteSnapshotHashes`, and explicitly encoding the `protocolExtension` topology contract | A checked in-tree command that proves the same preserved-remote behavior on the live source boundary | Topology and drift proof remain remote-only |
-| CI or default enforcement | `origin/lane/reliable-executor` exposes `verify:release` on the current remote tip `536015fb`, and the contract fixture now names the checked commands `npm run verify:release` and `npm run test:recovery:file-journal` plus the pull-to-push bridge topology semantics | A checked default entrypoint in this checkout that owns the release verdict | No enforced in-tree gate yet; remote command discovery is no longer the blocker |
+| R1 base manifest | The planner and fixture exporters carry stable resource keys and hashes for local/lab snapshots. | No production pull-base manifest contract for the full WordPress graph. | Yes |
+| R2 three-way planning | Unit tests compare base/local/remote hashes and keep remote-only changes by default. | No checked production-source comparison run from this checkout. | Yes |
+| R3 preserve remote-only changes | Planner tests keep remote-only files, rows, and plugin metadata. | No live WordPress graph proof that all relevant relationships are preserved. | Yes |
+| R4 redacted conflicts | Planner and recovery tests assert redaction in local fixture conflicts and journals. | No production-bound conflict/report artifact contract. | Yes |
+| R5 live preconditions | Planner/apply tests require live-remote preconditions before mutation. | No checked production apply run that revalidates at the live boundary. | Yes |
+| R6 guarded writes | Storage-guarded fixture smokes prove some DB row and file paths reject drift. | No production storage-bound proof for every mutation type. | Yes |
+| R7 atomic groups | Planner and plugin tests model coupled plugin/file/data groups. | No production proof for split plugin/application states across real WordPress resources. | Yes |
+| R8 plugin/schema-sensitive data | Tests block or constrain plugin-owned and custom-table data without explicit driver evidence. | No real plugin validator contract at the production boundary. | Yes |
+| R9 auth and authorization | Local authenticated routes and production-shaped route/package tests prove lab protocol shape. | No production credentials, TLS, replay-protection, or session lifecycle proof. | Yes |
+| R10 honest dry-run | Dry-run and preflight smokes refuse stale or changed lab state. | No production apply confirmation that stale state is still refused after dry-run. | Yes |
+| R11 durable journal | Recovery tests and lab smokes prove journaling, replay, and restart classification. | No production durable journal storage with lease/fencing ownership. | Yes |
+| R12 resumability | Duplicate/replay, stale claim, and restart smokes exist in fixtures. | No production duplicate-request or chunk-resume proof. | Yes |
+| R13 real WordPress shapes | Fixtures cover selected posts, options, files, plugin metadata, and a custom table. | No broad production-backed matrix for uploads, postmeta, terms, users, plugin tables, activation, schema changes, or multisite. | Yes |
+| R14 redaction | Selected tests verify redaction of raw fixture values. | No formal allowlist for all future production artifacts. | Yes |
+| R15 speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove model-level speed guardrails. | No measured live-site throughput or memory evidence. | Yes |
+| R16 release suite | `npm test` passes, and the long Playground smokes pass when invoked explicitly. | No CI/default entrypoint that runs the full safety-critical release set. | Yes |
 
 ## Test Audit
 
-- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) proves planner behavior, live-remote precondition tracking, conflict refusal, atomic group handling, and plugin-owned resource policy in local fixtures. It does not prove no data loss on production storage or release-time auth/session behavior.
-- [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) proves JSONL monotonicity, redaction, restart classification, and drift detection in temporary files. It does not prove durable journal semantics on production storage or fence against real live-boundary failures.
-- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) is explicit about refusing unsupported throughput claims. It is not a live-path speed measurement.
-- [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the benchmark model moves staged buffers and row payloads through durable evidence and blocks unsupported production throughput claims. It still does not measure the real push path, so it cannot support a speed claim.
-- The local regression slice rechecked in this worktree passed `86/86`. That is useful regression evidence, but it is still not live-boundary proof of no data loss, reliability, or speed.
-- The remote release verifier is stronger than the local regression slice because it checks live preflight, dry-run, apply, recovery inspect, journal readback, durable-journal restart smoke, apply revalidation, and drift revalidation. Even so, it remains upstream-only evidence until this checkout owns the same verdict in-tree. The remote audit trail now also proves the durable-journal restart smoke checks persistent journal files, `fsync` evidence, monotonic sequence behavior, `filesystem-compare-rename` lease fencing, the explicit `protocolExtension` contract, and now an explicit durable-journal boundary verdict, but the audit trail still keeps the first open boundary on production auth/session lifecycle, with durable journal storage/fencing also still blocked, rather than claiming release readiness. Neither change converts the upstream proof into in-tree release evidence.
-- Net effect: the current tests prove important guardrails, but they do not yet prove the production release claim. They are local invariants, fixture checks, or upstream-only release smokes, not this checkout's live-boundary no-data-loss, reliability, or speed verdict.
+### What The Default Tests Prove
 
-## Current Command Surface
+`npm test` passed during this audit with 89 tests, 0 failures, and 0 skips.
 
-Direct command-surface recheck on `origin/lane/reliable-executor` at `536015fb5fdd85f2063a18b5549957981d0003a7`:
+- `test/push-planner.test.js` proves planner behavior, live-remote precondition tracking, conflict refusal, atomic group handling, and plugin-owned resource policy in local fixtures.
+- `test/recovery-journal.test.js` proves JSONL monotonicity, redaction, restart classification, and drift detection in temporary files.
+- `test/performance-model.test.js` proves a deterministic speed model and refuses unsupported throughput claims.
+- `test/guarded-executor-benchmark.test.js` proves the benchmark model moves staged buffers and row payloads through durable evidence while still blocking unsupported production throughput claims.
 
-- `origin/lane/reliable-executor` at `536015fb` exposes `verify:release`, `test:playground:production-shaped-release-verify`, `test:playground:production-shaped-live-preflight`, `test:playground:production-shaped-missing-live-source`, and `test:playground:production-shaped-missing-secret`.
-- The contract fixture at `536015fb` now explicitly binds the verifier to the supplied source URL, surfaces `remoteSnapshotHashes`, adds the `protocolExtension` release contract, and preserves the same checked command names and drift/recovery evidence surface while still clarifying that the pull-to-push bridge only reads the remote comparison surface for planning and records durable evidence without authorizing mutation.
-- `scripts/playground/production-shaped-release-verify.mjs` fails closed when no live source or no secret is provided, and it still emits the remaining boundary verdicts `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` plus `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
-- The same script reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, durable journal readback with `rows: 17`, the additional durable-journal restart smoke proof, the apply revalidation proof, the drift revalidation proof, and surfaced `remoteSnapshotHashes` when the release path succeeds.
-- This checkout does not yet carry that checked verdict in-tree, so the release gate is still closed here until the same checked command runs from this worktree or an equivalent default entrypoint produces the same machine-checkable result here.
+These tests are useful, but they are still local invariants, fixture checks, or model-level claims. They do not prove no data loss, reliability, or speed on a live production WordPress source site.
 
-## Release Gate Definition
+### What The Standalone Smokes Prove
 
-The weakest current claim is not test coverage. It is that this checkout still lacks an in-tree live-boundary verdict for the remaining production claims, so green regression runs cannot be promoted to release proof by interpretation alone.
+- `npm run test:playground:production-shaped-push` passed against `/wp-json/reprint/v1/push/*`, applied 8 fixture mutations, replayed with zero fresh mutation work, rejected cross-route receipts before mutation, and classified recovery as `fully-updated-remote`.
+- `npm run test:playground:production-plugin-package` passed with the temporary `reprint-push` plugin mounted as a normal plugin, the public lab namespace disabled, 8 fixture mutations applied, and the final visible fixture surface matching local.
+- The current progress log also records fresh release-surface evidence: the `536015fb` release verifier path adds `remoteSnapshotHashes`, `protocolExtension`, persistent journal-file checks, `filesystem-compare-rename` lease fencing, `fsync` evidence, monotonic sequence behavior, and explicit durable-journal boundary verdicts. The restart-era evidence update now moves that verifier tip to `b725b2d3`, and the no-data-loss and recovery lanes now point at `b9aebe71` and `134d0401`.
 
-The exact proof that would move one gate is a checked command from this checkout that produces all of the following in one invocation:
+These smokes are still lab-bound. They improve confidence, but they do not prove production durability, arbitrary WordPress resources, real MySQL/InnoDB behavior, production auth, or measured speed.
 
-1. apply-time auth/session validation against the retained live source,
-2. durable journal readback from the same run,
-3. recovery inspect evidence from the same run,
-4. preserved-remote drift evidence from the same run,
-5. live-source topology proof from the same run, and
-6. an explicit machine-checkable verdict for graph identity, plugin-driver behavior, leases/fencing, and the remote snapshot hash boundary.
+## Evidence Table Deltas
 
-Until then, graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift stay unclosed.
+| Area | Directly observed proof | Still insufficient | Next proof required |
+| --- | --- | --- | --- |
+| No-overwrite planner | Unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. | These are JSON-model resources plus fixture policy, not WordPress graph semantics. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
+| Recovery and idempotency | Unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Playground smokes cover DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
+| Speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a guarded model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, bounded buffer movement, and rejected unsafe fast paths. | The benchmark evidence is still model-level and fixture-shaped. It does not measure production throughput, memory ceiling, retry cost, or live large-site behavior under load. | Run a large-file and large-table benchmark through the production-backed executor with receipts, preconditions, journal cursors, retries, and measured memory/runtime. |
 
-## Gate Status
+## Why The Gates Stay `0/4`
 
-`0/4` stays unchanged.
+The last 12 hours changed evidence, not gate status. The new proof now shows a real release-boundary planner result and an explicit durable-journal boundary verdict, but it still does not prove the production auth/session lifecycle or a durable production journal with lease/fencing.
 
-Why: the current proof is still upstream-only and lab-backed at the live boundary. The exact proof that would move one gate is the checked `verify:release`-class run from this checkout that yields apply-time auth/session validation, durable journal readback from production storage, recovery inspection, live-source topology, preserved-remote drift, and a machine-checkable verdict for the remaining production boundary.
+The exact proof that would move one gate is one checked production-boundary run from this checkout that starts from a live source snapshot, authenticates with production credentials, writes through the durable journal boundary, and survives recovery without data loss while also reporting the live precondition, preserved-remote drift, and machine-checkable release verdicts.
 
-Minimum properties of the gate:
-
-1. It must run on the real release boundary, not only on fixtures or Playground storage.
-2. It must revalidate apply-time live state before mutation.
-3. It must fail closed if auth/session lifecycle, durable journal semantics, leases/fencing, graph identity, plugin-driver behavior, or topology proof is still lab-backed.
-4. It must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists.
-5. It must be the command CI or another default entrypoint actually invokes in this checkout, not only in `origin/lane/reliable-executor`.
-
-## Conclusion
-
-The repository has strong local regression, refusal, and journaling evidence. It does not yet have in-tree live-boundary proof that production auth/session lifecycle and durable journal semantics hold at apply time, and the remaining graph identity, plugin-driver, lease/fencing, preserved-remote drift, and topology claims are still only lab-backed or upstream-only. The release gate stays closed until this checkout owns a checked live-boundary verdict or an enforced default entrypoint that produces the same verdict here.
+Until that exists, the release claim stays scoped to lab evidence for push safety invariants, not production-safe live WordPress push.
