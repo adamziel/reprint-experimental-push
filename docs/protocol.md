@@ -78,6 +78,11 @@ Endpoint specifics:
   read-only; `auto`, `finish`, and `rollback` may mutate only when the journal
   and fresh live hashes prove the action.
 
+Preflight therefore produces the three bindings the executor must persist for
+later push steps: the push session, the base manifest binding, and the remote
+identity binding. Those bindings are provenance, not a write lock, and they
+remain valid only until the session expires.
+
 The protocol extension is production-shaped rather than lab-shaped: a dry-run
 receipt is only an eligibility artifact, never a lease. The remote may accept
 the plan and still reject later apply batches if the live state has drifted.

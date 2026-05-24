@@ -13,6 +13,8 @@
       ],
       "outputs": [
         "push session",
+        "base manifest binding",
+        "remote identity binding",
         "protocol version",
         "capability set",
         "journal support evidence"
@@ -92,7 +94,8 @@
       ],
       "outputs": [
         "read-only evidence",
-        "safe/unsafe/blocked recovery classification"
+        "safe/unsafe/blocked recovery classification",
+        "journal and live-hash proof"
       ]
     },
     {

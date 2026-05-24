@@ -13,6 +13,11 @@
     "journal": "resolves lost responses and crash ambiguity without granting a lock",
     "recover": "inspects, finishes, rolls back, or blocks using journal evidence and fresh live hashes"
   },
+  "session_binding": {
+    "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+    "remote_site_id": "remote-example",
+    "scoped_write_authority": "one persisted pull base, one remote identity, one requested scope"
+  },
   "persisted_base_package": {
     "base_manifest_id": "pull-2026-05-24T00:00:00Z",
     "base_manifest_hash": "sha256:base-manifest",
@@ -28,6 +33,7 @@
   "required_invariants": [
     "the pull package is immutable provenance, not a live lock",
     "dry-run is eligibility only and apply revalidates the live remote again",
-    "journal and recover inspect explain evidence without turning stale proof into authority"
+    "journal and recover inspect explain evidence without turning stale proof into authority",
+    "preflight binds the push session to the stored pull base and live remote identity"
   ]
 }
