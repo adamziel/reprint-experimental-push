@@ -6,19 +6,22 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Current Supervisor Snapshot
 
-- Status: `70` Node tests pass. Both
-  `npm run test:playground:production-shaped-push` and
-  `npm run test:playground:production-plugin-package` pass against
-  `/wp-json/reprint/v1/push/*`.
-- Trend: reliable executor moved from route-shape proof to packaged endpoint
-  proof; production readiness is still blocked.
+- Status: fresh verification at 22:37 CEST passed `npm test` with `70` tests and
+  `npm run test:playground:production-plugin-package` against
+  `/wp-json/reprint/v1/push/*`. The package smoke reported the public lab
+  namespace disabled, `8` applied fixture mutations, committed apply evidence,
+  and a final surface hash matching local.
+- Trend: verification is fresher, but production readiness is still flat at
+  packaged endpoint proof.
 - Blocker: the packaged endpoint still uses lab auth and lab journal internals.
   Production credential lifecycle, nonce/session cleanup, durable storage,
-  leases, and arbitrary plugin drivers are still unproven.
+  leases, WordPress graph identity, and arbitrary plugin drivers are unproven.
 - Next nudge: replace lab-backed internals with production auth/session cleanup
-  and durable journal guarantees under the packaged plugin.
+  and durable journal guarantees under the packaged plugin, then rerun
+  replay/conflict/refusal and recovery inspection through `reprint/v1`.
 - Public page: [progress.html](../progress.html) shows a visible last-updated
-  date and keeps the supervisor view short.
+  date and keeps the supervisor view short. This lane update becomes live only
+  after the lane is merged to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>

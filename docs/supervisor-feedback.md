@@ -1,9 +1,37 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 22:32 CEST
+Last updated: 2026-05-24 22:37 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-24 22:37 CEST - Package Verification Refresh
+
+- Going well: fresh `npm test` passed with `70` tests, and
+  `npm run test:playground:production-plugin-package` passed with
+  `/wp-json/reprint/v1/push/*`, lab namespace disabled, `8` applied fixture
+  mutations, and committed apply evidence.
+- Not going well: this still proves a packaged lab-backed route, not production
+  push. Production auth cleanup, durable journal storage, leases, WordPress
+  graph identity, and general plugin drivers remain blocked by missing evidence.
+- Progress change: verification is fresher; readiness did not move past the
+  packaged endpoint proof. This lane page update becomes live only after the
+  lane is merged to `main`.
+- Next nudge: keep hardening the packaged route by replacing one lab dependency
+  at a time, then rerun replay/conflict/refusal and recovery inspection through
+  the production namespace.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Gap: graph identity. Next test: post/postmeta/attachment/taxonomy drift fixture. Owner: invariants. |
+| Recovery | Gap: production durability. Next test: kill DB/file/journal boundaries against durable storage. Owner: recovery. |
+| Reliable executor | Gap: lab internals. Next test: production auth/session cleanup plus durable journal rows under the packaged route. Owner: reliable executor. |
+| Fast paths | Gap: runtime proof. Next test: large chunk benchmark with receipts and resume cursors. Owner: fast paths. |
+| Audit and critic | Gap: packaged route review. Next test: re-audit `reprint/v1` package proof before any readiness increase. Owner: audit and critic. |
+| Progress publisher | Gap: deployment. Next test: merge to `main`, verify Pages, and keep details linked. Owner: progress publisher. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 22:32 CEST - Package Nudge
 
@@ -27,9 +55,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Benchmark large chunks with receipts and resume cursors. |
 | Audit and critic | Re-audit this packaged endpoint before any readiness jump. |
 | Progress publisher | Keep the page dated, one-screen, and caveat-linked. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Current Nudge
 
