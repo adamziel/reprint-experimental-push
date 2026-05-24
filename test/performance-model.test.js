@@ -661,6 +661,32 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.ok(
+    rejectedById
+      .get('fingerprint-and-compressed-upload-queue-completes-large-upload')
+      .violates.includes('file-hashing'),
+  );
+  assert.ok(
+    rejectedById
+      .get('fingerprint-and-compressed-upload-queue-completes-large-upload')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('fingerprint-and-compressed-upload-queue-completes-large-upload')
+      .violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById
+      .get('fingerprint-and-compressed-upload-queue-completes-large-upload')
+      .violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById
+      .get('fingerprint-and-compressed-upload-queue-completes-large-upload')
+      .rejectedGate,
+    'recovery',
+  );
+  assert.ok(
     rejectedById.get('compressed-receipts-replace-durable-progress').violates.includes('compression'),
   );
   assert.ok(
@@ -1537,6 +1563,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-file-hash-completes-plugin-update',
     'archive-hash-skips-chunk-receipts',
     'compressed-upload-queue-completes-large-upload',
+    'fingerprint-and-compressed-upload-queue-completes-large-upload',
     'compressed-receipts-replace-durable-progress',
     'fingerprint-completes-large-upload',
     'compressed-file-hash-skips-chunk-receipts',

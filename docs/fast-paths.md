@@ -466,6 +466,9 @@ under load:
 - compressed-upload-queue-completes-large-upload is rejected because a drained
   compressed queue can still hide missing chunk receipts or the guarded
   publish record.
+- fingerprint-and-compressed-upload-queue-completes-large-upload is rejected
+  because a local fingerprint and queue compression can reduce work, but they
+  cannot prove chunk acknowledgements or the guarded publish survived failure.
 - compressed-receipts-replace-durable-progress is rejected because compressing
   receipts can hide the per-chunk or per-row evidence needed to classify partial
   failure.
@@ -474,6 +477,9 @@ under load:
 - fingerprint-completes-large-upload is rejected because a local fingerprint
   can skip duplicate hashing, but it cannot prove chunk receipts, guarded
   publish, or durable upload completion survived failure.
+- fingerprint-and-compressed-upload-queue-completes-large-upload is rejected
+  because a local fingerprint and queue compression can reduce work, but they
+  cannot prove chunk acknowledgements or the guarded publish survived failure.
 - remote-index-plus-compressed-row-batch-completes-plugin-update is rejected
   because planning evidence and batch compression cannot prove row-level
   preconditions, dependency checks, or the atomic-group commit survived a
