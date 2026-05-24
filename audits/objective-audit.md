@@ -24,7 +24,8 @@ integrity, missing graph-identity evidence, missing recovery evidence, and
 non-production storage or row-apply capabilities. That is a useful refusal
 mechanism, but it is still only a guardrail. It does not create the required
 release boundary, so the repo can still present a green default test run while
-the strongest claims remain skipped.
+the strongest claims remain skipped. In other words, the suite can reject
+unsafe release claims, but it does not yet enforce the full release claim.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -180,10 +181,28 @@ gate.
   `npm run test:playground:storage-guarded-db-write`,
   `npm run test:playground:production-shaped-push`, and
   `npm run test:playground:production-plugin-package`.
+  Those commands are individually useful, but they are not chained into one
+  required release command.
 
 That means the repo can still look healthy while the exact proof needed for a
 release claim has not been run. For this objective, that is a release blocker,
 not just a documentation gap.
+
+### Test Verdict
+
+The current tests are good at proving guardrails:
+
+- planner rules reject unsafe overwrite and stale-state cases in the model
+- local Playground smokes prove fixture-scoped auth, storage, journal, and
+  route-shape behavior
+- the benchmark harness refuses unsupported speed claims
+
+They do not yet prove the release claim:
+
+- no live source site mutation boundary is exercised end-to-end
+- no production-backed crash, replay, lease, or fencing matrix is enforced
+- no measured throughput or memory threshold is required before release
+- no single command fails the build when those stronger checks are omitted
 
 ## Test Audit
 
