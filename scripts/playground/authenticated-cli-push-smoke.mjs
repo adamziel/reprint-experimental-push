@@ -32,12 +32,13 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
+const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-cli-push-'));
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 fs.writeFileSync(basePath, `${JSON.stringify(snapshots.base, null, 2)}\n`);
-fs.writeFileSync(localPath, `${JSON.stringify(snapshots.local, null, 2)}\n`);
+fs.writeFileSync(localPath, `${JSON.stringify(readyLocalSnapshot, null, 2)}\n`);
 
 const summary = {
   dryRun: {},
@@ -107,7 +108,7 @@ try {
     assert.equal(apply.dbJournal.mutationApplied, apply.plan.mutations);
 
     const afterApply = await getSnapshot(server);
-    assertVisibleSurfaceEqual(afterApply.body.snapshot, snapshots.local, 'CLI apply final source');
+    assertVisibleSurfaceEqual(afterApply.body.snapshot, readyLocalSnapshot, 'CLI apply final source');
 
     summary.dryRun = {
       ok: dryRun.ok,
@@ -547,6 +548,15 @@ function assertVisibleSurfaceEqual(actual, expected, label) {
 function snapshotWithPostTitle(snapshot, title) {
   const next = JSON.parse(JSON.stringify(snapshot));
   next.db.wp_posts['ID:1001'].post_title = title;
+  return next;
+}
+
+function withoutUnmappedGraphPostmeta(snapshot) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
+    delete next.db.wp_postmeta;
+  }
   return next;
 }
 

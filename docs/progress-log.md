@@ -6,22 +6,23 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Current Supervisor Snapshot
 
-- Status: `77` Node tests pass. The production-shaped and packaged-plugin
-  smokes pass against `/wp-json/reprint/v1/push/*`.
-- New proof: the packaged plugin disables lab auth bootstrap
-  (`authBootstrapDisabled: true`), requires explicit credential provisioning,
-  rejects an unprovisioned alternate credential with `401`, cleans two expired
-  signed store artifacts, applies eight fixture mutations, and ends with the
-  local snapshot matched.
-- Also merged: raw dependency payload redaction in push plans, no-overwrite
-  topology suppression, recovery replay envelopes, protocol route binding,
-  fast-path proof obligations, and refreshed audits.
-- Trend: reliable executor and merge invariants improved within lab/model
-  scope. Production readiness is still blocked.
+- Status: `82` Node tests pass. The production-shaped, packaged-plugin, and
+  authenticated HTTP smokes pass against graph-safe route fixtures.
+- New proof: push routes now accept only explicitly provisioned push-scoped
+  Application Password entries. The packaged smoke rejects both an
+  unprovisioned alternate credential and an unscoped administrator Application
+  Password with `401`, then applies seven graph-safe mutations.
+- Also merged: stale WordPress graph references are blocked, stale recovery
+  claims fence old workers before mutation, and guarded executor benchmark
+  evidence refuses production throughput claims when proof is missing.
+- Trend: no-data-loss, recovery, fast-path, and reliable-executor evidence all
+  moved up in lab/model scope. Production readiness is still blocked.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
-  WordPress graph identity, and arbitrary plugin drivers remain unproven.
+  full WordPress graph identity mapping, and arbitrary plugin drivers remain
+  unproven.
 - Next nudge: replace lab-backed auth/session/journal internals with
-  production lifecycle and durable journal guarantees.
+  production lifecycle and durable journal guarantees, then prove graph identity
+  mapping instead of dropping blocked graph edges from route smokes.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and keeps details behind links.
 

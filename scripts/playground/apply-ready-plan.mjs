@@ -21,10 +21,11 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
+const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
 
 const plan = createPushPlan({
   base: snapshots.base,
-  local: snapshots.local,
+  local: readyLocalSnapshot,
   remote: snapshots.base,
   now: fixedNow,
 });
@@ -211,7 +212,6 @@ function assertReadyPlanResources(plan) {
     'row:["wp_options","option_name:reprint_push_forms_fixture"]',
     'row:["wp_options","option_name:reprint_push_plugin_payload"]',
     'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
-    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
     'row:["wp_posts","ID:1001"]',
     'row:["wp_posts","ID:2001"]',
   ];
@@ -297,34 +297,6 @@ function assertAppliedPluginValues(snapshot) {
     schemaVersion: '2-local',
   });
 
-  const localOnlySchema = snapshot.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  assert.equal(localOnlySchema.__pluginOwner, 'forms');
-  assert.deepEqual(localOnlySchema.meta_value, {
-    fields: [
-      {
-        enabled: true,
-        key: 'email',
-        label: 'Email',
-        type: 'email',
-      },
-      {
-        choices: ['small', 'medium', 'large'],
-        enabled: true,
-        key: 'budget',
-        label: 'Budget',
-        type: 'select',
-      },
-    ],
-    form: 'intake',
-    notifications: {
-      admin: false,
-      copyToSender: true,
-    },
-    owner: 'forms',
-    required: ['email'],
-    schemaVersion: '1-local-only',
-  });
-
   const customTableRow = snapshot.db.wp_reprint_push_forms_lab['id:1'];
   assert.equal(customTableRow.__pluginOwner, 'forms');
   assert.deepEqual(customTableRow.payload, {
@@ -365,6 +337,15 @@ function assertPhpStableHashMatchesJsForUnicode() {
   }
 
   assert.equal(result.stdout, digest(value));
+}
+
+function withoutUnmappedGraphPostmeta(snapshot) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
+    delete next.db.wp_postmeta;
+  }
+  return next;
 }
 
 function parseMarkedJson(stdout, begin, end, missingMessage) {

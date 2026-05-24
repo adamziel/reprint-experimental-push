@@ -30,10 +30,11 @@ const snapshots = Object.fromEntries(
 assert.equal(snapshots.base.meta.fixture, 'remote-base');
 assert.equal(snapshots.local.meta.fixture, 'local-edited');
 assert.equal(snapshots.remoteChanged.meta.fixture, 'remote-changed');
+const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
 
 const readyPlan = createPushPlan({
   base: snapshots.base,
-  local: snapshots.local,
+  local: readyLocalSnapshot,
   remote: snapshots.base,
   now: fixedNow,
 });
@@ -172,8 +173,8 @@ await withPlaygroundServer('ready-base', path.join(repoRoot, fixtures.base), asy
   await assertJournalContains(server, 'apply-committed');
 
   const applyAfter = await getSnapshot(server);
-  assertVisibleSurfaceEqual(applyAfter.body.snapshot, snapshots.local, 'ready apply final visible surface');
-  assertVisibleSurfaceEqual(apply.body.afterSnapshot, snapshots.local, 'ready apply response final visible surface');
+  assertVisibleSurfaceEqual(applyAfter.body.snapshot, readyLocalSnapshot, 'ready apply final visible surface');
+  assertVisibleSurfaceEqual(apply.body.afterSnapshot, readyLocalSnapshot, 'ready apply response final visible surface');
   assertAppliedHashes(readyPlan, applyAfter.body.snapshot);
   assertAppliedFixtureValues(applyAfter.body.snapshot);
 
@@ -205,7 +206,7 @@ await withPlaygroundServer('ready-base', path.join(repoRoot, fixtures.base), asy
       applied: apply.body.applied,
       verified: apply.body.verifiedKeys.length,
       journal: ['apply-started', 'apply-committed'],
-      finalMatchesLocal: digest(visibleSurface(applyAfter.body.snapshot)) === digest(visibleSurface(snapshots.local)),
+      finalMatchesLocal: digest(visibleSurface(applyAfter.body.snapshot)) === digest(visibleSurface(readyLocalSnapshot)),
     },
   };
 });
@@ -230,7 +231,7 @@ await withPlaygroundServer('stale-remote', path.join(repoRoot, fixtures.remoteCh
   assertNoJournalEvent(staleApply.body, 'apply-committed');
   const staleAfter = await getSnapshot(server);
   assertTargetSurfaceEqual(staleAfter.body.snapshot, staleBefore.body.snapshot, 'stale failed apply target surface');
-  assertVisibleSurfaceNotEqual(staleAfter.body.snapshot, snapshots.local, 'stale failure preserved drifted state');
+  assertVisibleSurfaceNotEqual(staleAfter.body.snapshot, readyLocalSnapshot, 'stale failure preserved drifted state');
   await assertJournalLacks(server, 'apply-committed');
 
   summary.stale = {
@@ -668,6 +669,15 @@ function assertVisibleSurfaceNotEqual(actual, expected, label) {
   assert.notEqual(digest(visibleSurface(actual)), digest(visibleSurface(expected)), `${label} mismatch`);
 }
 
+function withoutUnmappedGraphPostmeta(snapshot) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
+    delete next.db.wp_postmeta;
+  }
+  return next;
+}
+
 function visibleSurface(snapshot) {
   return {
     files: snapshot.files,
@@ -683,7 +693,6 @@ function assertReadyPlanResources(plan) {
     'row:["wp_options","option_name:reprint_push_forms_fixture"]',
     'row:["wp_options","option_name:reprint_push_plugin_payload"]',
     'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
-    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
     'row:["wp_posts","ID:1001"]',
     'row:["wp_posts","ID:2001"]',
   ];
@@ -837,34 +846,6 @@ function assertAppliedFixtureValues(snapshot) {
     owner: 'forms',
     required: ['email', 'message', 'phone'],
     schemaVersion: '2-local',
-  });
-
-  const localOnlySchema = snapshot.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  assert.equal(localOnlySchema.__pluginOwner, 'forms');
-  assert.deepEqual(localOnlySchema.meta_value, {
-    fields: [
-      {
-        enabled: true,
-        key: 'email',
-        label: 'Email',
-        type: 'email',
-      },
-      {
-        choices: ['small', 'medium', 'large'],
-        enabled: true,
-        key: 'budget',
-        label: 'Budget',
-        type: 'select',
-      },
-    ],
-    form: 'intake',
-    notifications: {
-      admin: false,
-      copyToSender: true,
-    },
-    owner: 'forms',
-    required: ['email'],
-    schemaVersion: '1-local-only',
   });
 
   const customTableRow = snapshot.db.wp_reprint_push_forms_lab['id:1'];
