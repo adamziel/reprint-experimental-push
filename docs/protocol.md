@@ -51,6 +51,12 @@ Required behavior:
   blocks an interrupted batch only when journal artifacts and live hashes
   prove the action.
 
+Dry-run is an eligibility and planning receipt, not a liveness reservation.
+The remote may accept a dry-run plan and still reject later apply batches if
+the live hash listing changes or the storage boundary can no longer prove the
+same mutation is safe. Apply must therefore treat the dry-run receipt as
+evidence only and re-run the live preconditions before every write.
+
 Remote liveness is checked at apply time, not at dry-run time. A conforming
 apply performs two checks:
 
@@ -258,6 +264,8 @@ A coverage manifest includes:
 - blocked unknown resources that make the plan ineligible for apply
 - a complete remote hash listing for the requested scope, including absent
   entries for base keys when requested
+- cursor proofs showing that the hash listing was complete for the requested
+  scope and page range
 
 Dry-run must reject a plan whose `remote_coverage_hash` does not match the
 accepted remote hash listing or whose requested mutations depend on resources

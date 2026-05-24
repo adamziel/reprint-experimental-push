@@ -152,9 +152,19 @@ runner         Node/PHP runner that orchestrates pull, plan, dry-run, apply
 ```
 
 Only the runner talks to both sites. No WordPress container publishes a public
-port. If browser inspection is needed, expose at most `127.0.0.1:8080` through
-an optional local-only proxy. Do not use ngrok, cloudflared, localtunnel,
-serveo, localhost.run, Tailscale Funnel, or any equivalent tunnel.
+port. If browser inspection is needed, expose at most the sandbox-provided
+`8080` ingress through an optional local-only proxy. Do not use ngrok,
+cloudflared, localtunnel, serveo, localhost.run, Tailscale Funnel, or any
+equivalent tunnel.
+
+The intended Docker data flow is:
+
+- `remote-wp` is pulled first and acts as the merge base source.
+- `local-wp` is restored from that pull base, then edited independently.
+- `runner` calls `push_preflight`, `push_snapshot_hashes`, `push_plan_dry_run`,
+  `push_batch_apply`, `push_journal`, and `push_recover` against `remote-wp`.
+- `remote-db` and `local-db` are kept separate so remote drift can be observed
+  without contaminating the local edit history.
 
 ### Playground Topology
 
@@ -173,6 +183,13 @@ base manifest from `remote-base`, builds the local plan from `local-edited`,
 and uses `remote-changed` as the liveness drift case for `PRECONDITION_FAILED`
 and recovery coverage. This topology proves the one-remote, one-local shape
 without requiring external network exposure.
+
+The Playground harness should keep the same role split as Docker:
+
+- `remote-base` seeds the pull base and push identity evidence.
+- `local-edited` produces the local delta and the candidate dry-run plan.
+- `remote-changed` simulates live remote drift between dry-run and apply.
+- the runner remains the only actor allowed to compare, upload, and recover.
 
 ## Durable Push State
 
