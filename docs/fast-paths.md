@@ -60,6 +60,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed row batch still cannot prove a plugin install finished, because per-row preconditions, dependency checks, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus durable chunk receipts still cannot skip the live file compare before publish.
 - A fresh remote index plus cached chunk receipts still cannot skip the guarded publish finalize for a large upload.
+- A dependency-heavy plugin update still cannot use a fresh remote index or a cached package hash to skip dependency preconditions at the atomic-group barrier.
 - A local fingerprint match still cannot skip the live file compare before publish, because size, mtime, inode, or mode can only skip a rehash and cannot authorize the mutation boundary.
 - A fresh remote index plus a compressed upload queue still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove chunk resume is complete, because compressed pressure relief does not replace missing chunk acknowledgements.
@@ -79,8 +80,12 @@ fails in a different way:
   live remote compare is still required.
 - Chunk upload cannot treat a visible staging object or a matching digest as a
   substitute for the durable receipt and guarded finalize step.
+- Chunk upload for large archives cannot treat a cached manifest or archive hash
+  as proof that every chunk receipt survived failure.
 - Database row batching cannot merge rows across owners or atomic groups just to
   make a larger batch.
+- Database row batching for plugin installs and updates cannot skip dependency
+  or metadata preconditions by leaning on remote index freshness.
 - Remote indexes cannot authorize mutation because the listing may be stale by
   the time apply runs.
 - Compression cannot change the canonical hash or replace the compare-and-swap
@@ -382,6 +387,8 @@ under load:
   atomic-group commit.
 - remote-index plus cached package hash cannot skip plugin validators because
   package identity is not a substitute for the live group-scoped commit barrier.
+- dependency-heavy plugin update cannot be fast-pathed by index freshness alone
+  because dependency checks still have to survive the atomic-group barrier.
 - split plugin install is rejected because files, rows, metadata, dependency
   checks, and activation state must cross visibility together.
 - blind SQL replace is rejected because it removes per-row compare-and-swap

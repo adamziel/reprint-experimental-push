@@ -14,6 +14,7 @@ test('benchmark model covers large uploads and plugin installs', () => {
   const largeUpload = model.schedules.find((schedule) => schedule.kind === 'large-upload');
   const pluginInstall = model.schedules.find((schedule) => schedule.kind === 'plugin-install');
   const pluginUpdate = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
+  const pluginUpdateWorkload = model.workloads.find((workload) => workload.kind === 'plugin-update');
 
   assert.ok(largeUpload, 'large upload workload exists');
   assert.ok(pluginInstall, 'plugin install workload exists');
@@ -57,6 +58,8 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
   assert.ok(pluginUpdate.totals.dbRows >= 6_000, 'plugin update includes dependency-heavy row batches');
+  assert.ok(pluginUpdateWorkload.atomicGroup.dependencies.includes('payments'));
+  assert.ok(pluginUpdateWorkload.atomicGroup.dependencies.includes('subscriptions'));
   assert.ok(
     pluginInstall.totals.uploadChunks > 10,
     'plugin install includes enough chunked file work to exercise staged retries',
@@ -136,6 +139,15 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin update keeps remote indexes planning-only',
   );
   assert.ok(
+    pluginUpdate.actions.some(
+      (action) =>
+        action.type === 'remote-index-probe' &&
+        action.freshnessEvidence === 'generation-and-scanner-cursor' &&
+        action.authorizesApply === false,
+    ),
+    'plugin update records planning-only remote index evidence',
+  );
+  assert.ok(
     pluginUpdate.actions.some((action) => action.type === 'plugin-metadata-stage'),
     'plugin update models staged plugin metadata before commit',
   );
@@ -153,6 +165,11 @@ test('benchmark model covers large uploads and plugin installs', () => {
     pluginInstall.backpressure.resumeRequires.includes('database-batch-commit-records'),
     'plugin install backpressure should require durable batch receipts before resume',
   );
+  assert.ok(
+    pluginUpdate.backpressure.pauseWhen.includes('remote-latency-budget-hit'),
+    'plugin update backpressure should model remote latency as a stop condition',
+  );
+  assert.equal(pluginUpdate.backpressure.forbiddenResponse, 'drop-evidence-or-mark-unacknowledged-work-complete');
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
