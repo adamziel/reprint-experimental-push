@@ -474,19 +474,19 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Lab proof is still the only verified signal: 89 Node tests pass. Production push proof is still missing.</p>
-        <time class="update-stamp" datetime="2026-05-25T01:35:17+02:00">Last updated: May 25, 2026, 01:35:17 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T01:36:06+02:00">Last updated: May 25, 2026, 01:36:06 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">89 Node tests passing</span>
           <span class="pill">Trend flat; lab evidence only</span>
-          <span class="pill">Top blocker: production auth plus durable journaling</span>
+          <span class="pill">Top blocker: production auth, executor proof, and durable journaling</span>
           <span class="pill">0 of 4 production gates proven</span>
-          <span class="pill">Pending: graph identity, Docker/Playground integration, plugin drivers</span>
+          <span class="pill">Pending: recovery journal, Docker/Playground integration, plugin drivers, graph identity</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
         <p>Detailed evidence lives in the linked docs. The first screen keeps the current gates, trend, and links visible without a build step.</p>
-        <p><strong>Evidence:</strong> <a href="docs/protocol.md">protocol</a>, <a href="docs/recovery/apply-journal.md">recovery</a>, <a href="docs/playground-topology.md">playground</a>, <a href="docs/executor.md">executor</a>, <a href="docs/supervisor-feedback.md">feedback</a>.</p>
+        <p><strong>Evidence:</strong> <a href="docs/executor.md">executor</a>, <a href="docs/recovery/apply-journal.md">recovery</a>, <a href="docs/playground-topology.md">playground</a>, <a href="docs/protocol.md">protocol</a>, <a href="docs/supervisor-feedback.md">feedback</a>.</p>
       </div>
     </header>
 
@@ -513,7 +513,7 @@
       <section class="section" aria-labelledby="lanes">
         <div class="section-head">
           <h2 id="lanes">Work Lanes</h2>
-          <span>Concise status, links, and blockers</span>
+          <span>Current status, blockers, and evidence links</span>
         </div>
 
         <div class="lane">
@@ -553,7 +553,7 @@
           <ul class="compact-list">
             <li><strong>Going well</strong><span>89 Node tests pass; the linked planner, recovery, fast-path, protocol, critic, and audit evidence stays current.</span></li>
             <li><strong>Top risk</strong><span>Production auth and durable journaling stay first in line before any push-safety claim.</span></li>
-            <li><strong>Still pending</strong><span>Graph identity plus Docker/Playground and plugin-driver proof remain unverified.</span></li>
+            <li><strong>Still pending</strong><span>Executor proof, recovery journal proof, graph identity, Docker/Playground, and plugin-driver evidence remain unverified.</span></li>
             <li><strong>Audit note</strong><span>The public page keeps the status, blockers, and evidence links on one screen.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
