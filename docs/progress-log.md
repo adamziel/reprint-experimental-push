@@ -4,40 +4,39 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-24 23:02 CEST - Current Verification Snapshot
+## 2026-05-24 23:08 CEST - Current Verification Snapshot
 
-- Status: `npm test` passed with `76` Node tests. Both
-  `npm run test:playground:production-shaped-push` and
-  `npm run test:playground:production-plugin-package` passed against
-  `/wp-json/reprint/v1/push/*`. Evidence:
-  [package.json](../package.json),
+- Status: `npm test` passed with `77` Node tests. The production-shaped and
+  packaged-plugin smokes passed against `/wp-json/reprint/v1/push/*`.
+  Evidence: [package.json](../package.json),
   [production-shaped route smoke](../scripts/playground/production-shaped-route-smoke.mjs),
   [packaged plugin smoke](../scripts/playground/production-plugin-package-smoke.mjs),
-  and [plugin wrapper](../plugins/reprint-push/reprint-push.php).
-- Route/package facts verified in this lane: the production-shaped route still
-  reports `labBacked: true`; packaged activation disables the public lab
-  namespace and packaged auth bootstrap; an unprovisioned alternate credential
-  path returns `401`; signed-store cleanup deleted `2` expired artifacts
-  (`sessionsDeleted: 1`, `noncesDeleted: 1`); the CLI applied `8` fixture
-  mutations; and `finalMatchesLocal: true`.
-- Static-page check: [responsive report](progress-assets/responsive-20260524-2302/report.json),
-  [desktop screenshot](progress-assets/responsive-20260524-2302/desktop.png),
-  and [mobile screenshot](progress-assets/responsive-20260524-2302/mobile.png)
+  [plugin wrapper](../plugins/reprint-push/reprint-push.php), and
+  [planner tests](../test/push-planner.test.js).
+- Current lab/model proof: packaged activation disables the public lab
+  namespace and packaged auth bootstrap (`authBootstrapDisabled: true`),
+  requires explicitly provisioned credentials, rejects an unprovisioned
+  alternate credential path with `401`, cleans `2` expired signed-store
+  artifacts (`sessionsDeleted: 1`, `noncesDeleted: 1`), applies `8` fixture
+  mutations, ends with `finalMatchesLocal: true`, and redacts raw dependency
+  payload values in push plans.
+- Static-page check: [responsive report](progress-assets/responsive-20260524-2308/report.json),
+  [desktop screenshot](progress-assets/responsive-20260524-2308/desktop.png),
+  [tablet screenshot](progress-assets/responsive-20260524-2308/tablet.png),
+  and [mobile screenshot](progress-assets/responsive-20260524-2308/mobile.png)
   show no horizontal overflow warnings.
-- Merged hardening slices: fast-path proof obligations, no-overwrite topology
-  mutation suppression, recovery journaling for durable write failures and
-  replay envelopes, protocol transport/route binding, refreshed objective
-  audit, and refreshed critic production gate audit.
-- Trend: reliable executor, recovery, invariants, fast-path model, and audit
-  evidence all improved in lab/model scope; production readiness is still
-  blocked.
-- Blocker: the packaged endpoint still uses lab-backed internals. Production
-  credential lifecycle, durable storage, leases/fencing, WordPress graph
-  identity, and arbitrary plugin drivers are still unproven.
-- Next nudge: replace lab-backed internals with production auth/session
-  lifecycle and durable journal guarantees under the packaged plugin.
-- Public page: [progress.html](../progress.html) shows a visible last-updated
-  date and keeps the supervisor view short.
+- Production readiness remains flat: package/auth-bootstrap hardening,
+  signed-store cleanup, and dependency payload redaction are lab/model
+  evidence, not production push support. The packaged endpoint still uses
+  lab-backed internals.
+- Blocker: production credential lifecycle, durable journal storage,
+  leases/fencing, WordPress graph identity, and arbitrary plugin drivers remain
+  unproven.
+- Next nudge: replace lab-backed auth/session/journal internals with
+  production lifecycle and durable journal guarantees under the packaged
+  plugin.
+- Public page: [progress.html](../progress.html) carries the visible update
+  date and keeps details behind links.
 
 <details>
 <summary>Earlier progress entries</summary>
@@ -75,13 +74,8 @@ linked implementation artifacts.
   it confirmed existing lab evidence; it did not prove a production Reprint
   push executor, production recovery journal, Docker/full-Playground
   integration, or arbitrary plugin drivers.
-- Static UI verification passed with no heuristic warnings, no horizontal
-  overflow, and responsive screenshots captured for desktop, tablet, and
-  mobile. Evidence:
-  [screenshot report](progress-assets/screenshots/report.json),
-  [desktop screenshot](progress-assets/screenshots/desktop.png),
-  [tablet screenshot](progress-assets/screenshots/tablet.png), and
-  [mobile screenshot](progress-assets/screenshots/mobile.png).
+- Earlier static UI screenshots from this lane were superseded by the current
+  23:08 CEST responsive evidence linked above.
 
 ## 2026-05-24 - Core Evidence Recheck
 

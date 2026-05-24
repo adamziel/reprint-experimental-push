@@ -982,6 +982,45 @@ test('blocks an atomic plugin install when dependencies are absent', () => {
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('redacts raw plugin dependency metadata from blocker evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
+  local.pushIntents = [
+    {
+      id: 'install-atomic-dependent-fixture',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: [`plugin:${atomicDependentPlugin}`],
+      dependencies: {
+        privateEnvelope: 'dependency-envelope-secret',
+        plugins: [
+          {
+            name: atomicDependencyPlugin,
+            expectedVersion: '2.1.0',
+            active: true,
+            accessToken: 'dependency-token-secret',
+          },
+        ],
+      },
+    },
+  ];
+
+  const plan = planFor(base, local, baseSite());
+  const blocker = plan.blockers[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.deepEqual(plan.atomicGroups[0].dependencies, { plugins: [atomicDependencyPlugin] });
+  assert.deepEqual(blocker.dependency, {
+    plugin: atomicDependencyPlugin,
+    expectedVersion: '2.1.0',
+    active: true,
+  });
+  assert.equal(planJson.includes('dependency-token-secret'), false);
+  assert.equal(planJson.includes('dependency-envelope-secret'), false);
+});
+
 test('applies an atomic plugin install when dependencies are included in the same plan', () => {
   const base = baseSite();
   const local = baseSite();

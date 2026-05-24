@@ -564,7 +564,6 @@ function pluginDependencyEvidence(dependency, intent, plan, base, remote) {
 
 function normalizeGroupDependencies(dependencies, requiredPlugins) {
   return {
-    ...deepClone(dependencies),
     plugins: requiredPlugins
       .map((dependency) => dependency.name)
       .filter(Boolean),
@@ -801,10 +800,32 @@ function pluginDependencyBlocker({
     class: className,
     groupId: intent.id,
     plugin: dependency.name,
-    dependency: deepClone(dependency.raw || dependency),
+    dependencyIndex,
+    dependency: pluginDependencyAuditEvidence(dependency),
     reason,
     ...extra,
   };
+}
+
+function pluginDependencyAuditEvidence(dependency) {
+  const evidence = {
+    plugin: dependency.name || null,
+  };
+
+  if (dependency.expectedVersion) {
+    evidence.expectedVersion = dependency.expectedVersion;
+  }
+  if (dependency.versionRange) {
+    evidence.versionRange = dependency.versionRange;
+  }
+  if (dependency.expectedHash) {
+    evidence.expectedHash = dependency.expectedHash;
+  }
+  if (typeof dependency.active === 'boolean') {
+    evidence.active = dependency.active;
+  }
+
+  return evidence;
 }
 
 function digestPluginValue(value) {
