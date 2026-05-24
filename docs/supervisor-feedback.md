@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:26:01 CEST
+Last updated: 2026-05-25 01:26:49 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 01:26:01 CEST - Supervisor Snapshot
+## 2026-05-25 01:26:49 CEST - Supervisor Snapshot
 
-- Going well: the visible page and log still agree, and the newest entry stays short.
-- Not going well: production auth, journal durability, leases, graph mapping, integration, and plugin drivers are still blocked by missing evidence.
-- Progress change: no proof gap moved; this pass only tightened the scan copy.
+- Going well: the page, log, and newest note still line up, and the scan copy stays short.
+- Not going well: production auth, journal durability, leases, graph mapping, integration, and plugin drivers still lack direct evidence.
+- Progress change: no proof gap moved; this pass only tightened wording and alignment.
 - Next nudge: keep each lane to one proof gap, one next test, and one owner.
 
 | Lane | Next nudge |
