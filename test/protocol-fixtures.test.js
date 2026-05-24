@@ -238,6 +238,33 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
   );
 });
 
+test('push topology matrix fixture captures the minimal docker and playground proof shape', () => {
+  const matrix = readJson('fixtures/protocol/push-topology-matrix.json');
+
+  assert.equal(matrix.topology_matrix_id, 'push-topology-docker-playground-matrix');
+  assert.equal(matrix.networking.ingress_port, 8080);
+  assert.equal(matrix.networking.proxy_policy, 'local-only');
+  assert.equal(matrix.networking.tunnels, 'disallowed');
+  assert.equal(matrix.docker.remote_base, 'remote-base');
+  assert.equal(matrix.docker.local_edited, 'local-edited');
+  assert.equal(matrix.docker.remote_changed, 'remote-changed');
+  assert.ok(matrix.docker.proof.includes('one private network'));
+  assert.ok(
+    matrix.docker.proof.includes(
+      'remote-base and remote-changed are the same remote identity at different times',
+    ),
+  );
+  assert.equal(matrix.playground.remote_base, 'remote-base');
+  assert.equal(matrix.playground.local_edited, 'local-edited');
+  assert.equal(matrix.playground.remote_changed, 'remote-changed');
+  assert.ok(matrix.playground.proof.includes('separate disposable blueprints'));
+  assert.ok(
+    matrix.required_invariants.includes(
+      'apply must revalidate the live remote before every batch and at the storage boundary',
+    ),
+  );
+});
+
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
 

@@ -30,6 +30,7 @@ The normal sequence is:
 22. `push-recovery-path.json`
 23. `push-pull-mapping.json`
 24. `push-contract.json`
+25. `push-topology-matrix.json`
 
 Failure and recovery examples:
 
@@ -81,6 +82,9 @@ Failure and recovery examples:
 - `push-contract.json` gives the compact production contract that ties the
   exporter/importer handoff, push stages, auth/session proofs, and
   Docker/Playground topology into a single fixture.
+- `push-topology-matrix.json` gives the shortest machine-readable proof of the
+  one-remote, one-local, one-drift-witness topology used by both Docker and
+  Playground test harnesses.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

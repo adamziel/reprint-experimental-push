@@ -1,0 +1,41 @@
+{
+  "topology_matrix_id": "push-topology-docker-playground-matrix",
+  "purpose": "compact machine-readable proof for one remote source, one local edited site, and one live drift witness",
+  "roles": {
+    "remote_base": "one remote source site that seeds the persisted pull base",
+    "local_edited": "one imported local site with user edits",
+    "remote_changed": "the same remote site observed later after independent drift",
+    "runner": "the only process allowed to preflight, plan, upload, inspect, and recover"
+  },
+  "networking": {
+    "ingress_port": 8080,
+    "proxy_policy": "local-only",
+    "tunnels": "disallowed"
+  },
+  "docker": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "proof": [
+      "one private network",
+      "remote-base and remote-changed are the same remote identity at different times",
+      "runner is the only caller that can compare, upload, inspect, and recover"
+    ]
+  },
+  "playground": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "proof": [
+      "separate disposable blueprints",
+      "remote-base and remote-changed are the same remote identity at different times",
+      "runner uses the same route names and keeps browser-visible inspection on local-only 8080 ingress"
+    ]
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair"
+  ]
+}

@@ -50,6 +50,10 @@ The machine-readable companion at
 captures that one-way handoff in compact form. Tests can use it to prove the
 base package stays immutable provenance while push adds session, snapshot,
 dry-run, journal, and recovery evidence on top.
+The compact topology fixture at
+[`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
+captures the same one-remote, one-local, one-drift-witness test shape for
+Docker and Playground.
 
 For machine-readable verification, the compact contract fixture at
 [`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
