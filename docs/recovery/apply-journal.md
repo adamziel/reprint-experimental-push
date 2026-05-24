@@ -44,6 +44,16 @@ Completed replay validates that current remote resources still match the
 journaled after hashes. If any resource drifted after completion, replay blocks
 instead of resurrecting stale local data.
 
+The JSON apply model can also be given a durable journal writer with
+`appendEvent(type, payload)`. The writer receives hash-only JSONL-compatible
+events before mutation work starts: `journal-opened`, one `target-planned` per
+mutation, staging/dependency/commit boundaries, `mutation-observed`, terminal
+`journal-completed`, or `recovery-state`. These records are sufficient for the
+restart inspector to classify a failure as `old-remote`, `fully-updated-remote`,
+or `blocked-recovery` without raw target values. A replayed in-memory journal
+must exactly match the plan's mutation ids, resource keys, actions, before
+hashes, and after hashes before it can suppress fresh mutation work.
+
 ## Current Playground Lab Evidence
 
 `npm run test:playground:recovery` verifies the lab failpoint
