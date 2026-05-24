@@ -6,6 +6,14 @@ This lane treats durable recovery as valid only when an interrupted apply lands 
 1. `fully-updated-remote`
 1. `blocked-recovery` with artifacts
 
+The named failure boundaries in this lane are expected to stay in `old-remote`:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+
+Completed-plan replay is only acceptable when it returns `fully-updated-remote` and stays inert.
+
 ## Old remote
 
 The remote remains unchanged from the last known good state.
@@ -55,4 +63,3 @@ This is the release-blocker state if a retry would otherwise risk:
 Any failure path must end in one of the three states above.
 
 If the remote is not fully old or fully updated, the recovery result must be blocked and inspectable.
-
