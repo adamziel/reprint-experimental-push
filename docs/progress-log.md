@@ -4,6 +4,31 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-24 - Progress Publisher Verification Refresh
+
+- `npm test` passed in this lane with `55` Node scenarios. Evidence:
+  [package.json](../package.json),
+  [test/push-planner.test.js](../test/push-planner.test.js),
+  [test/recovery-journal.test.js](../test/recovery-journal.test.js), and
+  [test/performance-model.test.js](../test/performance-model.test.js).
+- `npm run test:playground` passed in this lane. Its three no-server
+  Playground legs verified snapshot planning, guarded apply, and fixture
+  protocol behavior. The plan leg reported the expected row, file, and
+  plugin-data conflict classes; the apply leg verified eight fixture mutations;
+  the protocol leg verified dry-run receipts, receipt mismatch refusal, stale
+  precondition refusal, and conflict refusal. Evidence:
+  [docs/playground-topology.md](playground-topology.md),
+  [scripts/playground/plan-from-blueprints.mjs](../scripts/playground/plan-from-blueprints.mjs),
+  [scripts/playground/apply-ready-plan.mjs](../scripts/playground/apply-ready-plan.mjs), and
+  [scripts/playground/push-protocol-smoke.mjs](../scripts/playground/push-protocol-smoke.mjs).
+- [progress.html](../progress.html) now separates the currently verified slice
+  from linked standalone local-server lab evidence. It keeps percentages flat
+  because the production gates did not move in this pass.
+- Explicit pending gates remain: real WordPress push executor, production
+  recovery journal, Docker/full Playground integration beyond disposable
+  fixtures, and arbitrary plugin drivers. Current Playground proof is useful
+  fixture evidence, not a production executor or recovery claim.
+
 ## 2026-05-24 - Baseline Evidence Pass
 
 - `npm test` passed with 42 Node test scenarios covering the deterministic JSON
@@ -508,14 +533,18 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Explicit Pending Proof Gates
 
-- Production source mutation: still pending. A real source site must be mutated
-  through the intended Reprint protocol and verified after apply.
-- Durable recovery: still pending. Lab JSONL/DB journals prove useful slices,
-  but not production DB durability, `fsync`, locks, leases, rollback, or
-  exactly-once writes.
-- WordPress integration: still pending. Playground proves fixtures, local REST,
-  auth-shaped routes, storage guards, and plugin fixtures; production Reprint
-  auth, credential binding, and durable source-site audit records remain open.
-- Plugin semantics: still pending. Current safety is limited to allowlisted
+- Real WordPress push executor: still pending. A real source site must be
+  mutated through the intended production-shaped Reprint protocol and verified
+  after apply, with persisted executor state and no lab-only route assumptions.
+- Production recovery journal: still pending. Lab JSONL/DB journals prove
+  useful slices, but not production DB durability, `fsync`, locks, leases,
+  rollback, or exactly-once writes.
+- Docker/full Playground integration: still pending. No-server and localhost
+  Playground fixtures prove useful WordPress-facing behavior, but Docker is
+  unavailable in this sandbox and the full integration path is not production
+  proof.
+- Plugin drivers: still pending. Current safety is limited to allowlisted
   fixture data, one forms custom-table driver, detection-only plugin metadata,
-  and hard-coded fixture plugin install atomicity.
+  and hard-coded fixture plugin install atomicity; arbitrary plugin-owned
+  options, postmeta, custom tables, activation hooks, and rollback are not
+  solved.
