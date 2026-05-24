@@ -97,3 +97,17 @@ Use the JSON model to prove:
 Use the durable journal to prove the same states are recoverable after process
 exit. If the durable path cannot preserve the recovery artifact, the model
 result is not enough to ship.
+
+## Boundary matrix
+
+| Failure boundary | Required state | Required artifacts |
+| --- | --- | --- |
+| before mutation | `old-remote` | opened journal plus the staged plan envelope |
+| after staging | `old-remote` | staged journal evidence plus no committed remote mutation |
+| after dependency validation | `old-remote` | dependencies-validated journal evidence plus no committed remote mutation |
+| completed-plan replay | `fully-updated-remote` | completed journal envelope only, with zero new mutations |
+| partial or drifted replay | `blocked-recovery` | completed journal plus remote drift evidence |
+
+The matrix above is intentionally strict. If the remote changed but the recovery
+artifact does not explain the change, the lane must treat that as blocked
+recovery rather than a safe retry.
