@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Status Review
+
+- Status remains unchanged: `82` Node tests pass, the packaged and
+  production-shaped route smokes still require scoped credentials, stale graph
+  references still block, and the guarded benchmark still refuses unsupported
+  production speed claims.
+- Trend: no material evidence change since the prior snapshot. Production
+  readiness is still blocked by missing auth, durable journal storage,
+  leases/fencing, full graph identity mapping, and general plugin-driver proof.
+- Next nudge: keep replacing lab-backed auth/session/journal internals with
+  production-backed storage and prove graph identity mapping before widening
+  release language.
+- Public page: [progress.html](../progress.html) carries the visible update
+  date and keeps details behind links. This lane update becomes live only after
+  the lane is merged to `main`.
+
 ## 2026-05-24 - Current Supervisor Snapshot
 
 - Status: `82` Node tests pass. The production-shaped, packaged-plugin, and

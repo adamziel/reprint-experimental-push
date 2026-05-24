@@ -1,9 +1,32 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 23:24 CEST
+Last updated: 2026-05-25 00:00 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 00:00 CEST - Status Review Without New Proof
+
+- Going well: the same lab-backed proof remains solid. `82` Node tests pass,
+  packaged push still rejects unscoped or unprovisioned credentials, stale
+  graph references still block, and the guarded benchmark still fails closed on
+  unsupported production speed claims.
+- Not going well: production auth, durable journal storage, leases/fencing,
+  full graph identity mapping, and general plugin drivers remain unproven.
+- Progress change: no material evidence change since the last entry. The status
+  is still blocked for production and the visible page should stay conservative.
+- Next nudge: keep replacing lab auth/session/journal internals with
+  production-backed storage and prove graph identity mapping before widening
+  any release language.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Prove real post/postmeta/attachment/taxonomy identity mapping. |
+| Recovery | Move stale-claim fencing from model to production journal storage. |
+| Reliable executor | Replace scoped lab credentials with production push credentials. |
+| Fast paths | Run the guarded benchmark against a real large Playground/Docker site. |
+| Audit and critic | Re-audit after production-backed auth and journal rows land. |
+| Progress publisher | Keep Pages dated, concise, and explicit about blocked production gates; lane updates become live after merge to `main`. |
 
 ## 2026-05-24 23:24 CEST - Scoped Credential And Graph Safety Refresh
 
