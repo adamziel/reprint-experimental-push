@@ -77,6 +77,7 @@ try {
     assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
     assert.equal(preflight.body.routeProfile.restNamespace, 'reprint/v1');
     assert.equal(preflight.body.routeProfile.labBacked, true);
+    assertSignedStoreCleanup(preflight.body.sessionStore?.cleanup);
 
     const result = runCli([
       'push-authenticated',
@@ -120,6 +121,11 @@ try {
       namespace: preflight.body.routeProfile.restNamespace,
       labNamespaceDisabled: labRoute.status === 404,
       profile: preflight.body.routeProfile.profile,
+      signedStoreCleanup: {
+        deletedExpiredTotal: preflight.body.sessionStore.cleanup.deletedExpiredTotal,
+        sessionsDeleted: preflight.body.sessionStore.cleanup.sessionOptions.deletedExpired,
+        noncesDeleted: preflight.body.sessionStore.cleanup.nonceOptions.deletedExpired,
+      },
     };
     summary.cli = {
       ok: result.ok,
@@ -171,6 +177,19 @@ function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {
       "require_once ABSPATH . 'wp-admin/includes/plugin.php';",
       "$result = activate_plugin('reprint-push/reprint-push.php');",
       'if (is_wp_error($result)) { throw new RuntimeException($result->get_error_message()); }',
+    ].join(' '),
+  });
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      '$past = time() - 60;',
+      '$future = time() + 3600;',
+      "add_option('reprint_push_lab_signed_session_' . str_repeat('a', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$past,'fixture'=>'expired-session'), '', 'no');",
+      "add_option('reprint_push_lab_signed_session_' . str_repeat('b', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$future,'fixture'=>'future-session'), '', 'no');",
+      "add_option('reprint_push_lab_signed_nonce_' . str_repeat('c', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$past,'fixture'=>'expired-nonce'), '', 'no');",
+      "add_option('reprint_push_lab_signed_nonce_' . str_repeat('d', 64), array('schemaVersion'=>1,'expiresAtUnix'=>$future,'fixture'=>'future-nonce'), '', 'no');",
     ].join(' '),
   });
   fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
@@ -443,6 +462,18 @@ function assertRouteNamespace(body) {
     false,
     'packaged plugin must not expose public lab REST namespace',
   );
+}
+
+function assertSignedStoreCleanup(cleanup) {
+  assert.equal(cleanup?.schemaVersion, 1);
+  assert.equal(cleanup.store, 'wp-options');
+  assert.ok(cleanup.deletedExpiredTotal >= 2, 'signed store cleanup must delete seeded expired artifacts');
+  assert.ok(cleanup.sessionOptions.deletedExpired >= 1, 'expired signed session option was not deleted');
+  assert.ok(cleanup.nonceOptions.deletedExpired >= 1, 'expired signed nonce option was not deleted');
+  assert.ok(cleanup.sessionOptions.retainedUnexpired >= 1, 'unexpired signed session option was not retained');
+  assert.ok(cleanup.nonceOptions.retainedUnexpired >= 1, 'unexpired signed nonce option was not retained');
+  assert.equal(cleanup.sessionOptions.limitReached, false);
+  assert.equal(cleanup.nonceOptions.limitReached, false);
 }
 
 async function findLocalPort() {

@@ -30,6 +30,7 @@ const REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE = 'reprint_push_lab_auth';
 const REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE = 'reprint_push_lab_signature';
 const REPRINT_PUSH_LAB_SIGNED_SESSION_TTL = 300;
 const REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW = 300;
+const REPRINT_PUSH_LAB_SIGNED_STORE_CLEANUP_LIMIT = 500;
 
 add_filter('wp_is_application_passwords_available', 'reprint_push_lab_rest_application_passwords_available');
 add_action('rest_api_init', 'reprint_push_lab_rest_register_routes');
@@ -387,6 +388,14 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
             'issuedAt' => $signature['session']['issuedAt'] ?? null,
             'expiresAt' => $signature['session']['expiresAt'] ?? null,
             'receiptTtlSeconds' => 300,
+        ],
+        'sessionStore' => [
+            'type' => 'wp-options',
+            'cleanup' => $signature['cleanup'] ?? [],
+            'retention' => [
+                'sessionTtlSeconds' => REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
+                'nonceTtlSeconds' => REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW,
+            ],
         ],
         'limits' => [
             'maxMutationsPerPlan' => 100,
@@ -2016,6 +2025,8 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         $session_id = (string) $session['id'];
     }
 
+    $cleanup = reprint_push_lab_rest_collect_expired_signed_artifacts();
+
     return [
         'ok' => true,
         'signature' => [
@@ -2039,6 +2050,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
                 'idempotencyKeyHash' => $idempotency_key !== '' ? hash('sha256', $idempotency_key) : '',
                 'canonicalHash' => hash('sha256', $canonical['string']),
             ],
+            'cleanup' => $cleanup,
         ],
     ];
 }
@@ -2188,6 +2200,75 @@ function reprint_push_lab_rest_claim_signed_nonce(string $nonce, array $metadata
     return add_option(reprint_push_lab_rest_signed_nonce_option($nonce_hash), $metadata, '', 'no');
 }
 
+function reprint_push_lab_rest_collect_expired_signed_artifacts(?int $now = null): array
+{
+    $now = $now ?? time();
+    $session_cleanup = reprint_push_lab_rest_collect_expired_signed_artifacts_by_prefix(
+        reprint_push_lab_rest_signed_session_option(''),
+        $now
+    );
+    $nonce_cleanup = reprint_push_lab_rest_collect_expired_signed_artifacts_by_prefix(
+        reprint_push_lab_rest_signed_nonce_option(''),
+        $now
+    );
+
+    return [
+        'schemaVersion' => 1,
+        'store' => 'wp-options',
+        'now' => gmdate('Y-m-d\TH:i:s\Z', $now),
+        'limit' => REPRINT_PUSH_LAB_SIGNED_STORE_CLEANUP_LIMIT,
+        'sessionOptions' => $session_cleanup,
+        'nonceOptions' => $nonce_cleanup,
+        'deletedExpiredTotal' => (int) $session_cleanup['deletedExpired'] + (int) $nonce_cleanup['deletedExpired'],
+    ];
+}
+
+function reprint_push_lab_rest_collect_expired_signed_artifacts_by_prefix(string $option_prefix, int $now): array
+{
+    global $wpdb;
+
+    $rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s ORDER BY option_name ASC LIMIT %d",
+            $wpdb->esc_like($option_prefix) . '%',
+            REPRINT_PUSH_LAB_SIGNED_STORE_CLEANUP_LIMIT
+        ),
+        ARRAY_A
+    );
+    $rows = is_array($rows) ? $rows : [];
+
+    $deleted = 0;
+    $retained_unexpired = 0;
+    $retained_without_expiry = 0;
+
+    foreach ($rows as $row) {
+        $option_name = (string) ($row['option_name'] ?? '');
+        $value = maybe_unserialize($row['option_value'] ?? null);
+        $expires_at = is_array($value) ? (int) ($value['expiresAtUnix'] ?? 0) : 0;
+
+        if ($expires_at > 0 && $expires_at <= $now) {
+            delete_option($option_name);
+            $deleted++;
+            continue;
+        }
+
+        if ($expires_at > $now) {
+            $retained_unexpired++;
+        } else {
+            $retained_without_expiry++;
+        }
+    }
+
+    return [
+        'prefixHash' => hash('sha256', $option_prefix),
+        'scanned' => count($rows),
+        'deletedExpired' => $deleted,
+        'retainedUnexpired' => $retained_unexpired,
+        'retainedWithoutExpiry' => $retained_without_expiry,
+        'limitReached' => count($rows) >= REPRINT_PUSH_LAB_SIGNED_STORE_CLEANUP_LIMIT,
+    ];
+}
+
 function reprint_push_lab_rest_signed_identity_hash(array $auth): string
 {
     return hash('sha256', implode("\n", [
@@ -2232,6 +2313,9 @@ function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request)
         'nonceHash' => (string) ($signature['nonceHash'] ?? ''),
         'sessionHash' => (string) ($signature['session']['sessionHash'] ?? ''),
         'signingKeyHash' => (string) ($signature['signingKeyHash'] ?? ''),
+        'cleanup' => isset($signature['cleanup']) && is_array($signature['cleanup'])
+            ? $signature['cleanup']
+            : [],
         'request' => isset($signature['request']) && is_array($signature['request'])
             ? $signature['request']
             : [],
