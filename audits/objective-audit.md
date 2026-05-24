@@ -244,18 +244,22 @@ invocation and can be skipped while `npm test` remains green.
    and one custom table in fixtures. It does not prove that attachments,
    taxonomy links, menus, users, plugin tables, or plugin-owned serialized
    payloads survive a failed or retried live push without loss or duplication.
+   Until a live-source graph matrix exists, every no-data-loss statement is a
+   blocked claim, not a proven one.
 
 5. **Reliability evidence is narrower than the claim.**
    The recovery and idempotency smokes classify events and replay fixture
    results, but they do not prove crash survival at every guarded boundary in a
    production executor, nor do they prove leases, fencing, or exactly-once
-   behavior on a live source site.
+   behavior on a live source site. Passing them only proves that some failure
+   states are detected; it does not prove the live write path is restart-safe.
 
 6. **Speed evidence is modeled, not measured for release.**
    The benchmark tests are useful because they reject unsupported speed claims
    and encode guardrails, but they do not move bytes through a production
    executor, measure a live source site, or establish a release throughput
-   threshold on a documented environment.
+   threshold on a documented environment. The suite can block a false "fast"
+   claim, but it cannot authorize a real one.
 
 7. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
@@ -341,21 +345,40 @@ invocation and can be skipped while `npm test` remains green.
    in order and fails closed on any skipped mandatory smoke.
 
 18. **The live-source no-data-loss claim is still blocked by missing crash
-   coverage at the actual write boundaries.** The current smoke suite can
-   show one process-kill path and one stale-claim path, but it does not kill
-   the executor at each production-grade boundary for DB writes, filesystem
-   writes, plugin activation, finalization, and replay. Without that matrix,
-   the claim still rests on selective fixtures and model state, not on the
-   exact places the source site can lose or duplicate work.
+    coverage at the actual write boundaries.** The current smoke suite can
+    show one process-kill path and one stale-claim path, but it does not kill
+    the executor at each production-grade boundary for DB writes, filesystem
+    writes, plugin activation, finalization, and replay. Without that matrix,
+    the claim still rests on selective fixtures and model state, not on the
+    exact places the source site can lose or duplicate work.
 
 19. **The speed claim is still only a model.** The benchmark tests verify
-   evidence structure, guardrail placement, and failure gates, but they do
-   not measure a real push path against a live WordPress site, do not report
-   a throughput target, do not establish a memory ceiling under load, and do
-   not enforce a benchmark environment that can fail release automatically.
-   Until a production-shaped benchmark runs the executor end to end with a
-   non-bypassable threshold, "fast" remains blocked as a release claim, not
-   merely unproven.
+    evidence structure, guardrail placement, and failure gates, but they do
+    not measure a real push path against a live WordPress site, do not report
+    a throughput target, do not establish a memory ceiling under load, and do
+    not enforce a benchmark environment that can fail release automatically.
+    Until a production-shaped benchmark runs the executor end to end with a
+    non-bypassable threshold, "fast" remains blocked as a release claim, not
+    merely unproven.
+
+## Test Verdict
+
+The current test suite is good at proving local invariants and blocking bad
+states. It is not good enough to certify a live WordPress push path.
+
+Specifically:
+
+- `npm test` proves model-level safety, not production no-data-loss.
+- The Playground smokes prove fixture behavior, not real source-site
+  durability or graph integrity.
+- The benchmark checks prove guardrails, not release-grade speed.
+- Because the strongest gates are still manual, a green run does not imply
+  release readiness.
+
+The actionable next proof is a non-bypassable release gate plus a kill matrix
+at every guarded write boundary on the production-backed path. Until then, the
+repository can truthfully claim lab evidence for push-safety invariants, but
+not a production-safe live WordPress push.
 
 ## Required Release Gates
 
