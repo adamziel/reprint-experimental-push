@@ -15,6 +15,9 @@ the live remote immediately before apply.
 - Independent local changes while other remote-only resources changed.
 - Remote-only plugin metadata and file changes are preserved while unrelated
   local mutations on other resources are still eligible for planning.
+- Local deletions remain auto-applicable only when the deleted resource still
+  matches the pull base on the live remote. Remote-only changes to unrelated
+  plugin metadata or plugin files do not relax that precondition.
 - Matching independent edits where local and remote changed a resource to the
   same hash, including deletions and file edits; these produce
   `already-in-sync` decisions, not mutations.
@@ -82,6 +85,9 @@ the resource key, the live remote hash observed during planning, and the
   that live owner context.
 - Plugin-owned data changes when the live remote owner plugin files or metadata
   changed since the pull base and local does not match that live owner context.
+- Unrelated remote-only plugin drift does not make a stale plugin-context
+  mutation safe. If local touches the same plugin's files or plugin-owned data,
+  stop.
 - Plugin-owned data changes whose declared driver does not match the resource
   table, such as `wp-option` for a `wp_postmeta` row.
 - WordPress graph mutations that reference a graph target whose live remote
@@ -91,10 +97,14 @@ the resource key, the live remote hash observed during planning, and the
 - WordPress graph mutations that reference a graph target absent from the live
   remote. Creating new target identities and rewriting relationship rows in the
   same plan remains blocked until an identity-map/rewrite proof exists.
-- File topology conflicts where applying a local file deletion or type swap
-  would require overwriting, removing, or hiding a live remote ancestor or
-  descendant. The conflicting file mutation and its precondition must be
-  suppressed rather than left as an apply candidate.
+- File topology conflicts where applying a local file or type change would
+  require overwriting, removing, or hiding a live remote ancestor or descendant.
+  The conflicting file mutation and its precondition must be suppressed rather
+  than left as an apply candidate.
+- Safe preservation of unrelated remote-only plugin drift does not authorize a
+  stale plugin-context mutation. If the local plan touches the same plugin's
+  files or plugin-owned data, the planner must stop instead of assuming the
+  remote plugin drift is harmless.
 - Atomic groups with missing plugin dependencies after considering the expected
   post-apply remote state and planned plugin mutations.
 - Any internally generated mutation that lacks a matching live remote
