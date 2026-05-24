@@ -590,7 +590,10 @@ would reasonably read as equivalent.
   route name, package name, or lab smoke output still looks correct.
 - A retry always starts from fresh live evidence and cannot reuse an old
   approval for unrelated rows, files, or plugin state, including plugin-owned
-  surfaces that drifted after the review.
+  surfaces that drifted after the review or were only partially approved in a
+  previous attempt. Stale approval must remain readable for audit, but it
+  cannot be widened into a broader write scope or replayed as current
+  authority after remote drift.
 - Every partial apply path is either rolled back, fenced, or preserved for
   audit and retry without a false success claim.
 - A fixture replay, packaged-plugin smoke, or `finalMatchesLocal` result is
@@ -603,6 +606,10 @@ would reasonably read as equivalent.
 - A manual review artifact is only acceptable when the remote snapshot,
   reviewed scope, and hashes still match at apply time; otherwise the artifact
   must stay audit-only and be rejected before any write.
+- If a manual-review artifact becomes stale after drift or after a partial
+  apply, the next retry must fail closed before mutation, preserve the old
+  artifact for audit, and re-plan from a fresh live snapshot rather than
+  widening the old approval.
 - Every production journal boundary has crash evidence for old, new, or
   blocked classification.
 - The release suite runs auth, storage, recovery, plugin, graph, redaction,
