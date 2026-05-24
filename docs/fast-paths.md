@@ -38,7 +38,7 @@ the safe list even when they improve a throughput metric.
 | File hashing | Cache strong file hashes behind a local fingerprint such as size, mtime, inode, mode, and the previous digest. Stream only uncached or fingerprint-changed files, and keep per-chunk hashes for large files so resume can skip work safely. | Size, mtime, or inode can only skip a rehash when they match a cached strong digest. The apply precondition remains the live remote resource hash. |
 | Chunk upload | Upload large file bodies to plan-scoped staging objects in digest-addressed chunks, then assemble or publish the file with one compare-and-swap finalize step. | Chunk writes must not mutate the live path. Each chunk needs a checksum, idempotency key, and durable journal entry before the sender advances. |
 | Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order with one precondition per row. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
-| Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, and strong hash so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
+| Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, strong hash, and owner so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
 | Compression | Compress transport frames for JSON, SQL batches, manifests, and text files. Skip already-compressed file types and keep the canonical hash over the uncompressed resource value. | Content encoding is transport metadata. It must not change the hash used for conflict detection or compare-and-swap. |
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
@@ -217,7 +217,7 @@ validators, and the final durable commit record.
 
 ## Fast Paths To Reject
 
-- Publishing chunks directly into the live file path.
+- Publishing chunks directly into the live file path or any other live path before finalize.
 - Skipping apply preconditions because the dry-run plan was just generated.
 - Treating a remote index generation as permission to mutate.
 - Using mtime, size, row count, or table checksum instead of strong resource
@@ -232,7 +232,7 @@ validators, and the final durable commit record.
   guarded finalize step.
 - Merging rows from different plugin owners or atomic groups into one visible
   batch because the SQL shape matches.
-- Using index freshness, cursor freshness, or a successful dry run as a live
+- Using index freshness, cursor freshness, tombstone state, or a successful dry run as a live
   mutation authorization.
 - Retrying non-idempotent mutations without a plan id, resource key, and batch
   idempotency key.

@@ -40,6 +40,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin install models remote planning indexes',
   );
   assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'file-hash'),
+    'plugin install models file hashing',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'chunk-upload'),
+    'plugin install models chunk uploads',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'compression-decision'),
+    'plugin install models compression decisions',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'db-row-batch'),
     'plugin install models database row batching',
   );
@@ -277,10 +289,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('commit-group-with-missing-receipts').violates.includes('durable-progress'),
   );
   assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('unbounded-parallelism').violates.includes('backpressure'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(rejectedById.get('live-chunk-publish').proposal.includes('live file path'));
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('metadata-only-conflict-check').violates.includes('strong-resource-hashes'));
+  assert.ok(rejectedById.get('remote-index-authorizes-mutation').proposal.includes('permission'));
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {
