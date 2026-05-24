@@ -2859,6 +2859,22 @@ test('recovery boundaries only allow old remote, fully updated remote, or blocke
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
   }
 
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const partialError = captureError(() =>
+    applyPlan(baseSite(), plan, {
+      failBeforeCommitAtMutation: 1,
+      durableJournal,
+    }));
+  durableJournal.close();
+
+  assert.ok(partialError instanceof PushPlanError);
+  assert.equal(partialError.code, 'INJECTED_FAILURE_BEFORE_COMMIT');
+  assertAcceptableRecoveryState(partialError.details.recovery);
+  assert.equal(partialError.details.recovery.status, 'old-remote');
+  assert.ok(partialError.details.recovery.artifacts.journal);
+  assert.equal(partialError.details.recovery.artifacts.remote, undefined);
+
   const completed = applyPlan(baseSite(), plan);
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
