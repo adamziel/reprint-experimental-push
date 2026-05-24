@@ -258,6 +258,32 @@ production-grade push support:
   remote hashes that were reviewed, the reviewer identity, and the live
   snapshot timestamp, and it must fail closed if any of those change before
   apply.
+
+## Must-Have Proof Before Production Wording
+
+A future production claim is still blocked until the repo can show all of the
+following on the live push path, not on a fixture or route-shape smoke:
+
+- A live production executor path that is not a Playground proxy, copied lab
+  helper, or fixture-backed stand-in.
+- A fresh remote re-read immediately before the first guarded write, with stale
+  hashes and stale manual-review artifacts rejected before any mutation.
+- A remote-preserving retry flow that starts from a new snapshot and a new plan
+  after drift, while keeping the rejected artifact readable for audit only.
+- Identity reservation or a hard block for creates, with proof that the retry
+  path cannot silently remap relationships to a new object.
+- A plugin ownership manifest that covers every owned table, file, option, cron,
+  cache, activation, generated, and runtime side effect in scope, with unknown
+  surfaces blocked instead of guessed.
+- Durable crash classification that can say old, new, or blocked after partial
+  file, DB, or plugin side effects, without reporting success from an
+  incomplete apply.
+- A review artifact that binds the exact base, local, remote, reviewer, live
+  snapshot timestamp, and retry scope, and that cannot be widened to a different
+  row, file, or plugin-owned surface.
+
+If any one of those proofs is missing, the branch can describe the design, but
+it cannot claim production-grade push support.
 - Evidence standard: fixture replay, route-shape smoke, and packaged-plugin
   mounting are compatibility checks only; none may be cited as proof of
   production safety, even if they return live-looking hashes or `finalMatchesLocal`.
