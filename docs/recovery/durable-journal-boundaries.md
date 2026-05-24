@@ -64,6 +64,18 @@ implementation needs a durable append/write path, not just an in-memory object:
 
 The production journal may be implemented with files, database rows, or another
 durable sink, but the post-failure classification requirements do not change.
+The implementation details can vary, but the safety bar does not:
+
+- file-backed journals need an actual flush to stable storage, not just an
+  in-memory append
+- row-backed journals need a committed row that survives restart and can be
+  inspected later
+- plugin activation or other external side effects need their own durable
+  evidence when they affect the recovery boundary
+- leases, fencing tokens, or similar exclusion mechanisms are required when a
+  second writer could otherwise replay stale work
+- recovery inspect must be able to classify the result from artifacts alone,
+  without guessing from the local working copy
 
 If a remote mutation is visible but there is no durable recovery artifact that
 can explain the state, treat that as a release blocker.
