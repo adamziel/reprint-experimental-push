@@ -311,6 +311,33 @@ test('plans local file type swaps only behind live remote preconditions', () => 
   assert.deepEqual(result.site.files['wp-content/uploads/cover'], { type: 'directory' });
 });
 
+test('keeps remote-only plugin changes while planning an unrelated local file type swap', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = 'base file bytes';
+  const local = baseSite();
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  const remote = baseSite();
+  remote.files['wp-content/uploads/cover'] = 'base file bytes';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, 'file:wp-content/uploads/cover');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.changeKind, 'type-change');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.deepEqual(result.site.files['wp-content/uploads/cover'], { type: 'directory' });
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.plugins.forms.active, false);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
 test('keeps independent mutation evidence while suppressing unsafe topology mutations', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
