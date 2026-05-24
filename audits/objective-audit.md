@@ -39,13 +39,12 @@ them are still fixture-scoped or lab-backed. The benchmark code already
 refuses an unsupported throughput claim by listing blockers such as missing
 durable chunk receipts, missing live remote preconditions, missing durable
 journal integrity, missing graph-identity evidence, missing recovery evidence,
-and non-production storage or row-apply capabilities. That is a useful refusal
-mechanism, but it is still only a guardrail. It does not create the required
-release boundary, so the repo can still present a green default test run while
-the strongest claims remain skipped. In other words, the suite can reject
-unsafe release claims, but it does not yet enforce the full release claim.
-That means the current test story is strongest as a blocker generator, not as
-release-grade proof of no data loss, reliability, or speed.
+and non-production storage or row-apply capabilities. That is useful refusal
+logic, but it is not a release gate. It does not prevent a green default run
+from skipping the strongest checks, so the repo can still look healthy while
+the objective remains unproven. The current test story is therefore strongest
+as a blocker generator, not as release-grade proof of no data loss,
+reliability, or speed.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -232,7 +231,10 @@ bundled lab chain is `npm run test:playground`, and the stronger auth,
 journal, storage, recovery, plugin, and benchmark checks are only available
 as separate opt-ins. There is no `npm run release`, `npm run verify`, or CI
 workflow that chains those checks into one required release path, so a green
-run can still omit the exact proof the objective needs.
+run can still omit the exact proof the objective needs. This should be the
+next implementation target: a single required command that executes the full
+release matrix and fails closed when any safety or performance gate reports
+fixture-only, lab-backed, or missing-live-topology evidence.
 
 - `npm test` is the default automated suite, but it only covers the model and
   selected fixture logic.
