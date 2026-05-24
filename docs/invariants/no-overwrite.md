@@ -136,6 +136,9 @@ the resource key, the live remote hash observed during planning, and the
   post-apply remote state and planned plugin mutations.
 - Any internally generated mutation that lacks a matching live remote
   precondition.
+- Any forged ready plan that is missing the mutation's live remote precondition
+  or that points at a different resource hash than the one observed during
+  planning.
 - Any mutation whose target hash drifts after dry-run or initial apply
   validation but before that specific mutation write.
 - Any supported fixture DB update whose stored row columns or required fixture

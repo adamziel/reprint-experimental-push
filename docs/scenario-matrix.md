@@ -5,6 +5,7 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Scenario | Expected behavior | Current evidence |
 | --- | --- | --- |
 | Remote site is unchanged since pull | Local file and row changes are planned and applied. | `plans and applies local changes when remote still matches the pull base` |
+| Forged ready plan omits a live remote precondition | Executor rejects the plan with `PRECONDITION_FAILED`; no mutation is applied. | `executor rejects forged ready plans missing live remote preconditions` |
 | Remote changed, local did not | Remote change is kept; no mutation is produced. | `keeps remote-only changes and does not overwrite them` |
 | Remote and local changed different resources | Local mutations apply while remote-only changes are preserved. | `combines non-overlapping local and remote changes` |
 | Local deleted a file or row, remote still matches pull base | Delete mutations are planned only with matching live remote preconditions; no stale delete is emitted without a live-remote hash check. | `plans local deletions only behind live remote preconditions` |

@@ -989,7 +989,29 @@ function sanitizeRecoveryRemote(remote, plan) {
 }
 
 function validatePreconditions(remote, plan) {
+  const preconditions = Array.isArray(plan.preconditions) ? plan.preconditions : [];
+  if (preconditions.length !== (plan.mutations || []).length) {
+    throw new PushPlanError(
+      'PRECONDITION_FAILED',
+      'Refusing to apply a ready plan without one live remote precondition per mutation.',
+      {
+        mutationCount: (plan.mutations || []).length,
+        preconditionCount: preconditions.length,
+      },
+    );
+  }
   for (const precondition of plan.preconditions || []) {
+    if (precondition.checkedAgainst !== 'live-remote') {
+      throw new PushPlanError(
+        'PRECONDITION_FAILED',
+        `Refusing to apply mutation ${precondition.mutationId || '(unknown)'} without a live-remote precondition.`,
+        {
+          mutationId: precondition.mutationId || null,
+          resourceKey: precondition.resourceKey || null,
+          checkedAgainst: precondition.checkedAgainst || null,
+        },
+      );
+    }
     const actualHash = resourceHash(remote, precondition.resource);
     if (actualHash !== precondition.expectedHash) {
       throw new PushPlanError(
