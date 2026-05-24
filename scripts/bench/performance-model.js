@@ -392,6 +392,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'durable-progress'],
   },
   {
+    id: 'backpressure-pause-means-complete',
+    proposal: 'treat a backpressure pause as proof that a large upload or plugin install is complete',
+    rejectedBecause: 'a pause only stops producers; it does not prove that chunk receipts, row receipts, or the atomic-group commit survived failure',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'chunk-receipts', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-buffer-means-complete',
     proposal: 'treat a compressed in-memory buffer as proof that upload or batch work is durable',
     rejectedBecause: 'compression can shrink buffered state, but it cannot replace the receipt or commit record needed after failure',

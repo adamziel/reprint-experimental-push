@@ -52,6 +52,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A remote index cursor can guide planning, but it cannot authorize a live write.
 - Extra parallelism is only safe while it preserves the same preconditions, receipts, and atomic barrier.
 - Backpressure must pause producers; it cannot claim success by draining evidence into memory.
+- A backpressure pause cannot mean completion, because the paused work still needs chunk receipts, row receipts, and the atomic-group commit record to survive failure.
 - Compressing buffered evidence can save memory, but it cannot stand in for a receipt or commit record.
 - A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
 - A fresh remote index plus a cached plugin package hash still cannot skip dependency checks, metadata writes, or the atomic-group barrier.

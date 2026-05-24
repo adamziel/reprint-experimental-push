@@ -606,6 +606,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('archive-hash-skips-chunk-receipts').violates.includes('durable-progress'),
   );
   assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('backpressure'));
+  assert.ok(
+    rejectedById.get('backpressure-pause-means-complete').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('backpressure-pause-means-complete').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('backpressure-pause-means-complete').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('backpressure-pause-means-complete').violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('backpressure-pause-means-complete').rejectedGate,
+    'recovery',
+  );
   assert.ok(rejectedById.get('compressed-buffer-means-complete').violates.includes('compression'));
   assert.ok(
     rejectedById.get('compressed-buffer-means-complete').violates.includes('durable-progress'),
@@ -1526,6 +1542,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'split-plugin-install',
     'blind-sql-replace',
     'backpressure-drops-evidence',
+    'backpressure-pause-means-complete',
     'compressed-buffer-means-complete',
     'compressed-queue-drains-means-complete',
     'chunk-digest-completes-chunk',
