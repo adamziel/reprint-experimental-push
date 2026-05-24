@@ -238,6 +238,28 @@ evidence for all of these, not just a plausible design:
   authorize a different row, file, or plugin-owned surface.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
+
+## Release Gate
+
+Do not allow production-grade push wording unless every item below is true in
+repo-specific evidence, not in lab shape or source-note comparison language:
+
+- A live remote drift between dry-run and apply is rejected before any write,
+  and the rejection cites the exact live hashes that failed validation.
+- A create-time identity reservation exists, or the plan hard-blocks every
+  create that could be renumbered, aliased, or remapped on the remote.
+- Every plugin-owned surface touched by push is either enumerated in the
+  coverage manifest or hard-blocked before apply.
+- Partial file, DB, or plugin side effects are classified with durable
+  artifacts that survive retry and preserve the remote for audit.
+- A manual-resolution artifact is bound to the exact stale snapshot it was
+  reviewed against, remains auditable, and cannot authorize a widened retry.
+- A retry after stale approval starts from fresh live evidence and cannot
+  reuse an old route-shape smoke, packaged-plugin smoke, or `finalMatchesLocal`
+  result as authority.
+- The evidence shows the write path is the production executor, not a
+  Playground-backed or fixture-backed stand-in that only matches the route
+  shape.
 - A release gate that runs the full safety-critical suite before any
   production claim ships, and that gate must fail closed on stale manual
   review artifacts, unknown plugin ownership, route-shape-only evidence, or
