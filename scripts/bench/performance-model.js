@@ -294,6 +294,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'durable-progress'],
   },
   {
+    id: 'staged-bytes-as-published',
+    proposal: 'treat complete-looking staged chunks or row batches as visible without guarded finalize or commit',
+    rejectedBecause: 'staging presence does not prove the live preconditions or group commit have completed',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'skip-plugin-validators-on-package-hash',
     proposal: 'skip dependency, metadata, and activation validators when a plugin package hash is cached',
     rejectedBecause: 'package identity does not prove that coupled remote resources are ready to commit',
@@ -403,7 +410,7 @@ function largeUploadWorkload() {
       {
         resourceKey: 'file:wp-content/uploads/2026/05/catalog-export.zip',
         path: 'wp-content/uploads/2026/05/catalog-export.zip',
-        sizeBytes: 1536 * MIB,
+        sizeBytes: 2048 * MIB,
         mimeType: 'application/zip',
         compressible: false,
         baseHash: 'sha256:base-catalog-export',

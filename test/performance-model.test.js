@@ -293,6 +293,10 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('visible-staging-object-completes-chunk').violates.includes('durable-progress'),
   );
+  assert.ok(
+    rejectedById.get('staged-bytes-as-published').violates.includes('atomic-groups'),
+  );
+  assert.equal(rejectedById.get('staged-bytes-as-published').rejectedGate, 'group');
   assert.ok(rejectedById.get('blind-sql-replace').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('cross-group-row-batch').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('index-cursor-as-lock').violates.includes('live-preconditions'));

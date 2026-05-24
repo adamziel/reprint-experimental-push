@@ -53,7 +53,9 @@ file hashing, chunk upload, database row batching, remote indexes,
 compression, parallelism limits, and backpressure. If a proposed speedup in
 one of those areas cannot explain its unchanged visibility boundary and its
 durable failure evidence, it belongs in the reject list instead of the safe
-list.
+list. Planning evidence, such as a remote index cursor or a local fingerprint,
+can justify skipping duplicate work, but it never authorizes a live mutation
+by itself.
 
 Before a speedup moves from proposal to implementation, write down the proof
 obligation in the benchmark model:
@@ -236,7 +238,9 @@ validators, and the final durable commit record.
 
 ## Fast Paths To Reject
 
-- Publishing chunks directly into the live file path or any other live path before finalize.
+- Publishing chunks directly into the live file path.
+- Publishing staged chunks or row batches just because the staging objects
+  exist and look complete.
 - Skipping apply preconditions because the dry-run plan was just generated.
 - Treating a remote index generation as permission to mutate.
 - Using mtime, size, row count, or table checksum instead of strong resource
