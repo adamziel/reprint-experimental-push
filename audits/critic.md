@@ -144,6 +144,10 @@ evidence for all of these, not just a plausible design:
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals, and a proof that package mounting only exposes the
   endpoint shape rather than the mutation semantics.
+- A route that looks production-shaped, returns live hashes, or passes a
+  packaged-plugin smoke must still be proven against a live remote with drift;
+  those results are compatibility evidence only and do not prove production
+  write safety, credential isolation, or durable retry behavior.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
   outputs are compatibility evidence only; they are never sufficient by
   themselves to claim production mutation safety, credential isolation, or
@@ -208,7 +212,8 @@ production-grade push support:
 - Plugin ownership safety: every plugin-owned table, file, option, cron,
   cache, activation, and generated surface in scope must be explicitly
   enumerated or hard-blocked, and remote ownership drift must be revalidated
-  before write.
+  before write. Unknown plugin-owned state outside the manifest is a hard
+  block, not a candidate for manual resolution.
 - Partial-side-effect safety: a failure that leaves mixed file, DB, or plugin
   effects must produce durable artifacts that classify the target as old,
   fully updated, or blocked recovery without pretending the push succeeded.
@@ -217,7 +222,13 @@ production-grade push support:
   remote can be preserved and the operator can safely retry or inspect later.
 - Stale-approval handling: if the remote changes after review, the old
   approval must stay readable for audit but the retry must be rejected before
-  any write and forced to start from a fresh live snapshot.
+  any write and forced to start from a fresh live snapshot. A retry may not
+  reuse an old approval record to widen scope, cross rows, or touch a
+  different plugin-owned surface.
+- Manual-review proof: the review artifact must show the exact base/local/
+  remote hashes that were reviewed, the reviewer identity, and the live
+  snapshot timestamp, and it must fail closed if any of those change before
+  apply.
 - Evidence standard: fixture replay, route-shape smoke, and packaged-plugin
   mounting are compatibility checks only; none may be cited as proof of
   production safety.
