@@ -25,8 +25,10 @@ state changes on the live remote.
 The current design also still has five unproven failure classes that matter for
 production push safety: live remote drift between dry-run and apply, create-time
 identity remapping, plugin-owned state outside the allowlist, partial file/DB/
-plugin side effects, and stale manual review artifacts. Until each one has a
-retry-safe proof or a hard block, a success message is stronger than the
+plugin side effects, and stale manual review artifacts. For each one, the
+missing proof is concrete: either the write is rejected before mutation, or the
+remote-preserving retry path is fully auditable and replay-safe. Until each
+class has that proof or a hard block, a success message is stronger than the
 evidence.
 
 ## Blocking Gaps
@@ -205,15 +207,18 @@ mode where the current evidence still allows silent data loss, stale retries,
 or an operator-facing success message that is stronger than the proof.
 
 1. Ship a real production push endpoint whose implementation does not route to
-   Playground or lab internals.
+   Playground or lab internals, and prove the live write path still works when
+   the remote drifts between dry-run and apply.
 2. Separate lab credentials from production push credentials and prove
    production lifecycle behavior: issuance, scoping, rotation, revocation,
    replay rejection, and audit retention.
 3. Introduce a complete production coverage manifest and make unknown plugin,
    custom-table, generated-file, cache, and multisite resources hard blocks.
+   Missing proof: a live remote plugin-owned surface outside the manifest is
+   rejected before any write.
 4. Define plugin-owned resource contracts for tables, files, options, cron,
    cache, and activation hooks, with rollback or block behavior for unknown
-   ownership.
+   ownership and for ownership changes discovered immediately before apply.
 5. Add graph identity mapping, including stable allocation for new objects, or
    broaden the hard block policy so every relationship-bearing WordPress row
    class that can silently rewire identity is either rewritten safely or
@@ -229,11 +234,12 @@ or an operator-facing success message that is stronger than the proof.
    approval record.
 8. Extend storage-boundary checks to production write primitives, including
    inserts, deletes, schema changes, file publish/unlink, plugin activation
-   side effects, and any write path that can expose mixed old/new state.
+   side effects, and any write path that can expose mixed old/new state after a
+   partial write.
 9. Build a durable production journal with kill-at-every-boundary tests across
    DB, filesystem, plugin activation, and stale-claim recovery.
 10. Add tombstone and resurrection policy for delete/restore cases so a retry
-   cannot silently revive intentionally deleted remote content.
+    cannot silently revive intentionally deleted remote content.
 11. Publish production audit/redaction schemas and a release gate that runs the
     full safety-critical suite before the project can use production-grade
     wording.
