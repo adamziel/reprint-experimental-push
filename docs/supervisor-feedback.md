@@ -1,9 +1,20 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:18:28 CEST
+Last updated: 2026-05-25 01:19:38 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 01:19:38 CEST - Supervisor Snapshot
+
+- Going well: the page still stays compact, and the detailed evidence links are
+  easy to reach.
+- Not going well: the blocked production gates still dominate the story because
+  no new proof landed.
+- Progress change: no evidence delta; this pass only tightened the surface and
+  pruned repeated wording.
+- Next nudge: each lane should name one proof gap, one next test, and one owner
+  in a single terse line.
 
 ## 2026-05-25 01:18:28 CEST - Supervisor Snapshot
 
