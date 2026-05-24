@@ -6,7 +6,7 @@
       "kind": "source-site",
       "role": "pulled merge base and persisted push provenance",
       "examples": {
-        "docker": "remote-wp",
+        "docker": "remote-base",
         "playground": "remote-base"
       }
     },
@@ -14,7 +14,7 @@
       "kind": "edited-clone",
       "role": "local plan source after user edits",
       "examples": {
-        "docker": "local-wp",
+        "docker": "local-edited",
         "playground": "local-edited"
       }
     },
@@ -37,8 +37,8 @@
   },
   "docker": {
     "shape": [
-      "remote-wp pulls first and seeds the merge base",
-      "local-wp is restored from that base and edited independently",
+      "remote-base pulls first and seeds the merge base",
+      "local-edited is restored from that base and edited independently",
       "runner calls push_preflight, push_snapshot_hashes, push_plan_dry_run, push_batch_apply, push_journal, and push_recover against the same remote site as it drifts",
       "push_plan_dry_run is only an eligibility receipt; push_batch_apply must revalidate live remote state before every batch and again at the storage boundary",
       "push_journal and push_recover inspect are read-only evidence readers, while mutating recovery modes require fresh live proof",

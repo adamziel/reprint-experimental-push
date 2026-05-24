@@ -265,9 +265,9 @@ runner:
 docker network: reprint-push
 
 remote-db      source site database
-remote-wp      source WordPress site with the push extension
+remote-base    source WordPress site with the push extension
 local-db       edited local site database
-local-wp       edited local WordPress site created from the pull base
+local-edited   edited local WordPress site created from the pull base
 runner         Node/PHP runner that orchestrates pull, plan, dry-run, apply
 ```
 
@@ -279,10 +279,10 @@ or any equivalent tunnel.
 
 The intended Docker data flow is:
 
-- `remote-wp` is pulled first and acts as the merge base source.
-- `local-wp` is restored from that pull base, then edited independently.
+- `remote-base` is pulled first and acts as the merge base source.
+- `local-edited` is restored from that pull base, then edited independently.
 - `runner` calls `push_preflight`, `push_snapshot_hashes`, `push_plan_dry_run`,
-  `push_batch_apply`, `push_journal`, and `push_recover` against `remote-wp`.
+  `push_batch_apply`, `push_journal`, and `push_recover` against `remote-base`.
 - `remote-db` and `local-db` are kept separate so remote drift can be observed
   without contaminating the local edit history.
 - for browser-visible inspection, use only the sandbox-provided `8080` ingress
@@ -692,9 +692,9 @@ WordPress site, and a runner. No remote tunneling service is used.
 docker network: reprint-push
 
 remote-db      MySQL or MariaDB for the source site
-remote-wp      WordPress with Reprint exporter and push extension
+remote-base    WordPress with Reprint exporter and push extension
 local-db       MySQL, MariaDB, or SQLite for the edited local site
-local-wp       WordPress created from a Reprint pull of remote-wp
+local-edited   WordPress created from a Reprint pull of remote-base
 runner         Node/PHP test runner with Reprint importer and push client
 proxy-8080     Optional local-only reverse proxy for browser inspection
 ```
@@ -703,7 +703,7 @@ Port rules:
 
 - Publish only `127.0.0.1:8080` from `proxy-8080` when browser inspection is
   needed.
-- Keep `remote-wp`, `local-wp`, and databases on the Docker network only.
+- Keep `remote-base`, `local-edited`, and databases on the Docker network only.
 - The runner should be the only container that talks to both sites.
 
 ### Playground Topology
@@ -725,14 +725,15 @@ coverage. The remote and local sites must stay distinct throughout the test:
 the remote is never repurposed as the edited site, and the edited site never
 becomes the source of truth. The drift site exists only to prove that a live
 remote can change after dry-run and before apply.
-In the Docker topology, the runner calls `http://remote-wp/` and
-`http://local-wp/` by service name, and the environment must not use ngrok,
+In the Docker topology, the runner calls `http://remote-base/` and
+`http://local-edited/` by service name, and the environment must not use ngrok,
 cloudflared tunnels, localtunnel, serveo, localhost.run, Tailscale Funnel, or
 equivalent remote tunnel services.
 
 The same shape can also be expressed with WordPress Playground when Docker or
 WP-CLI is unavailable in the sandbox. In both cases, the remote and local
-sites stay distinct: one remote source of truth, one edited local pull target.
+sites stay distinct: one remote source of truth, one edited local pull target,
+and one separate drift witness.
 
 Minimal Compose shape:
 
@@ -741,7 +742,7 @@ services:
   remote-db:
     image: mariadb:11
     networks: [reprint-push]
-  remote-wp:
+  remote-base:
     image: wordpress:php8.3-apache
     depends_on: [remote-db]
     networks: [reprint-push]
@@ -750,7 +751,7 @@ services:
   local-db:
     image: mariadb:11
     networks: [reprint-push]
-  local-wp:
+  local-edited:
     image: wordpress:php8.3-apache
     depends_on: [local-db]
     networks: [reprint-push]
@@ -819,15 +820,15 @@ For the production-shaped push lane, keep the test topology deliberately small:
 
 | Role | Docker topology | Playground topology |
 | --- | --- | --- |
-| Remote source site | `remote-site` container with the pull base and live drift injection hooks | `playground-remote` loopback server with the source-site plugin/theme state |
-| Local edited site | `local-site` container holding the imported base plus local edits | `playground-local` loopback server holding the imported base plus local edits |
+| Remote source site | `remote-base` container with the pull base and live drift injection hooks | `remote-base` loopback server with the source-site plugin/theme state |
+| Local edited site | `local-edited` container holding the imported base plus local edits | `local-edited` loopback server holding the imported base plus local edits |
 | Runner | `push-runner` container or host process that signs requests, uploads dry-run plans, and reads journals | Same runner process, bound to the sandbox-provided `8080` ingress only when browser inspection is needed |
 | Drift witness | `remote-changed` mutation against the remote site after snapshot listing | `remote-changed` Playground state change after snapshot listing |
 
 Use the topology to prove the remote and local roles are separate:
 
-- `remote-site` or `playground-remote` is the authoritative live remote for preflight, snapshot listing, dry-run eligibility, apply-time revalidation, journal inspection, and recovery.
-- `local-site` or `playground-local` is the edited local mirror that feeds the planner.
+- `remote-base` is the authoritative live remote for preflight, snapshot listing, dry-run eligibility, apply-time revalidation, journal inspection, and recovery.
+- `local-edited` is the edited local mirror that feeds the planner.
 - A separate `remote-changed` state is required for the stale-apply case so dry-run and apply are not conflated.
 - Apply must revalidate against the live remote again even when the dry-run receipt is valid.
 
@@ -836,16 +837,17 @@ Use the topology to prove the remote and local roles are separate:
 WordPress Playground can run the same shape with faster setup:
 
 ```text
-playground-remote  local-only Playground server for the source site
-playground-local   local-only Playground server for the edited pulled site
-runner             push protocol test runner
-proxy-8080         optional local-only ingress to inspect either site
+remote-base    local-only Playground server for the source site
+local-edited   local-only Playground server for the edited pulled site
+remote-changed local-only Playground server for the drift witness
+runner         push protocol test runner
+proxy-8080     optional local-only ingress to inspect either site
 ```
 
 Recommended usage:
 
-- Mount the Reprint exporter/push extension into `playground-remote`.
-- Pull from `playground-remote` into `playground-local`.
+- Mount the Reprint exporter/push extension into `remote-base`.
+- Pull from `remote-base` into `local-edited`.
 - Store the base manifest in the runner workspace.
 - Bind Playground servers to loopback or container-internal addresses.
 - Route browser access through the single local 8080 proxy if needed.

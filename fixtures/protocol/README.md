@@ -162,12 +162,11 @@ The topology is asymmetric on purpose:
   revalidation, journal inspection, and recovery are separate from dry-run.
 
 For Docker verification, mirror the same shape with one source-site container,
-one edited local-site container, and one runner container that holds the
+one edited local container, and one runner container that holds the
 persisted pull base package. For Playground verification, mirror it with one
-`playground-remote` server, one `playground-local` server, and the same runner
-process. In both cases, keep the live drift state on the same remote site so
-stale-apply tests prove a fresh revalidation boundary instead of a reused
-dry-run receipt.
+`remote-base` server, one `local-edited` server, and the same runner process.
+In both cases, keep the live drift state on the same remote site so stale-apply
+tests prove a fresh revalidation boundary instead of a reused dry-run receipt.
 
 The same topology is captured in `push-topology.json` so focused tests can
 assert the intended role split without re-encoding prose assumptions.
