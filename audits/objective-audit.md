@@ -367,6 +367,12 @@ The current test suite is good at proving local invariants and blocking bad
 states. It is not good enough to certify a live WordPress push path, and it
 should not be described that way in release-facing text.
 
+The important distinction is enforcement: `npm test` is a useful filter, but it
+is not a release gate. The stronger auth, storage, recovery, plugin, and
+performance smokes remain opt-in commands that can be skipped without causing a
+failure, so the repository still lacks one required command that proves the
+full safety matrix before any production claim is made.
+
 Specifically:
 
 - `npm test` proves model-level safety, not production no-data-loss.
