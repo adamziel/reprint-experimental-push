@@ -336,6 +336,9 @@ under load:
   would be overwritten without a live compare-and-swap check.
 - remote-index authorization is rejected because a stale listing can still
   plan quickly but cannot prove current storage state.
+- remote-index plus cached package hash is rejected because planning evidence
+  and package identity cannot prove dependency checks, metadata writes, or the
+  atomic-group commit.
 - split plugin install is rejected because files, rows, metadata, dependency
   checks, and activation state must cross visibility together.
 - blind SQL replace is rejected because it removes per-row compare-and-swap
@@ -382,6 +385,8 @@ The important rejection cases are modeled too:
 - plugin installs cannot publish files early or activate before validators pass.
 - remote indexes can guide planning only and never replace live apply
   preconditions.
+- remote indexes plus cached package hashes still cannot skip plugin
+  dependency checks, metadata writes, or the atomic-group commit.
 - backpressure pauses upstream producers instead of compressing away evidence
   or treating an unacknowledged buffer as success.
 

@@ -389,6 +389,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('index-and-digest-completes-apply').violates.includes('live-preconditions'),
   );
   assert.equal(rejectedById.get('index-and-digest-completes-apply').rejectedGate, 'live');
+  assert.ok(
+    rejectedById
+      .get('index-and-package-hash-completes-plugin-install')
+      .violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-package-hash-completes-plugin-install')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-package-hash-completes-plugin-install')
+      .violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-package-hash-completes-plugin-install').rejectedGate,
+    'group',
+  );
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
@@ -428,6 +447,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'queue-empty-means-complete',
     'fresh-index-empty-queue-completes-apply',
     'index-and-digest-completes-apply',
+    'index-and-package-hash-completes-plugin-install',
     'full-digest-completes-chunk-resume',
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);

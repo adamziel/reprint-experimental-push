@@ -392,6 +392,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'live-preconditions', 'durable-progress'],
   },
   {
+    id: 'index-and-package-hash-completes-plugin-install',
+    proposal: 'treat a fresh remote index plus a cached plugin package hash as proof that the install can skip its live boundary',
+    rejectedBecause: 'planning evidence and a package hash do not prove dependency checks, metadata writes, or atomic-group commit completion',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'plugin-preconditions', 'atomic-groups'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
