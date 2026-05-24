@@ -156,6 +156,9 @@ It also does not prove no-data-loss at the WordPress graph boundary: the
 default suite can show that selected modeled resources are preserved, but not
 that a live posts/postmeta/attachment/taxonomy/plugin graph survives a failed
 push without silent loss or duplication.
+In release terms, the default suite is a safety filter, not a production-safe
+proof. It can justify blocking bad changes; it cannot justify shipping the
+live-source no-data-loss, reliability, or speed claims by itself.
 
 ### What The Standalone Smokes Prove
 
