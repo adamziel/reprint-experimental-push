@@ -319,7 +319,8 @@ rewriting the persisted base.
 ## One-Remote, One-Local Test Topology
 
 The recommended production-shaped topology is one remote source, one edited
-local site, and one runner:
+local site, and one runner. The machine-readable version lives in
+[`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json):
 
 - `remote-base` is the pulled source of truth and persists the base package.
 - `local-edited` is the imported site after user edits.
