@@ -196,8 +196,12 @@ as separate opt-ins.
   required release command.
 - There is no `npm run release`, `npm run verify`, or CI workflow in the
   inspected `package.json` that forces the full safety matrix before a push
-  claim. That absence matters because the repo can still look healthy while
-  the strongest proof remains opt-in.
+  claim. The existing bundled entrypoint stops at
+  `npm run test:playground:push-protocol`, so the auth/session, durable
+  journal, storage-boundary, graph-identity, plugin-driver, real-topology,
+  crash-boundary, and benchmark gates remain manual add-ons. That absence
+  matters because the repo can still look healthy while the strongest proof
+  remains opt-in.
 
 That means the repo can still look healthy while the exact proof needed for a
 release claim has not been run. For this objective, that is a release blocker,
