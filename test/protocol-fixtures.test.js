@@ -115,6 +115,10 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
   assert.equal(topology.networking.ingress_port, 8080);
   assert.equal(topology.networking.proxy_policy, 'local-only');
   assert.equal(topology.networking.tunnels, 'disallowed');
+  assert.equal(topology.remote_identity.site_id, 'remote-example');
+  assert.equal(topology.remote_identity.same_remote_identity, true);
+  assert.equal(topology.remote_identity.remote_base_snapshot, 'remote-base');
+  assert.equal(topology.remote_identity.remote_changed_snapshot, 'remote-changed');
   assert.equal(topology.roles.remote_base.examples.docker, 'remote-base');
   assert.equal(topology.roles.local_edited.examples.playground, 'local-edited');
   assert.equal(topology.roles.remote_changed.examples.docker, 'remote-changed');
@@ -134,6 +138,15 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
   assert.ok(topology.playground.evidence.some((line) => line.includes('remote-changed is the same remote site observed later')));
   assert.equal(topology.roles.remote_changed.examples.playground, 'remote-changed');
   assert.ok(topology.playground.shape.some((line) => line.includes('remote-changed')));
+  assert.deepEqual(topology.test_topology.proof_order, [
+    'preflight',
+    'snapshot-hashes',
+    'dry-run',
+    'apply',
+    'journal',
+    'recovery-inspect',
+    'recovery-mutate',
+  ]);
 });
 
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {

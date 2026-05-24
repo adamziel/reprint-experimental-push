@@ -58,7 +58,9 @@ Failure and recovery examples:
   recovery requests.
 - `push-topology.json` gives a machine-readable one-remote, one-local proof
   shape for Docker and Playground test harnesses, including the same remote site
-  after independent drift between dry-run and apply.
+  after independent drift between dry-run and apply. It also records the
+  remote identity binding that makes `remote-base` and `remote-changed` two
+  observations of the same site rather than different sites.
 - `push-recovery-decision.json` gives the inspect-first recovery decision
   matrix that keeps `inspect` read-only and requires fresh live proof before
   any mutating recovery mode.

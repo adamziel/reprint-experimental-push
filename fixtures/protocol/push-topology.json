@@ -6,6 +6,12 @@
     "proxy_policy": "local-only",
     "tunnels": "disallowed"
   },
+  "remote_identity": {
+    "site_id": "remote-example",
+    "same_remote_identity": true,
+    "remote_base_snapshot": "remote-base",
+    "remote_changed_snapshot": "remote-changed"
+  },
   "roles": {
     "remote_base": {
       "kind": "source-site",
@@ -39,6 +45,21 @@
         "playground": "local test process"
       }
     }
+  },
+  "test_topology": {
+    "remote_base": "one source site that seeds the persisted pull base",
+    "local_edited": "one imported local site with user edits",
+    "remote_changed": "the same remote site after independent drift",
+    "runner": "the only actor allowed to run the push protocol",
+    "proof_order": [
+      "preflight",
+      "snapshot-hashes",
+      "dry-run",
+      "apply",
+      "journal",
+      "recovery-inspect",
+      "recovery-mutate"
+    ]
   },
   "docker": {
     "topology": [
