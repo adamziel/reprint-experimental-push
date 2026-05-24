@@ -4,14 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Progress Refresh
+## 2026-05-25 - Public Status Refresh
 
 - [progress.html](../progress.html) now shows a visible last-updated stamp for
-  `2026-05-25 00:45 CEST` and keeps the public summary concise.
-- The page still treats production push, durable recovery, Docker/full
-  Playground integration, and general plugin drivers as pending. The newest
-  public view now points back to the existing evidence set instead of implying
-  new production proof.
+  `2026-05-25 00:49 CEST` and keeps the public summary concise.
+- The page still treats production push, durable recovery, Docker/Playground
+  integration, and general plugin drivers as pending. The newest public view
+  points back to the existing evidence set instead of implying new production
+  proof.
 - Evidence links remain the owned page plus the established docs and smoke
   paths: [progress.html](../progress.html),
   [docs/playground-topology.md](playground-topology.md),
