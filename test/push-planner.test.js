@@ -20,6 +20,22 @@ function tempRecoveryJournalPath() {
   return path.join(dir, 'recovery.jsonl');
 }
 
+function failingDurableJournal(failType) {
+  return {
+    events: [],
+    nextSequence: 1,
+    appendEvent(type, payload) {
+      if (type === failType) {
+        throw new Error(`injected journal failure for ${type}`);
+      }
+      const record = { sequence: this.nextSequence, type, ...payload };
+      this.events.push(record);
+      this.nextSequence++;
+      return record;
+    },
+  };
+}
+
 function baseSite() {
   return {
     files: {
@@ -1514,6 +1530,62 @@ test('durable apply journal classifies pre-commit failures as old remote', () =>
   }
 });
 
+test('durable journal write failures before commit include old-remote recovery artifacts', () => {
+  const scenarios = [
+    { failType: 'journal-opened', expectedJournalStatus: 'opened' },
+    { failType: 'apply-staged', expectedJournalStatus: 'staged' },
+    { failType: 'dependencies-validated', expectedJournalStatus: 'dependencies-validated' },
+    { failType: 'apply-committing', expectedJournalStatus: 'committing' },
+  ];
+
+  for (const scenario of scenarios) {
+    const base = baseSite();
+    const local = baseSite();
+    local.files['index.php'] = '<?php echo "local";';
+    local.db.wp_posts['ID:1'].post_title = 'Local title';
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const plan = planFor(base, local, remote);
+    const durableJournal = failingDurableJournal(scenario.failType);
+
+    const error = captureError(() => applyPlan(remote, plan, { durableJournal }));
+
+    assert.ok(error instanceof PushPlanError, scenario.failType);
+    assert.equal(error.code, 'JOURNAL_WRITE_FAILED', scenario.failType);
+    assert.equal(error.details.boundary, scenario.failType, scenario.failType);
+    assert.equal(error.details.eventType, scenario.failType, scenario.failType);
+    assert.equal(JSON.stringify(remote), before, scenario.failType);
+    assert.equal(error.details.recovery.status, 'old-remote', scenario.failType);
+    assert.equal(
+      error.details.recovery.artifacts.journal.status,
+      scenario.expectedJournalStatus,
+      scenario.failType,
+    );
+  }
+});
+
+test('old-remote injected failures keep recovery artifacts if terminal recovery-state append fails', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const durableJournal = failingDurableJournal('recovery-state');
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, { failAfterDependencyValidation: true, durableJournal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
+  assert.equal(error.details.durableRecoveryStateWriteFailed, true);
+  assert.equal(error.details.durableJournalError.eventType, 'recovery-state');
+});
+
 test('retrying an old-remote journal appends durable retry state without duplicating targets', () => {
   const base = baseSite();
   const local = baseSite();
@@ -1577,6 +1649,47 @@ test('replaying a completed plan does not duplicate inserts or reapply stale loc
   assert.equal(error.code, 'RECOVERY_BLOCKED');
   assert.equal(changedAfterCompletion.db.wp_posts['ID:2'].post_title, 'Remote edited after push');
   assert.equal(error.details.recovery.status, 'blocked-recovery');
+});
+
+test('completed replay on a fresh durable journal persists a restart-inspectable envelope', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const replay = applyPlan(result.site, plan, {
+    journal: result.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  const targetRecords = persisted.records.filter((record) => record.type === 'target-planned');
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: result.site });
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.deepEqual(
+    persisted.records.map((record) => record.type),
+    [
+      'journal-opened',
+      ...plan.mutations.map(() => 'target-planned'),
+      'journal-replayed',
+    ],
+  );
+  assert.equal(persisted.records[0].state, 'replay-observed');
+  assert.equal(targetRecords.length, plan.mutations.length);
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.deepEqual(inspection.counts, { old: 0, new: 2, blockedUnknown: 0 });
+  for (const record of persisted.records) {
+    assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
+  }
 });
 
 test('replaying a completed plan requires a complete matching journal envelope', () => {

@@ -47,7 +47,11 @@ export function applyPlan(remote, plan, options = {}) {
   let journal = prepareJournal(remote, plan, options.journal);
   if (journal.status === 'completed') {
     const result = replayCompletedPlan(remote, plan, journal);
-    recordDurableReplay(durableJournal, remote, plan, result.recoveryState);
+    try {
+      recordDurableReplay(durableJournal, remote, plan, result.recoveryState, journal);
+    } catch (error) {
+      throw journalWriteFailureFullyUpdated(error, remote, plan, result.journal, 'journal-replayed');
+    }
     return result;
   }
   if (hasPreviousJournal) {
@@ -62,7 +66,11 @@ export function applyPlan(remote, plan, options = {}) {
           journal: completedJournal,
         },
       };
-      recordDurableReplay(durableJournal, remote, plan, recoveryState);
+      try {
+        recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
+      } catch (error) {
+        throw journalWriteFailureFullyUpdated(error, remote, plan, completedJournal, 'journal-replayed');
+      }
       return {
         site: deepClone(remote),
         appliedMutations: 0,
@@ -78,13 +86,17 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   validatePreconditions(remote, plan);
-  recordDurablePlanOpened(durableJournal, remote, plan, {
-    ...options,
-    previousJournalState,
-  });
+  try {
+    recordDurablePlanOpened(durableJournal, remote, plan, {
+      ...options,
+      previousJournalState,
+    });
+  } catch (error) {
+    throw journalWriteFailureOldRemote(error, remote, plan, journal, 'journal-opened');
+  }
 
   if (options.failBeforeMutation) {
-    recordDurableRecoveryState(durableJournal, remote, plan, {
+    const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
       status: 'old-remote',
       reason: 'Injected failure before staging any mutation.',
     });
@@ -94,6 +106,7 @@ export function applyPlan(remote, plan, options = {}) {
       remote,
       plan,
       journal,
+      recoveryStateDurableWriteDetails(durableJournalError),
     );
   }
 
@@ -116,12 +129,16 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   journal = markJournalStatus(journal, 'staged');
-  recordDurableBoundary(durableJournal, 'apply-staged', remote, plan, {
-    state: 'staged',
-    stagedHash: digest(staged),
-  });
+  try {
+    recordDurableBoundary(durableJournal, 'apply-staged', remote, plan, {
+      state: 'staged',
+      stagedHash: digest(staged),
+    });
+  } catch (error) {
+    throw journalWriteFailureOldRemote(error, remote, plan, journal, 'apply-staged');
+  }
   if (options.failAfterStaging) {
-    recordDurableRecoveryState(durableJournal, remote, plan, {
+    const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
       status: 'old-remote',
       reason: 'Injected failure after staging all mutations.',
     });
@@ -131,18 +148,23 @@ export function applyPlan(remote, plan, options = {}) {
       remote,
       plan,
       journal,
+      recoveryStateDurableWriteDetails(durableJournalError),
     );
   }
 
   validateAtomicGroups(staged, plan);
 
   journal = markJournalStatus(journal, 'dependencies-validated');
-  recordDurableBoundary(durableJournal, 'dependencies-validated', remote, plan, {
-    state: 'dependencies-validated',
-    stagedHash: digest(staged),
-  });
+  try {
+    recordDurableBoundary(durableJournal, 'dependencies-validated', remote, plan, {
+      state: 'dependencies-validated',
+      stagedHash: digest(staged),
+    });
+  } catch (error) {
+    throw journalWriteFailureOldRemote(error, remote, plan, journal, 'dependencies-validated');
+  }
   if (options.failAfterDependencyValidation) {
-    recordDurableRecoveryState(durableJournal, remote, plan, {
+    const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
       status: 'old-remote',
       reason: 'Injected failure after dependency validation.',
     });
@@ -152,6 +174,7 @@ export function applyPlan(remote, plan, options = {}) {
       remote,
       plan,
       journal,
+      recoveryStateDurableWriteDetails(durableJournalError),
     );
   }
 
@@ -521,7 +544,16 @@ function recordDurablePlanOpened(writer, remote, plan, options = {}) {
     return;
   }
 
+  recordDurableTargets(writer, remote, plan);
+}
+
+function recordDurableTargets(writer, remote, plan, journal = null) {
+  const entryByMutationId = new Map(
+    (journal?.entries || []).map((entry) => [entry.mutationId, entry]),
+  );
+
   for (const mutation of plan.mutations || []) {
+    const entry = entryByMutationId.get(mutation.id);
     appendDurableEvent(writer, 'target-planned', {
       planId: plan.id,
       mutationId: mutation.id,
@@ -529,8 +561,8 @@ function recordDurablePlanOpened(writer, remote, plan, options = {}) {
       resourceType: mutation.resource?.type || null,
       action: mutation.action,
       changeKind: mutation.changeKind,
-      beforeHash: mutation.remoteBeforeHash || resourceHash(remote, mutation.resource),
-      afterHash: digest(deserializeResourceValue(mutation.value)),
+      beforeHash: entry?.beforeHash || mutation.remoteBeforeHash || resourceHash(remote, mutation.resource),
+      afterHash: entry?.afterHash || digest(deserializeResourceValue(mutation.value)),
       state: 'planned',
       artifactRefs: {},
     });
@@ -541,9 +573,18 @@ function durableJournalHasPriorRecords(writer) {
   return Number.isInteger(writer.nextSequence) && writer.nextSequence > 1;
 }
 
-function recordDurableReplay(writer, remote, plan, recoveryState) {
+function recordDurableReplay(writer, remote, plan, recoveryState, journal = null) {
   if (!writer) {
     return;
+  }
+  if (!durableJournalHasPriorRecords(writer)) {
+    appendDurableEvent(writer, 'journal-opened', {
+      planId: plan.id,
+      state: 'replay-observed',
+      observedHash: digest(remote),
+      artifactRefs: {},
+    });
+    recordDurableTargets(writer, remote, plan, journal);
   }
   recordDurableBoundary(writer, 'journal-replayed', remote, plan, {
     state: recoveryState.status,
@@ -591,6 +632,15 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState) {
   });
 }
 
+function recordDurableRecoveryStateBestEffort(writer, current, plan, recoveryState) {
+  try {
+    recordDurableRecoveryState(writer, current, plan, recoveryState);
+    return null;
+  } catch (error) {
+    return durableJournalFailureDetails(error);
+  }
+}
+
 function appendDurableEvent(writer, type, payload) {
   try {
     return writer.appendEvent(type, payload);
@@ -610,9 +660,15 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
   let committed = options.mutateRemote ? remote : deepClone(remote);
   let committedJournal = markJournalStatus(journal, 'committing');
   let appliedMutations = 0;
-  recordDurableBoundary(durableJournal, 'apply-committing', committed, plan, {
-    state: 'committing',
-  });
+  try {
+    recordDurableBoundary(durableJournal, 'apply-committing', committed, plan, {
+      state: 'committing',
+    });
+  } catch (error) {
+    return {
+      failure: journalWriteFailureOldRemote(error, committed, plan, committedJournal, 'apply-committing'),
+    };
+  }
 
   for (const mutation of plan.mutations) {
     appliedMutations++;
@@ -731,6 +787,63 @@ function oldRemoteRecoveryState(remote, plan, journal, reason) {
     artifacts: {
       journal,
     },
+  };
+}
+
+function fullyUpdatedRecoveryState(remote, plan, journal, reason) {
+  return {
+    status: 'fully-updated-remote',
+    reason,
+    remoteHash: digest(remote),
+    planId: plan.id,
+    artifacts: {
+      journal,
+    },
+  };
+}
+
+function journalWriteFailureOldRemote(error, remote, plan, journal, boundary) {
+  const details = durableJournalFailureDetails(error);
+  const reason = `Durable recovery journal write failed before committing remote mutations at ${boundary}.`;
+  return new PushPlanError(
+    'JOURNAL_WRITE_FAILED',
+    reason,
+    {
+      boundary,
+      ...details,
+      recovery: oldRemoteRecoveryState(remote, plan, journal, reason),
+    },
+  );
+}
+
+function journalWriteFailureFullyUpdated(error, remote, plan, journal, boundary) {
+  const details = durableJournalFailureDetails(error);
+  const reason = `Durable recovery journal write failed while recording completed replay at ${boundary}.`;
+  return new PushPlanError(
+    'JOURNAL_WRITE_FAILED',
+    reason,
+    {
+      boundary,
+      ...details,
+      recovery: fullyUpdatedRecoveryState(remote, plan, journal, reason),
+    },
+  );
+}
+
+function recoveryStateDurableWriteDetails(errorDetails) {
+  if (!errorDetails) {
+    return {};
+  }
+  return {
+    durableRecoveryStateWriteFailed: true,
+    durableJournalError: errorDetails,
+  };
+}
+
+function durableJournalFailureDetails(error) {
+  return {
+    eventType: error?.details?.eventType || null,
+    causeMessage: error?.details?.causeMessage || error?.message || String(error),
   };
 }
 

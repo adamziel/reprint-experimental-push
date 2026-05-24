@@ -54,11 +54,27 @@ or `blocked-recovery` without raw target values. A replayed in-memory journal
 must exactly match the plan's mutation ids, resource keys, actions, before
 hashes, and after hashes before it can suppress fresh mutation work.
 
+Durable writer failures before the commit boundary are also classified. If the
+writer fails while opening the journal, recording the staged boundary,
+recording dependency validation, or entering `committing` before the first
+target write, the executor reports `old-remote` and includes the in-memory
+journal artifact in the error. If an injected old-remote failure cannot append
+its terminal `recovery-state` event, the injected failure remains classified as
+`old-remote`; the error records the durable append failure separately so the
+caller does not mistake missing terminal JSONL evidence for a partial remote
+mutation.
+
 When an `old-remote` in-memory journal is retried while appending to the same
 durable JSONL file, the apply model records `journal-retry-opened` and reuses
 the original `target-planned` records. It does not append duplicate target
 records, because duplicate target metadata would make restart inspection
 ambiguous even when the retry finishes as `fully-updated-remote`.
+
+When a completed in-memory journal is replayed into a fresh durable JSONL file,
+the apply model first writes hash-only `journal-opened` and `target-planned`
+records from the completed journal envelope, then appends `journal-replayed`.
+That makes the fresh durable artifact restart-inspectable as
+`fully-updated-remote` without reapplying inserts or stale local values.
 
 ## Current Playground Lab Evidence
 
