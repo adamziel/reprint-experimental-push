@@ -118,13 +118,15 @@ evidence for all of these, not just a plausible design:
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
-  outputs are never sufficient by themselves to claim production mutation
-  safety.
+  outputs are compatibility evidence only; they are never sufficient by
+  themselves to claim production mutation safety.
 - `finalMatchesLocal`, committed replay, or packaged-plugin success on a
   fixture never prove the same path is safe against live remote drift in
-  plugin metadata, graph identity, or custom-table state.
+  plugin metadata, graph identity, custom-table state, or create-time identity
+  remapping.
 - Live-remote revalidation immediately before apply, with stale retries
-  rejected before any write.
+  rejected before any write and with the rejection tied to the live hashes
+  that failed validation.
 - A complete coverage manifest for core, plugin, theme, upload, generated,
   custom-table, and multisite resources, with unknown ownership treated as a
   hard block.
@@ -139,7 +141,8 @@ evidence for all of these, not just a plausible design:
   filesystem, and plugin boundaries.
 - A release gate that runs the full safety-critical suite before any
   production claim ships, and that gate must fail closed on stale manual
-  review artifacts, unknown plugin ownership, or route-shape-only evidence.
+  review artifacts, unknown plugin ownership, route-shape-only evidence, or
+  fixture-only replay evidence.
 
 ## Changes Required Before A Production Claim
 
@@ -199,7 +202,8 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - The push path is a real production endpoint and does not resolve to
   Playground, fixture, or copied lab internals.
 - The live remote is revalidated immediately before apply, and any stale
-  retry starts from a fresh snapshot rather than reusing old approval.
+  retry starts from a fresh snapshot rather than reusing old approval or stale
+  manual-review artifacts.
 - Every mutation surface has an explicit coverage manifest entry, or the push
   hard-blocks before apply.
 - Every plugin-owned resource has a declared contract, or the push hard-blocks
@@ -213,8 +217,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   target as old, new, or blocked after a crash.
 - Every partial side effect path is either rolled back, fenced, or preserved
   for audit and retry with no false success claim.
-- Every route-shape or packaged-plugin smoke remains labeled as lab evidence
-  only and cannot be used as proof of production mutation safety.
+- Every route-shape, packaged-plugin, or `finalMatchesLocal` smoke remains
+  labeled as lab evidence only and cannot be used as proof of production
+  mutation safety.
 - The release suite runs the production-shaped auth, storage, recovery,
   plugin, graph, and audit checks together, not as isolated smoke tests.
 - The claim text explicitly says what is proven and what remains lab-only.
