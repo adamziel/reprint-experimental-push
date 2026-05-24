@@ -18,6 +18,14 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(pluginInstall, 'plugin install workload exists');
   assert.ok(largeUpload.totals.uploadBytes >= 1024 * MIB, 'large upload is at least 1 GiB');
   assert.ok(largeUpload.totals.uploadChunks > 100, 'large upload is chunked enough to exercise resumability');
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'file-hash'),
+    'large upload models file hashing',
+  );
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'chunk-upload'),
+    'large upload models chunk uploads',
+  );
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
   assert.equal(pluginInstall.atomicGroupId, 'install-commerce-stack');
@@ -30,6 +38,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'remote-index-probe'),
     'plugin install models remote planning indexes',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'db-row-batch'),
+    'plugin install models database row batching',
   );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
