@@ -697,6 +697,35 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('keeps remote-only plugin changes while mixing an unrelated deletion with a matching independent restore', () => {
+  const base = baseSite();
+  delete base.files['index.php'];
+  const local = baseSite();
+  delete local.db.wp_posts['ID:1'];
+  local.files['index.php'] = '<?php echo "restored";';
+  const remote = baseSite();
+  remote.files['index.php'] = '<?php echo "restored";';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const rowDelete = mutationFor(plan, 'row:["wp_posts","ID:1"]');
+  const restoreDecision = decisionFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(rowDelete.action, 'delete');
+  assert.equal(rowDelete.changeKind, 'delete');
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'create');
+  assert.equal(restoreDecision.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+});
+
 test('recognizes matching independent plugin context edits as already in sync', () => {
   const base = baseSite();
   const local = baseSite();
