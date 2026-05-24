@@ -211,6 +211,7 @@ test('push recovery inspect fixture distinguishes safe evidence from blocked rec
 
 test('push session journal proof binds the minted session to fencing and inspect-first recovery', () => {
   const proof = readJson('fixtures/protocol/push-session-journal-proof.json');
+  const recoveryPath = readJson('fixtures/protocol/push-recovery-path.json');
 
   assert.equal(proof.proof_id, 'push-session-journal-proof-one-remote-one-local');
   assert.equal(proof.session.push_session, 'psh_01j00000000000000000000000');
@@ -237,4 +238,15 @@ test('push session journal proof binds the minted session to fencing and inspect
   assert.equal(proof.recovery.mutates, false);
   assert.ok(proof.required_invariants.includes('claim generation and lease expiry fence stale workers before mutation'));
   assert.ok(proof.required_invariants.includes('journal inspection is read-only and inspect must come before mutating recovery'));
+  assert.equal(recoveryPath.path_id, 'push-recovery-path-inspect-first');
+  assert.equal(recoveryPath.inspect.mutates, false);
+  assert.deepEqual(recoveryPath.inspect.required_order, [
+    'read journal',
+    'inspect live hashes',
+    'classify finish|rollback|retry|block',
+  ]);
+  assert.equal(recoveryPath.classification.blocked, 1);
+  assert.equal(recoveryPath.inputs.same_remote_identity, true);
+  assert.ok(recoveryPath.mutating_modes.finish.requires.includes('fresh live hashes'));
+  assert.ok(recoveryPath.required_invariants.includes('stale dry-run evidence must not be promoted into recovery authority'));
 });

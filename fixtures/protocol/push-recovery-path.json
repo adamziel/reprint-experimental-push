@@ -1,0 +1,62 @@
+{
+  "path_id": "push-recovery-path-inspect-first",
+  "purpose": "machine-readable inspect-first recovery classification for apply ambiguity",
+  "inputs": {
+    "push_session": "psh_01j00000000000000000000000",
+    "journal_cursor": "journal:dry_01j00000000000000000000000:1",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "snapshot_id": "snap_01j00000000000000000000000",
+    "remote_changed_snapshot_id": "snap_01j00000000000000000000001",
+    "same_remote_identity": true
+  },
+  "classification": {
+    "old": 2,
+    "new": 3,
+    "blocked": 1,
+    "open": 0
+  },
+  "inspect": {
+    "mutates": false,
+    "required_order": [
+      "read journal",
+      "inspect live hashes",
+      "classify finish|rollback|retry|block"
+    ],
+    "proof": "journal-and-live-hashes-reviewed"
+  },
+  "mutating_modes": {
+    "finish": {
+      "mutates": true,
+      "requires": [
+        "fresh live hashes",
+        "journal evidence proving completion is safe"
+      ]
+    },
+    "rollback": {
+      "mutates": true,
+      "requires": [
+        "fresh live hashes",
+        "journal evidence proving rollback is safe"
+      ]
+    },
+    "auto": {
+      "mutates": true,
+      "requires": [
+        "inspect evidence",
+        "fresh live hashes"
+      ]
+    }
+  },
+  "blocked_cases": [
+    "fresh live hashes do not match the journaled target",
+    "the journal cannot prove a safe finish or rollback",
+    "the claim lease has expired and the worker is fenced"
+  ],
+  "required_invariants": [
+    "inspect is read-only",
+    "journal rows carry claim ownership, generation, and lease expiry",
+    "fresh live hashes are required before mutating recovery",
+    "stale dry-run evidence must not be promoted into recovery authority"
+  ]
+}

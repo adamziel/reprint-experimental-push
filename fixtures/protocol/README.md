@@ -26,6 +26,7 @@ The normal sequence is:
 18. `push-flow.json`
 19. `push-recovery-decision.json`
 20. `push-session-journal-proof.json`
+21. `push-recovery-path.json`
 
 Failure and recovery examples:
 
@@ -66,6 +67,10 @@ Failure and recovery examples:
 - `push-recovery-decision.json` gives the inspect-first recovery decision
   matrix that keeps `inspect` read-only and requires fresh live proof before
   any mutating recovery mode.
+- `push-recovery-path.json` gives the machine-readable inspect-first recovery
+  classification used when a batch response is ambiguous and the executor must
+  distinguish old, new, blocked, and open outcomes from journal plus live
+  evidence.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

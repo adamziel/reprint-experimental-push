@@ -653,6 +653,13 @@ journal. Abort on `SITE_IDENTITY_MISMATCH`; the executor may ask the user to
 confirm a remote URL change, but confirmation must result in a fresh preflight
 against the same `site_id`.
 
+When apply later becomes ambiguous, do not infer recovery from stale dry-run
+evidence. Use the inspect-first recovery path instead; the machine-readable
+fixture at
+[`fixtures/protocol/push-recovery-path.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-path.json)
+captures the old/new/blocked/open classification after the journal is read and
+live hashes are refreshed.
+
 Current lab note: `npm run test:playground:authenticated-http-push` verifies a
 local Playground preflight at
 `/wp-json/reprint-push-lab/v1/authenticated/preflight`. It returns identity,
