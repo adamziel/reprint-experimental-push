@@ -351,6 +351,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   identifier and retry scope; if the live snapshot changes or the scope
   expands, the artifact is audit-only and the next apply must start from a
   fresh review.
+- A route-shape match, package mount, or `finalMatchesLocal` result never
+  proves the live snapshot still matches the reviewed approval; those signals
+  stay compatibility evidence only, even when they return live-looking hashes.
 - Every mutation surface has an explicit coverage manifest entry, or the push
   hard-blocks before apply.
 - Every plugin-owned resource has a declared contract, or the push hard-blocks
