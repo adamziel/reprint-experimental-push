@@ -20,6 +20,16 @@ const SUPPORTED_PLUGIN_DATA_DRIVERS = new Set([
   'fixture-forms-lab-table',
 ]);
 
+const PLUGIN_DATA_DRIVER_TABLES = new Map([
+  ['wp-option', 'wp_options'],
+  ['wp-postmeta', 'wp_postmeta'],
+  ['wp-post-meta', 'wp_postmeta'],
+  ['wp-termmeta', 'wp_termmeta'],
+  ['wp-term-meta', 'wp_termmeta'],
+  ['wp-usermeta', 'wp_usermeta'],
+  ['wp-user-meta', 'wp_usermeta'],
+]);
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -260,6 +270,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           className: 'unsupported-plugin-owned-resource',
           driver: withDriver.driver,
           policySource: withDriver.source,
+          reason: 'Plugin-owned resource driver does not match the resource type or table.',
         };
       }
 
@@ -359,9 +370,15 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
 }
 
 function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
-  if (entry.driver !== 'fixture-forms-lab-table') {
-    return true;
+  if (entry.pluginOwner !== owner) {
+    return false;
   }
+
+  if (entry.driver !== 'fixture-forms-lab-table') {
+    const expectedTable = PLUGIN_DATA_DRIVER_TABLES.get(entry.driver);
+    return resource.type === 'row' && resource.table === expectedTable;
+  }
+
   return resource.type === 'row'
     && resource.table === 'wp_reprint_push_forms_lab'
     && /^id:\d+$/.test(resource.id)
@@ -847,9 +864,9 @@ function addPluginOwnedResourceBlocker(plan, {
   remoteHash,
 }) {
   const className = support.className || 'unsupported-plugin-owned-resource';
-  const reason = className === 'missing-plugin-driver'
+  const reason = support.reason || (className === 'missing-plugin-driver'
     ? `Plugin-owned resource ${resource.key} is missing explicit driver metadata for plugin ${owner}.`
-    : `Plugin-owned resource ${resource.key} is not covered by a supported resource driver policy for plugin ${owner}.`;
+    : `Plugin-owned resource ${resource.key} is not covered by a supported resource driver policy for plugin ${owner}.`);
 
   plan.blockers.push({
     id: `blocker-plugin-owned-resource-${plan.blockers.length + 1}`,
@@ -941,8 +958,7 @@ function addFileTopologyConflicts(plan, resources, base, local, remote) {
 
       if (isAncestorPath(mutation.resource.path, other.path)) {
         if (
-          mutationAfter !== ABSENT
-          && mutationAfterType !== 'directory'
+          (mutationAfter === ABSENT || mutationAfterType !== 'directory')
           && shouldStopForDescendant(mutationByKey, other, base, remote)
         ) {
           addTopologyConflict(
@@ -954,7 +970,7 @@ function addFileTopologyConflicts(plan, resources, base, local, remote) {
             base,
             local,
             remote,
-            'Local file type change would hide or remove a live remote descendant.',
+            'Local file deletion or type change would hide or remove a live remote descendant.',
           );
         }
         continue;
