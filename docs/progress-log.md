@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+Newest entries stay short and link back to the evidence trail.
+
+## 2026-05-25 - Public Status Refresh 01:51:36
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:51:36 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Tightened the first-screen evidence line so the log, executor, recovery,
+  playground, protocol, and feedback links stay visible without repeating the
+  same caveat.
+- Public status remains conservative: 89 Node tests pass, the blocker is still
+  production auth plus durable journaling, and executor, recovery journal,
+  Docker/Playground, graph identity, and plugin-driver proof remain pending.
+
 ## 2026-05-25 - Public Status Refresh 01:51:11
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
