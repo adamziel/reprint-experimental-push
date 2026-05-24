@@ -51,8 +51,8 @@ production system will depend on.
 | R8 resumable chunks | Source notes cite resumable pull and recommend chunked push. | No chunk journal, cursor, idempotency key, retry contract, resume tests, or stale-plan invalidation tests. | Yes. A live push cannot rely on one in-memory apply call. |
 | R9 real WordPress execution | Playground base/local/remote fixtures export real WordPress posts/options/files, guarded apply writes a fresh source fixture with WordPress-visible readback, and a fixture-scoped PHP endpoint smoke covers dry-run/apply/stale/conflict paths. | No production Reprint HTTP source mutation endpoint, no Docker/live-source executor, no database transaction tests, no filesystem permission tests, and no plugin activation/custom-table semantics. | Yes. The current project is a lab model only. |
 | R10 speed | The model mutates only changed resources instead of replacing the whole site. Progress page marks fast path at 12 percent and lists chunking/streaming as open. | No benchmarks, complexity budget, large-file streaming, parallel upload tests, memory ceiling, or latency targets. | Yes for any speed claim beyond "not whole-site replacement in the model." |
-| R11 honest dry run | README states apply can refuse if the live remote changes after dry run. Drift tests cover file mutation drift and Playground fixture stale apply. The protocol smoke verifies ready apply with a supplied dry-run receipt. | The PHP lab endpoint still permits apply without a supplied prior receipt by creating one inline. No stale-plan expiry, no plan signing/binding to a remote snapshot, no UI/operator warning tests, and no concurrency test for remote changes between individual production writes. | Blocking for UX/reliability release, not for the current lab scope. |
-| R12 audit records | Plans include mutations, preconditions, decisions, conflicts, blockers, and atomic groups. | Records are transient JSON objects unless the caller saves them. There is no durable audit log, no recovery artifact schema, no redaction policy, and no operator-facing report. | Yes for production. |
+| R11 honest dry run | README states apply can refuse if the live remote changes after dry run. Drift tests cover file mutation drift and Playground fixture stale apply. The protocol smoke verifies ready apply with a supplied dry-run receipt, rejects missing receipts with `MISSING_DRY_RUN_RECEIPT`, and rejects tampered receipts with `RECEIPT_MISMATCH`. Lab receipts bind to the plan fingerprint/hash, mutation and precondition sets, ordered resource keys, and dry-run actual hashes. | No stale-plan expiry, production signing/auth binding, UI/operator warning tests, or concurrency test for remote changes between individual production writes. | Blocking for UX/reliability release, not for the current lab scope. |
+| R12 audit records | Plans include mutations, preconditions, decisions, conflicts, blockers, and atomic groups. The lab PHP endpoint records bounded fixture-scoped lab journal/audit option events for dry-run, apply, stale, non-ready, missing-receipt, and mismatch outcomes. | Records are still fixture-scoped lab option events unless the caller saves them. There is no durable production audit log, no recovery artifact schema, no redaction policy, and no operator-facing report. | Yes for production. |
 
 ## Test Audit
 
@@ -91,9 +91,10 @@ pure in-memory apply behavior.
 
 4. **The Playground endpoint is intentionally not a production endpoint.** It
    proves a narrow fixture-scoped protocol shape, including read-only dry-run,
-   ready apply with a supplied receipt, stale rejection, and conflict refusal.
+   required receipt-backed ready apply, stale rejection, receipt mismatch
+   refusal, and conflict refusal.
    It does not provide production auth, sessions, durable journals, source-site
-   capability checks, or a mandatory prior dry-run receipt.
+   capability checks, receipt signing, or receipt expiry.
 
 ## Required Release Gates
 

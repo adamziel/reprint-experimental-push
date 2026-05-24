@@ -85,19 +85,26 @@ The smoke verifies:
   unchanged;
 - apply with a supplied dry-run receipt applies the five expected fixture
   mutations and verifies the resulting hashes and WordPress-visible surface;
+- apply without a supplied receipt fails with `MISSING_DRY_RUN_RECEIPT` before
+  mutation;
+- tampered receipts fail with `RECEIPT_MISMATCH` before mutation;
 - stale apply against the changed remote fixture fails with
   `PRECONDITION_FAILED` and preserves the drifted remote state;
 - conflict dry-run and conflict apply refuse with `PLAN_NOT_READY` and include
   audit evidence for row, file, and plugin-data conflict classes.
 
-The smoke uses a prior dry-run receipt for the ready apply path, but that is not
-yet a protocol guarantee. The current PHP lab endpoint still permits apply
-without a supplied receipt by creating one inline.
+The lab receipt is bound to the plan fingerprint/hash, mutation and
+precondition sets, ordered resource keys, and dry-run actual hashes. The
+endpoint also records bounded fixture-scoped lab journal/audit option events:
+`dry-run-recorded`, `apply-started`, `apply-committed`,
+`precondition-failed`, `plan-not-ready`, `receipt-required`, and
+`receipt-mismatch`. These records are lab audit evidence only, not durable
+production journals.
 
 ## Next Proofs Needed
 
 - Replace the fixture-scoped PHP lab endpoint with a real Reprint push HTTP
   endpoint, authentication, sessions, and source-site capability checks.
 - Revalidate live remote hashes immediately before production apply.
-- Add production enforcement for prior dry-run receipts, with expiry and binding
-  to the accepted remote snapshot.
+- Add production-grade receipt expiry, signing/auth binding, and durable audit
+  storage around the accepted remote snapshot.

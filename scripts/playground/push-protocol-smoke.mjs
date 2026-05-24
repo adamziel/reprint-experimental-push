@@ -48,6 +48,19 @@ assert.ok(readyPlan.mutations.length > 0, 'expected ready plan mutations');
 
 const readyPlanPath = writeJson('push-protocol-ready-plan.json', readyPlan);
 
+const missingReceiptApply = runEndpoint({
+  name: 'ready apply missing receipt',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'apply',
+  planPath: readyPlanPath,
+});
+
+assertFailureNoMutation(missingReceiptApply, snapshots.base, {
+  label: 'ready apply missing receipt',
+  code: 'MISSING_DRY_RUN_RECEIPT',
+  journalEvent: 'receipt-required',
+});
+
 const dryRun = runEndpoint({
   name: 'ready dry-run',
   blueprintPath: path.join(repoRoot, fixtures.base),
@@ -60,6 +73,7 @@ assert.equal(dryRun.result.ok, true);
 assert.equal(dryRun.result.mode, 'dry-run');
 assert.equal(dryRun.result.applied, 0);
 assert.equal(dryRun.result.receipt.mode, 'dry-run');
+assertJournalEvent(dryRun.result, 'dry-run-recorded');
 assertSnapshotContentEqual(dryRun.readback.beforeSnapshot, snapshots.base, 'dry-run before snapshot');
 assertSnapshotEqual(dryRun.readback.afterSnapshot, dryRun.readback.beforeSnapshot, 'dry-run same-process readback');
 assertSnapshotContentEqual(dryRun.result.currentSnapshot, snapshots.base, 'dry-run current snapshot');
@@ -70,6 +84,49 @@ assert.deepEqual(
 );
 
 const dryRunReceiptPath = writeJson('push-protocol-ready-dry-run-receipt.json', dryRun.result.receipt);
+
+const planHashTamperedReceiptPath = writeJson(
+  'push-protocol-tampered-plan-hash-receipt.json',
+  tamperedReceipt(dryRun.result.receipt, (receipt) => {
+    receipt.planHash = '0'.repeat(64);
+  }),
+);
+
+const planHashTamperedApply = runEndpoint({
+  name: 'ready apply tampered plan hash receipt',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'apply',
+  planPath: readyPlanPath,
+  receiptPath: planHashTamperedReceiptPath,
+});
+
+assertFailureNoMutation(planHashTamperedApply, snapshots.base, {
+  label: 'ready apply tampered plan hash receipt',
+  code: 'RECEIPT_MISMATCH',
+  journalEvent: 'receipt-mismatch',
+});
+
+const preconditionTamperedReceiptPath = writeJson(
+  'push-protocol-tampered-precondition-hash-receipt.json',
+  tamperedReceipt(dryRun.result.receipt, (receipt) => {
+    assert.ok(receipt.preconditionHashes?.[0], 'tamper fixture needs at least one precondition hash');
+    receipt.preconditionHashes[0].actualHash = 'f'.repeat(64);
+  }),
+);
+
+const preconditionTamperedApply = runEndpoint({
+  name: 'ready apply tampered precondition hash receipt',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'apply',
+  planPath: readyPlanPath,
+  receiptPath: preconditionTamperedReceiptPath,
+});
+
+assertFailureNoMutation(preconditionTamperedApply, snapshots.base, {
+  label: 'ready apply tampered precondition hash receipt',
+  code: 'RECEIPT_MISMATCH',
+  journalEvent: 'receipt-mismatch',
+});
 
 const apply = runEndpoint({
   name: 'ready apply',
@@ -83,6 +140,7 @@ assert.equal(apply.status, 0);
 assert.equal(apply.result.ok, true);
 assert.equal(apply.result.mode, 'apply');
 assert.equal(apply.result.applied, readyPlan.mutations.length);
+assertJournalEventsOrdered(apply.result, ['apply-started', 'apply-committed']);
 assert.deepEqual(
   apply.result.verifiedKeys,
   readyPlan.mutations.map((mutation) => mutation.resourceKey),
@@ -104,6 +162,8 @@ const staleApply = runEndpoint({
 assert.notEqual(staleApply.status, 0, 'expected stale apply to fail');
 assert.equal(staleApply.result.ok, false);
 assert.equal(staleApply.result.code, 'PRECONDITION_FAILED');
+assertJournalEvent(staleApply.result, 'precondition-failed');
+assertNoJournalEvent(staleApply.result, 'apply-committed');
 assertSnapshotContentEqual(staleApply.readback.beforeSnapshot, snapshots.remoteChanged, 'stale before snapshot');
 assertSnapshotEqual(staleApply.readback.afterSnapshot, staleApply.readback.beforeSnapshot, 'stale same-process readback');
 assertSnapshotContentEqual(staleApply.result.currentSnapshot, snapshots.remoteChanged, 'stale failure current snapshot');
@@ -138,6 +198,7 @@ const conflictApply = runEndpoint({
   blueprintPath: path.join(repoRoot, fixtures.base),
   mode: 'apply',
   planPath: conflictPlanPath,
+  receiptPath: dryRunReceiptPath,
 });
 
 assertPlanNotReady(conflictApply, snapshots.base, 'conflict apply');
@@ -158,7 +219,12 @@ console.log(JSON.stringify({
   ready: {
     status: readyPlan.status,
     mutations: readyPlan.mutations.length,
+    missingReceiptCode: missingReceiptApply.result.code,
     dryRunVerified: dryRun.result.verifiedPreconditions.length,
+    tamperedReceiptCodes: [
+      planHashTamperedApply.result.code,
+      preconditionTamperedApply.result.code,
+    ],
     applied: apply.result.applied,
     verifiedKeys: apply.result.verifiedKeys.length,
   },
@@ -259,6 +325,14 @@ function writeJson(name, value) {
   const filePath = path.join(tmpDir, name);
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
   return filePath;
+}
+
+function tamperedReceipt(receipt, mutate) {
+  const next = JSON.parse(JSON.stringify(receipt));
+  mutate(next);
+  delete next.receiptHash;
+  next.receiptHash = digest(next);
+  return next;
 }
 
 function parseMarkedJson(stdout, begin, end, missingMessage) {
@@ -376,10 +450,24 @@ function postByTitle(snapshot, title) {
   return entry;
 }
 
+function assertFailureNoMutation(endpointRun, expectedSnapshot, { label, code, journalEvent }) {
+  assert.notEqual(endpointRun.status, 0, `expected ${label} to fail`);
+  assert.equal(endpointRun.result.ok, false);
+  assert.equal(endpointRun.result.code, code);
+  assertJournalEvent(endpointRun.result, journalEvent);
+  assertNoJournalEvent(endpointRun.result, 'apply-started');
+  assertNoJournalEvent(endpointRun.result, 'apply-committed');
+  assertSnapshotContentEqual(endpointRun.readback.beforeSnapshot, expectedSnapshot, `${label} before snapshot`);
+  assertSnapshotEqual(endpointRun.readback.afterSnapshot, endpointRun.readback.beforeSnapshot, `${label} same-process readback`);
+}
+
 function assertPlanNotReady(endpointRun, expectedSnapshot, label) {
   assert.notEqual(endpointRun.status, 0, `expected ${label} to fail`);
   assert.equal(endpointRun.result.ok, false);
   assert.equal(endpointRun.result.code, 'PLAN_NOT_READY');
+  assertJournalEvent(endpointRun.result, 'plan-not-ready');
+  assertNoJournalEvent(endpointRun.result, 'apply-started');
+  assertNoJournalEvent(endpointRun.result, 'apply-committed');
   assertSnapshotContentEqual(endpointRun.readback.beforeSnapshot, expectedSnapshot, `${label} before snapshot`);
   assertSnapshotEqual(endpointRun.readback.afterSnapshot, endpointRun.readback.beforeSnapshot, `${label} same-process readback`);
 }
@@ -393,4 +481,44 @@ function assertConflictClasses(result) {
 
 function conflictClasses(result) {
   return [...new Set((result.audit?.conflicts || []).map((conflict) => conflict.class))].sort();
+}
+
+function assertJournalEvent(result, event) {
+  assert.equal(result.journal?.event, event, `expected current journal event ${event}`);
+  assert.equal(result.journal?.option, 'reprint_push_protocol_journal');
+  assert.ok(Array.isArray(result.journal?.recent), 'missing bounded journal evidence');
+  assert.ok(result.journal.recent.length <= 5, 'journal evidence must stay bounded');
+  assert.ok(
+    result.journal.recent.some((entry) => entry.event === event),
+    `journal recent entries missing ${event}`,
+  );
+}
+
+function assertNoJournalEvent(result, event) {
+  assert.ok(
+    !(result.journal?.recent || []).some((entry) => entry.event === event),
+    `journal recent entries should not include ${event}`,
+  );
+}
+
+function assertJournalEventsOrdered(result, events) {
+  for (const event of events) {
+    assert.ok(
+      result.journal?.recent?.some((entry) => entry.event === event),
+      `journal recent entries missing ${event}`,
+    );
+  }
+
+  const positions = events.map((event) =>
+    result.journal.recent.findIndex((entry) => entry.event === event)
+  );
+
+  for (let index = 1; index < positions.length; index += 1) {
+    assert.ok(
+      positions[index - 1] < positions[index],
+      `journal event ${events[index - 1]} must precede ${events[index]}`,
+    );
+  }
+
+  assertJournalEvent(result, events.at(-1));
 }

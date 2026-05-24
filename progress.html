@@ -454,7 +454,7 @@
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">18%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 18 percent"><div class="fill amber" style="width:18%"></div></div>
-          <p class="note">The CLI can plan and apply deterministic JSON snapshots, the proposed Reprint push protocol has request/response fixtures, and Playground snapshot extraction is automated. A lab-only fixture endpoint now verifies read-only dry-run, apply with a supplied dry-run receipt, stale rejection, and conflict refusal; the production Reprint HTTP mutation endpoint and remote audit records are pending.</p>
+          <p class="note">The CLI can plan and apply deterministic JSON snapshots, the proposed Reprint push protocol has request/response fixtures, and Playground snapshot extraction is automated. A lab-only fixture endpoint now verifies read-only dry-run, required receipt-backed apply, missing/tampered receipt refusal, stale rejection, and conflict refusal; the production Reprint HTTP mutation endpoint and durable audit records are pending.</p>
         </div>
 
         <div class="lane">
@@ -487,7 +487,7 @@
           <div class="proof-list">
             <div class="proof-item"><span class="status">Pending</span><p>Production Reprint HTTP source mutation endpoint for files, rows, and plugin state on a live source site.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Durable recovery journal with crash/kill-process tests around each commit boundary.</p></div>
-            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply and protocol smoke verify read-only dry-run, ready apply with a supplied receipt, stale rejection, and conflict refusal against disposable fixtures.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply and protocol smoke verify read-only dry-run, required receipt-backed apply, missing/tampered receipt refusal, stale rejection, conflict refusal, and fixture-scoped lab journal/audit events.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Plugin-specific validators or drivers that prove safe semantic merges before applying plugin-owned data.</p></div>
           </div>
         </section>

@@ -24,6 +24,8 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Remote changes after dry-run | Apply rejects with `PRECONDITION_FAILED`. | `rejects apply when the remote changed after dry-run planning` |
 | Playground fixture protocol dry-run | Dry-run verifies ready-plan preconditions, applies nothing, and same-process WordPress readback stays unchanged. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol ready apply | Apply with a supplied dry-run receipt writes the five expected fixture mutations and verifies hashes/readback. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
+| Playground fixture protocol missing receipt | Apply without a supplied dry-run receipt rejects with `MISSING_DRY_RUN_RECEIPT` before mutation. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
+| Playground fixture protocol tampered receipt | Apply with a mismatched receipt rejects with `RECEIPT_MISMATCH` before mutation. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol stale apply | Stale apply rejects with `PRECONDITION_FAILED` and preserves the changed remote fixture. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Playground fixture protocol non-ready plan | Conflict dry-run and apply reject with `PLAN_NOT_READY` and report row, file, and plugin-data conflict classes. | `npm run test:playground` / `scripts/playground/push-protocol-smoke.mjs` |
 | Failure happens while staging mutations | No partially mutated remote state is returned or committed. | `injected failure before commit returns no partially mutated remote state` |
@@ -32,7 +34,7 @@ The first executable matrix lives in `test/push-planner.test.js`.
 
 - Production Reprint HTTP source mutation endpoint for live source sites.
 - Reprint exporter protocol extension for authenticated push preflight,
-  sessions, production receipt enforcement, and mutation batches.
+  sessions, signed/expiring production receipts, and mutation batches.
 - File body streaming with large upload chunks.
 - Database transaction boundaries on MySQL and SQLite.
 - Remote plugin activation/update with dependency and recovery checks.

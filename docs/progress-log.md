@@ -60,13 +60,17 @@ linked implementation artifacts.
   `scripts/playground/push-remote-lib.php` files into no-server Playground.
 - The smoke proves dry-run is read-only by same-process WordPress before/after
   readback, applies a ready fixture plan with a supplied dry-run receipt,
-  verifies five fixture mutations and hashes, rejects stale apply with
-  `PRECONDITION_FAILED`, and preserves the drifted remote fixture.
+  verifies five fixture mutations and hashes, rejects missing receipts with
+  `MISSING_DRY_RUN_RECEIPT`, rejects tampered receipts with
+  `RECEIPT_MISMATCH`, rejects stale apply with `PRECONDITION_FAILED`, and
+  preserves the drifted remote fixture.
 - Conflict dry-run and apply both refuse with `PLAN_NOT_READY` and return audit
   evidence for row, file, and plugin-data conflict classes.
-- This remains fixture-scoped lab evidence. The PHP endpoint still permits
-  apply without a supplied prior receipt by creating one inline, so prior
-  dry-run receipts are verified in the smoke but not yet mandatory. Production
+- Receipts are bound to the plan fingerprint/hash, mutation and precondition
+  sets, ordered resource keys, and dry-run actual hashes. The PHP endpoint
+  records bounded fixture-scoped lab journal/audit option events for dry-run,
+  apply, stale, non-ready, missing-receipt, and mismatch outcomes. This remains
+  fixture-scoped lab evidence, not durable production journaling. Production
   Reprint HTTP source mutation support remains pending.
 
 ## 2026-05-24 - Status By Area

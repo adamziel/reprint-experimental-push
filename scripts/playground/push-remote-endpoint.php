@@ -4,7 +4,7 @@
  *
  * Usage:
  *   php push-remote-endpoint.php dry-run /path/to/plan.json
- *   php push-remote-endpoint.php apply /path/to/plan.json [/path/to/dry-run-receipt.json]
+ *   php push-remote-endpoint.php apply /path/to/plan.json /path/to/dry-run-receipt.json
  */
 
 if (!defined('ABSPATH')) {
@@ -30,7 +30,7 @@ try {
         throw new Reprint_Push_Protocol_Error([
             'ok' => false,
             'code' => 'INVALID_ARGUMENT',
-            'message' => 'Usage: php push-remote-endpoint.php <dry-run|apply> <plan.json> [receipt.json]',
+            'message' => 'Usage: php push-remote-endpoint.php dry-run <plan.json> | php push-remote-endpoint.php apply <plan.json> <dry-run-receipt.json>',
         ]);
     }
 

@@ -39,10 +39,11 @@ files after apply. The Playground protocol smoke also exercises a fixture-scoped
 dry-run/apply endpoint: dry-run is read-only by same-process before/after
 readback, apply with a supplied dry-run receipt mutates the five expected
 fixture resources and verifies hashes, stale apply fails with
-`PRECONDITION_FAILED`, and non-ready conflict plans fail with `PLAN_NOT_READY`.
+`PRECONDITION_FAILED`, missing or tampered receipts fail before mutation, and
+non-ready conflict plans fail with `PLAN_NOT_READY`.
 This remains a lab harness, not production Reprint HTTP source mutation support.
-The lab endpoint can still create a receipt inline for apply, so a prior
-dry-run receipt is verified but not yet mandatory.
+Its receipt and journal checks are fixture-scoped lab audit evidence, not a
+durable production journal, auth model, or signing scheme.
 
 The lab CLI works on three snapshots:
 
