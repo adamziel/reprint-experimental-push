@@ -184,6 +184,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
     ),
     'model rejects treating compressed row receipts plus a fresh remote index as plugin-update completion',
   );
+  assert.ok(
+    model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'index-and-compressed-row-summary-completes-plugin-update',
+    ),
+    'model rejects treating a compressed row summary plus a fresh remote index as plugin-update completion',
+  );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
   assert.ok(
