@@ -248,6 +248,10 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - Any reviewed approval artifact must bind to the exact base, local, remote,
   and coverage hashes that were reviewed. If any of those hashes change, the
   old artifact remains audit evidence only and cannot authorize a retry.
+- Any reviewed approval artifact must also bind to the exact live snapshot
+  identifier and retry scope; if the live snapshot changes or the scope
+  expands, the artifact is audit-only and the next apply must start from a
+  fresh review.
 - Every mutation surface has an explicit coverage manifest entry, or the push
   hard-blocks before apply.
 - Every plugin-owned resource has a declared contract, or the push hard-blocks
