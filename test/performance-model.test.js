@@ -1069,6 +1069,45 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('index-and-compressed-file-hash-completes-plugin-update')
+      .violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-file-hash-completes-plugin-update')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-file-hash-completes-plugin-update')
+      .violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-file-hash-completes-plugin-update')
+      .violates.includes('file-hashing'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-file-hash-completes-plugin-update')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-file-hash-completes-plugin-update')
+      .violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-file-hash-completes-plugin-update')
+      .violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-file-hash-completes-plugin-update').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-buffer-completes-plugin-install')
       .violates.includes('atomic-groups'),
   );
@@ -1139,6 +1178,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-buffer-completes-plugin-update',
     'index-and-compressed-buffer-completes-plugin-install',
     'index-and-compressed-file-hash-completes-plugin-install',
+    'index-and-compressed-file-hash-completes-plugin-update',
     'archive-hash-skips-chunk-receipts',
     'compressed-upload-queue-completes-large-upload',
     'index-and-table-checksum-skips-batch-preconditions',
