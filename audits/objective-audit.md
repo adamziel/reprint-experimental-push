@@ -318,7 +318,7 @@ invocation and can be skipped while `npm test` remains green.
     exact places the source site can lose or duplicate work. That is still a
     blocker for any live-source no-data-loss claim.
 
-13. **The release suite is fragmented and unenforced.** The highest-value
+17. **The release suite is fragmented and unenforced.** The highest-value
    evidence is split across manually invoked scripts. A green default test run
    still leaves the strongest claims unproven unless the full matrix is run
    deliberately, and nothing in the repository currently enforces that matrix
@@ -329,14 +329,22 @@ invocation and can be skipped while `npm test` remains green.
    The actionable fix is a single release gate command plus CI that runs it
    in order and fails closed on any skipped mandatory smoke.
 
-14. **The speed claim is still only a model.** The benchmark tests verify
-    evidence structure, guardrail placement, and failure gates, but they do
-    not measure a real push path against a live WordPress site, do not report
-    a throughput target, do not establish a memory ceiling under load, and do
-    not enforce a benchmark environment that can fail release automatically.
-    Until a production-shaped benchmark runs the executor end to end with a
-    non-bypassable threshold, "fast" remains blocked as a release claim, not
-    merely unproven.
+18. **The live-source no-data-loss claim is still blocked by missing crash
+   coverage at the actual write boundaries.** The current smoke suite can
+   show one process-kill path and one stale-claim path, but it does not kill
+   the executor at each production-grade boundary for DB writes, filesystem
+   writes, plugin activation, finalization, and replay. Without that matrix,
+   the claim still rests on selective fixtures and model state, not on the
+   exact places the source site can lose or duplicate work.
+
+19. **The speed claim is still only a model.** The benchmark tests verify
+   evidence structure, guardrail placement, and failure gates, but they do
+   not measure a real push path against a live WordPress site, do not report
+   a throughput target, do not establish a memory ceiling under load, and do
+   not enforce a benchmark environment that can fail release automatically.
+   Until a production-shaped benchmark runs the executor end to end with a
+   non-bypassable threshold, "fast" remains blocked as a release claim, not
+   merely unproven.
 
 ## Required Release Gates
 
