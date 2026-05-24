@@ -163,6 +163,11 @@ evidence for all of these, not just a plausible design:
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals, plus a repo-specific proof that package mounting
   only exposes the endpoint shape rather than the write-path semantics.
+- The source-note snapshots themselves are not current upstream proof: a
+  locally observed commit, worktree state, or README claim in Reprint, ZS-
+  Sync, or ForkPress only anchors the comparison text. It does not prove that
+  the upstream repo still has the cited semantics today or that this branch
+  has matched them at the mutation boundary.
 - A route that looks production-shaped, returns live hashes, or passes a
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
