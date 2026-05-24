@@ -19,11 +19,11 @@ source-mutation boundary for this repository. Reprint shows transport stages,
 not live mutation safety. ZS-Sync shows bounded change discovery, not write
 policy. ForkPress shows the reliability bar, but only as a comparison point
 until this repo proves the same lifecycle. Any claim beyond that would be an
-inference, not direct evidence, and no route-shape or packaged-plugin smoke
-should be read as proof of live source-site safety. None of the three source
-notes prove remote-drift rejection at apply time, stable identity reservation
-for creates, or revalidation of plugin-owned ownership changes immediately
-before write.
+inference, not direct evidence, and no route-shape, packaged-plugin, or
+`finalMatchesLocal` smoke should be read as proof of live source-site safety.
+None of the three source notes prove remote-drift rejection at apply time,
+stable identity reservation for creates, or revalidation of plugin-owned
+ownership changes immediately before write.
 None of the source notes prove that stale manual-review artifacts are rejected
 before write, that retries after live remote drift start from a fresh
 snapshot, or that a fixture replay remains safe when identity or plugin-owned
@@ -238,6 +238,10 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - The live remote is revalidated immediately before apply, and any stale
   retry starts from a fresh snapshot rather than reusing old approval or stale
   manual-review artifacts.
+- Manual resolution only counts as success when the remote is preserved for
+  audit, the review artifact is bound to the exact live snapshot that was
+  approved, and the next retry re-plans from fresh evidence. A stale approval
+  that merely “looks reasonable” is not production proof.
 - A stale approval, stale snapshot, or stale manual-review artifact cannot be
   recycled as evidence for a new apply, even if the plan hash or endpoint name
   has not changed.
