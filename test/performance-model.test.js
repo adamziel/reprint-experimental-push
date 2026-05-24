@@ -196,6 +196,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
     ),
     'model rejects treating a compressed row batch plus a fresh remote index as backpressure bypass for plugin updates',
   );
+  assert.ok(
+    model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'index-and-compressed-chunk-receipts-completes-large-upload',
+    ),
+    'model rejects treating compressed chunk receipts plus a fresh remote index as large-upload completion',
+  );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
   assert.ok(
