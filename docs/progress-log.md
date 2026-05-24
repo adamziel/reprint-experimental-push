@@ -7,6 +7,18 @@ linked implementation artifacts.
 ## 2026-05-25 - Progress Page Refresh
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:23:24 CEST`) and kept the first screen concise.
+- The page still treats production auth, durable journaling, graph identity,
+  Docker/Playground integration, and plugin drivers as pending until proof
+  appears.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md), and
+  [docs/playground-topology.md](playground-topology.md).
+
+## 2026-05-25 - Progress Page Refresh
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
   (`2026-05-25 01:22:55 CEST`) and kept the first screen concise.
 - The public page still shows 0 of 4 production gates proven; auth, durable
   journaling, graph identity, Docker/Playground integration, and plugin-driver
