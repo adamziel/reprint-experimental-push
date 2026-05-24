@@ -1,0 +1,33 @@
+{
+  "mapping_id": "push-pull-mapping-one-way",
+  "purpose": "machine-readable pull exporter/importer to push executor handoff",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as read-only provenance"
+  },
+  "push_pipeline": {
+    "preflight": "binds the persisted base package to the live remote identity and write scope",
+    "snapshot_hashes": "lists the live remote comparison set for the requested scope",
+    "plan_dry_run": "uploads the canonical three-way plan from base, local, and live remote",
+    "batch_apply": "revalidates the live remote before every batch and again at the storage boundary",
+    "journal": "resolves lost responses and crash ambiguity without granting a lock",
+    "recover": "inspects, finishes, rolls back, or blocks using journal evidence and fresh live hashes"
+  },
+  "persisted_base_package": {
+    "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+    "base_manifest_hash": "sha256:base-manifest",
+    "base_coverage_hash": "sha256:base-coverage",
+    "remote_site_id": "remote-example",
+    "pull_protocol_version": 1,
+    "evidence": [
+      "resource keys and hashes observed during pull",
+      "optional bodies observed during pull",
+      "pull-time coverage completion proof"
+    ]
+  },
+  "required_invariants": [
+    "the pull package is immutable provenance, not a live lock",
+    "dry-run is eligibility only and apply revalidates the live remote again",
+    "journal and recover inspect explain evidence without turning stale proof into authority"
+  ]
+}

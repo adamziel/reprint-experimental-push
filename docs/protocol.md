@@ -171,6 +171,10 @@ artifacts already stored on disk:
 - push journal and recovery inspect read durable evidence only, and never rewrite
   the persisted pull base to make a stale plan look current
 
+The machine-readable handoff fixture at
+[`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
+captures the same one-way mapping for tests.
+
 The pull exporter/importer owns the persisted base package and the base
 coverage evidence. Push never asks pull to become a write lock. Instead, push
 uses the persisted base package as immutable provenance and layers new

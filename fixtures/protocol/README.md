@@ -39,6 +39,9 @@ Failure and recovery examples:
   show the read-only evidence lookup used before any mutating recovery mode.
 - `push-recovery-blocked-response.json` shows the evidence returned when the
   remote cannot prove a safe finish or rollback.
+- `push-pull-mapping.json` shows how the persisted pull base package becomes
+  immutable provenance for push preflight, snapshot listing, dry-run upload,
+  batched apply, journal inspection, and recovery.
 - `push-auth-headers.json` shows the required authentication header families
   and versioned canonical push signature parts for dry-run, apply, and mutating
   recovery requests.
@@ -178,3 +181,8 @@ The fixture contract is intentionally one remote, one local, one runner:
 - `remote_changed` is the same remote site after drift and forces apply-time
   revalidation.
 - `runner` is the only actor that may compare, upload, inspect, or recover.
+
+`push-pull-mapping.json` is the compact handoff contract between the pull
+exporter/importer pipeline and the push executor. It exists so tests can assert
+that the stored pull base package is read-only provenance, not a hidden lock or
+second export format.

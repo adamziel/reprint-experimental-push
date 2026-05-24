@@ -735,6 +735,11 @@ WP-CLI is unavailable in the sandbox. In both cases, the remote and local
 sites stay distinct: one remote source of truth, one edited local pull target,
 and one separate drift witness.
 
+The machine-readable fixture [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
+captures the same role split for test code, and
+[`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
+captures the pull-to-push handoff that the executor must preserve.
+
 Minimal Compose shape:
 
 ```yaml
