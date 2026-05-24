@@ -6,6 +6,11 @@ one of the known states: unchanged, fully changed, or blocked with durable
 recovery evidence. Anything that makes the final state ambiguous is not a fast
 path for this project.
 
+The acceptance rule is simple: a speedup may reduce duplicate hashing, body
+transfer, round trips, lock time, or idle time, but it may not remove live
+preconditions, weaken canonical hashes, publish staged data early, split an
+atomic group, or mark progress before durable evidence exists.
+
 ## Safe Speedups
 
 | Area | Safe fast path | Required guardrail |
@@ -163,3 +168,14 @@ The deterministic model in `scripts/bench/performance-model.js` captures these
 benchmark shapes without touching a live site. It should stay aligned with the
 planner invariants: speedups can reduce bytes, round trips, and duplicate work,
 but cannot remove preconditions or split atomic groups.
+
+The model exposes three contract lists that tests should keep current:
+
+- `safeSpeedupAreas` covers file hashing, chunk upload, database row batching,
+  remote indexes, compression, parallelism limits, and backpressure.
+- `rejectedFastPaths` records proposals that are not allowed because they
+  bypass preconditions, split atomic groups, publish staged data early, confuse
+  canonical hashes with transport encoding, or lose durable progress evidence.
+- `failureInjectionBoundaries` names the durable transitions that benchmarks
+  must exercise: chunk ack, database batch commit, group staging finalize, and
+  atomic group commit.

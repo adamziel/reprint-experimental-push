@@ -14,6 +14,94 @@ export const DEFAULT_LIMITS = Object.freeze({
   maxPendingDbBatches: 4,
 });
 
+export const SAFE_SPEEDUP_AREAS = Object.freeze([
+  'file-hashing',
+  'chunk-upload',
+  'database-row-batching',
+  'remote-indexes',
+  'compression',
+  'parallelism-limits',
+  'backpressure',
+]);
+
+export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([
+  {
+    boundary: 'chunk-ack',
+    beforeState: 'chunk-not-complete',
+    afterState: 'chunk-complete-in-plan-staging',
+    recoveryEvidence: 'chunk digest plus plan-scoped idempotency key',
+  },
+  {
+    boundary: 'db-batch-commit',
+    beforeState: 'batch-not-visible',
+    afterState: 'batch-visible-or-group-staged',
+    recoveryEvidence: 'row count, per-row precondition count, batch idempotency key',
+  },
+  {
+    boundary: 'group-staging-finalize',
+    beforeState: 'group-member-staged-but-not-visible',
+    afterState: 'group-member-ready-for-commit',
+    recoveryEvidence: 'member resource hash, staging hash, atomic group id',
+  },
+  {
+    boundary: 'atomic-group-commit',
+    beforeState: 'no-group-members-visible',
+    afterState: 'all-group-members-visible',
+    recoveryEvidence: 'commit record after all member preconditions are rechecked',
+  },
+]);
+
+export const REJECTED_FAST_PATHS = Object.freeze([
+  {
+    id: 'live-chunk-publish',
+    proposal: 'write uploaded chunks directly to the live file path',
+    rejectedBecause: 'a partial upload can become user-visible and ambiguous after failure',
+    violates: ['known-terminal-state', 'atomic-file-publish'],
+  },
+  {
+    id: 'fresh-dry-run-authorizes-apply',
+    proposal: 'skip apply preconditions when the dry-run plan is recent',
+    rejectedBecause: 'remote edits after dry-run would be overwritten without a live compare',
+    violates: ['live-preconditions'],
+  },
+  {
+    id: 'remote-index-authorizes-mutation',
+    proposal: 'treat a remote index generation as permission to mutate',
+    rejectedBecause: 'indexes are planning evidence and can be stale before apply',
+    violates: ['live-preconditions'],
+  },
+  {
+    id: 'metadata-only-conflict-check',
+    proposal: 'use mtime, size, row count, or table checksum instead of resource hashes',
+    rejectedBecause: 'metadata equality is not proof that the guarded resource value is unchanged',
+    violates: ['strong-resource-hashes'],
+  },
+  {
+    id: 'split-plugin-install',
+    proposal: 'publish plugin files before database rows, metadata, dependency checks, and activation state',
+    rejectedBecause: 'the plugin can become half-installed and cannot be classified as old or new',
+    violates: ['atomic-groups'],
+  },
+  {
+    id: 'blind-sql-replace',
+    proposal: 'bulk replay SQL with REPLACE statements and no row-level compare-and-swap',
+    rejectedBecause: 'row ownership and concurrent remote edits are overwritten silently',
+    violates: ['row-preconditions', 'idempotent-replay'],
+  },
+  {
+    id: 'compressed-canonical-hash',
+    proposal: 'hash compressed bytes as the canonical resource value',
+    rejectedBecause: 'transport encoding changes would look like content changes or hide them',
+    violates: ['canonical-resource-hashes'],
+  },
+  {
+    id: 'unbounded-parallelism',
+    proposal: 'raise concurrency without in-flight byte, queue, or journal-lag budgets',
+    rejectedBecause: 'the sender can lose the evidence needed to resume or classify failure',
+    violates: ['backpressure', 'durable-progress'],
+  },
+]);
+
 export function buildBenchmarkModel(overrides = {}) {
   const limits = { ...DEFAULT_LIMITS, ...overrides };
   const workloads = [
@@ -24,7 +112,23 @@ export function buildBenchmarkModel(overrides = {}) {
 
   return {
     schemaVersion: 1,
+    safetyContract: {
+      priority: 'fast-fourth',
+      acceptableTerminalStates: [
+        'unchanged',
+        'fully-changed',
+        'blocked-with-durable-recovery-evidence',
+      ],
+      forbids: [
+        'ambiguous-after-failure',
+        'precondition-bypass',
+        'atomic-group-split',
+      ],
+    },
     limits,
+    safeSpeedupAreas: SAFE_SPEEDUP_AREAS,
+    failureInjectionBoundaries: FAILURE_INJECTION_BOUNDARIES,
+    rejectedFastPaths: REJECTED_FAST_PATHS,
     remoteIndex: {
       use: 'planning-only',
       requiredFields: [
@@ -240,6 +344,7 @@ function scheduleFile(file, limits) {
       chunkDigest: `sha256:${file.resourceKey}:chunk:${chunkIndex}`,
       destination: 'plan-staging',
       canonicalVisible: false,
+      durableEvidence: 'chunk-digest-and-idempotency-key',
       idempotencyKey: `${file.localHash}:${chunkIndex}`,
     });
   }
@@ -281,6 +386,7 @@ function scheduleRowGroup(rowGroupEntry, limits) {
       order: 'primary-key',
       transaction: rowGroupEntry.atomicGroupId ? 'group-staging' : 'batch-atomic',
       canonicalVisible: !rowGroupEntry.atomicGroupId,
+      durableEvidence: 'batch-commit-record-or-group-staging-record',
       preconditions: {
         kind: 'per-row-hash',
         count: rowCount,
