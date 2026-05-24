@@ -12,6 +12,12 @@ not cosmetic. They are the exact points where a partial write, hidden plugin
 side effect, stale retry, or graph rewrite can silently lose remote state while
 the system reports a plausible success.
 
+The comparison against Reprint, ZS-Sync, and ForkPress is intentionally
+conservative: those sources contribute transport shape, scanner composition,
+and reliability vocabulary, but none of them by themselves prove a production
+source-mutation boundary for this repository. Any claim beyond that would be an
+inference, not direct evidence.
+
 ## Blocking Gaps
 
 | Risk | Scenario | Missing proof | Why this blocks production |
