@@ -194,7 +194,8 @@ evidence for all of these, not just a plausible design:
   widened to unrelated rows, files, or plugin-owned surfaces on retry.
 - A reviewed manual-resolution artifact is not success on its own; the retry
   must preserve the remote, bind to the exact stale snapshot that was
-  reviewed, and force a fresh plan before any write.
+  reviewed, reject the stale artifact before any write, and force a fresh
+  plan before any write.
 - A stale manual-review artifact is never current authority; it may stay
   auditable, but it cannot authorize a retry after remote drift or after a
   partial approval has already been recorded.
@@ -243,7 +244,7 @@ production-grade push support:
   apply.
 - Evidence standard: fixture replay, route-shape smoke, and packaged-plugin
   mounting are compatibility checks only; none may be cited as proof of
-  production safety.
+  production safety, even if they return live-looking hashes or `finalMatchesLocal`.
 
 ## Changes Required Before A Production Claim
 
