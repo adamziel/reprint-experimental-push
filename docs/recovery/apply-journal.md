@@ -15,6 +15,9 @@ The production design target is a durable artifact that separates a safe retry
 from an unsafe partial push. A failed apply must leave the system classifiable
 as only one of these states:
 
+See [Acceptable Post-Failure States](./acceptable-states.md) for the concise
+contract.
+
 - `old-remote`: no remote mutation was committed. The journal records the plan,
   before/after hashes, and the last completed boundary so the push can be
   retried after revalidating preconditions.
