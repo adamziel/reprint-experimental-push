@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 00:49 CEST.
+- Last update: 2026-05-25 00:50 CEST.
 - Status: `89` Node tests still pass after supervised lane merges.
 - Trend: planner, recovery, fast-path, protocol, critic, and objective-audit
   surfaces stay aligned inside lab/model scope. Production readiness is still
@@ -19,8 +19,8 @@ linked implementation artifacts.
 - Next nudge: keep production gates blocked until a worker proves production
   auth/session/journal internals and graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update
-  date and links to the detailed evidence. This lane update becomes live only
-  after merge to `main`.
+  date and links to the detailed evidence. In this lane, that page updates live
+  only after merge to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>
