@@ -4,22 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-24 - Follow-Up Lane Integration Refresh
+## 2026-05-24 - Current Supervisor Snapshot
 
-- Integrated follow-up lane work for no-data-loss invariants, no-data-loss
-  recovery, reliable executor, fast paths, independent audit, and critic.
-- `npm test` now passes with `70` Node scenarios. The new coverage includes
-  stale owner-plugin context blocking across plugin files, metadata, and
-  plugin-owned data; durable old-remote retry journal evidence without duplicate
-  target records; and stricter fast-path staging/idempotency/recovery gates.
-- Protocol docs now include production contract language, auth header families,
-  request fixtures for preflight/snapshot hashes/journal/recovery, and executor
-  acceptance criteria. These are still contract/model evidence, not an
-  executable production Reprint endpoint.
-- [progress.html](../progress.html) and
-  [supervisor feedback](supervisor-feedback.md) were refreshed to keep the public
-  summary concise and to keep production readiness flat until a production-shaped
-  route slice mutates a real source site with durable audit/recovery proof.
+- Status: `70` Node tests pass; Playground and CLI lab evidence remains linked.
+- Trend: lab/model confidence improved; production readiness is still flat.
+- Blocker: no production Reprint endpoint, auth binding, durable journal,
+  storage guard, or general plugin driver proof has landed.
+- Next nudge: reliable executor should prove one production-shaped route slice:
+  preflight, dry-run receipt, guarded DB/file writes, journal/recovery inspect,
+  replay, and different-body conflict refusal.
+- Public page: [progress.html](../progress.html) shows a visible last-updated
+  date and keeps the supervisor view short.
+
+<details>
+<summary>Earlier progress entries</summary>
 
 ## 2026-05-24 - Integrated Feedback And Verification Refresh
 
@@ -607,3 +605,5 @@ linked implementation artifacts.
   and hard-coded fixture plugin install atomicity; arbitrary plugin-owned
   options, postmeta, custom tables, activation hooks, and rollback are not
   solved.
+
+</details>

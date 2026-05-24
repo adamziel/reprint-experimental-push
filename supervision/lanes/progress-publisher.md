@@ -25,5 +25,6 @@ Quality bar:
 
 - Progress bars must reflect evidence, not optimism.
 - The page must work as a static file with no build step.
+- Keep the public page and newest progress-log entry concise. Put older or
+  detailed evidence behind links or collapsed history.
 - Do not mention Codex or generated-by attribution in branch docs or commits.
-

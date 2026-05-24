@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Lab evidence covers planner invariants, guarded writes, recovery journals, protocol fixtures, fast-path safety gates, authenticated CLI push, and post-snapshot drift refusal. Production Reprint push remains blocked by missing endpoint, auth, journal, and plugin-driver proof.</p>
-        <time class="update-stamp" datetime="2026-05-24">Last updated: May 24, 2026</time>
+        <p class="lead">Current proof is lab/model evidence: 70 Node tests plus Playground and CLI smokes. Production push remains blocked by missing endpoint, auth, durable journal, and plugin-driver proof.</p>
+        <time class="update-stamp" datetime="2026-05-24T21:47:00+02:00">Last updated: May 24, 2026, 21:47 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">70 Node tests passing</span>
           <span class="pill">Playground labs passing</span>
@@ -485,26 +485,26 @@
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>Detailed evidence lives in the linked docs. This page keeps the supervisor view short.</p>
+        <p>Scan view only. Detailed evidence lives in the linked docs.</p>
       </div>
     </header>
 
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong>70</strong>
-        <span>passing Node tests across planner, recovery, protocol, and fast-path models</span>
+        <span>passing Node tests</span>
       </div>
       <div class="metric">
         <strong>Flat</strong>
-        <span>production readiness; recent gains are still lab/model-scoped</span>
+        <span>production readiness</span>
       </div>
       <div class="metric">
         <strong>0</strong>
-        <span>production push gates proven; current evidence stays lab-scoped</span>
+        <span>production gates proven</span>
       </div>
       <div class="metric">
         <strong>4</strong>
-        <span>explicit pending proof gates before production claims</span>
+        <span>pending proof gates</span>
       </div>
     </section>
 
@@ -518,31 +518,31 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">41%</span></div>
           <div class="bar" aria-label="No data loss merge invariants 41 percent"><div class="fill green" style="width:41%"></div></div>
-          <p class="note">Planner now blocks stale owner-plugin context across plugin files, metadata, and plugin-owned data. Gap: real WordPress graph identity and semantic preservation.</p>
+          <p class="note">Owner-plugin drift is blocked in the model. Gap: real WordPress graph identity.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">25%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 25 percent"><div class="fill green" style="width:25%"></div></div>
-          <p class="note">Durable retry journals now preserve old-remote retry evidence without duplicating targets. Gap: production durability, `fsync`, leases, rollback, and exactly-once proof.</p>
+          <p class="note">Retry evidence is cleaner in lab journals. Gap: production durability and crash proof.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">30%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 30 percent"><div class="fill amber" style="width:30%"></div></div>
-          <p class="note">Protocol docs now define production contract, auth header families, journal/recovery requests, and executor acceptance criteria. Gap: executable production route.</p>
+          <p class="note">Contract fixtures are clearer. Gap: executable production-shaped route.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">15%</span></div>
           <div class="bar" aria-label="Fast path and chunking 15 percent"><div class="fill" style="width:15%"></div></div>
-          <p class="note">Performance model now covers staging finalization, missing receipts, idempotency, pressure budgets, and rejected unsafe shortcuts. Gap: real large-site runtime benchmark.</p>
+          <p class="note">Safety model improved. Gap: real large-site runtime benchmark.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">27%</span></div>
           <div class="bar" aria-label="Independent evidence and critique 27 percent"><div class="fill red" style="width:27%"></div></div>
-          <p class="note">Audit and critic gates now make production-claim blockers explicit. Gap: re-audit the first executable production-shaped mutation slice.</p>
+          <p class="note">Production-claim blockers are explicit. Gap: re-audit the first route slice.</p>
         </div>
       </section>
 
@@ -550,10 +550,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>Planner, recovery, protocol, fast-path, critic, and audit lanes all added sharper executable or review gates.</span></li>
-            <li><strong>Not going well</strong><span>No production endpoint, auth binding, nonce cleanup, durable audit, storage guard, or general plugin proof has landed.</span></li>
-            <li><strong>Progress change</strong><span>Lab/model evidence improved to 70 passing Node tests; production readiness is still flat.</span></li>
-            <li><strong>Next nudge</strong><span>Reliable executor: run one production-shaped route slice with guarded DB/file writes and journal recovery.</span></li>
+            <li><strong>Going well</strong><span>Lab/model gates sharpened; 70 Node tests pass.</span></li>
+            <li><strong>Not going well</strong><span>Production endpoint, auth, journal, storage guard, and plugin proof are still missing.</span></li>
+            <li><strong>Progress change</strong><span>Lab/model up; production flat.</span></li>
+            <li><strong>Next nudge</strong><span>Run one production-shaped route slice with guarded DB/file writes and recovery inspect.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -577,11 +577,11 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Pending</span><p>Production-shaped Reprint routes with real auth and credential binding.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Durable production recovery journal with crash and lease tests.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Full Playground or Docker integration beyond disposable fixture labs.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Plugin drivers for arbitrary options, postmeta, tables, hooks, and rollback.</p></div>
-            <div class="proof-item"><span class="status">Lab proof</span><p>Current evidence is `npm test`, Playground, and standalone local-server labs.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Production-shaped routes and real auth.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Durable journal with crash and lease tests.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Full integration beyond fixture labs.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>General plugin drivers and rollback.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Current evidence is lab-only.</p></div>
           </div>
         </section>
 

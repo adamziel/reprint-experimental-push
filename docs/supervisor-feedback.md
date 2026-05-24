@@ -1,44 +1,33 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24
+Last updated: 2026-05-24 21:47 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-24 - Follow-Up Lane Refresh
+## 2026-05-24 - Current Nudge
 
-### Going Well
+- Going well: `70` Node tests pass, and invariants, recovery, protocol,
+  fast-path, audit, and critic lanes all sharpened lab/model gates.
+- Not going well: production readiness is flat. The repo still lacks a
+  production endpoint, credential binding, nonce cleanup, durable audit,
+  storage guard, and general plugin driver proof.
+- Progress change: lab/model evidence moved up; production evidence did not.
+- Next nudge: reliable executor should run one production-shaped route slice
+  end to end with guarded DB/file writes, journal/recovery inspect, replay, and
+  different-body conflict refusal.
 
-- `npm test` now passes with 70 Node scenarios.
-- Invariants now block stale owner-plugin context across plugin files,
-  metadata, and plugin-owned data.
-- Recovery, reliable protocol, fast-path model, audit, and critic lanes added
-  sharper lab/model gates.
-
-### Not Going Well
-
-- Production readiness is still flat: no production Reprint mutation endpoint,
-  credential binding, nonce cleanup, durable audit, storage guard, or general
-  plugin driver proof has landed.
-- Fast paths remain model-level; there is no large-site runtime benchmark.
-
-### Progress Delta
-
-| Lane | Direction | Nudge |
+| Lane | Change | Next nudge |
 | --- | --- | --- |
-| No-data-loss invariants | Up in lab | Next: real WordPress graph identity with attachments, taxonomy, users, and serialized refs. |
-| No-data-loss recovery | Up in lab | Next: production DB journal durability, leases, and crash-boundary proof. |
-| Reliable executor | Up in contract | Next: one production-shaped route slice with guarded DB/file writes and recovery inspect. |
-| Fast paths | Up in model | Next: large-site transfer benchmark with receipts, staging, and resume cursors. |
-| Audit and critic | Up | Next: re-audit the first executable production-shaped mutation slice. |
-| Progress publisher | Needs sync | Next: keep Pages aligned with integrated main and concise enough to scan. |
+| Invariants | Up in lab | Prove real WordPress graph identity and drift handling. |
+| Recovery | Up in lab | Prove production DB journal durability and crash boundaries. |
+| Reliable executor | Up in contract | Build the first production-shaped route slice. |
+| Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
+| Audit and critic | Up | Re-audit the first executable production-shaped mutation slice. |
+| Progress publisher | Synced | Keep Pages aligned and concise. |
 
-### Next Supervisor Nudge
-
-Stop adding proof breadth until reliable executor runs one production-shaped
-route slice end to end: preflight, snapshot hashes, dry-run receipt, guarded DB
-row, guarded file write, journal inspect, recovery inspect, replay, and
-different-body conflict refusal.
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Evidence Checkpoint
 
@@ -165,3 +154,5 @@ Prioritize a production-shaped source-site mutation slice: authenticated
 preflight, dry-run receipt, one guarded DB row update, one guarded file write,
 DB journal evidence, and replay/conflict behavior over a real local WordPress
 site. Keep the scope small, but make the boundary production-shaped.
+
+</details>

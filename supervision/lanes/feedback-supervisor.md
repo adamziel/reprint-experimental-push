@@ -34,4 +34,6 @@ Quality bar:
 - Prefer "blocked by missing evidence" over optimistic language.
 - Keep summaries skimmable: one screen should reveal current status, trend, and
    top risks.
+- Keep the newest supervisor entry short. Collapse older entries under a
+  details block instead of making the supervisor read the whole history first.
 - Do not mention Codex or generated-by attribution in branch docs or commits.
