@@ -12,14 +12,15 @@ git -C "$repo" worktree list
 
 if [ -d "$lanes_root" ]; then
   printf '\n%s\n' "lane git state:"
-  for worktree in "$lanes_root"/*; do
+  while IFS= read -r worktree; do
     git -C "$worktree" rev-parse --is-inside-work-tree >/dev/null 2>&1 || continue
-    printf '\n## %s\n' "$(basename "$worktree")"
+    lane_label="${worktree#"$lanes_root"/}"
+    printf '\n## %s\n' "$lane_label"
     git -C "$worktree" status --short --branch
     if git -C "$worktree" rev-parse --verify origin/main >/dev/null 2>&1; then
       ahead_main="$(git -C "$worktree" rev-list --count origin/main..HEAD)"
       behind_main="$(git -C "$worktree" rev-list --count HEAD..origin/main)"
       printf 'main delta: ahead %s, behind %s\n' "$ahead_main" "$behind_main"
     fi
-  done
+  done < <(find "$lanes_root" -mindepth 1 -maxdepth 2 -type d | sort)
 fi
