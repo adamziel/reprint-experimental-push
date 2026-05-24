@@ -68,6 +68,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed in-memory buffer still cannot prove plugin activation finished, because the activation change, dependency checks, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed file-hash cache still cannot prove a plugin install finished, because dependency checks, staged files, row receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed file-hash cache still cannot prove a plugin update finished, because dependency checks, staged files, row receipts, and the atomic-group commit still need durable evidence.
+- A fresh remote index plus compressed chunk receipts still cannot prove a plugin update finished, because chunk acknowledgements do not replace dependency checks, row receipts, or the atomic-group commit.
 - A local fingerprint match still cannot skip the live file compare before publish, because size, mtime, inode, or mode can only skip a rehash and cannot authorize the mutation boundary.
 - A fresh remote index plus a compressed upload queue still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
 - A fresh remote index plus a compressed upload buffer still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.

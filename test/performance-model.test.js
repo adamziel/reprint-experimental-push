@@ -1154,6 +1154,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('index-and-compressed-chunk-receipts-completes-plugin-update')
+      .violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-chunk-receipts-completes-plugin-update')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-file-hash-completes-plugin-update')
       .violates.includes('compression'),
   );
