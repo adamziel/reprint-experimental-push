@@ -156,6 +156,9 @@ evidence for all of these, not just a plausible design:
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
   write safety, credential isolation, or durable retry behavior.
+- The same warning applies to `finalMatchesLocal`: a fixture-level match only
+  proves the lab surface converged, not that the live remote was preserved or
+  that a stale approval was rejected before write.
 - Manual resolution is only acceptable if the remote is preserved for audit,
   the stale approval stays readable but unusable, and the retry starts from a
   fresh snapshot and fresh plan after a live revalidation failure.
@@ -214,6 +217,9 @@ evidence for all of these, not just a plausible design:
   auditable, but it cannot authorize a retry after remote drift or after a
   partial approval has already been recorded, and it cannot be upgraded by a
   later route-shape smoke or packaged-plugin mount.
+- A stale approval must remain an audit record only: the next retry has to
+  start from fresh live evidence, and the old record must not be reused to
+  authorize a different row, file, or plugin-owned surface.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
 - A release gate that runs the full safety-critical suite before any
@@ -242,6 +248,9 @@ production-grade push support:
   smokes are compatibility checks only; they cannot be used to claim
   production write safety, stale-approval validity, or remote-preserving retry
   behavior.
+- Audit-boundary proof: a rejected stale approval must remain readable for
+  audit while being unusable for write authorization, and the retry must be
+  tied to the new live hashes.
 - Identity safety: create paths must either reserve stable identities or
   block; a retry may not renumber or remap identities from stale local
   assumptions.
