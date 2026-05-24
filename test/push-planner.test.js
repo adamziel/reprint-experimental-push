@@ -473,6 +473,34 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   assert.equal(remote.plugins.forms.active, false);
 });
 
+test('keeps remote-only plugin changes while recognizing a matching independent edit', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.files['index.php'] = '<?php echo "shared ordinary edit";';
+  remote.files['index.php'] = '<?php echo "shared ordinary edit";';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const editDecision = decisionFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(result.site.files['index.php'], '<?php echo "shared ordinary edit";');
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.plugins.forms.active, false);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
 test('recognizes matching independent file edits as already in sync', () => {
   const base = baseSite();
   base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
