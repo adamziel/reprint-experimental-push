@@ -16,7 +16,7 @@ same live write path was exercised against a drifted remote and the audit shows
 the stale approval was rejected before mutation.
 
 The comparison against Reprint, ZS-Sync, and ForkPress is intentionally
-conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages and resumability, not live mutation safety, production write semantics, or a mutation executor that survives drift. ZS-Sync shows bounded change discovery, not a write policy, create-time identity discipline, or ownership revalidation at apply time. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle with live remote preservation, reviewed-resolution artifacts, and crash classification that survives partial apply. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety, remote-preserving retry, manual-review artifact expiry, or production write-path durability. A packaged-plugin mount only proves the route can be loaded in that packaging shape; it does not prove the write path is the production executor rather than a lab-backed stand-in, and it does not prove that the exercised route is free of fixture-only storage, lab-only auth, or copied lab internals. If the same ingress returns a plausible hash from a fixture or copied-lab path, the missing proof is still the live mutation boundary, not the HTTP shape. A production claim also cannot rely on “manual resolution will handle it later” unless the remote is preserved, the stale artifact is still auditable but unusable, the retry starts from fresh live evidence, and the old approval cannot be widened to a different row, file, or plugin-owned surface. A stale approval created from a lab-backed route-shape or `finalMatchesLocal` smoke still counts as stale, not current authority. The source notes therefore justify the comparison language, but they do not justify any production-readiness inference about this repo's write path, retry path, or approval lifecycle. Put differently: the notes can justify a design direction, but they do not justify a production claim without repo-specific live write proof.
+conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages and resumability, not live mutation safety, production write semantics, or a mutation executor that survives drift. ZS-Sync shows bounded change discovery, not a write policy, create-time identity discipline, or ownership revalidation at apply time. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle with live remote preservation, reviewed-resolution artifacts, and crash classification that survives partial apply. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety, remote-preserving retry, manual-review artifact expiry, or production write-path durability. A packaged-plugin mount only proves the route can be loaded in that packaging shape; it does not prove the write path is the production executor rather than a lab-backed stand-in, and it does not prove that the exercised route is free of fixture-only storage, lab-only auth, or copied lab internals. If the same ingress returns a plausible hash from a fixture or copied-lab path, the missing proof is still the live mutation boundary, not the HTTP shape. A production claim also cannot rely on “manual resolution will handle it later” unless the remote is preserved, the stale artifact is still auditable but unusable, the retry starts from fresh live evidence, and the old approval cannot be widened to a different row, file, or plugin-owned surface. A stale approval created from a lab-backed route-shape or `finalMatchesLocal` smoke still counts as stale, not current authority. The source notes therefore justify the comparison language, but they do not justify any production-readiness inference about this repo's write path, retry path, or approval lifecycle. Put differently: the notes can justify a design direction, but they do not justify a production claim without repo-specific live write proof. Manual review also cannot be treated as success when the remote changed after review; the proof must show the remote was preserved for audit, the stale artifact failed closed at apply time, and a fresh retry rebuilt scope from current hashes instead of inheriting the old approval.
 The source-note comparison has one more hard limit: Reprint's resumable transport proves a staged delivery shape, not a safe source overwrite boundary; ZS-Sync's scanners prove bounded discovery, not a conflict policy for writes; and ForkPress's reviewed merge language proves the right reliability vocabulary, not that this repository has the same live-remote executor or crash-safe mutation boundary. None of those notes prove that plugin-owned state outside the allowlist is blocked, that a create can reserve stable identity on the live remote, or that a partial file/DB/plugin write leaves an audit trail instead of a false success.
 No source note proves that a stale manual-review artifact can survive a live
 drift and still authorize apply, so any retry claim has to be backed by a
@@ -43,9 +43,14 @@ production push safety: live remote drift between dry-run and apply, create-time
 identity remapping, plugin-owned state outside the allowlist, partial file/DB/
 plugin side effects, and stale manual review artifacts. For each one, the
 missing proof is concrete: either the write is rejected before mutation, or the
-remote-preserving retry path is fully auditable and replay-safe. Until each
-class has that proof or a hard block, a success message is stronger than the
-evidence.
+remote-preserving retry path is fully auditable and replay-safe. A plugin data
+trap is not solved by naming the table or file class alone; the proof has to
+show that plugin-owned options, custom tables, generated files, activation
+hooks, and cache side effects are either explicitly contracted or hard-blocked.
+Likewise, a create path is not safe because it can name an object class; it has
+to prove stable identity reservation or fail closed when the remote can
+renumber, alias, or reassign the target. Until each class has that proof or a
+hard block, a success message is stronger than the evidence.
 The same warning applies to plugin data traps that are easy to miss in review:
 plugin-owned options, custom tables, generated files, activation hooks, cron,
 and cache entries can all mutate outside the main post/page row plan. If any
@@ -246,6 +251,20 @@ production-grade push support:
   compatibility checks only. They do not prove production safety, because they
   can succeed while the live remote has drifted, the write path is still
   lab-backed, or stale manual-review artifacts are being reused.
+- A production claim must show the live remote was revalidated at the actual
+  apply boundary, not just during dry-run or fixture planning.
+- A production claim must fail closed on create-time identity remapping unless
+  the repo proves durable identity reservation and reference rewriting for that
+  exact live object class.
+- A production claim must fail closed on plugin-owned state outside the
+  declared allowlist, including plugin tables, options, generated files,
+  activation side effects, cron, and cache state, unless a semantic driver
+  proves the mutation surface exactly.
+- A production claim must fail closed on partial file/DB/plugin side effects;
+  a split remote state is not success unless the remote is preserved for audit
+  and the retry path can prove safe recovery from fresh evidence.
+- A stale manual-review artifact may stay readable for audit, but it must not
+  be treated as current authority after remote drift or partial apply.
 - Production push endpoint: the exercised write path must be the real
   production-backed source mutation path, not a Playground proxy, route-shape
   stand-in, or copied lab executor.
@@ -258,6 +277,12 @@ production-grade push support:
   smokes are compatibility checks only; they cannot be used to claim
   production write safety, stale-approval validity, or remote-preserving retry
   behavior.
+- Auditability boundary: manual review is only acceptable if the remote stays
+  preserved, the approval is bound to a fresh live snapshot, and the retry
+  path rejects the stale approval before any write.
+- Comparison boundary: Reprint, ZS-Sync, and ForkPress can justify design
+  direction, but they do not prove the live production executor exists in this
+  repo or that it is safe under drift.
 - Audit-boundary proof: a rejected stale approval must remain readable for
   audit while being unusable for write authorization, and the retry must be
   tied to the new live hashes.
