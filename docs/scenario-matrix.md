@@ -2,6 +2,9 @@
 
 The first executable matrix lives in `test/push-planner.test.js`.
 
+The planner policy summary lives in
+[No Overwrite Playbook](invariants/no-overwrite-playbook.md).
+
 | Scenario | Expected behavior | Current evidence |
 | --- | --- | --- |
 | Remote site is unchanged since pull | Local file and row changes are planned and applied. | `plans and applies local changes when remote still matches the pull base` |
