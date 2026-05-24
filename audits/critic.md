@@ -331,7 +331,9 @@ The Reprint source notes support staged, resumable transport: preflight,
 files pull, DB pull, DB apply, flat document root, runtime apply, and
 optional start. They describe pull and export mechanics, not a live
 source-site mutation proof. That is a good transport primitive for push, but
-it is not a mutation proof.
+it is not a mutation proof. Reprint proves that a staged workflow can be
+structured, not that a remote WordPress source can survive mid-apply drift,
+partial writes, or plugin-owned side effects without losing auditability.
 
 Scenario: push applies plugin files, then the process dies before the related
 options, custom-table rows, or activation state are committed. The file side is
@@ -341,7 +343,8 @@ site is old, new, or blocked.
 Missing proof: the current design still lacks a production Reprint mutation
 boundary with per-chunk compare-and-swap, durable recovery state across each
 write surface, and an auditable rollback/blocked artifact for every remote
-write boundary. Pull resumability alone does not prove source mutation safety.
+write boundary. Pull resumability alone does not prove source mutation safety,
+and a route or packaging smoke does not prove the live source path.
 
 Required change: production push must extend Reprint with mutation-scoped auth,
 coverage-bound planning, storage-boundary guards, and a durable journal that
@@ -352,7 +355,9 @@ survives file/DB/plugin boundaries separately.
 The ZS-Sync notes are useful for scanner composition, cursors, resource
 providers, and bounded changed-resource listing. They frame one site as
 authoritative and the others as consumers of changed resources. They are not
-a source-site mutation policy.
+a source-site mutation policy. ZS-Sync proves bounded discovery, not write
+permission. Its value here is as a conservative inventory model: enumerate
+what changed, then decide whether a push may proceed.
 
 Scenario: the scanner says the known tables and files are current, but a plugin
 stores state in an unregistered custom table, a generated file, or a runtime
@@ -374,7 +379,10 @@ The ForkPress notes provide the closest production reliability bar:
 three-way merge records, reviewed conflict resolution, plugin validators,
 revalidation, and crash consistency where failure is old, new, or blocked with
 artifacts. They cover branch merge auditability and crash consistency across
-WordPress files and SQLite data, not live push of a remote source site.
+WordPress files and SQLite data, not live push of a remote source site. ForkPress
+is the strongest comparison point because it treats manual conflict handling as
+a first-class audited state, but it still does not prove this repository's live
+remote path, graph identity remapping, or plugin-owned state handling.
 
 Scenario: an operator reviews a conflict, picks "take local," and retries after
 the source site changed again or after a partial apply left a mixed remote
@@ -397,6 +405,42 @@ ForkPress-grade claims. Manual resolution is acceptable only when the remote
 is preserved for audit, retries start from fresh evidence, and partial side
 effects are classified without reusing stale manual permission or stale
 approval artifacts.
+
+## Production Claim Checklist
+
+Use this checklist before any doc, PR, branch status, review comment, or
+release note says `production-grade`, `production support`, or anything that
+would reasonably read as equivalent.
+
+- The write path is a real production endpoint and does not resolve to copied
+  Playground, fixture, or lab internals.
+- The live remote is revalidated immediately before apply, and any drift
+  causes a fail-close before the first write.
+- Every mutation surface in scope has a coverage manifest entry, or the push
+  hard-blocks before apply.
+- Every plugin-owned resource in scope has a declared contract, or the push
+  hard-blocks before apply.
+- Every relationship-bearing row class has either a proven rewrite rule or an
+  explicit hard block.
+- Every create path has stable identity allocation, or it is blocked when the
+  remote can renumber, alias, or reassign the target.
+- Every conflict resolution writes a reviewed artifact with base, local,
+  remote, reviewer, action, and fresh revalidation evidence.
+- Any stale manual-review artifact is rejected before write, but still kept
+  readable for audit and retry.
+- A retry always starts from fresh live evidence and cannot reuse an old
+  approval for unrelated rows, files, or plugin state.
+- Every partial apply path is either rolled back, fenced, or preserved for
+  audit and retry without a false success claim.
+- Every production journal boundary has crash evidence for old, new, or
+  blocked classification.
+- The release suite runs auth, storage, recovery, plugin, graph, redaction,
+  and performance gates together, not as isolated smokes.
+- Route-shape, fixture replay, packaged-plugin mounting, and `finalMatchesLocal`
+  remain lab evidence only.
+- Any production-readiness wording in docs, PRs, branch status, review
+  comments, or release notes is backed by the live production path, fresh
+  remote evidence, and a current reviewed artifact.
 
 ## Reliability Language Gate
 
