@@ -666,5 +666,10 @@ Before any production-grade push claim, the project needs all of these:
     create path that can renumber, alias, or reassign target identity without
     a live remap proof.
 
+The release gate is not satisfied by "looks production-shaped" evidence. A
+route that mounts in the right package, returns live-looking hashes, or passes
+fixture replay still needs a live remote revalidation proof at the actual write
+boundary, plus stale-approval rejection and auditable retry behavior under drift.
+
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
