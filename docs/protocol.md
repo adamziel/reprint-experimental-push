@@ -50,7 +50,9 @@ Required behavior:
   `finish`, and `rollback` modes. It inspects, finishes, rolls back, or
   blocks an interrupted batch only when journal artifacts and live hashes
   prove the action. `inspect` may surface the evidence needed to decide the
-  next step, but it must not mutate the remote or imply recovery safety.
+  next step, but it must not mutate the remote or imply recovery safety. A
+  blocked inspection result is required when the server cannot prove a safe
+  finish or rollback.
 
 Dry-run is an eligibility and planning receipt, not a liveness reservation.
 The remote may accept a dry-run plan and still reject later apply batches if
@@ -188,7 +190,9 @@ uploads a dry-run plan. If the live listing is partial, blocked, or incomplete
 for the requested scope, the executor must stop before dry-run and refresh the
 remote view rather than guessing from the persisted pull base. A stale or
 partial listing is not eligible for dry-run upload, even when the persisted
-pull base is complete.
+pull base is complete. Apply must fetch fresh live evidence again before every
+batch and treat the dry-run listing as stale if the remote changed after it
+was recorded.
 
 The existing pull exporter/importer still owns the base package format. Push
 does not invent a second notion of truth; it layers live remote verification

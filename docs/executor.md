@@ -327,8 +327,9 @@ not as three independent targets. The important proof is that apply revalidates
 against the live remote, not that dry-run and apply see the same snapshot.
 
 For both Docker and Playground, the remote drift target must be distinct from
-the persisted base source, or the executor cannot prove that apply revalidated
-a live remote rather than replaying a stale snapshot.
+the persisted base source, and the runner must compare against the live drift
+instance before apply, or the executor cannot prove that apply revalidated a
+live remote rather than replaying a stale snapshot.
 
 For production-facing checks, keep the topology constrained to a single remote
 source, a single edited local clone, and a single executor process. That keeps
