@@ -18,8 +18,12 @@ Responsibilities:
 - Build a three-way plan from base, local, and live remote.
 - Upload the plan with `push_plan_dry_run`.
 - Apply ready plans in bounded `push_batch_apply` calls.
-- Inspect `push_journal` after any timeout, process crash, or ambiguous error.
-- Run `push_recover` in `inspect` mode first, then in a mutating mode only when the journal says recovery is required and the live remote can prove the action.
+- Inspect `push_journal` after any timeout, process crash, ambiguous error, or
+  lost response, and treat inspection as the source of truth for replay
+  decisions.
+- Run `push_recover` in `inspect` mode first, then in a mutating mode only
+  when the journal says recovery is required and the live remote can prove the
+  action.
 
 The executor must not mutate the remote during planning. It may fetch remote
 content for conflict display, but mutation starts only at `push_batch_apply`.
@@ -50,7 +54,7 @@ Executor gates:
 | Remote listing complete | `push_plan_dry_run` | All requested scopes are complete, blocked resources are absent or irrelevant, and the coverage hash is persisted. | Mark blocked; do not upload a ready plan. |
 | Local plan ready | `push_plan_dry_run` | Every mutation has base, local, and live remote hashes plus a storage guard or semantic driver. | Report conflict or blocker. |
 | Dry-run ready | `push_batch_apply` | Remote accepted the same canonical plan hash and returned a ready dry-run receipt. | Stop unless status is `ready`. |
-| Apply ambiguous | `push_journal` | Any timeout, closed connection, process restart, or `RECOVERY_REQUIRED` happens before a committed receipt is persisted. | Inspect journal before retrying. |
+| Apply ambiguous | `push_journal` | Any timeout, closed connection, process restart, lost response, or `RECOVERY_REQUIRED` happens before a committed receipt is persisted. | Inspect journal before retrying. |
 | Journal complete | none | Every planned batch is committed and final hashes match the plan. | Mark the local attempt complete. |
 
 ## State Machine
@@ -84,6 +88,8 @@ push resumes from the last safe state:
 - If dry-run was accepted, inspect its journal before applying.
 - If a batch response was lost, retry with the same idempotency key.
 - If the server reports `RECOVERY_REQUIRED`, inspect then recover.
+- If the journal inspection shows the batch is already committed, do not replay
+  the body under a fresh key just to get a second answer.
 
 Resume decisions are conservative:
 
@@ -114,6 +120,11 @@ style with different stage semantics.
 The push executor should not reuse the pull streaming SQL dump as a mutation
 format. SQL replay is too coarse for a live remote. It can reuse pull transport,
 budgeting, cursoring, multipart handling, and HMAC helpers.
+
+The persisted pull base package is the executor's merge-base proof. It must be
+treated as immutable evidence, not as a mutable cache of the current remote
+state. The remote listing and dry-run receipt only prove that the plan was
+eligible at the time they were created; neither one authorizes apply on its own.
 
 The pull importer must additionally persist a push base package:
 
@@ -243,6 +254,13 @@ Abort if push auth is not scoped for mutation or the server cannot write a
 journal. Abort on `SITE_IDENTITY_MISMATCH`; the executor may ask the user to
 confirm a remote URL change, but confirmation must result in a fresh preflight
 against the same `site_id`.
+
+The production proof that is still missing here is the one the backlog calls
+out: end-to-end auth/session lifecycle enforcement, durable journal rows,
+leases or fencing for concurrent writers, and inspectable recovery state that
+survives a process restart. The current smokes prove the route shape and
+replay/idempotency behavior in Playground, but they do not yet prove those
+production storage and concurrency invariants against a real remote.
 
 Current lab note: `npm run test:playground:authenticated-http-push` verifies a
 local Playground preflight at

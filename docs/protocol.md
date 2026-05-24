@@ -29,7 +29,8 @@ Push is split into a read-only planning phase and a write phase:
   receipt.
 - `push_batch_apply` executes accepted plans in bounded batches with live
   revalidation before every write.
-- `push_journal` resolves lost responses and crash ambiguity.
+- `push_journal` inspects and pages journal state so the executor can resolve
+  lost responses and crash ambiguity.
 - `push_recover` is the only endpoint allowed to finish, roll back, or block a
   partially applied batch after proof from the journal and live hashes.
 
@@ -44,8 +45,9 @@ Required behavior:
   result in the journal or idempotency store without mutating target resources.
 - `push_batch_apply` is the normal mutation path and only applies an accepted
   dry-run plan in legal batches.
-- `push_journal` reports dry-run, apply, idempotency, and recovery state so the
-  executor can resolve ambiguous responses.
+- `push_journal` reports dry-run, apply, idempotency, and recovery state, and
+  can page artifacts for inspection so the executor can resolve ambiguous
+  responses without guessing.
 - `push_recover` has a read-only `inspect` mode plus mutating `auto`,
   `finish`, and `rollback` modes. It inspects, finishes, rolls back, or
   blocks an interrupted batch only when journal artifacts and live hashes
@@ -74,13 +76,16 @@ the apply and mutating recovery steps may change target resources.
 | 3 | local planner | No | Builds a three-way plan from pull base, local site, and live remote hashes. |
 | 4 | `push_plan_dry_run` | No | Validates the uploaded plan and records a dry-run journal entry. |
 | 5 | `push_batch_apply` | Yes | Revalidates live preconditions and storage boundaries before writing. |
-| 6 | `push_journal` | No | Lets the executor resolve lost responses, crashes, and ambiguous apply states. |
+| 6 | `push_journal` | No | Lets the executor inspect journal pages, resolve lost responses, crashes, and ambiguous apply states. |
 | 7 | `push_recover` | Mode-dependent | `inspect` is read-only; mutating modes finish, roll back, or block only when journal artifacts and live hashes prove the action. |
 
 `snapshot_id`, `coverage_hash`, `dry_run_id`, and `journal_cursor` are evidence
 and request bindings. They are not remote locks. A remote edit between any
 non-mutating step and apply must be detected by apply revalidation and must
 preserve the remote edit unless a newly planned mutation explicitly covers it.
+The executor must never infer apply permission from a dry-run receipt alone.
+It must re-read the live remote state whenever a batch request is retried or
+the journal says the response may have been lost.
 
 ## Pull Pipeline Mapping
 
@@ -263,6 +268,90 @@ Dry-run must reject a plan whose `remote_coverage_hash` does not match the
 accepted remote hash listing or whose requested mutations depend on resources
 outside covered scopes. Apply must still revalidate the live resources; coverage
 only proves the planner had a complete enough view to propose a plan.
+
+### `push_journal`
+
+Purpose: inspect durable remote state after a timeout, retry, crash, or
+ambiguous response.
+
+Method: `GET` for inspection and paging, `POST` for artifact export when the
+implementation needs an authenticated request body to scope the query.
+
+Request shape:
+
+```json
+{
+  "push_session": "psh_01j00000000000000000000000",
+  "dry_run_id": "dry_01j00000000000000000000000",
+  "cursor": null,
+  "include_artifacts": false
+}
+```
+
+Response shape:
+
+```json
+{
+  "ok": true,
+  "cursor": null,
+  "complete": true,
+  "entries": [
+    {
+      "journal_id": "jrnl_01j00000000000000000000000",
+      "dry_run_id": "dry_01j00000000000000000000000",
+      "plan_id": "plan_2026-05-24T00:00:00Z_001",
+      "batch_id": "batch-1",
+      "idempotency_key": "idem_apply_01j000000000000000000",
+      "request_hash": "sha256:apply-request",
+      "state": "committed",
+      "created_at": "2026-05-24T00:00:05Z",
+      "updated_at": "2026-05-24T00:00:06Z",
+      "resources": [
+        {
+          "resource_key": "file:index.php",
+          "before_hash": "sha256:base-index",
+          "staged_hash": "sha256:local-index",
+          "after_hash": "sha256:local-index"
+        }
+      ],
+      "storage_guards": [
+        {
+          "resource_key": "file:index.php",
+          "guard": "filesystem-compare-rename",
+          "expected_hash": "sha256:base-index",
+          "observed_hash": "sha256:base-index",
+          "outcome": "applied"
+        }
+      ],
+      "artifacts": []
+    }
+  ]
+}
+```
+
+Journal inspection is read-only. It is how the executor distinguishes:
+
+- a committed batch that only lost its HTTP response
+- an open batch that can be retried with the same idempotency key and body
+- a blocked batch that needs recovery proof before any repair attempt
+- a corrupted or truncated journal that must block rather than guess
+
+### `push_recover`
+
+Purpose: finish, roll back, block, or inspect an interrupted apply using journal
+artifacts and live hashes.
+
+`inspect` mode is read-only and must come first after any ambiguity. Mutating
+recovery modes are only allowed when the inspect result and live hashes prove a
+safe action. A recovery response must state whether the remote is old, new, or
+blocked for every affected resource; it must not collapse mixed evidence into a
+simple success.
+
+`finish` and `auto` are for cases where the journal shows the batch already
+completed or can be safely finalized. `rollback` is only for cases where the
+remote can prove the staged work never became the durable remote state. If live
+hashes drift outside the before/after evidence, the only safe result is a
+blocked recovery response.
 
 ### Current Playground Auth Lab
 

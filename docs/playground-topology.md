@@ -21,6 +21,17 @@ rows, and `reprint-push-forms-fixture` plugin metadata. They are intentionally
 small because this topology proves snapshot extraction and planning, not the
 final transport.
 
+The intended push story here is one remote source and one edited local site:
+
+- `remote-base` is the pulled source and the dry-run baseline.
+- `local-edited` is the local site after user edits.
+- `remote-changed` is the live remote after an independent edit lands between
+  dry-run and apply.
+
+That third site is the important drift case. A valid dry-run against
+`remote-base` must still fail at apply time against `remote-changed` when the
+live remote hash listing no longer matches the accepted preconditions.
+
 ## Smoke Command
 
 ```bash
@@ -83,6 +94,17 @@ Playground source and read back through WordPress. It does not prove the
 production Reprint HTTP transport, a live source-site mutation endpoint,
 durable remote journaling, authentication, or plugin-specific semantic merge
 drivers.
+
+The harness is also the place where the drift story stays explicit:
+
+1. Build the plan from `remote-base` plus `local-edited`.
+2. Dry-run against the still-matching `remote-base`.
+3. Mutate `remote-changed` independently.
+4. Apply the old dry-run receipt against `remote-changed` and expect
+   `PRECONDITION_FAILED`.
+
+That sequence keeps dry-run and apply separate and proves that the accepted
+receipt is not a remote lock.
 
 ## Fixture Forms Lab Custom-Table Driver
 
@@ -505,6 +527,17 @@ over the partial state.
 This is lab recovery inspection only. It proves bounded journal evidence and
 classification after an injected apply failure, not production durable recovery,
 process-kill safety, `fsync` safety, or automatic repair.
+
+## Missing Production Proofs
+
+The next production proof this topology still does not give us is the one the
+executor backlog calls out:
+
+- production auth and session lifecycle
+- durable journal rows instead of transient lab evidence
+- leases or fencing for concurrent writers
+- recovery inspect plus finish/rollback against a real remote journal
+- live remote hash revalidation at the production apply boundary
 
 ## File-Backed JSONL Recovery Journal
 
