@@ -133,6 +133,10 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const inspectResponse = readJson('fixtures/protocol/push-recovery-inspect-response.json');
   const blockedInspect = readJson('fixtures/protocol/push-recovery-inspect-blocked-response.json');
   const recoveryDecision = readJson('fixtures/protocol/push-recovery-decision.json');
+  const authSessionJournalProof = readJson('fixtures/protocol/push-auth-session-journal-proof.json');
+  const sessionJournalProof = readJson('fixtures/protocol/push-session-journal-proof.json');
+  const recoveryPath = readJson('fixtures/protocol/push-recovery-path.json');
+  const recoveryBlocked = readJson('fixtures/protocol/push-recovery-blocked-response.json');
 
   assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightRequest.remote_site_id, 'remote-example');
@@ -180,6 +184,26 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(journalOpen.entries[0].storage_guards[0].outcome, 'claimed');
   assert.equal(journalOpen.entries[0].resources[1].resource_key, 'row:["wp_posts","ID:1"]');
   assert.equal(journalOpen.entries[0].storage_guards[1].guard, 'mysql-transaction-row-lock');
+  assert.equal(authSessionJournalProof.auth.export_hmac_family, 'hmac-sha256');
+  assert.equal(authSessionJournalProof.auth.push_hmac_family, 'hmac-sha256');
+  assert.deepEqual(authSessionJournalProof.auth.push_requires, [
+    'push session',
+    'canonical push signature',
+    'idempotency key',
+  ]);
+  assert.equal(authSessionJournalProof.session.remote_site_id, 'remote-example');
+  assert.equal(authSessionJournalProof.journal_row.claim_generation, 4);
+  assert.equal(authSessionJournalProof.inspect.mutates, false);
+  assert.ok(authSessionJournalProof.required_invariants.includes('inspect is read-only and must come before any mutating recovery mode'));
+  assert.equal(sessionJournalProof.live_evidence.same_remote_identity, true);
+  assert.equal(sessionJournalProof.journal_fencing.claim_owner, 'worker-17');
+  assert.equal(sessionJournalProof.apply_revalidation.before_each_batch, 'fresh live hashes');
+  assert.equal(recoveryPath.inspect.mutates, false);
+  assert.deepEqual(recoveryPath.classification, { old: 2, new: 3, blocked: 1, open: 0 });
+  assert.ok(recoveryPath.blocked_cases.includes('the claim lease has expired and the worker is fenced'));
+  assert.equal(recoveryBlocked.code, 'RECOVERY_BLOCKED');
+  assert.equal(recoveryBlocked.details.batch_id, 'batch-1');
+  assert.equal(recoveryBlocked.details.target_state_counts.blocked, 1);
 });
 
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {

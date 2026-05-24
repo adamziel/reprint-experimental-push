@@ -79,6 +79,9 @@ Failure and recovery examples:
   classification used when a batch response is ambiguous and the executor must
   distinguish old, new, blocked, and open outcomes from journal plus live
   evidence.
+- `push-recovery-blocked-response.json` shows the inspect-first blocked case
+  when the remote cannot prove a safe finish or rollback and returns
+  `RECOVERY_BLOCKED` instead of mutating.
 - `push-contract.json` gives the compact production contract that ties the
   exporter/importer handoff, push stages, auth/session proofs, and
   Docker/Playground topology into a single fixture.
