@@ -283,6 +283,8 @@ validators, and the final durable commit record.
   idempotency key.
 - Advancing an upstream producer because the queue is empty while receipts or
   journal records are still missing.
+- Treating a fresh remote index and cached digest as proof that the live apply
+  already finished.
 - Raising concurrency without an in-flight byte budget and durable progress
   journal.
 - Reporting success when staged bytes, staged rows, or an atomic group commit

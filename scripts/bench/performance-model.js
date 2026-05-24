@@ -364,6 +364,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'index-and-digest-completes-apply',
+    proposal: 'treat a fresh remote index plus a cached digest as proof that the live apply already finished',
+    rejectedBecause: 'planning evidence and cached hashes can skip work, but they cannot replace a live compare or recovery receipt',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'live-preconditions', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
