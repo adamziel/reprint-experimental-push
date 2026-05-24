@@ -30,29 +30,6 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Supervisor Refresh
 
-- Last update: 2026-05-25 01:11:13 CEST.
-- Status: `89` Node tests still pass.
-- Trend: the visible page and this log still agree, but production readiness
-  remains blocked by missing evidence.
-- Supervision: the same-plan graph worker remains active and unmerged.
-- Blocker: production credential lifecycle, durable storage, leases/fencing,
-  full WordPress graph identity mapping, Docker/full Playground integration,
-  and arbitrary plugin drivers remain unproven.
-- Visible page: [progress.html](../progress.html) keeps the blocked state
-  compact and links to this log for the evidence trail.
-- Pending proof gates: production auth/session storage, durable journal
-  ownership, leases/fencing, full WordPress graph identity mapping,
-  Docker/full Playground integration, and arbitrary plugin drivers.
-- Next nudge: keep production gates blocked until a worker proves production
-  auth/session/journal internals and graph identity mapping.
-- Public page: [progress.html](../progress.html) carries the visible update
-  date and links to the detailed evidence. In this lane, the page becomes live
-  only after merge to `main`.
-- Refresh note: timestamp-only update. The evidence gap and blocked-by-missing-
-  evidence production gates did not change.
-
-## 2026-05-25 - Supervisor Refresh
-
 - Last update: 2026-05-25 01:09:53 CEST.
 - Status: `89` Node tests still pass.
 - Trend: the visible page and this log still agree, but production readiness
