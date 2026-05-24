@@ -23,6 +23,8 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and links to the detailed evidence. In this lane, the page becomes live
   only after merge to `main`.
+- Refresh note: this entry tracks a timestamp-only update; the evidence gap and
+  blocked production gates did not change.
 
 <details>
 <summary>Earlier progress entries</summary>
