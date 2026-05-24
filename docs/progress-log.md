@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Progress Visibility Refresh
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:25:20 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Tightened the first screen so the public page keeps a short blocker line and
+  the linked evidence docs remain easy to reach.
+- The public page still treats production auth, durable journaling, graph
+  identity, Docker/Playground integration, and plugin drivers as pending until
+  proof appears.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md), and
+  [docs/playground-topology.md](playground-topology.md).
+
 ## 2026-05-25 - First-Screen Audit Refresh
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
