@@ -378,6 +378,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'index-and-compressed-queue-completes-apply',
+    proposal: 'treat a fresh remote index plus a drained compressed queue as proof that apply is complete',
+    rejectedBecause: 'planning evidence and queue compression can reduce work, but they cannot prove the live mutation or its receipts survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'live-preconditions', 'durable-progress'],
+  },
+  {
     id: 'compressed-buffer-acknowledges-chunks',
     proposal: 'treat compressed staging buffers as durable proof that chunk uploads reached the remote',
     rejectedBecause: 'compression only shrinks buffered state; it does not replace per-chunk receipts or the guarded publish barrier',

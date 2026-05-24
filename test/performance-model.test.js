@@ -379,6 +379,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-queue-drains-means-complete').violates.includes('durable-progress'),
   );
   assert.ok(
+    rejectedById.get('index-and-compressed-queue-completes-apply').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-queue-completes-apply').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-queue-completes-apply').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-queue-completes-apply').violates.includes('live-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-queue-completes-apply').violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-queue-completes-apply').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
     rejectedById.get('compressed-buffer-acknowledges-chunks').violates.includes('chunk-receipts'),
   );
   assert.ok(
@@ -508,6 +527,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'backpressure-drops-evidence',
     'compressed-buffer-means-complete',
     'compressed-queue-drains-means-complete',
+    'index-and-compressed-queue-completes-apply',
     'compressed-buffer-acknowledges-chunks',
     'queue-empty-means-complete',
     'fresh-index-empty-queue-completes-apply',
