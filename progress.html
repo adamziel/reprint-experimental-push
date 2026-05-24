@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is still lab/model scope: 89 Node tests pass after supervised lane merges covering planner invariants, recovery replay/failure states, fast-path guardrails, protocol binding, and audit updates. Eight recent fast-mode outputs were integrated; the graph HTTP lane remains active and unmerged. Production push remains blocked.</p>
-        <time class="update-stamp" datetime="2026-05-25T00:27:00+02:00">Last updated: May 25, 2026, 00:27 CEST</time>
+        <p class="lead">Current proof is still lab/model scope: 89 Node tests pass after supervised lane merges covering planner invariants, recovery replay/failure states, fast-path guardrails, protocol binding, and audit updates. The graph HTTP lane remains active and unmerged. Production push remains blocked.</p>
+        <time class="update-stamp" datetime="2026-05-25T00:45:00+02:00">Last updated: May 25, 2026, 00:45 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">89 Node tests passing</span>
           <span class="pill">Packaged plugin route passing</span>
@@ -489,7 +489,7 @@
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>Scan view only. Detailed evidence lives in the linked docs.</p>
+        <p>Scan view only. Detailed evidence lives in the linked docs, and the page becomes live on GitHub Pages after merge to `main`.</p>
       </div>
     </header>
 
@@ -554,10 +554,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence landed.</span></li>
+            <li><strong>Going well</strong><span>89 Node tests pass; planner, recovery, fast-path, protocol, critic, and audit evidence now agree on the blocked-production story.</span></li>
             <li><strong>Not going well</strong><span>Production auth, journal, leases, graph mapping, integration, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>Eight worker outputs were integrated; production readiness stayed blocked.</span></li>
-            <li><strong>Next nudge</strong><span>Get the graph HTTP smoke green, then prove production auth and journal storage.</span></li>
+            <li><strong>Progress change</strong><span>The evidence is tighter, but the proof gap is still lab/model only.</span></li>
+            <li><strong>Next nudge</strong><span>Ask each lane for one production-backed proof, not another model pass.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
