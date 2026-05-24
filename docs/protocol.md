@@ -26,8 +26,8 @@ local site, and one runner. `remote-base` seeds the persisted pull base,
 `local-edited` carries the user edits, `remote-changed` is the same remote
 after independent drift, and `runner` is the only actor allowed to compare,
 upload, inspect, and recover. That role split is the same for Docker and
-Playground, and browser-visible inspection must use only the sandbox-provided
-`8080` ingress through a local-only proxy.
+Playground. Browser-visible inspection must use only the sandbox-provided
+`8080` ingress through a local-only proxy, and remote tunnels are disallowed.
 
 Push is split into a read-only planning phase and a write phase:
 
@@ -45,7 +45,8 @@ The snapshot phase deserves special emphasis: `push_snapshot_hashes` is a live
 remote hash listing, not a lock. It must be complete for the requested scope,
 cursorable for large sites, and fresh enough only for planning. The executor
 may use it to build the dry-run plan, but apply must still re-read live
-evidence before every batch and again at the storage boundary.
+evidence before every batch and again at the storage boundary. A valid
+snapshot listing never upgrades a dry-run receipt into write authority.
 
 Minimal wire shapes:
 
@@ -201,6 +202,8 @@ packaging differs:
 - `remote-changed` is the same remote site observed later after independent
   drift.
 - `runner` is the only actor allowed to compare, upload, inspect, or recover.
+- `remote-base` and `remote-changed` are two observations of the same remote
+  identity at different times, which is what proves live revalidation.
 
 For Docker, keep the three site roles on one private network and expose only
 browser-visible inspection through the sandbox-provided `8080` ingress via a
