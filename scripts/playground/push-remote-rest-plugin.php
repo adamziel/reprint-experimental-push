@@ -26,6 +26,9 @@ require_once $reprint_push_lab_dir . '/push-db-journal-lib.php';
 const REPRINT_PUSH_LAB_REST_NAMESPACE = 'reprint-push-lab/v1';
 const REPRINT_PUSH_LAB_AUTH_SCOPE = 'reprint-push-lab:authenticated-http-push';
 const REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE = 'reprint_push_lab_auth';
+const REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE = 'reprint_push_lab_signature';
+const REPRINT_PUSH_LAB_SIGNED_SESSION_TTL = 300;
+const REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW = 300;
 
 add_filter('wp_is_application_passwords_available', 'reprint_push_lab_rest_application_passwords_available');
 add_action('rest_api_init', 'reprint_push_lab_rest_register_routes');
@@ -208,16 +211,39 @@ function reprint_push_lab_rest_authenticated_permission(WP_REST_Request $request
 
 function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request): WP_REST_Response
 {
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'preflight');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
     $auth = reprint_push_lab_rest_auth_evidence($request);
+    $signature = reprint_push_lab_rest_signature_context($request);
 
     return reprint_push_lab_rest_json_response([
         'ok' => true,
         'mode' => 'preflight',
         'auth' => $auth,
+        'protocol' => [
+            'schemaVersion' => 1,
+            'authString' => 'nonce + timestamp + content_hash',
+            'pushCanonicalString' => "REPRINT-PUSH-LAB-V1\nUPPERCASE_METHOD\nACTUAL_REQUEST_PATH\nCANONICAL_QUERY\nCONTENT_HASH\nSESSION\nIDEMPOTENCY_KEY",
+            'contentHash' => 'lowercase hex SHA-256 of the exact raw request body bytes',
+            'signature' => 'lowercase hex HMAC-SHA256',
+            'labSigningKey' => 'hex HMAC-SHA256 with key = Basic application password and data = "reprint-push-lab-v1\\n" + Basic username',
+        ],
         'requirements' => [
             'authentication' => 'application-password-basic',
             'capability' => 'manage_options',
             'idempotencyHeader' => 'X-Reprint-Push-Idempotency-Key',
+            'signedHeaders' => [
+                'X-Auth-Content-Hash',
+                'X-Auth-Timestamp',
+                'X-Auth-Nonce',
+                'X-Auth-Signature',
+                'X-Reprint-Push-Signature',
+                'X-Reprint-Push-Session',
+                'X-Reprint-Push-Idempotency-Key',
+            ],
         ],
         'authorized' => [
             'identity' => $auth['identity'],
@@ -232,10 +258,14 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
             ],
         ],
         'session' => [
-            'type' => $auth['session']['type'] ?? null,
+            'type' => 'lab-signed-push-session',
+            'id' => $signature['session']['id'] ?? null,
+            'sessionHash' => $signature['session']['sessionHash'] ?? null,
             'applicationPasswordUuid' => $auth['session']['applicationPasswordUuid'] ?? null,
             'credentialHash' => $auth['session']['credentialHash'] ?? null,
-            'expiresAt' => null,
+            'signingKeyHash' => $signature['signingKeyHash'] ?? null,
+            'issuedAt' => $signature['session']['issuedAt'] ?? null,
+            'expiresAt' => $signature['session']['expiresAt'] ?? null,
             'receiptTtlSeconds' => 300,
         ],
         'limits' => [
@@ -261,6 +291,11 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
 
 function reprint_push_lab_rest_authenticated_dry_run(WP_REST_Request $request): WP_REST_Response
 {
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'dry-run');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
     $response = reprint_push_lab_rest_protocol_response('dry-run', $request);
     $result = $response->get_data();
     if (($result['ok'] ?? false) === true && isset($result['receipt']) && is_array($result['receipt'])) {
@@ -273,12 +308,18 @@ function reprint_push_lab_rest_authenticated_dry_run(WP_REST_Request $request): 
             $plan
         );
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
+        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
     }
     return reprint_push_lab_rest_json_response($result);
 }
 
 function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP_REST_Response
 {
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'apply');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
     try {
         $payload = reprint_push_lab_rest_json_payload($request);
         $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
@@ -310,6 +351,7 @@ function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP
     $result = $response->get_data();
     if (($result['ok'] ?? false) === true || isset($result['idempotency'])) {
         $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
+        $result['signedRequest'] = reprint_push_lab_rest_signed_request_evidence($request);
     }
     return reprint_push_lab_rest_json_response($result);
 }
@@ -1021,6 +1063,421 @@ function reprint_push_lab_rest_db_journal_context(array $payload, string $idempo
     ];
 }
 
+function reprint_push_lab_rest_require_signed_request(WP_REST_Request $request, string $mode): ?WP_REST_Response
+{
+    $result = reprint_push_lab_rest_verify_signed_request($request, $mode);
+    if (($result['ok'] ?? false) !== true) {
+        return reprint_push_lab_rest_json_response($result + ['mode' => $mode]);
+    }
+
+    reprint_push_lab_rest_set_signature_context($request, $result['signature']);
+    return null;
+}
+
+function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, string $mode): array
+{
+    $auth = reprint_push_lab_rest_basic_auth_context($request);
+    if (!is_array($auth) || !isset($auth['signingKey'])) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_AUTH_UNAVAILABLE',
+            'Signed push requests require verified Application Password basic auth evidence.',
+            401
+        );
+    }
+
+    $content_hash = strtolower(trim((string) $request->get_header('x-auth-content-hash')));
+    $timestamp = trim((string) $request->get_header('x-auth-timestamp'));
+    $nonce = trim((string) $request->get_header('x-auth-nonce'));
+    $auth_signature = trim((string) $request->get_header('x-auth-signature'));
+    $push_signature = trim((string) $request->get_header('x-reprint-push-signature'));
+    $session_id = trim((string) $request->get_header('x-reprint-push-session'));
+    $idempotency_key = trim((string) $request->get_header('x-reprint-push-idempotency-key'));
+
+    foreach ([
+        'X-Auth-Content-Hash' => $content_hash,
+        'X-Auth-Timestamp' => $timestamp,
+        'X-Auth-Nonce' => $nonce,
+        'X-Auth-Signature' => $auth_signature,
+        'X-Reprint-Push-Signature' => $push_signature,
+    ] as $header => $value) {
+        if ($value === '') {
+            return reprint_push_lab_rest_signature_failure(
+                'SIGNED_HEADER_REQUIRED',
+                $header . ' is required for signed authenticated push requests.',
+                401
+            );
+        }
+    }
+
+    if ($mode === 'preflight') {
+        if ($session_id !== '') {
+            return reprint_push_lab_rest_signature_failure(
+                'SIGNED_PREFLIGHT_SESSION_REJECTED',
+                'Signed preflight mints a server session and does not accept X-Reprint-Push-Session.',
+                400
+            );
+        }
+    } else {
+        if ($session_id === '') {
+            return reprint_push_lab_rest_signature_failure(
+                'SIGNED_SESSION_REQUIRED',
+                'X-Reprint-Push-Session is required for signed dry-run and apply requests.',
+                401
+            );
+        }
+        if ($idempotency_key === '') {
+            return reprint_push_lab_rest_signature_failure(
+                'MISSING_IDEMPOTENCY_KEY',
+                'X-Reprint-Push-Idempotency-Key is required for signed dry-run and apply requests.',
+                400
+            );
+        }
+    }
+
+    if (!preg_match('/^[a-f0-9]{64}$/', $content_hash)) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_CONTENT_HASH_INVALID',
+            'X-Auth-Content-Hash must be a lowercase hex SHA-256 digest.',
+            400
+        );
+    }
+
+    $raw_body = (string) $request->get_body();
+    $actual_content_hash = hash('sha256', $raw_body);
+    if (!hash_equals($actual_content_hash, $content_hash)) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_CONTENT_HASH_MISMATCH',
+            'X-Auth-Content-Hash does not match the raw request body bytes.',
+            401
+        );
+    }
+
+    $timestamp_seconds = reprint_push_lab_rest_parse_signed_timestamp($timestamp);
+    if ($timestamp_seconds === null || abs(time() - $timestamp_seconds) > REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_TIMESTAMP_INVALID',
+            'X-Auth-Timestamp is outside the signed request acceptance window.',
+            401
+        );
+    }
+
+    if (!preg_match('/^[A-Za-z0-9._:-]{8,160}$/', $nonce)) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_NONCE_INVALID',
+            'X-Auth-Nonce must be an opaque 8 to 160 character token.',
+            400
+        );
+    }
+
+    $signing_key = (string) $auth['signingKey'];
+    $signing_key_hash = hash('sha256', $signing_key);
+    $auth_string = $nonce . $timestamp . $content_hash;
+    $expected_auth_signature = hash_hmac('sha256', $auth_string, $signing_key);
+    if (!reprint_push_lab_rest_signature_matches($auth_signature, $expected_auth_signature)) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_AUTH_SIGNATURE_MISMATCH',
+            'X-Auth-Signature does not match the signed auth string.',
+            401
+        );
+    }
+
+    $session = null;
+    if ($mode === 'preflight') {
+        $session = [
+            'sessionHash' => '',
+            'issuedAt' => '',
+            'expiresAt' => '',
+        ];
+    } else {
+        $session = reprint_push_lab_rest_signed_session($session_id);
+        if (!is_array($session)) {
+            return reprint_push_lab_rest_signature_failure(
+                'SIGNED_SESSION_INVALID',
+                'X-Reprint-Push-Session is not a valid lab signed push session.',
+                401
+            );
+        }
+        if ((int) ($session['expiresAtUnix'] ?? 0) < time()) {
+            return reprint_push_lab_rest_signature_failure(
+                'SIGNED_SESSION_EXPIRED',
+                'X-Reprint-Push-Session has expired.',
+                401
+            );
+        }
+        if (!hash_equals((string) ($session['credentialHash'] ?? ''), (string) ($auth['credentialHash'] ?? ''))
+            || !hash_equals((string) ($session['signingKeyHash'] ?? ''), $signing_key_hash)
+            || (int) ($session['userId'] ?? 0) !== (int) ($auth['userId'] ?? 0)
+            || (string) ($session['scope'] ?? '') !== REPRINT_PUSH_LAB_AUTH_SCOPE
+        ) {
+            return reprint_push_lab_rest_signature_failure(
+                'SIGNED_SESSION_BINDING_MISMATCH',
+                'X-Reprint-Push-Session is not bound to the current identity and credential.',
+                401
+            );
+        }
+    }
+
+    $canonical = reprint_push_lab_rest_push_canonical_string(
+        $request,
+        $content_hash,
+        $mode === 'preflight' ? '' : $session_id,
+        $mode === 'preflight' ? '' : $idempotency_key
+    );
+    $expected_push_signature = hash_hmac('sha256', $canonical['string'], $signing_key);
+    if (!reprint_push_lab_rest_signature_matches($push_signature, $expected_push_signature)) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_PUSH_SIGNATURE_MISMATCH',
+            'X-Reprint-Push-Signature does not match the signed push canonical string.',
+            401
+        );
+    }
+
+    $nonce_claim = reprint_push_lab_rest_claim_signed_nonce($nonce, [
+        'mode' => $mode,
+        'timestamp' => $timestamp_seconds,
+        'expiresAtUnix' => time() + REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW,
+        'contentHash' => $content_hash,
+        'sessionHash' => (string) ($session['sessionHash'] ?? ''),
+        'identityHash' => reprint_push_lab_rest_signed_identity_hash($auth),
+        'credentialHash' => (string) ($auth['credentialHash'] ?? ''),
+        'authSignatureHash' => hash('sha256', $expected_auth_signature),
+        'pushSignatureHash' => hash('sha256', $expected_push_signature),
+    ]);
+    if (!$nonce_claim) {
+        return reprint_push_lab_rest_signature_failure(
+            'SIGNED_NONCE_REPLAYED',
+            'X-Auth-Nonce has already been accepted for a signed request.',
+            409
+        );
+    }
+
+    if ($mode === 'preflight') {
+        $session = reprint_push_lab_rest_mint_signed_session($auth, $signing_key_hash);
+        $session_id = (string) $session['id'];
+    }
+
+    return [
+        'ok' => true,
+        'signature' => [
+            'schemaVersion' => 1,
+            'mode' => $mode,
+            'contentHash' => $content_hash,
+            'timestamp' => $timestamp,
+            'timestampUnix' => $timestamp_seconds,
+            'nonceHash' => hash('sha256', $nonce),
+            'signingKeyHash' => $signing_key_hash,
+            'session' => [
+                'id' => $mode === 'preflight' ? $session_id : null,
+                'sessionHash' => (string) ($session['sessionHash'] ?? ''),
+                'issuedAt' => (string) ($session['issuedAt'] ?? ''),
+                'expiresAt' => (string) ($session['expiresAt'] ?? ''),
+            ],
+            'request' => [
+                'method' => $canonical['method'],
+                'path' => $canonical['path'],
+                'canonicalQuery' => $canonical['canonicalQuery'],
+                'idempotencyKeyHash' => $idempotency_key !== '' ? hash('sha256', $idempotency_key) : '',
+                'canonicalHash' => hash('sha256', $canonical['string']),
+            ],
+        ],
+    ];
+}
+
+function reprint_push_lab_rest_signature_failure(string $code, string $message, int $status): array
+{
+    return [
+        'ok' => false,
+        'code' => $code,
+        'message' => $message,
+        'signature' => [
+            'required' => true,
+            'status' => $status,
+        ],
+    ];
+}
+
+function reprint_push_lab_rest_parse_signed_timestamp(string $timestamp): ?int
+{
+    if (preg_match('/^\d{10}$/', $timestamp)) {
+        return (int) $timestamp;
+    }
+    $parsed = strtotime($timestamp);
+    return $parsed === false ? null : $parsed;
+}
+
+function reprint_push_lab_rest_signature_matches(string $supplied, string $expected_hex): bool
+{
+    $normalized = strtolower(trim($supplied));
+    if (strpos($normalized, 'sha256=') === 0) {
+        $normalized = substr($normalized, 7);
+    }
+    if (preg_match('/^[a-f0-9]{64}$/', $normalized)) {
+        return hash_equals($expected_hex, $normalized);
+    }
+
+    $decoded = base64_decode($supplied, true);
+    if (is_string($decoded) && $decoded !== '') {
+        return hash_equals(hex2bin($expected_hex), $decoded);
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_push_canonical_string(
+    WP_REST_Request $request,
+    string $content_hash,
+    string $session,
+    string $idempotency_key
+): array {
+    $request_uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+    $parts = parse_url($request_uri);
+    $path = is_array($parts) && isset($parts['path']) ? (string) $parts['path'] : '/';
+    $query = is_array($parts) && isset($parts['query']) ? (string) $parts['query'] : '';
+    $method = strtoupper((string) $request->get_method());
+    $canonical_query = reprint_push_lab_rest_canonical_query($query);
+    $canonical = implode("\n", [
+        'REPRINT-PUSH-LAB-V1',
+        $method,
+        $path,
+        $canonical_query,
+        $content_hash,
+        $session,
+        $idempotency_key,
+    ]);
+
+    return [
+        'string' => $canonical,
+        'method' => $method,
+        'path' => $path,
+        'canonicalQuery' => $canonical_query,
+    ];
+}
+
+function reprint_push_lab_rest_canonical_query(string $query): string
+{
+    if ($query === '') {
+        return '';
+    }
+
+    $pairs = [];
+    foreach (explode('&', $query) as $index => $part) {
+        if ($part === '') {
+            continue;
+        }
+        $pieces = explode('=', $part, 2);
+        $pairs[] = [
+            'key' => rawurldecode(str_replace('+', '%20', $pieces[0])),
+            'value' => rawurldecode(str_replace('+', '%20', $pieces[1] ?? '')),
+            'index' => $index,
+        ];
+    }
+
+    usort($pairs, static function (array $a, array $b): int {
+        return [$a['key'], $a['value'], $a['index']] <=> [$b['key'], $b['value'], $b['index']];
+    });
+
+    return implode('&', array_map(static function (array $pair): string {
+        return rawurlencode((string) $pair['key']) . '=' . rawurlencode((string) $pair['value']);
+    }, $pairs));
+}
+
+function reprint_push_lab_rest_mint_signed_session(array $auth, string $signing_key_hash): array
+{
+    $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+    $session_hash = hash('sha256', $token);
+    $now = time();
+    $session = [
+        'schemaVersion' => 1,
+        'sessionHash' => $session_hash,
+        'identityHash' => reprint_push_lab_rest_signed_identity_hash($auth),
+        'credentialHash' => (string) ($auth['credentialHash'] ?? ''),
+        'applicationPasswordUuid' => (string) ($auth['applicationPasswordUuid'] ?? ''),
+        'userId' => (int) ($auth['userId'] ?? 0),
+        'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+        'signingKeyHash' => $signing_key_hash,
+        'issuedAt' => gmdate('Y-m-d\TH:i:s\Z', $now),
+        'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $now + REPRINT_PUSH_LAB_SIGNED_SESSION_TTL),
+        'expiresAtUnix' => $now + REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
+    ];
+    add_option(reprint_push_lab_rest_signed_session_option($session_hash), $session, '', 'no');
+    $session['id'] = $token;
+    return $session;
+}
+
+function reprint_push_lab_rest_signed_session(string $session_id): ?array
+{
+    if (!preg_match('/^[A-Za-z0-9_-]{32,160}$/', $session_id)) {
+        return null;
+    }
+
+    $session_hash = hash('sha256', $session_id);
+    $session = get_option(reprint_push_lab_rest_signed_session_option($session_hash), null);
+    if (!is_array($session)) {
+        return null;
+    }
+    $session['sessionHash'] = $session_hash;
+    return $session;
+}
+
+function reprint_push_lab_rest_claim_signed_nonce(string $nonce, array $metadata): bool
+{
+    $nonce_hash = hash('sha256', $nonce);
+    $metadata['schemaVersion'] = 1;
+    $metadata['nonceHash'] = $nonce_hash;
+    $metadata['createdAt'] = gmdate('Y-m-d\TH:i:s\Z');
+    return add_option(reprint_push_lab_rest_signed_nonce_option($nonce_hash), $metadata, '', 'no');
+}
+
+function reprint_push_lab_rest_signed_identity_hash(array $auth): string
+{
+    return hash('sha256', implode("\n", [
+        (string) ($auth['userId'] ?? ''),
+        (string) ($auth['userLogin'] ?? ''),
+        (string) ($auth['applicationPasswordUuid'] ?? ''),
+        REPRINT_PUSH_LAB_AUTH_SCOPE,
+    ]));
+}
+
+function reprint_push_lab_rest_signed_session_option(string $session_hash): string
+{
+    return 'reprint_push_lab_signed_session_' . $session_hash;
+}
+
+function reprint_push_lab_rest_signed_nonce_option(string $nonce_hash): string
+{
+    return 'reprint_push_lab_signed_nonce_' . $nonce_hash;
+}
+
+function reprint_push_lab_rest_set_signature_context(WP_REST_Request $request, array $signature): void
+{
+    $attributes = $request->get_attributes();
+    $attributes[REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE] = $signature;
+    $request->set_attributes($attributes);
+}
+
+function reprint_push_lab_rest_signature_context(WP_REST_Request $request): array
+{
+    $attributes = $request->get_attributes();
+    $signature = $attributes[REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE] ?? null;
+    return is_array($signature) ? $signature : [];
+}
+
+function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request): array
+{
+    $signature = reprint_push_lab_rest_signature_context($request);
+    return [
+        'schemaVersion' => 1,
+        'contentHash' => (string) ($signature['contentHash'] ?? ''),
+        'timestamp' => (string) ($signature['timestamp'] ?? ''),
+        'nonceHash' => (string) ($signature['nonceHash'] ?? ''),
+        'sessionHash' => (string) ($signature['session']['sessionHash'] ?? ''),
+        'signingKeyHash' => (string) ($signature['signingKeyHash'] ?? ''),
+        'request' => isset($signature['request']) && is_array($signature['request'])
+            ? $signature['request']
+            : [],
+    ];
+}
+
 function reprint_push_lab_rest_maybe_bootstrap_auth_users(): void
 {
     if (!reprint_push_lab_rest_auth_bootstrap_enabled()) {
@@ -1236,6 +1693,7 @@ function reprint_push_lab_rest_verify_application_password(int $user_id, string 
             'userLogin' => (string) $user->user_login,
             'applicationPasswordUuid' => (string) ($item['uuid'] ?? ''),
             'credentialHash' => hash('sha256', $login . "\n" . $password),
+            'signingKey' => hash_hmac('sha256', 'reprint-push-lab-v1' . "\n" . $login, $password),
             'playgroundFallback' => true,
             'warning' => 'Lab-only Playground Basic verifier; not production authentication.',
         ];
@@ -1314,11 +1772,19 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
     array $payload,
     array $plan
 ): array {
+    $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
     $receipt['authBinding'] = [
         'schemaVersion' => 1,
         'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
         'identity' => reprint_push_lab_rest_auth_evidence($request)['identity'],
         'session' => reprint_push_lab_rest_auth_evidence($request)['session'],
+        'pushSession' => [
+            'sessionHash' => $signed_request['sessionHash'],
+            'signingKeyHash' => $signed_request['signingKeyHash'],
+            'dryRunNonceHash' => $signed_request['nonceHash'],
+            'dryRunContentHash' => $signed_request['contentHash'],
+            'dryRunCanonicalHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
+        ],
         'request' => [
             'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
             'dryRunRoute' => '/authenticated/dry-run',
@@ -1397,6 +1863,17 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         || (int) ($preconditions['mutationCount'] ?? -1) !== (int) ($receipt['mutationCount'] ?? -2)
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt precondition binding does not match receipt evidence.', $receipt);
+    }
+
+    $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
+    $push_session = isset($binding['pushSession']) && is_array($binding['pushSession'])
+        ? $binding['pushSession']
+        : [];
+    if ((string) ($push_session['sessionHash'] ?? '') === ''
+        || (string) ($push_session['sessionHash'] ?? '') !== (string) ($signed_request['sessionHash'] ?? '')
+        || (string) ($push_session['signingKeyHash'] ?? '') !== (string) ($signed_request['signingKeyHash'] ?? '')
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt signed session binding does not match the current request.', $receipt);
     }
 }
 
@@ -1621,6 +2098,23 @@ function reprint_push_lab_rest_status_for_result(array $result): int
 
     switch ((string) ($result['code'] ?? '')) {
         case 'MISSING_IDEMPOTENCY_KEY':
+            return 400;
+        case 'SIGNED_HEADER_REQUIRED':
+        case 'SIGNED_AUTH_UNAVAILABLE':
+        case 'SIGNED_CONTENT_HASH_MISMATCH':
+        case 'SIGNED_TIMESTAMP_INVALID':
+        case 'SIGNED_AUTH_SIGNATURE_MISMATCH':
+        case 'SIGNED_SESSION_REQUIRED':
+        case 'SIGNED_SESSION_INVALID':
+        case 'SIGNED_SESSION_EXPIRED':
+        case 'SIGNED_SESSION_BINDING_MISMATCH':
+        case 'SIGNED_PUSH_SIGNATURE_MISMATCH':
+            return 401;
+        case 'SIGNED_NONCE_REPLAYED':
+            return 409;
+        case 'SIGNED_PREFLIGHT_SESSION_REJECTED':
+        case 'SIGNED_CONTENT_HASH_INVALID':
+        case 'SIGNED_NONCE_INVALID':
             return 400;
         case 'IDEMPOTENCY_KEY_CONFLICT':
         case 'IDEMPOTENCY_KEY_IN_PROGRESS':

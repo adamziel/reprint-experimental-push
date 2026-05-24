@@ -87,19 +87,41 @@ dry-run upload, apply, journal repair, and recovery mutation.
 
 ### Current Playground Auth Lab
 
-`npm run test:playground:authenticated-http-push` is not this production auth
-protocol. It verifies authenticated local Playground source-site mutation under
+`npm run test:playground:authenticated-http-push` is lab HMAC evidence, not
+this production auth protocol. It verifies authenticated local Playground
+source-site mutation under
 `/wp-json/reprint-push-lab/v1/authenticated/*` with Basic-auth-shaped
 Application Password credentials for bootstrapped users, `manage_options`,
 auth-bound receipts, `AUTH_RECEIPT_MISMATCH`, `AUTH_RECEIPT_EXPIRED`,
 `X-Reprint-Push-Idempotency-Key`, stale no-data-loss, and replay with zero
-fresh mutation work. Playground fallback caveat: core Application Password
-auth did not establish `/wp-json/wp/v2/users/me`, so the lab route validates
-stored hashed app-password entries and sets the current user before capability
-checks. Production Reprint auth still needs protocol HMAC, TLS deployment,
-production nonce/replay storage, production session handling, production
-Application Password integration, real exporter credential binding, durable
-audit records, and full production push.
+fresh mutation work. Signed requests are required for
+`/authenticated/preflight`, `/authenticated/dry-run`, and
+`/authenticated/apply`.
+
+The lab verifier checks signatures before JSON parsing, receipt validation,
+idempotency lookup or claim, journal writes, or mutation. `X-Auth-Content-Hash`
+is SHA-256 over the raw request body bytes. The auth signature covers
+`X-Auth-Nonce`, `X-Auth-Timestamp`, and the content hash. The push signature
+binds the method, actual path, canonical query, content hash, server-minted lab
+push session, and idempotency key. Preflight mints short-lived lab push
+sessions; dry-run and apply require the session plus
+`X-Reprint-Push-Idempotency-Key`. Nonce replay rejects before idempotency
+replay, while replay with a fresh nonce/signature still works with zero fresh
+mutation work.
+
+Tests cover unsigned, malformed, bad hash, body changed after signing,
+stale/future timestamp, wrong method/path/query, wrong session, idempotency
+mismatch, public-route signature attempts, nonce replay, and positive signed
+preflight, dry-run, apply, and replay. Playground fallback caveat: core
+Application Password auth did not establish `/wp-json/wp/v2/users/me`, so the
+lab route validates stored hashed app-password entries and sets the current
+user before capability checks. Public legacy lab routes remain public/mutable;
+HMAC applies only to `/authenticated/*` aliases. Responses expose stable hash
+evidence such as credential/signing-key hashes for lab proof and are not a
+production response contract. Production Reprint auth still needs TLS
+deployment, nonce/replay store cleanup, production session handling, real
+exporter credential binding, durable production audit records, and full
+production push.
 
 ## Resource Model
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,12 @@ const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 const serverStartupTimeoutMs = 120_000;
 const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
+const sessionHeader = 'X-Reprint-Push-Session';
+const authContentHashHeader = 'X-Auth-Content-Hash';
+const authTimestampHeader = 'X-Auth-Timestamp';
+const authNonceHeader = 'X-Auth-Nonce';
+const authSignatureHeader = 'X-Auth-Signature';
+const pushSignatureHeader = 'X-Reprint-Push-Signature';
 const authScope = 'reprint-push-lab:authenticated-http-push';
 
 const credentials = {
@@ -81,6 +88,7 @@ const summary = {
 };
 
 let readyReceipt;
+let signedNonceCounter = 0;
 
 await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtures.base), async (server) => {
   summary.transport.servers.push(server.summary);
@@ -224,7 +232,78 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
     label: 'insufficient capability dry-run',
   });
 
-  const preflight = await getAuthenticated(server, '/preflight', authHeaders(credentials.admin));
+  const unsignedPreflight = await getAuthenticated(server, '/preflight', authHeaders(credentials.admin));
+  await assertFailureNoMutation(server, unsignedPreflight, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_HEADER_REQUIRED',
+    label: 'unsigned authenticated preflight',
+  });
+
+  const unsignedDryRun = await postAuthenticated(server, '/dry-run', { plan: readyPlan }, authHeaders(credentials.admin));
+  await assertFailureNoMutation(server, unsignedDryRun, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_HEADER_REQUIRED',
+    label: 'unsigned authenticated dry-run',
+  });
+
+  const unsignedApply = await postAuthenticated(server, '/apply', { plan: readyPlan, receipt: {} }, {
+    ...authHeaders(credentials.admin),
+    [idempotencyHeader]: 'auth-http-unsigned-apply',
+  });
+  await assertFailureNoMutation(server, unsignedApply, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_HEADER_REQUIRED',
+    label: 'unsigned authenticated apply',
+  });
+
+  const malformedSignature = await signedGetAuthenticated(server, '/preflight', credentials.admin, {
+    headerOverrides: {
+      [authSignatureHeader]: 'not-a-valid-signature',
+    },
+  });
+  await assertFailureNoMutation(server, malformedSignature, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_AUTH_SIGNATURE_MISMATCH',
+    label: 'malformed auth signature preflight',
+  });
+
+  const staleTimestamp = await signedGetAuthenticated(server, '/preflight', credentials.admin, {
+    timestamp: String(Math.floor(Date.now() / 1000) - 601),
+  });
+  await assertFailureNoMutation(server, staleTimestamp, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_TIMESTAMP_INVALID',
+    label: 'stale signed preflight',
+  });
+
+  const futureTimestamp = await signedGetAuthenticated(server, '/preflight', credentials.admin, {
+    timestamp: String(Math.floor(Date.now() / 1000) + 601),
+  });
+  await assertFailureNoMutation(server, futureTimestamp, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_TIMESTAMP_INVALID',
+    label: 'future signed preflight',
+  });
+
+  const wrongMethodSignature = await signedGetAuthenticated(server, '/preflight?z=2&a=1', credentials.admin, {
+    signMethod: 'POST',
+  });
+  await assertFailureNoMutation(server, wrongMethodSignature, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_PUSH_SIGNATURE_MISMATCH',
+    label: 'wrong method signature preflight',
+  });
+
+  const wrongPathQuerySignature = await signedGetAuthenticated(server, '/preflight?z=2&a=1', credentials.admin, {
+    signPathname: '/wp-json/reprint-push-lab/v1/authenticated/preflight?z=2&a=changed',
+  });
+  await assertFailureNoMutation(server, wrongPathQuerySignature, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_PUSH_SIGNATURE_MISMATCH',
+    label: 'wrong path query signature preflight',
+  });
+
+  const preflight = await signedGetAuthenticated(server, '/preflight', credentials.admin);
   assert.equal(preflight.status, 200);
   assert.equal(preflight.body.ok, true);
   assert.equal(preflight.body.mode, 'preflight');
@@ -235,9 +314,12 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   assert.match(preflight.body.auth.session.verifier, /^playground-basic-/);
   assert.equal(preflight.body.auth.session.playgroundFallback, true);
   assert.match(preflight.body.auth.session.warning, /not production authentication/);
+  assert.equal(preflight.body.session.type, 'lab-signed-push-session');
+  assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
   assert.equal(preflight.body.session.receiptTtlSeconds, 300);
   assert.equal(preflight.body.limits.requiresIdempotencyKey, true);
   assert.equal(preflight.body.journal.dbJournal.available, true);
+  const pushSession = preflight.body.session.id;
   summary.auth = {
     coreUsersMe: coreMe.status,
     coreApplicationPasswordAvailable,
@@ -251,8 +333,92 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
     verifier: preflight.body.auth.session.verifier,
   };
 
+  const authenticatedSnapshot = await getAuthenticated(server, '/snapshot', authHeaders(credentials.admin));
+  assert.equal(authenticatedSnapshot.status, 200);
+  assertSnapshotContentEqual(authenticatedSnapshot.body.snapshot, initial.body.snapshot, 'authenticated Basic snapshot');
+  await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic snapshot');
+
+  const authenticatedJournal = await getAuthenticated(server, '/journal?limit=80', authHeaders(credentials.admin));
+  assert.equal(authenticatedJournal.status, 200);
+  await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic journal');
+
+  const authenticatedDbJournal = await getAuthenticated(server, '/db-journal?limit=80', authHeaders(credentials.admin));
+  assert.equal(authenticatedDbJournal.status, 200);
+  await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic db-journal');
+
+  const authenticatedDbJournalSchema = await getAuthenticated(server, '/db-journal/schema', authHeaders(credentials.admin));
+  assert.equal(authenticatedDbJournalSchema.status, 200);
+  await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic db-journal schema');
+
+  const authenticatedRecovery = await postAuthenticated(
+    server,
+    '/recovery/inspect',
+    { plan: readyPlan, receipt: {} },
+    authHeaders(credentials.admin),
+  );
+  assert.notEqual(authenticatedRecovery.status, 401);
+  await assertNoMutation(server, initial.body.snapshot, 'authenticated Basic recovery inspect');
+
+  const badBodyHash = await signedPostAuthenticated(server, '/dry-run', { plan: readyPlan }, credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-bad-body-hash',
+    contentHash: '0'.repeat(64),
+  });
+  await assertFailureNoMutation(server, badBodyHash, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_CONTENT_HASH_MISMATCH',
+    label: 'bad body hash signed dry-run',
+  });
+
+  const signedBodyChanged = await signedPostAuthenticated(server, '/dry-run', { plan: readyPlan }, credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-body-changed',
+    signRawBody: JSON.stringify({ plan: readyPlan }),
+    rawBody: JSON.stringify({ plan: readyPlan, changedAfterSigning: true }),
+  });
+  await assertFailureNoMutation(server, signedBodyChanged, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_CONTENT_HASH_MISMATCH',
+    label: 'signed body changed after signing dry-run',
+  });
+
+  const wrongIdentitySession = await signedPostAuthenticated(server, '/dry-run', { plan: readyPlan }, credentials.altAdmin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-wrong-session-identity',
+  });
+  await assertFailureNoMutation(server, wrongIdentitySession, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_SESSION_BINDING_MISMATCH',
+    label: 'wrong session identity dry-run',
+  });
+
+  const idempotencySignatureMismatch = await signedPostAuthenticated(server, '/dry-run', { plan: readyPlan }, credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-idempotency-sent',
+    signIdempotencyKey: 'auth-http-idempotency-signed',
+  });
+  await assertFailureNoMutation(server, idempotencySignatureMismatch, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_PUSH_SIGNATURE_MISMATCH',
+    label: 'signature idempotency key mismatch dry-run',
+  });
+
+  const publicRoutePathSignature = await signedPostAuthenticated(server, '/dry-run', { plan: readyPlan }, credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-public-path-signed',
+    signPathname: '/wp-json/reprint-push-lab/v1/dry-run',
+  });
+  await assertFailureNoMutation(server, publicRoutePathSignature, initial.body.snapshot, {
+    status: 401,
+    code: 'SIGNED_PUSH_SIGNATURE_MISMATCH',
+    label: 'public route signed path on authenticated dry-run',
+  });
+
   const dryRunBefore = await getSnapshot(server);
-  const dryRun = await postAuthenticated(server, '/dry-run', { plan: readyPlan }, authHeaders(credentials.admin));
+  const dryRun = await signedPostAuthenticated(server, '/dry-run', { plan: readyPlan }, credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-ready-dry-run',
+  });
   assert.equal(dryRun.status, 200);
   assert.equal(dryRun.body.ok, true);
   assert.equal(dryRun.body.mode, 'dry-run');
@@ -266,7 +432,13 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
     server,
     '/apply',
     { plan: readyPlan, receipt: readyReceipt },
-    authHeaders(credentials.admin),
+    signedRequestHeaders(
+      credentials.admin,
+      'POST',
+      '/wp-json/reprint-push-lab/v1/authenticated/apply',
+      JSON.stringify({ plan: readyPlan, receipt: readyReceipt }),
+      { session: pushSession },
+    ),
   );
   await assertFailureNoMutation(server, missingKey, dryRunBefore.body.snapshot, {
     status: 400,
@@ -283,10 +455,18 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
         receipt.authBinding.scope = 'wrong-scope';
       }),
     },
-    {
-      ...authHeaders(credentials.admin),
-      [idempotencyHeader]: 'auth-http-tampered-receipt',
-    },
+    signedRequestHeaders(
+      credentials.admin,
+      'POST',
+      '/wp-json/reprint-push-lab/v1/authenticated/apply',
+      JSON.stringify({
+        plan: readyPlan,
+        receipt: mutateReceiptWithoutRehash(readyReceipt, (receipt) => {
+          receipt.authBinding.scope = 'wrong-scope';
+        }),
+      }),
+      { session: pushSession, idempotencyKey: 'auth-http-tampered-receipt' },
+    ),
   );
   await assertFailureNoMutation(server, tamperedReceipt, dryRunBefore.body.snapshot, {
     status: 409,
@@ -304,10 +484,18 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
         receipt.authBinding.expiresAt = '2000-01-01T00:00:00Z';
       }),
     },
-    {
-      ...authHeaders(credentials.admin),
-      [idempotencyHeader]: 'auth-http-expired-receipt',
-    },
+    signedRequestHeaders(
+      credentials.admin,
+      'POST',
+      '/wp-json/reprint-push-lab/v1/authenticated/apply',
+      JSON.stringify({
+        plan: readyPlan,
+        receipt: mutateReceipt(readyReceipt, (receipt) => {
+          receipt.authBinding.expiresAt = '2000-01-01T00:00:00Z';
+        }),
+      }),
+      { session: pushSession, idempotencyKey: 'auth-http-expired-receipt' },
+    ),
   );
   await assertFailureNoMutation(server, expiredReceipt, dryRunBefore.body.snapshot, {
     status: 409,
@@ -316,13 +504,17 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
     journalEvent: 'auth-receipt-mismatch',
   });
 
-  const identityMismatch = await postAuthenticated(
+  const altPreflight = await signedGetAuthenticated(server, '/preflight', credentials.altAdmin);
+  assert.equal(altPreflight.status, 200);
+  assert.match(altPreflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
+  const identityMismatch = await signedPostAuthenticated(
     server,
     '/apply',
     { plan: readyPlan, receipt: readyReceipt },
+    credentials.altAdmin,
     {
-      ...authHeaders(credentials.altAdmin),
-      [idempotencyHeader]: 'auth-http-identity-mismatch',
+      session: altPreflight.body.session.id,
+      idempotencyKey: 'auth-http-identity-mismatch',
     },
   );
   await assertFailureNoMutation(server, identityMismatch, dryRunBefore.body.snapshot, {
@@ -335,9 +527,13 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   const applyBody = { plan: readyPlan, receipt: readyReceipt };
   const applyBefore = await getSnapshot(server);
   assertSnapshotContentEqual(applyBefore.body.snapshot, snapshots.base, 'authenticated apply before HTTP snapshot');
-  const apply = await postAuthenticated(server, '/apply', applyBody, {
-    ...authHeaders(credentials.admin),
-    [idempotencyHeader]: 'auth-http-ready-apply',
+  const applyNonce = nextSignedNonce('auth-http-ready-apply');
+  const applyTimestamp = currentSignedTimestamp();
+  const apply = await signedPostAuthenticated(server, '/apply', applyBody, credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-ready-apply',
+    nonce: applyNonce,
+    timestamp: applyTimestamp,
   });
   assert.equal(apply.status, 200);
   assert.equal(apply.body.ok, true);
@@ -357,9 +553,24 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
   assert.equal(mutationEventsAfterApply, readyPlan.mutations.length);
   assert.ok(journalAfterApply.some((entry) => entry.event === 'apply-committed'), 'DB journal missing apply-committed');
 
-  const replay = await postAuthenticated(server, '/apply', applyBody, {
-    ...authHeaders(credentials.admin),
-    [idempotencyHeader]: 'auth-http-ready-apply',
+  const nonceReplay = await signedPostAuthenticated(server, '/apply', applyBody, credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-ready-apply',
+    nonce: applyNonce,
+    timestamp: applyTimestamp,
+  });
+  assert.equal(nonceReplay.status, 409);
+  assert.equal(nonceReplay.body.code, 'SIGNED_NONCE_REPLAYED');
+  const journalAfterNonceReplay = await getDbJournalEntries(server);
+  assert.equal(
+    countJournalEvents(journalAfterNonceReplay, 'mutation-applied'),
+    mutationEventsAfterApply,
+    'signed nonce replay added mutation work',
+  );
+
+  const replay = await signedPostAuthenticated(server, '/apply', applyBody, credentials.admin, {
+    session: pushSession,
+    idempotencyKey: 'auth-http-ready-apply',
   });
   assert.equal(replay.status, 200);
   assert.equal(replay.body.ok, true);
@@ -416,6 +627,25 @@ await withPlaygroundServer('authenticated-ready-base', path.join(repoRoot, fixtu
     expiredReceipt: { status: expiredReceipt.status, code: expiredReceipt.body.code },
     identityMismatch: { status: identityMismatch.status, code: identityMismatch.body.code },
     missingIdempotencyKey: { status: missingKey.status, code: missingKey.body.code },
+    unsignedSignedRoutes: {
+      preflight: { status: unsignedPreflight.status, code: unsignedPreflight.body.code },
+      dryRun: { status: unsignedDryRun.status, code: unsignedDryRun.body.code },
+      apply: { status: unsignedApply.status, code: unsignedApply.body.code },
+    },
+    malformedSignature: { status: malformedSignature.status, code: malformedSignature.body.code },
+    badBodyHash: { status: badBodyHash.status, code: badBodyHash.body.code },
+    signedBodyChanged: { status: signedBodyChanged.status, code: signedBodyChanged.body.code },
+    staleTimestamp: { status: staleTimestamp.status, code: staleTimestamp.body.code },
+    futureTimestamp: { status: futureTimestamp.status, code: futureTimestamp.body.code },
+    wrongMethodSignature: { status: wrongMethodSignature.status, code: wrongMethodSignature.body.code },
+    wrongPathQuerySignature: { status: wrongPathQuerySignature.status, code: wrongPathQuerySignature.body.code },
+    wrongIdentitySession: { status: wrongIdentitySession.status, code: wrongIdentitySession.body.code },
+    idempotencySignatureMismatch: {
+      status: idempotencySignatureMismatch.status,
+      code: idempotencySignatureMismatch.body.code,
+    },
+    publicRoutePathSignature: { status: publicRoutePathSignature.status, code: publicRoutePathSignature.body.code },
+    nonceReplayBeforeIdempotencyReplay: { status: nonceReplay.status, code: nonceReplay.body.code },
   };
   summary.dryRun = {
     status: dryRun.status,
@@ -445,27 +675,24 @@ await withPlaygroundServer('authenticated-stale-remote', path.join(repoRoot, fix
 
   const staleBefore = await getSnapshot(server);
   assertSnapshotContentEqual(staleBefore.body.snapshot, snapshots.remoteChanged, 'stale before HTTP snapshot');
-  const staleApply = await postAuthenticated(
-    server,
-    '/apply',
-    { plan: readyPlan, receipt: readyReceipt },
-    {
-      ...authHeaders(credentials.admin),
-      [idempotencyHeader]: 'auth-http-stale-remote',
-    },
-  );
-  assert.equal(staleApply.status, 412);
-  assert.equal(staleApply.body.ok, false);
-  assert.equal(staleApply.body.code, 'PRECONDITION_FAILED');
+  const stalePreflight = await signedGetAuthenticated(server, '/preflight', credentials.admin);
+  assert.equal(stalePreflight.status, 200);
+  const staleDryRun = await signedPostAuthenticated(server, '/dry-run', { plan: readyPlan }, credentials.admin, {
+    session: stalePreflight.body.session.id,
+    idempotencyKey: 'auth-http-stale-dry-run',
+  });
+  assert.equal(staleDryRun.status, 412);
+  assert.equal(staleDryRun.body.ok, false);
+  assert.equal(staleDryRun.body.code, 'PRECONDITION_FAILED');
   const staleAfter = await getSnapshot(server);
-  assertTargetSurfaceEqual(staleAfter.body.snapshot, staleBefore.body.snapshot, 'authenticated stale failed apply target surface');
+  assertTargetSurfaceEqual(staleAfter.body.snapshot, staleBefore.body.snapshot, 'authenticated stale failed dry-run target surface');
   assertVisibleSurfaceNotEqual(staleAfter.body.snapshot, snapshots.local, 'authenticated stale failure preserved drifted state');
-  await assertNoIdempotencyClaim(server, 'authenticated stale failed apply');
+  await assertNoIdempotencyClaim(server, 'authenticated stale failed dry-run');
 
   summary.stale = {
-    route: 'POST /wp-json/reprint-push-lab/v1/authenticated/apply',
-    status: staleApply.status,
-    code: staleApply.body.code,
+    route: 'POST /wp-json/reprint-push-lab/v1/authenticated/dry-run',
+    status: staleDryRun.status,
+    code: staleDryRun.body.code,
     preservedFixture: staleAfter.body.snapshot.meta.fixture,
     finalMatchesLocal: digest(visibleSurface(staleAfter.body.snapshot)) === digest(visibleSurface(snapshots.local)),
   };
@@ -763,14 +990,48 @@ async function postAuthenticated(server, pathSuffix, body, headers = {}) {
   return requestJson(server, 'POST', `/wp-json/reprint-push-lab/v1/authenticated${pathSuffix}`, body, headers);
 }
 
+async function signedGetAuthenticated(server, pathSuffix, credential, options = {}) {
+  const pathname = `/wp-json/reprint-push-lab/v1/authenticated${pathSuffix}`;
+  return requestJsonRaw(
+    server,
+    'GET',
+    pathname,
+    undefined,
+    signedRequestHeaders(credential, 'GET', pathname, '', options),
+  );
+}
+
+async function signedPostAuthenticated(server, pathSuffix, body, credential, options = {}) {
+  const pathname = `/wp-json/reprint-push-lab/v1/authenticated${pathSuffix}`;
+  const rawBody = options.rawBody ?? JSON.stringify(body);
+  const signRawBody = options.signRawBody ?? rawBody;
+  return requestJsonRaw(
+    server,
+    'POST',
+    pathname,
+    rawBody,
+    signedRequestHeaders(credential, 'POST', pathname, signRawBody, options),
+  );
+}
+
 async function requestJson(server, method, pathname, body = undefined, headers = {}) {
+  return requestJsonRaw(
+    server,
+    method,
+    pathname,
+    body === undefined ? undefined : JSON.stringify(body),
+    headers,
+  );
+}
+
+async function requestJsonRaw(server, method, pathname, rawBody = undefined, headers = {}) {
   const response = await fetch(`${server.baseUrl}${pathname}`, {
     method,
-    headers: body === undefined ? headers : {
+    headers: rawBody === undefined ? headers : {
       'content-type': 'application/json',
       ...headers,
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: rawBody,
   });
   const text = await response.text();
   let json;
@@ -783,6 +1044,115 @@ async function requestJson(server, method, pathname, body = undefined, headers =
     status: response.status,
     body: json,
   };
+}
+
+function signedRequestHeaders(credential, method, pathname, rawBody, options = {}) {
+  const contentHash = options.contentHash ?? sha256Hex(rawBody);
+  const timestamp = options.timestamp ?? currentSignedTimestamp();
+  const nonce = options.nonce ?? nextSignedNonce('auth-http');
+  const signingKey = labSigningKey(credential);
+  const authString = `${nonce}${timestamp}${contentHash}`;
+  const canonical = pushCanonicalString({
+    method: options.signMethod ?? method,
+    pathname: options.signPathname ?? pathname,
+    contentHash,
+    session: options.signSession ?? options.session ?? '',
+    idempotencyKey: options.signIdempotencyKey ?? options.idempotencyKey ?? '',
+  });
+  const headers = {
+    ...authHeaders(credential),
+    [authContentHashHeader]: contentHash,
+    [authTimestampHeader]: timestamp,
+    [authNonceHeader]: nonce,
+    [authSignatureHeader]: options.authSignature ?? hmacHex(signingKey, authString),
+    [pushSignatureHeader]: options.pushSignature ?? hmacHex(signingKey, canonical),
+  };
+
+  if (options.session !== undefined) {
+    headers[sessionHeader] = options.session;
+  }
+  if (options.idempotencyKey !== undefined) {
+    headers[idempotencyHeader] = options.idempotencyKey;
+  }
+
+  return {
+    ...headers,
+    ...(options.headerOverrides ?? {}),
+  };
+}
+
+function pushCanonicalString({ method, pathname, contentHash, session, idempotencyKey }) {
+  const [rawPath, rawQuery = ''] = pathname.split('?', 2);
+  return [
+    'REPRINT-PUSH-LAB-V1',
+    method.toUpperCase(),
+    rawPath || '/',
+    canonicalQuery(rawQuery),
+    contentHash,
+    session,
+    idempotencyKey,
+  ].join('\n');
+}
+
+function canonicalQuery(query) {
+  if (query === '') {
+    return '';
+  }
+
+  return query
+    .split('&')
+    .map((part, index) => {
+      if (part === '') {
+        return null;
+      }
+      const [key, value = ''] = part.split('=', 2);
+      return {
+        key: rawUrlDecodeQueryPart(key),
+        value: rawUrlDecodeQueryPart(value),
+        index,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.key !== b.key) {
+        return a.key < b.key ? -1 : 1;
+      }
+      if (a.value !== b.value) {
+        return a.value < b.value ? -1 : 1;
+      }
+      return a.index - b.index;
+    })
+    .map((pair) => `${rawUrlEncode(pair.key)}=${rawUrlEncode(pair.value)}`)
+    .join('&');
+}
+
+function rawUrlDecodeQueryPart(value) {
+  return decodeURIComponent(value.replace(/\+/g, '%20'));
+}
+
+function rawUrlEncode(value) {
+  return encodeURIComponent(value).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
+}
+
+function labSigningKey(credential) {
+  return hmacHex(credential.password, `reprint-push-lab-v1\n${credential.username}`);
+}
+
+function hmacHex(key, data) {
+  return createHmac('sha256', key).update(data, 'utf8').digest('hex');
+}
+
+function sha256Hex(data) {
+  return createHash('sha256').update(data, 'utf8').digest('hex');
+}
+
+function currentSignedTimestamp() {
+  return String(Math.floor(Date.now() / 1000));
+}
+
+function nextSignedNonce(prefix) {
+  signedNonceCounter += 1;
+  return `${prefix}-${Date.now()}-${signedNonceCounter}-${randomBytes(6).toString('hex')}`;
 }
 
 function authHeaders(credential) {

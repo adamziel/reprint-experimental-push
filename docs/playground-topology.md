@@ -188,18 +188,37 @@ source over real local HTTP, then a fresh authenticated snapshot verifies the
 WordPress-visible source changes. Replaying the same idempotency key/body
 returns `BATCH_ALREADY_COMMITTED` with zero fresh mutation work.
 
+The authenticated smoke also requires signed lab requests for
+`/authenticated/preflight`, `/authenticated/dry-run`, and
+`/authenticated/apply`. The existing Basic/Application-Password-shaped auth and
+`manage_options` permission check remain in place. HMAC verification runs
+before JSON parsing, receipt validation, idempotency lookup/claim, journal
+write, or mutation. `X-Auth-Content-Hash` is SHA-256 over the raw request body
+bytes; `X-Auth-Signature` covers nonce, timestamp, and that content hash.
+`X-Reprint-Push-Signature` covers method, actual path, canonical query, content
+hash, the server-minted lab push session, and idempotency key. Preflight mints
+the short-lived lab session, while dry-run/apply require the session and
+idempotency key.
+
 Negative proof covers missing, bad, and malformed auth; insufficient
 capability; forged `reprint_push_lab_auth` query/body/header values;
 `AUTH_RECEIPT_MISMATCH` for tampered or wrong-identity receipts;
 `AUTH_RECEIPT_EXPIRED` for expired receipts; missing
 `X-Reprint-Push-Idempotency-Key`; stale remote refusal with no data loss before
-idempotency claim; and replay without fresh mutation work.
+idempotency claim; unsigned or malformed signature data; bad content hash; body
+changed after signing; stale or future timestamp; wrong method, path, canonical
+query, session, or idempotency binding; signed public-route attempts; nonce
+replay before idempotency replay; and replay with a fresh nonce/signature and
+zero fresh mutation work.
 
 This is authenticated local Playground source-site mutation evidence only. It
-does not prove production Reprint auth, protocol HMAC, TLS deployment,
-production nonce/replay storage, production auth/session handling, real
-exporter credential binding, production Application Password integration, or
-full production push.
+does not prove production Reprint auth, TLS deployment, nonce/replay store
+cleanup, production auth/session handling, real exporter credential binding,
+production Application Password integration, durable production audit records,
+or full production push. The public legacy lab routes remain public/mutable;
+HMAC applies only to `/authenticated/*` aliases. Responses expose stable hash
+evidence such as credential/signing-key hashes for lab proof and are not a
+production response contract.
 
 ## DB Journal and Idempotency Lab
 

@@ -129,6 +129,29 @@ replay with zero fresh mutation work. The public legacy lab routes remain
 intentionally public for old smokes; this authenticated evidence applies only to
 `/authenticated/*`.
 
+The same authenticated Playground smoke now also proves a lab HMAC/signed
+request integrity floor for `/authenticated/preflight`,
+`/authenticated/dry-run`, and `/authenticated/apply`. Basic/Application
+Password-shaped auth and the `manage_options` capability check remain in place,
+but the route rejects bad request signatures before JSON parsing, receipt
+validation, idempotency lookup or claim, journal writes, or mutation. The
+`X-Auth-Content-Hash` value is SHA-256 over the raw request body bytes.
+`X-Auth-Signature` covers `X-Auth-Nonce`, `X-Auth-Timestamp`, and the content
+hash. Dry-run/apply also require `X-Reprint-Push-Signature`, binding the HTTP
+method, actual path, canonical query, content hash, server-minted push session,
+and `X-Reprint-Push-Idempotency-Key`. Preflight mints the short-lived lab push
+session; dry-run and apply require both that session and an idempotency key.
+Nonce replay rejects before idempotency replay, while a replay with a fresh
+nonce/signature and the same idempotency key/body still returns the committed
+result with zero fresh mutation work. Signature tests cover unsigned,
+malformed, bad content hash, body changed after signing, stale/future
+timestamp, wrong method/path/query, wrong session, idempotency mismatch,
+public-route signature attempts, nonce replay, and positive signed preflight,
+dry-run, apply, and replay. This is lab HMAC evidence only, not production
+Reprint auth; responses intentionally expose stable hash evidence such as
+credential/signing-key hashes for lab proof and are not a production response
+contract.
+
 The `test:playground:db-journal-idempotency` script verifies a separate
 DB-native lab journal for `POST /apply`. Apply now requires
 `X-Reprint-Push-Idempotency-Key`; a missing key returns
@@ -179,9 +202,10 @@ conservative/not fully solved, tests mostly count mutation evidence rows rather
 than deeply asserting every observed hash, and production auth, live source
 mutation, and the full push path remain pending. The authenticated Playground
 slice is authenticated local Playground source-site mutation evidence, not
-production Reprint auth: protocol HMAC, TLS deployment, production
-nonce/replay/session storage, production Application Password integration, real
-exporter credential binding, and full production push remain pending.
+production Reprint auth. No production TLS deployment, nonce/replay store
+cleanup, production session handling, production Application Password
+integration, real exporter credential binding, durable production audit records,
+or full production push exists yet.
 
 The `test:playground:recovery` script exercises the lab-only failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The

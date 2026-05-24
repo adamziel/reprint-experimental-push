@@ -107,12 +107,18 @@ local Playground preflight at
 `/wp-json/reprint-push-lab/v1/authenticated/preflight`. It returns identity,
 `manage_options`, scope, session, expiry, idempotency, and journal evidence, and
 the matching authenticated dry-run/apply routes bind receipts to auth/session
-and request data before DB idempotency claim/mutation. This is authenticated
-local Playground source-site mutation evidence only. Playground fallback caveat:
-the lab verifier validates stored hashed app-password entries and sets the
-current user because local Playground core did not establish
-`/wp-json/wp/v2/users/me`; it is not production Reprint auth or production
-Application Password integration.
+and request data before DB idempotency claim/mutation. The signed-request lab
+requires HMAC signatures on `/authenticated/preflight`,
+`/authenticated/dry-run`, and `/authenticated/apply`; it verifies
+`X-Auth-Content-Hash` as SHA-256 over the raw request body bytes and rejects bad
+signatures before JSON parsing, receipt checks, idempotency lookup, journal
+write, or mutation. Dry-run/apply also bind `X-Reprint-Push-Signature` to the
+method, actual path, canonical query, content hash, lab session, and
+idempotency key. This is authenticated local Playground source-site mutation
+evidence only. Playground fallback caveat: the lab verifier validates stored
+hashed app-password entries and sets the current user because local Playground
+core did not establish `/wp-json/wp/v2/users/me`; it is not production Reprint
+auth or production Application Password integration.
 
 ### 3. Remote Snapshot Hash Listing
 

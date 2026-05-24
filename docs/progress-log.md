@@ -163,10 +163,30 @@ linked implementation artifacts.
 - Public legacy lab routes remain intentionally public for old smokes. This
   authenticated evidence applies only to `/authenticated/*` and remains
   authenticated local Playground source-site mutation evidence, not production
-  Reprint auth. Protocol HMAC, TLS deployment, production nonce/replay store,
-  production auth/session handling, production Application Password
-  integration, real exporter credential binding, and full production push
-  remain pending.
+  Reprint auth.
+- The same smoke now requires lab HMAC/signed requests for
+  `/authenticated/preflight`, `/authenticated/dry-run`, and
+  `/authenticated/apply`, with signature verification before JSON parsing,
+  receipt validation, idempotency lookup/claim, journal writes, or mutation.
+  `X-Auth-Content-Hash` is SHA-256 over raw request body bytes,
+  `X-Auth-Signature` covers nonce/timestamp/content hash, and
+  `X-Reprint-Push-Signature` binds method, actual path, canonical query,
+  content hash, server-minted session, and idempotency key.
+- Preflight mints short-lived lab push sessions; dry-run/apply require the
+  session plus `X-Reprint-Push-Idempotency-Key`. Nonce replay rejects before
+  idempotency replay, while replay with a fresh nonce/signature performs zero
+  fresh mutation work.
+- New negative signature proof covers unsigned, malformed, bad hash, body
+  changed after signing, stale/future timestamp, wrong method/path/query, wrong
+  session, idempotency mismatch, public-route signature attempts, and nonce
+  replay. Positive proof covers signed preflight, dry-run, apply, and replay.
+- Caveats remain explicit: this is lab HMAC evidence only. Public legacy lab
+  routes remain public/mutable; HMAC applies only to `/authenticated/*`
+  aliases. Responses expose stable hash evidence such as
+  credential/signing-key hashes for lab proof, not a production response
+  contract. No production TLS deployment, nonce/replay store cleanup,
+  production session handling, real exporter credential binding, durable
+  production audit records, or full production push exists yet.
 
 ## 2026-05-24 - DB Journal Idempotency Slice
 
