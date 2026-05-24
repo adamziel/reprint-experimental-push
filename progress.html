@@ -451,15 +451,15 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Lab evidence now covers planner invariants, guarded writes, recovery journals, authenticated lab routes, and fixture plugin/data cases. Production Reprint push remains unproved.</p>
-        <time class="update-stamp" datetime="2026-05-24">Last updated: May 24, 2026</time>
+        <p class="lead">Verified status covers the deterministic Node model and the bundled no-server Playground plan/apply/protocol harness. Standalone local-server labs are linked as lab evidence; production Reprint push remains unproved.</p>
+        <time class="update-stamp" datetime="2026-05-24">Last verified: May 24, 2026</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">55 Node lab tests passing</span>
-          <span class="pill">Playground labs passing</span>
+          <span class="pill">55 Node scenarios verified</span>
+          <span class="pill">npm run test:playground verified</span>
           <span class="pill">Authenticated CLI live-drift refusal passing</span>
-          <span class="pill">DB recovery labs passing</span>
-          <span class="pill">Storage-boundary file update/create/delete passing</span>
-          <span class="pill">Production push blocked by missing evidence</span>
+          <span class="pill">Standalone HTTP/auth/DB labs linked below</span>
+          <span class="pill">Docker path unavailable in this sandbox</span>
+          <span class="pill">Production executor, journal, and plugin drivers pending</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
@@ -471,15 +471,15 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong>55</strong>
-        <span>passing Node lab scenarios; Playground smokes cover WordPress-facing cases</span>
+        <span>passing Node lab scenarios verified in this lane</span>
       </div>
       <div class="metric">
-        <strong>13</strong>
-        <span>linked docs and audits covering protocol, topology, recovery, critique, and progress</span>
+        <strong>3</strong>
+        <span>no-server Playground legs verified: plan, guarded apply, and protocol smoke</span>
       </div>
       <div class="metric">
-        <strong>1</strong>
-        <span>lab path from snapshot planning through guarded apply, recovery evidence, auth checks, and fixture plugin/data handling</span>
+        <strong>0</strong>
+        <span>production push gates proven; current evidence stays lab-scoped</span>
       </div>
       <div class="metric">
         <strong>4</strong>
@@ -497,13 +497,13 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">38%</span></div>
           <div class="bar" aria-label="No data loss merge invariants 38 percent"><div class="fill green" style="width:38%"></div></div>
-          <p class="note">Three-way planning, conflict stops, live-hash preconditions, atomic plugin intent checks, fixture custom-table driver checks, and guarded fixture file/DB writes have lab evidence. The next gap is production-shaped resource identity and semantic preservation across real WordPress data graphs.</p>
+          <p class="note">Three-way planning, conflict stops, live-hash preconditions, atomic fixture plugin checks, fixture custom-table checks, and guarded fixture file/DB writes have lab evidence. The next gap is production-shaped resource identity and semantic preservation across real WordPress data graphs.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">24%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 24 percent"><div class="fill green" style="width:24%"></div></div>
-          <p class="note">DB journal idempotency, process-kill blocking, missing-commit finalization, all-old stale-claim retry, and stale-at-write DB/file refusals are passing in local Playground. This is still lab evidence, not production durability, `fsync`, locks, rollback, or exactly-once proof.</p>
+          <p class="note">DB journal idempotency, process-kill blocking, missing-commit finalization, all-old stale-claim retry, and stale-at-write DB/file refusals are documented in local Playground labs. A production recovery journal with durability, `fsync`, locks, leases, rollback, and exactly-once proof is still pending.</p>
         </div>
 
         <div class="lane">
@@ -530,8 +530,8 @@
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
             <li><strong>Going well</strong><span>Recovery evidence improved, and the authenticated CLI now proves non-mutating dry-run, committed apply, changed-source refusal, and post-snapshot drift refusal.</span></li>
-            <li><strong>Not going well</strong><span>The project is still lab-scoped. Production Reprint mutation, auth binding, durable journal, and arbitrary plugin data safety are pending.</span></li>
-            <li><strong>Progress change</strong><span>Reliable executor moved up slightly because the flow is now command-driven, but production endpoint contracts are still missing.</span></li>
+            <li><strong>Not going well</strong><span>The project is still lab-scoped. Real WordPress executor, production recovery journal, Docker/full Playground integration, and arbitrary plugin data safety are pending.</span></li>
+            <li><strong>Progress change</strong><span>Reliable executor moved up slightly because the command-driven lab flow now refuses post-snapshot source drift, but production endpoint contracts are still missing.</span></li>
             <li><strong>Next nudge</strong><span>Replace lab route/auth assumptions with a production-shaped Reprint endpoint contract and keep the guarded DB/file proof small.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
@@ -554,10 +554,11 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Pending</span><p>Production Reprint source-site mutation endpoint with production auth and credential binding.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Real WordPress push executor against production-shaped Reprint routes with production auth and credential binding.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Production DB-table recovery journal with crash, locking, `fsync`, stale-claim leases, and WordPress commit-boundary tests.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Plugin-specific validators for arbitrary plugin-owned options, postmeta, tables, activation hooks, and rollback/blocked recovery.</p></div>
-            <div class="proof-item"><span class="status">Lab proof</span><p>Current evidence is strong for local Playground fixtures only. See the progress log for full command output and caveats.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Docker and full Playground integration beyond disposable fixture labs. Docker is unavailable in this sandbox, and the current Playground proof is narrow.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Plugin-specific drivers for arbitrary plugin-owned options, postmeta, tables, activation hooks, rollback, and blocked recovery.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Current verified evidence covers `npm test` and `npm run test:playground`; standalone local-server labs remain linked as lab evidence with caveats.</p></div>
           </div>
         </section>
 
@@ -565,11 +566,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>The implemented path is lab-scoped: snapshots feed guarded plans, the CLI can drive authenticated lab push, and production Reprint mutation/auth remain pending.</p>
+              <p>The implemented path is lab-scoped: snapshots feed guarded plans, no-server Playground verifies fixture apply/protocol behavior, and production Reprint mutation/auth remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers CLI push, apply, recovery, auth, storage guards, and plugin fixtures. Production Reprint mutation is still pending.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation is still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>
