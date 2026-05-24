@@ -14,6 +14,13 @@ direct proof for the objective: pushing local edits back to a live source
 WordPress site without losing concurrent source changes, while remaining
 reliable and fast.
 
+The weakest current claim is speed. The benchmark harness does not assert a
+production throughput claim; it enumerates blockers such as missing durable
+chunk receipts, missing live remote preconditions, missing durable journal
+integrity, missing graph-identity evidence, missing recovery evidence, and
+non-production storage or row-apply capabilities. That is a useful refusal
+mechanism, but it is still not a measured release gate.
+
 The honest release claim is narrower: this repository is an executable safety
 model and local Playground lab for push invariants. It does **not** yet prove
 production no-data-loss, production reliability, or measured speed.
@@ -159,6 +166,9 @@ Evidence classes used below:
   target blocking, and corrupt/truncated journal blocking.
 - Lab/fixture proof for snapshot apply gates on named lab plugin resources, named lab plugin file paths, and exact forms lab custom-table rows when PHP is available.
 - Executable proof for a deterministic performance model, not measured performance.
+- Executable proof that the benchmark harness can block a production throughput
+  claim when the required production evidence is absent; it still does not
+  measure throughput or memory on the live push path.
 
 This is useful evidence, but it is not production proof. It does not exercise a
 production source site, a production push endpoint, real production
@@ -237,6 +247,16 @@ invocation and can be skipped while `npm test` remains green.
    replay behavior, and plugin packaging in the lab. They still report
    `labBacked: true`, so they are not proof that the live source mutation path
    runs against production auth, storage, journaling, or graph semantics.
+
+4. **Speed is the clearest unreleased claim, and the benchmark code already
+   agrees.** `test/guarded-executor-benchmark.test.js` exercises the benchmark
+   harness as a claim filter, not as a claim grant. The script blocks any
+   production throughput assertion unless the report can prove durable chunk
+   receipts, live remote preconditions, durable journal integrity, redaction,
+   graph identity, recovery evidence, atomic-group commit measurement, and
+   production storage and row-apply capabilities. That makes the current speed
+   story stricter than the docs, but still not releasable: the repository lacks
+   the measured end-to-end run that clears those blockers.
 
 4. **No test proves the no-data-loss claim across the whole WordPress graph.**
    The current evidence can preserve selected posts, options, files, postmeta,
