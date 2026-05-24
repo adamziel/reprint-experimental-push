@@ -679,6 +679,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-receipts-plus-cached-hash-complete-large-upload',
+    proposal: 'treat compressed chunk receipts plus a cached file hash as proof that a large upload already finished',
+    rejectedBecause: 'a cached hash and compressed receipts can reduce recovery work, but they still cannot prove the live compare, guarded publish, or every chunk acknowledgement survived failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
+  },
+  {
     id: 'fingerprint-completes-large-upload',
     proposal: 'treat a local fingerprint plus cached file hash as proof that a large upload already finished',
     rejectedBecause: 'a local fingerprint can skip duplicate hashing, but it cannot prove chunk receipts, guarded publish, or durable upload completion survived failure',
