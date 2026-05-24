@@ -102,6 +102,8 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
   assert.equal(topology.roles.runner.role, 'the only process allowed to compare, upload, inspect, and recover');
   assert.equal(topology.roles.remote_base.examples.playground, 'remote-base');
   assert.equal(topology.roles.local_edited.examples.docker, 'local-edited');
+  assert.equal(topology.docker.topology[0], 'remote-base is one WordPress source site on the private network');
+  assert.equal(topology.playground.topology[0], 'remote-base is the source blueprint that becomes the persisted pull base');
   assert.ok(topology.docker.topology.some((line) => line.includes('remote-base is one WordPress source site')));
   assert.ok(topology.docker.topology.some((line) => line.includes('runner is the only caller')));
   assert.ok(topology.playground.topology.some((line) => line.includes('remote-base is the source blueprint')));
@@ -136,6 +138,10 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
   assert.ok(mapping.required_invariants.includes('remote hash listing is planning evidence and never an apply lock'));
   assert.ok(mapping.required_invariants.includes('mutating recovery requires inspect evidence before finish or rollback'));
   assert.ok(mapping.required_invariants.includes('dry-run is eligibility only and apply revalidates the live remote again'));
+  assert.ok(mapping.pull_pipeline.importer.includes('read-only provenance'));
+  assert.ok(mapping.push_pipeline.preflight.includes('live remote identity and write scope'));
+  assert.ok(mapping.push_pipeline.journal.includes('without granting a lock'));
+  assert.ok(mapping.push_pipeline.recover.includes('inspect first'));
 });
 
 test('push recovery inspect fixture distinguishes safe evidence from blocked recovery', () => {

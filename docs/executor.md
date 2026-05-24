@@ -53,11 +53,36 @@ The executor also treats the pushed session as bounded provenance:
 - any scope or identity change requires a fresh preflight rather than a reused
   session
 
+The production test topology is intentionally one remote source site, one
+local edited site, and one drift witness:
+
+- `remote-base` seeds the persisted pull base and the live source identity
+- `local-edited` is the imported site after user edits
+- `remote-changed` is the same remote site after independent drift between
+  dry-run and apply
+- `runner` is the only process that may run preflight, snapshot listing,
+  dry-run, apply, journal inspection, and recovery
+
+For Docker, keep those roles on one private network and expose browser-visible
+inspection only through the sandbox-provided `8080` ingress via a local-only
+proxy. For Playground, use the same role split with separate disposable
+blueprints and the same no-tunnel rule.
+
 The executor should treat the remote snapshot hash listing as the planning
 boundary and the dry-run receipt as a one-way eligibility proof. Neither one
 is a lock. The only place where live remote liveness is rechecked for
 authority is `push_batch_apply`, and that call must refresh remote evidence
 before every batch and again at the storage boundary.
+
+The mapping to the existing pull pipeline is one-way:
+
+- pull exporter and importer create the persisted base package
+- push preflight binds that package to the live remote identity and session
+- push snapshot hashes list the live remote comparison set for planning
+- push dry-run uploads the canonical three-way plan
+- push batch apply revalidates the live remote before every batch and at the
+  storage boundary
+- push journal and push recover inspect read durable evidence only
 
 Acceptance criteria for the reliable executor:
 

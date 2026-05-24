@@ -21,6 +21,14 @@ API. Pull remains the way a local site gets its merge base. Push is allowed
 only when the executor can prove that the pull base, the edited local site, and
 the live remote site still form a safe three-way plan.
 
+The production topology is intentionally one remote source site, one edited
+local site, and one runner. `remote-base` seeds the persisted pull base,
+`local-edited` carries the user edits, `remote-changed` is the same remote
+after independent drift, and `runner` is the only actor allowed to compare,
+upload, inspect, and recover. That role split is the same for Docker and
+Playground, and browser-visible inspection must use only the sandbox-provided
+`8080` ingress through a local-only proxy.
+
 Push is split into a read-only planning phase and a write phase:
 
 - `push_preflight` authenticates and negotiates session and capability state.
@@ -32,6 +40,11 @@ Push is split into a read-only planning phase and a write phase:
 - `push_journal` resolves lost responses and crash ambiguity.
 - `push_recover` is the only endpoint allowed to finish, roll back, or block a
   partially applied batch after proof from the journal and live hashes.
+
+Dry-run and apply are separate remote operations. Dry-run proves eligibility
+only. Apply is a later live proof step and must revalidate the remote before
+every batch and again at the storage boundary. A dry-run receipt may be valid
+as a receipt and still be stale as live evidence.
 
 Required behavior:
 
@@ -147,6 +160,16 @@ non-mutating step and apply must be detected by apply revalidation and must
 preserve the remote edit unless a newly planned mutation explicitly covers it.
 The live evidence used for apply must be fetched fresh, not copied from the
 dry-run receipt.
+
+The pull exporter/importer handoff is one-way:
+
+1. exporter scans the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. push preflight binds that package to the live remote identity and session
+4. push snapshot hashes list the current live comparison set for planning
+5. push dry-run uploads the canonical plan derived from base, local, and live
+6. push apply revalidates the live remote before every batch and at the storage boundary
+7. push journal and push recover inspect read durable evidence only
 
 ## Pull Pipeline Mapping
 
