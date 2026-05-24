@@ -114,6 +114,17 @@ The smoke covers these restart-style states:
   `blockedUnknown > 0`;
 - journal files contain no raw fixture fields/data.
 
+The file-backed JS executor also has a stale-worker fencing proof. A writer
+opened under claim A records hash-only `recovery-claim-opened` evidence. After
+a later writer appends `stale-claim-advanced` for claim B past the stale
+threshold, claim A is checked again immediately before each target mutation.
+The test interleaves the old worker after `apply-committing`, advances the
+newer claim, changes a live target to a newer value, and then proves the stale
+worker records no `mutation-observed` rows and does not resurrect its stale
+local data. Restart inspection classifies the resulting target hashes as
+`blocked-recovery` and exposes the advanced claim metadata without raw target
+values.
+
 This is stronger than the earlier in-memory-only recovery model, but it is
 still JSON-model lab evidence. It is not the production WordPress DB table
 journal, not the local Playground process-kill smoke, and not a production
@@ -266,13 +277,13 @@ prove storage `fsync`, rollback, transactions, locking, exactly-once
 production writes, generic MySQL/InnoDB or filesystem compare-and-swap
 behavior, arbitrary plugin data safety, arbitrary file safety, create/delete
 guarding, or storage guarding for plugin activation. The stale-claim lab slice
-does not prove production stale-claim leases, fencing, claim expiry,
-cross-process/shared-DB lock behavior, arbitrary production repair, or a
-production retry policy. Tests mostly count mutation evidence rows rather than
-deeply asserting every observed hash, and production auth, live source
-mutation, and full push remain pending. Redaction is checked through forbidden
-keys and fixture values, not by a formal sanitizer for arbitrary future journal
-messages.
+and file-journal stale-worker proof do not prove production stale-claim leases,
+claim expiry, cross-process/shared-DB lock behavior, arbitrary production
+repair, or a production retry policy. Tests mostly count mutation evidence rows
+rather than deeply asserting every observed hash, and production auth, live
+source mutation, and full push remain pending. Redaction is checked through
+forbidden keys and fixture values, not by a formal sanitizer for arbitrary
+future journal messages.
 
 ## Current Fixture Plugin Atomicity Failure Evidence
 

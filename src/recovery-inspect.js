@@ -1,5 +1,5 @@
 import { resourceHash } from './resources.js';
-import { readRecoveryJournal } from './recovery-journal.js';
+import { classifyRecoveryJournalClaims, readRecoveryJournal } from './recovery-journal.js';
 
 export function inspectRecoveryJournal({ journal, journalPath, plan, current }) {
   const persisted = journal || readRecoveryJournal(journalPath);
@@ -53,6 +53,7 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current }) 
     }));
   const counts = countTargets(targets);
   const status = overallStatus(counts, targets.length);
+  const claim = classifyRecoveryJournalClaims(persisted.records);
 
   return {
     status,
@@ -60,6 +61,7 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current }) 
     planId: plan.id,
     counts,
     targets,
+    claim,
     journal: persisted,
   };
 }
@@ -117,6 +119,7 @@ function blockedInspection({ plan, persisted, reason }) {
     planId: plan.id,
     counts: countTargets(targets),
     targets,
+    claim: classifyRecoveryJournalClaims(persisted.records),
     journal: persisted,
   };
 }

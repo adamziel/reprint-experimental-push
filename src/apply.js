@@ -92,7 +92,7 @@ export function applyPlan(remote, plan, options = {}) {
       previousJournalState,
     });
   } catch (error) {
-    throw journalWriteFailureOldRemote(error, remote, plan, journal, 'journal-opened');
+    throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'journal-opened');
   }
 
   if (options.failBeforeMutation) {
@@ -135,7 +135,7 @@ export function applyPlan(remote, plan, options = {}) {
       stagedHash: digest(staged),
     });
   } catch (error) {
-    throw journalWriteFailureOldRemote(error, remote, plan, journal, 'apply-staged');
+    throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'apply-staged');
   }
   if (options.failAfterStaging) {
     const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
@@ -161,7 +161,7 @@ export function applyPlan(remote, plan, options = {}) {
       stagedHash: digest(staged),
     });
   } catch (error) {
-    throw journalWriteFailureOldRemote(error, remote, plan, journal, 'dependencies-validated');
+    throw journalWriteFailureBeforeMutation(error, remote, plan, journal, 'dependencies-validated');
   }
   if (options.failAfterDependencyValidation) {
     const durableJournalError = recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, {
@@ -645,15 +645,97 @@ function appendDurableEvent(writer, type, payload) {
   try {
     return writer.appendEvent(type, payload);
   } catch (error) {
-    throw new PushPlanError(
-      'JOURNAL_WRITE_FAILED',
-      `Durable recovery journal write failed for ${type}.`,
+    throw durableJournalOperationError(error, type);
+  }
+}
+
+function assertDurableClaimCurrent(writer, type) {
+  if (!writer || typeof writer.assertCurrentClaim !== 'function') {
+    return;
+  }
+  try {
+    writer.assertCurrentClaim(type);
+  } catch (error) {
+    throw durableJournalOperationError(error, type);
+  }
+}
+
+function durableJournalOperationError(error, type) {
+  if (error?.code === 'RECOVERY_CLAIM_STALE') {
+    return new PushPlanError(
+      'RECOVERY_CLAIM_STALE',
+      `Durable recovery journal claim was superseded before ${type}.`,
       {
         eventType: type,
-        causeMessage: error?.message || String(error),
+        ...(error.details || {}),
       },
     );
   }
+
+  return new PushPlanError(
+    'JOURNAL_WRITE_FAILED',
+    `Durable recovery journal write failed for ${type}.`,
+    {
+      eventType: type,
+      causeMessage: error?.message || String(error),
+    },
+  );
+}
+
+function journalWriteFailureBeforeMutation(error, remote, plan, journal, boundary) {
+  if (error?.code === 'RECOVERY_CLAIM_STALE') {
+    return recoveryClaimStaleBlocked(error, remote, plan, journal, boundary);
+  }
+  return journalWriteFailureOldRemote(error, remote, plan, journal, boundary);
+}
+
+function recoveryClaimStaleBlocked(error, remote, plan, journal, boundary) {
+  return recoveryBlocked(
+    remote,
+    plan,
+    markJournalStatus(journal, 'blocked'),
+    `Recovery journal claim was superseded before remote mutation at ${boundary}.`,
+    {
+      code: 'RECOVERY_CLAIM_STALE',
+      boundary,
+      eventType: error?.details?.eventType || boundary,
+      staleClaimHash: error?.details?.staleClaimHash || null,
+      activeClaimHash: error?.details?.activeClaimHash || null,
+      activeClaimSequence: error?.details?.activeClaimSequence || null,
+      activeClaimType: error?.details?.activeClaimType || null,
+      causeMessage: error?.message || String(error),
+    },
+  );
+}
+
+function runBeforeMutationHook(options, context) {
+  if (typeof options.beforeMutation === 'function') {
+    options.beforeMutation(context);
+  }
+}
+
+function claimFenceFailure(error, remote, plan, journal, mutation) {
+  if (error?.code === 'RECOVERY_CLAIM_STALE') {
+    return recoveryClaimStaleBlocked(
+      error,
+      remote,
+      plan,
+      journal,
+      `mutation ${mutation.id}`,
+    );
+  }
+  return recoveryBlocked(
+    remote,
+    plan,
+    markJournalStatus(journal, 'blocked'),
+    `Durable recovery journal claim check failed before committing mutation ${mutation.id}.`,
+    {
+      code: error?.code || 'JOURNAL_WRITE_FAILED',
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      causeMessage: error?.details?.causeMessage || error?.message || String(error),
+    },
+  );
 }
 
 function commitStagedSite(remote, staged, plan, journal, options, durableJournal) {
@@ -666,11 +748,27 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
     });
   } catch (error) {
     return {
-      failure: journalWriteFailureOldRemote(error, committed, plan, committedJournal, 'apply-committing'),
+      failure: journalWriteFailureBeforeMutation(error, committed, plan, committedJournal, 'apply-committing'),
     };
   }
 
   for (const mutation of plan.mutations) {
+    try {
+      runBeforeMutationHook(options, {
+        mutation,
+        mutationIndex: appliedMutations + 1,
+        remote: committed,
+        plan,
+        journal: committedJournal,
+        durableJournal,
+      });
+      assertDurableClaimCurrent(durableJournal, 'mutation-write');
+    } catch (error) {
+      return {
+        failure: claimFenceFailure(error, committed, plan, committedJournal, mutation),
+      };
+    }
+
     appliedMutations++;
     setResource(committed, mutation.resource, deserializeResourceValue(mutation.value));
     committedJournal = markJournalEntry(committedJournal, mutation.id, 'applied');
@@ -685,7 +783,7 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
           blockedJournal,
           `Durable recovery journal write failed after committing mutation ${mutation.id}.`,
           {
-            code: 'JOURNAL_WRITE_FAILED',
+            code: error?.code || 'JOURNAL_WRITE_FAILED',
             mutationId: mutation.id,
             causeMessage: error?.details?.causeMessage || error?.message || String(error),
           },
@@ -735,7 +833,7 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
         completedJournal,
         'Durable recovery journal write failed after committing all mutations.',
         {
-          code: 'JOURNAL_WRITE_FAILED',
+          code: error?.code || 'JOURNAL_WRITE_FAILED',
           causeMessage: error?.details?.causeMessage || error?.message || String(error),
         },
       ),

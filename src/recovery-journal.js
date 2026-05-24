@@ -5,6 +5,12 @@ import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
 
+const CLAIM_EVENT_TYPES = new Set([
+  'recovery-claim-opened',
+  'stale-claim-advanced',
+]);
+const CLAIM_HASH_PATTERN = /^[a-f0-9]{64}$/;
+
 const RAW_VALUE_KEYS = new Set([
   'body',
   'content',
@@ -16,6 +22,15 @@ const RAW_VALUE_KEYS = new Set([
   'beforeValue',
   'afterValue',
 ]);
+
+export class RecoveryJournalClaimStaleError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = 'RecoveryJournalClaimStaleError';
+    this.code = 'RECOVERY_CLAIM_STALE';
+    this.details = details;
+  }
+}
 
 export function openRecoveryJournal(filePath, options = {}) {
   const flags = options.truncate ? 'w+' : 'a+';
@@ -35,7 +50,10 @@ export function openRecoveryJournal(filePath, options = {}) {
     1,
   );
 
-  return new RecoveryJournalWriter(filePath, fd, nextSequence, options.now);
+  return new RecoveryJournalWriter(filePath, fd, nextSequence, {
+    now: options.now,
+    claimId: options.claimId || options.claim?.id || null,
+  });
 }
 
 export function openPlanRecoveryJournal({
@@ -59,6 +77,55 @@ export function openPlanRecoveryJournal({
   }
 
   return journal;
+}
+
+export function recoveryClaimHash(claimId) {
+  if (typeof claimId !== 'string' || claimId.length === 0) {
+    throw new Error('Recovery journal claim id must be a non-empty string.');
+  }
+  return digest({ recoveryJournalClaim: claimId });
+}
+
+export function appendRecoveryClaimOpened(journal, {
+  plan,
+  current,
+  claimId,
+  staleThresholdMs,
+  artifactRefs = {},
+  reason = 'Recovery claim opened.',
+}) {
+  return journal.appendEvent('recovery-claim-opened', {
+    planId: plan.id,
+    state: 'active',
+    claimHash: recoveryClaimHash(claimId),
+    observedHash: digest(current),
+    staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
+    reason,
+    artifactRefs,
+  });
+}
+
+export function appendStaleClaimAdvanced(journal, {
+  plan,
+  current,
+  previousClaimId,
+  claimId,
+  staleThresholdMs,
+  previousClaimAgeMs,
+  artifactRefs = {},
+  reason = 'Previous recovery claim exceeded the stale threshold.',
+}) {
+  return journal.appendEvent('stale-claim-advanced', {
+    planId: plan.id,
+    state: 'advanced',
+    previousClaimHash: recoveryClaimHash(previousClaimId),
+    claimHash: recoveryClaimHash(claimId),
+    observedHash: digest(current),
+    staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
+    previousClaimAgeMs: normalizeOptionalNonNegativeInteger(previousClaimAgeMs),
+    reason,
+    artifactRefs,
+  });
 }
 
 export function appendMutationObserved(journal, {
@@ -181,12 +248,51 @@ export function assertJournalRecordHasNoRawValues(record) {
   visitRecord(record, []);
 }
 
+export function classifyRecoveryJournalClaims(records) {
+  const claimRecords = (Array.isArray(records) ? records : [])
+    .filter((record) => CLAIM_EVENT_TYPES.has(record.type));
+  if (claimRecords.length === 0) {
+    return {
+      status: 'none',
+      activeClaimHash: null,
+      previousClaimHash: null,
+      sequence: null,
+      type: null,
+    };
+  }
+
+  for (const record of claimRecords) {
+    if (!CLAIM_HASH_PATTERN.test(record.claimHash || '')) {
+      return blockedClaimState(record, 'Recovery claim record is missing a valid claim hash.');
+    }
+    if (
+      record.type === 'stale-claim-advanced'
+      && !CLAIM_HASH_PATTERN.test(record.previousClaimHash || '')
+    ) {
+      return blockedClaimState(record, 'Advanced stale-claim record is missing a valid previous claim hash.');
+    }
+  }
+
+  const latest = claimRecords.at(-1);
+  return {
+    status: latest.type === 'stale-claim-advanced' ? 'advanced' : 'active',
+    activeClaimHash: latest.claimHash,
+    previousClaimHash: latest.previousClaimHash || null,
+    sequence: latest.sequence,
+    type: latest.type,
+    staleThresholdMs: latest.staleThresholdMs ?? null,
+    previousClaimAgeMs: latest.previousClaimAgeMs ?? null,
+    reason: latest.reason || null,
+  };
+}
+
 class RecoveryJournalWriter {
-  constructor(filePath, fd, nextSequence, now) {
+  constructor(filePath, fd, nextSequence, options = {}) {
     this.filePath = filePath;
     this.fd = fd;
     this.nextSequence = nextSequence;
-    this.now = now;
+    this.now = options.now;
+    this.claimHash = options.claimId ? recoveryClaimHash(options.claimId) : null;
     this.closed = false;
   }
 
@@ -194,6 +300,7 @@ class RecoveryJournalWriter {
     if (this.closed) {
       throw new Error('Recovery journal is closed.');
     }
+    this.assertCurrentClaim(type);
 
     const record = {
       schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
@@ -214,12 +321,63 @@ class RecoveryJournalWriter {
     return record;
   }
 
+  assertCurrentClaim(eventType = 'journal-append') {
+    if (!this.claimHash || CLAIM_EVENT_TYPES.has(eventType)) {
+      return;
+    }
+
+    const persisted = readRecoveryJournal(this.filePath);
+    if (persisted.integrity.status !== 'ok') {
+      throw new Error(`Refusing to append to invalid recovery journal: ${persisted.integrity.reason}`);
+    }
+
+    const claim = classifyRecoveryJournalClaims(persisted.records);
+    if (claim.status === 'none') {
+      throw new RecoveryJournalClaimStaleError(
+        'Recovery journal has no active claim for this fenced writer.',
+        {
+          filePath: this.filePath,
+          eventType,
+          staleClaimHash: this.claimHash,
+          activeClaimHash: null,
+          activeClaimSequence: null,
+          activeClaimType: null,
+        },
+      );
+    }
+    if (claim.status === 'blocked' || claim.activeClaimHash !== this.claimHash) {
+      throw new RecoveryJournalClaimStaleError(
+        'Recovery journal claim was superseded before this fenced writer could append.',
+        {
+          filePath: this.filePath,
+          eventType,
+          staleClaimHash: this.claimHash,
+          activeClaimHash: claim.activeClaimHash,
+          activeClaimSequence: claim.sequence,
+          activeClaimType: claim.type,
+          reason: claim.reason || null,
+        },
+      );
+    }
+  }
+
   close() {
     if (!this.closed) {
       fs.closeSync(this.fd);
       this.closed = true;
     }
   }
+}
+
+function blockedClaimState(record, reason) {
+  return {
+    status: 'blocked',
+    activeClaimHash: record.claimHash || null,
+    previousClaimHash: record.previousClaimHash || null,
+    sequence: record.sequence || null,
+    type: record.type || null,
+    reason,
+  };
 }
 
 function plannedTargetPayload({ plan, mutation, current }) {
@@ -251,6 +409,16 @@ function timestampFor(now) {
     return value instanceof Date ? value.toISOString() : String(value);
   }
   return new Date().toISOString();
+}
+
+function normalizeOptionalNonNegativeInteger(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error('Recovery claim timing evidence must be a non-negative integer.');
+  }
+  return value;
 }
 
 function visitRecord(value, pathParts) {
