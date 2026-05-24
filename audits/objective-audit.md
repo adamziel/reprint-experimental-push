@@ -56,7 +56,17 @@ boundary.
 
 The default suite passed locally on 2026-05-25, but it is still mostly model
 proof plus fixture-scoped lab evidence. Passing it does not close the
-production release gap.
+production release gap. The strongest available proofs are split across
+separate entrypoints:
+
+- Executable default proof: `npm test`
+- Light Playground chain: `npm run test:playground`
+- Stronger manual opt-ins: authenticated HTTP/CLI, DB journal, storage guard,
+  process-kill recovery, stale-claim recovery, plugin atomicity, production-
+  shaped route/package, and mid-apply drift smokes
+
+That split matters because a green default run still does not mean the release
+gates were exercised.
 
 | Area | Directly observed proof | Still insufficient | Next proof required |
 | --- | --- | --- | --- |
@@ -227,7 +237,14 @@ invocation and can be skipped while `npm test` remains green.
    guardrails. They do not move bytes, mutate a source site, measure memory,
    measure throughput, or verify that safety checks remain enabled under load.
 
-10. **The highest-value missing edge case is a real crash matrix on the live
+10. **The release surface is real but fragmented.** The repository already
+    exposes high-value smokes for auth, journal durability, storage guards,
+    and production-shaped routing, but they are not collected under a single
+    enforced gate. That means the current proof set is larger than `npm test`
+    alone, yet still weaker than a release-ready matrix because the strongest
+    claims stay manual and easy to skip.
+
+11. **The highest-value missing edge case is a real crash matrix on the live
     write boundaries.** The current smoke suite can show one process-kill path
     and one stale-claim path, but it does not kill the executor at each
     production-grade boundary for DB writes, filesystem writes, plugin
@@ -235,7 +252,7 @@ invocation and can be skipped while `npm test` remains green.
     loss" claim still rests on selective fixtures and model state, not on the
     exact places the source site can lose or duplicate work.
 
-11. **The release suite is fragmented and unenforced.** The highest-value
+12. **The release suite is fragmented and unenforced.** The highest-value
    evidence is split across manually invoked scripts. A green default test run
    still leaves the strongest claims unproven unless the full matrix is run
    deliberately, and nothing in the repository currently enforces that matrix
@@ -243,7 +260,7 @@ invocation and can be skipped while `npm test` remains green.
    that fails the build when the strongest auth, storage, recovery, plugin,
    and performance smokes are skipped.
 
-12. **The speed claim is still only a model.** The benchmark tests verify
+13. **The speed claim is still only a model.** The benchmark tests verify
     evidence structure, guardrail placement, and failure gates, but they do
     not measure a real push path against a live WordPress site, do not report
     a throughput target, and do not establish a memory ceiling under load.
@@ -275,11 +292,11 @@ proof gates:
    unit, Playground, auth, storage, recovery, idempotency, plugin, and
    performance gates or explicitly label excluded tests as non-release proof.
    Right now `npm test` plus `npm run test:playground` still stop at the
-   lighter plan/apply/protocol path, while the stronger auth, storage,
-   recovery, production-shaped route, and plugin-package smokes remain manual
-   opt-ins. The repository cannot yet claim that release evidence is actually
-   enforced. Release readiness remains a manual judgment call until that
-   aggregator exists.
+   lighter plan/apply/protocol path, while the stronger auth, HTTP, DB
+   journal, storage, recovery, production-shaped route/package, and plugin
+   smokes remain manual opt-ins. The repository cannot yet claim that release
+   evidence is actually enforced. Release readiness remains a manual
+   judgment call until that aggregator exists.
 8. Runtime benchmarks for large uploads and large DB changes with concrete
    throughput, memory, retry, and recovery measurements.
 
