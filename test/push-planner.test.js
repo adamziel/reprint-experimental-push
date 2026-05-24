@@ -1545,6 +1545,7 @@ test('atomic apply recovery boundaries only land in old remote, fully updated re
     ['before mutation', { failBeforeMutation: true }, 'opened'],
     ['after staging', { failAfterStaging: true }, 'staged'],
     ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+    ['mid-apply', { failDuringCommitAtMutation: 1 }, 'blocked'],
   ]) {
     const remote = baseSite();
     const before = JSON.stringify(remote);
@@ -1553,9 +1554,27 @@ test('atomic apply recovery boundaries only land in old remote, fully updated re
     assert.ok(error instanceof PushPlanError, label);
     assert.equal(JSON.stringify(remote), before, label);
     assertAcceptableRecoveryState(error.details.recovery);
-    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.equal(
+      error.details.recovery.status,
+      label === 'mid-apply' ? 'blocked-recovery' : 'old-remote',
+      label,
+    );
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
-    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    if (label === 'mid-apply') {
+      assert.ok(error.details.recovery.artifacts.remote, 'mid-apply recovery must carry remote artifacts');
+      assert.equal(
+        error.details.recovery.artifacts.remote.files['index.php'],
+        '<?php echo "local";',
+        label,
+      );
+      assert.equal(
+        error.details.recovery.artifacts.remote.db.wp_posts['ID:2'],
+        undefined,
+        label,
+      );
+    } else {
+      assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    }
   }
 
   const completed = applyPlan(baseSite(), plan);
