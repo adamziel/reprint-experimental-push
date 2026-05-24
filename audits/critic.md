@@ -755,7 +755,9 @@ The comparisons below are conservative design notes, not proof rankings. Terms
 like "best baseline" or "strongest comparison point" only mean "best among the
 documented ideas under the current evidence gap." They do not imply production
 readiness, and they do not convert route-shape, scanner, or merge notes into
-mutation safety proof.
+mutation safety proof. Treat the source notes as snapshots of observed
+upstream state, not as current proof of upstream behavior today unless this
+branch independently reverified the same revision or worktree state.
 
 ### Reprint
 
@@ -963,7 +965,9 @@ would reasonably read as equivalent.
   stability, or plugin ownership safety without a live revalidation proof.
 - Reprint, ZS-Sync, and ForkPress comparisons are design input only; they are
   never current proof that this repo has the same live executor boundary,
-  stale-artifact rejection, or remote-preserving retry behavior.
+  stale-artifact rejection, or remote-preserving retry behavior, and they
+  cannot be read as current upstream proof unless the cited upstream revision
+  or worktree was reverified at the same state.
 - A route that only looks production-shaped is not evidence of production
   safety, reliability, or retry correctness.
 - A route-shape smoke, packaged-plugin mount, or `finalMatchesLocal` result
@@ -971,7 +975,9 @@ would reasonably read as equivalent.
   plugin-owned side-effect safety, or durable recovery.
 - Comparisons to Reprint, ZS-Sync, and ForkPress remain source-note evidence
   only; they cannot be upgraded into proof of production push support without a
-  repo-specific live mutation path.
+  repo-specific live mutation path, and they must not be treated as current
+  upstream evidence unless the upstream revision was rechecked at the same
+  commit or worktree state.
 - A production claim must also fail closed on five specific live scenarios:
   remote drift between dry-run and apply, create-time identity remapping,
   plugin-owned state outside the declared allowlist, partial file/DB/plugin
@@ -1093,8 +1099,9 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   audit, the stale artifact is rejected before write, and the retry starts
   from fresh live evidence with no scope widening.
 - Reprint, ZS-Sync, and ForkPress notes are comparison evidence only; they do
-  not prove current upstream behavior today and they do not prove this repo's
-  live mutation boundary.
+  not prove current upstream behavior today, and they do not prove this repo's
+  live mutation boundary unless the same upstream revision or worktree was
+  independently reverified.
 - Status comments, branch notes, and release notes must not cite source-note
   comparisons or live-looking hashes as substitutes for current production
   proof.
