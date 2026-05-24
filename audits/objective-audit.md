@@ -357,6 +357,15 @@ They do not yet prove the release claim:
   one required path, so the strongest evidence can still be skipped while the
   default suite stays green
 
+Highest-value interpretation:
+
+- no-data-loss is still inferred from fixture and model coverage, not proven
+  at a live WordPress graph boundary
+- reliability is still inferred from lab crash/replay examples, not proven
+  across production auth, storage, lease, and fencing boundaries
+- speed is still refused as an unsupported claim, not proven with a measured
+  end-to-end run against the release path
+
 Bottom line:
 
 - `npm test` is useful executable evidence for the model and selected fixtures
