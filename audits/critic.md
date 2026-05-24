@@ -140,6 +140,9 @@ evidence for all of these, not just a plausible design:
   revalidation, durable recovery, remote-preserving retry after drift, stale
   manual-review artifact rejection, or a production write boundary in this
   repo.
+- Those notes also do not justify production wording by association. A future
+  doc or status comment must still show live write-path proof in this repo; a
+  strong transport shape, scanner model, or crash vocabulary is not enough.
 - Those notes also do not prove that a stale approval stays auditable while a
   retry preserves the remote, re-plans from fresh evidence, and rejects any
   widened scope before write.
@@ -258,6 +261,11 @@ production-grade push support:
 - Evidence standard: fixture replay, route-shape smoke, and packaged-plugin
   mounting are compatibility checks only; none may be cited as proof of
   production safety, even if they return live-looking hashes or `finalMatchesLocal`.
+- Claim hygiene: any doc, PR, or status comment that says or implies
+  `production-grade`, `production support`, or `production-safe` must cite
+  live remote revalidation immediately before write, stale-artifact rejection,
+  and a repo-specific production mutation path. If that proof is missing, the
+  wording must stay explicitly non-production.
 
 ## Changes Required Before A Production Claim
 
