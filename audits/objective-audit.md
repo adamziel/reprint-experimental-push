@@ -141,7 +141,7 @@ Evidence classes used below:
 | R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
 | R15 speed | Executable proof: `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, backpressure triggers, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no release threshold is tied to a documented benchmark environment. The current evidence can justify refusing unsupported speed claims; it cannot justify saying the push path is fast or production-scaled. | Yes for any speed claim |
-| R16 release suite | Executable proof: `npm test` passed with 89 tests, 0 failures, and 0 skips. Lab/fixture proof: `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. The repo exposes named opt-in gates for auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomicity, forms lab, authenticated CLI, production-shaped routing/package, mid-apply drift, and recovery. | No CI workflow or release aggregator was found. The only bundled release-like script is `npm run test:playground`, and it still stops after plan/apply/push-protocol. The stronger gates are not chained into any enforced command, so release evidence is still a manual assembly of optional scripts. The production-shaped smoke itself still reports `labBacked: true`, so route-shaped success is not production proof. There is no single enforced command that proves safety, durability, and performance together before release. The current default test pass is therefore only a model-and-fixture checkpoint, not a release gate. | Yes |
+| R16 release suite | Executable proof: `npm test` passed with 89 tests, 0 failures, and 0 skips. Lab/fixture proof: `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. The repo exposes named opt-in gates for auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomicity, forms lab, authenticated CLI, production-shaped routing/package, mid-apply drift, and recovery. | No CI workflow or release aggregator was found. The only bundled release-like script is `npm run test:playground`, and it still stops after plan/apply/push-protocol. The stronger gates are not chained into any enforced command, so release evidence is still a manual assembly of optional scripts. The production-shaped smoke itself still reports `labBacked: true`, so route-shaped success is not production proof. There is no single enforced command that proves safety, durability, and performance together before release, and no test currently fails a release if the stronger gates are omitted. The current default test pass is therefore only a model-and-fixture checkpoint, not a release gate. | Yes |
 
 ## Test Audit
 
@@ -364,7 +364,8 @@ invocation and can be skipped while `npm test` remains green.
 ## Test Verdict
 
 The current test suite is good at proving local invariants and blocking bad
-states. It is not good enough to certify a live WordPress push path.
+states. It is not good enough to certify a live WordPress push path, and it
+should not be described that way in release-facing text.
 
 Specifically:
 
@@ -373,12 +374,13 @@ Specifically:
   durability or graph integrity.
 - The benchmark checks prove guardrails, not release-grade speed.
 - Because the strongest gates are still manual, a green run does not imply
-  release readiness.
+  release readiness, and it does not justify any production claim that the
+  repo currently blocks.
 
 The actionable next proof is a non-bypassable release gate plus a kill matrix
 at every guarded write boundary on the production-backed path. Until then, the
 repository can truthfully claim lab evidence for push-safety invariants, but
-not a production-safe live WordPress push.
+not a production-safe live WordPress push or a measured fast path.
 
 ## Required Release Gates
 
@@ -422,14 +424,15 @@ push.**
 
 The weakest surviving claim is the one that sounds simplest: that a live
 source WordPress site can be pushed back without data loss. Right now the repo
-only proves that selected fixtures survive selected lab paths. That is not
-enough.
+only proves that selected fixtures survive selected lab paths, and those paths
+do not yet cover the same auth, storage, journal, and graph boundaries as a
+real source mutation.
 
 To make the claim release-grade, the next proof must be a kill matrix that
 covers every guarded write boundary on a real push path, with live before/after
 state and journal evidence for each case. The claim should stay blocked until
 all of the following are shown on the production-backed path, not just in a
-fixture:
+fixture or model:
 
 - DB row update, insert, and delete
 - file create, update, and delete
@@ -440,7 +443,7 @@ fixture:
 
 If any one of these boundaries is still only covered by a model or fixture
 smoke, the no-data-loss claim stays blocked and should not be softened in the
-README, release notes, or status comments.
+README, release notes, status comments, or branch descriptions.
 
 The current suite is therefore good at rejecting regressions, but it is not
 yet good enough to justify the live-source production claims. The most
