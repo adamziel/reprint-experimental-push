@@ -39,7 +39,8 @@ Required behavior:
   as the current export HMAC, binds the request to the pulled base identity,
   negotiates capabilities, and mints a short-lived push session.
 - `push_snapshot_hashes` returns a complete, cursorable live remote hash list
-  plus coverage proof for the requested scopes.
+  plus coverage proof for the requested scopes. It is a planning read only and
+  must be treated as stale as soon as live remote state changes.
 - `push_plan_dry_run` uploads a canonical plan, validates it, and records the
   result in the journal or idempotency store without mutating target resources.
 - `push_batch_apply` is the normal mutation path and only applies an accepted
@@ -65,10 +66,12 @@ Endpoint specifics:
 - `push_plan_dry_run` accepts the canonical plan derived from the persisted
   pull base, the local edited site, and the live snapshot. It records the plan
   as eligible or blocked, but it never reserves remote liveness. The dry-run
-  receipt is only a planning receipt, never an apply permit.
+  receipt is only a planning receipt, never an apply permit, and it does not
+  weaken the later storage-boundary revalidation.
 - `push_batch_apply` is the only normal mutation path. It must revalidate the
   live remote before every batch and again at the storage boundary before any
-  write. Dry-run evidence is not sufficient by itself.
+  write. Dry-run evidence is not sufficient by itself, and a live mismatch at
+  either boundary must stop the batch instead of replaying stale proof.
 - `push_journal` is a read-only journal inspector for lost-response recovery,
   idempotency resolution, lease/fencing evidence, and apply classification.
   It reads durable journal rows only; it does not mint a new lock or rewrite a
@@ -76,7 +79,8 @@ Endpoint specifics:
   committed, replayable, and blocked results after a timeout or crash.
 - `push_recover` is the only recovery entrypoint. `inspect` must stay
   read-only; `auto`, `finish`, and `rollback` may mutate only when the journal
-  and fresh live hashes prove the action.
+  and fresh live hashes prove the action. Recovery must not infer safety from
+  a dry-run receipt or a stale journal row.
 
 Preflight therefore produces the three bindings the executor must persist for
 later push steps: the push session, the base manifest binding, and the remote
@@ -223,8 +227,8 @@ artifacts already stored on disk:
 - push dry-run uploads the canonical plan derived from the pulled base plus local edits
 - push apply revalidates the live remote before every batch and again at the
   storage boundary
-- push journal and recovery inspect read durable evidence only, and never rewrite
-  the persisted pull base to make a stale plan look current
+- push journal and recovery inspect read durable evidence only, and never
+  rewrite the persisted pull base to make a stale plan look current
 
 The machine-readable handoff fixture at
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)

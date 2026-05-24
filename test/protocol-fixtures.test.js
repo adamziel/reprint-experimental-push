@@ -25,6 +25,10 @@ test('push protocol fixture captures the production stage order and recovery rul
     ],
   );
   assert.equal(flow.stages[3].revalidation[0], 'fresh remote hash check before every batch');
+  assert.ok(flow.stages[0].outputs.includes('requested scope binding'));
+  assert.ok(flow.stages[1].outputs.includes('fresh apply-time evidence, not a lock'));
+  assert.ok(flow.stages[2].outputs.includes('explicit non-mutating receipt'));
+  assert.ok(flow.stages[3].outputs.includes('revalidated live proof for each batch'));
   assert.equal(flow.stages[5].mode, 'inspect');
   assert.equal(flow.stages[6].mode, 'auto|finish|rollback');
   assert.ok(flow.stages[0].outputs.includes('base manifest binding'));
@@ -88,13 +92,16 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
   assert.equal(mapping.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(
     mapping.push_pipeline.batch_apply,
-    'revalidates the live remote before every batch and again at the storage boundary',
+    'revalidates the live remote before every batch and again at the storage boundary before any write',
   );
   assert.equal(mapping.session_binding.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(mapping.session_binding.remote_site_id, 'remote-example');
+  assert.deepEqual(mapping.session_binding.requested_scope, ['files', 'database', 'plugins', 'themes']);
   assert.equal(mapping.persisted_base_package.remote_site_id, 'remote-example');
   assert.equal(mapping.required_invariants[0], 'the pull package is immutable provenance, not a live lock');
-  assert.ok(mapping.required_invariants.includes('preflight binds the push session to the stored pull base and live remote identity'));
+  assert.ok(mapping.required_invariants.includes('preflight binds the push session to the stored pull base, requested scope, and live remote identity'));
+  assert.ok(mapping.required_invariants.includes('remote hash listing is planning evidence and never an apply lock'));
+  assert.ok(mapping.required_invariants.includes('mutating recovery requires inspect evidence before finish or rollback'));
 });
 
 test('push recovery inspect fixture distinguishes safe evidence from blocked recovery', () => {

@@ -15,6 +15,7 @@
         "push session",
         "base manifest binding",
         "remote identity binding",
+        "requested scope binding",
         "protocol version",
         "capability set",
         "journal support evidence"
@@ -31,7 +32,8 @@
       "outputs": [
         "live remote hash list",
         "coverage hash",
-        "cursor completion proof"
+        "cursor completion proof",
+        "fresh apply-time evidence, not a lock"
       ]
     },
     {
@@ -47,7 +49,8 @@
       "outputs": [
         "dry-run receipt",
         "plan hash",
-        "eligibility evidence"
+        "eligibility evidence",
+        "explicit non-mutating receipt"
       ]
     },
     {
@@ -68,7 +71,8 @@
       "outputs": [
         "batch receipts",
         "journal cursor",
-        "apply result"
+        "apply result",
+        "revalidated live proof for each batch"
       ]
     },
     {
@@ -95,7 +99,8 @@
       "outputs": [
         "read-only evidence",
         "safe/unsafe/blocked recovery classification",
-        "journal and live-hash proof"
+        "journal and live-hash proof",
+        "inspect-first recovery evidence"
       ]
     },
     {
@@ -112,7 +117,8 @@
       ],
       "outputs": [
         "recovery receipt",
-        "final journal state"
+        "final journal state",
+        "mutating recovery proof"
       ]
     }
   ],

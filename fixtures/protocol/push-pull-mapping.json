@@ -7,16 +7,22 @@
   },
   "push_pipeline": {
     "preflight": "binds the persisted base package to the live remote identity and write scope",
-    "snapshot_hashes": "lists the live remote comparison set for the requested scope",
-    "plan_dry_run": "uploads the canonical three-way plan from base, local, and live remote",
-    "batch_apply": "revalidates the live remote before every batch and again at the storage boundary",
-    "journal": "resolves lost responses and crash ambiguity without granting a lock",
-    "recover": "inspects, finishes, rolls back, or blocks using journal evidence and fresh live hashes"
+    "snapshot_hashes": "lists the live remote comparison set for the requested scope and returns cursorable coverage proof",
+    "plan_dry_run": "uploads the canonical three-way plan from base, local, and live remote as an eligibility receipt only",
+    "batch_apply": "revalidates the live remote before every batch and again at the storage boundary before any write",
+    "journal": "resolves lost responses, leases, and crash ambiguity without granting a lock",
+    "recover": "inspects, finishes, rolls back, or blocks using journal evidence and fresh live hashes, with inspect first"
   },
   "session_binding": {
     "base_manifest_id": "pull-2026-05-24T00:00:00Z",
     "remote_site_id": "remote-example",
-    "scoped_write_authority": "one persisted pull base, one remote identity, one requested scope"
+    "requested_scope": [
+      "files",
+      "database",
+      "plugins",
+      "themes"
+    ],
+    "scoped_write_authority": "one persisted pull base, one remote identity, one requested scope, one short-lived push session"
   },
   "persisted_base_package": {
     "base_manifest_id": "pull-2026-05-24T00:00:00Z",
@@ -33,7 +39,9 @@
   "required_invariants": [
     "the pull package is immutable provenance, not a live lock",
     "dry-run is eligibility only and apply revalidates the live remote again",
+    "remote hash listing is planning evidence and never an apply lock",
     "journal and recover inspect explain evidence without turning stale proof into authority",
-    "preflight binds the push session to the stored pull base and live remote identity"
+    "preflight binds the push session to the stored pull base, requested scope, and live remote identity",
+    "mutating recovery requires inspect evidence before finish or rollback"
   ]
 }

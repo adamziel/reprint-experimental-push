@@ -14,7 +14,7 @@ Responsibilities:
 - Load the saved pull base manifest and verify it belongs to the remote.
 - Run `push_preflight` and negotiate protocol, limits, auth scope, and push session.
 - List the live remote hashes with `push_snapshot_hashes`.
-- Verify the remote coverage manifest is complete for the requested push scope.
+- Verify the remote coverage manifest is complete for the requested push scope and persist the fresh coverage hash.
 - Build a three-way plan from base, local, and live remote.
 - Upload the plan with `push_plan_dry_run`.
 - Apply ready plans in bounded `push_batch_apply` calls.
@@ -37,7 +37,9 @@ The executor treats the push protocol as a three-sided merge:
 - live remote hash listing
 
 It must never use the remote listing as a replacement for the pull base, and it
-must never treat a dry-run receipt as proof that apply is still safe.
+must never treat a dry-run receipt as proof that apply is still safe. The
+executor must refresh live evidence before every batch, even if the dry-run
+response is still valid.
 It also must not treat journal inspection as authorization to mutate; recovery
 only becomes mutating when the journal and fresh live hashes both prove the
 same action.
@@ -58,6 +60,8 @@ Acceptance criteria for the reliable executor:
   push session.
 - It treats `dry_run_id`, `snapshot_id`, and `coverage_hash` as evidence, not as
   locks.
+- It persists the coverage hash and journal cursor alongside the recovery proof
+  so a restart can distinguish accepted, committed, and blocked outcomes.
 - It reuses idempotency keys only with byte-identical request bodies.
 - It stops on `PRECONDITION_FAILED` and replans from a fresh remote listing.
 - It asks `push_journal` before retrying any apply whose HTTP response was lost.
@@ -71,7 +75,7 @@ Executor gates:
 | --- | --- | --- | --- |
 | Base loaded | `push_preflight` | Base manifest, coverage hash, remote site identity, and resource hashes are present and match the selected remote. | Stop and require a fresh pull. |
 | Preflight accepted | `push_snapshot_hashes` | Push-scoped HMAC credential, active session, journal support, hash listing, idempotency, and required storage guards are advertised. | Stop before planning. |
-| Remote listing complete | `push_plan_dry_run` | All requested scopes are complete, blocked resources are absent or irrelevant, and the coverage hash is persisted. | Mark blocked; do not upload a ready plan. |
+| Remote listing complete | `push_plan_dry_run` | All requested scopes are complete, blocked resources are absent or irrelevant, and the coverage hash is persisted as fresh planning evidence. | Mark blocked; do not upload a ready plan. |
 | Local plan ready | `push_plan_dry_run` | Every mutation has base, local, and live remote hashes plus a storage guard or semantic driver. | Report conflict or blocker. |
 | Dry-run ready | `push_batch_apply` | Remote accepted the same canonical plan hash and returned a ready dry-run receipt. | Stop unless status is `ready`; re-read live hashes before each batch. |
 | Apply ambiguous | `push_journal` | Any timeout, closed connection, process restart, or `RECOVERY_REQUIRED` happens before a committed receipt is persisted. | Inspect journal before retrying. |
@@ -189,6 +193,7 @@ remote lock:
   the storage boundary.
 - `push_journal` and `push_recover inspect` are evidence readers, not write
   permissions.
+- `push_recover inspect` must happen before any mutating recovery mode.
 
 Mapping summary:
 
