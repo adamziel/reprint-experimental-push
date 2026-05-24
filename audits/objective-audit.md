@@ -109,7 +109,7 @@ these release requirements:
 | R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no media attachment graph, taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
 | R15 speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, backpressure triggers, and benchmark evidence gates. | No bytes move in a production executor, no live source site is mutated, and no memory ceiling or throughput target is measured against a real push path. | Yes for any speed claim |
-| R16 release suite | `npm test` passed with 89 tests, 0 failures, and 0 skips. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol. That means auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes all remain opt-in rather than release-gated. | Yes |
+| R16 release suite | `npm test` passed with 89 tests, 0 failures, and 0 skips. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow or release aggregator was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol. That means auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes all remain opt-in rather than release-gated. | Yes |
 
 ## Test Audit
 
@@ -166,15 +166,15 @@ production auth, or measured speed.
 ### Test Gaps That Block Release Claims
 
 1. **The strongest evidence is not wired into a release suite.** There is no
-   CI workflow in the repository. The default `npm test` command does not run
-   any Playground smoke, and the shorter `npm run test:playground` path stops
-   at plan/apply/protocol even though the repo already exposes separate
-   commands for auth, HTTP, DB journal, storage guards, process kill, stale
-   claim, plugin atomic, forms lab, authenticated CLI, production-shaped
-   route/package, mid-apply drift, and recovery. That means the strongest
-   proof is still manual opt-in, not release-gated. A release claim cannot
-   rely on tests that only pass when somebody remembers to run the right
-   scripts.
+   CI workflow or release wrapper in the repository. The default `npm test`
+   command does not run any Playground smoke, and the shorter
+   `npm run test:playground` path stops at plan/apply/protocol even though the
+   repo already exposes separate commands for auth, HTTP, DB journal, storage
+   guards, process kill, stale claim, plugin atomic, forms lab, authenticated
+   CLI, production-shaped route/package, mid-apply drift, and recovery. That
+   means the strongest proof is still manual opt-in, not release-gated. A
+   release claim cannot rely on tests that only pass when somebody remembers
+   to run the right scripts.
 
 2. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
@@ -229,10 +229,13 @@ production auth, or measured speed.
     loss" claim still rests on selective fixtures and model state, not on the
     exact places the source site can lose or duplicate work.
 
-11. **The release suite is fragmented.** The highest-value evidence is split
-   across manually invoked scripts. A green default test run still leaves the
-   strongest claims unproven unless the full matrix is run deliberately, and
-   nothing in the repository currently enforces that matrix before release.
+11. **The release suite is fragmented and unenforced.** The highest-value
+   evidence is split across manually invoked scripts. A green default test run
+   still leaves the strongest claims unproven unless the full matrix is run
+   deliberately, and nothing in the repository currently enforces that matrix
+   before release. There is also no checked-in CI workflow or release wrapper
+   that fails the build when the strongest auth, storage, recovery, plugin,
+   and performance smokes are skipped.
 
 ## Required Release Gates
 
@@ -262,7 +265,8 @@ proof gates:
    lighter plan/apply/protocol path, while the stronger auth, storage,
    recovery, production-shaped route, and plugin-package smokes remain manual
    opt-ins. The repository cannot yet claim that release evidence is actually
-   enforced.
+   enforced. Release readiness remains a manual judgment call until that
+   aggregator exists.
 8. Runtime benchmarks for large uploads and large DB changes with concrete
    throughput, memory, retry, and recovery measurements.
 
