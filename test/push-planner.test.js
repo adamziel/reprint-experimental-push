@@ -2729,6 +2729,42 @@ test('mid-apply failure after staging one mutation leaves the remote old and the
   assert.deepEqual(inspection.counts, { old: plan.mutations.length, new: 0, blockedUnknown: 0 });
 });
 
+test('partial mid-apply recovery blocks retries and keeps recovery artifacts attached', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const remote = baseSite();
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal, 'blocked recovery must include journal artifacts');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked recovery must include remote artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'blocked');
+  assert.equal(error.details.recovery.artifacts.journal.entries[0].status, 'applied');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+
+  const retryError = captureError(() =>
+    applyPlan(remote, plan, { journal: error.details.recovery.artifacts.journal }));
+
+  assert.ok(retryError instanceof PushPlanError);
+  assert.equal(retryError.code, 'RECOVERY_BLOCKED');
+  assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+  assert.ok(retryError.details.recovery.artifacts.journal);
+  assert.ok(retryError.details.recovery.artifacts.remote);
+  assert.equal(remote.files['index.php'], '<?php echo "local";');
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+});
+
 test('atomic apply only accepts the documented recovery states', () => {
   const base = baseSite();
   const local = baseSite();
