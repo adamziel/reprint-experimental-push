@@ -956,6 +956,52 @@ test('classifies divergent plugin-owned data rows as redacted plugin data confli
   assert.equal(conflictsJson.includes('local-private-entry'), false);
 });
 
+test('blocks local postmeta references to stale remote-created post identity', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 2,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-meta-payload',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'remote-private-post-title',
+    post_content: 'remote-private-post-body',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remoteChange, 'create');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(planJson.includes('local-private-meta-payload'), false);
+  assert.equal(planJson.includes('remote-private-post-title'), false);
+  assert.equal(planJson.includes('remote-private-post-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.db.wp_posts['ID:2'].post_title, 'remote-private-post-title');
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();

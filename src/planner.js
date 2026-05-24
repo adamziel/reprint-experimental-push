@@ -184,6 +184,28 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         }
       }
 
+      const graphIdentitySupport = wordpressGraphIdentitySupport({
+        resource,
+        localValue,
+        resources,
+        base,
+        local,
+        remote,
+      });
+      if (!graphIdentitySupport.supported) {
+        addWordPressGraphIdentityBlocker(plan, {
+          resource,
+          support: graphIdentitySupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const mutation = {
         id: `mutation-${plan.mutations.length + 1}`,
         resource,
@@ -922,6 +944,242 @@ function isPluginOwnedDataResource(resource, owner) {
   return resource.type === 'row' && Boolean(owner);
 }
 
+const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
+  'term_relationships',
+  'term_taxonomy',
+  'postmeta',
+  'termmeta',
+  'posts',
+  'terms',
+];
+
+function wordpressGraphIdentitySupport({
+  resource,
+  localValue,
+  resources,
+  base,
+  local,
+  remote,
+}) {
+  if (resource.type !== 'row' || localValue === ABSENT) {
+    return { supported: true };
+  }
+
+  const references = wordpressGraphReferences(resource, localValue);
+  if (references.length === 0) {
+    return { supported: true };
+  }
+
+  const unsafeReferences = references
+    .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
+    .filter(Boolean)
+    .filter((reference) => isUnsafeWordPressGraphReference(reference));
+
+  if (unsafeReferences.length === 0) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'stale-wordpress-graph-identity',
+    reason: `WordPress graph mutation ${resource.key} references graph identities without proven identity mapping or reference rewriting.`,
+    references: unsafeReferences,
+  };
+}
+
+function isUnsafeWordPressGraphReference(reference) {
+  if (reference.targetChange.remote.state !== 'present') {
+    return true;
+  }
+
+  if (reference.targetRemoteHash === reference.targetBaseHash) {
+    return false;
+  }
+
+  return reference.targetLocalHash !== reference.targetRemoteHash;
+}
+
+function wordpressGraphReferences(resource, value) {
+  const suffix = wordpressGraphTableSuffix(resource.table);
+  if (!suffix || !value || typeof value !== 'object') {
+    return [];
+  }
+
+  const references = [];
+  const addReference = ({ field, relationshipType, targetTable, targetId }) => {
+    const normalizedId = normalizePositiveInteger(targetId);
+    if (normalizedId == null) {
+      return;
+    }
+    const targetResource = wordpressGraphTargetResource({
+      sourceTable: resource.table,
+      targetSuffix: targetTable,
+      id: normalizedId,
+    });
+    references.push({
+      relationshipKey: `${resource.table}.${field}`,
+      relationshipType,
+      sourceResourceKey: resource.key,
+      sourceTable: resource.table,
+      sourceRowId: resource.id,
+      targetTable: targetResource.table,
+      targetId: targetResource.id,
+      targetResource,
+      targetResourceKey: targetResource.key,
+    });
+  };
+
+  if (suffix === 'posts') {
+    addReference({
+      field: 'post_parent',
+      relationshipType: 'post-parent',
+      targetTable: 'posts',
+      targetId: value.post_parent,
+    });
+  }
+
+  if (suffix === 'postmeta') {
+    addReference({
+      field: 'post_id',
+      relationshipType: 'postmeta-post',
+      targetTable: 'posts',
+      targetId: value.post_id,
+    });
+    if (value.meta_key === '_thumbnail_id') {
+      addReference({
+        field: 'meta_value',
+        relationshipType: 'featured-image-attachment',
+        targetTable: 'posts',
+        targetId: value.meta_value,
+      });
+    }
+  }
+
+  if (suffix === 'term_relationships') {
+    addReference({
+      field: 'object_id',
+      relationshipType: 'term-relationship-object',
+      targetTable: 'posts',
+      targetId: value.object_id,
+    });
+    addReference({
+      field: 'term_taxonomy_id',
+      relationshipType: 'term-relationship-taxonomy',
+      targetTable: 'term_taxonomy',
+      targetId: value.term_taxonomy_id,
+    });
+  }
+
+  if (suffix === 'term_taxonomy') {
+    addReference({
+      field: 'term_id',
+      relationshipType: 'term-taxonomy-term',
+      targetTable: 'terms',
+      targetId: value.term_id,
+    });
+    addReference({
+      field: 'parent',
+      relationshipType: 'term-taxonomy-parent',
+      targetTable: 'terms',
+      targetId: value.parent,
+    });
+  }
+
+  if (suffix === 'termmeta') {
+    addReference({
+      field: 'term_id',
+      relationshipType: 'termmeta-term',
+      targetTable: 'terms',
+      targetId: value.term_id,
+    });
+  }
+
+  return references;
+}
+
+function wordpressGraphReferenceEvidence(reference, resources, base, local, remote) {
+  const target = resources.find((candidate) => candidate.key === reference.targetResourceKey)
+    || reference.targetResource;
+  const baseValue = getResource(base, target);
+  const localValue = getResource(local, target);
+  const remoteValue = getResource(remote, target);
+  const targetBaseHash = resourceHash(base, target);
+  const targetLocalHash = resourceHash(local, target);
+  const targetRemoteHash = resourceHash(remote, target);
+
+  return {
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    sourceResourceKey: reference.sourceResourceKey,
+    sourceTable: reference.sourceTable,
+    sourceRowId: reference.sourceRowId,
+    targetResource: target,
+    targetResourceKey: target.key,
+    targetTable: target.table,
+    targetId: target.id,
+    targetBaseHash,
+    targetLocalHash,
+    targetRemoteHash,
+    targetChange: changeEvidence(
+      target,
+      baseValue,
+      localValue,
+      remoteValue,
+      targetBaseHash,
+      targetLocalHash,
+      targetRemoteHash,
+    ),
+  };
+}
+
+function wordpressGraphTargetResource({ sourceTable, targetSuffix, id }) {
+  const table = wordpressGraphSiblingTable(sourceTable, targetSuffix);
+  const idField = wordpressGraphPrimaryIdField(targetSuffix);
+  const rowId = `${idField}:${id}`;
+  return {
+    type: 'row',
+    table,
+    id: rowId,
+    key: `row:${JSON.stringify([table, rowId])}`,
+  };
+}
+
+function wordpressGraphSiblingTable(table, targetSuffix) {
+  const sourceSuffix = wordpressGraphTableSuffix(table);
+  if (!sourceSuffix) {
+    return `wp_${targetSuffix}`;
+  }
+  return `${table.slice(0, table.length - sourceSuffix.length)}${targetSuffix}`;
+}
+
+function wordpressGraphTableSuffix(table) {
+  return WORDPRESS_GRAPH_TABLE_SUFFIXES.find((suffix) =>
+    table === `wp_${suffix}` || table.endsWith(`_${suffix}`)) || null;
+}
+
+function wordpressGraphPrimaryIdField(suffix) {
+  if (suffix === 'posts') {
+    return 'ID';
+  }
+  if (suffix === 'terms') {
+    return 'term_id';
+  }
+  if (suffix === 'term_taxonomy') {
+    return 'term_taxonomy_id';
+  }
+  return 'id';
+}
+
+function normalizePositiveInteger(value) {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+  if (typeof value === 'string' && /^[1-9]\d*$/.test(value)) {
+    return Number.parseInt(value, 10);
+  }
+  return null;
+}
+
 function isPluginContextMutationResource(resource, owner) {
   return Boolean(owner)
     && (resource.type === 'plugin' || (resource.type === 'file' && isPluginOwnerContextResource(resource, owner)));
@@ -1125,6 +1383,39 @@ function addPluginContextBlocker(plan, {
       localHash,
       remoteHash,
     ),
+  });
+}
+
+function addWordPressGraphIdentityBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-wordpress-graph-identity-${plan.blockers.length + 1}`,
+    class: support.className || 'stale-wordpress-graph-identity',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `WordPress graph mutation ${resource.key} requires proven identity mapping and reference rewriting.`,
+    resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+    references: support.references || [],
   });
 }
 
