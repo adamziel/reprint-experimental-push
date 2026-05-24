@@ -22,6 +22,7 @@ The normal sequence is:
 14. `push-recovery-inspect-request.json`
 15. `push-recovery-inspect-response.json`
 16. `push-topology.json`
+17. `push-flow.json`
 
 Failure and recovery examples:
 
@@ -47,6 +48,8 @@ Failure and recovery examples:
   recovery requests.
 - `push-topology.json` gives a machine-readable one-remote, one-local proof
   shape for Docker and Playground test harnesses.
+- `push-flow.json` gives a machine-readable stage order for preflight,
+  snapshot listing, dry-run, apply, journal inspection, and recovery.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

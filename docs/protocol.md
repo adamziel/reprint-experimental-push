@@ -250,6 +250,10 @@ For wire-contract consumers, the production sequence is intentionally strict:
 6. `push_recover` begins in `mode: "inspect"` and only proceeds mutating when
    the journal and live hashes prove the repair is safe.
 
+The same stage order is also captured in
+[`fixtures/protocol/push-flow.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-flow.json)
+so focused tests can assert the exact flow without re-encoding the sequence.
+
 ## Authentication
 
 All push endpoints require authentication at least as strict as current Reprint

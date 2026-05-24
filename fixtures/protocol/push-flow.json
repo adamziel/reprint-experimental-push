@@ -1,0 +1,123 @@
+{
+  "flow_id": "push-flow-preflight-to-recovery",
+  "purpose": "ordered production push proof for one remote site and one local edited site",
+  "stages": [
+    {
+      "name": "preflight",
+      "endpoint": "push_preflight",
+      "mutates": false,
+      "required_inputs": [
+        "persisted pull base package",
+        "push-capable HMAC credential",
+        "remote site identity"
+      ],
+      "outputs": [
+        "push session",
+        "protocol version",
+        "capability set",
+        "journal support evidence"
+      ]
+    },
+    {
+      "name": "snapshot-hashes",
+      "endpoint": "push_snapshot_hashes",
+      "mutates": false,
+      "required_inputs": [
+        "push session",
+        "requested scope"
+      ],
+      "outputs": [
+        "live remote hash list",
+        "coverage hash",
+        "cursor completion proof"
+      ]
+    },
+    {
+      "name": "dry-run",
+      "endpoint": "push_plan_dry_run",
+      "mutates": false,
+      "required_inputs": [
+        "canonical three-way plan",
+        "push session",
+        "canonical push signature",
+        "idempotency key"
+      ],
+      "outputs": [
+        "dry-run receipt",
+        "plan hash",
+        "eligibility evidence"
+      ]
+    },
+    {
+      "name": "apply",
+      "endpoint": "push_batch_apply",
+      "mutates": true,
+      "required_inputs": [
+        "accepted dry-run receipt",
+        "fresh live remote evidence",
+        "push session",
+        "canonical push signature",
+        "idempotency key"
+      ],
+      "revalidation": [
+        "fresh remote hash check before every batch",
+        "storage-boundary proof before each mutation"
+      ],
+      "outputs": [
+        "batch receipts",
+        "journal cursor",
+        "apply result"
+      ]
+    },
+    {
+      "name": "journal",
+      "endpoint": "push_journal",
+      "mutates": false,
+      "required_inputs": [
+        "push session"
+      ],
+      "outputs": [
+        "open or committed claim evidence",
+        "fencing evidence",
+        "recovery cursor"
+      ]
+    },
+    {
+      "name": "recovery-inspect",
+      "endpoint": "push_recover",
+      "mode": "inspect",
+      "mutates": false,
+      "required_inputs": [
+        "push session"
+      ],
+      "outputs": [
+        "read-only evidence",
+        "safe/unsafe/blocked recovery classification"
+      ]
+    },
+    {
+      "name": "recovery-mutate",
+      "endpoint": "push_recover",
+      "mode": "auto|finish|rollback",
+      "mutates": true,
+      "required_inputs": [
+        "push session",
+        "canonical push signature",
+        "idempotency key",
+        "fresh live remote evidence",
+        "journal proof"
+      ],
+      "outputs": [
+        "recovery receipt",
+        "final journal state"
+      ]
+    }
+  ],
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage"
+  ]
+}
