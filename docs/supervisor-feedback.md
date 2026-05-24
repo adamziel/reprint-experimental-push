@@ -9,7 +9,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 - Going well: the page, log, and feedback note still agree, and the evidence trail stays one click away.
 - Not going well: production proof is still missing for auth, durable journals, leases, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the surface was trimmed again so the current blocker set scans faster.
+- Progress change: no new evidence landed; the scan copy was trimmed again so the blocker set reads faster.
 - Next nudge: keep each lane to one proof gap, one next test, and one owner.
 
 | Lane | Next nudge |
