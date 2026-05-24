@@ -1,9 +1,35 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 22:04 CEST
+Last updated: 2026-05-24 22:32 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-24 22:32 CEST - Package Nudge
+
+- Going well: `70` Node tests pass, the production-shaped route smoke passes,
+  and a normal plugin package now activates `/wp-json/reprint/v1/push/*` with
+  the public lab namespace disabled.
+- Not going well: the route still uses lab auth and lab journal internals.
+  Production credential lifecycle, nonce/session cleanup, durable storage,
+  leases, and arbitrary plugin drivers are still unproven.
+- Progress change: reliable executor moved from route-shape proof to packaged
+  endpoint proof; production readiness remains blocked.
+- Next nudge: replace the lab-backed internals one layer at a time: production
+  auth cleanup, durable journal rows, replay/conflict refusal, then recovery
+  inspect under the packaged plugin.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Prove real post/postmeta/attachment/taxonomy graph identity. |
+| Recovery | Kill DB/file/journal boundaries against durable storage. |
+| Reliable executor | Swap lab auth/journal internals for production ones. |
+| Fast paths | Benchmark large chunks with receipts and resume cursors. |
+| Audit and critic | Re-audit this packaged endpoint before any readiness jump. |
+| Progress publisher | Keep the page dated, one-screen, and caveat-linked. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Current Nudge
 
@@ -26,9 +52,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Up in model | Run a large-site benchmark with receipts and resume cursors. |
 | Audit and critic | Up | Re-audit the first executable production-shaped mutation slice. |
 | Progress publisher | Synced | Keep Pages aligned and concise. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Evidence Checkpoint
 

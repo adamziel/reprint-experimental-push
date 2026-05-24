@@ -207,6 +207,16 @@ signing key derivation, and does not prove tamper-resistant production receipt
 security, production packaging, credential lifecycle, nonce cleanup, durable
 production journal storage, leases, or arbitrary plugin drivers.
 
+Current packaged-plugin note:
+`npm run test:playground:production-plugin-package` builds a temporary
+`reprint-push` plugin package from [plugins/reprint-push](../plugins/reprint-push),
+mounts it as a normal plugin, activates it through a Blueprint step, confirms
+the public `reprint-push-lab/v1` namespace is disabled, and applies the same
+eight fixture mutations through `/wp-json/reprint/v1/push/*`. This improves the
+packaging proof but is still not production readiness: the endpoint internals
+remain lab-backed until production auth, session cleanup, durable journal
+storage, leases, and plugin drivers replace the fixture implementation.
+
 ### 3. Remote Snapshot Hash Listing
 
 Call `push_snapshot_hashes` until complete. Include base resource keys so

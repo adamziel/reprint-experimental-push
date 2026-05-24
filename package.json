@@ -18,6 +18,7 @@
     "test:playground:authenticated-http-push": "node ./scripts/playground/authenticated-http-push-smoke.mjs",
     "test:playground:authenticated-cli-push": "node ./scripts/playground/authenticated-cli-push-smoke.mjs",
     "test:playground:production-shaped-push": "node ./scripts/playground/production-shaped-route-smoke.mjs",
+    "test:playground:production-plugin-package": "node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:plugin-atomic-install": "node ./scripts/playground/plugin-atomic-install-smoke.mjs",
     "test:playground:db-journal-idempotency": "node ./scripts/playground/db-journal-idempotency-smoke.mjs",
     "test:playground:storage-guarded-db-write": "node ./scripts/playground/storage-guarded-db-write-smoke.mjs",

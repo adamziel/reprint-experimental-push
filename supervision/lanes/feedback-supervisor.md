@@ -25,7 +25,11 @@ Task:
    long audit text.
 4. Keep `docs/progress-log.md` aligned with the visible page. Do not overstate
    production readiness.
-5. Push your current lane branch when finished and leave the worktree clean.
+5. If you are running in the integration worktree, verify the deployed
+   <https://adamziel.github.io/reprint-experimental-push/progress.html> copy
+   after pushing. If you are running in a lane, leave a clear note that the
+   page update becomes live only after the lane is merged to `main`.
+6. Push your current lane branch when finished and leave the worktree clean.
 
 Quality bar:
 

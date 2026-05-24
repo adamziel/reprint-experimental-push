@@ -45,131 +45,133 @@ function reprint_push_lab_rest_application_passwords_available($available): bool
 
 function reprint_push_lab_rest_register_routes(): void
 {
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/dry-run', [
-        'methods' => WP_REST_Server::CREATABLE,
-        'callback' => 'reprint_push_lab_rest_dry_run',
-        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
-    ]);
+    if (reprint_push_lab_rest_lab_routes_enabled()) {
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/dry-run', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_dry_run',
+            'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/apply', [
-        'methods' => WP_REST_Server::CREATABLE,
-        'callback' => 'reprint_push_lab_rest_apply',
-        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/apply', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_apply',
+            'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/recovery/inspect', [
-        'methods' => WP_REST_Server::CREATABLE,
-        'callback' => 'reprint_push_lab_rest_recovery_inspect',
-        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/recovery/inspect', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_recovery_inspect',
+            'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/snapshot', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_snapshot',
-        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/snapshot', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_snapshot',
+            'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/journal', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_journal',
-        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
-        'args' => [
-            'limit' => [
-                'type' => 'integer',
-                'default' => 20,
-                'minimum' => 1,
-                'maximum' => 80,
-                'sanitize_callback' => 'absint',
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/journal', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_journal',
+            'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+            'args' => [
+                'limit' => [
+                    'type' => 'integer',
+                    'default' => 20,
+                    'minimum' => 1,
+                    'maximum' => 80,
+                    'sanitize_callback' => 'absint',
+                ],
             ],
-        ],
-    ]);
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/db-journal', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_db_journal',
-        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
-        'args' => [
-            'limit' => [
-                'type' => 'integer',
-                'default' => 20,
-                'minimum' => 1,
-                'maximum' => 80,
-                'sanitize_callback' => 'absint',
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/db-journal', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_db_journal',
+            'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+            'args' => [
+                'limit' => [
+                    'type' => 'integer',
+                    'default' => 20,
+                    'minimum' => 1,
+                    'maximum' => 80,
+                    'sanitize_callback' => 'absint',
+                ],
             ],
-        ],
-    ]);
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/db-journal/schema', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_db_journal_schema',
-        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/db-journal/schema', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_db_journal_schema',
+            'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/preflight', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_authenticated_preflight',
-        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/preflight', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_preflight',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/dry-run', [
-        'methods' => WP_REST_Server::CREATABLE,
-        'callback' => 'reprint_push_lab_rest_authenticated_dry_run',
-        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/dry-run', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_dry_run',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/apply', [
-        'methods' => WP_REST_Server::CREATABLE,
-        'callback' => 'reprint_push_lab_rest_authenticated_apply',
-        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/apply', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_apply',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/snapshot', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_snapshot',
-        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/snapshot', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_snapshot',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/journal', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_journal',
-        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
-        'args' => [
-            'limit' => [
-                'type' => 'integer',
-                'default' => 20,
-                'minimum' => 1,
-                'maximum' => 80,
-                'sanitize_callback' => 'absint',
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/journal', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_journal',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+            'args' => [
+                'limit' => [
+                    'type' => 'integer',
+                    'default' => 20,
+                    'minimum' => 1,
+                    'maximum' => 80,
+                    'sanitize_callback' => 'absint',
+                ],
             ],
-        ],
-    ]);
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/db-journal', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_db_journal',
-        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
-        'args' => [
-            'limit' => [
-                'type' => 'integer',
-                'default' => 20,
-                'minimum' => 1,
-                'maximum' => 80,
-                'sanitize_callback' => 'absint',
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/db-journal', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_db_journal',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+            'args' => [
+                'limit' => [
+                    'type' => 'integer',
+                    'default' => 20,
+                    'minimum' => 1,
+                    'maximum' => 80,
+                    'sanitize_callback' => 'absint',
+                ],
             ],
-        ],
-    ]);
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/db-journal/schema', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'reprint_push_lab_rest_db_journal_schema',
-        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/db-journal/schema', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => 'reprint_push_lab_rest_db_journal_schema',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
 
-    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/recovery/inspect', [
-        'methods' => WP_REST_Server::CREATABLE,
-        'callback' => 'reprint_push_lab_rest_authenticated_recovery_inspect',
-        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
-    ]);
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/recovery/inspect', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_recovery_inspect',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
+    }
 
     register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/preflight', [
         'methods' => WP_REST_Server::READABLE,
@@ -241,6 +243,11 @@ function reprint_push_lab_rest_register_routes(): void
 function reprint_push_lab_rest_public_lab_permission(): bool
 {
     return true;
+}
+
+function reprint_push_lab_rest_lab_routes_enabled(): bool
+{
+    return !defined('REPRINT_PUSH_DISABLE_LAB_ROUTES') || REPRINT_PUSH_DISABLE_LAB_ROUTES !== true;
 }
 
 function reprint_push_lab_rest_route_profile(WP_REST_Request $request): array
