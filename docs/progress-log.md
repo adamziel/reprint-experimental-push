@@ -6,6 +6,17 @@ linked implementation artifacts.
 
 Newest entries stay short and link back to the evidence trail.
 
+## 2026-05-25 - Public Status Refresh 01:52:44
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:52:44 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Tightened the first screen so the current gate and top blocker are explicit
+  without adding any new proof claims.
+- Public status stays conservative: 89 Node tests pass and executor, recovery
+  journal, Docker/Playground, graph identity, and plugin-driver proof remain
+  pending.
+
 ## 2026-05-25 - Public Status Refresh 01:52:12
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
