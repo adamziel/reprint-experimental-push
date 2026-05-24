@@ -4,6 +4,14 @@ This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
+Scope:
+
+- one persisted pull base package
+- one live remote identity observed twice, before and after drift
+- one edited local clone derived from that base
+- one runner process that owns preflight, planning, apply, journal inspect,
+  and recovery
+
 The production sequence is fixed:
 
 1. `push_preflight` binds the persisted pull base to a live remote identity
@@ -96,6 +104,11 @@ local edited site, and one drift witness:
 - `runner` is the only process that may run preflight, snapshot listing,
   dry-run, apply, journal inspection, and recovery
 
+That topology is the implementation contract, not just an example. The same
+shape must be represented in Docker and Playground, and the browser-visible
+inspection path must stay on the sandbox-provided `8080` ingress through a
+local-only proxy.
+
 The same shape is what the Docker and Playground proofs must implement:
 
 | Role | Docker | Playground | Why it exists |
@@ -104,6 +117,27 @@ The same shape is what the Docker and Playground proofs must implement:
 | `local-edited` | Imported edited-site container on the same private network | Separate loopback Playground instance | Holds the user edits that the planner will compare against the base. |
 | `remote-changed` | Same remote site observed later after drift | Same Playground site after a later mutation | Proves apply revalidates live state instead of replaying dry-run evidence. |
 | `runner` | Client container or host process | Client process | Signs requests, uploads plans, reads journals, and drives recovery. |
+
+## Topology
+
+The topology proof is the simplest possible production-shaped setup that still
+separates liveness from eligibility:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| `remote-base` | source-site container on the private network | source-site blueprint that seeds the persisted pull base |
+| `local-edited` | imported clone on the same private network | separate disposable blueprint with local edits |
+| `remote-changed` | the same remote container after live drift | the same remote blueprint after a later mutation |
+| `runner` | client container or host process | local test process |
+
+The proof only holds if `remote-base` and `remote-changed` are the same remote
+identity at different times. If they are different sites, the test no longer
+demonstrates apply-time revalidation.
+
+Browser-visible inspection must use only the sandbox-provided `8080` ingress
+through a local-only proxy. Remote tunnels are disallowed.
+
+## Restart Proof
 
 The executor proof is only complete when both packaging modes show the same
 remote identity twice:
@@ -214,6 +248,10 @@ distinguish fresh planning evidence from replay evidence:
 - `journal_cursor`, claim generation, and lease expiry from apply or journal
 - the last recovery `mode`, `proof`, and `state`
 
+That tuple is the minimum restart evidence, not a lock. If any live evidence
+is stale, the executor must discard the old apply authority and fetch fresh
+remote hashes before resuming.
+
 That tuple is not a lock. It is only the minimum restart evidence that lets
 the executor decide whether to resume, re-list the remote, or stop and
 inspect. If any of the live evidence is stale, the executor must discard the
@@ -234,6 +272,10 @@ Acceptance criteria for the reliable executor:
 - It marks a push complete only after journal confirmation proves all batches
   committed.
 - It refuses to run against a remote that only has read-only export HMAC scope.
+- It keeps `push_journal` and `push_recover inspect` read-only and only allows
+  mutating recovery when the journal plus fresh live hashes prove the action.
+- It uses the same pull/export/import provenance package for both Docker and
+  Playground proofs.
 
 Executor gates:
 
