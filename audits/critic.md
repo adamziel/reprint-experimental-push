@@ -13,7 +13,7 @@ side effect, stale retry, or graph rewrite can silently lose remote state while
 the system reports a plausible success.
 
 The comparison against Reprint, ZS-Sync, and ForkPress is intentionally
-conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages, not live mutation safety. ZS-Sync shows bounded change discovery, not write policy. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety or production write-path durability.
+conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/docs/source-notes.md). Those notes contribute transport shape, scanner composition, and reliability vocabulary, but none of them by themselves prove a production source-mutation boundary for this repository. Reprint shows transport stages, not live mutation safety. ZS-Sync shows bounded change discovery, not write policy. ForkPress shows the reliability bar, but only as a comparison point until this repo proves the same lifecycle. Any claim beyond that would be an inference, not direct evidence. Route-shape, packaged-plugin, and `finalMatchesLocal` smokes are compatibility evidence only; even when they return live-looking hashes, they should not be read as proof of live source-site safety, remote-preserving retry, or production write-path durability.
 None of the three source notes prove remote-drift rejection at apply time,
 stable identity reservation for creates, or revalidation of plugin-owned
 ownership changes immediately before write.
@@ -21,6 +21,11 @@ None of the source notes prove that stale manual-review artifacts are rejected
 before write, that retries after live remote drift start from a fresh
 snapshot, or that a fixture replay remains safe when identity or plugin-owned
 state changes on the live remote.
+What the notes do prove is narrower: Reprint gives the transport rhythm we can
+borrow, ZS-Sync shows that bounded scanning is feasible, and ForkPress shows
+that reviewed resolution and crash classification are the right failure
+language. None of them prove that this repository has matched those semantics
+at the mutation boundary.
 
 The current design also still has five unproven failure classes that matter for
 production push safety: live remote drift between dry-run and apply, create-time
@@ -39,7 +44,7 @@ evidence.
 | New-object identity collisions | Local and remote both create new posts, attachments, terms, or plugin-owned records after the pull base, and the planner later sees matching slugs, import IDs, filenames, or other human-friendly keys. A same-plan create may also be renumbered, aliased, or reassigned during retry. | There is no stable allocation proof that separates "same label" from "same identity" for newly created objects. The docs talk about pull-base binding and graph rewrites, but they do not show a remote-safe identity map, reservation scheme, or replay-safe create mapping for objects that did not exist at base time. | A production push can silently merge or overwrite distinct objects if new identities are inferred from mutable labels instead of a durable identity map. |
 | Manual resolution can become stale overwrite permission | An operator selects "take local" after reviewing a conflict, then retries after the remote changed again or after a previous attempt left a mixed state. A second case is an approval recorded for one plan hash and then reused after a different live remote snapshot or a partial recovery replay. A third case is a mixed-scope retry where only part of the plan was approved locally, but the next apply silently reuses that approval for unrelated rows or files. | No reviewed-resolution artifact binds the approval to the exact base/local/remote hashes, reviewer identity, live snapshot timestamp, and retry scope. The docs say manual resolution is only acceptable if the remote is preserved for audit and retry starts from fresh evidence, but the design does not yet show the artifact, server-side enforcement, or retry rejection path when the approved snapshot is stale. Missing proof: a retry after remote drift is rejected before any write, the stale approval remains readable for audit, the rejected artifact cannot be widened into a different row/file/plugin surface, the remote-preserving retry starts from a new snapshot rather than reusing the old decision, a partial approval cannot be broadened to unrelated targets, and a recovered partial apply cannot resurrect the old approval as if it were still current. | A stale manual decision is equivalent to granting overwrite permission on new remote data. |
 | Plugin data traps remain under-modeled | A plugin stores state in a custom table, generated file, cron row, cache entry, activation hook, serialized option, or runtime-only registry entry not covered by the allowlist. A remote-only plugin update can also change ownership metadata without changing the local plan, leaving a write to an apparently safe row that actually belongs to plugin-managed state. A stale approval can then be replayed against the wrong plugin snapshot and mutate a resource that was never re-reviewed. | The current plan relies on fixture allowlists and a small set of driver checks. It does not define plugin-owned resource graphs, versioned semantics, rollback expectations, or a conservative fallback for unknown plugin state. Missing proof: the planner either enumerates every owned surface for each supported plugin or hard-blocks the push before any write. There is also no proof that ownership changes on the remote are re-evaluated immediately before apply instead of inherited from stale local metadata, or that stale manual approval cannot authorize a different plugin-owned surface after drift. | Production push needs to know what each plugin owns, or it must refuse the push. Guessing is unsafe because plugin state often spans tables, files, runtime side effects, and ownership metadata that can drift independently. |
-| False reliability from lab-backed routes | A route looks production-shaped, returns live hashes, and accepts push-like requests, but the implementation still resolves to Playground internals or fixture-only paths. | The current evidence repeatedly distinguishes lab-backed route shape from production implementation, but the design does not yet provide a production endpoint that is not lab-backed. The plugin package smoke confirms the route can be mounted as a normal plugin, not that the mutation path is production-safe. Missing proof: the same request must stay safe when replayed against a live source with changed remote state, the route must not depend on copied lab code anywhere in the write path, and a packaged-plugin mount must not be treated as evidence of production mutation semantics. | A named endpoint is not production support if its success path still depends on copied lab code, fixture scopes, or route-shape smoke tests. |
+| False reliability from lab-backed routes | A route looks production-shaped, returns live hashes, and accepts push-like requests, but the implementation still resolves to Playground internals or fixture-only paths. A second variant is a route that reports `finalMatchesLocal` on a fixture while a live source drifts underneath it. | The current evidence repeatedly distinguishes lab-backed route shape from production implementation, but the design does not yet provide a production endpoint that is not lab-backed. The plugin package smoke confirms the route can be mounted as a normal plugin, not that the mutation path is production-safe. Missing proof: the same request must stay safe when replayed against a live source with changed remote state, the route must not depend on copied lab code anywhere in the write path, and a packaged-plugin mount must not be treated as evidence of production mutation semantics. It also lacks proof that a stale approval cannot be replayed through the same route after a fresh live snapshot disagrees. | A named endpoint is not production support if its success path still depends on copied lab code, fixture scopes, route-shape smoke tests, or stale manual-review artifacts. |
 | Fixture success can hide live semantic drift | A lab smoke reports `finalMatchesLocal`, committed replay, or packaged-plugin success on a disposable fixture while the live source has diverged in plugin metadata, graph identity, or custom-table state that the fixture does not model. | The current evidence proves the fixture path can complete and replay, but it does not show the same mutation path against a live remote with changed ownership, remapped identities, or non-fixture side effects. Missing proof: a live-source replay after drift must either preserve the remote or fail closed before any write, and the audit trail must show which production surface was protected. | Fixture success is compatibility evidence, not production safety evidence. If live semantic drift is unmodeled, a green smoke can still mask silent data loss. |
 | Recovery claims stop at classification | After a partial apply, the system can label the remote `old-remote`, `fully-updated-remote`, or `blocked-recovery`, but cannot complete a production repair across every boundary. | The recovery docs intentionally stop at lab evidence. They do not prove durable production journals, kill-at-every-boundary replay, or repair across DB, filesystem, plugin activation, and stale-claim lease boundaries. | Production push must survive real crashes, not just classify them after the fact. |
 | Storage boundary proof is still fixture-bounded | A remote changes after dry-run but before a MySQL update, file publish, schema write, activation side effect, or plugin publish. | The guarded write proof is limited to specific Playground fixtures and a narrow set of file/database operations. It does not cover arbitrary production inserts, deletes, schema changes, plugin activation writes, or generic compare-and-swap semantics. | Partial success at a narrow fixture boundary is not proof that arbitrary production writes are safe. |
@@ -125,7 +130,8 @@ evidence for all of these, not just a plausible design:
 - The source notes for Reprint, ZS-Sync, and ForkPress are treated as
   conservative design input only. They do not prove live remote drift
   rejection, stable identity reservation for creates, plugin-owned state
-  revalidation, durable recovery, or a production write boundary in this repo.
+  revalidation, durable recovery, remote-preserving retry after drift, or a
+  production write boundary in this repo.
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
@@ -140,6 +146,9 @@ evidence for all of these, not just a plausible design:
   fixture never prove the same path is safe against live remote drift in
   plugin metadata, graph identity, custom-table state, or create-time identity
   remapping.
+- A route that only proves route shape or fixture replay must still fail
+  closed on stale manual-review artifacts, because a stale approval is not
+  current authority for a live retry.
 - Live-remote revalidation immediately before apply, with stale retries
   rejected before any write and with the rejection tied to the live hashes
   that failed validation.
@@ -180,6 +189,8 @@ production-grade push support:
 - Fresh remote proof: apply must re-read the live remote immediately before
   the first guarded write, and any stale hash or stale manual review artifact
   must fail closed before mutation.
+- Retry proof: if a retry is allowed after drift, the next run must start from
+  a fresh snapshot and a fresh plan, not from the old approval record.
 - Identity safety: create paths must either reserve stable identities or
   block; a retry may not renumber or remap identities from stale local
   assumptions.
@@ -208,7 +219,8 @@ or an operator-facing success message that is stronger than the proof.
 
 1. Ship a real production push endpoint whose implementation does not route to
    Playground or lab internals, and prove the live write path still works when
-   the remote drifts between dry-run and apply.
+   the remote drifts between dry-run and apply, including the case where a
+   stale approval exists but must be rejected before write.
 2. Separate lab credentials from production push credentials and prove
    production lifecycle behavior: issuance, scoping, rotation, revocation,
    replay rejection, and audit retention.
@@ -217,8 +229,9 @@ or an operator-facing success message that is stronger than the proof.
    Missing proof: a live remote plugin-owned surface outside the manifest is
    rejected before any write.
 4. Define plugin-owned resource contracts for tables, files, options, cron,
-   cache, and activation hooks, with rollback or block behavior for unknown
-   ownership and for ownership changes discovered immediately before apply.
+   cache, activation hooks, and generated side effects, with rollback or
+   block behavior for unknown ownership and for ownership changes discovered
+   immediately before apply.
 5. Add graph identity mapping, including stable allocation for new objects, or
    broaden the hard block policy so every relationship-bearing WordPress row
    class that can silently rewire identity is either rewritten safely or
