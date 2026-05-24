@@ -656,6 +656,33 @@ test('keeps remote-only plugin changes while allowing unrelated local deletions'
   );
 });
 
+test('preserves unrelated ordinary mutations while stopping stale plugin-context edits', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local ordinary edit";';
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* local plugin edit */';
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const fileMutation = mutationFor(plan, 'file:index.php');
+  const conflict = plan.conflicts[0];
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(fileMutation.action, 'put');
+  assert.equal(fileMutation.changeKind, 'update');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(conflict.class, 'plugin-data-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/plugins/forms/forms.php');
+  assert.equal(conflict.pluginOwner, 'forms');
+  assert.equal(JSON.stringify(conflict).includes('remote-private-forms-code'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['index.php'], '<?php echo "base";');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
 test('keeps remote-only plugin changes while recognizing a matching independent edit', () => {
   const base = baseSite();
   const local = baseSite();
