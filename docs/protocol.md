@@ -46,8 +46,10 @@ Required behavior:
   dry-run plan in legal batches.
 - `push_journal` reports dry-run, apply, idempotency, and recovery state so the
   executor can resolve ambiguous responses.
-- `push_recover` inspects, finishes, rolls back, or blocks an interrupted batch
-  only when journal artifacts and live hashes prove the action.
+- `push_recover` has a read-only `inspect` mode plus mutating `auto`,
+  `finish`, and `rollback` modes. It inspects, finishes, rolls back, or
+  blocks an interrupted batch only when journal artifacts and live hashes
+  prove the action.
 
 Remote liveness is checked at apply time, not at dry-run time. A conforming
 apply performs two checks:
@@ -73,7 +75,7 @@ the apply and mutating recovery steps may change target resources.
 | 4 | `push_plan_dry_run` | No | Validates the uploaded plan and records a dry-run journal entry. |
 | 5 | `push_batch_apply` | Yes | Revalidates live preconditions and storage boundaries before writing. |
 | 6 | `push_journal` | No | Lets the executor resolve lost responses, crashes, and ambiguous apply states. |
-| 7 | `push_recover` | Mode-dependent | Finishes, rolls back, or blocks only when journal artifacts and live hashes prove the action. |
+| 7 | `push_recover` | Mode-dependent | `inspect` is read-only; mutating modes finish, roll back, or block only when journal artifacts and live hashes prove the action. |
 
 `snapshot_id`, `coverage_hash`, `dry_run_id`, and `journal_cursor` are evidence
 and request bindings. They are not remote locks. A remote edit between any
