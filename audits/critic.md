@@ -54,6 +54,10 @@ retry.
 
 ## Changes Required Before A Production Claim
 
+These are not optional hardening ideas. Each item closes a specific failure
+mode where the current evidence still allows silent data loss, stale retries,
+or an operator-facing success message that is stronger than the proof.
+
 1. Ship a real production push endpoint whose implementation does not route to
    Playground or lab internals.
 2. Separate lab credentials from production push credentials and prove
@@ -79,6 +83,9 @@ retry.
 10. Publish production audit/redaction schemas and a release gate that runs the
     full safety-critical suite before the project can use production-grade
     wording.
+
+If any one of these remains unproved, the correct claim stays limited to
+fixture-scoped or lab-backed push evidence.
 
 ## Current Bottom Line
 
