@@ -164,7 +164,9 @@ edited site, and one runner. That is the minimum one-remote, one-local shape
 the protocol is expected to support. The remote remains the source of truth
 for the push protocol; the local site is the pull target that was edited after
 import. The runner owns the protocol flow and is the only process that talks
-to both sites.
+to both sites. The test must prove remote drift, meaning the remote can change
+independently between dry-run and apply and the executor still rejects stale
+work.
 
 ### Docker Topology
 
@@ -245,6 +247,11 @@ The preferred Playground topology keeps the same role split:
 The runner should treat these as three snapshots of one logical site lineage,
 not as three independent targets. The important proof is that apply revalidates
 against the live remote, not that dry-run and apply see the same snapshot.
+
+For production-facing checks, keep the topology constrained to a single remote
+source, a single edited local clone, and a single executor process. That keeps
+the base binding, snapshot listing, dry-run receipt, apply revalidation, and
+recovery journal path observable end to end.
 
 ## Durable Push State
 

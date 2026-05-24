@@ -127,6 +127,15 @@ which base it was built from, `push_preflight` or `push_plan_dry_run` must
 reject. A later push may refresh live remote hashes, but it must not rewrite
 the stored pull base to make an old plan look current.
 
+The pull-to-push handoff is linear:
+
+1. Pull exports the base package and coverage evidence.
+2. Local editing mutates the imported site.
+3. Push preflight binds that stored base to the live remote identity.
+4. Push snapshot listing records the current remote hash view.
+5. Push dry-run uploads the canonical plan built from base, local, and live remote.
+6. Push apply mutates only when live revalidation still matches the plan.
+
 ## Authentication
 
 All push endpoints require authentication at least as strict as current Reprint
@@ -262,6 +271,21 @@ Server behavior:
   `IDEMPOTENCY_KEY_CONFLICT` before mutation.
 - Lost response during apply: the executor inspects `push_journal` before
   retrying and retries only with the same key and same body.
+
+### Recovery Rules
+
+`push_journal` and `push_recover` are the ambiguous-response escape hatch.
+They let the executor distinguish four cases:
+
+- the batch never started,
+- the batch committed and the response was lost,
+- the batch is open but still recoverable,
+- the batch is blocked by a newer remote edit or a corrupt journal.
+
+Recovery is inspect-first. `push_recover` in `inspect` mode is read-only and
+must explain why later mutating recovery is safe, unsafe, or blocked. Mutating
+recovery modes use the same auth and idempotency rules as apply, and they
+revalidate the live remote again before changing target state.
 
 ### Snapshot Coverage
 
