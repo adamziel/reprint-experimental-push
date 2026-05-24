@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 01:15:18 CEST.
+- Last update: 2026-05-25 01:17:12 CEST.
 - Status: `89` Node tests still pass.
 - Trend: planner, recovery, fast-path, protocol, critic, and objective-audit
   surfaces stay aligned inside lab/model scope. Production readiness remains
@@ -15,8 +15,8 @@ linked implementation artifacts.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
   and arbitrary plugin drivers remain unproven.
-- Visible page: `progress.html` keeps the blocked state compact and links to
-  this log for the evidence trail.
+- Visible page: [progress.html](../progress.html) keeps the blocked state
+  compact and links to this log for the evidence trail.
 - Pending proof gates: production auth/session storage, durable journal
   ownership, leases/fencing, full WordPress graph identity mapping,
   Docker/full Playground integration, and arbitrary plugin drivers.
@@ -25,8 +25,7 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and links to the detailed evidence. In this lane, the page becomes live
   only after merge to `main`.
-- Refresh note: no new evidence landed; the page stays blocked and links to
-  the detailed evidence.
+- Refresh note: page copy was tightened for readability; no evidence delta.
 
 ## 2026-05-25 - Supervisor Refresh
 

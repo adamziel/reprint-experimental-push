@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:15:18 CEST
+Last updated: 2026-05-25 01:17:12 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 01:15:18 CEST - Supervisor Snapshot
+## 2026-05-25 01:17:12 CEST - Supervisor Snapshot
 
-- Going well: the visible page and log still agree, and the top of the page stays scan-friendly.
+- Going well: the visible page and log still agree, and the top of the page now scans faster.
 - Not going well: production proof is still missing for auth, journal durability, graph identity, leases, integration, and plugin drivers.
-- Progress change: no new evidence landed; this pass only trimmed repeated status noise.
+- Progress change: no new evidence landed; this pass only tightened repeated status noise.
 - Next nudge: keep each lane tied to one production-backed test and avoid readiness language until proof exists.
 
 ## 2026-05-25 00:59 CEST - Supervisor Snapshot
