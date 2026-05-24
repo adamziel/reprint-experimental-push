@@ -357,6 +357,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['backpressure', 'durable-progress'],
   },
   {
+    id: 'fresh-index-empty-queue-completes-apply',
+    proposal: 'treat a fresh remote index plus an empty local queue as proof that apply is complete',
+    rejectedBecause: 'planning evidence and local idleness cannot prove the live mutation finished safely',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',

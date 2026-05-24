@@ -350,6 +350,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('backpressure'));
   assert.ok(rejectedById.get('queue-empty-means-complete').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('queue-empty-means-complete').proposal.includes('queue is empty'));
+  assert.ok(
+    rejectedById.get('fresh-index-empty-queue-completes-apply').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('fresh-index-empty-queue-completes-apply').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('fresh-index-empty-queue-completes-apply').violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('fresh-index-empty-queue-completes-apply').rejectedGate,
+    'recovery',
+  );
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
@@ -385,6 +398,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'blind-sql-replace',
     'backpressure-drops-evidence',
     'queue-empty-means-complete',
+    'fresh-index-empty-queue-completes-apply',
   ]) {
     assert.ok(rejectedIds.has(id), `missing rejected fast path ${id}`);
   }
