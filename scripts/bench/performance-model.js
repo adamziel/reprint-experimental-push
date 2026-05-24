@@ -108,6 +108,30 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'package identity does not prove that coupled remote resources are ready to commit',
     violates: ['atomic-groups', 'plugin-preconditions'],
   },
+  {
+    id: 'cross-group-row-batch',
+    proposal: 'merge database rows from different plugin owners or atomic groups into one visible batch',
+    rejectedBecause: 'recovery could not prove which group owns a partial row result after failure',
+    violates: ['atomic-groups', 'row-preconditions'],
+  },
+  {
+    id: 'index-cursor-as-lock',
+    proposal: 'treat a remote index cursor, generation, or ETag as a lock for later apply writes',
+    rejectedBecause: 'index evidence can speed planning but cannot prove live storage state at mutation time',
+    violates: ['live-preconditions'],
+  },
+  {
+    id: 'commit-group-with-missing-receipts',
+    proposal: 'commit an atomic group before every staged file, row batch, metadata entry, and validator has a receipt',
+    rejectedBecause: 'the commit could expose a half-installed plugin or leave no durable proof of what was included',
+    violates: ['atomic-groups', 'durable-progress'],
+  },
+  {
+    id: 'backpressure-drops-evidence',
+    proposal: 'summarize or drop queued precondition evidence when upload or journal queues are over budget',
+    rejectedBecause: 'pressure handling must pause producers, not erase the evidence needed to classify recovery',
+    violates: ['backpressure', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
@@ -280,6 +304,7 @@ function scheduleWorkload(workload, limits) {
   for (const pluginResource of workload.pluginResources) {
     actions.push({
       type: 'plugin-metadata-stage',
+      planId: workload.planId,
       resourceKey: pluginResource.resourceKey,
       atomicGroupId: pluginResource.atomicGroupId,
       precondition: {
@@ -287,13 +312,16 @@ function scheduleWorkload(workload, limits) {
         expectedHash: pluginResource.remoteBeforeHash,
       },
       canonicalVisible: false,
+      durableEvidence: 'plugin-metadata-staging-record',
       idempotencyKey: `${workload.planId}:${pluginResource.atomicGroupId}:${pluginResource.resourceKey}`,
     });
   }
 
   if (workload.atomicGroup) {
+    actions.push(finalizeAtomicGroupStaging(workload, actions));
     actions.push({
       type: 'atomic-group-commit',
+      planId: workload.planId,
       atomicGroupId: workload.atomicGroup.id,
       dependencies: [...workload.atomicGroup.dependencies],
       preconditions: 'recheck-all-member-resource-hashes',
@@ -303,6 +331,9 @@ function scheduleWorkload(workload, limits) {
         'activation-preconditions',
       ],
       commitPolicy: workload.atomicGroup.commitPolicy,
+      requiresFinalizedGroupStaging: true,
+      durableEvidence: 'atomic-group-commit-record',
+      idempotencyKey: `${workload.planId}:${workload.atomicGroup.id}:atomic-group-commit`,
       canonicalVisible: true,
     });
   }
@@ -342,6 +373,42 @@ function scheduleWorkload(workload, limits) {
     },
     actions,
     totals: summarizeActions(actions),
+  };
+}
+
+function finalizeAtomicGroupStaging(workload, actions) {
+  const groupId = workload.atomicGroup.id;
+  const groupActions = actions.filter((action) => action.atomicGroupId === groupId);
+  const chunkReceipts = groupActions.filter((action) => action.type === 'chunk-upload');
+  const stagedFiles = groupActions.filter((action) => action.type === 'file-publish');
+  const rowBatches = groupActions.filter((action) => action.type === 'db-row-batch');
+  const pluginMetadataEntries = groupActions.filter((action) => action.type === 'plugin-metadata-stage');
+
+  return {
+    type: 'group-staging-finalize',
+    planId: workload.planId,
+    atomicGroupId: groupId,
+    finalizeMode: 'receipts-plus-live-preconditions',
+    canonicalVisible: false,
+    requiredReceipts: {
+      chunkReceipts: chunkReceipts.length,
+      stagedFiles: stagedFiles.length,
+      rowBatches: rowBatches.length,
+      pluginMetadataEntries: pluginMetadataEntries.length,
+    },
+    preconditions: 'recheck-all-member-resource-hashes',
+    validators: [
+      'dependency-preconditions',
+      'plugin-metadata-preconditions',
+      'activation-preconditions',
+    ],
+    durableEvidence: 'group-staging-finalize-record',
+    idempotencyKey: `${workload.planId}:${groupId}:group-staging-finalize`,
+    failsClosedWhen: [
+      'missing-member-receipt',
+      'live-precondition-drift',
+      'validator-missing',
+    ],
   };
 }
 
@@ -408,6 +475,10 @@ function scheduleFile(file, planId, limits) {
     destination: file.atomicGroupId ? 'atomic-group-staging' : 'live-path',
     canonicalVisible: !file.atomicGroupId,
     publishMode: 'compare-and-swap',
+    durableEvidence: file.atomicGroupId
+      ? 'file-group-staging-record'
+      : 'file-publish-commit-record',
+    idempotencyKey: `${planId}:${file.resourceKey}:file-publish`,
     precondition: {
       resourceKey: file.resourceKey,
       expectedHash: file.remoteBeforeHash,
@@ -466,6 +537,7 @@ function summarizeSchedules(schedules) {
       totals.dbRows += schedule.totals.dbRows;
       totals.dbBatches += schedule.totals.dbBatches;
       totals.filePublishes += schedule.totals.filePublishes;
+      totals.groupStagingFinalizes += schedule.totals.groupStagingFinalizes;
       totals.atomicGroupCommits += schedule.totals.atomicGroupCommits;
       return totals;
     },
@@ -475,6 +547,7 @@ function summarizeSchedules(schedules) {
       dbRows: 0,
       dbBatches: 0,
       filePublishes: 0,
+      groupStagingFinalizes: 0,
       atomicGroupCommits: 0,
     },
   );
@@ -487,6 +560,7 @@ function summarizeActions(actions) {
     dbRows: 0,
     dbBatches: 0,
     filePublishes: 0,
+    groupStagingFinalizes: 0,
     atomicGroupCommits: 0,
   };
 
@@ -501,6 +575,9 @@ function summarizeActions(actions) {
     }
     if (action.type === 'file-publish') {
       totals.filePublishes++;
+    }
+    if (action.type === 'group-staging-finalize') {
+      totals.groupStagingFinalizes++;
     }
     if (action.type === 'atomic-group-commit') {
       totals.atomicGroupCommits++;

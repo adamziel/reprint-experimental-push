@@ -19,6 +19,8 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
   assert.equal(pluginInstall.atomicGroupId, 'install-commerce-stack');
+  assert.equal(pluginInstall.totals.groupStagingFinalizes, 1);
+  assert.equal(pluginInstall.totals.atomicGroupCommits, 1);
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
@@ -99,6 +101,8 @@ test('chunk uploads stay staged until a guarded publish step', () => {
     filePublishes.every((action) => action.requiresCompleteChunkReceipts === action.chunkCount),
   );
   assert.ok(filePublishes.every((action) => action.assembledHash?.startsWith('sha256:')));
+  assert.ok(filePublishes.every((action) => action.durableEvidence));
+  assert.ok(filePublishes.every((action) => action.idempotencyKey));
 });
 
 test('database batching is bounded and keeps per-row preconditions', () => {
@@ -123,14 +127,26 @@ test('plugin install remains invisible until the atomic group commit', () => {
     action.atomicGroupId === pluginInstall.atomicGroupId && action.type !== 'atomic-group-commit',
   );
   const commit = pluginInstall.actions.find((action) => action.type === 'atomic-group-commit');
+  const groupFinalize = pluginInstall.actions.find((action) => action.type === 'group-staging-finalize');
   const visibleBeforeCommit = memberActions.filter((action) => action.canonicalVisible === true);
 
   assert.ok(memberActions.length > 0);
   assert.deepEqual(visibleBeforeCommit, []);
+  assert.ok(groupFinalize);
+  assert.equal(groupFinalize.canonicalVisible, false);
+  assert.equal(groupFinalize.preconditions, 'recheck-all-member-resource-hashes');
+  assert.equal(groupFinalize.durableEvidence, 'group-staging-finalize-record');
+  assert.ok(groupFinalize.requiredReceipts.chunkReceipts > groupFinalize.requiredReceipts.stagedFiles);
+  assert.ok(groupFinalize.requiredReceipts.rowBatches > 10);
+  assert.equal(groupFinalize.requiredReceipts.pluginMetadataEntries, 2);
+  assert.ok(groupFinalize.failsClosedWhen.includes('missing-member-receipt'));
   assert.ok(commit);
   assert.equal(commit.atomicGroupId, pluginInstall.atomicGroupId);
   assert.equal(commit.commitPolicy, 'all-or-nothing');
   assert.equal(commit.preconditions, 'recheck-all-member-resource-hashes');
+  assert.equal(commit.requiresFinalizedGroupStaging, true);
+  assert.equal(commit.durableEvidence, 'atomic-group-commit-record');
+  assert.ok(commit.idempotencyKey);
   assert.ok(commit.validators.includes('dependency-preconditions'));
   assert.ok(commit.validators.includes('plugin-metadata-preconditions'));
   assert.ok(commit.validators.includes('activation-preconditions'));
@@ -184,6 +200,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
   assert.ok(rejectedById.get('blind-sql-replace').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('cross-group-row-batch').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('index-cursor-as-lock').violates.includes('live-preconditions'));
+  assert.ok(
+    rejectedById.get('commit-group-with-missing-receipts').violates.includes('durable-progress'),
+  );
+  assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('backpressure'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
 });
 
@@ -207,4 +229,12 @@ test('failure injection boundaries include every durable transition in the bench
       entry.beforeState && entry.afterState && entry.recoveryEvidence
     ),
   );
+
+  const actionTypes = new Set(model.schedules.flatMap((schedule) =>
+    schedule.actions.map((action) => action.type),
+  ));
+  assert.ok(actionTypes.has('chunk-upload'), 'chunk ack is modeled by staged chunk uploads');
+  assert.ok(actionTypes.has('db-row-batch'), 'database batch commit is modeled by row batches');
+  assert.ok(actionTypes.has('group-staging-finalize'), 'group staging finalize is explicitly modeled');
+  assert.ok(actionTypes.has('atomic-group-commit'), 'atomic group commit is explicitly modeled');
 });

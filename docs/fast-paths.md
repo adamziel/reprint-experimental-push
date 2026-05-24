@@ -11,6 +11,19 @@ transfer, round trips, lock time, or idle time, but it may not remove live
 preconditions, weaken canonical hashes, publish staged data early, split an
 atomic group, or mark progress before durable evidence exists.
 
+Every proposed fast path has to pass these gates before implementation:
+
+- **Skip gate:** it may skip duplicate work only when the skipped work is
+  backed by a strong digest, a matching plan-scoped receipt, or a remote index
+  entry that is used for planning only.
+- **Live gate:** every mutating write still has a live resource precondition at
+  the storage boundary or a server-side compare-and-swap predicate.
+- **Group gate:** plugin installs, upgrades, activation changes, and any
+  plugin-owned rows cross visibility only through their atomic group commit.
+- **Recovery gate:** after a lost response, crash, retry, or pressure pause, the
+  executor can classify the remote as old, new, or blocked from durable
+  receipts and journal records without inferring intent from partial artifacts.
+
 ## Safe Speedups
 
 | Area | Safe fast path | Required guardrail |
@@ -22,6 +35,11 @@ atomic group, or mark progress before durable evidence exists.
 | Compression | Compress transport frames for JSON, SQL batches, manifests, and text files. Skip already-compressed file types and keep the canonical hash over the uncompressed resource value. | Content encoding is transport metadata. It must not change the hash used for conflict detection or compare-and-swap. |
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
+
+The safe version of a fast path is usually a "skip duplicate staging work" or
+"stage earlier" optimization, not a "commit earlier" optimization. The commit
+point is where no-data-loss guarantees are easiest to lose, so it stays narrow,
+preconditioned, idempotent, and journaled.
 
 ## File Hashing
 
@@ -89,6 +107,11 @@ staging operations. The atomic group commit is the visibility boundary.
 Reject blind `REPLACE INTO`, unordered SQL replay, and batches that use one
 table-level timestamp as a substitute for per-row preconditions.
 
+Do not merge rows from different plugin owners or atomic groups into the same
+visibility batch just because their SQL shape matches. The executor can share a
+prepared statement shape and still issue separate group-scoped batches. That
+keeps recovery records tied to the rows that may become visible together.
+
 ## Remote Indexes
 
 Remote indexes should make planning cheaper by listing resource metadata and
@@ -145,6 +168,12 @@ compression can stop feeding the upload queue while staging disk is high. Work
 already acknowledged stays resumable through chunk receipts, row batch commit
 records, and atomic group staging records.
 
+Atomic group commits are a global barrier per site. Hashing, chunk upload,
+compression, index scanning, and row staging may run ahead of the barrier, but
+the group commit must wait for complete member receipts, live precondition
+rechecks, dependency validators, plugin metadata validators, activation
+validators, and the final durable commit record.
+
 ## Fast Paths To Reject
 
 - Publishing chunks directly into the live file path.
@@ -170,6 +199,15 @@ records, and atomic group staging records.
   package hash was cached.
 - Treating a present staging object as a completed chunk without a matching
   durable receipt.
+- Merging database rows from different plugin owners or atomic groups into one
+  commit-visible batch.
+- Treating a remote index cursor, generation, or ETag as a lock that can cover
+  later apply writes.
+- Committing an atomic group when any staged file, row batch, plugin metadata
+  entry, dependency check, or activation validator lacks a matching receipt.
+- Letting backpressure drop queued precondition evidence or compress buffered
+  state into a summary that cannot identify the affected resources after a
+  crash.
 
 ## Benchmark Shape
 
