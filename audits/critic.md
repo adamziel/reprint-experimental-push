@@ -91,6 +91,8 @@ or an operator-facing success message that is stronger than the proof.
    remote after planning.
 7. Add reviewed conflict-resolution artifacts that preserve base/local/remote
    evidence, reviewer identity, chosen action, and fresh revalidation data.
+   The approval must bind to a specific live snapshot and expire on any remote
+   drift so a retry cannot reuse stale manual permission.
 8. Extend storage-boundary checks to production write primitives, including
    inserts, deletes, schema changes, file publish/unlink, plugin activation
    side effects, and any write path that can expose mixed old/new state.
