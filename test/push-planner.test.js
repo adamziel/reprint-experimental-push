@@ -1492,6 +1492,44 @@ test('durable retry after dependency validation preserves the recovery artifact 
   );
 });
 
+test('durable retry after an old-remote failure reopens append-only without duplicating targets', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+
+  const firstWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, { failBeforeMutation: true, durableJournal: firstWriter }));
+  firstWriter.close();
+
+  assert.ok(firstError instanceof PushPlanError);
+  assert.equal(firstError.details.recovery.status, 'old-remote');
+  assert.equal(firstError.details.recovery.artifacts.journal.status, 'opened');
+
+  const retryWriter = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retry = applyPlan(remote, plan, {
+    journal: firstError.details.recovery.artifacts.journal,
+    durableJournal: retryWriter,
+    mutateRemote: true,
+  });
+  retryWriter.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  const targetRecords = persisted.records.filter((record) => record.type === 'target-planned');
+
+  assert.equal(retry.appliedMutations, 2);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(remote.files['index.php'], '<?php echo "local";');
+  assert.equal(remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(targetRecords.length, plan.mutations.length);
+  assert.ok(persisted.records.some((record) => record.type === 'journal-retry-opened'));
+  assert.equal(persisted.integrity.status, 'ok');
+});
+
 test('atomic apply recovery boundaries only land in old remote, fully updated remote, or blocked recovery with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
