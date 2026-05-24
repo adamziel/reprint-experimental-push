@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Progress Publisher Refresh
+
+- Last update: 2026-05-25 00:39 CEST.
+- Public page: [progress.html](../progress.html) now shows the live timestamp,
+  a concise evidence summary, and the current pending gates without claiming
+  production executor or journal proof.
+- Evidence links: [Playground topology](playground-topology.md),
+  [protocol sketch](protocol.md), [executor notes](executor.md),
+  [objective audit](../audits/objective-audit.md), and
+  [critic audit](../audits/critic.md).
+- Status remains unchanged: lab/model proof is improving, while real WordPress
+  executor, recovery journal, Docker/Playground integration, and plugin
+  drivers stay pending.
+
 ## 2026-05-25 - Current Public Refresh
 
 - Last update: 2026-05-25 00:36 CEST.
