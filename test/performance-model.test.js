@@ -1159,6 +1159,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.ok(
+    rejectedById.get('compressed-row-batch-skips-group-finalize').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-row-batch-skips-group-finalize').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-row-batch-skips-group-finalize').violates.includes('plugin-preconditions'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-row-batch-skips-group-finalize').rejectedGate,
+    'group',
+  );
+  assert.ok(
     rejectedById
       .get('index-and-compressed-row-batch-completes-plugin-update')
       .violates.includes('plugin-preconditions'),
@@ -1658,6 +1671,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'compressed-upload-queue-completes-large-upload',
     'fingerprint-and-compressed-upload-queue-completes-large-upload',
     'compressed-receipts-replace-durable-progress',
+    'compressed-row-batch-skips-group-finalize',
     'fingerprint-completes-large-upload',
     'compressed-file-hash-skips-chunk-receipts',
     'compressed-manifest-hash-skips-live-compare',

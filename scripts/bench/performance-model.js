@@ -630,6 +630,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'row-preconditions', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-row-batch-skips-group-finalize',
+    proposal: 'treat a compressed row batch as enough proof to skip the group finalize barrier for a dependency-heavy plugin update',
+    rejectedBecause: 'compressed batches can reduce recovery work, but they cannot prove the dependency checks held, the group finalize ran, or the atomic-group visibility boundary survived failure',
+    rejectedGate: 'group',
+    violates: ['compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-row-summary-completes-plugin-activation',
     proposal: 'treat a fresh remote index plus a compressed row summary as proof that plugin activation already finished',
     rejectedBecause: 'planning evidence and a compressed batch summary can reduce lookup work, but they cannot prove the per-row receipts, activation state change, or atomic-group commit survived failure',
