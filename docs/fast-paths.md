@@ -24,6 +24,13 @@ Every proposed fast path has to pass these gates before implementation:
   executor can classify the remote as old, new, or blocked from durable
   receipts and journal records without inferring intent from partial artifacts.
 
+The benchmark model encodes the same gates in `fastPathGates`. Each
+`safeFastPaths` entry must carry a concrete proof for all four gates, even when
+the proof is that a gate is not doing mutation work, such as remote indexes or
+backpressure pauses. Each rejected entry names the first gate it breaks through
+`rejectedGate`; that keeps "fast but ambiguous after failure" proposals out of
+the safe list even when they improve a throughput metric.
+
 ## Safe Speedups
 
 | Area | Safe fast path | Required guardrail |
@@ -308,13 +315,17 @@ inspect after a lost response or process failure.
 
 The model exposes three contract lists that tests should keep current:
 
+- `fastPathGates` records the skip, live precondition, atomic group, and
+  recovery gates that every speedup has to satisfy.
 - `safeFastPaths` records each safe proposal's benefit, allowed shortcut,
-  guardrails, visibility boundary, and failure evidence.
+  guardrails, gate proofs, visibility boundary, and failure evidence.
 - `safeSpeedupAreas` covers file hashing, chunk upload, database row batching,
   remote indexes, compression, parallelism limits, and backpressure.
 - `rejectedFastPaths` records proposals that are not allowed because they
   bypass preconditions, split atomic groups, publish staged data early, confuse
   canonical hashes with transport encoding, or lose durable progress evidence.
+  Each rejection names the broken gate so precondition bypasses and atomic group
+  splits stay visible in benchmark review.
 - `failureInjectionBoundaries` names the durable transitions that benchmarks
   must exercise: chunk ack, database batch commit, group staging finalize, and
   atomic group commit.
