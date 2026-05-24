@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyPlan, PushPlanError } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
+import { resourceHash } from '../src/resources.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -49,6 +50,10 @@ function mutationFor(plan, resourceKey) {
 
 function decisionFor(plan, resourceKey) {
   return plan.decisions.find((decision) => decision.resourceKey === resourceKey);
+}
+
+function pluginResource(name) {
+  return { type: 'plugin', name, key: `plugin:${name}` };
 }
 
 function assertEveryMutationHasLiveRemotePrecondition(plan) {
@@ -314,7 +319,15 @@ test('applies an atomic plugin install when dependencies are included in the sam
         'plugin:commerce',
         'row:["wp_options","option_name:commerce_settings"]',
       ],
-      dependencies: { plugins: ['payments'] },
+      dependencies: {
+        plugins: [
+          {
+            name: 'payments',
+            version: '2.1.0',
+            hash: resourceHash(local, pluginResource('payments')),
+          },
+        ],
+      },
     },
   ];
 
@@ -326,6 +339,145 @@ test('applies an atomic plugin install when dependencies are included in the sam
   assert.equal(result.site.plugins.commerce.version, '1.0.0');
   assert.equal(result.site.plugins.payments.version, '2.1.0');
   assert.equal(result.site.db.wp_options['option_name:commerce_settings'].option_value.currency, 'USD');
+});
+
+test('blocks an atomic plugin bundle when its dependency mutation is outside the group', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.plugins.payments = { version: '2.1.0', active: true };
+  local.plugins.commerce = { version: '1.0.0', active: true, requires: ['payments'] };
+  local.pushIntents = [
+    {
+      id: 'install-payments',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: ['plugin:payments'],
+    },
+    {
+      id: 'install-commerce',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: ['plugin:commerce'],
+      dependencies: { plugins: ['payments'] },
+    },
+  ];
+
+  const plan = planFor(base, local, baseSite());
+  const commerceGroup = plan.atomicGroups.find((group) => group.id === 'install-commerce');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(commerceGroup.status, 'blocked');
+  assert.equal(commerceGroup.blockers[0].class, 'plugin-dependency-outside-atomic-group');
+  assert.equal(commerceGroup.blockers[0].plugin, 'payments');
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks a dependent atomic bundle when a remote dependency changed since base', () => {
+  const base = baseSite();
+  base.plugins.payments = { version: '2.1.0', active: true };
+  const local = baseSite();
+  local.plugins.payments = { version: '2.1.0', active: true };
+  local.db.wp_options['option_name:commerce_settings'] = {
+    option_name: 'commerce_settings',
+    option_value: { currency: 'USD' },
+    __pluginOwner: 'commerce',
+  };
+  local.pushIntents = [
+    {
+      id: 'update-commerce-settings',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: ['row:["wp_options","option_name:commerce_settings"]'],
+      dependencies: {
+        plugins: [
+          {
+            name: 'payments',
+            version: '2.1.0',
+            hash: resourceHash(base, pluginResource('payments')),
+          },
+        ],
+      },
+    },
+  ];
+  const remote = baseSite();
+  remote.plugins.payments = { version: '2.2.0', active: true };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'remote-plugin-dependency-drift');
+  assert.equal(blocker.plugin, 'payments');
+  assert.equal(decisionFor(plan, 'plugin:payments').decision, 'keep-remote');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks an atomic bundle with an incompatible plugin dependency version range', () => {
+  const base = baseSite();
+  base.plugins.payments = { version: '2.1.0', active: true };
+  const local = baseSite();
+  local.plugins.payments = { version: '2.1.0', active: true };
+  local.db.wp_options['option_name:commerce_settings'] = {
+    option_name: 'commerce_settings',
+    option_value: { currency: 'USD' },
+    __pluginOwner: 'commerce',
+  };
+  local.pushIntents = [
+    {
+      id: 'update-commerce-settings',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: ['row:["wp_options","option_name:commerce_settings"]'],
+      dependencies: {
+        plugins: [{ name: 'payments', versionRange: '>=3.0.0 <4.0.0' }],
+      },
+    },
+  ];
+  const remote = baseSite();
+  remote.plugins.payments = { version: '2.1.0', active: true };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'incompatible-plugin-dependency-version-range');
+  assert.equal(blocker.plugin, 'payments');
+  assert.match(blocker.reason, />=3\.0\.0 <4\.0\.0/);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks an atomic bundle when dependency hash metadata does not match remote', () => {
+  const base = baseSite();
+  base.plugins.payments = { version: '2.1.0', active: true };
+  const local = baseSite();
+  local.plugins.payments = { version: '2.1.0', active: true };
+  local.db.wp_options['option_name:commerce_settings'] = {
+    option_name: 'commerce_settings',
+    option_value: { currency: 'USD' },
+    __pluginOwner: 'commerce',
+  };
+  local.pushIntents = [
+    {
+      id: 'update-commerce-settings',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: ['row:["wp_options","option_name:commerce_settings"]'],
+      dependencies: {
+        plugins: [{ name: 'payments', hash: 'sha256:not-the-remote-plugin-hash' }],
+      },
+    },
+  ];
+  const remote = baseSite();
+  remote.plugins.payments = { version: '2.1.0', active: true };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'plugin-dependency-hash-mismatch');
+  assert.equal(blocker.plugin, 'payments');
+  assert.equal(blocker.expectedHash, 'sha256:not-the-remote-plugin-hash');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('rejects apply when the remote changed after dry-run planning', () => {

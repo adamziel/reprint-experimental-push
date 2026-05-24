@@ -124,7 +124,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
   }
 
   addFileTopologyConflicts(plan, resources, base, local, remote);
-  plan.atomicGroups = intents.map((intent) => buildAtomicGroup(intent, plan, remote));
+  plan.atomicGroups = intents.map((intent) => buildAtomicGroup(intent, plan, base, remote));
   plan.blockers.push(...plan.atomicGroups.flatMap((group) => group.blockers));
   enforceMutationPreconditionInvariant(plan);
 
@@ -152,7 +152,8 @@ function mapIntentsByResource(intents) {
   return map;
 }
 
-function buildAtomicGroup(intent, plan, remote) {
+function buildAtomicGroup(intent, plan, base, remote) {
+  const groupResourceKeys = new Set(intent.resources || []);
   const mutationIds = plan.mutations
     .filter((mutation) => mutation.atomicGroupId === intent.id)
     .map((mutation) => mutation.id);
@@ -160,18 +161,27 @@ function buildAtomicGroup(intent, plan, remote) {
     .filter((conflict) => (intent.resources || []).includes(conflict.resourceKey))
     .map((conflict) => conflict.id);
   const blockers = [];
-  const requiredPlugins = intent.dependencies?.plugins || [];
+  const requiredPlugins = normalizePluginDependencies(intent.dependencies?.plugins || []);
 
-  for (const plugin of requiredPlugins) {
-    if (!willHavePlugin(plugin, plan, remote)) {
-      blockers.push({
-        id: `blocker-${intent.id}-${plugin}`,
-        class: 'missing-plugin-dependency',
-        groupId: intent.id,
-        plugin,
-        reason: `Atomic push intent ${intent.id} requires plugin ${plugin}.`,
-      });
-    }
+  requiredPlugins.forEach((dependency, index) => {
+    blockers.push(...evaluatePluginDependency({
+      dependency,
+      dependencyIndex: index,
+      intent,
+      groupResourceKeys,
+      plan,
+      base,
+      remote,
+    }));
+  });
+
+  if (requiredPlugins.some((dependency) => !dependency.name)) {
+    blockers.push({
+      id: `blocker-${intent.id}-invalid-plugin-dependency`,
+      class: 'invalid-plugin-dependency-metadata',
+      groupId: intent.id,
+      reason: `Atomic push intent ${intent.id} declares a plugin dependency without a plugin name.`,
+    });
   }
 
   return {
@@ -182,19 +192,339 @@ function buildAtomicGroup(intent, plan, remote) {
     resources: [...(intent.resources || [])],
     mutationIds,
     conflicts,
-    dependencies: deepClone(intent.dependencies || {}),
+    dependencies: normalizeGroupDependencies(intent.dependencies || {}, requiredPlugins),
+    dependencyRequirements: requiredPlugins.map((dependency) => ({
+      plugin: dependency.name,
+      expectedVersion: dependency.expectedVersion,
+      versionRange: dependency.versionRange,
+      expectedHash: dependency.expectedHash,
+      active: dependency.active,
+    })),
     status: conflicts.length > 0 ? 'conflict' : blockers.length > 0 ? 'blocked' : 'ready',
     blockers,
   };
 }
 
-function willHavePlugin(plugin, plan, remote) {
-  const pluginResourceKey = `plugin:${plugin}`;
-  const mutation = plan.mutations.find((entry) => entry.resourceKey === pluginResourceKey);
-  if (mutation) {
-    return deserializeResourceValue(mutation.value) !== ABSENT;
+function normalizeGroupDependencies(dependencies, requiredPlugins) {
+  return {
+    ...deepClone(dependencies),
+    plugins: requiredPlugins
+      .map((dependency) => dependency.name)
+      .filter(Boolean),
+  };
+}
+
+function normalizePluginDependencies(dependencies) {
+  return dependencies.map((dependency) => {
+    if (typeof dependency === 'string') {
+      return { name: dependency };
+    }
+    if (!dependency || typeof dependency !== 'object') {
+      return { name: null, raw: dependency };
+    }
+    const version = dependency.version ?? null;
+    const requiredVersion = dependency.requiredVersion ?? null;
+    return {
+      name: dependency.name || dependency.slug || dependency.plugin || null,
+      expectedVersion: dependency.expectedVersion
+        ?? dependency.exactVersion
+        ?? (typeof version === 'string' && !looksLikeVersionRange(version) ? version : null)
+        ?? (typeof requiredVersion === 'string' && !looksLikeVersionRange(requiredVersion)
+          ? requiredVersion
+          : null),
+      versionRange: dependency.versionRange
+        ?? dependency.range
+        ?? (typeof version === 'string' && looksLikeVersionRange(version) ? version : null)
+        ?? (typeof requiredVersion === 'string' && looksLikeVersionRange(requiredVersion)
+          ? requiredVersion
+          : null),
+      expectedHash: dependency.expectedHash ?? dependency.hash ?? dependency.resourceHash ?? null,
+      active: typeof dependency.active === 'boolean' ? dependency.active : null,
+      raw: deepClone(dependency),
+    };
+  });
+}
+
+function evaluatePluginDependency({
+  dependency,
+  dependencyIndex,
+  intent,
+  groupResourceKeys,
+  plan,
+  base,
+  remote,
+}) {
+  if (!dependency.name) {
+    return [];
   }
-  return hasPlugin(remote, plugin);
+
+  const blockers = [];
+  const plugin = dependency.name;
+  const pluginResource = { type: 'plugin', name: plugin, key: `plugin:${plugin}` };
+  const sameGroupMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === pluginResource.key && mutation.atomicGroupId === intent.id);
+  const outsideGroupMutation = plan.mutations.find((mutation) =>
+    mutation.resourceKey === pluginResource.key && mutation.atomicGroupId !== intent.id);
+  const dependencyConflict = plan.conflicts.find((conflict) =>
+    conflict.resourceKey === pluginResource.key);
+
+  if (dependencyConflict && !groupResourceKeys.has(pluginResource.key)) {
+    blockers.push(pluginDependencyBlocker({
+      intent,
+      dependency,
+      dependencyIndex,
+      className: 'conflicting-plugin-dependency',
+      reason: `Atomic push intent ${intent.id} depends on plugin ${plugin}, but that dependency already has a conflict.`,
+      extra: { conflictId: dependencyConflict.id },
+    }));
+    return blockers;
+  }
+
+  if (sameGroupMutation) {
+    const plannedValue = deserializeResourceValue(sameGroupMutation.value);
+    if (plannedValue === ABSENT) {
+      blockers.push(pluginDependencyBlocker({
+        intent,
+        dependency,
+        dependencyIndex,
+        className: 'missing-plugin-dependency',
+        reason: `Atomic push intent ${intent.id} would remove required plugin ${plugin}.`,
+      }));
+      return blockers;
+    }
+    blockers.push(...validatePluginDependencyValue({
+      dependency,
+      dependencyIndex,
+      intent,
+      value: plannedValue,
+      hash: digestPluginValue(plannedValue),
+      source: 'same-atomic-group',
+    }));
+    return blockers;
+  }
+
+  if (outsideGroupMutation) {
+    blockers.push(pluginDependencyBlocker({
+      intent,
+      dependency,
+      dependencyIndex,
+      className: 'plugin-dependency-outside-atomic-group',
+      reason: `Atomic push intent ${intent.id} depends on plugin ${plugin}, but its planned mutation is outside this atomic group.`,
+      extra: { mutationId: outsideGroupMutation.id },
+    }));
+    return blockers;
+  }
+
+  if (!hasPlugin(remote, plugin)) {
+    blockers.push(pluginDependencyBlocker({
+      intent,
+      dependency,
+      dependencyIndex,
+      className: 'missing-plugin-dependency',
+      reason: `Atomic push intent ${intent.id} requires plugin ${plugin}, but it is absent from the live remote.`,
+    }));
+    return blockers;
+  }
+
+  const baseHash = resourceHash(base, pluginResource);
+  const remoteHash = resourceHash(remote, pluginResource);
+  if (baseHash !== remoteHash) {
+    blockers.push(pluginDependencyBlocker({
+      intent,
+      dependency,
+      dependencyIndex,
+      className: 'remote-plugin-dependency-drift',
+      reason: `Atomic push intent ${intent.id} depends on plugin ${plugin}, but the live remote dependency changed since the pull base.`,
+      extra: {
+        baseHash,
+        remoteHash,
+      },
+    }));
+    return blockers;
+  }
+
+  blockers.push(...validatePluginDependencyValue({
+    dependency,
+    dependencyIndex,
+    intent,
+    value: getResource(remote, pluginResource),
+    hash: remoteHash,
+    source: 'live-remote',
+  }));
+
+  return blockers;
+}
+
+function validatePluginDependencyValue({ dependency, dependencyIndex, intent, value, hash, source }) {
+  const blockers = [];
+  const plugin = dependency.name;
+
+  if (dependency.expectedHash && dependency.expectedHash !== hash) {
+    blockers.push(pluginDependencyBlocker({
+      intent,
+      dependency,
+      dependencyIndex,
+      className: 'plugin-dependency-hash-mismatch',
+      reason: `Atomic push intent ${intent.id} requires plugin ${plugin} at hash ${dependency.expectedHash}, but ${source} has ${hash}.`,
+      extra: { expectedHash: dependency.expectedHash, actualHash: hash, source },
+    }));
+  }
+
+  const actualVersion = value?.version;
+  if ((dependency.expectedVersion || dependency.versionRange) && typeof actualVersion !== 'string') {
+    blockers.push(pluginDependencyBlocker({
+      intent,
+      dependency,
+      dependencyIndex,
+      className: 'plugin-dependency-version-missing',
+      reason: `Atomic push intent ${intent.id} requires a versioned plugin dependency ${plugin}, but ${source} has no version metadata.`,
+      extra: { source },
+    }));
+    return blockers;
+  }
+
+  if (dependency.expectedVersion && actualVersion !== dependency.expectedVersion) {
+    blockers.push(pluginDependencyBlocker({
+      intent,
+      dependency,
+      dependencyIndex,
+      className: 'incompatible-plugin-dependency-version',
+      reason: `Atomic push intent ${intent.id} requires plugin ${plugin} version ${dependency.expectedVersion}, but ${source} has ${actualVersion}.`,
+      extra: { expectedVersion: dependency.expectedVersion, actualVersion, source },
+    }));
+  }
+
+  if (dependency.versionRange) {
+    const rangeResult = satisfiesVersionRange(actualVersion, dependency.versionRange);
+    if (rangeResult.unsupported) {
+      blockers.push(pluginDependencyBlocker({
+        intent,
+        dependency,
+        dependencyIndex,
+        className: 'unsupported-plugin-dependency-version-range',
+        reason: `Atomic push intent ${intent.id} declares unsupported version range ${dependency.versionRange} for plugin ${plugin}.`,
+        extra: { versionRange: dependency.versionRange, actualVersion, source },
+      }));
+    } else if (!rangeResult.satisfied) {
+      blockers.push(pluginDependencyBlocker({
+        intent,
+        dependency,
+        dependencyIndex,
+        className: 'incompatible-plugin-dependency-version-range',
+        reason: `Atomic push intent ${intent.id} requires plugin ${plugin} version ${dependency.versionRange}, but ${source} has ${actualVersion}.`,
+        extra: { versionRange: dependency.versionRange, actualVersion, source },
+      }));
+    }
+  }
+
+  if (dependency.active != null && Boolean(value?.active) !== dependency.active) {
+    blockers.push(pluginDependencyBlocker({
+      intent,
+      dependency,
+      dependencyIndex,
+      className: 'incompatible-plugin-dependency-activation',
+      reason: `Atomic push intent ${intent.id} requires plugin ${plugin} active=${dependency.active}, but ${source} has active=${Boolean(value?.active)}.`,
+      extra: { expectedActive: dependency.active, actualActive: Boolean(value?.active), source },
+    }));
+  }
+
+  return blockers;
+}
+
+function pluginDependencyBlocker({
+  intent,
+  dependency,
+  dependencyIndex,
+  className,
+  reason,
+  extra = {},
+}) {
+  return {
+    id: `blocker-${intent.id}-${dependency.name || 'plugin'}-${dependencyIndex}`,
+    class: className,
+    groupId: intent.id,
+    plugin: dependency.name,
+    dependency: deepClone(dependency.raw || dependency),
+    reason,
+    ...extra,
+  };
+}
+
+function digestPluginValue(value) {
+  return resourceHash({ plugins: { __dependency__: value } }, {
+    type: 'plugin',
+    name: '__dependency__',
+    key: 'plugin:__dependency__',
+  });
+}
+
+function looksLikeVersionRange(version) {
+  return /[<>=~^* ]/.test(version);
+}
+
+function satisfiesVersionRange(version, range) {
+  const comparators = String(range).trim().split(/\s+/).filter(Boolean);
+  if (comparators.length === 0) {
+    return { supported: false, unsupported: true, satisfied: false };
+  }
+
+  for (const comparator of comparators) {
+    const match = comparator.match(/^(>=|>|<=|<|=)?(.+)$/);
+    if (!match) {
+      return { supported: false, unsupported: true, satisfied: false };
+    }
+    const operator = match[1] || '=';
+    const expected = match[2];
+    const comparison = compareVersions(version, expected);
+    if (comparison === null || !comparatorSatisfied(comparison, operator)) {
+      return comparison === null
+        ? { supported: false, unsupported: true, satisfied: false }
+        : { supported: true, unsupported: false, satisfied: false };
+    }
+  }
+
+  return { supported: true, unsupported: false, satisfied: true };
+}
+
+function comparatorSatisfied(comparison, operator) {
+  if (operator === '>') {
+    return comparison > 0;
+  }
+  if (operator === '>=') {
+    return comparison >= 0;
+  }
+  if (operator === '<') {
+    return comparison < 0;
+  }
+  if (operator === '<=') {
+    return comparison <= 0;
+  }
+  return comparison === 0;
+}
+
+function compareVersions(left, right) {
+  const leftParts = parseVersion(left);
+  const rightParts = parseVersion(right);
+  if (!leftParts || !rightParts) {
+    return null;
+  }
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index++) {
+    const leftPart = leftParts[index] || 0;
+    const rightPart = rightParts[index] || 0;
+    if (leftPart !== rightPart) {
+      return leftPart > rightPart ? 1 : -1;
+    }
+  }
+  return 0;
+}
+
+function parseVersion(version) {
+  const normalized = String(version).replace(/^v/i, '');
+  if (!/^\d+(\.\d+)*$/.test(normalized)) {
+    return null;
+  }
+  return normalized.split('.').map((part) => Number.parseInt(part, 10));
 }
 
 function conflictClass(resource, owner) {

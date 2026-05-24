@@ -6,14 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Baseline Evidence Pass
 
-- `npm test` passed with 25 Node test scenarios covering the deterministic JSON
+- `npm test` passed with 29 Node test scenarios covering the deterministic JSON
   snapshot planner and applicator. Evidence:
   [test/push-planner.test.js](../test/push-planner.test.js) and
   [test/performance-model.test.js](../test/performance-model.test.js).
 - The current planner implements three-way base/local/remote comparison,
   conflict stops, remote-only preservation, plugin-owned conflict
-  classification, atomic intent dependency checks, and precondition hashes.
-  Evidence: [src/planner.js](../src/planner.js).
+  classification, atomic intent dependency checks, dependency version/hash
+  checks, stale remote dependency blocking, and precondition hashes. Evidence:
+  [src/planner.js](../src/planner.js).
 - The current applicator validates preconditions, stages mutations, rejects
   non-ready plans, and returns journal/recovery evidence for old remote, fully
   updated remote, and blocked recovery cases. Evidence:
@@ -51,27 +52,45 @@ linked implementation artifacts.
   source mutation support; the real HTTP transport/source mutation endpoint is
   still a pending proof gate.
 
+## 2026-05-24 - Playground Fixture Protocol Smoke
+
+- `npm run test:playground` now includes
+  `scripts/playground/push-protocol-smoke.mjs`, which mounts the lab-only
+  `scripts/playground/push-remote-endpoint.php` and
+  `scripts/playground/push-remote-lib.php` files into no-server Playground.
+- The smoke proves dry-run is read-only by same-process WordPress before/after
+  readback, applies a ready fixture plan with a supplied dry-run receipt,
+  verifies five fixture mutations and hashes, rejects stale apply with
+  `PRECONDITION_FAILED`, and preserves the drifted remote fixture.
+- Conflict dry-run and apply both refuse with `PLAN_NOT_READY` and return audit
+  evidence for row, file, and plugin-data conflict classes.
+- This remains fixture-scoped lab evidence. The PHP endpoint still permits
+  apply without a supplied prior receipt by creating one inline, so prior
+  dry-run receipts are verified in the smoke but not yet mandatory. Production
+  Reprint HTTP source mutation support remains pending.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
-| Merge invariants | 32% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply harness in [playground topology](playground-topology.md) | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks |
+| Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md) | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks |
 | Recovery boundaries | 14% | Journal/recovery artifacts in [src/apply.js](../src/apply.js) and tests | Durable on-disk journal, process-kill tests, storage-level recovery proof |
-| Reliable executor and protocol | 14% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, and guarded Playground apply | Implemented Reprint protocol extension, real WordPress mutation executor, remote audit records |
+| Reliable executor and protocol | 18% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, and fixture-scoped Playground protocol smoke | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
 
 ## 2026-05-24 - Explicit Pending Proof Gates
 
 - Real WordPress executor: pending until a source site is mutated through the
-  intended protocol and verified after apply.
+  intended production protocol and verified after apply. The current Playground
+  protocol smoke is a fixture-scoped lab endpoint only.
 - Durable recovery journal: pending until journal files or equivalent recovery
   artifacts survive process failure and classify the target as old, new, or
   blocked.
-- WordPress integration: Playground base/local/remote fixtures now smoke-test
-  and export planner snapshots. Guarded apply now runs into a fresh Playground
-  source with WordPress-visible readback; production push behavior remains
-  pending until mutations flow through the intended HTTP source endpoint and are
-  verified there.
+- WordPress integration: Playground base/local/remote fixtures now smoke-test,
+  export planner snapshots, run guarded apply into a fresh Playground source,
+  and exercise a lab-only fixture protocol endpoint with WordPress-visible
+  readback. Production push behavior remains pending until mutations flow
+  through the intended HTTP source endpoint and are verified there.
 - Plugin validators or drivers: pending until plugin-specific semantics are
   implemented and tested against real plugin-owned data.

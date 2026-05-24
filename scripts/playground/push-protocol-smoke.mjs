@@ -1,0 +1,396 @@
+#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createPushPlan } from '../../src/planner.js';
+import { digest } from '../../src/stable-json.js';
+import { resourceHash } from '../../src/resources.js';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+
+const fixtures = {
+  base: 'fixtures/playground/remote-base.blueprint.json',
+  local: 'fixtures/playground/local-edited.blueprint.json',
+  remoteChanged: 'fixtures/playground/remote-changed.blueprint.json',
+};
+
+const tmpDir = path.join(repoRoot, '.tmp');
+fs.mkdirSync(tmpDir, { recursive: true });
+
+const endpointWrapperPath = path.join(tmpDir, 'push-protocol-endpoint-readback.php');
+fs.writeFileSync(endpointWrapperPath, endpointWrapperSource());
+
+const snapshots = Object.fromEntries(
+  Object.entries(fixtures).map(([name, fixture]) => [
+    name,
+    exportSnapshot(name, path.join(repoRoot, fixture)),
+  ]),
+);
+
+assert.equal(snapshots.base.meta.fixture, 'remote-base');
+assert.equal(snapshots.local.meta.fixture, 'local-edited');
+assert.equal(snapshots.remoteChanged.meta.fixture, 'remote-changed');
+
+const readyPlan = createPushPlan({
+  base: snapshots.base,
+  local: snapshots.local,
+  remote: snapshots.base,
+  now: fixedNow,
+});
+
+assert.equal(readyPlan.status, 'ready');
+assert.equal(readyPlan.summary.conflicts, 0);
+assert.equal(readyPlan.summary.blockers, 0);
+assert.ok(readyPlan.mutations.length > 0, 'expected ready plan mutations');
+
+const readyPlanPath = writeJson('push-protocol-ready-plan.json', readyPlan);
+
+const dryRun = runEndpoint({
+  name: 'ready dry-run',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'dry-run',
+  planPath: readyPlanPath,
+});
+
+assert.equal(dryRun.status, 0);
+assert.equal(dryRun.result.ok, true);
+assert.equal(dryRun.result.mode, 'dry-run');
+assert.equal(dryRun.result.applied, 0);
+assert.equal(dryRun.result.receipt.mode, 'dry-run');
+assertSnapshotContentEqual(dryRun.readback.beforeSnapshot, snapshots.base, 'dry-run before snapshot');
+assertSnapshotEqual(dryRun.readback.afterSnapshot, dryRun.readback.beforeSnapshot, 'dry-run same-process readback');
+assertSnapshotContentEqual(dryRun.result.currentSnapshot, snapshots.base, 'dry-run current snapshot');
+assertTargetHashes(readyPlan, snapshots.base, 'expectedHash', 'dry-run base preconditions');
+assert.deepEqual(
+  dryRun.result.verifiedPreconditions.map((entry) => entry.resourceKey),
+  readyPlan.mutations.map((mutation) => mutation.resourceKey),
+);
+
+const dryRunReceiptPath = writeJson('push-protocol-ready-dry-run-receipt.json', dryRun.result.receipt);
+
+const apply = runEndpoint({
+  name: 'ready apply',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'apply',
+  planPath: readyPlanPath,
+  receiptPath: dryRunReceiptPath,
+});
+
+assert.equal(apply.status, 0);
+assert.equal(apply.result.ok, true);
+assert.equal(apply.result.mode, 'apply');
+assert.equal(apply.result.applied, readyPlan.mutations.length);
+assert.deepEqual(
+  apply.result.verifiedKeys,
+  readyPlan.mutations.map((mutation) => mutation.resourceKey),
+);
+assertSnapshotContentEqual(apply.readback.beforeSnapshot, snapshots.base, 'apply before snapshot');
+assertSnapshotEqual(apply.readback.afterSnapshot, apply.result.afterSnapshot, 'apply endpoint/readback after snapshot');
+assertVisibleSurfaceEqual(apply.result.afterSnapshot, snapshots.local, 'apply final visible surface');
+assertAppliedHashes(readyPlan, apply.result.afterSnapshot);
+assertAppliedFixtureValues(apply.result.afterSnapshot);
+
+const staleApply = runEndpoint({
+  name: 'stale apply',
+  blueprintPath: path.join(repoRoot, fixtures.remoteChanged),
+  mode: 'apply',
+  planPath: readyPlanPath,
+  receiptPath: dryRunReceiptPath,
+});
+
+assert.notEqual(staleApply.status, 0, 'expected stale apply to fail');
+assert.equal(staleApply.result.ok, false);
+assert.equal(staleApply.result.code, 'PRECONDITION_FAILED');
+assertSnapshotContentEqual(staleApply.readback.beforeSnapshot, snapshots.remoteChanged, 'stale before snapshot');
+assertSnapshotEqual(staleApply.readback.afterSnapshot, staleApply.readback.beforeSnapshot, 'stale same-process readback');
+assertSnapshotContentEqual(staleApply.result.currentSnapshot, snapshots.remoteChanged, 'stale failure current snapshot');
+assert.notDeepEqual(
+  visibleSurface(staleApply.readback.afterSnapshot),
+  visibleSurface(snapshots.local),
+  'stale failure must leave remote drift instead of applying local state',
+);
+
+const conflictPlan = createPushPlan({
+  base: snapshots.base,
+  local: snapshots.local,
+  remote: snapshots.remoteChanged,
+  now: fixedNow,
+});
+
+assert.equal(conflictPlan.status, 'conflict');
+const conflictPlanPath = writeJson('push-protocol-conflict-plan.json', conflictPlan);
+
+const conflictDryRun = runEndpoint({
+  name: 'conflict dry-run',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'dry-run',
+  planPath: conflictPlanPath,
+});
+
+assertPlanNotReady(conflictDryRun, snapshots.base, 'conflict dry-run');
+assertConflictClasses(conflictDryRun.result);
+
+const conflictApply = runEndpoint({
+  name: 'conflict apply',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'apply',
+  planPath: conflictPlanPath,
+});
+
+assertPlanNotReady(conflictApply, snapshots.base, 'conflict apply');
+assertConflictClasses(conflictApply.result);
+
+console.log(JSON.stringify({
+  snapshots: Object.fromEntries(
+    Object.entries(snapshots).map(([name, snapshot]) => [
+      name,
+      {
+        fixture: snapshot.meta.fixture,
+        posts: Object.keys(snapshot.db.wp_posts).length,
+        options: Object.keys(snapshot.db.wp_options).length,
+        files: Object.keys(snapshot.files).length,
+      },
+    ]),
+  ),
+  ready: {
+    status: readyPlan.status,
+    mutations: readyPlan.mutations.length,
+    dryRunVerified: dryRun.result.verifiedPreconditions.length,
+    applied: apply.result.applied,
+    verifiedKeys: apply.result.verifiedKeys.length,
+  },
+  stale: {
+    exitCode: staleApply.status,
+    code: staleApply.result.code,
+    resourceKey: staleApply.result.resourceKey,
+    preservedFixture: staleApply.readback.afterSnapshot.meta.fixture,
+  },
+  conflict: {
+    status: conflictPlan.status,
+    dryRunExitCode: conflictDryRun.status,
+    applyExitCode: conflictApply.status,
+    classes: conflictClasses(conflictDryRun.result),
+  },
+}, null, 2));
+
+function exportSnapshot(name, blueprintPath) {
+  const result = spawnSync('npx', [
+    '--yes',
+    '@wp-playground/cli@latest',
+    'php',
+    '--blueprint',
+    blueprintPath,
+    '--mount',
+    `${repoRoot}:/workspace`,
+    '--verbosity',
+    'quiet',
+    '--',
+    '/workspace/scripts/playground/export-site-snapshot.php',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  if (result.status !== 0) {
+    throw new Error(`Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+  }
+
+  return parseMarkedJson(
+    result.stdout,
+    'REPRINT_PUSH_SNAPSHOT_JSON_BEGIN',
+    'REPRINT_PUSH_SNAPSHOT_JSON_END',
+    `Snapshot markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
+  );
+}
+
+function runEndpoint({ name, blueprintPath, mode, planPath, receiptPath = null }) {
+  const args = [
+    '--yes',
+    '@wp-playground/cli@latest',
+    'php',
+    '--blueprint',
+    blueprintPath,
+    '--mount',
+    `${repoRoot}:/workspace`,
+    '--verbosity',
+    'quiet',
+    '--',
+    `/workspace/${path.relative(repoRoot, endpointWrapperPath)}`,
+    mode,
+    `/workspace/${path.relative(repoRoot, planPath)}`,
+  ];
+
+  if (receiptPath) {
+    args.push(`/workspace/${path.relative(repoRoot, receiptPath)}`);
+  }
+
+  const result = spawnSync('npx', args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  const payload = {
+    status: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+    result: parseMarkedJson(
+      result.stdout,
+      'REPRINT_PUSH_PROTOCOL_JSON_BEGIN',
+      'REPRINT_PUSH_PROTOCOL_JSON_END',
+      `Protocol markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
+    ),
+    readback: parseMarkedJson(
+      result.stdout,
+      'REPRINT_PUSH_PROTOCOL_READBACK_JSON_BEGIN',
+      'REPRINT_PUSH_PROTOCOL_READBACK_JSON_END',
+      `Readback markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
+    ),
+  };
+
+  return payload;
+}
+
+function writeJson(name, value) {
+  const filePath = path.join(tmpDir, name);
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+  return filePath;
+}
+
+function parseMarkedJson(stdout, begin, end, missingMessage) {
+  const match = stdout.match(new RegExp(`${begin}\\n([\\s\\S]*?)\\n${end}`));
+  if (!match) {
+    throw new Error(missingMessage);
+  }
+  return JSON.parse(match[1]);
+}
+
+function endpointWrapperSource() {
+  return `<?php
+if (!defined('ABSPATH')) {
+    require_once '/wordpress/wp-load.php';
+}
+require_once '/workspace/scripts/playground/snapshot-lib.php';
+
+$before_snapshot = reprint_push_export_snapshot();
+register_shutdown_function(static function () use ($before_snapshot): void {
+    $after_snapshot = reprint_push_export_snapshot();
+    echo "\\nREPRINT_PUSH_PROTOCOL_READBACK_JSON_BEGIN\\n";
+    echo json_encode([
+        'beforeSnapshot' => $before_snapshot,
+        'afterSnapshot' => $after_snapshot,
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\\n";
+    echo "REPRINT_PUSH_PROTOCOL_READBACK_JSON_END\\n";
+});
+
+$endpoint = '/workspace/scripts/playground/push-remote-endpoint.php';
+$argv = array_merge([$endpoint], array_slice($argv, 1));
+$argc = count($argv);
+require $endpoint;
+`;
+}
+
+function assertSnapshotEqual(actual, expected, label) {
+  assert.deepEqual(actual, expected, `${label} mismatch`);
+  assert.equal(digest(actual), digest(expected), `${label} digest mismatch`);
+}
+
+function assertSnapshotContentEqual(actual, expected, label) {
+  assert.deepEqual(snapshotContent(actual), snapshotContent(expected), `${label} content mismatch`);
+  assert.equal(digest(snapshotContent(actual)), digest(snapshotContent(expected)), `${label} content digest mismatch`);
+}
+
+function snapshotContent(snapshot) {
+  return {
+    meta: {
+      source: snapshot.meta.source,
+      fixture: snapshot.meta.fixture,
+      table_prefix: snapshot.meta.table_prefix,
+    },
+    ...visibleSurface(snapshot),
+  };
+}
+
+function assertTargetHashes(plan, snapshot, preconditionHashField, label) {
+  for (const precondition of plan.preconditions) {
+    assert.equal(
+      resourceHash(snapshot, precondition.resource),
+      precondition[preconditionHashField],
+      `${label}: ${precondition.resourceKey}`,
+    );
+  }
+}
+
+function assertAppliedHashes(plan, snapshot) {
+  for (const mutation of plan.mutations) {
+    assert.equal(
+      resourceHash(snapshot, mutation.resource),
+      mutation.localHash,
+      `applied hash mismatch for ${mutation.resourceKey}`,
+    );
+  }
+}
+
+function assertVisibleSurfaceEqual(actual, expected, label) {
+  assert.deepEqual(visibleSurface(actual), visibleSurface(expected), `${label} mismatch`);
+}
+
+function visibleSurface(snapshot) {
+  return {
+    files: snapshot.files,
+    db: snapshot.db,
+    plugins: snapshot.plugins,
+  };
+}
+
+function assertAppliedFixtureValues(snapshot) {
+  assert.equal(snapshot.meta.fixture, 'remote-base');
+
+  const sharedPost = postByTitle(snapshot, 'Shared base post');
+  assert.equal(sharedPost.post_content, 'Local edited content');
+  assert.equal(sharedPost.post_status, 'publish');
+
+  const localPost = postByTitle(snapshot, 'Local-only draft');
+  assert.equal(localPost.post_content, 'Created locally after pull');
+  assert.equal(localPost.post_status, 'draft');
+
+  assert.equal(snapshot.files['wp-content/uploads/reprint-push/shared.txt'], 'local upload content');
+  assert.equal(snapshot.files['wp-content/uploads/reprint-push/local-only.txt'], 'local-only upload content');
+
+  const pluginPayload = snapshot.db.wp_options['option_name:reprint_push_plugin_payload'];
+  assert.equal(pluginPayload.__pluginOwner, 'forms');
+  assert.deepEqual(pluginPayload.option_value, {
+    mode: 'local-edited',
+    owner: 'forms',
+    version: 2,
+  });
+}
+
+function postByTitle(snapshot, title) {
+  const entry = Object.values(snapshot.db.wp_posts).find((row) => row.post_title === title);
+  assert.ok(entry, `missing post ${title}`);
+  return entry;
+}
+
+function assertPlanNotReady(endpointRun, expectedSnapshot, label) {
+  assert.notEqual(endpointRun.status, 0, `expected ${label} to fail`);
+  assert.equal(endpointRun.result.ok, false);
+  assert.equal(endpointRun.result.code, 'PLAN_NOT_READY');
+  assertSnapshotContentEqual(endpointRun.readback.beforeSnapshot, expectedSnapshot, `${label} before snapshot`);
+  assertSnapshotEqual(endpointRun.readback.afterSnapshot, endpointRun.readback.beforeSnapshot, `${label} same-process readback`);
+}
+
+function assertConflictClasses(result) {
+  const classes = conflictClasses(result);
+  assert.ok(classes.includes('row-conflict'), 'missing row conflict audit');
+  assert.ok(classes.includes('file-conflict'), 'missing file conflict audit');
+  assert.ok(classes.includes('plugin-data-conflict'), 'missing plugin-data conflict audit');
+}
+
+function conflictClasses(result) {
+  return [...new Set((result.audit?.conflicts || []).map((conflict) => conflict.class))].sort();
+}

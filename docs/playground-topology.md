@@ -38,9 +38,9 @@ npm run test:playground
 ```
 
 The script mounts this repository into each Playground runtime, runs
-`scripts/playground/export-site-snapshot.php`, and passes the exported
-WordPress posts/options/files through the JSON push planner. It currently
-asserts:
+`scripts/playground/export-site-snapshot.php`, passes the exported WordPress
+posts/options/files through the JSON push planner, applies a ready fixture plan,
+and runs a fixture-scoped protocol smoke. It currently asserts:
 
 - the shared post is a real WordPress row conflict;
 - the shared upload file is a file conflict;
@@ -69,10 +69,35 @@ production Reprint HTTP transport, a live source-site mutation endpoint,
 durable remote journaling, authentication, or plugin-specific semantic merge
 drivers.
 
+## Fixture-Scoped Protocol Smoke
+
+`scripts/playground/push-protocol-smoke.mjs` mounts
+`scripts/playground/push-remote-endpoint.php` and
+`scripts/playground/push-remote-lib.php` into no-server Playground runtimes.
+This endpoint is intentionally lab-only and fixture-scoped. It is not the
+production Reprint HTTP mutation endpoint.
+
+The smoke verifies:
+
+- dry-run validates all ready-plan mutation preconditions and reports
+  `applied: 0`;
+- same-process WordPress readback proves dry-run leaves the source fixture
+  unchanged;
+- apply with a supplied dry-run receipt applies the five expected fixture
+  mutations and verifies the resulting hashes and WordPress-visible surface;
+- stale apply against the changed remote fixture fails with
+  `PRECONDITION_FAILED` and preserves the drifted remote state;
+- conflict dry-run and conflict apply refuse with `PLAN_NOT_READY` and include
+  audit evidence for row, file, and plugin-data conflict classes.
+
+The smoke uses a prior dry-run receipt for the ready apply path, but that is not
+yet a protocol guarantee. The current PHP lab endpoint still permits apply
+without a supplied receipt by creating one inline.
+
 ## Next Proofs Needed
 
-- Mount the Reprint exporter/importer or experimental push plugin into the
-  Playground runtime.
-- Execute a push dry-run through a Reprint HTTP endpoint rather than an in-process
-  Node planner.
+- Replace the fixture-scoped PHP lab endpoint with a real Reprint push HTTP
+  endpoint, authentication, sessions, and source-site capability checks.
 - Revalidate live remote hashes immediately before production apply.
+- Add production enforcement for prior dry-run receipts, with expiry and binding
+  to the accepted remote snapshot.

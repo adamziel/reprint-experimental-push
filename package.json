@@ -9,9 +9,10 @@
   },
   "scripts": {
     "test": "node --test",
-    "test:playground": "npm run test:playground:plan && npm run test:playground:apply",
+    "test:playground": "npm run test:playground:plan && npm run test:playground:apply && npm run test:playground:push-protocol",
     "test:playground:plan": "node ./scripts/playground/plan-from-blueprints.mjs",
     "test:playground:apply": "node ./scripts/playground/apply-ready-plan.mjs",
+    "test:playground:push-protocol": "node ./scripts/playground/push-protocol-smoke.mjs",
     "plan": "node ./bin/reprint-push-lab.js plan",
     "apply": "node ./bin/reprint-push-lab.js apply"
   },

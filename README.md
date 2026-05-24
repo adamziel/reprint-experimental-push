@@ -16,8 +16,8 @@ The priorities are deliberately repetitive:
 
 The current code is not a production WordPress push transport. It is an
 executable safety model: a deterministic JSON-snapshot planner, an atomic
-applicator, and scenario tests that define the invariants the production
-transport must satisfy.
+applicator, lab-only Playground fixture endpoints, and scenario tests that
+define the invariants the production transport must satisfy.
 
 ## Current Prototype
 
@@ -35,8 +35,14 @@ The Playground target is the lab proof for real WordPress fixture state. It
 exports snapshots from Playground sites, exercises conflict planning from those
 snapshots, creates a ready plan with `remote=base`, applies that plan inside a
 fresh Playground source site, and verifies WordPress-visible posts, options, and
-files after apply. This remains a lab harness, not production Reprint HTTP
-source mutation support.
+files after apply. The Playground protocol smoke also exercises a fixture-scoped
+dry-run/apply endpoint: dry-run is read-only by same-process before/after
+readback, apply with a supplied dry-run receipt mutates the five expected
+fixture resources and verifies hashes, stale apply fails with
+`PRECONDITION_FAILED`, and non-ready conflict plans fail with `PLAN_NOT_READY`.
+This remains a lab harness, not production Reprint HTTP source mutation support.
+The lab endpoint can still create a receipt inline for apply, so a prior
+dry-run receipt is verified but not yet mandatory.
 
 The lab CLI works on three snapshots:
 
