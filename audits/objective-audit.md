@@ -168,11 +168,13 @@ production auth, or measured speed.
 1. **The strongest evidence is not wired into a release suite.** There is no
    CI workflow in the repository. The default `npm test` command does not run
    any Playground smoke, and the shorter `npm run test:playground` path stops
-   at plan/apply/protocol. That leaves auth, HTTP, DB journal, storage
-   guards, process kill, stale claim, plugin atomic, forms lab, authenticated
-   CLI, production-shaped route/package, mid-apply drift, and recovery
-   coverage as manual opt-ins. A release claim cannot rely on tests that are
-   optional and manually invoked.
+   at plan/apply/protocol even though the repo already exposes separate
+   commands for auth, HTTP, DB journal, storage guards, process kill, stale
+   claim, plugin atomic, forms lab, authenticated CLI, production-shaped
+   route/package, mid-apply drift, and recovery. That means the strongest
+   proof is still manual opt-in, not release-gated. A release claim cannot
+   rely on tests that only pass when somebody remembers to run the right
+   scripts.
 
 2. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
@@ -228,8 +230,9 @@ production auth, or measured speed.
     exact places the source site can lose or duplicate work.
 
 11. **The release suite is fragmented.** The highest-value evidence is split
-    across manually invoked scripts, so a green default test run still leaves
-    the strongest claims unproven unless the full matrix is run deliberately.
+   across manually invoked scripts. A green default test run still leaves the
+   strongest claims unproven unless the full matrix is run deliberately, and
+   nothing in the repository currently enforces that matrix before release.
 
 ## Required Release Gates
 
