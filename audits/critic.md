@@ -37,11 +37,12 @@ inference, not direct evidence.
 
 Reprint gives the transport skeleton: preflight, chunking, resumability, and
 protocol versioning. That is a good starting point for push, but it is not a
-proof of live-source safety or rollout behavior. The current design still
-needs a production mutation boundary with per-write preconditions, durable
-journal semantics, and a recovery artifact that survives failure across file,
-DB, and plugin boundaries. It also needs proof that the push path is not just
-a mirrored pull pipeline with write verbs attached.
+proof of live-source safety, production auth, or rollout behavior. The current
+design still needs a production mutation boundary with per-write preconditions,
+durable journal semantics, and a recovery artifact that survives failure
+across file, DB, and plugin boundaries. It also needs proof that the push path
+is not just a mirrored pull pipeline with write verbs attached or a route
+shape that happens to return the expected endpoint.
 
 ### ZS-Sync
 
@@ -51,7 +52,9 @@ The current design still lacks a complete coverage manifest that ties scanner
 results to every core, plugin, theme, upload, generated, custom-table, and
 multisite resource the push can affect. Scanner cursors and bounded batches
 are only useful if every enumerated resource either has a mutation rule or a
-hard block. Scanner evidence is planning input, not a write-safety proof.
+hard block. Scanner evidence is planning input, not a write-safety proof, and
+it does not prove remote drift handling, create-time identity allocation, or
+plugin-owned side effects outside the scanned set.
 
 ### ForkPress
 
@@ -65,6 +68,30 @@ retry. ForkPress is also the warning sign here: reviewed resolution is not a
 success path unless the remote is preserved for audit and the next retry
 re-plans from fresh evidence. ForkPress is the comparison point, not a
 guarantee that this branch has matched it.
+
+## Production Claim Checklist
+
+Before the project can use production-grade push wording, the audit needs
+evidence for all of these, not just a plausible design:
+
+- A real production Reprint push endpoint that does not resolve to Playground
+  or copied lab internals.
+- Live-remote revalidation immediately before apply, with stale retries
+  rejected before any write.
+- A complete coverage manifest for core, plugin, theme, upload, generated,
+  custom-table, and multisite resources, with unknown ownership treated as a
+  hard block.
+- A plugin ownership contract for tables, files, options, cron, cache,
+  activation hooks, and other side effects, with explicit rollback or block
+  behavior.
+- Graph identity mapping or an explicit hard block for every relationship-
+  bearing row class that can silently rewire references.
+- Reviewed conflict artifacts that preserve base/local/remote evidence,
+  reviewer identity, chosen action, and fresh revalidation data.
+- Durable journals and kill-at-every-boundary recovery proofs across DB,
+  filesystem, and plugin boundaries.
+- A release gate that runs the full safety-critical suite before any
+  production claim ships.
 
 ## Changes Required Before A Production Claim
 
