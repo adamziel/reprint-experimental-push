@@ -355,6 +355,11 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'an empty queue is not proof that the remote acknowledged the work',
     rejectedGate: 'recovery',
     violates: ['backpressure', 'durable-progress'],
+    id: 'parallelize-atomic-group-commit',
+    proposal: 'run atomic group commits in parallel so independent work can publish sooner',
+    rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'visibility-boundary'],
   },
 ]);
 

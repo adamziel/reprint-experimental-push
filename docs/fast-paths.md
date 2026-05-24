@@ -264,6 +264,8 @@ validators, and the final durable commit record.
   finalize comparison that still guards the live file path.
 - Merging rows from different plugin owners or atomic groups into one visible
   batch because the SQL shape matches.
+- Parallelizing atomic-group commits or interleaving them so the barrier is no
+  longer a single visibility point.
 - Using index freshness, cursor freshness, tombstone state, or a successful dry run as a live
   mutation authorization.
 - Comparing compressed bytes as the canonical resource hash, or using
