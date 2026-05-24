@@ -301,16 +301,11 @@ mutation work.
 Tests cover unsigned, malformed, bad hash, body changed after signing,
 stale/future timestamp, wrong method/path/query, wrong session, idempotency
 mismatch, public-route signature attempts, nonce replay, and positive signed
-preflight, dry-run, apply, and replay. Playground fallback caveat: core
-Application Password auth did not establish `/wp-json/wp/v2/users/me`, so the
-lab route validates stored hashed app-password entries and sets the current
-user before capability checks. Public legacy lab routes remain public/mutable;
-HMAC applies only to `/authenticated/*` aliases. Responses expose stable hash
-evidence such as credential/signing-key hashes for lab proof and are not a
-production response contract. Production Reprint auth still needs TLS
-deployment, nonce/replay store cleanup, production session handling, real
-exporter credential binding, durable production audit records, and full
-production push.
+preflight, dry-run, apply, and replay. Responses expose stable hash evidence
+such as credential/signing-key hashes for lab proof and are not a production
+response contract. Production Reprint auth still needs TLS deployment,
+nonce/replay store cleanup, production session handling, real exporter
+credential binding, durable production audit records, and full production push.
 
 `npm run test:playground:authenticated-cli-push` now verifies the same lab
 protocol through the `reprint-push-lab push-authenticated` command. That CLI
@@ -318,6 +313,12 @@ fetches the source snapshot, builds a fresh three-way plan from base/local
 snapshot files, signs preflight/dry-run/apply, applies with an idempotency key,
 refuses a changed source as `PLAN_NOT_READY_LOCALLY` before mutation, and
 refuses post-snapshot source drift as `PRECONDITION_FAILED` before apply.
+
+Playground fallback caveat: core Application Password auth did not establish
+`/wp-json/wp/v2/users/me`, so the lab route validates stored hashed
+app-password entries and sets the current user before capability checks.
+Public legacy lab routes remain public/mutable; HMAC applies only to
+`/authenticated/*` aliases.
 
 ### Current Fixture Plugin Atomicity Lab
 

@@ -115,7 +115,8 @@ The push executor should not reuse the pull streaming SQL dump as a mutation
 format. SQL replay is too coarse for a live remote. It can reuse pull transport,
 budgeting, cursoring, multipart handling, and HMAC helpers.
 
-The pull importer must additionally persist a push base package:
+The pull importer must persist a push base package so later pushes can prove
+the merge base:
 
 ```text
 push-base/
@@ -185,13 +186,15 @@ base manifest from `remote-base`, builds the local plan from `local-edited`,
 and uses `remote-changed` as the liveness drift case for `PRECONDITION_FAILED`
 and recovery coverage. This topology proves the one-remote, one-local shape
 without requiring external network exposure.
-
 The Playground harness should keep the same role split as Docker:
 
 - `remote-base` seeds the pull base and push identity evidence.
 - `local-edited` produces the local delta and the candidate dry-run plan.
 - `remote-changed` simulates live remote drift between dry-run and apply.
 - the runner remains the only actor allowed to compare, upload, and recover.
+Use only the sandbox-provided `8080` ingress if a browser-visible proxy is
+needed for inspection, and keep the WordPress blueprints isolated from each
+other.
 
 ## Durable Push State
 
