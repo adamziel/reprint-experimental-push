@@ -2952,6 +2952,40 @@ test('durable completed replay stays fully updated and leaves inspectable replay
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
 
+test('durable completed replay ignores later local divergence and remains fully updated', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  const staleLocal = JSON.parse(JSON.stringify(local));
+  staleLocal.files['index.php'] = '<?php echo "stale-local";';
+  staleLocal.db.wp_posts['ID:2'].post_title = 'Stale local insert';
+  staleLocal.db.wp_posts['ID:3'] = { ID: 3, post_title: 'Late local insert', post_status: 'draft' };
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const replay = applyPlan(JSON.parse(JSON.stringify(completed.site)), plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
+  assert.equal(staleLocal.files['index.php'], '<?php echo "stale-local";');
+  assert.equal(staleLocal.db.wp_posts['ID:2'].post_title, 'Stale local insert');
+  assert.equal(staleLocal.db.wp_posts['ID:3'].post_title, 'Late local insert');
+});
+
 test('acceptable post-failure states carry the required recovery artifacts', () => {
   const base = baseSite();
   const local = baseSite();
