@@ -238,6 +238,17 @@ objective needs.
 - `npm run test:playground` is bundled, but it stops after plan/apply/protocol
   and does not invoke the stronger auth, storage, recovery, plugin, graph, or
   benchmark smokes.
+- The repository does not expose a single required release command such as
+  `npm run release` or `npm run verify`; the safety matrix is still assembled
+  manually from independent scripts.
+- The strongest checks remain opt-in entrypoints such as
+  `test:playground:authenticated-http-push`,
+  `test:playground:authenticated-cli-push`,
+  `test:playground:db-journal-idempotency`,
+  `test:playground:storage-guarded-db-write`,
+  `test:playground:storage-guarded-file-write`,
+  `test:playground:db-journal-process-kill`, and
+  `test:playground:production-shaped-push`.
 - None of the existing commands fail the release if `labBacked: true`,
   fixture-only scope, missing live-remote preconditions, missing journal
   durability, missing graph-identity evidence, or missing benchmark evidence
