@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 00:20 CEST.
+- Last update: 2026-05-25 00:24 CEST.
 - Status: `89` Node tests pass after supervised lane merges.
 - New proof: planner coverage checks matching independent delete/edit cases;
   recovery now has a concise acceptable-state contract; fast-path docs name the
@@ -15,10 +15,10 @@ linked implementation artifacts.
   evidence.
 - Trend: no-data-loss, recovery, fast-path, reliable-executor, and audit lanes
   improved inside lab/model scope. Production readiness is still blocked.
-- Supervision: five fast-mode worker outputs were reviewed and integrated from
-  the next-proof cycle: recovery, reliable executor, fast paths, independent
-  auditor, and critic. The same-plan graph worker remains active and unmerged
-  while it fixes the remaining HTTP smoke failure.
+- Supervision: seven fast-mode workers are active in isolated lane worktrees:
+  same-plan graph, recovery, reliable executor, fast paths, independent
+  auditor, critic, and progress publisher. The same-plan graph worker remains
+  unmerged while it fixes the remaining HTTP smoke failure.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
   and arbitrary plugin drivers remain unproven.
