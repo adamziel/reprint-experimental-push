@@ -201,7 +201,10 @@ fetches the live source snapshot, builds a three-way plan from `base` and
 applies with an idempotency key. The smoke proves dry-run is non-mutating,
 apply commits the eight fixture mutations with DB journal evidence, and a
 changed source is refused locally as `PLAN_NOT_READY_LOCALLY` before dry-run or
-apply. This is still the lab endpoint and not production Reprint auth or a
+apply. It also uses a lab-only post-snapshot drift hook to mutate the source
+after the CLI fetches its snapshot but before dry-run; the command reports
+`PRECONDITION_FAILED`, does not apply, and leaves the concurrent source change
+intact. This is still the lab endpoint and not production Reprint auth or a
 production mutation endpoint.
 
 The `test:playground:db-journal-idempotency` script verifies a separate

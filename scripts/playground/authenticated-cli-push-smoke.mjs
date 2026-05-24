@@ -12,6 +12,8 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
 const serverStartupTimeoutMs = 120_000;
+const transientFetchRetryDelayMs = 250;
+const transientFetchAttempts = 4;
 
 const credentials = {
   username: 'reprint_push_admin',
@@ -41,6 +43,7 @@ const summary = {
   dryRun: {},
   apply: {},
   stale: {},
+  driftAfterSnapshot: {},
 };
 
 try {
@@ -153,6 +156,50 @@ try {
       conflicts: stale.plan.conflicts.length,
     };
   });
+
+  await withPlaygroundServer('authenticated-cli-drift-after-snapshot', path.join(repoRoot, fixtures.base), async (server) => {
+    const drift = runCli([
+      'push-authenticated',
+      '--base',
+      basePath,
+      '--local',
+      localPath,
+      '--source-url',
+      server.baseUrl,
+      '--username',
+      credentials.username,
+      '--application-password',
+      credentials.password,
+      '--idempotency-key',
+      'cli-auth-drift-after-snapshot',
+      '--lab-drift-after-snapshot',
+      'post-title',
+    ], { expectStatus: 2 });
+
+    assert.equal(drift.ok, false);
+    assert.equal(drift.code, 'PRECONDITION_FAILED');
+    assert.equal(drift.plan.status, 'ready');
+    assert.equal(drift.dryRun.status, 412);
+    assert.equal(drift.dryRun.code, 'PRECONDITION_FAILED');
+    assert.equal(drift.apply, null);
+    assert.equal(drift.after, null);
+    assert.equal(drift.dbJournal, null);
+
+    const afterDrift = await getSnapshot(server);
+    const expected = snapshotWithPostTitle(
+      snapshots.base,
+      'Concurrent source drift after authenticated snapshot',
+    );
+    assertVisibleSurfaceEqual(afterDrift.body.snapshot, expected, 'CLI post-snapshot drift refusal source state');
+
+    summary.driftAfterSnapshot = {
+      ok: drift.ok,
+      code: drift.code,
+      planStatus: drift.plan.status,
+      dryRunStatus: drift.dryRun.status,
+      finalMatchesInjectedDrift: digest(visibleSurface(afterDrift.body.snapshot)) === digest(visibleSurface(expected)),
+    };
+  });
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 }
@@ -210,8 +257,8 @@ function exportSnapshot(name, blueprintPath) {
   );
 }
 
-async function withPlaygroundServer(name, blueprintPath, run) {
-  const server = await startPlaygroundServer(name, blueprintPath);
+async function withPlaygroundServer(name, blueprintPath, run, options = {}) {
+  const server = await startPlaygroundServer(name, blueprintPath, options);
   try {
     await run(server);
   } finally {
@@ -219,7 +266,7 @@ async function withPlaygroundServer(name, blueprintPath, run) {
   }
 }
 
-async function startPlaygroundServer(name, blueprintPath) {
+async function startPlaygroundServer(name, blueprintPath, options = {}) {
   const port = await findLocalPort();
   const baseUrl = `http://127.0.0.1:${port}`;
   const logs = [];
@@ -250,6 +297,7 @@ async function startPlaygroundServer(name, blueprintPath) {
       REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+      ...(options.env || {}),
       NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -299,12 +347,29 @@ async function waitForServer(child, baseUrl, logs) {
     }
 
     try {
-      const response = await fetch(`${baseUrl}/wp-json/`);
+      const response = await fetch(`${baseUrl}/wp-json/`, {
+        headers: {
+          connection: 'close',
+        },
+      });
       if (response.status === 200) {
         await response.arrayBuffer();
-        return;
+        const snapshot = await requestJsonWithRetry(
+          baseUrl,
+          'GET',
+          '/wp-json/reprint-push-lab/v1/snapshot',
+          undefined,
+          {},
+          { attempts: 2 },
+        );
+        if (snapshot.status === 200 && snapshot.body?.ok === true) {
+          return;
+        }
+        lastError = new Error(`Snapshot readiness HTTP ${snapshot.status}`);
       }
-      lastError = new Error(`HTTP ${response.status}`);
+      if (response.status !== 200) {
+        lastError = new Error(`HTTP ${response.status}`);
+      }
     } catch (error) {
       lastError = error;
     }
@@ -373,12 +438,39 @@ async function getSnapshot(server) {
 }
 
 async function requestJson(server, method, pathname, body = undefined, headers = {}) {
-  const response = await fetch(`${server.baseUrl}${pathname}`, {
+  return requestJsonWithRetry(server.baseUrl, method, pathname, body, headers);
+}
+
+async function requestJsonWithRetry(baseUrl, method, pathname, body = undefined, headers = {}, { attempts = transientFetchAttempts } = {}) {
+  let lastError;
+  const retryable = method === 'GET';
+  const maxAttempts = retryable ? attempts : 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await requestJsonOnce(baseUrl, method, pathname, body, headers);
+    } catch (error) {
+      lastError = error;
+      if (!retryable || !isTransientFetchError(error) || attempt === maxAttempts) {
+        throw error;
+      }
+      await sleep(transientFetchRetryDelayMs * attempt);
+    }
+  }
+  throw lastError;
+}
+
+async function requestJsonOnce(baseUrl, method, pathname, body = undefined, headers = {}) {
+  const requestHeaders = body === undefined ? {
+    connection: 'close',
+    ...headers,
+  } : {
+    'content-type': 'application/json',
+    connection: 'close',
+    ...headers,
+  };
+  const response = await fetch(`${baseUrl}${pathname}`, {
     method,
-    headers: body === undefined ? headers : {
-      'content-type': 'application/json',
-      ...headers,
-    },
+    headers: requestHeaders,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await response.text();
@@ -392,6 +484,19 @@ async function requestJson(server, method, pathname, body = undefined, headers =
     status: response.status,
     body: json,
   };
+}
+
+function isTransientFetchError(error) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const code = error.cause?.code || error.code;
+  return error.name === 'TypeError' && (
+    code === 'UND_ERR_SOCKET'
+    || code === 'ECONNRESET'
+    || code === 'EPIPE'
+    || code === 'ETIMEDOUT'
+  );
 }
 
 function appendNodeOption(existing, option) {
@@ -437,6 +542,12 @@ function parseMarkedJson(stdout, begin, end, missingMessage) {
 function assertVisibleSurfaceEqual(actual, expected, label) {
   assert.deepEqual(visibleSurface(actual), visibleSurface(expected), `${label} mismatch`);
   assert.equal(digest(visibleSurface(actual)), digest(visibleSurface(expected)), `${label} digest mismatch`);
+}
+
+function snapshotWithPostTitle(snapshot, title) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  next.db.wp_posts['ID:1001'].post_title = title;
+  return next;
 }
 
 function visibleSurface(snapshot) {

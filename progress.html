@@ -456,7 +456,7 @@
         <div class="meta" aria-label="Project status">
           <span class="pill">55 Node lab tests passing</span>
           <span class="pill">Playground labs passing</span>
-          <span class="pill">Authenticated CLI push smoke passing</span>
+          <span class="pill">Authenticated CLI live-drift refusal passing</span>
           <span class="pill">DB recovery labs passing</span>
           <span class="pill">Storage-boundary file update/create/delete passing</span>
           <span class="pill">Production push blocked by missing evidence</span>
@@ -507,9 +507,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">27%</span></div>
-          <div class="bar" aria-label="Reliable executor and protocol 27 percent"><div class="fill amber" style="width:27%"></div></div>
-          <p class="note">The lab protocol covers preflight, dry-run receipts, signed authenticated requests, idempotency keys, stale refusal, replay, conflict refusal, and an authenticated CLI push smoke. The next gap is a production Reprint endpoint with real credential binding, durable audit records, nonce cleanup, TLS assumptions, and storage-level guards.</p>
+          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">28%</span></div>
+          <div class="bar" aria-label="Reliable executor and protocol 28 percent"><div class="fill amber" style="width:28%"></div></div>
+          <p class="note">The lab protocol covers preflight, dry-run receipts, signed authenticated requests, idempotency keys, stale refusal, replay, conflict refusal, authenticated CLI push, and post-snapshot source drift refusal. The next gap is a production Reprint endpoint with real credential binding, durable audit records, nonce cleanup, TLS assumptions, and storage-level guards.</p>
         </div>
 
         <div class="lane">
@@ -529,7 +529,7 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>Recovery evidence improved, and the authenticated CLI now proves non-mutating dry-run, committed apply, and changed-source refusal in local Playground.</span></li>
+            <li><strong>Going well</strong><span>Recovery evidence improved, and the authenticated CLI now proves non-mutating dry-run, committed apply, changed-source refusal, and post-snapshot drift refusal.</span></li>
             <li><strong>Not going well</strong><span>The project is still lab-scoped. Production Reprint mutation, auth binding, durable journal, and arbitrary plugin data safety are pending.</span></li>
             <li><strong>Progress change</strong><span>Reliable executor moved up slightly because the flow is now command-driven, but production endpoint contracts are still missing.</span></li>
             <li><strong>Next nudge</strong><span>Replace lab route/auth assumptions with a production-shaped Reprint endpoint contract and keep the guarded DB/file proof small.</span></li>

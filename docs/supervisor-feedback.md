@@ -17,7 +17,8 @@ changed, what is helping, what is not helping, and the next nudge.
   storage-boundary DB/file refusal are linked from the status surfaces.
 - The source-site path is now command-driven in the lab. The authenticated CLI
   smoke proves non-mutating dry-run, DB-journaled apply, and changed-source
-  refusal before dry-run/apply.
+  refusal before dry-run/apply. It now also proves post-snapshot source drift
+  is caught by authenticated dry-run before apply.
 - Fixture plugin/data safety is less hand-wavy: forms fixture data, one custom
   table driver, and hard-coded fixture plugin install atomicity now have
   allowlisted proof.
@@ -42,7 +43,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | --- | --- | --- |
 | No-data-loss invariants | Up | Owner: no-data-loss invariants. Gap: WordPress graph identity. Next test: post, postmeta, attachment, taxonomy, and remote drift. |
 | No-data-loss recovery | Up | Owner: no-data-loss recovery. Gap: production durability. Next test: kill apply at each DB/file boundary and classify old/new/blocked. |
-| Reliable executor | Up in lab, blocked for production | Owner: reliable executor. Gap: real Reprint endpoint and credential binding. Next test: production-shaped CLI endpoint contract. |
+| Reliable executor | Up in lab, blocked for production | Owner: reliable executor. Gap: real Reprint endpoint and credential binding. Next test: production-shaped CLI endpoint contract with the same post-snapshot drift refusal. |
 | Plugin data | Up in fixtures, blocked generally | Owner: no-data-loss invariants. Gap: arbitrary plugin state. Next test: one real plugin validator/driver beyond the forms fixture. |
 | Fast paths | Flat | Owner: fast paths. Gap: executable chunking proof. Next test: large upload/table benchmark with receipts, preconditions, journals, and recovery. |
 | Independent audit and critic | Flat | Owner: independent auditor and critic. Gap: live integration behavior. Next test: re-audit the first production-shaped source mutation slice. |

@@ -247,7 +247,10 @@ authenticated lab routes through `reprint-push-lab push-authenticated`. It
 fetches the live source snapshot, builds a plan from base/local snapshot files,
 proves dry-run is non-mutating, applies the eight fixture mutations with DB
 journal commit evidence, and refuses a changed source locally before dry-run or
-apply.
+apply. It also exercises a lab-only post-snapshot drift hook: the source
+changes after the CLI receives its snapshot but before dry-run, authenticated
+dry-run returns `PRECONDITION_FAILED`, apply is not called, and the concurrent
+source change remains intact.
 
 This is authenticated local Playground source-site mutation evidence only. It
 does not prove production Reprint auth, TLS deployment, nonce/replay store

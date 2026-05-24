@@ -98,6 +98,9 @@ async function main() {
       applicationPassword: requirePath(args, 'application-password'),
       idempotencyKey: requirePath(args, 'idempotency-key'),
       dryRunOnly: Boolean(args['dry-run-only']),
+      labDriftAfterSnapshot: typeof args['lab-drift-after-snapshot'] === 'string'
+        ? args['lab-drift-after-snapshot']
+        : '',
     });
     writeJson(args.out || '-', result);
     if (!result.ok) {
