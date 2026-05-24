@@ -2046,6 +2046,31 @@ test('completed replay on an existing durable journal keeps replay evidence appe
   assert.equal(persisted.records.some((record) => record.type === 'target-planned'), false);
 });
 
+test('completed replay durable write failure still classifies as fully updated remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const before = JSON.stringify(completed.site);
+  const durableJournal = failingDurableJournal('journal-replayed');
+
+  const error = captureError(() =>
+    applyPlan(completed.site, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'JOURNAL_WRITE_FAILED');
+  assert.equal(JSON.stringify(completed.site), before);
+  assert.equal(error.details.recovery.status, 'fully-updated-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(error.details.boundary, 'journal-replayed');
+});
+
 test('replaying a completed plan requires a complete matching journal envelope', () => {
   const base = baseSite();
   const local = baseSite();

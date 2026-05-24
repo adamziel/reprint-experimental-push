@@ -27,4 +27,5 @@ The atomic apply boundary checks must keep these failure modes inside the contra
 - Failure after staging must still leave `old-remote` plus a recovery artifact.
 - Failure after dependency validation must still leave `old-remote` plus a recovery artifact.
 - Replaying a completed plan must return `fully-updated-remote`, not a second write path.
+- If replay finishes the remote but the durable replay record fails, the result must still classify as `fully-updated-remote` with artifacts.
 - If a completed journal no longer matches the remote, the result must be `blocked-recovery` with artifacts, never a silent retry.
