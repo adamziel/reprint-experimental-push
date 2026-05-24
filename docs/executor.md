@@ -220,11 +220,25 @@ The implementation test topology should mirror that shape exactly:
 
 For Docker, keep those roles in separate containers on one private network and
 drive browser-visible inspection only through the sandbox-provided `8080`
-ingress with a local-only proxy. For Playground, use three disposable
-blueprints with the same role split and the same drift pattern. In both cases,
-the point of `remote-changed` is to prove that dry-run and apply are separate
-remote operations and that apply revalidates the live remote after the plan is
+ingress with a local-only proxy. For Playground, use the same logical roles as
+three disposable blueprints plus the runner process. In both cases, the point
+of `remote-changed` is to prove that dry-run and apply are separate remote
+operations and that apply revalidates the live remote after the plan is
 already accepted.
+
+Concrete test topology:
+
+| Role | Docker shape | Playground shape |
+| --- | --- | --- |
+| Remote source site | `remote-base` container, exporter and push extension enabled | `remote-base` blueprint, source-site truth |
+| Local edited site | `local-edited` container restored from the pulled base and edited independently | `local-edited` blueprint, imported clone with local edits |
+| Drift witness | `remote-changed` container or state mutation against the same remote after dry-run | `remote-changed` blueprint or state mutation after snapshot listing |
+| Runner | `runner` container or host process that signs requests and drives protocol calls | Same runner process, attached only to the private network |
+
+The topology must stay small enough to prove one remote and one local site
+without hiding the freshness check. `remote-base` is the authoritative source,
+`local-edited` is the pulled-and-edited clone, and `remote-changed` is the same
+remote observed later so stale apply can be rejected on revalidation.
 
 The pull importer must persist a push base package so later pushes can prove
 the merge base, and it must also preserve the additional pull evidence needed
