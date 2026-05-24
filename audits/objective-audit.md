@@ -167,11 +167,12 @@ production auth, or measured speed.
 
 1. **The strongest evidence is not wired into a release suite.** There is no
    CI workflow in the repository. The default `npm test` command does not run
-   the long Playground smokes that support most README claims, and the shorter
-   `npm run test:playground` path omits auth, HTTP, DB journal, storage
+   any Playground smoke, and the shorter `npm run test:playground` path stops
+   at plan/apply/protocol. That leaves auth, HTTP, DB journal, storage
    guards, process kill, stale claim, plugin atomic, forms lab, authenticated
-   CLI, production-shaped route/package, and recovery coverage. A release
-   claim cannot rely on tests that are optional and manually invoked.
+   CLI, production-shaped route/package, mid-apply drift, and recovery
+   coverage as manual opt-ins. A release claim cannot rely on tests that are
+   optional and manually invoked.
 
 2. **No test exercises the complete production-backed path.** The
    production-shaped smoke proves route shape and packaging, but the route is
@@ -254,8 +255,11 @@ proof gates:
 7. A release test aggregator and CI workflow that run the safety-critical
    unit, Playground, auth, storage, recovery, idempotency, plugin, and
    performance gates or explicitly label excluded tests as non-release proof.
-   Right now the strongest smoke scripts are still manual opt-ins, so the
-   repository cannot yet claim that release evidence is actually enforced.
+   Right now `npm test` plus `npm run test:playground` still stop at the
+   lighter plan/apply/protocol path, while the stronger auth, storage,
+   recovery, production-shaped route, and plugin-package smokes remain manual
+   opt-ins. The repository cannot yet claim that release evidence is actually
+   enforced.
 8. Runtime benchmarks for large uploads and large DB changes with concrete
    throughput, memory, retry, and recovery measurements.
 
