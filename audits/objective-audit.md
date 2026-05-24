@@ -127,6 +127,9 @@ these release requirements:
 This is useful evidence. It does not exercise a production source site, a
 production push endpoint, real production credentials, production DB/file
 durability, real concurrent WordPress traffic, or arbitrary plugin data.
+The strongest default-suite evidence remains model-level, and the most
+important production claims still depend on optional Playground smokes that are
+outside `npm test`.
 
 ### What The Standalone Smokes Prove
 
@@ -209,6 +212,11 @@ production auth, or measured speed.
 9. **Speed has no measured evidence.** The performance tests prove a model and
    guardrails. They do not move bytes, mutate a source site, measure memory,
    measure throughput, or verify that safety checks remain enabled under load.
+10. **Release gating is incomplete.** The suite contains valuable evidence, but
+    the default command does not run the standalone auth, journal, storage,
+    process-kill, and production-shaped smokes that support the narrower lab
+    claims. Anything described as release proof still depends on manual script
+    selection.
 
 ## Required Release Gates
 
