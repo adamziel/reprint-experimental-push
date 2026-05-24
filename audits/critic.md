@@ -179,6 +179,9 @@ evidence for all of these, not just a plausible design:
   Sync, or ForkPress only anchors the comparison text. It does not prove that
   the upstream repo still has the cited semantics today or that this branch
   has matched them at the mutation boundary.
+- Any future comparison claim that leans on those notes must also re-verify
+  the current upstream commit or worktree state; otherwise the note is only
+  historical context and cannot support production wording.
 - A route that looks production-shaped, returns live hashes, or passes a
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
@@ -542,6 +545,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   correct.
 - A route-shaped response with live-looking hashes still does not prove the
   production executor is in the path.
+- A route-shaped response, packaged-plugin mount, or `finalMatchesLocal`
+  smoke does not prove current upstream behavior in Reprint, ZS-Sync, or
+  ForkPress unless that upstream state was re-verified at the same revision.
 - A lab route that looks production-shaped is not production proof, even if it
   returns live hashes, mounts as a plugin, or replays successfully on a
   fixture. Those results only show compatibility with the lab path that was
