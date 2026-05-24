@@ -511,6 +511,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'row-preconditions', 'plugin-preconditions', 'live-preconditions'],
   },
   {
+    id: 'index-and-cached-row-batch-completes-plugin-install',
+    proposal: 'treat a fresh remote index plus cached row-batch receipts as proof that a plugin install already finished',
+    rejectedBecause: 'planning evidence and cached row receipts can reduce lookup work, but they cannot prove every live row precondition and the atomic-group commit barrier survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-package-hash-completes-plugin-install',
     proposal: 'treat a fresh remote index plus a cached plugin package hash as proof that the install can skip its live boundary',
     rejectedBecause: 'planning evidence and a package hash do not prove dependency checks, metadata writes, or atomic-group commit completion',
