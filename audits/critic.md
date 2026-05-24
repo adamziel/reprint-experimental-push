@@ -1062,6 +1062,12 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   gate.
 - Route-shape-only evidence, fixture replay alone, and `finalMatchesLocal`
   alone are never enough to claim production support.
+- Manual resolution is not a success state unless the remote is preserved for
+  audit, the stale artifact is rejected before write, and the retry starts
+  from fresh live evidence with no scope widening.
+- Reprint, ZS-Sync, and ForkPress notes are comparison evidence only; they do
+  not prove current upstream behavior today and they do not prove this repo's
+  live mutation boundary.
 - Status comments, branch notes, and release notes must not cite source-note
   comparisons or live-looking hashes as substitutes for current production
   proof.
