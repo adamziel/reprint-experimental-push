@@ -1138,6 +1138,45 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and ma
   );
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned type swap and matching independent edit stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/themes/theme/style.css'] = 'body { color: black; }';
+  remote.plugins.forms = { version: '1.5.0', active: true };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code v1.5 */';
+
+  const plan = planFor(base, local, remote);
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/gallery');
+  const editDecision = decisionFor(plan, 'file:wp-content/themes/theme/style.css');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.files['wp-content/uploads/gallery'], 'shared replacement file');
+  assert.equal(result.site.files['wp-content/themes/theme/style.css'], 'body { color: black; }');
+  assert.equal(result.site.plugins.forms.version, '1.5.0');
+  assert.equal(
+    result.site.files['wp-content/plugins/forms/forms.php'],
+    '<?php /* remote-private-forms-code v1.5 */',
+  );
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned row delete and matching independent edit and type swap stay safe', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
