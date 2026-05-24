@@ -63,30 +63,34 @@ can claim production-grade push support:
 ### Reprint
 
 Reprint gives the transport skeleton: preflight, chunking, resumability, and
-protocol versioning. That is a good starting point for push, but it is not a
-proof of live-source safety, production auth, or rollout behavior. The current
-design still needs a production mutation boundary with per-write preconditions,
-durable journal semantics, and a recovery artifact that survives failure
-across file, DB, and plugin boundaries. It also needs proof that the push path
-is not just a mirrored pull pipeline with write verbs attached or a route
-shape that happens to return the expected endpoint. A route that only proves
-endpoint shape, replay behavior, or packaged-plugin mounting still does not
-prove live remote drift handling, identity remapping, or production storage
-durability. Reprint's stage-oriented pull notes are useful context, but they
-do not prove a retry-safe manual override model for source mutation or a live
-approval artifact that expires on remote drift.
+protocol versioning. The source notes prove pull/export mechanics and a
+resumable stage model, not a production write boundary. That is a good
+starting point for push, but it is not a proof of live-source safety,
+production auth, or rollout behavior. The current design still needs a
+production mutation boundary with per-write preconditions, durable journal
+semantics, and a recovery artifact that survives failure across file, DB, and
+plugin boundaries. It also needs proof that the push path is not just a
+mirrored pull pipeline with write verbs attached or a route shape that
+happens to return the expected endpoint. A route that only proves endpoint
+shape, replay behavior, or packaged-plugin mounting still does not prove live
+remote drift handling, identity remapping, or production storage durability.
+Reprint's stage-oriented pull notes are useful context, but they do not prove
+a retry-safe manual override model for source mutation or a live approval
+artifact that expires on remote drift.
 
 ### ZS-Sync
 
 ZS-Sync contributes scanner composition and bounded resource enumeration. That
 helps the planner know what changed. It does not prove what is safe to mutate.
-The current design still lacks a complete coverage manifest that ties scanner
-results to every core, plugin, theme, upload, generated, custom-table, and
-multisite resource the push can affect. Scanner cursors and bounded batches
-are only useful if every enumerated resource either has a mutation rule or a
-hard block. Scanner evidence is planning input, not a write-safety proof, and
-it does not prove remote drift handling, create-time identity allocation, or
-plugin-owned side effects outside the scanned set.
+The source notes show a bounded changed-resource list and continuous rescans,
+but not a mutation policy. The current design still lacks a complete coverage
+manifest that ties scanner results to every core, plugin, theme, upload,
+generated, custom-table, and multisite resource the push can affect. Scanner
+cursors and bounded batches are only useful if every enumerated resource
+either has a mutation rule or a hard block. Scanner evidence is planning
+input, not a write-safety proof, and it does not prove remote drift handling,
+create-time identity allocation, or plugin-owned side effects outside the
+scanned set.
 It also does not prove that a ready plan remains safe after the remote changes
 between scan and write. That matters for manual resolution too: the scanner
 can tell us what changed, but it cannot prove that an operator approval stays
@@ -358,8 +362,9 @@ remote hashes. It also does not show a server-side rejection path that keeps
 the audit trail intact while refusing to apply the stale approval.
 
 Required change: adopt the ForkPress-grade lifecycle before making
-ForkPress-grade claims. Manual resolution is acceptable only when the remote is
-preserved for audit and retry starts from fresh evidence.
+ForkPress-grade claims. Manual resolution is acceptable only when the remote
+is preserved for audit, retries start from fresh evidence, and partial side
+effects are classified without reusing stale manual permission.
 
 ## Reliability Language Gate
 
@@ -405,8 +410,8 @@ Before any production-grade push claim, the project needs all of these:
 11. Production audit/redaction schemas with retention and operator reports.
 12. A release suite and CI gate that runs safety-critical unit, Playground,
     auth, storage, recovery, plugin, graph, redaction, and performance checks.
-13. Measured large-file and large-table benchmarks through the guarded executor
-    path intended for release.
+13. Measured large-file and large-table benchmarks through the guarded
+    executor path intended for release.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
