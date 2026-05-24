@@ -345,3 +345,18 @@ The model exposes three contract lists that tests should keep current:
 - `failureInjectionBoundaries` names the durable transitions that benchmarks
   must exercise: chunk ack, database batch commit, group staging finalize, and
   atomic group commit.
+
+Rejected fast paths stay rejected even when they look fast on paper:
+
+- File hashing cannot fall back to mtime-only, size-only, or path-only
+  equality when that would skip a live remote hash check.
+- Chunk upload cannot publish staged chunks into the live file path before the
+  finalize compare-and-swap.
+- Database batching cannot use a table checksum, row count, or blind SQL replay
+  as a substitute for per-row compare-and-swap.
+- Remote indexes cannot authorize apply writes or replace the live precondition
+  check at mutation time.
+- Compression cannot make encoded bytes the canonical resource value.
+- Parallelism cannot bypass the atomic group commit barrier.
+- Backpressure cannot drop receipts or summarize evidence so recovery loses the
+  ability to classify the remote state.
