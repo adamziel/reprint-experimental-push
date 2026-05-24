@@ -42,6 +42,8 @@ the resource key, the live remote hash observed during planning, and the
 
 - Any remote-only resource change when local still matches the pull base.
 - Remote-only plugin metadata, plugin files, activation state, and removals.
+- Remote-only plugin removals are preserved just like other remote-only plugin
+  changes when local does not touch that plugin.
 - Remote-only plugin context changes when local wants to mutate another file or
   metadata resource for the same plugin. The planner must preserve the remote
   plugin context and refuse the stale local plugin mutation.
