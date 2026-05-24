@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:38:40 CEST
+Last updated: 2026-05-25 01:39:19 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 01:38:40 CEST - Supervisor Snapshot
+## 2026-05-25 01:39:19 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and newest note still agree.
 - Not going well: production proof is still missing for auth, journal durability, leases, graph identity, integration, and plugin drivers.
-- Progress change: no evidence delta; the newest scan text is shorter and the live-page note stays explicit about merge gating.
+- Progress change: no evidence delta; the newest scan text is shorter and the public page no longer leans on a stale test count.
 - Next nudge: keep each lane to one proof gap, one next test, and one owner.
 
 | Lane | Next nudge |
@@ -22,6 +22,9 @@ changed, what is helping, what is not helping, and the next nudge.
 | Progress publisher | Keep the page dated, concise, and linked to evidence. |
 
 Note: this lane's page update becomes live only after the branch merges to `main`.
+
+<details>
+<summary>Older supervisor snapshots</summary>
 
 ## 2026-05-25 01:28:07 CEST - Supervisor Snapshot
 
@@ -128,6 +131,8 @@ Note: this lane's page update becomes live only after the branch merges to `main
 | Fast paths | Run guarded benchmark proof against a real large site. |
 | Audit and critic | Re-audit current proof while implementation lanes run. |
 | Progress publisher | Keep Pages dated, concise, and explicit about active lanes. |
+
+</details>
 
 <details>
 <summary>Earlier feedback entries</summary>
