@@ -15,6 +15,8 @@ linked implementation artifacts.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
   and arbitrary plugin drivers remain unproven.
+- Visible page: `progress.html` shows the blocked state without a production
+  proof count and links to this log for the evidence trail.
 - Pending proof gates: production auth/session storage, durable journal
   ownership, leases/fencing, full WordPress graph identity mapping,
   Docker/full Playground integration, and arbitrary plugin drivers.
