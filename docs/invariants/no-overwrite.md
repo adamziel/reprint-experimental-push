@@ -96,6 +96,8 @@ the resource key, the live remote hash observed during planning, and the
   the same way as other remote-only plugin context changes. Local edits to
   unrelated resources may still proceed if their own live remote preconditions
   are satisfied.
+- If local still touches a plugin's files or plugin-owned data after that plugin
+  was removed remotely, the planner must stop rather than infer harmless drift.
 
 ## Must Preserve Live Evidence
 
@@ -137,6 +139,9 @@ the resource key, the live remote hash observed during planning, and the
   stale plugin-context mutation. If the local plan touches the same plugin's
   files or plugin-owned data, the planner must stop instead of assuming the
   remote plugin drift is harmless.
+- Remote-only plugin removal does not make a stale local plugin-file or
+  plugin-owned-data mutation safe. If the local plan still touches that plugin,
+  stop.
 - Local file deletions and type swaps when the remote resource changed since
   pull and local does not independently match the live remote hash.
 - Atomic groups with missing plugin dependencies after considering the expected

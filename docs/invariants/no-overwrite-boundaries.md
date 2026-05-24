@@ -15,6 +15,8 @@ This note is the short form of the planner policy in
 - Plugin-context and plugin-owned data mutations only when their required live
   remote plugin context still matches the pull base or the local side
   independently matches the live remote context.
+- A local mutation that still touches a remotely removed plugin's files or
+  plugin-owned data must stop.
 
 Every automatic mutation still needs a live remote precondition bound to the
 mutation id, the resource key, the remote hash observed during planning, and
@@ -35,6 +37,7 @@ mutation id, the resource key, the remote hash observed during planning, and
   local side did not independently reach the live remote hash.
 - Plugin-context or plugin-owned data mutations when the relevant live remote
   plugin context drifted and the local side did not independently match it.
+- Plugin-file or plugin-owned-data mutations when the live remote plugin was
+  removed and the local side still touches that plugin.
 - Any mutation that lacks a live remote precondition bound to the mutation id,
   resource key, and remote hash observed during planning.
-
