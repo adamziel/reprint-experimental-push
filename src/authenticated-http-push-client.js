@@ -10,6 +10,8 @@ const authTimestampHeader = 'X-Auth-Timestamp';
 const authNonceHeader = 'X-Auth-Nonce';
 const authSignatureHeader = 'X-Auth-Signature';
 const pushSignatureHeader = 'X-Reprint-Push-Signature';
+const transientFetchRetryDelayMs = 250;
+const transientFetchAttempts = 4;
 
 export async function runAuthenticatedHttpPush({
   sourceUrl,
@@ -19,6 +21,7 @@ export async function runAuthenticatedHttpPush({
   applicationPassword,
   idempotencyKey,
   dryRunOnly = false,
+  labDriftAfterSnapshot = '',
   now = new Date(),
 }) {
   if (!sourceUrl) {
@@ -65,7 +68,10 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
 
-  const remoteSnapshot = await client.get('/snapshot');
+  const snapshotPath = labDriftAfterSnapshot
+    ? `/snapshot?reprint_push_lab_drift_after_snapshot=${encodeURIComponent(labDriftAfterSnapshot)}`
+    : '/snapshot';
+  const remoteSnapshot = await client.get(snapshotPath);
   if (remoteSnapshot.status !== 200 || remoteSnapshot.body?.ok !== true) {
     summary.code = remoteSnapshot.body?.code || 'SNAPSHOT_FAILED';
     summary.snapshot = summarizeResponse(remoteSnapshot);
@@ -244,12 +250,33 @@ async function requestJson(baseUrl, method, pathname, body = undefined, headers 
 }
 
 async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, headers = {}) {
-  const response = await fetch(new URL(pathname, baseUrl), {
-    method,
-    headers: rawBody === undefined ? headers : {
+  const retryable = method === 'GET' && !Object.hasOwn(headers, authNonceHeader);
+  const attempts = retryable ? transientFetchAttempts : 1;
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await requestJsonRawOnce(baseUrl, method, pathname, rawBody, headers);
+    } catch (error) {
+      lastError = error;
+      if (!retryable || !isTransientFetchError(error) || attempt === attempts) {
+        throw error;
+      }
+      await sleep(transientFetchRetryDelayMs * attempt);
+    }
+  }
+  throw lastError;
+}
+
+async function requestJsonRawOnce(baseUrl, method, pathname, rawBody = undefined, headers = {}) {
+  const requestHeaders = rawBody === undefined
+    ? withConnectionClose(headers)
+    : withConnectionClose({
       'content-type': 'application/json',
       ...headers,
-    },
+    });
+  const response = await fetch(new URL(pathname, baseUrl), {
+    method,
+    headers: requestHeaders,
     body: rawBody,
   });
   const text = await response.text();
@@ -263,6 +290,30 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
     status: response.status,
     body: json,
   };
+}
+
+function withConnectionClose(headers) {
+  return {
+    connection: 'close',
+    ...headers,
+  };
+}
+
+function isTransientFetchError(error) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  const code = error.cause?.code || error.code;
+  return error.name === 'TypeError' && (
+    code === 'UND_ERR_SOCKET'
+    || code === 'ECONNRESET'
+    || code === 'EPIPE'
+    || code === 'ETIMEDOUT'
+  );
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function signedRequestHeaders(credential, method, pathname, rawBody, options = {}) {

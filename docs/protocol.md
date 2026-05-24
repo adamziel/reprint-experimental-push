@@ -131,7 +131,8 @@ production push.
 protocol through the `reprint-push-lab push-authenticated` command. That CLI
 fetches the source snapshot, builds a fresh three-way plan from base/local
 snapshot files, signs preflight/dry-run/apply, applies with an idempotency key,
-and refuses a changed source as `PLAN_NOT_READY_LOCALLY` before mutation.
+refuses a changed source as `PLAN_NOT_READY_LOCALLY` before mutation, and
+refuses post-snapshot source drift as `PRECONDITION_FAILED` before apply.
 
 ### Current Fixture Plugin Atomicity Lab
 

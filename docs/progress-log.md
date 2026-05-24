@@ -483,6 +483,14 @@ linked implementation artifacts.
 - Negative proof covers a changed source site: the CLI reports
   `PLAN_NOT_READY_LOCALLY` with conflict evidence and does not call dry-run or
   apply.
+- Live-source drift proof covers the source changing after the CLI fetches its
+  snapshot but before dry-run. A lab-only post-snapshot drift hook changes a
+  fixture post title; the CLI-built plan is locally `ready`, authenticated
+  dry-run returns `412 PRECONDITION_FAILED`, apply is not called, and the
+  concurrent source change is preserved.
+- The authenticated CLI client now retries transient socket failures only for
+  unsigned GET requests and sends `Connection: close`; signed requests remain
+  single-shot so nonce replay protections are not weakened.
 - Caveat: this makes the lab source-site flow usable from the CLI, but it still
   targets the lab endpoint. It is not a production Reprint endpoint, production
   credential binding, or production durability proof.
@@ -515,13 +523,33 @@ linked implementation artifacts.
   nonce/session cleanup proof, durable production audit/recovery records,
   production filesystem/DB durability proof, and arbitrary plugin data safety.
 
+## 2026-05-24 - CLI Drift And Supervisor Branch Review
+
+- Merged main now adds authenticated CLI post-snapshot drift refusal. The
+  source can change after the CLI fetches its snapshot but before dry-run;
+  authenticated dry-run returns `412 PRECONDITION_FAILED`, apply is not called,
+  and the concurrent source change is preserved. Evidence:
+  [scripts/playground/authenticated-cli-push-smoke.mjs](../scripts/playground/authenticated-cli-push-smoke.mjs)
+  and [src/authenticated-http-push-client.js](../src/authenticated-http-push-client.js).
+- [progress.html](../progress.html) now reflects this as a reliable-executor
+  lab increase only. Production readiness is still blocked by missing Reprint
+  endpoint/auth binding, nonce/session cleanup, durable production audit
+  records, and production storage guards.
+- Supervisor review found useful unmerged lane-branch deltas for invariants,
+  recovery, reliable executor, and audit language. They remain branch evidence
+  and are not counted as current production proof until merged and verified in
+  this tree.
+- [supervisor feedback](supervisor-feedback.md) now names the next nudge per
+  lane and keeps the visible page linked to detailed evidence instead of
+  embedding long audit text.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | What changed | Next proof |
 | --- | ---: | --- | --- |
 | Merge invariants | 38% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
 | Recovery boundaries | 24% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
-| Reliable executor and protocol | 27% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, and an authenticated CLI push smoke exist; no newer production-shaped endpoint proof has landed. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, nonce/session cleanup, and durable audit records. |
+| Reliable executor and protocol | 28% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, and CLI post-snapshot drift refusal exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, nonce/session cleanup, and durable audit records. |
 | Fast path and chunking | 12% | Performance model and fast-path design are documented. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
 | Independent evidence and critique | 25% | Objective audit, critic notes, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
 

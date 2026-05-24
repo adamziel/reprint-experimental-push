@@ -5,6 +5,53 @@ Last updated: 2026-05-24
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-24 - CLI Drift And Lane Branch Review
+
+### Going Well
+
+- Main now has executable lab proof for post-snapshot source drift: the
+  authenticated CLI fetches a snapshot, a lab hook changes the source before
+  dry-run, dry-run returns `PRECONDITION_FAILED`, apply is not called, and the
+  concurrent source change remains intact.
+- Lane branches are sharpening the right proof gaps: invariants adds
+  file-topology and plugin-driver/table blockers, recovery adds durable
+  JSON-model journal states, reliable executor drafts a production protocol
+  contract, and audit lanes tighten production-gate language.
+- The status page remains short and links to detailed evidence instead of
+  embedding audit text.
+
+### Not Going Well
+
+- The only newly merged executable evidence is still lab-scoped. Production
+  source-site mutation remains blocked by missing Reprint endpoint, production
+  credential binding, nonce/session cleanup, durable audit records, and
+  production storage guards.
+- Branch deltas are useful, but unmerged branch work should not be counted as
+  current production readiness.
+- Plugin safety still stops at fixtures and allowlists. No real plugin
+  validator proves arbitrary serialized options, custom tables, generated
+  files, activation hooks, or rollback.
+
+### Progress Delta
+
+| Lane | Direction | Nudge |
+| --- | --- | --- |
+| No-data-loss invariants | Up on branch, not production | Owner: no-data-loss invariants. Gap: WordPress graph identity. Next test: real fixture with post, postmeta, attachment, taxonomy, descendant file drift, and driver/table mismatch in one revalidated plan. |
+| No-data-loss recovery | Up on branch, still model/lab | Owner: no-data-loss recovery. Gap: production durability. Next test: kill at each DB/file boundary with durable DB journal rows, `fsync`/lease evidence, and old/new/blocked classification. |
+| Reliable executor | Up in lab | Owner: reliable executor. Gap: production route/auth contract implementation. Next test: production-shaped Reprint preflight, snapshot hashes with coverage, dry-run, apply, audit, nonce cleanup, and same post-snapshot drift refusal. |
+| Plugin data | Slight up on branch | Owner: no-data-loss invariants. Gap: semantic plugin validation. Next test: one real plugin validator/driver beyond forms and atomic fixture allowlists. |
+| Fast paths | Flat | Owner: fast paths. Gap: executable chunking proof. Next test: large upload/table benchmark with receipts, preconditions, journals, resume cursors, and memory ceiling. |
+| Independent audit and critic | Up in docs | Owner: independent auditor and critic. Gap: live integration behavior. Next test: re-audit the first production-shaped mutation slice, not lab aliases or branch-only contracts. |
+| Progress publisher | Needs alignment | Owner: progress publisher and feedback supervisor. Gap: page/log drift across lane branches. Next test: keep the visible page one-screen and reconcile only merged evidence as current proof. |
+
+### Next Supervisor Nudge
+
+Push reliable executor toward an implemented production-shaped slice, not more
+lab aliases: real Reprint route names, base/coverage binding, production
+credential scope, signed preflight/dry-run/apply, nonce/session cleanup, one
+guarded DB row, one guarded file, DB audit rows, replay/conflict refusal,
+recovery inspect, and explicit rollback/blocking semantics.
+
 ## 2026-05-24 - Evidence Checkpoint
 
 ### Going Well
@@ -63,7 +110,8 @@ recovery inspect, and explicit rollback/blocking semantics.
   storage-boundary DB/file refusal are linked from the status surfaces.
 - The source-site path is now command-driven in the lab. The authenticated CLI
   smoke proves non-mutating dry-run, DB-journaled apply, and changed-source
-  refusal before dry-run/apply.
+  refusal before dry-run/apply. It now also proves post-snapshot source drift
+  is caught by authenticated dry-run before apply.
 - Fixture plugin/data safety is less hand-wavy: forms fixture data, one custom
   table driver, and hard-coded fixture plugin install atomicity now have
   allowlisted proof.
@@ -88,7 +136,7 @@ recovery inspect, and explicit rollback/blocking semantics.
 | --- | --- | --- |
 | No-data-loss invariants | Up | Owner: no-data-loss invariants. Gap: WordPress graph identity. Next test: post, postmeta, attachment, taxonomy, and remote drift. |
 | No-data-loss recovery | Up | Owner: no-data-loss recovery. Gap: production durability. Next test: kill apply at each DB/file boundary and classify old/new/blocked. |
-| Reliable executor | Up in lab, blocked for production | Owner: reliable executor. Gap: real Reprint endpoint and credential binding. Next test: production-shaped CLI endpoint contract. |
+| Reliable executor | Up in lab, blocked for production | Owner: reliable executor. Gap: real Reprint endpoint and credential binding. Next test: production-shaped CLI endpoint contract with the same post-snapshot drift refusal. |
 | Plugin data | Up in fixtures, blocked generally | Owner: no-data-loss invariants. Gap: arbitrary plugin state. Next test: one real plugin validator/driver beyond the forms fixture. |
 | Fast paths | Flat | Owner: fast paths. Gap: executable chunking proof. Next test: large upload/table benchmark with receipts, preconditions, journals, and recovery. |
 | Independent audit and critic | Flat | Owner: independent auditor and critic. Gap: live integration behavior. Next test: re-audit the first production-shaped source mutation slice. |

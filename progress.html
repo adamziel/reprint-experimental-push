@@ -479,8 +479,8 @@
         <div class="meta" aria-label="Project status">
           <span class="pill">55 Node lab tests passing</span>
           <span class="pill">Playground labs passing</span>
-          <span class="pill">Authenticated CLI push smoke passing</span>
-          <span class="pill">Trend flat since CLI refresh</span>
+          <span class="pill">Authenticated CLI post-snapshot drift refusal passing</span>
+          <span class="pill">Lab trend up; production still blocked</span>
           <span class="pill">DB recovery labs passing</span>
           <span class="pill">Storage-boundary file update/create/delete passing</span>
           <span class="pill">Production push blocked by missing evidence</span>
@@ -531,9 +531,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">27%</span></div>
-          <div class="bar" aria-label="Reliable executor and protocol 27 percent"><div class="fill amber" style="width:27%"></div></div>
-          <p class="note">Lab protocol and CLI prove signed dry-run, apply, replay, and refusal paths. Gap: production Reprint endpoint, credentials, audit, nonce cleanup, and storage guards.</p>
+          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">28%</span></div>
+          <div class="bar" aria-label="Reliable executor and protocol 28 percent"><div class="fill amber" style="width:28%"></div></div>
+          <p class="note">Lab protocol and CLI now prove signed dry-run, apply, replay, changed-source refusal, and post-snapshot drift refusal. Gap: production Reprint endpoint, credential binding, durable audit records, nonce cleanup, TLS assumptions, and storage guards.</p>
         </div>
 
         <div class="lane">
@@ -553,9 +553,9 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>The evidence surfaces agree: planner, recovery, storage-guard, auth-shaped route, CLI, and plugin fixture proofs are linked and scoped to the lab.</span></li>
-            <li><strong>Not going well</strong><span>No new production Reprint mutation endpoint, credential binding, nonce/session cleanup, durable audit record, or arbitrary plugin data proof has landed.</span></li>
-            <li><strong>Progress change</strong><span>Flat since the authenticated CLI refresh. The CLI flow is useful proof scaffolding, not a production readiness increase.</span></li>
+            <li><strong>Going well</strong><span>The authenticated CLI now proves non-mutating dry-run, committed apply, changed-source refusal, and post-snapshot drift refusal in the lab.</span></li>
+            <li><strong>Not going well</strong><span>The project is still blocked by missing production Reprint mutation, auth binding, durable journal, nonce cleanup, and arbitrary plugin data proof.</span></li>
+            <li><strong>Progress change</strong><span>Reliable executor moved up in lab evidence only; production readiness did not increase.</span></li>
             <li><strong>Next nudge</strong><span>Owner: reliable executor. Replace lab route/auth assumptions with a production-shaped Reprint preflight, dry-run, apply, audit, and recovery contract.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>

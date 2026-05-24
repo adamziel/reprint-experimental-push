@@ -2698,10 +2698,71 @@ function reprint_push_lab_rest_delay_from_payload(array $payload, string $key): 
 
 function reprint_push_lab_rest_snapshot(WP_REST_Request $request): WP_REST_Response
 {
+    $snapshot = reprint_push_export_snapshot();
+    $drift = reprint_push_lab_rest_maybe_drift_after_authenticated_snapshot($request);
+
     return reprint_push_lab_rest_json_response([
         'ok' => true,
-        'snapshot' => reprint_push_export_snapshot(),
+        'snapshot' => $snapshot,
+        'labDriftAfterSnapshot' => $drift,
     ]);
+}
+
+function reprint_push_lab_rest_maybe_drift_after_authenticated_snapshot(WP_REST_Request $request): ?array
+{
+    if (!is_array(reprint_push_lab_rest_get_auth_context($request))) {
+        return null;
+    }
+
+    $mode = (string) $request->get_param('reprint_push_lab_drift_after_snapshot');
+    if ($mode === '') {
+        $mode = (string) getenv('REPRINT_PUSH_LAB_DRIFT_AFTER_AUTH_SNAPSHOT');
+    }
+    if ($mode === '') {
+        return null;
+    }
+
+    $option_name = 'reprint_push_lab_drift_after_auth_snapshot_done';
+    if (get_option($option_name, '') === $mode) {
+        return [
+            'mode' => $mode,
+            'applied' => false,
+            'reason' => 'already-applied',
+        ];
+    }
+
+    if ($mode !== 'post-title') {
+        return [
+            'mode' => $mode,
+            'applied' => false,
+            'reason' => 'unsupported-lab-drift-mode',
+        ];
+    }
+
+    $post_id = 1001;
+    $before = get_post($post_id);
+    if (!$before instanceof WP_Post) {
+        return [
+            'mode' => $mode,
+            'applied' => false,
+            'reason' => 'fixture-post-missing',
+            'resourceKey' => 'row:' . wp_json_encode(['wp_posts', 'ID:' . $post_id], JSON_UNESCAPED_SLASHES),
+        ];
+    }
+
+    wp_update_post([
+        'ID' => $post_id,
+        'post_title' => 'Concurrent source drift after authenticated snapshot',
+    ]);
+    update_option($option_name, $mode, false);
+
+    return [
+        'mode' => $mode,
+        'applied' => true,
+        'resourceKey' => 'row:' . wp_json_encode(['wp_posts', 'ID:' . $post_id], JSON_UNESCAPED_SLASHES),
+        'beforeHash' => hash('sha256', (string) $before->post_title),
+        'afterHash' => hash('sha256', 'Concurrent source drift after authenticated snapshot'),
+    ];
 }
 
 function reprint_push_lab_rest_journal(WP_REST_Request $request): WP_REST_Response
