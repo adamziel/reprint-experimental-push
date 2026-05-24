@@ -12,6 +12,14 @@ An apply attempt must end in one of these states, and only these states:
   The recovery artifact set must include the journal plus any observed remote
   evidence needed to stop unsafe retry.
 
+Concrete boundaries map to these states:
+
+- failure before mutation, after staging, or after dependency validation must
+  stay `old-remote`
+- replaying a completed plan must stay `fully-updated-remote`
+- any partial remote mutation, stale completed replay, or ambiguous recovery
+  envelope must be reported as `blocked-recovery` with artifacts
+
 Anything else is unacceptable for a production partial remote mutation. If a
 remote was mutated but the recovery artifact is missing, incomplete, or
 uninspectable, treat that as a release blocker.
