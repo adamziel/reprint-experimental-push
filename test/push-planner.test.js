@@ -2056,3 +2056,57 @@ test('durable apply journal classifies partial remote mutation as blocked recove
     assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
   }
 });
+
+test('durable recovery stays within old remote, fully updated remote, or blocked recovery', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const failureScenarios = [
+    {
+      label: 'before mutation',
+      options: { failBeforeMutation: true },
+      expectedRecoveryStatus: 'old-remote',
+    },
+    {
+      label: 'after staging',
+      options: { failAfterStaging: true },
+      expectedRecoveryStatus: 'old-remote',
+    },
+    {
+      label: 'after dependency validation',
+      options: { failAfterDependencyValidation: true },
+      expectedRecoveryStatus: 'old-remote',
+    },
+  ];
+
+  for (const scenario of failureScenarios) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, scenario.options));
+
+    assert.ok(error instanceof PushPlanError, scenario.label);
+    assert.equal(JSON.stringify(remote), before, scenario.label);
+    assert.equal(error.details.recovery.status, scenario.expectedRecoveryStatus, scenario.label);
+    assert.ok(error.details.recovery.artifacts.journal, scenario.label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replay = applyPlan(completed.site, plan, { journal: completed.journal });
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  const blockedRemote = JSON.parse(JSON.stringify(completed.site));
+  blockedRemote.db.wp_posts['ID:1'].post_title = 'Drifted after completion';
+  const blocked = captureError(() => applyPlan(blockedRemote, plan, { journal: completed.journal }));
+
+  assert.ok(blocked instanceof PushPlanError);
+  assert.equal(blocked.details.recovery.status, 'blocked-recovery');
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(blocked.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Drifted after completion');
+});
