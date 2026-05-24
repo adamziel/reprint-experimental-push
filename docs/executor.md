@@ -36,6 +36,9 @@ The executor treats the push protocol as a three-sided merge:
 
 It must never use the remote listing as a replacement for the pull base, and it
 must never treat a dry-run receipt as proof that apply is still safe.
+It also must not treat journal inspection as authorization to mutate; recovery
+only becomes mutating when the journal and fresh live hashes both prove the
+same action.
 
 Acceptance criteria for the reliable executor:
 
@@ -166,7 +169,12 @@ for the push protocol; the local site is the pull target that was edited after
 import. The runner owns the protocol flow and is the only process that talks
 to both sites. The test must prove remote drift, meaning the remote can change
 independently between dry-run and apply and the executor still rejects stale
-work.
+work. The topology should be explicit about role separation:
+
+- `remote-base` is the source of truth used to produce the pull base package.
+- `local-edited` is the imported local site after user edits.
+- `remote-changed` is a live drift case that changes between dry-run and apply.
+- the runner is the only process that compares, uploads, inspects, and recovers.
 
 ### Docker Topology
 
@@ -197,6 +205,9 @@ The intended Docker data flow is:
   `push_batch_apply`, `push_journal`, and `push_recover` against `remote-wp`.
 - `remote-db` and `local-db` are kept separate so remote drift can be observed
   without contaminating the local edit history.
+- for browser-visible inspection, use only the sandbox-provided `8080` ingress
+  through a local-only proxy bound inside the sandbox; do not publish any
+  remote container port directly
 
 Suggested Docker wiring:
 

@@ -59,6 +59,11 @@ inspection call uses the same `push_recover` endpoint with `mode: "inspect"`
 and omits the mutating recovery idempotency key unless the implementation
 requires idempotency for all recovery requests.
 
+`push_journal` is the ambiguity resolver after a timeout or crash. `push_recover`
+`mode: "inspect"` is the evidence reader that decides whether the next safe step
+is finish, rollback, retry, or block. Neither call should be treated as a live
+write lock.
+
 The fixtures are intentionally paired so tests can verify the full sequence:
 preflight, remote snapshot hash listing, dry-run upload, batched apply,
 journal inspection, and recovery. They should be treated as wire-contract

@@ -141,6 +141,8 @@ The pull-to-push handoff is linear:
 The remote snapshot listing is the planning view, not the write lock. Any
 remote change after snapshot listing, dry-run, or journal inspection must be
 considered live until apply revalidates the batch at the storage boundary.
+`push_journal` and `push_recover inspect` reuse durable evidence only; neither
+call creates a lock or authorizes a later mutation by itself.
 
 ## Authentication
 
@@ -255,6 +257,14 @@ That persisted base is the local truth source for:
 - which scopes were scanned completely enough to permit later mutation
 - which cursor-completion proofs must be preserved when a later push wants a
   wider or overlapping scope
+
+It is read-only evidence, not a mutable cache. `push_preflight` checks that
+the base still belongs to the live remote identity, `push_snapshot_hashes`
+compares the stored base hashes against the live remote listing, and
+`push_plan_dry_run` uploads the canonical three-way plan built from base,
+local, and live remote evidence. Recovery never rewrites the base package; it
+only uses the stored evidence to classify committed, replayable, or blocked
+state after a lost response or process crash.
 
 Push planning must stop if the stored base package is missing, corrupt,
 incomplete for the requested scope, or bound to a different remote identity.
