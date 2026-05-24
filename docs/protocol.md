@@ -373,6 +373,26 @@ The pull-to-push handoff is linear and one-way:
 8. Push journal and recovery inspect resolve lost responses or interrupted
    apply attempts without turning stale evidence into write authority.
 
+The pull/export/import pipeline maps to push like this:
+
+- `exporter` discovers the merge base, coverage evidence, and resource hashes
+  for the pull base package.
+- `importer` persists that package as immutable provenance, including the base
+  manifest, coverage hash, requested scope, and remote identity binding.
+- `push_preflight` binds the stored package to the live remote identity and
+  mints a short-lived push session for that same lineage and scope.
+- `push_snapshot_hashes` is the fresh live planning read that lists the remote
+  comparison set and coverage for the requested scope.
+- `push_plan_dry_run` uploads the canonical three-way plan and records
+  eligibility only.
+- `push_batch_apply` revalidates the live remote before every batch and again
+  at the storage boundary before any write.
+- `push_journal` resolves lost responses and crash ambiguity from durable
+  journal evidence without turning the pull package into a lock.
+- `push_recover inspect` reads journal and live-hash evidence first; only
+  mutating recovery modes may change state, and only when that evidence proves
+  the action.
+
 The existing pull exporter/importer pipeline remains the source of truth for the
 persisted merge base. Push does not add a second export format or a second notion
 of base ownership. Instead, it layers live remote proof on top of the pull

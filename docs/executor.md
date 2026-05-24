@@ -63,6 +63,25 @@ local edited site, and one drift witness:
 - `runner` is the only process that may run preflight, snapshot listing,
   dry-run, apply, journal inspection, and recovery
 
+The same shape is what the Docker and Playground proofs must implement:
+
+| Role | Docker | Playground | Why it exists |
+| --- | --- | --- | --- |
+| `remote-base` | Source-site container on the private network | Loopback Playground source site | Produces the persisted pull base and live remote identity. |
+| `local-edited` | Imported edited-site container on the same private network | Separate loopback Playground instance | Holds the user edits that the planner will compare against the base. |
+| `remote-changed` | Same remote site observed later after drift | Same Playground site after a later mutation | Proves apply revalidates live state instead of replaying dry-run evidence. |
+| `runner` | Client container or host process | Client process | Signs requests, uploads plans, reads journals, and drives recovery. |
+
+Shared harness rules:
+
+- Browser-visible inspection may use only the sandbox-provided `8080` ingress
+  through a local-only proxy.
+- Remote tunnels are disallowed.
+- `remote-base` and `remote-changed` must be the same remote identity observed
+  at different times, not two different sites.
+- Dry-run and apply remain separate remote calls even when the same runner
+  executes both.
+
 Docker and Playground use the same proof boundary:
 
 - `remote-base` seeds the persisted pull base and the live source identity.
