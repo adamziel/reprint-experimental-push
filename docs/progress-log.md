@@ -4,6 +4,19 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Release Gate Dashboard Refresh
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:21:24 CEST`) and tightened the first screen into a concise
+  release-gate view.
+- The public page still shows only lab proof as verified; production auth,
+  durable journaling, graph identity, Docker/Playground integration, and
+  plugin drivers remain pending.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/executor.md](executor.md), [docs/protocol.md](protocol.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md), and
+  [docs/playground-topology.md](playground-topology.md).
+
 ## 2026-05-25 - Public Status Audit Refresh
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
