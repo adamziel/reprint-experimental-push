@@ -325,6 +325,23 @@ test('recognizes matching independent deletions as already in sync', () => {
   assert.equal(decision.change.remoteChange, 'delete');
 });
 
+test('recognizes matching independent row deletions as already in sync', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete local.db.wp_posts['ID:1'];
+  delete remote.db.wp_posts['ID:1'];
+
+  const plan = planFor(base, local, remote);
+  const decision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decision.decision, 'already-in-sync');
+  assert.equal(decision.change.localChange, 'delete');
+  assert.equal(decision.change.remoteChange, 'delete');
+});
+
 test('recognizes matching independent file edits as already in sync', () => {
   const base = baseSite();
   base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
