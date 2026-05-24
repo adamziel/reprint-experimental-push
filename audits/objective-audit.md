@@ -71,7 +71,7 @@ gates were exercised.
 | Area | Directly observed proof | Still insufficient | Next proof required |
 | --- | --- | --- | --- |
 | No-overwrite planner | Unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. | These are JSON-model resources plus fixture policy, not WordPress graph semantics. The tests cannot prove post/postmeta/attachment/taxonomy/menu/plugin relationships are complete or safe. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
-| Recovery and idempotency | Unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Playground smoke source covers DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. The production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
+| Recovery and idempotency | Unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Playground smoke source covers DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. The production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. The current suite can demonstrate blocked recovery states, but it does not prove that a live source site survives crash/retry cycles without data loss or duplicate mutation at each guarded boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
 | Speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and benchmark evidence gates. They also block unsupported production throughput claims until live measurements exist. | No bytes move in a production executor, no live source site is mutated, no memory ceiling or throughput target is measured against a real push path, and no benchmark evidence yet proves the claim at the production boundary. | Run a large-file and large-table benchmark through the executor with receipts, preconditions, journal cursors, retries, memory/runtime measurements, and an explicit pass/fail threshold for production throughput claims. |
 
 ## Explicit Requirements From The Objective
@@ -213,7 +213,9 @@ invocation and can be skipped while `npm test` remains green.
    simplified resources and named fixtures. They do not prove semantic
    no-loss behavior for WordPress data graphs such as posts plus postmeta plus
    attachments plus taxonomy relationships, or for arbitrary plugin tables and
-   serialized options.
+   serialized options. That means the suite can show selected resources are
+   preserved in a lab run, but not that a live source site keeps every related
+   object intact after a failed or retried production push.
 
 4. **Storage safety is partial.** The DB guard smoke covers existing fixture
    row updates only. The file guard smoke covers accepted fixture upload
@@ -224,7 +226,10 @@ invocation and can be skipped while `npm test` remains green.
 5. **Crash recovery coverage is sparse relative to the claim.** The process
    kill smoke is valuable but covers one local Playground path. There is no
    kill-at-every-boundary matrix across DB writes, file writes, plugin
-   activation, journal writes, finalization, stale claims, and replay.
+   activation, journal writes, finalization, stale claims, and replay. The
+   current recovery evidence can show that some interruptions are detected and
+   classified, but not that the production executor restarts without losing or
+   duplicating live source changes.
 
 6. **Reliability assertions often count events rather than prove every hash
    transition.** Several smokes verify expected event names, counts, and coarse
