@@ -26,6 +26,107 @@ export const SAFE_SPEEDUP_AREAS = Object.freeze([
   'backpressure',
 ]);
 
+export const SAFE_FAST_PATHS = Object.freeze([
+  {
+    area: 'file-hashing',
+    reduces: ['duplicate-local-hash-work', 'remote-body-fetches'],
+    allowedShortcut: 'skip-local-rehash-on-fingerprint-plus-previous-strong-digest',
+    guardrails: [
+      'cache-entry-includes-previous-digest',
+      'apply-uses-live-remote-resource-hash',
+    ],
+    visibilityBoundary: 'compare-and-swap-file-publish',
+    failureEvidence: 'cached digest, file fingerprint, and plan resource hash',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'chunk-upload',
+    reduces: ['duplicate-body-transfer', 'lost-response-retries'],
+    allowedShortcut: 'resume-plan-scoped-chunks-with-matching-receipts',
+    guardrails: [
+      'chunks-write-only-to-plan-staging',
+      'finalize-requires-complete-chunk-receipts',
+    ],
+    visibilityBoundary: 'file-finalize-or-atomic-group-commit',
+    failureEvidence: 'chunk receipt keyed by plan, resource, local hash, range, and digest',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'database-row-batching',
+    reduces: ['round-trips', 'statement-setup-cost'],
+    allowedShortcut: 'reuse-statement-shapes-for-bounded-primary-key-batches',
+    guardrails: [
+      'one-expected-remote-hash-per-row',
+      'batch-transaction-or-group-staging-record',
+    ],
+    visibilityBoundary: 'batch-transaction-or-atomic-group-commit',
+    failureEvidence: 'batch idempotency key with row count and precondition count',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'remote-indexes',
+    reduces: ['remote-body-fetches', 'planning-round-trips'],
+    allowedShortcut: 'plan-from-indexed-strong-hash-listing',
+    guardrails: [
+      'index-is-planning-evidence-only',
+      'apply-revalidates-live-resource-hash',
+    ],
+    visibilityBoundary: 'none-planning-only',
+    failureEvidence: 'index cursor recorded with the plan but not used as a lock',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'compression',
+    reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
+    allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
+    guardrails: [
+      'canonical-hash-over-uncompressed-value',
+      'encoded-payload-digest-recorded-separately',
+    ],
+    visibilityBoundary: 'transport-only',
+    failureEvidence: 'canonical digest plus encoded payload digest',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'parallelism-limits',
+    reduces: ['idle-time', 'head-of-line-blocking'],
+    allowedShortcut: 'run-independent-staging-work-within-per-site-and-per-kind-budgets',
+    guardrails: [
+      'atomic-groups-remain-dependency-barriers',
+      'per-site-and-per-kind-concurrency-budgets',
+    ],
+    visibilityBoundary: 'atomic-group-commit-barrier',
+    failureEvidence: 'per-worker journal records tied to plan-scoped idempotency keys',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'backpressure',
+    reduces: ['retry-amplification', 'memory-and-staging-pressure'],
+    allowedShortcut: 'pause-upstream-producers-when-ack-or-journal-budgets-are-hit',
+    guardrails: [
+      'bounded-queues-retain-resource-level-evidence',
+      'resume-requires-durable-receipts-and-journal-catch-up',
+    ],
+    visibilityBoundary: 'none-pause-only',
+    failureEvidence: 'durable queue and journal entries with affected resource identifiers',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+]);
+
 export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([
   {
     boundary: 'chunk-ack',
@@ -159,6 +260,7 @@ export function buildBenchmarkModel(overrides = {}) {
     },
     limits,
     safeSpeedupAreas: SAFE_SPEEDUP_AREAS,
+    safeFastPaths: SAFE_FAST_PATHS,
     failureInjectionBoundaries: FAILURE_INJECTION_BOUNDARIES,
     rejectedFastPaths: REJECTED_FAST_PATHS,
     remoteIndex: {

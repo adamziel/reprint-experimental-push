@@ -4,6 +4,7 @@ import {
   buildBenchmarkModel,
   DEFAULT_LIMITS,
   MIB,
+  SAFE_FAST_PATHS,
   SAFE_SPEEDUP_AREAS,
 } from '../scripts/bench/performance-model.js';
 
@@ -28,6 +29,7 @@ test('safety contract covers required speedup areas and terminal states', () => 
 
   assert.equal(model.safetyContract.priority, 'fast-fourth');
   assert.deepEqual(model.safeSpeedupAreas, SAFE_SPEEDUP_AREAS);
+  assert.deepEqual(model.safeFastPaths, SAFE_FAST_PATHS);
 
   for (const state of ['unchanged', 'fully-changed', 'blocked-with-durable-recovery-evidence']) {
     assert.ok(model.safetyContract.acceptableTerminalStates.includes(state));
@@ -44,6 +46,37 @@ test('safety contract covers required speedup areas and terminal states', () => 
   ]) {
     assert.ok(model.safeSpeedupAreas.includes(area), `missing safe speedup area ${area}`);
   }
+});
+
+test('safe fast path proposals retain proof obligations', () => {
+  const model = buildBenchmarkModel();
+  const fastPathByArea = new Map(
+    model.safeFastPaths.map((fastPath) => [fastPath.area, fastPath]),
+  );
+
+  for (const area of model.safeSpeedupAreas) {
+    assert.ok(fastPathByArea.has(area), `missing safe fast path proposal for ${area}`);
+  }
+
+  for (const fastPath of model.safeFastPaths) {
+    assert.ok(fastPath.reduces.length > 0, `missing speed benefit for ${fastPath.area}`);
+    assert.ok(fastPath.guardrails.length >= 2, `missing guardrails for ${fastPath.area}`);
+    assert.ok(fastPath.allowedShortcut, `missing allowed shortcut for ${fastPath.area}`);
+    assert.ok(fastPath.visibilityBoundary, `missing visibility boundary for ${fastPath.area}`);
+    assert.ok(fastPath.failureEvidence, `missing recovery evidence for ${fastPath.area}`);
+    assert.equal(fastPath.bypassesLivePreconditions, false);
+    assert.equal(fastPath.splitsAtomicGroup, false);
+    assert.equal(fastPath.publishesStagedDataEarly, false);
+  }
+
+  assert.ok(
+    fastPathByArea.get('remote-indexes').guardrails.includes('apply-revalidates-live-resource-hash'),
+  );
+  assert.equal(fastPathByArea.get('remote-indexes').visibilityBoundary, 'none-planning-only');
+  assert.equal(
+    fastPathByArea.get('parallelism-limits').visibilityBoundary,
+    'atomic-group-commit-barrier',
+  );
 });
 
 test('file hashing and compression decisions preserve canonical hashes', () => {

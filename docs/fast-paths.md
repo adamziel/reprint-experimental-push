@@ -41,6 +41,23 @@ The safe version of a fast path is usually a "skip duplicate staging work" or
 point is where no-data-loss guarantees are easiest to lose, so it stays narrow,
 preconditioned, idempotent, and journaled.
 
+Before a speedup moves from proposal to implementation, write down the proof
+obligation in the benchmark model:
+
+- What work gets faster, such as hashing, body transfer, round trips, lock
+  time, or idle time.
+- What shortcut is allowed and what exact evidence authorizes the shortcut.
+- Which live precondition still guards the eventual storage-boundary write.
+- Which visibility boundary remains unchanged.
+- Which durable receipt, journal record, or cursor lets recovery classify a
+  crash, retry, lost response, or pressure pause.
+- Which unsafe variant is explicitly rejected if the proposal would otherwise
+  be tempting under load.
+
+The benchmark model records those fields in `safeFastPaths`. A proposed
+optimization is incomplete if it can show lower request counts but cannot name
+its unchanged visibility boundary and failure evidence.
+
 ## File Hashing
 
 Use a two-level model:
@@ -237,6 +254,8 @@ resumed after a failure.
 
 The model exposes three contract lists that tests should keep current:
 
+- `safeFastPaths` records each safe proposal's benefit, allowed shortcut,
+  guardrails, visibility boundary, and failure evidence.
 - `safeSpeedupAreas` covers file hashing, chunk upload, database row batching,
   remote indexes, compression, parallelism limits, and backpressure.
 - `rejectedFastPaths` records proposals that are not allowed because they
