@@ -7,6 +7,20 @@ linked implementation artifacts.
 ## 2026-05-25 - Status Snapshot Refresh
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:19:52 CEST`) and kept the first screen concise and
+  conservative.
+- The public page still treats WordPress executor, durable recovery journal,
+  Docker/Playground integration, and plugin drivers as pending until proof
+  appears.
+- Evidence links remain [progress.html](../progress.html),
+  [docs/protocol.md](protocol.md), [docs/executor.md](executor.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
+## 2026-05-25 - Status Snapshot Refresh
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
   (`2026-05-25 01:18:48 CEST`) and kept the first screen to one concise audit
   view with the current blockers and links.
 - The public page still treats WordPress executor, durable recovery journal,
