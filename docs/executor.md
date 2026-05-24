@@ -216,80 +216,33 @@ The executor must also respect the pull-to-push provenance boundary:
 - the persisted pull base package is never rewritten to make a stale plan look
   current
 
+That handoff is one-way: exporter/importer creates the immutable base package,
+push preflight binds it to the live remote identity, snapshot hashes provide
+the planning view, dry-run proves eligibility, apply performs fresh
+revalidation, and journal or recovery inspection explain ambiguity without
+rewriting the persisted base.
+
 ## One-Remote, One-Local Test Topology
 
-The recommended integration test topology is one live remote site, one local
-edited site, and one runner. That is the minimum one-remote, one-local shape
-the protocol is expected to support. The remote remains the source of truth
-for the push protocol; the local site is the pull target that was edited after
-import. The runner owns the protocol flow and is the only process that talks
-to both sites. The test must prove remote drift, meaning the same remote site
-can change between dry-run and apply and the executor still rejects stale
-work. The topology should be explicit about role separation:
+The recommended production-shaped topology is one remote source, one edited
+local site, and one runner:
 
-- `remote-base` is the source of truth used to produce the pull base package.
-- `local-edited` is the imported local site after user edits.
-- `remote-changed` is the same remote site after independent live drift between
-  dry-run and apply.
-- the runner is the only process that compares, uploads, inspects, and recovers.
+- `remote-base` is the pulled source of truth and persists the base package.
+- `local-edited` is the imported site after user edits.
+- `remote-changed` is the same remote after independent drift between dry-run
+  and apply.
+- `runner` is the only process that may compare, upload, inspect, or recover.
 
-The test story is intentionally asymmetric:
+For Docker, keep the remote and local databases isolated so drift is visible
+without contaminating the local edit history. No WordPress container should
+publish a public port. If browser-visible inspection is needed, use only the
+sandbox-provided `8080` ingress through a local-only proxy inside the sandbox,
+and never a tunnel service.
 
-1. `remote-base` provides the pull base package and the persisted push provenance.
-2. `local-edited` provides the edited local content that becomes the candidate plan.
-3. `remote-changed` introduces live drift after dry-run so apply can prove
-   liveness revalidation is separate from planning.
-
-The topology proves the production rule that dry-run and apply are separate:
-
-1. Pull `remote-base` and persist the merge-base package.
-2. Restore `local-edited` from that pull base and apply user edits.
-3. Have the runner call `push_preflight` and `push_snapshot_hashes` against
-   `remote-base`.
-4. Build and upload the dry-run plan from `remote-base`, `local-edited`, and
-   the live hash listing.
-5. Let `remote-base` drift into `remote-changed` after dry-run, so apply must
-   revalidate the same remote and reject stale work.
-6. Use `push_journal` and `push_recover` to resolve any lost-response or crash
-   ambiguity before retrying.
-7. Keep `remote-base` as the persisted pull source and treat `remote-changed`
-   as the same remote site observed later, so the executor proves it is
-   comparing live state rather than replaying a stale snapshot.
-
-### Docker Topology
-
-Use Docker when you want the clearest separation between the two sites and the
-runner:
-
-```text
-docker network: reprint-push
-
-remote-db      source site database
-remote-base    source WordPress site with the push extension
-local-db       edited local site database
-local-edited   edited local WordPress site created from the pull base
-runner         Node/PHP runner that orchestrates pull, plan, dry-run, apply
-```
-
-Only the runner talks to the remote and local sites. No WordPress container
-publishes a public port. If browser inspection is needed, expose at most the
-sandbox-provided `8080` ingress through an optional local-only proxy. Do not
-use ngrok, cloudflared, localtunnel, serveo, localhost.run, Tailscale Funnel,
-or any equivalent tunnel.
-
-The intended Docker data flow is:
-
-- `remote-base` is pulled first and acts as the merge base source.
-- `local-edited` is restored from that pull base, then edited independently.
-- `runner` calls `push_preflight`, `push_snapshot_hashes`, `push_plan_dry_run`,
-  `push_batch_apply`, `push_journal`, and `push_recover` against `remote-base`.
-- `remote-db` and `local-db` are kept separate so remote drift can be observed
-  without contaminating the local edit history.
-- for browser-visible inspection, use only the sandbox-provided `8080` ingress
-  through a local-only proxy bound inside the sandbox; do not publish any
-  remote container port directly
-- if a live drift case is needed, point the runner at `remote-changed` for
-  apply and recovery while keeping `remote-base` as the persisted merge base
+For Playground, use separate disposable blueprints for `remote-base`,
+`local-edited`, and `remote-changed`, and keep the same `8080` ingress rule
+for browser-visible inspection. The important proof is that apply revalidates
+fresh live state after dry-run, not that the same snapshot happened to persist.
 
 Suggested Docker wiring:
 

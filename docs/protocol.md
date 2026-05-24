@@ -292,6 +292,29 @@ The same stage order is also captured in
 [`fixtures/protocol/push-flow.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-flow.json)
 so focused tests can assert the exact flow without re-encoding the sequence.
 
+## Pull-To-Push Topology
+
+The production-shaped topology is one remote source, one edited local clone,
+and one runner. That shape is reused for both Docker and Playground.
+
+- `remote-base` is the source site that produced the persisted pull base
+- `local-edited` is the imported site after user edits
+- `remote-changed` is the same remote site after live drift between dry-run
+  and apply
+- `runner` is the only process allowed to compare, upload, inspect, and
+  recover
+
+For Docker, keep the source and edited sites isolated on separate databases or
+volumes so drift is visible without contaminating the local edit history. No
+WordPress container should publish a public port. If browser-visible
+inspection is needed, use only the sandbox-provided `8080` ingress through a
+local-only proxy inside the sandbox, and never a tunnel service.
+
+For Playground, use separate disposable blueprints for `remote-base`,
+`local-edited`, and `remote-changed`, and keep the same `8080` ingress rule
+for any browser-visible inspection. The point of the topology is to prove that
+apply revalidates live state rather than replaying a stale dry-run receipt.
+
 ## Authentication
 
 All push endpoints require authentication at least as strict as current Reprint
