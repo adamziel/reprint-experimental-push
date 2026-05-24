@@ -1,29 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:49 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
+## 2026-05-25 00:49 CEST - Supervisor Snapshot
 
-- Going well: `89` Node tests pass after supervised lane merges. Matching
-  delete/edit, recovery replay/failure states, fast-path rejection guardrails,
-  protocol binding, critic, and objective-audit evidence all landed.
-- Also merged: a concise acceptable recovery-state contract, stricter critic
-  blocking gaps, objective-audit refresh, journal/recovery protocol wording,
-  safe fast-path family guidance, benchmark assertions for large upload/plugin
-  workloads, and explicit recovery inspect semantics.
+- Going well: `89` Node tests still pass; planner, recovery, fast-path,
+  protocol, critic, and objective-audit evidence remain aligned.
 - Not going well: production auth/session storage, durable journal ownership,
   leases, full graph identity mapping, Docker/full Playground integration, and
   general plugin drivers remain unproven.
-- Progress change: eight fast-mode worker outputs were integrated across the
-  last two passes; production readiness stayed blocked.
-- Active supervision: same-plan graph remains active and unmerged. Completed
-  replacement sessions were stopped after review; stale progress-publisher
-  output was rejected instead of merged.
-- Next nudge: keep workers focused on production-backed auth/journal proof and
-  graph identity mapping.
+- Progress change: no new proof moved the production gates; this is a status
+  refresh, not a readiness jump.
+- Active supervision: same-plan graph work stays active and unmerged.
+- Next nudge: keep workers on production-backed auth/journal proof and graph
+  identity mapping.
 
 | Lane | Nudge |
 | --- | --- |
