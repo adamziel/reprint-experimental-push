@@ -63,6 +63,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed package cache still cannot skip plugin activation or the atomic-group barrier, because planning evidence and compressed storage do not prove the activation state or group commit completion.
 - A fresh remote index plus a compressed row batch still cannot prove a plugin install finished, because per-row preconditions, dependency checks, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row summary still cannot prove plugin activation finished, because the per-row receipts, activation state change, and atomic-group commit still need durable evidence.
+- A fresh remote index plus a compressed row summary still cannot prove plugin install finished, because dependency checks, row receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus durable chunk receipts still cannot skip the live file compare before publish.
 - A fresh remote index plus cached chunk receipts still cannot skip the guarded publish finalize for a large upload.
 - A dependency-heavy plugin update still cannot use a fresh remote index or a cached package hash to skip dependency preconditions at the atomic-group barrier.

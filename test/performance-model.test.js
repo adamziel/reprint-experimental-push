@@ -1284,8 +1284,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
       .get('index-and-compressed-row-summary-completes-plugin-activation')
       .violates.includes('atomic-groups'),
   );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-row-summary-completes-plugin-install')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-row-summary-completes-plugin-install')
+      .violates.includes('atomic-groups'),
+  );
   assert.equal(
     rejectedById.get('index-and-compressed-row-summary-completes-plugin-activation').rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-row-summary-completes-plugin-install').rejectedGate,
     'recovery',
   );
   assert.equal(
@@ -1348,6 +1362,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-row-batch-completes-plugin-update',
     'index-and-compressed-row-batch-completes-plugin-install',
     'index-and-compressed-row-summary-completes-plugin-activation',
+    'index-and-compressed-row-summary-completes-plugin-install',
     'index-and-compressed-upload-queue-completes-large-upload',
     'index-and-compressed-buffer-completes-chunk-resume',
     'index-and-compressed-buffer-completes-plugin-update',
