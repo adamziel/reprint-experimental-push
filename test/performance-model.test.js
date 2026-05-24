@@ -395,6 +395,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.ok(
+    rejectedById.get('index-and-digest-skips-row-preconditions').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-digest-skips-row-preconditions').violates.includes('live-preconditions'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-digest-skips-row-preconditions').rejectedGate,
+    'live',
+  );
+  assert.ok(
     rejectedById.get('index-and-digest-completes-apply').violates.includes('remote-index-planning-only'),
   );
   assert.ok(

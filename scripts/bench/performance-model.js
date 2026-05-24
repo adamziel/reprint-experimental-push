@@ -392,6 +392,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'live-preconditions', 'durable-progress'],
   },
   {
+    id: 'index-and-digest-skips-row-preconditions',
+    proposal: 'use a fresh remote index plus a cached digest to skip per-row preconditions in a database batch',
+    rejectedBecause: 'row-level compare-and-swap still has to guard each mutating write at apply time',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'row-preconditions', 'live-preconditions'],
+  },
+  {
     id: 'index-and-package-hash-completes-plugin-install',
     proposal: 'treat a fresh remote index plus a cached plugin package hash as proof that the install can skip its live boundary',
     rejectedBecause: 'planning evidence and a package hash do not prove dependency checks, metadata writes, or atomic-group commit completion',
