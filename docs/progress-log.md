@@ -6,26 +6,24 @@ linked implementation artifacts.
 
 ## 2026-05-24 - Current Supervisor Snapshot
 
-- Status: `76` Node tests pass. Both
-  `npm run test:playground:production-shaped-push` and
-  `npm run test:playground:production-plugin-package` pass against
-  `/wp-json/reprint/v1/push/*`. The packaged smoke reported
-  `signedStoreCleanup.deletedExpiredTotal: 2`, `sessionsDeleted: 1`,
-  `noncesDeleted: 1`, `applied: 8`, and `finalMatchesLocal: true`.
-- Merged hardening slices: fast-path proof obligations, no-overwrite topology
-  mutation suppression, recovery journaling for durable write failures and
-  replay envelopes, protocol transport/route binding, refreshed objective
-  audit, and refreshed critic production gate audit.
-- Trend: reliable executor, recovery, invariants, fast-path model, and audit
-  evidence all improved in lab/model scope; production readiness is still
-  blocked.
-- Blocker: the packaged endpoint still uses lab-backed internals. Production
-  credential lifecycle, durable storage, leases/fencing, WordPress graph
-  identity, and arbitrary plugin drivers are still unproven.
-- Next nudge: replace lab-backed internals with production auth/session
-  lifecycle and durable journal guarantees under the packaged plugin.
-- Public page: [progress.html](../progress.html) shows a visible last-updated
-  date and keeps the supervisor view short.
+- Status: `77` Node tests pass. The production-shaped and packaged-plugin
+  smokes pass against `/wp-json/reprint/v1/push/*`.
+- New proof: the packaged plugin disables lab auth bootstrap
+  (`authBootstrapDisabled: true`), requires explicit credential provisioning,
+  rejects an unprovisioned alternate credential with `401`, cleans two expired
+  signed store artifacts, applies eight fixture mutations, and ends with the
+  local snapshot matched.
+- Also merged: raw dependency payload redaction in push plans, no-overwrite
+  topology suppression, recovery replay envelopes, protocol route binding,
+  fast-path proof obligations, and refreshed audits.
+- Trend: reliable executor and merge invariants improved within lab/model
+  scope. Production readiness is still blocked.
+- Blocker: production credential lifecycle, durable storage, leases/fencing,
+  WordPress graph identity, and arbitrary plugin drivers remain unproven.
+- Next nudge: replace lab-backed auth/session/journal internals with
+  production lifecycle and durable journal guarantees.
+- Public page: [progress.html](../progress.html) carries the visible update
+  date and keeps details behind links.
 
 <details>
 <summary>Earlier progress entries</summary>

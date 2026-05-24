@@ -1,9 +1,36 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 22:45 CEST
+Last updated: 2026-05-24 23:04 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-24 23:04 CEST - Auth Bootstrap And Redaction Refresh
+
+- Going well: `77` Node tests pass. The packaged plugin now disables lab auth
+  bootstrap, requires explicit credentials, rejects an unprovisioned alternate
+  credential with `401`, and still passes signed cleanup plus eight-mutation
+  apply.
+- Also merged: push plans redact raw dependency payloads and keep unsafe
+  topology mutations suppressed.
+- Not going well: auth, sessions, journal storage, leases, graph identity, and
+  plugin drivers are still lab/model proof, not production proof.
+- Progress change: reliable executor and invariants nudged up; production
+  readiness stayed blocked.
+- Next nudge: replace lab-backed auth/session/journal internals with production
+  lifecycle and durable storage while preserving replay/conflict refusal.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Add real graph fixtures before widening automatic apply. |
+| Recovery | Prove kill-at-boundary journal durability on production storage. |
+| Reliable executor | Prove production credential lifecycle and journal rows. |
+| Fast paths | Measure chunking without weakening receipts or preconditions. |
+| Audit and critic | Re-audit the next production-backed mutation slice, not just route shape. |
+| Progress publisher | Keep Pages concise and dated after each proof change. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 22:45 CEST - Hardening Merge Refresh
 
@@ -31,9 +58,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Measure chunking without weakening receipts or preconditions. |
 | Audit and critic | Re-audit the next production-backed mutation slice, not just route shape. |
 | Progress publisher | Keep Pages concise and dated after each proof change. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 22:32 CEST - Package Nudge
 

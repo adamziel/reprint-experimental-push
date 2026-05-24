@@ -38,23 +38,28 @@ If the default feedback worktree has stale local commits or local changes, the
 script leaves it untouched and starts a fresh suffixed feedback session from
 current `origin/main`.
 
-For this cycle, the session names and worktrees are:
+The feedback supervisor is part of every full cycle and can also be started on
+its own. Its job is to update `docs/supervisor-feedback.md`,
+`docs/progress-log.md`, and `progress.html` with a dated, concise nudge after
+material evidence changes.
+
+For the current cycle, the session names and worktrees are:
 
 | Lane | Session | Worktree |
 | --- | --- | --- |
-| No data loss invariants | `rp-cycle-20260524-followup-no-data-loss-invariants` | `~/reprint-experimental-push-lanes/cycle-20260524-followup/no-data-loss-invariants` |
-| No data loss recovery | `rp-cycle-20260524-followup-no-data-loss-recovery` | `~/reprint-experimental-push-lanes/cycle-20260524-followup/no-data-loss-recovery` |
-| Reliable executor | `rp-cycle-20260524-followup-reliable-executor` | `~/reprint-experimental-push-lanes/cycle-20260524-followup/reliable-executor` |
-| Fast paths | `rp-cycle-20260524-followup-fast-paths` | `~/reprint-experimental-push-lanes/cycle-20260524-followup/fast-paths` |
-| Independent auditor | `rp-cycle-20260524-followup-independent-auditor` | `~/reprint-experimental-push-lanes/cycle-20260524-followup/independent-auditor` |
-| Critic | `rp-cycle-20260524-followup-critic` | `~/reprint-experimental-push-lanes/cycle-20260524-followup/critic` |
-| Feedback supervisor | `rp-cycle-20260524-followup-feedback-supervisor` | `~/reprint-experimental-push-lanes/cycle-20260524-followup/feedback-supervisor` |
-| Progress publisher | `rp-cycle-20260524-followup-progress-publisher` | `~/reprint-experimental-push-lanes/cycle-20260524-followup/progress-publisher` |
+| No data loss invariants | `rp-cycle-20260524-auth-graph-hardening-no-data-loss-invariants` | `~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/no-data-loss-invariants` |
+| No data loss recovery | `rp-cycle-20260524-auth-graph-hardening-no-data-loss-recovery` | `~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/no-data-loss-recovery` |
+| Reliable executor | `rp-cycle-20260524-auth-graph-hardening-reliable-executor` | `~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/reliable-executor` |
+| Fast paths | `rp-cycle-20260524-auth-graph-hardening-fast-paths` | `~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/fast-paths` |
+| Independent auditor | `rp-cycle-20260524-auth-graph-hardening-independent-auditor` | `~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/independent-auditor` |
+| Critic | `rp-cycle-20260524-auth-graph-hardening-critic` | `~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/critic` |
+| Feedback supervisor | `rp-cycle-20260524-auth-graph-hardening-feedback-supervisor` | `~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/feedback-supervisor` |
+| Progress publisher | `rp-cycle-20260524-auth-graph-hardening-progress-publisher` | `~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/progress-publisher` |
 
 Attach to a lane:
 
 ```bash
-tmux attach -t rp-cycle-20260524-followup-reliable-executor
+tmux attach -t rp-cycle-20260524-auth-graph-hardening-reliable-executor
 ```
 
 Detach without stopping it: press `Ctrl-b`, then `d`.
@@ -70,7 +75,7 @@ Each lane writes its final note to:
 After a lane finishes, inspect:
 
 ```bash
-lane=~/reprint-experimental-push-lanes/cycle-20260524-followup/reliable-executor
+lane=~/reprint-experimental-push-lanes/cycle-20260524-auth-graph-hardening/reliable-executor
 git -C "$lane" status --short --branch
 git -C "$lane" log --oneline --decorate -5
 sed -n '1,220p' "$lane/.lane-output/final.md"
@@ -90,7 +95,7 @@ dirty worktrees, and skip clean stale branches with local commits. Inspect or
 archive stale lane commits before starting a new session from them:
 
 ```bash
-scripts/supervision/start-cycle.sh cycle-20260524-followup
+scripts/supervision/start-cycle.sh cycle-YYYYMMDD-label
 ```
 
 ## Public Progress

@@ -213,10 +213,13 @@ Current packaged-plugin note:
 `reprint-push` plugin package from [plugins/reprint-push](../plugins/reprint-push),
 mounts it as a normal plugin, activates it through a Blueprint step, confirms
 the public `reprint-push-lab/v1` namespace is disabled, and applies the same
-eight fixture mutations through `/wp-json/reprint/v1/push/*`. It also seeds
-expired and unexpired signed session/nonce option artifacts and proves
-preflight deletes the expired artifacts while retaining unexpired ones. This
-improves the packaging and signed-store hygiene proof but is still not
+eight fixture mutations through `/wp-json/reprint/v1/push/*`. The package now
+sets `REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP` by default, so the smoke explicitly
+provisions only the primary Application Password fixture and verifies an
+unprovisioned alternate credential is rejected with `401`. It also seeds expired
+and unexpired signed session/nonce option artifacts and proves preflight deletes
+the expired artifacts while retaining unexpired ones. This improves the
+packaging, credential, and signed-store hygiene proof but is still not
 production readiness: the endpoint internals remain lab-backed until production
 auth, credential lifecycle, durable journal storage, leases/fencing, WordPress
 graph identity, and plugin drivers replace the fixture implementation.
