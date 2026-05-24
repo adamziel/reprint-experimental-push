@@ -756,6 +756,25 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'recovery',
   );
   assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-large-upload').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-large-upload').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-large-upload').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-large-upload').violates.includes('live-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-large-upload').violates.includes('chunk-receipts'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-buffer-completes-large-upload').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
     rejectedById
       .get('index-and-package-hash-completes-plugin-install')
       .violates.includes('remote-index-planning-only'),

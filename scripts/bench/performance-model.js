@@ -455,6 +455,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
+    id: 'index-and-compressed-buffer-completes-large-upload',
+    proposal: 'treat a fresh remote index plus a compressed upload buffer as proof that a large upload already finished',
+    rejectedBecause: 'planning evidence and compressed buffers can reduce stalled work, but they cannot prove the live compare or durable chunk receipts survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'live-preconditions', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'index-and-digest-skips-row-preconditions',
     proposal: 'use a fresh remote index plus a cached digest to skip per-row preconditions in a database batch',
     rejectedBecause: 'row-level compare-and-swap still has to guard each mutating write at apply time',
