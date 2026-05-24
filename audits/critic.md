@@ -1,107 +1,99 @@
 # Critic Audit
 
-## 2026-05-24 Production Push Claim Gate
+## 2026-05-24 Auth And Graph Hardening Re-Audit
 
-Verdict: the project must not claim production-grade push support yet.
+Verdict: the project still must not claim production-grade push support.
 
-The current repository has real progress: JSON-model planning, Playground
-source mutation, authenticated lab routes, DB journal/idempotency smokes,
-process-kill recovery inspection, storage-boundary fixture guards, a
-production-shaped `/wp-json/reprint/v1/push/*` route profile, and a packaged
-prototype plugin. That is still not proof that an arbitrary live WordPress
-source site can be mutated without data loss.
+The current branch improves the lab: scoped push Application Password evidence,
+unprovisioned and unscoped credential rejection, signed session and nonce
+cleanup, stale WordPress graph-reference blocking, stale-claim fencing, guarded
+storage-boundary fixture writes, and a benchmark gate that refuses production
+throughput claims when production evidence is missing. Those are real
+improvements. They are still not proof that an arbitrary live WordPress source
+site can be mutated safely.
 
-The packaged endpoint is especially easy to overstate. `plugins/reprint-push`
-does disable the public lab namespace when packaged, but it still loads the
-Playground implementation files. The production-shaped routes are registered
-to the same authenticated lab callbacks, the route profile explicitly reports
-`labBacked: true`, and the DB journal schema says its scope is local Playground
-fixture evidence, not production durability. This is useful route-shape proof,
-not production push support.
+The strongest honest claim remains: executable safety-model and local
+Playground evidence for push invariants. The packaged `/wp-json/reprint/v1/push/*`
+path still reports `routeProfile.labBacked: true`, copies Playground
+implementation files into the package, and applies a graph-safe fixture slice
+after dropping the unmapped graph edge. That is route-shape evidence, not
+production push support.
 
-## Evidence Boundary
-
-This audit reviewed the design and current proof surface in:
+## Evidence Reviewed
 
 - `docs/protocol.md`
 - `docs/source-notes.md`
 - `docs/scenario-matrix.md`
-- `docs/recovery/apply-journal.md`
 - `docs/invariants/no-overwrite.md`
+- `docs/recovery/apply-journal.md`
+- `docs/executor.md`
+- `docs/fast-paths.md`
 - `docs/progress-log.md`
 - `docs/supervisor-feedback.md`
+- `audits/objective-audit.md`
 - `plugins/reprint-push/reprint-push.php`
 - `scripts/playground/push-remote-rest-plugin.php`
-- `scripts/playground/push-db-journal-lib.php`
 - `scripts/playground/production-shaped-route-smoke.mjs`
 - `scripts/playground/production-plugin-package-smoke.mjs`
+- `test/push-planner.test.js`
+- `test/recovery-journal.test.js`
+- `test/guarded-executor-benchmark.test.js`
 
-The strongest current claim should remain: executable safety-model and local
-Playground evidence for push invariants.
+## Current Claim Traps
 
-## Current Branch Re-Audit
-
-The auth and packaging hardening in this cycle improves route shape and
-misconfiguration resistance, but it does not close the production push gate.
-
-| Claim trap | Scenario | Missing proof | Required change |
+| Trap | Scenario | Missing proof | Required change |
 | --- | --- | --- | --- |
-| Packaged plugin can look production-ready while still using lab internals | The temporary `reprint-push` package mounts `/wp-json/reprint/v1/push/*`, disables the public lab namespace, applies eight fixture mutations, and reports `finalMatchesLocal: true`. A release note could present that as production push. | The package still copies Playground files into `includes/`, and preflight still advertises `routeProfile.labBacked: true`. The smoke proves route names, cross-route receipt binding, signed-store cleanup, and fixture apply only. | Make the packaged production namespace fail if any route profile is lab-backed or any implementation path resolves to Playground internals. Keep the smoke as route-shape evidence, but require separate production-backed auth, journal, storage, and recovery tests for readiness claims. |
-| Signed-store cleanup is hygiene, not credential lifecycle | Preflight deletes one expired lab session and one expired lab nonce while retaining unexpired records, then the push applies fixtures. | No production credential model proves push-only scope, rotation, revocation, replay-window retention, nonce/session cleanup under concurrency, multisite scoping, rate limits, TLS deployment, or durable audit ownership. The Application Password path still grants broad admin capability in the lab. | Define production push credentials and lifecycle separately from the lab HMAC store. Prove replay cleanup and active-session behavior under concurrent requests before treating auth as production evidence. |
-| Graph hardening is still resource-key hardening | Local creates or edits posts, attachments, terms, users, comments, menus, orders, or serialized blocks while the live remote created related objects after pull. A row/file hash plan can appear clean while references point to the wrong remote entity after apply. | No WordPress graph fixture proves identity allocation, tombstones, postmeta/term/menu/attachment relationships, GUID/path rewriting, serialized block references, user/comment ownership, order IDs, or referential-integrity validation. | Add graph-aware planning and tests, or block graph-mutating pushes until identity mapping and reference rewriting are proven against real WordPress data shapes. |
-| Visible fixture equality can hide side effects | A smoke says the final visible fixture surface matches local, while preflight intentionally mutates signed-session and nonce option rows and plugin activation can change unrelated runtime state. | No success criterion enumerates all permitted side effects and all hidden resource classes that must be preserved, redacted, or journaled. Fixture equality does not cover auth stores, cron, generated files, object cache state, plugin migration rows, roles/caps, or custom tables outside the fixture allowlist. | Production success must compare the planned target graph plus a declared side-effect manifest. Any side effect outside that manifest must block or become explicit audited evidence. |
-| Conflict resolution language can still become stale overwrite permission | An operator manually reviews a conflict, then retries after the source changes again or after a prior partial apply left blocked recovery evidence. | No reviewed-resolution artifact proves base/local/remote values were preserved, who approved the action, what remote evidence was retained, and that retry rebuilt the plan from fresh live remote hashes. | Treat every manual resolution as a new plan. Preserve remote evidence, bind approval to a fresh snapshot, and reject retries that skip current storage-boundary preconditions. |
-
-## Release-Blocking Critic Findings
-
-| Blocker | Scenario | Missing proof | Required change before production-grade claim |
-| --- | --- | --- | --- |
-| Production-shaped endpoint is still lab-backed | A packaged plugin exposes `/wp-json/reprint/v1/push/apply`, a user or status page treats the route name as production, and a live site mutates through callbacks and journals built for local Playground fixtures. | No production Reprint push implementation proves push-scoped credentials, durable sessions, nonce cleanup, replay retention, TLS deployment policy, production audit rows, or non-lab journal/apply internals. The current route profile says `labBacked: true`. | Replace lab callbacks and lab journal internals under the production namespace with production implementations. Keep the route-shape test, but add a test that fails if production routes report lab-backed scope or use lab-only storage. |
-| Coverage can be incomplete while the plan says ready | The remote has WooCommerce HPOS tables, Action Scheduler rows, mu-plugin settings, generated CSS, media derivatives, multisite network tables, or plugin custom tables that are not listed, while local pushes related code, content, or options. | No signed completed coverage manifest proves every affected core, plugin, theme, upload, generated-file, custom-table, user/order, and multisite surface was scanned or explicitly blocked. A ZS-Sync-style scan cursor only proves what the scanner knows how to enumerate. | Make unknown or incomplete coverage a hard block. Bind completed coverage hashes into dry-run and apply evidence, and require semantic drivers to declare the resource graph they cover. |
-| Manual resolution is not a safe conflict policy yet | A user resolves a conflict in wp-admin, or chooses "take local" for a resource changed on the source after pull, then retries from an older plan or receipt. | No reviewed-resolution artifact preserves the remote value, base/local/remote diffs, reviewer identity, selected action, retry state, and fresh live-remote revalidation. Without that, manual resolution can become a stale overwrite permission. | Treat conflict resolution as a new auditable plan. Preserve remote evidence, fetch a fresh remote snapshot, rebuild the plan, and reject stale approvals that bypass current preconditions. |
-| Storage-boundary guards are fixture slices | A remote edit lands after dry-run and after the JIT hash check but before the actual MySQL update, insert, delete, schema change, plugin activation write, file rename, or unlink. | Current proof covers selected fixture row updates and accepted fixture upload file writes. It does not prove MySQL/InnoDB transactions or locks, arbitrary inserts/deletes, schema writes, plugin file publish, symlink/path policy, target `fsync`, rollback, or storage guards for activation side effects. | Implement production storage guards for each supported write primitive and run race/kill tests proving stale writes affect zero targets and preserve the remote at the storage boundary. |
-| Cross-store crash consistency is not production-proven | A plugin update publishes PHP files, changes `active_plugins`, runs migrations, updates options/custom tables, refreshes generated files, and the host dies between boundaries. | No production journal proves every file, row, activation state, generated artifact, and commit marker is old, new, or blocked after hard crashes at each durable boundary. Current DB and file journal smokes are local Playground SQLite/host-mount evidence. | Build a durable production journal and kill matrix across journal append, DB write, file write, activation, finalization, replay, stale-claim retry, and recovery inspect. Never report success unless final hashes and durable commit records agree. |
-| Stale-claim retry lacks production fencing | One worker opens an apply claim, stalls under load, another worker marks it stale and retries, then the first worker resumes and writes with older evidence. | The all-old stale-claim smoke proves one deterministic lab path. It does not prove production leases, fencing tokens, monotonic claim ownership, expiry rules, shared-DB race behavior, or stale-worker write prevention. | Add a production lease/fencing model and multi-worker tests where stale workers try to resume after a retry claim advances. |
-| Plugin allowlists are not semantic closure | An allowlisted plugin option or postmeta value is pushed while the plugin also depends on serialized counters, cron rows, generated CSS, custom tables, roles/capabilities, activation hooks, or versioned migrations. | No plugin validator contract declares the complete resource graph, supported create/update/delete operations, side effects, version constraints, post-apply checks, rollback/block behavior, and redaction schema. Fixture forms and fixture atomic-install paths prove only exact allowlists. | Define plugin validator/driver contracts and prove at least one real plugin beyond fixtures. Unknown plugin-owned state must preserve remote and stop. |
-| "Non-overlapping" resources can still corrupt meaning | Local changes plugin code or theme templates while the remote preserves a changed option, attachment metadata row, taxonomy relation, rewrite rule, block pattern, or generated cache that the new code will reinterpret on next load. | No dependency graph or compatibility validator proves remote-only resources remain valid after local code/content changes. Separate resource keys are not enough to prove semantic independence. | Promote coupled resources into atomic groups or require validators that explicitly approve preserved remote-only state under the new code/content. |
-| WordPress identity and reference rewriting are unresolved | Local creates posts, attachments, terms, users, comments, orders, or upload paths that collide with remote objects created after pull; serialized blocks, GUIDs, postmeta, menus, and relationships then point at the wrong entity. | No ID allocation, remapping, reference rewrite, or referential-integrity validator exists across the WordPress graph. Row-level compare/write cannot prove no data loss for newly created entities. | Add graph-aware identity and reference handling, or block graph-mutating pushes that cannot prove safe remapping and relationship integrity. |
-| Delete/restore policy is under-specified | The remote deleted a post for moderation, legal, or editorial reasons while local edited it; a later "take local" operation would recreate it. Another case: local deletes a file while remote changes metadata for it. | The design stops conflicts, but does not define tombstones, retention windows, reviewed restore/delete policy, or required evidence for intentional resurrection. | Preserve remote delete evidence, require explicit reviewed restore plans, and revalidate the live remote before any restore/delete mutation. |
-| Environment-specific resources can leak or break production | Local clone state includes `siteurl`, `home`, salts, SMTP/API keys, object-cache configuration, absolute upload paths, cron schedules, or local-only plugin settings. | No production denylist/transform policy is proven across core and plugin resources. The protocol describes defaults, but the executor does not prove these resources are blocked or transformed safely in production. | Enforce deny-by-default environment resource handling with tests for core options, secrets, paths, cron/cache/runtime data, and plugin-specific environment state. |
-| Audit and redaction are not a production policy | A blocked recovery artifact includes order details, form entries, membership data, private upload paths, option payloads, API keys, or absolute paths while the operator still needs enough detail to audit and retry. | Current redaction is fixture/forbidden-string oriented. There is no production allowlist schema, privacy review, retention policy, operator report contract, or proof for arbitrary plugin payloads. | Define production audit schemas with stable hashes, redacted diffs, bounded retention, and operator-facing recovery reports that are useful without leaking private data. |
-| Release tests do not match release claims | Documentation cites passing smokes and the project gradually sounds production-safe because route, auth, journal, storage guard, and fixture plugin tests pass. | The strongest Playground smokes remain optional/manual, and no single release gate runs production-shaped endpoint, auth, storage, recovery, plugin, graph, redaction, and performance proof. | Create a release suite and CI gate. Any excluded smoke must be labeled non-release evidence, and production-grade wording must be blocked unless the full gate passes. |
-| Speed remains a model, not measured reliability | Large-site push is described through performance models while real mutation still needs receipts, coverage, journals, storage guards, and retries. | No benchmark moves large files/tables through the executor with memory ceilings, chunk cursors, retries, recovery inspection, and safety checks enabled. | Run large-file and large-table benchmarks through the same guarded executor path intended for release, and publish limits only for the measured path. |
+| Production-shaped routes look production-ready while still lab-backed | A site installs the temporary `reprint-push` package, sees `/wp-json/reprint/v1/push/*`, rejects unscoped credentials, applies seven graph-safe fixture mutations, and reports `finalMatchesLocal: true`. | The package still loads copied Playground internals, the preflight route reports `labBacked: true`, and the smoke deliberately removes the unmapped graph postmeta before applying. No production auth, journal, storage, graph, or plugin implementation is exercised. | Make production routes fail if they are lab-backed or resolve to Playground files. Keep the smoke as route-shape evidence only. |
+| Graph-safe route smokes prove exclusion, not identity mapping | Local wants to push a postmeta row that references a post identity created or changed on the remote after pull. Current ready smokes delete `post_id:2001:meta_key:_reprint_push_forms_schema` from the local snapshot to avoid the blocked edge. | The planner now blocks one stale `wp_postmeta.post_id` case, but there is no automatic ID allocation, identity map, reference rewrite, or referential-integrity proof for attachments, terms, menus, users, comments, orders, serialized blocks, GUIDs, upload paths, or same-plan creates. | Treat blocked graph edges as release blockers, not as evidence to omit from ready fixtures. Add graph identity mapping or block all graph-mutating pushes that need rewriting. |
+| Scoped lab credentials can be mistaken for production credential lifecycle | Packaged preflight rejects an unprovisioned alternate user and an unscoped administrator Application Password, then accepts a provisioned lab push credential. | This proves fixture metadata checks, not production lifecycle. There is no production push credential issuance, rotation, revocation, replay retention, rate limiting, TLS deployment policy, multisite scoping, or durable audit ownership. | Define production push credentials separately from the lab HMAC/Application Password fixtures and test lifecycle, cleanup, replay, and revocation under concurrent requests. |
+| Signed-store cleanup is hygiene, not durability | Preflight deletes seeded expired signed-session and nonce option rows while retaining unexpired rows. | No production nonce/session store proves crash durability, cleanup races, retention windows, replay windows, option bloat limits, or auditability. | Add a production session/nonce store with retention policy, concurrency tests, and recovery behavior. |
+| Manual resolution can become stale overwrite permission | An operator manually resolves a conflict, chooses "take local", or fixes a resource in wp-admin, then retries after the live remote changed again or after a partial apply left recovery evidence. | No reviewed-resolution artifact preserves base/local/remote values, remote evidence, reviewer identity, selected action, retry state, and fresh remote hashes. | Manual resolution is success only when the remote evidence is preserved, the user can audit and retry safely, and retry creates a new plan from a fresh live remote snapshot. |
+| Plugin allowlists can hide plugin data traps | A fixture plugin option or table row is allowed while the real plugin also depends on custom tables, serialized counters, cron rows, generated CSS, roles/caps, activation hooks, migrations, or external side effects. | Current forms and atomic-plugin paths are exact fixture allowlists. They prove conservative blocking and one hard-coded happy path, not general plugin semantics. | Define plugin validator/driver contracts with complete owned-resource graphs, side effects, version constraints, rollback/block behavior, and at least one real plugin proof. Unknown plugin-owned state must preserve remote and stop. |
+| Coverage can be incomplete while a plan looks ready | The remote has WooCommerce HPOS tables, Action Scheduler queues, mu-plugin settings, generated files, media derivatives, multisite network tables, or plugin custom tables outside the scanner scope. | No completed coverage manifest proves every affected core, plugin, theme, upload, generated, custom-table, user/order, and multisite surface was scanned or explicitly blocked. | Make unknown or incomplete coverage a hard block. Bind completed coverage hashes into dry-run and apply evidence. |
+| Fixture equality can hide hidden side effects | A smoke verifies the visible fixture surface matches local while preflight mutates auth/session option rows, plugin activation changes runtime state, or generated/cached data changes off-screen. | No side-effect manifest defines which auth stores, cron entries, generated files, object-cache state, roles/caps, plugin migration rows, or custom tables are allowed to change. | Production success must compare the planned target graph plus an explicit side-effect manifest. Any unlisted side effect blocks the claim. |
+| Storage-boundary proof is still narrow | A remote edit lands after dry-run and JIT hash but before a MySQL update, insert, delete, schema change, plugin activation write, file rename, unlink, or generated-file write. | Current storage guards prove selected Playground fixture row updates and fixture upload file update/create/delete paths. They do not prove generic MySQL/InnoDB transactions, arbitrary inserts/deletes, schema writes, plugin file publish, activation side effects, locks, rollback, or target `fsync`. | Implement and test production storage guards for every supported write primitive, with race and kill tests that preserve remote state on stale writes. |
+| Cross-store crash consistency is not production-proven | A plugin update publishes PHP files, changes `active_plugins`, runs migrations, updates options/custom tables, and the host dies between boundaries. | DB journal and file journal smokes are local Playground SQLite/host-mount and JSON-model evidence. They do not prove old/new/blocked classification across production DB, filesystem, activation, finalization, and replay boundaries. | Build a durable production journal and kill matrix across journal append, DB write, file write, activation, finalization, replay, stale-claim retry, and recovery inspect. |
+| Stale-claim fencing remains lab/model evidence | One worker opens an apply claim, stalls, a retry advances the claim, then the old worker resumes under production load. | The all-old stale-claim smoke and JSONL stale-worker proof are deterministic lab/model paths. They do not prove production leases, fencing tokens, monotonic ownership, expiry rules, shared-DB locking, or stale-worker write prevention. | Add production lease/fencing semantics and multi-worker tests where stale workers attempt to resume after claim advancement. |
+| Delete and restore policy is underspecified | The remote deleted a post for moderation, legal, editorial, or plugin reasons while local edited it; a later local push would resurrect it. Or local deletes a file while remote updates metadata for it. | The planner stops direct conflicts, but there is no tombstone model, retention window, intentional restore policy, or reviewed delete/restore evidence. | Preserve remote delete evidence, require explicit reviewed restore/delete plans, and revalidate the live remote before any resurrection or deletion. |
+| Environment resources can leak or break production | A local clone contains `siteurl`, `home`, salts, SMTP/API keys, object-cache settings, cron schedules, absolute upload paths, or local-only plugin settings. | No production denylist/transform policy is proven across core and plugin resources. | Enforce deny-by-default environment-resource handling with tests for core options, secrets, paths, cron/cache/runtime data, and plugin-specific environment state. |
+| Audit redaction is fixture-based | A recovery artifact includes order details, form entries, membership data, private upload paths, option payloads, API keys, or absolute paths while the operator still needs actionable recovery evidence. | Current redaction checks selected fixture strings, forbidden keys, and hash-only fields. There is no production allowlist schema, privacy review, retention policy, or operator report contract for arbitrary plugin payloads. | Define production audit schemas with stable hashes, redacted diffs, bounded retention, and useful operator-facing recovery reports. |
+| Speed evidence can sound stronger than measured reliability | The guarded benchmark moves generated buffers and row payloads through the model and refuses a production throughput claim when blockers remain. | No benchmark mutates production storage with chunk cursors, retries, memory ceilings, recovery inspection, storage receipts, and safety checks enabled. | Publish speed limits only for measured production paths. Keep model and lab benchmarks labeled as non-production evidence. |
+| Release tests do not match release claims | Documentation cites many passing smokes and the project sounds increasingly safe because route, auth, journal, storage, plugin, graph, and benchmark slices pass. | The strongest Playground smokes are still optional/manual and no single CI release gate runs production-shaped endpoint, auth, storage, recovery, plugin, graph, redaction, and performance evidence. | Create a release suite and CI gate. Production-grade wording must be blocked unless the full gate passes. |
 
 ## Source Comparison
 
 ### Reprint
 
-Reprint source notes support the staged, resumable transport shape: preflight,
-files pull, DB pull, DB apply, flat docroot, runtime apply, and start. That
-helps push with chunking and budgets, but it does not prove mutation safety.
+The Reprint source notes support staged, resumable transport: preflight, files
+pull, DB pull, DB apply, flat document root, runtime apply, and optional start.
+That is a good transport shape for chunking and budgets, but pull resumability
+does not prove source-site mutation safety.
 
-Scenario: push applies plugin files and then related rows, but the process dies
-after files are visible and before the DB commit or journal finalization.
+Scenario: push publishes plugin files and then related DB rows, but the process
+dies after files are visible and before DB commit or journal finalization.
 
-Missing proof: the production Reprint boundary does not yet show guarded
-per-chunk mutation, durable recovery state, rollback/blocked artifacts, and
+Missing proof: production Reprint does not yet show guarded per-chunk mutation,
+mutation-scoped auth, durable recovery state, rollback/blocked artifacts, and
 operator audit records for every remote write boundary.
 
-Required change: production push must extend Reprint with mutation-scoped auth,
-coverage-bound planning, storage-boundary guards, and a durable journal. Pull
-resumability cannot be treated as push reliability.
+Required change: extend Reprint push with coverage-bound planning,
+storage-boundary guards, production mutation credentials, and durable
+old/new/blocked journal evidence. Pull resumability cannot be reused as a
+production push reliability claim.
 
 ### ZS-Sync
 
-ZS-Sync source notes are valuable for scanner composition, cursors, resource
+The ZS-Sync notes are useful for scanner composition, cursors, resource
 providers, and bounded changed-resource listing. They are not a source-site
 mutation policy.
 
 Scenario: a scanner cursor completes for known core files and tables while an
-active plugin stores state in an unregistered custom table or generated file.
+active plugin stores required state in an unregistered custom table, generated
+file, cron queue, or action scheduler row.
 
 Missing proof: no source-site coverage contract binds scanner cursors to all
 active plugins, mu-plugins, themes, uploads, generated artifacts, custom
-tables, and multisite scopes that can be affected by the push.
+tables, and multisite scopes affected by the push.
 
 Required change: use ZS-Sync-style scanning as planning input only. A ready push
 requires complete coverage for the affected scope, or the unknown scope must
@@ -109,21 +101,21 @@ block apply.
 
 ### ForkPress
 
-ForkPress source notes provide the closest production reliability target:
+The ForkPress notes provide the closest production reliability bar:
 three-way merge records, reviewed conflict resolution, plugin validators,
 revalidation, and crash consistency where failure is old, new, or blocked with
 artifacts.
 
-Scenario: a user manually resolves a conflict and retries, or a plugin publish
-fails during activation.
+Scenario: a user manually resolves a conflict and retries from stale evidence,
+or a plugin publish fails during activation after files are visible.
 
-Missing proof: the current design borrows the invariants but not the full
-production lifecycle: reviewed resolution artifacts, semantic validator
+Missing proof: the current project borrows ForkPress invariants but not the
+full production lifecycle: reviewed resolution artifacts, semantic validator
 contracts, production storage durability, and old/new/blocked proof for every
 visible boundary.
 
 Required change: adopt the ForkPress-grade lifecycle before making
-ForkPress-grade claims. Manual resolution is success only when the remote is
+ForkPress-grade claims. Manual resolution is acceptable only when the remote is
 preserved for audit and retry starts from fresh evidence.
 
 ## Reliability Language Gate
@@ -144,6 +136,7 @@ Blocked wording until the required proofs exist:
 - "general plugin-safe push"
 - "durable production recovery"
 - "safe for arbitrary live WordPress source sites"
+- "production throughput"
 
 ## Minimum Production Claim Gates
 
@@ -151,22 +144,26 @@ Before any production-grade push claim, the project needs all of these:
 
 1. Production Reprint push endpoints whose implementation is not lab-backed.
 2. Production-scoped auth, credential lifecycle, TLS policy, session storage,
-   nonce/replay cleanup, operator identity, and audit retention.
-3. Complete pull-base and live remote coverage manifests, including unknown
+   nonce/replay cleanup, operator identity, rate limits, and audit retention.
+3. Complete pull-base and live remote coverage manifests, with unknown
    plugin/custom-table/generated resources as hard blockers.
 4. Storage-boundary guarded writes for every supported DB and filesystem
-   mutation kind.
+   mutation kind, including inserts, deletes, schema changes, file publish,
+   unlink, and activation side effects.
 5. A durable production journal with kill-at-every-boundary recovery tests.
 6. Reviewed conflict-resolution artifacts that preserve remote evidence and
    force fresh revalidation before retry.
-7. WordPress graph identity and reference rewriting, or explicit blocking for
-   graph-mutating pushes.
+7. WordPress graph identity mapping and reference rewriting, or explicit
+   blocking for graph-mutating pushes.
 8. Plugin semantic driver contracts with at least one real plugin proof and a
    conservative fallback for unknown plugin state.
-9. Production audit/redaction schemas with retention and operator reports.
-10. A release suite and CI gate that runs the safety-critical unit,
-    Playground, auth, storage, recovery, plugin, graph, redaction, and
-    performance checks.
+9. Delete/restore tombstones and reviewed resurrection policy.
+10. Production environment-resource denylist/transform policy.
+11. Production audit/redaction schemas with retention and operator reports.
+12. A release suite and CI gate that runs safety-critical unit, Playground,
+    auth, storage, recovery, plugin, graph, redaction, and performance checks.
+13. Measured large-file and large-table benchmarks through the guarded executor
+    path intended for release.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
