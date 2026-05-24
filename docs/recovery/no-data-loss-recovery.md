@@ -40,6 +40,21 @@ distinguish:
 - a fully applied remote that can be replayed idempotently
 - a blocked recovery state that requires inspection before retry
 
+## Durable Vs. Lab Evidence
+
+The JSON evidence used in tests and model checks is only a proof artifact. It
+is not a substitute for production durability.
+
+Production recovery needs durable writes for:
+
+- journal rows or entries that survive process exit
+- fsync or equivalent flush semantics for the journal file or store
+- activation or lease fencing so only one writer can advance recovery state
+- inspectable recovery metadata for restart-time diagnosis
+
+That distinction matters because a recovery state can look complete in memory
+while still being unsafe if the journal was not durably committed.
+
 ## Operational Rule
 
 Never treat a partial write without recovery artifacts as safe. If the remote
