@@ -459,6 +459,9 @@ under load:
   failure.
 - compressed-queue-drains-completes-work is rejected because a drained queue
   can still hide missing chunk or batch acknowledgements.
+- fingerprint-completes-large-upload is rejected because a local fingerprint
+  can skip duplicate hashing, but it cannot prove chunk receipts, guarded
+  publish, or durable upload completion survived failure.
 - remote-index-plus-compressed-row-batch-completes-plugin-update is rejected
   because planning evidence and batch compression cannot prove row-level
   preconditions, dependency checks, or the atomic-group commit survived a

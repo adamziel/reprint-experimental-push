@@ -623,6 +623,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'file-hashing', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'fingerprint-completes-large-upload',
+    proposal: 'treat a local fingerprint plus cached file hash as proof that a large upload already finished',
+    rejectedBecause: 'a local fingerprint can skip duplicate hashing, but it cannot prove chunk receipts, guarded publish, or durable upload completion survived failure',
+    rejectedGate: 'recovery',
+    violates: ['file-hashing', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-chunk-receipts-completes-plugin-update',
     proposal: 'treat a fresh remote index plus compressed chunk receipts as proof that a plugin update already finished',
     rejectedBecause: 'chunk receipts can prove staged upload progress, but compression and planning evidence cannot prove dependency checks, row receipts, or the atomic-group commit survived failure',
