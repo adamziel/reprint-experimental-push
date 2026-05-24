@@ -102,7 +102,9 @@ dry-run receipt.
 
 Push reuses the existing pull exporter/importer as the base truth source.
 Pull still discovers and records the merge base. Push consumes that base and
-adds live-remote revalidation and mutation journaling.
+adds live-remote revalidation and mutation journaling. The mapping is explicit:
+the pull exporter/importer produces the persisted base package, and push reads
+that package as immutable provenance rather than re-exporting or rewriting it.
 
 | Pull stage | Push mapping |
 | --- | --- |
@@ -129,14 +131,15 @@ which base it was built from, `push_preflight` or `push_plan_dry_run` must
 reject. A later push may refresh live remote hashes, but it must not rewrite
 the stored pull base to make an old plan look current.
 
-The pull-to-push handoff is linear:
+The pull-to-push handoff is linear and one-way:
 
 1. Pull exports the base package and coverage evidence.
 2. Local editing mutates the imported site.
-3. Push preflight binds that stored base to the live remote identity.
-4. Push snapshot listing records the current remote hash view.
+3. Push preflight binds that stored base to the live remote identity and session.
+4. Push snapshot listing records the current remote hash view for the requested scope.
 5. Push dry-run uploads the canonical plan built from base, local, and live remote.
-6. Push apply mutates only when live revalidation still matches the plan.
+6. Push apply mutates only when live revalidation still matches the plan and the
+   storage boundary still proves the individual write.
 
 The pull exporter/importer owns the persisted base package and the base
 coverage evidence. Push never asks pull to become a write lock. Instead, push
@@ -189,7 +192,8 @@ The existing pull exporter/importer still owns the base package format. Push
 does not invent a second notion of truth; it layers live remote verification
 and mutation receipts on top of the pull artifacts already persisted on disk.
 The only new persistent push-side evidence is the attempt state directory and
-the durable journal rows that describe dry-run, batch apply, and recovery.
+the durable journal rows that describe preflight, snapshot listing, dry-run,
+batch apply, journal inspection, and recovery.
 
 ## Authentication
 

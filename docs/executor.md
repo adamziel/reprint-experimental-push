@@ -794,6 +794,22 @@ Minimum topology matrix:
 | Interrupted batch | Server exits after staging or partial write | Recovery reports committed, rolled back, or blocked with resource evidence. |
 | Read-only credential | Export secret lacks push scope | Preflight or dry-run rejects before mutation. |
 
+For the production-shaped push lane, keep the test topology deliberately small:
+
+| Role | Docker topology | Playground topology |
+| --- | --- | --- |
+| Remote source site | `remote-site` container with the pull base and live drift injection hooks | `playground-remote` loopback server with the source-site plugin/theme state |
+| Local edited site | `local-site` container holding the imported base plus local edits | `playground-local` loopback server holding the imported base plus local edits |
+| Runner | `push-runner` container or host process that signs requests, uploads dry-run plans, and reads journals | Same runner process, bound to the sandbox-provided `8080` ingress only when browser inspection is needed |
+| Drift witness | `remote-changed` mutation against the remote site after snapshot listing | `remote-changed` Playground state change after snapshot listing |
+
+Use the topology to prove the remote and local roles are separate:
+
+- `remote-site` or `playground-remote` is the authoritative live remote for preflight, snapshot listing, dry-run eligibility, apply-time revalidation, journal inspection, and recovery.
+- `local-site` or `playground-local` is the edited local mirror that feeds the planner.
+- A separate `remote-changed` state is required for the stale-apply case so dry-run and apply are not conflated.
+- Apply must revalidate against the live remote again even when the dry-run receipt is valid.
+
 ## Playground Test Topology
 
 WordPress Playground can run the same shape with faster setup:
@@ -819,8 +835,11 @@ Recommended usage:
   if it diverges after dry-run, the executor must revalidate before apply.
 
 Playground is best for protocol, planner, and recovery fixtures. Docker with
-MySQL/MariaDB remains necessary for transaction and lock behavior that differs
-from SQLite.
+MySQL/MariaDB remains necessary for transaction, lock, and fencing behavior
+that differs from SQLite. Use Docker when you need to prove journal rows,
+lease expiry, or apply-time revalidation against a production-shaped database
+boundary; use Playground when you need fast, repeatable protocol and recovery
+smokes against the same one-remote, one-local shape.
 
 ## Test Fixtures
 
