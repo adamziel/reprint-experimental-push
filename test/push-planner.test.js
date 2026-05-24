@@ -1973,6 +1973,37 @@ test('rejects apply when the remote changed after dry-run planning', () => {
   assert.equal(driftedRemote.files['index.php'], '<?php echo "surprise remote edit";');
 });
 
+test('recovery boundaries stay within the acceptable old, updated, or blocked states', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true }],
+    ['after staging', { failAfterStaging: true }],
+    ['after dependency validation', { failAfterDependencyValidation: true }],
+  ]) {
+    const workingRemote = baseSite();
+    const before = JSON.stringify(workingRemote);
+    const error = captureError(() => applyPlan(workingRemote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(workingRemote), before, label);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replay = applyPlan(completed.site, plan, { journal: completed.journal });
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.deepEqual(replay.site, completed.site);
+});
+
 test('injected failure before commit returns no partially mutated remote state', () => {
   const base = baseSite();
   const local = baseSite();
