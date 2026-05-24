@@ -406,6 +406,13 @@ The honest claim remains: fixture-scoped and lab-backed push evidence, blocked
 for production until the missing proofs above exist. Anything stronger is a
 false reliability claim.
 
+One more trap to keep out of the claim language: a route that returns live-looking
+hashes, a packaged plugin that mounts cleanly, or a smoke that reports
+`finalMatchesLocal` on a fixture is still only compatibility evidence. Those
+results do not prove the write path is production-backed, do not prove remote
+drift rejection, and do not prove stale approval cannot be reused after a
+fresh live snapshot disagrees.
+
 ## 2026-05-24 Auth And Graph Hardening Re-Audit
 
 Verdict: the project still must not claim production-grade push support.
