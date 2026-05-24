@@ -21,16 +21,16 @@ class Reprint_Push_Protocol_Error extends RuntimeException
 
 function reprint_push_protocol_run(string $mode, string $plan_path, ?string $receipt_path = null): array
 {
-    if (!in_array($mode, ['dry-run', 'apply'], true)) {
+    if (!in_array($mode, ['dry-run', 'apply', 'inspect'], true)) {
         reprint_push_protocol_fail([
             'ok' => false,
             'code' => 'INVALID_ARGUMENT',
-            'message' => 'Mode must be dry-run or apply.',
+            'message' => 'Mode must be dry-run, apply, or inspect.',
             'mode' => $mode,
         ]);
     }
 
-    if ($mode === 'apply' && ($receipt_path === null || $receipt_path === '')) {
+    if (($mode === 'apply' || $mode === 'inspect') && ($receipt_path === null || $receipt_path === '')) {
         $journal_entry = reprint_push_protocol_append_journal_event('receipt-required', [
             'mode' => $mode,
             'planPathHash' => hash('sha256', $plan_path),
@@ -39,7 +39,7 @@ function reprint_push_protocol_run(string $mode, string $plan_path, ?string $rec
         reprint_push_protocol_fail([
             'ok' => false,
             'code' => 'MISSING_DRY_RUN_RECEIPT',
-            'message' => 'Apply requires a supplied dry-run receipt JSON path.',
+            'message' => ucfirst($mode) . ' requires a supplied dry-run receipt JSON path.',
             'mode' => $mode,
             'journal' => reprint_push_protocol_journal_evidence($journal_entry),
         ]);
@@ -49,16 +49,22 @@ function reprint_push_protocol_run(string $mode, string $plan_path, ?string $rec
     $receipt_payload = null;
 
     if ($receipt_path !== null && $receipt_path !== '') {
-        if ($mode !== 'apply') {
+        if (!in_array($mode, ['apply', 'inspect'], true)) {
             reprint_push_protocol_fail([
                 'ok' => false,
                 'code' => 'INVALID_ARGUMENT',
-                'message' => 'Receipt paths are only accepted for apply.',
+                'message' => 'Receipt paths are only accepted for apply or inspect.',
                 'mode' => $mode,
             ]);
         }
 
         $receipt_payload = reprint_push_protocol_read_json_file($receipt_path, 'Receipt');
+    }
+
+    if ($mode === 'inspect') {
+        return reprint_push_protocol_inspect_recovery($plan, $receipt_payload, [
+            'transport' => 'cli-file',
+        ]);
     }
 
     return reprint_push_protocol_run_payload($mode, $plan, $receipt_payload, [
@@ -70,7 +76,8 @@ function reprint_push_protocol_run_payload(
     string $mode,
     array $plan,
     ?array $receipt_payload = null,
-    array $journal_context = []
+    array $journal_context = [],
+    array $options = []
 ): array {
     if (!in_array($mode, ['dry-run', 'apply'], true)) {
         reprint_push_protocol_fail([
@@ -149,13 +156,92 @@ function reprint_push_protocol_run_payload(
         ];
     }
 
+    $lab_fail_after_mutations = reprint_push_protocol_lab_fail_after_mutations($options);
+    $recovery_entries = reprint_push_protocol_recovery_entries($mutations, $preconditions);
     $started_entry = reprint_push_protocol_append_journal_event('apply-started', $journal_context + $plan_evidence + [
         'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
         'verifiedPreconditions' => reprint_push_protocol_compact_precondition_hashes($verified_preconditions),
+        'recoveryPlan' => $recovery_entries,
+        'labFailAfterMutations' => $lab_fail_after_mutations,
     ]);
 
-    foreach ($mutations as $mutation) {
-        reprint_push_apply_resource($mutation['resource'], $mutation['value']);
+    $applied = 0;
+    try {
+        if ($lab_fail_after_mutations === 0) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'LAB_INJECTED_APPLY_FAILURE',
+                'message' => 'Lab failpoint injected after 0 successful target resource mutations.',
+                'mode' => 'apply',
+                'applied' => 0,
+                'labFailAfterMutations' => $lab_fail_after_mutations,
+            ]);
+        }
+
+        foreach ($mutations as $index => $mutation) {
+            reprint_push_apply_resource($mutation['resource'], $mutation['value']);
+            $applied++;
+
+            $observed_snapshot = reprint_push_export_snapshot();
+            $observed_hash = reprint_push_hash_resource($observed_snapshot, $mutation['resource']);
+            $recovery_entries = reprint_push_protocol_mark_recovery_entry(
+                $recovery_entries,
+                (string) $mutation['id'],
+                'applied',
+                $observed_hash
+            );
+
+            reprint_push_protocol_append_journal_event('mutation-applied', $journal_context + $plan_evidence + [
+                'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+                'startedCursor' => $started_entry['cursor'],
+                'index' => (int) $index,
+                'mutationId' => (string) $mutation['id'],
+                'resourceKey' => (string) $mutation['resourceKey'],
+                'observedHash' => $observed_hash,
+                'recoveryPlan' => $recovery_entries,
+            ]);
+
+            if ($lab_fail_after_mutations !== null && $applied >= $lab_fail_after_mutations) {
+                reprint_push_protocol_fail([
+                    'ok' => false,
+                    'code' => 'LAB_INJECTED_APPLY_FAILURE',
+                    'message' => 'Lab failpoint injected after ' . $applied . ' successful target resource mutation(s).',
+                    'mode' => 'apply',
+                    'applied' => $applied,
+                    'labFailAfterMutations' => $lab_fail_after_mutations,
+                ]);
+            }
+        }
+    } catch (Reprint_Push_Protocol_Error $error) {
+        reprint_push_protocol_record_apply_failure(
+            $error->result,
+            $journal_context,
+            $plan_evidence,
+            $receipt,
+            $started_entry,
+            $recovery_entries,
+            $mutations,
+            $applied
+        );
+    } catch (Throwable $error) {
+        reprint_push_protocol_record_apply_failure(
+            [
+                'ok' => false,
+                'code' => 'APPLY_LOOP_FAILED',
+                'message' => $error->getMessage(),
+                'error' => [
+                    'class' => get_class($error),
+                    'message' => $error->getMessage(),
+                ],
+            ],
+            $journal_context,
+            $plan_evidence,
+            $receipt,
+            $started_entry,
+            $recovery_entries,
+            $mutations,
+            $applied
+        );
     }
 
     $after = reprint_push_export_snapshot();
@@ -175,6 +261,340 @@ function reprint_push_protocol_run_payload(
         'receipt' => $receipt,
         'journal' => reprint_push_protocol_journal_evidence($committed_entry),
         'afterSnapshot' => $after,
+    ];
+}
+
+function reprint_push_protocol_record_apply_failure(
+    array $failure,
+    array $journal_context,
+    array $plan_evidence,
+    ?array $receipt,
+    array $started_entry,
+    array $recovery_entries,
+    array $mutations,
+    int $applied
+): void {
+    $snapshot = reprint_push_export_snapshot();
+    $current_hashes = reprint_push_protocol_current_hashes($snapshot, $mutations);
+    $failure_code = (string) ($failure['code'] ?? 'APPLY_LOOP_FAILED');
+    $failure_message = (string) ($failure['message'] ?? $failure_code);
+
+    $failed_entry = reprint_push_protocol_append_journal_event('apply-failed', $journal_context + $plan_evidence + [
+        'receiptHash' => isset($receipt['receiptHash']) ? (string) $receipt['receiptHash'] : '',
+        'startedCursor' => $started_entry['cursor'],
+        'failureCode' => $failure_code,
+        'failureMessageHash' => hash('sha256', $failure_message),
+        'applied' => $applied,
+        'currentHashes' => $current_hashes,
+        'recoveryPlan' => $recovery_entries,
+    ]);
+
+    $required_entry = reprint_push_protocol_append_journal_event('recovery-required', $journal_context + $plan_evidence + [
+        'receiptHash' => isset($receipt['receiptHash']) ? (string) $receipt['receiptHash'] : '',
+        'startedCursor' => $started_entry['cursor'],
+        'failedCursor' => $failed_entry['cursor'],
+        'failureCode' => $failure_code,
+        'applied' => $applied,
+        'currentHashes' => $current_hashes,
+        'recoveryPlan' => $recovery_entries,
+    ]);
+
+    $inspection = reprint_push_protocol_inspect_recovery_from_prepared(
+        $mutations,
+        $current_hashes,
+        $plan_evidence,
+        is_array($receipt) ? $receipt : null,
+        $snapshot,
+        $recovery_entries
+    );
+
+    reprint_push_protocol_fail($failure + [
+        'ok' => false,
+        'mode' => 'apply',
+        'applied' => $applied,
+        'journal' => reprint_push_protocol_journal_evidence($required_entry),
+        'recovery' => [
+            'required' => true,
+            'state' => $inspection['state'],
+            'targets' => $inspection['targets'],
+            'currentHashes' => $current_hashes,
+            'scope' => 'lab-only evidence; not durable process-kill recovery',
+        ],
+    ]);
+}
+
+function reprint_push_protocol_lab_fail_after_mutations(array $options): ?int
+{
+    $raw = array_key_exists('labFailAfterMutations', $options)
+        ? $options['labFailAfterMutations']
+        : getenv('REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS');
+
+    if ($raw === false || $raw === null || $raw === '') {
+        return null;
+    }
+    if (is_bool($raw) || is_array($raw) || is_object($raw) || !is_numeric($raw)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'labFailAfterMutations must be a non-negative integer when supplied.',
+        ]);
+    }
+
+    $after = (int) $raw;
+    if ((string) $after !== (string) $raw && (string) $after !== trim((string) $raw)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'labFailAfterMutations must be a non-negative integer when supplied.',
+        ]);
+    }
+    if ($after < 0) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'labFailAfterMutations must be a non-negative integer when supplied.',
+        ]);
+    }
+
+    return $after;
+}
+
+function reprint_push_protocol_recovery_entries(array $mutations, array $preconditions): array
+{
+    $preconditions_by_mutation = reprint_push_protocol_preconditions_by_mutation($preconditions);
+    $entries = [];
+
+    foreach ($mutations as $index => $mutation) {
+        $mutation_id = (string) $mutation['id'];
+        $precondition = $preconditions_by_mutation[$mutation_id];
+        $expected_hash = (string) $precondition['expectedHash'];
+        $local_hash = (string) ($mutation['localHash'] ?? '');
+
+        $entries[] = [
+            'index' => (int) $index,
+            'mutationId' => $mutation_id,
+            'resourceKey' => (string) $mutation['resourceKey'],
+            'resource' => $mutation['resource'],
+            'beforeHash' => $expected_hash,
+            'preconditionExpectedHash' => $expected_hash,
+            'afterHash' => $local_hash,
+            'localHash' => $local_hash,
+            'status' => 'pending',
+        ];
+    }
+
+    return $entries;
+}
+
+function reprint_push_protocol_mark_recovery_entry(
+    array $entries,
+    string $mutation_id,
+    string $status,
+    ?string $observed_hash = null
+): array {
+    foreach ($entries as $index => $entry) {
+        if ((string) ($entry['mutationId'] ?? '') !== $mutation_id) {
+            continue;
+        }
+        $entries[$index]['status'] = $status;
+        if ($observed_hash !== null) {
+            $entries[$index]['observedHash'] = $observed_hash;
+        }
+        break;
+    }
+    return $entries;
+}
+
+function reprint_push_protocol_current_hashes(array $snapshot, array $mutations): array
+{
+    $hashes = [];
+    foreach ($mutations as $index => $mutation) {
+        $hashes[] = [
+            'index' => (int) $index,
+            'mutationId' => (string) $mutation['id'],
+            'resourceKey' => (string) $mutation['resourceKey'],
+            'hash' => reprint_push_hash_resource($snapshot, $mutation['resource']),
+        ];
+    }
+    return $hashes;
+}
+
+function reprint_push_protocol_inspect_recovery(
+    array $plan,
+    ?array $receipt_payload,
+    array $journal_context = []
+): array {
+    if ($receipt_payload === null) {
+        $journal_entry = reprint_push_protocol_append_journal_event('receipt-required', $journal_context + [
+            'mode' => 'inspect',
+            'planId' => $plan['id'] ?? null,
+            'planHash' => reprint_push_protocol_plan_hash($plan),
+        ]);
+
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'MISSING_DRY_RUN_RECEIPT',
+            'message' => 'Inspect requires a supplied dry-run receipt JSON.',
+            'mode' => 'inspect',
+            'journal' => reprint_push_protocol_journal_evidence($journal_entry),
+        ]);
+    }
+
+    $plan_hash = reprint_push_protocol_plan_hash($plan);
+    reprint_push_protocol_assert_plan_ready($plan, 'inspect', $plan_hash);
+
+    $mutations = reprint_push_protocol_plan_array($plan, 'mutations');
+    $precondition_entries = reprint_push_protocol_plan_array($plan, 'preconditions');
+    $preconditions = reprint_push_protocol_preconditions_by_mutation($precondition_entries);
+
+    reprint_push_protocol_validate_mutations_and_preconditions($mutations, $preconditions, $precondition_entries);
+
+    $plan_evidence = reprint_push_protocol_plan_evidence($plan, $plan_hash, $mutations, $precondition_entries);
+    $receipt = reprint_push_protocol_extract_receipt($receipt_payload);
+    reprint_push_protocol_assert_receipt_binds_to_plan($receipt, $plan, $plan_evidence, $mutations, $precondition_entries);
+
+    $snapshot = reprint_push_export_snapshot();
+    $current_hashes = reprint_push_protocol_current_hashes($snapshot, $mutations);
+
+    return [
+        'ok' => true,
+        'mode' => 'inspect',
+        'recovery' => reprint_push_protocol_inspect_recovery_from_prepared(
+            $mutations,
+            $current_hashes,
+            $plan_evidence,
+            $receipt,
+            $snapshot,
+            $precondition_entries
+        ),
+    ];
+}
+
+function reprint_push_protocol_inspect_recovery_from_prepared(
+    array $mutations,
+    array $current_hashes,
+    array $plan_evidence,
+    ?array $receipt,
+    array $snapshot,
+    array $preconditions = []
+): array {
+    $hashes_by_mutation = [];
+    foreach ($current_hashes as $entry) {
+        $hashes_by_mutation[(string) $entry['mutationId']] = (string) $entry['hash'];
+    }
+
+    $old_hashes_by_mutation = [];
+    foreach ($preconditions as $precondition) {
+        if (!is_array($precondition) || !isset($precondition['mutationId'])) {
+            continue;
+        }
+        $old_hashes_by_mutation[(string) $precondition['mutationId']] = (string) (
+            $precondition['expectedHash'] ?? $precondition['beforeHash'] ?? ''
+        );
+    }
+
+    $targets = [];
+    $old = 0;
+    $new = 0;
+    $unknown = 0;
+
+    foreach ($mutations as $index => $mutation) {
+        $mutation_id = (string) $mutation['id'];
+        $current_hash = (string) ($hashes_by_mutation[$mutation_id] ?? '');
+        $old_hash = array_key_exists($mutation_id, $old_hashes_by_mutation)
+            ? $old_hashes_by_mutation[$mutation_id]
+            : (string) ($mutation['remoteBeforeHash'] ?? '');
+        $new_hash = (string) ($mutation['localHash'] ?? '');
+
+        if ($current_hash === $old_hash) {
+            $classification = 'old';
+            $old++;
+        } elseif ($current_hash === $new_hash) {
+            $classification = 'new';
+            $new++;
+        } else {
+            $classification = 'blocked-unknown';
+            $unknown++;
+        }
+
+        $targets[] = [
+            'index' => (int) $index,
+            'mutationId' => $mutation_id,
+            'resourceKey' => (string) $mutation['resourceKey'],
+            'resource' => $mutation['resource'],
+            'expectedOldHash' => $old_hash,
+            'expectedNewHash' => $new_hash,
+            'currentHash' => $current_hash,
+            'classification' => $classification,
+        ];
+    }
+
+    $state = 'blocked-recovery';
+    if (count($targets) > 0 && $old === count($targets)) {
+        $state = 'old-remote';
+    } elseif (count($targets) > 0 && $new === count($targets)) {
+        $state = 'fully-updated-remote';
+    }
+
+    return [
+        'schemaVersion' => 1,
+        'scope' => 'lab-only inspect evidence; not durable process-kill recovery',
+        'state' => $state,
+        'counts' => [
+            'old' => $old,
+            'new' => $new,
+            'blockedUnknown' => $unknown,
+            'total' => count($targets),
+        ],
+        'targets' => $targets,
+        'currentHashes' => $current_hashes,
+        'currentSnapshotHash' => hash('sha256', reprint_push_stable_json($snapshot)),
+        'planEvidence' => $plan_evidence,
+        'receiptEvidence' => $receipt === null ? null : [
+            'receiptHash' => isset($receipt['receiptHash']) ? (string) $receipt['receiptHash'] : null,
+            'planHash' => isset($receipt['planHash']) ? (string) $receipt['planHash'] : null,
+            'mutationCount' => isset($receipt['mutationCount']) ? (int) $receipt['mutationCount'] : null,
+        ],
+        'journalEvidence' => reprint_push_protocol_latest_recovery_journal_evidence(
+            (string) $plan_evidence['planHash'],
+            $receipt !== null && isset($receipt['receiptHash']) ? (string) $receipt['receiptHash'] : null
+        ),
+    ];
+}
+
+function reprint_push_protocol_latest_recovery_journal_evidence(string $plan_hash, ?string $receipt_hash): array
+{
+    $journal = get_option('reprint_push_protocol_journal', null);
+    $entries = is_array($journal) && isset($journal['entries']) && is_array($journal['entries'])
+        ? $journal['entries']
+        : [];
+    $events = [
+        'apply-started',
+        'mutation-applied',
+        'apply-failed',
+        'recovery-required',
+        'apply-committed',
+    ];
+    $matches = [];
+
+    foreach ($entries as $entry) {
+        if (!is_array($entry) || !in_array((string) ($entry['event'] ?? ''), $events, true)) {
+            continue;
+        }
+        $matches_plan = isset($entry['planHash']) && (string) $entry['planHash'] === $plan_hash;
+        $matches_receipt = $receipt_hash !== null
+            && isset($entry['receiptHash'])
+            && (string) $entry['receiptHash'] === $receipt_hash;
+        if (!$matches_plan && !$matches_receipt) {
+            continue;
+        }
+        $matches[] = $entry;
+    }
+
+    return [
+        'option' => 'reprint_push_protocol_journal',
+        'nextSequence' => is_array($journal) ? (int) ($journal['nextSequence'] ?? 1) : 1,
+        'latestRelevant' => array_slice($matches, -10),
     ];
 }
 
@@ -779,13 +1199,40 @@ function reprint_push_protocol_journal_evidence(array $entry): array
     $entries = is_array($journal) && isset($journal['entries']) && is_array($journal['entries'])
         ? $journal['entries']
         : [];
+    $recent = array_slice($entries, -5);
+    $pinned = [];
+    foreach (['startedCursor', 'failedCursor'] as $cursor_key) {
+        if (!isset($entry[$cursor_key])) {
+            continue;
+        }
+        $cursor = (string) $entry[$cursor_key];
+        foreach ($entries as $candidate) {
+            if (is_array($candidate) && isset($candidate['cursor']) && (string) $candidate['cursor'] === $cursor) {
+                $pinned[$cursor] = $candidate;
+                break;
+            }
+        }
+    }
+    foreach (array_reverse($recent) as $candidate) {
+        if (!is_array($candidate) || !isset($candidate['cursor'])) {
+            continue;
+        }
+        $pinned[(string) $candidate['cursor']] = $candidate;
+        if (count($pinned) >= 5) {
+            break;
+        }
+    }
+    $recent = array_values($pinned);
+    usort($recent, static function (array $left, array $right): int {
+        return (int) ($left['sequence'] ?? 0) <=> (int) ($right['sequence'] ?? 0);
+    });
 
     return [
         'option' => 'reprint_push_protocol_journal',
         'cursor' => $entry['cursor'],
         'event' => $entry['event'],
         'sequence' => $entry['sequence'],
-        'recent' => array_slice($entries, -5),
+        'recent' => $recent,
     ];
 }
 

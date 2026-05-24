@@ -35,6 +35,8 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground local REST namespace | Disposable Playground servers expose `reprint-push-lab/v1` with `GET /snapshot`, `GET /journal`, `POST /dry-run`, and `POST /apply` over real local HTTP. | `npm run test:playground:http-push` |
 | Playground local REST ready apply | Dry-run is read-only, returns a receipt, and receipt-backed apply writes the eight expected fixture mutations. | `npm run test:playground:http-push` |
 | Playground local REST receipt/stale/conflict refusals | Missing receipt rejects with `428 MISSING_DRY_RUN_RECEIPT`, tampered receipt with `409 RECEIPT_MISMATCH`, stale remote with `412 PRECONDITION_FAILED`, and conflict plans with `409 PLAN_NOT_READY` for row, file, and plugin-data classes. | `npm run test:playground:http-push` |
+| Playground lab injected recovery failure | Fail-after-2 returns `LAB_INJECTED_APPLY_FAILURE` after two successful whole-resource mutations, records planned recovery entries and hash-only current state, and inspection reports `blocked-recovery` with `2 new` and `6 old` targets. | `npm run test:playground:recovery` |
+| Playground lab retry after partial apply | Retry over the partial lab state refuses with `PRECONDITION_FAILED` instead of applying over the blocked recovery state. | `npm run test:playground:recovery` |
 | Failure happens while staging mutations | No partially mutated remote state is returned or committed. | `injected failure before commit returns no partially mutated remote state` |
 
 ## Remaining Missing Scenarios
@@ -51,7 +53,9 @@ The first executable matrix lives in `test/push-planner.test.js`.
   current forms slice is fixture/allowlist-scoped and does not prove arbitrary
   production plugin-owned options, postmeta, custom tables, or activation
   semantics.
-- Kill-process recovery tests around every durable boundary.
+- Kill-process recovery tests around every durable boundary, including
+  `fsync`/storage-level proof. The current recovery harness is injected lab
+  failure inspection only.
 
 ## Invariant Policy
 

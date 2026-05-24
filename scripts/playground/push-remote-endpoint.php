@@ -5,6 +5,8 @@
  * Usage:
  *   php push-remote-endpoint.php dry-run /path/to/plan.json
  *   php push-remote-endpoint.php apply /path/to/plan.json /path/to/dry-run-receipt.json
+ *   php push-remote-endpoint.php inspect /path/to/plan.json /path/to/dry-run-receipt.json
+ *   php push-remote-endpoint.php recover inspect /path/to/plan.json /path/to/dry-run-receipt.json
  */
 
 if (!defined('ABSPATH')) {
@@ -26,11 +28,17 @@ try {
     $plan_path = $argv[2] ?? null;
     $receipt_path = $argv[3] ?? null;
 
+    if ($mode === 'recover' && ($argv[2] ?? null) === 'inspect') {
+        $mode = 'inspect';
+        $plan_path = $argv[3] ?? null;
+        $receipt_path = $argv[4] ?? null;
+    }
+
     if (!is_string($mode) || !is_string($plan_path)) {
         throw new Reprint_Push_Protocol_Error([
             'ok' => false,
             'code' => 'INVALID_ARGUMENT',
-            'message' => 'Usage: php push-remote-endpoint.php dry-run <plan.json> | php push-remote-endpoint.php apply <plan.json> <dry-run-receipt.json>',
+            'message' => 'Usage: php push-remote-endpoint.php dry-run <plan.json> | php push-remote-endpoint.php apply <plan.json> <dry-run-receipt.json> | php push-remote-endpoint.php inspect <plan.json> <dry-run-receipt.json> | php push-remote-endpoint.php recover inspect <plan.json> <dry-run-receipt.json>',
         ]);
     }
 

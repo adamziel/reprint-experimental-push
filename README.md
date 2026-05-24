@@ -37,6 +37,12 @@ Run the standalone local-only HTTP REST lab harness:
 npm run test:playground:http-push
 ```
 
+Run the lab recovery inspection harness:
+
+```bash
+npm run test:playground:recovery
+```
+
 The Playground target is the lab proof for real WordPress fixture state. It
 exports snapshots from Playground sites, exercises conflict planning from those
 snapshots, creates a ready plan with `remote=base`, applies that plan inside a
@@ -70,6 +76,15 @@ eight ready mutations, tampered receipt refusal, stale remote refusal, and
 row/file/plugin-data conflict classes. It is intentionally standalone because it
 starts real HTTP servers and takes around two minutes; it is not included in
 `test:playground`.
+
+The `test:playground:recovery` script exercises the lab-only failpoint
+`REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The
+verified fail-after-2 case records `LAB_INJECTED_APPLY_FAILURE` after two
+successful whole-resource mutations, classifies the remote as
+`blocked-recovery`, reports `2 new` and `6 old` targets through CLI/REST
+inspection, and refuses retry with `PRECONDITION_FAILED`. This is bounded lab
+inspection over option-journal evidence with hashes only; it is not
+process-kill safe, `fsync` safe, durable production recovery, or auto-repair.
 
 The lab CLI works on three snapshots:
 

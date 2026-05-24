@@ -145,6 +145,31 @@ Playground runtime, and it does not prove production auth, sessions, nonce
 checks, signed receipts, durable journals, crash recovery, or live source-site
 mutation safety.
 
+## Lab Recovery Harness
+
+```bash
+npm run test:playground:recovery
+```
+
+This standalone script starts a disposable Playground server bound only to
+`127.0.0.1` and exercises the lab failpoint
+`REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. It verifies
+the fail-after-2 case: the PHP protocol returns
+`LAB_INJECTED_APPLY_FAILURE` after two successful whole-resource mutations, the
+bounded option journal records planned recovery entries, `mutation-applied`,
+`apply-failed`, `recovery-required`, and current hashes without raw values, and
+inspection reports `2 new` targets plus `6 old` targets.
+
+The recovery inspection path is available through the CLI and through
+`GET /recovery/inspect` on the local REST server. Both classify the remote as
+`blocked-recovery`, with individual targets classified as old, new, or
+blocked-unknown. A retry refuses with `PRECONDITION_FAILED` instead of applying
+over the partial state.
+
+This is lab recovery inspection only. It proves bounded journal evidence and
+classification after an injected apply failure, not production durable recovery,
+process-kill safety, `fsync` safety, or automatic repair.
+
 ## Next Proofs Needed
 
 - Replace the fixture-scoped PHP lab endpoint with a real Reprint push HTTP
@@ -152,5 +177,7 @@ mutation safety.
 - Revalidate live remote hashes immediately before production apply.
 - Add production-grade receipt expiry, signing/auth binding, and durable audit
   storage around the accepted remote snapshot.
+- Add process-kill and `fsync`-backed recovery proof before claiming durable
+  production recovery.
 - Add real plugin activation, custom-table driver, recovery, and auth proof
   before making claims about arbitrary production plugin-owned data.

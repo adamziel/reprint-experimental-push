@@ -399,11 +399,11 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Experimental push-back from a pulled local WordPress site to the live source site. The current implementation is a JSON-snapshot safety model plus lab-scoped Playground apply, protocol-smoke, local-only REST harnesses, and allowlisted plugin-owned fixture data, not a production WordPress transport.</p>
+        <p class="lead">Experimental push-back from a pulled local WordPress site to the live source site. The current implementation is a JSON-snapshot safety model plus lab-scoped Playground apply, protocol-smoke, local-only REST and recovery harnesses, and allowlisted plugin-owned fixture data, not a production WordPress transport.</p>
         <div class="meta" aria-label="Project status">
           <span class="pill">Last updated: May 24, 2026</span>
           <span class="pill">29 lab tests passing</span>
-          <span class="pill">Playground REST lab passing</span>
+          <span class="pill">Playground REST and recovery labs passing</span>
           <span class="pill">Reprint HTTP mutation pending</span>
         </div>
       </div>
@@ -424,7 +424,7 @@
       </div>
       <div class="metric">
         <strong>1</strong>
-        <span>Playground integration for snapshot planning, guarded apply, fixture-scoped protocol smoke, local REST lab checks, and allowlisted plugin-owned forms data</span>
+        <span>Playground integration for snapshot planning, guarded apply, fixture-scoped protocol smoke, local REST/recovery lab checks, and allowlisted plugin-owned forms data</span>
       </div>
       <div class="metric">
         <strong>4</strong>
@@ -446,9 +446,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">14%</span></div>
-          <div class="bar" aria-label="No data loss recovery boundaries 14 percent"><div class="fill green" style="width:14%"></div></div>
-          <p class="note">The applicator now returns in-memory lab journal/recovery evidence for old remote, fully updated remote, and blocked recovery cases. Durable on-disk journals and process-kill recovery remain pending.</p>
+          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">18%</span></div>
+          <div class="bar" aria-label="No data loss recovery boundaries 18 percent"><div class="fill green" style="width:18%"></div></div>
+          <p class="note">The applicator returns in-memory lab journal/recovery evidence, and npm run test:playground:recovery verifies LAB_INJECTED_APPLY_FAILURE after fail-after-2, blocked-recovery inspection, 2 new and 6 old targets, and PRECONDITION_FAILED on retry. Durable on-disk journals, fsync proof, process-kill recovery, and auto-repair remain pending.</p>
         </div>
 
         <div class="lane">
@@ -477,7 +477,7 @@
             <li><a href="docs/scenario-matrix.md">Scenario matrix</a> maps the current test coverage and remaining integration scenarios.</li>
             <li><a href="docs/approach-scorecard.md">Approach scorecard</a> ranks guarded three-way push and ForkPress-style merge highest.</li>
             <li><a href="docs/protocol.md">Protocol sketch</a> defines proposed push preflight, hashes, dry-run, apply, journal, and recovery endpoints.</li>
-            <li><a href="docs/playground-topology.md">Playground topology</a> exports base/local/remote WordPress snapshots, asserts planner outcomes, and documents guarded apply, fixture-scoped protocol smoke, allowlisted forms fixture data, and the standalone local REST lab harness.</li>
+            <li><a href="docs/playground-topology.md">Playground topology</a> exports base/local/remote WordPress snapshots, asserts planner outcomes, and documents guarded apply, fixture-scoped protocol smoke, allowlisted forms fixture data, and the standalone local REST/recovery lab harnesses.</li>
             <li><a href="docs/progress-log.md">Progress log</a> records dated status entries and links to evidence.</li>
           </ul>
         </section>
@@ -486,8 +486,8 @@
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
             <div class="proof-item"><span class="status">Pending</span><p>Production Reprint HTTP source mutation endpoint for files, rows, and plugin state on a live source site, including auth/session/nonce proof.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Durable recovery journal with crash/kill-process tests around each commit boundary.</p></div>
-            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply, protocol smoke, and local REST lab checks verify read-only dry-run, required receipt-backed apply, missing/tampered receipt refusal, stale rejection, conflict refusal, the current eight exact ready mutations, and fixture-scoped lab journal/audit events.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Durable recovery journal with fsync-backed crash/kill-process tests around each commit boundary.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply, protocol smoke, local REST checks, and recovery inspection verify read-only dry-run, required receipt-backed apply, missing/tampered receipt refusal, stale rejection, conflict refusal, the current eight exact ready mutations, blocked-recovery after LAB_INJECTED_APPLY_FAILURE, and fixture-scoped lab journal/audit events.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Plugin-specific validators or drivers that prove safe semantic merges before applying arbitrary production plugin-owned data; current forms evidence is fixture/allowlist-scoped.</p></div>
           </div>
         </section>
@@ -496,11 +496,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>The implemented path is lab-scoped. Playground apply, protocol smoke, local REST checks, and allowlisted plugin-owned forms fixtures are passing, while production Reprint HTTP mutation remains a proof gate.</p>
+              <p>The implemented path is lab-scoped. Playground apply, protocol smoke, local REST/recovery checks, and allowlisted plugin-owned forms fixtures are passing, while production Reprint HTTP mutation remains a proof gate.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Pull base, local edits, and live remote snapshots feed a guarded plan. Playground apply, fixture protocol smoke, and local REST checks are verified in the lab and production Reprint HTTP mutation is still pending.</desc>
+              <desc id="map-desc">Pull base, local edits, and live remote snapshots feed a guarded plan. Playground apply, fixture protocol smoke, local REST checks, and recovery inspection are verified in the lab and production Reprint HTTP mutation is still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>

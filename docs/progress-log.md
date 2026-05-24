@@ -37,6 +37,24 @@ linked implementation artifacts.
 - The page at [progress.html](../progress.html) reports this as a safety model,
   not a production WordPress transport.
 
+## 2026-05-24 - Lab Recovery Inspection Slice
+
+- `npm run test:playground:recovery` passed as a standalone local-only
+  Playground recovery harness against a server bound to `127.0.0.1`.
+- The harness verifies the PHP protocol failpoint
+  `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. In the
+  fail-after-2 case, apply returns `LAB_INJECTED_APPLY_FAILURE` after two
+  successful whole-resource mutations.
+- The bounded option journal records planned recovery entries,
+  `mutation-applied`, `apply-failed`, `recovery-required`, and current hashes
+  without raw values. CLI inspect and REST `GET /recovery/inspect` classify the
+  target as `blocked-recovery`, with `2 new` targets and `6 old` targets; retry
+  refuses with `PRECONDITION_FAILED`.
+- This is lab recovery inspection evidence only. It is not a durable production
+  recovery journal, not process-kill or `fsync` safe, and not auto-repair.
+  Evidence: [docs/recovery/apply-journal.md](recovery/apply-journal.md) and
+  [docs/playground-topology.md](playground-topology.md).
+
 ## 2026-05-24 - Playground Guarded Apply Target
 
 - `npm run test:playground` passed as a two-leg Playground harness: first it
@@ -121,7 +139,7 @@ linked implementation artifacts.
 | Area | Progress | Evidence | Still pending |
 | --- | ---: | --- | --- |
 | Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling and detection-only custom-table/plugin metadata | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
-| Recovery boundaries | 14% | In-memory lab journal/recovery evidence in [src/apply.js](../src/apply.js) and tests | Durable on-disk journal, process-kill tests, storage-level recovery proof |
+| Recovery boundaries | 18% | In-memory applicator evidence plus Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; CLI/REST classify `blocked-recovery` with `2 new` and `6 old` targets | Durable on-disk journal, process-kill tests, `fsync`/storage-level recovery proof, auto-repair policy |
 | Reliable executor and protocol | 20% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, and standalone local-only REST lab harness | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
@@ -132,8 +150,10 @@ linked implementation artifacts.
   intended production protocol and verified after apply. The current Playground
   protocol smoke is a fixture-scoped lab endpoint only.
 - Durable recovery journal: pending until journal files or equivalent recovery
-  artifacts survive process failure and classify the target as old, new, or
-  blocked.
+  artifacts survive process failure, include the needed `fsync`/storage-level
+  proof, and classify the target as old, new, or blocked. The current
+  fail-after lab slice classifies old/new/blocked-recovery after injected PHP
+  failure, but does not prove process-kill safety or production repair.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test,
   export planner snapshots, run guarded apply into a fresh Playground source,
   exercise a lab-only fixture protocol endpoint with WordPress-visible readback,

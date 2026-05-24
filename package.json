@@ -14,6 +14,7 @@
     "test:playground:apply": "node ./scripts/playground/apply-ready-plan.mjs",
     "test:playground:push-protocol": "node ./scripts/playground/push-protocol-smoke.mjs",
     "test:playground:http-push": "node ./scripts/playground/http-push-smoke.mjs",
+    "test:playground:recovery": "node ./scripts/playground/recovery-smoke.mjs",
     "plan": "node ./bin/reprint-push-lab.js plan",
     "apply": "node ./bin/reprint-push-lab.js apply"
   },

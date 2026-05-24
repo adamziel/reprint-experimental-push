@@ -40,6 +40,12 @@ function reprint_push_lab_rest_register_routes(): void
         'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
     ]);
 
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/recovery/inspect', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_recovery_inspect',
+        'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
+    ]);
+
     register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/snapshot', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => 'reprint_push_lab_rest_snapshot',
@@ -77,6 +83,35 @@ function reprint_push_lab_rest_apply(WP_REST_Request $request): WP_REST_Response
     return reprint_push_lab_rest_protocol_response('apply', $request);
 }
 
+function reprint_push_lab_rest_recovery_inspect(WP_REST_Request $request): WP_REST_Response
+{
+    try {
+        $payload = reprint_push_lab_rest_json_payload($request);
+        $plan = reprint_push_lab_rest_plan_payload($payload, 'inspect');
+        $receipt = reprint_push_lab_rest_receipt_payload($payload);
+
+        $result = reprint_push_protocol_inspect_recovery($plan, $receipt, [
+            'transport' => 'wordpress-rest',
+            'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+            'restRoute' => '/recovery/inspect',
+        ]);
+    } catch (Reprint_Push_Protocol_Error $error) {
+        $result = $error->result;
+    } catch (Throwable $error) {
+        $result = [
+            'ok' => false,
+            'code' => 'PUSH_PROTOCOL_ERROR',
+            'message' => $error->getMessage(),
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+        ];
+    }
+
+    return reprint_push_lab_rest_json_response($result);
+}
+
 function reprint_push_lab_rest_protocol_response(string $mode, WP_REST_Request $request): WP_REST_Response
 {
     try {
@@ -87,7 +122,7 @@ function reprint_push_lab_rest_protocol_response(string $mode, WP_REST_Request $
         $result = reprint_push_protocol_run_payload($mode, $plan, $receipt, [
             'transport' => 'wordpress-rest',
             'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
-        ]);
+        ], reprint_push_lab_rest_lab_options($payload));
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
     } catch (Throwable $error) {
@@ -155,6 +190,15 @@ function reprint_push_lab_rest_receipt_payload(array $payload): ?array
         ]);
     }
     return $payload['receipt'];
+}
+
+function reprint_push_lab_rest_lab_options(array $payload): array
+{
+    $options = [];
+    if (array_key_exists('labFailAfterMutations', $payload)) {
+        $options['labFailAfterMutations'] = $payload['labFailAfterMutations'];
+    }
+    return $options;
 }
 
 function reprint_push_lab_rest_snapshot(WP_REST_Request $request): WP_REST_Response
