@@ -1283,6 +1283,27 @@ test('replays a completed plan without reapplying mutations', () => {
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
 });
 
+test('blocks a stale completed replay when the remote drifted after completion', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const staleReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  staleReplayRemote.files['index.php'] = '<?php echo "drifted";';
+  const before = JSON.stringify(staleReplayRemote);
+
+  const error = captureError(() => applyPlan(staleReplayRemote, plan, { journal: completed.journal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assertRemoteUnchanged(staleReplayRemote, before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked replay must carry remote artifacts');
+});
+
 test('accepts only the documented post-failure states for atomic apply recovery', () => {
   const scenarios = [
     {
