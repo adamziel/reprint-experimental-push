@@ -6,7 +6,8 @@ An apply attempt must end in one of these states, and only these states:
   journal that proves the plan can be retried after revalidation.
 - `fully-updated-remote`: every planned mutation is already present. Replay
   may observe the completed journal, but it must not reapply inserts or stale
-  local data.
+  local data. A completed-plan replay is only acceptable if it stays
+  read-only and returns this state.
 - `blocked-recovery`: the remote is partial, drifted, or otherwise ambiguous.
   The recovery artifact set must include the journal plus any observed remote
   evidence needed to stop unsafe retry.

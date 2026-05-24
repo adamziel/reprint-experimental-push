@@ -451,13 +451,12 @@ function replayCompletedPlan(remote, plan, journal) {
     site: deepClone(remote),
     appliedMutations: 0,
     journal,
-    recoveryState: {
-      status: 'fully-updated-remote',
-      reason: 'Completed plan replayed without reapplying mutations.',
-      artifacts: {
-        journal,
-      },
-    },
+    recoveryState: fullyUpdatedRecoveryState(
+      remote,
+      plan,
+      journal,
+      'Completed plan replayed without reapplying mutations.',
+    ),
   };
 }
 
