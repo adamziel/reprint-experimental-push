@@ -50,6 +50,10 @@ for lane in "${lanes[@]}"; do
   elif ! git -C "$worktree" diff --quiet || ! git -C "$worktree" diff --cached --quiet; then
     printf '%s\n' "worktree has local changes; not starting: $worktree"
     continue
+  elif git -C "$worktree" merge-base --is-ancestor HEAD "$base_ref"; then
+    git -C "$worktree" merge --ff-only "$base_ref" >/dev/null
+  else
+    printf '%s\n' "worktree has clean local commits; not fast-forwarding: $worktree"
   fi
 
   mkdir -p "$worktree/.lane-output"
@@ -58,4 +62,3 @@ for lane in "${lanes[@]}"; do
     "cd '$worktree' && codex exec -C '$worktree' --dangerously-bypass-approvals-and-sandbox -o '$output' - < '$prompt'; printf '\n[lane finished: $lane]\n'; git status --short --branch; exec bash"
   printf '%s\n' "started: $session -> $worktree"
 done
-
