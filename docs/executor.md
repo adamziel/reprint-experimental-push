@@ -102,6 +102,18 @@ Call `push_preflight` with the requested scopes. Store:
 Abort if push auth is not scoped for mutation or the server cannot write a
 journal.
 
+Current lab note: `npm run test:playground:authenticated-http-push` verifies a
+local Playground preflight at
+`/wp-json/reprint-push-lab/v1/authenticated/preflight`. It returns identity,
+`manage_options`, scope, session, expiry, idempotency, and journal evidence, and
+the matching authenticated dry-run/apply routes bind receipts to auth/session
+and request data before DB idempotency claim/mutation. This is authenticated
+local Playground source-site mutation evidence only. Playground fallback caveat:
+the lab verifier validates stored hashed app-password entries and sets the
+current user because local Playground core did not establish
+`/wp-json/wp/v2/users/me`; it is not production Reprint auth or production
+Application Password integration.
+
 ### 3. Remote Snapshot Hash Listing
 
 Call `push_snapshot_hashes` until complete. Include base resource keys so

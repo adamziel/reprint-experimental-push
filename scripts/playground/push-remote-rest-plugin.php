@@ -5,9 +5,9 @@
  * Version: 0.0.0
  * License: GPL-2.0-or-later
  *
- * This file is intentionally public and unauthenticated only for local
- * Playground proof runs. It must be loaded as an ordinary plugin or mu-plugin
- * inside a disposable local WordPress instance; it is not production auth.
+ * The base lab routes remain public for existing local Playground proof runs.
+ * Authenticated aliases below are still fixture-scoped, but require a real
+ * WordPress identity via Application Password basic auth.
  */
 
 if (!defined('ABSPATH')) {
@@ -24,8 +24,20 @@ require_once $reprint_push_lab_dir . '/push-remote-lib.php';
 require_once $reprint_push_lab_dir . '/push-db-journal-lib.php';
 
 const REPRINT_PUSH_LAB_REST_NAMESPACE = 'reprint-push-lab/v1';
+const REPRINT_PUSH_LAB_AUTH_SCOPE = 'reprint-push-lab:authenticated-http-push';
+const REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE = 'reprint_push_lab_auth';
 
+add_filter('wp_is_application_passwords_available', 'reprint_push_lab_rest_application_passwords_available');
 add_action('rest_api_init', 'reprint_push_lab_rest_register_routes');
+add_action('init', 'reprint_push_lab_rest_maybe_bootstrap_auth_users');
+
+function reprint_push_lab_rest_application_passwords_available($available): bool
+{
+    if (reprint_push_lab_rest_auth_bootstrap_enabled()) {
+        return true;
+    }
+    return (bool) $available;
+}
 
 function reprint_push_lab_rest_register_routes(): void
 {
@@ -88,11 +100,223 @@ function reprint_push_lab_rest_register_routes(): void
         'callback' => 'reprint_push_lab_rest_db_journal_schema',
         'permission_callback' => 'reprint_push_lab_rest_public_lab_permission',
     ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/preflight', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_preflight',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/dry-run', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_dry_run',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/apply', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_apply',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/snapshot', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_snapshot',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/journal', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_journal',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        'args' => [
+            'limit' => [
+                'type' => 'integer',
+                'default' => 20,
+                'minimum' => 1,
+                'maximum' => 80,
+                'sanitize_callback' => 'absint',
+            ],
+        ],
+    ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/db-journal', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_db_journal',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        'args' => [
+            'limit' => [
+                'type' => 'integer',
+                'default' => 20,
+                'minimum' => 1,
+                'maximum' => 80,
+                'sanitize_callback' => 'absint',
+            ],
+        ],
+    ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/db-journal/schema', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'reprint_push_lab_rest_db_journal_schema',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/recovery/inspect', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_recovery_inspect',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
 }
 
 function reprint_push_lab_rest_public_lab_permission(): bool
 {
     return true;
+}
+
+function reprint_push_lab_rest_authenticated_permission(WP_REST_Request $request)
+{
+    $auth = reprint_push_lab_rest_basic_auth_context($request);
+    if (!is_array($auth)) {
+        return new WP_Error(
+            'reprint_push_lab_auth_required',
+            'Authenticated push routes require WordPress Application Password basic auth.',
+            ['status' => 401]
+        );
+    }
+
+    reprint_push_lab_rest_set_auth_context($request, $auth);
+    wp_set_current_user((int) $auth['userId']);
+    $user = wp_get_current_user();
+    if (!$user->exists() || (int) $user->ID !== (int) $auth['userId']) {
+        return new WP_Error(
+            'reprint_push_lab_auth_required',
+            'Application Password authentication did not establish the requested WordPress user.',
+            ['status' => 401]
+        );
+    }
+
+    if (!current_user_can('manage_options')) {
+        return new WP_Error(
+            'reprint_push_lab_forbidden',
+            'Authenticated push routes require manage_options.',
+            ['status' => 403]
+        );
+    }
+
+    return true;
+}
+
+function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request): WP_REST_Response
+{
+    $auth = reprint_push_lab_rest_auth_evidence($request);
+
+    return reprint_push_lab_rest_json_response([
+        'ok' => true,
+        'mode' => 'preflight',
+        'auth' => $auth,
+        'requirements' => [
+            'authentication' => 'application-password-basic',
+            'capability' => 'manage_options',
+            'idempotencyHeader' => 'X-Reprint-Push-Idempotency-Key',
+        ],
+        'authorized' => [
+            'identity' => $auth['identity'],
+            'capabilities' => [
+                'manage_options' => current_user_can('manage_options'),
+                'reprint_push' => current_user_can('manage_options'),
+            ],
+            'scopes' => [
+                REPRINT_PUSH_LAB_AUTH_SCOPE,
+                'dry-run',
+                'apply',
+            ],
+        ],
+        'session' => [
+            'type' => $auth['session']['type'] ?? null,
+            'applicationPasswordUuid' => $auth['session']['applicationPasswordUuid'] ?? null,
+            'credentialHash' => $auth['session']['credentialHash'] ?? null,
+            'expiresAt' => null,
+            'receiptTtlSeconds' => 300,
+        ],
+        'limits' => [
+            'maxMutationsPerPlan' => 100,
+            'maxReceiptAgeSeconds' => 300,
+            'requiresIdempotencyKey' => true,
+        ],
+        'journal' => [
+            'available' => true,
+            'optionJournal' => [
+                'available' => true,
+                'option' => 'reprint_push_protocol_journal',
+            ],
+            'dbJournal' => [
+                'available' => true,
+                'table' => reprint_push_lab_db_journal_table_name(),
+                'scope' => 'local Playground fixture only; not production durability',
+            ],
+        ],
+        'snapshotHash' => hash('sha256', reprint_push_stable_json(reprint_push_export_snapshot())),
+    ]);
+}
+
+function reprint_push_lab_rest_authenticated_dry_run(WP_REST_Request $request): WP_REST_Response
+{
+    $response = reprint_push_lab_rest_protocol_response('dry-run', $request);
+    $result = $response->get_data();
+    if (($result['ok'] ?? false) === true && isset($result['receipt']) && is_array($result['receipt'])) {
+        $payload = reprint_push_lab_rest_json_payload($request);
+        $plan = reprint_push_lab_rest_plan_payload($payload, 'dry-run');
+        $result['receipt'] = reprint_push_lab_rest_bind_authenticated_receipt(
+            $result['receipt'],
+            $request,
+            $payload,
+            $plan
+        );
+        $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
+    }
+    return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP_REST_Response
+{
+    try {
+        $payload = reprint_push_lab_rest_json_payload($request);
+        $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
+        $receipt_payload = reprint_push_lab_rest_receipt_payload($payload);
+        if ($receipt_payload === null) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'MISSING_DRY_RUN_RECEIPT',
+                'message' => 'Apply requires a supplied dry-run receipt JSON.',
+                'mode' => 'apply',
+            ]);
+        }
+        reprint_push_lab_rest_validate_authenticated_receipt($request, $payload, $plan, $receipt_payload);
+    } catch (Reprint_Push_Protocol_Error $error) {
+        return reprint_push_lab_rest_json_response($error->result);
+    } catch (Throwable $error) {
+        return reprint_push_lab_rest_json_response([
+            'ok' => false,
+            'code' => 'PUSH_PROTOCOL_ERROR',
+            'message' => $error->getMessage(),
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+        ]);
+    }
+
+    $response = reprint_push_lab_rest_apply_with_db_journal($request, true);
+    $result = $response->get_data();
+    if (($result['ok'] ?? false) === true || isset($result['idempotency'])) {
+        $result['auth'] = reprint_push_lab_rest_auth_evidence($request);
+    }
+    return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $request): WP_REST_Response
+{
+    return reprint_push_lab_rest_recovery_inspect($request);
 }
 
 function reprint_push_lab_rest_dry_run(WP_REST_Request $request): WP_REST_Response
@@ -162,10 +386,16 @@ function reprint_push_lab_rest_protocol_response(string $mode, WP_REST_Request $
     return reprint_push_lab_rest_json_response($result);
 }
 
-function reprint_push_lab_rest_apply_with_db_journal(WP_REST_Request $request): WP_REST_Response
+function reprint_push_lab_rest_apply_with_db_journal(
+    WP_REST_Request $request,
+    bool $validate_before_idempotency_claim = false
+): WP_REST_Response
 {
     $context = null;
     $received_entry = null;
+    $accepted = null;
+    $plan = null;
+    $receipt = null;
 
     try {
         $idempotency_key = trim((string) $request->get_header('x-reprint-push-idempotency-key'));
@@ -197,6 +427,12 @@ function reprint_push_lab_rest_apply_with_db_journal(WP_REST_Request $request): 
             return reprint_push_lab_rest_json_response(
                 reprint_push_lab_rest_idempotency_conflict_result($context)
             );
+        }
+
+        if ($validate_before_idempotency_claim) {
+            $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
+            $receipt = reprint_push_lab_rest_receipt_payload($payload);
+            $accepted = reprint_push_lab_rest_validate_apply_for_db_journal($plan, $receipt, $context);
         }
 
         $claim = reprint_push_lab_db_journal_try_open_idempotency($context);
@@ -256,9 +492,11 @@ function reprint_push_lab_rest_apply_with_db_journal(WP_REST_Request $request): 
 
         $opened_entry = $claim['entry'];
         reprint_push_lab_rest_delay_after_idempotency_open($payload);
-        $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
-        $receipt = reprint_push_lab_rest_receipt_payload($payload);
-        $accepted = reprint_push_lab_rest_validate_apply_for_db_journal($plan, $receipt, $context);
+        if (!is_array($accepted)) {
+            $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
+            $receipt = reprint_push_lab_rest_receipt_payload($payload);
+            $accepted = reprint_push_lab_rest_validate_apply_for_db_journal($plan, $receipt, $context);
+        }
         $mutations = $accepted['mutations'];
 
         $started_entry = reprint_push_lab_db_journal_append_event('apply-started', $context + [
@@ -783,6 +1021,409 @@ function reprint_push_lab_rest_db_journal_context(array $payload, string $idempo
     ];
 }
 
+function reprint_push_lab_rest_maybe_bootstrap_auth_users(): void
+{
+    if (!reprint_push_lab_rest_auth_bootstrap_enabled()) {
+        return;
+    }
+
+    foreach (reprint_push_lab_rest_auth_fixture_credentials() as $credential) {
+        reprint_push_lab_rest_upsert_auth_user(
+            (string) $credential['login'],
+            (string) $credential['password'],
+            (string) $credential['role'],
+            (string) $credential['slug']
+        );
+    }
+}
+
+function reprint_push_lab_rest_upsert_auth_user(string $login, string $app_password, string $role, string $slug): void
+{
+    if ($login === '' || $app_password === '') {
+        return;
+    }
+
+    $user = get_user_by('login', $login);
+    if (!$user) {
+        $user_id = wp_insert_user([
+            'user_login' => $login,
+            'user_pass' => wp_generate_password(32, true, true),
+            'user_email' => sanitize_user($login, true) . '@example.test',
+            'display_name' => $login,
+            'role' => $role,
+        ]);
+        if (is_wp_error($user_id)) {
+            return;
+        }
+    } else {
+        $user_id = (int) $user->ID;
+        $wp_user = new WP_User($user_id);
+        $wp_user->set_role($role);
+    }
+
+    $uuid = reprint_push_lab_rest_stable_uuid('reprint-push-lab-' . $slug);
+    $app_id = reprint_push_lab_rest_stable_uuid('reprint-push-lab-app-' . $slug);
+    $items = get_user_meta($user_id, '_application_passwords', true);
+    $items = is_array($items) ? array_values($items) : [];
+    $items = array_values(array_filter($items, static function ($item) use ($uuid, $app_id): bool {
+        return !is_array($item)
+            || ((string) ($item['uuid'] ?? '') !== $uuid && (string) ($item['app_id'] ?? '') !== $app_id);
+    }));
+    $normalized_app_password = preg_replace('/[^a-zA-Z0-9]/', '', $app_password);
+    $items[] = [
+        'uuid' => $uuid,
+        'app_id' => $app_id,
+        'name' => 'Reprint Push Lab Auth Smoke',
+        'password' => wp_hash_password($normalized_app_password),
+        'created' => time(),
+        'last_used' => null,
+        'last_ip' => null,
+    ];
+    update_user_meta($user_id, '_application_passwords', $items);
+}
+
+function reprint_push_lab_rest_auth_bootstrap_enabled(): bool
+{
+    // This plugin is a disposable Playground fixture. The Basic verifier below
+    // is deliberately lab-only and must not be treated as production auth.
+    return true;
+}
+
+function reprint_push_lab_rest_auth_fixture_credentials(): array
+{
+    return [
+        [
+            'login' => getenv('REPRINT_PUSH_LAB_AUTH_ADMIN_USER') ?: 'reprint_push_admin',
+            'password' => getenv('REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD') ?: 'reprint-push-admin-app-password',
+            'role' => 'administrator',
+            'slug' => 'primary-admin',
+        ],
+        [
+            'login' => getenv('REPRINT_PUSH_LAB_AUTH_ALT_ADMIN_USER') ?: 'reprint_push_alt_admin',
+            'password' => getenv('REPRINT_PUSH_LAB_AUTH_ALT_ADMIN_APP_PASSWORD') ?: 'reprint-push-alt-admin-app-password',
+            'role' => 'administrator',
+            'slug' => 'alternate-admin',
+        ],
+        [
+            'login' => getenv('REPRINT_PUSH_LAB_AUTH_LIMITED_USER') ?: 'reprint_push_limited',
+            'password' => getenv('REPRINT_PUSH_LAB_AUTH_LIMITED_APP_PASSWORD') ?: 'reprint-push-limited-app-password',
+            'role' => 'subscriber',
+            'slug' => 'limited-user',
+        ],
+    ];
+}
+
+function reprint_push_lab_rest_stable_uuid(string $seed): string
+{
+    $hex = md5($seed);
+    return substr($hex, 0, 8)
+        . '-' . substr($hex, 8, 4)
+        . '-' . substr($hex, 12, 4)
+        . '-' . substr($hex, 16, 4)
+        . '-' . substr($hex, 20, 12);
+}
+
+function reprint_push_lab_rest_basic_auth_context(WP_REST_Request $request): ?array
+{
+    $existing = reprint_push_lab_rest_get_auth_context($request);
+    if (is_array($existing)) {
+        return $existing;
+    }
+
+    $header = reprint_push_lab_rest_authorization_header($request);
+    if (!preg_match('/^Basic\s+(.+)$/i', $header, $matches)) {
+        return null;
+    }
+
+    $decoded = base64_decode($matches[1], true);
+    if (!is_string($decoded) || strpos($decoded, ':') === false) {
+        return null;
+    }
+
+    [$login, $password] = explode(':', $decoded, 2);
+    if ($login === '' || $password === '') {
+        return null;
+    }
+
+    $user = get_user_by('login', $login);
+    if ($user) {
+        $verified = reprint_push_lab_rest_verify_application_password((int) $user->ID, $login, $password);
+        if (is_array($verified)) {
+            return $verified;
+        }
+    }
+
+    $fallback = reprint_push_lab_rest_playground_basic_auth_context($login, $password);
+    if (is_array($fallback)) {
+        reprint_push_lab_rest_set_auth_context($request, $fallback);
+    }
+
+    return $fallback;
+}
+
+function reprint_push_lab_rest_get_auth_context(WP_REST_Request $request): ?array
+{
+    $attributes = $request->get_attributes();
+    $auth = $attributes[REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE] ?? null;
+    return is_array($auth) ? $auth : null;
+}
+
+function reprint_push_lab_rest_set_auth_context(WP_REST_Request $request, array $auth): void
+{
+    $attributes = $request->get_attributes();
+    $attributes[REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE] = $auth;
+    $request->set_attributes($attributes);
+}
+
+function reprint_push_lab_rest_authorization_header(WP_REST_Request $request): string
+{
+    $headers = [
+        (string) $request->get_header('authorization'),
+        (string) $request->get_header('x-reprint-push-playground-authorization'),
+        (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? ''),
+        (string) ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? ''),
+    ];
+
+    if (function_exists('getallheaders')) {
+        $all_headers = getallheaders();
+        if (is_array($all_headers)) {
+            foreach ($all_headers as $name => $value) {
+                if (strcasecmp((string) $name, 'authorization') === 0) {
+                    $headers[] = (string) $value;
+                }
+            }
+        }
+    }
+
+    foreach ($headers as $header) {
+        if ($header !== '') {
+            return $header;
+        }
+    }
+
+    $php_auth_user = (string) ($_SERVER['PHP_AUTH_USER'] ?? '');
+    $php_auth_pw = (string) ($_SERVER['PHP_AUTH_PW'] ?? '');
+    if ($php_auth_user !== '' || $php_auth_pw !== '') {
+        return 'Basic ' . base64_encode($php_auth_user . ':' . $php_auth_pw);
+    }
+
+    return '';
+}
+
+function reprint_push_lab_rest_verify_application_password(int $user_id, string $login, string $password): ?array
+{
+    $items = get_user_meta($user_id, '_application_passwords', true);
+    $items = is_array($items) ? $items : [];
+    $normalized_password = (string) preg_replace('/[^a-zA-Z0-9]/', '', $password);
+
+    foreach ($items as $item) {
+        if (!is_array($item) || !isset($item['password'])) {
+            continue;
+        }
+        if (!wp_check_password($normalized_password, (string) $item['password'], $user_id)) {
+            continue;
+        }
+
+        $user = get_user_by('id', $user_id);
+        if (!$user) {
+            return null;
+        }
+
+        return [
+            'type' => 'application-password-basic',
+            'verifier' => 'playground-basic-stored-application-password',
+            'userId' => $user_id,
+            'userLogin' => (string) $user->user_login,
+            'applicationPasswordUuid' => (string) ($item['uuid'] ?? ''),
+            'credentialHash' => hash('sha256', $login . "\n" . $password),
+            'playgroundFallback' => true,
+            'warning' => 'Lab-only Playground Basic verifier; not production authentication.',
+        ];
+    }
+
+    return null;
+}
+
+function reprint_push_lab_rest_playground_basic_auth_context(string $login, string $password): ?array
+{
+    if (!reprint_push_lab_rest_auth_bootstrap_enabled()) {
+        return null;
+    }
+
+    $candidates = reprint_push_lab_rest_auth_fixture_credentials();
+    $normalized_password = (string) preg_replace('/[^a-zA-Z0-9]/', '', $password);
+    foreach ($candidates as $candidate) {
+        $candidate_password = (string) $candidate['password'];
+        $normalized_candidate_password = (string) preg_replace('/[^a-zA-Z0-9]/', '', $candidate_password);
+        if ($login !== $candidate['login']
+            || (!hash_equals($candidate_password, $password) && !hash_equals($normalized_candidate_password, $normalized_password))
+        ) {
+            continue;
+        }
+
+        reprint_push_lab_rest_upsert_auth_user($login, $candidate_password, (string) $candidate['role'], (string) $candidate['slug']);
+        $user = get_user_by('login', $login);
+        if (!$user) {
+            return null;
+        }
+
+        $verified = reprint_push_lab_rest_verify_application_password((int) $user->ID, $login, $password);
+        if (!is_array($verified)) {
+            return null;
+        }
+        $verified['verifier'] = 'playground-basic-bootstrap-fallback';
+        $verified['warning'] = 'Lab-only Playground Basic bootstrap fallback; not production authentication.';
+
+        $verified['applicationPasswordUuid'] = reprint_push_lab_rest_stable_uuid('reprint-push-lab-' . $candidate['slug']);
+        return $verified;
+    }
+
+    return null;
+}
+
+function reprint_push_lab_rest_auth_evidence(WP_REST_Request $request): array
+{
+    $auth = reprint_push_lab_rest_basic_auth_context($request);
+    $user = wp_get_current_user();
+
+    return [
+        'schemaVersion' => 1,
+        'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+        'identity' => [
+            'userId' => (int) $user->ID,
+            'userLogin' => (string) $user->user_login,
+            'roles' => array_values(array_map('strval', (array) $user->roles)),
+            'capabilities' => [
+                'manage_options' => current_user_can('manage_options'),
+            ],
+        ],
+        'session' => [
+            'type' => is_array($auth) ? $auth['type'] : null,
+            'verifier' => is_array($auth) ? ($auth['verifier'] ?? null) : null,
+            'applicationPasswordUuid' => is_array($auth) ? $auth['applicationPasswordUuid'] : null,
+            'credentialHash' => is_array($auth) ? $auth['credentialHash'] : null,
+            'playgroundFallback' => is_array($auth) ? (bool) ($auth['playgroundFallback'] ?? false) : false,
+            'warning' => is_array($auth) && isset($auth['warning']) ? (string) $auth['warning'] : null,
+        ],
+    ];
+}
+
+function reprint_push_lab_rest_bind_authenticated_receipt(
+    array $receipt,
+    WP_REST_Request $request,
+    array $payload,
+    array $plan
+): array {
+    $receipt['authBinding'] = [
+        'schemaVersion' => 1,
+        'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+        'identity' => reprint_push_lab_rest_auth_evidence($request)['identity'],
+        'session' => reprint_push_lab_rest_auth_evidence($request)['session'],
+        'request' => [
+            'restNamespace' => REPRINT_PUSH_LAB_REST_NAMESPACE,
+            'dryRunRoute' => '/authenticated/dry-run',
+            'planPayloadHash' => hash('sha256', reprint_push_stable_json($plan)),
+            'dryRunBodyHash' => hash('sha256', reprint_push_stable_json($payload)),
+        ],
+        'preconditions' => [
+            'preconditionSetHash' => (string) ($receipt['preconditionSetHash'] ?? ''),
+            'mutationSetHash' => (string) ($receipt['mutationSetHash'] ?? ''),
+            'mutationCount' => (int) ($receipt['mutationCount'] ?? 0),
+        ],
+        'issuedAt' => gmdate('Y-m-d\TH:i:s\Z'),
+        'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', time() + 300),
+    ];
+    unset($receipt['receiptHash']);
+    $receipt['receiptHash'] = hash('sha256', reprint_push_stable_json($receipt));
+
+    return $receipt;
+}
+
+function reprint_push_lab_rest_validate_authenticated_receipt(
+    WP_REST_Request $request,
+    array $payload,
+    array $plan,
+    array $receipt_payload
+): void {
+    $receipt = reprint_push_protocol_extract_receipt($receipt_payload);
+    $binding = isset($receipt['authBinding']) && is_array($receipt['authBinding'])
+        ? $receipt['authBinding']
+        : null;
+    if (!is_array($binding)) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Authenticated apply requires an auth-bound dry-run receipt.', $receipt);
+    }
+
+    $expected_hash = (string) ($receipt['receiptHash'] ?? '');
+    $without_hash = $receipt;
+    unset($without_hash['receiptHash']);
+    if ($expected_hash === '' || hash('sha256', reprint_push_stable_json($without_hash)) !== $expected_hash) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt hash does not match receipt body.', $receipt);
+    }
+
+    if ((string) ($binding['scope'] ?? '') !== REPRINT_PUSH_LAB_AUTH_SCOPE) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt auth scope does not match authenticated push scope.', $receipt);
+    }
+
+    $expires_at = strtotime((string) ($binding['expiresAt'] ?? ''));
+    if (!$expires_at || $expires_at < time()) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Authenticated dry-run receipt has expired.', $receipt, 'AUTH_RECEIPT_EXPIRED');
+    }
+
+    $current = reprint_push_lab_rest_auth_evidence($request);
+    $identity = isset($binding['identity']) && is_array($binding['identity']) ? $binding['identity'] : [];
+    $session = isset($binding['session']) && is_array($binding['session']) ? $binding['session'] : [];
+    if ((int) ($identity['userId'] ?? 0) !== (int) ($current['identity']['userId'] ?? 0)
+        || (string) ($identity['userLogin'] ?? '') !== (string) ($current['identity']['userLogin'] ?? '')
+        || (string) ($session['type'] ?? '') !== (string) ($current['session']['type'] ?? '')
+        || (string) ($session['applicationPasswordUuid'] ?? '') !== (string) ($current['session']['applicationPasswordUuid'] ?? '')
+        || (string) ($session['credentialHash'] ?? '') !== (string) ($current['session']['credentialHash'] ?? '')
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt auth identity or session does not match the current request.', $receipt);
+    }
+
+    $request_binding = isset($binding['request']) && is_array($binding['request']) ? $binding['request'] : [];
+    if ((string) ($request_binding['restNamespace'] ?? '') !== REPRINT_PUSH_LAB_REST_NAMESPACE
+        || (string) ($request_binding['dryRunRoute'] ?? '') !== '/authenticated/dry-run'
+        || (string) ($request_binding['planPayloadHash'] ?? '') !== hash('sha256', reprint_push_stable_json($plan))
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt request binding does not match the supplied apply plan.', $receipt);
+    }
+
+    $preconditions = isset($binding['preconditions']) && is_array($binding['preconditions'])
+        ? $binding['preconditions']
+        : [];
+    if ((string) ($preconditions['preconditionSetHash'] ?? '') !== (string) ($receipt['preconditionSetHash'] ?? '')
+        || (string) ($preconditions['mutationSetHash'] ?? '') !== (string) ($receipt['mutationSetHash'] ?? '')
+        || (int) ($preconditions['mutationCount'] ?? -1) !== (int) ($receipt['mutationCount'] ?? -2)
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt precondition binding does not match receipt evidence.', $receipt);
+    }
+}
+
+function reprint_push_lab_rest_auth_receipt_mismatch(
+    string $message,
+    array $receipt,
+    string $code = 'AUTH_RECEIPT_MISMATCH'
+): void {
+    $journal_entry = reprint_push_protocol_append_journal_event('auth-receipt-mismatch', [
+        'receiptHash' => isset($receipt['receiptHash']) ? (string) $receipt['receiptHash'] : null,
+        'receiptPlanId' => $receipt['planId'] ?? null,
+        'receiptPlanHash' => $receipt['planHash'] ?? null,
+        'reasonHash' => hash('sha256', $message),
+        'authScope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
+    ]);
+
+    reprint_push_protocol_fail([
+        'ok' => false,
+        'code' => $code,
+        'message' => $message,
+        'mode' => 'apply',
+        'receiptPlanId' => $receipt['planId'] ?? null,
+        'receiptPlanHash' => $receipt['planHash'] ?? null,
+        'journal' => reprint_push_protocol_journal_evidence($journal_entry),
+    ]);
+}
+
 function reprint_push_lab_rest_plan_mutations_for_db_journal(array $plan): array
 {
     if (!isset($plan['mutations'])) {
@@ -995,6 +1636,8 @@ function reprint_push_lab_rest_status_for_result(array $result): int
             return 412;
         case 'PLAN_NOT_READY':
         case 'RECEIPT_MISMATCH':
+        case 'AUTH_RECEIPT_MISMATCH':
+        case 'AUTH_RECEIPT_EXPIRED':
             return 409;
         default:
             return 500;

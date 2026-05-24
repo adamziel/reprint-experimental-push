@@ -85,6 +85,22 @@ If a server supports only the current export HMAC and not the canonical push
 signature, it may serve pull endpoints and hash listing, but it must reject
 dry-run upload, apply, journal repair, and recovery mutation.
 
+### Current Playground Auth Lab
+
+`npm run test:playground:authenticated-http-push` is not this production auth
+protocol. It verifies authenticated local Playground source-site mutation under
+`/wp-json/reprint-push-lab/v1/authenticated/*` with Basic-auth-shaped
+Application Password credentials for bootstrapped users, `manage_options`,
+auth-bound receipts, `AUTH_RECEIPT_MISMATCH`, `AUTH_RECEIPT_EXPIRED`,
+`X-Reprint-Push-Idempotency-Key`, stale no-data-loss, and replay with zero
+fresh mutation work. Playground fallback caveat: core Application Password
+auth did not establish `/wp-json/wp/v2/users/me`, so the lab route validates
+stored hashed app-password entries and sets the current user before capability
+checks. Production Reprint auth still needs protocol HMAC, TLS deployment,
+production nonce/replay storage, production session handling, production
+Application Password integration, real exporter credential binding, durable
+audit records, and full production push.
+
 ## Resource Model
 
 A push resource is the smallest unit that can be compared and guarded by a

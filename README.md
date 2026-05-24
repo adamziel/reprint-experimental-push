@@ -37,6 +37,12 @@ Run the standalone local-only HTTP REST lab harness:
 npm run test:playground:http-push
 ```
 
+Run the authenticated local-only HTTP REST lab harness:
+
+```bash
+npm run test:playground:authenticated-http-push
+```
+
 Run the DB-backed journal/idempotency REST lab harness:
 
 ```bash
@@ -101,6 +107,28 @@ row/file/plugin-data conflict classes. It is intentionally standalone because it
 starts real HTTP servers and takes around two minutes; it is not included in
 `test:playground`.
 
+The `test:playground:authenticated-http-push` script verifies authenticated
+aliases under `/wp-json/reprint-push-lab/v1/authenticated/*` over real local
+HTTP. The routes use Basic-auth-shaped WordPress Application Password
+credentials for bootstrapped Playground users and require `manage_options`.
+Playground fallback caveat: in this environment, core Application Password
+authentication did not establish `/wp-json/wp/v2/users/me`, so the lab route
+uses a plugin fallback verifier that validates the stored hashed
+`_application_passwords` entry, sets the current WordPress user, and then runs
+the capability check. Preflight returns identity, capability, scope, session,
+expiry, and journal evidence. Authenticated dry-run is read-only and mints
+auth-bound receipts. Authenticated apply validates receipt scope, expiry,
+identity, session, route/request binding, and the request body before the DB
+idempotency claim and mutation; it requires
+`X-Reprint-Push-Idempotency-Key`, applies over real local HTTP, and a fresh
+authenticated snapshot verifies the source changes. Negative proof covers
+missing, bad, and malformed auth; insufficient capability; forged
+`reprint_push_lab_auth` query/body/header data; tampered, expired, and
+wrong-identity receipts; missing idempotency key; stale remote no-data-loss; and
+replay with zero fresh mutation work. The public legacy lab routes remain
+intentionally public for old smokes; this authenticated evidence applies only to
+`/authenticated/*`.
+
 The `test:playground:db-journal-idempotency` script verifies a separate
 DB-native lab journal for `POST /apply`. Apply now requires
 `X-Reprint-Push-Idempotency-Key`; a missing key returns
@@ -149,7 +177,11 @@ exactly-once production writes, arbitrary plugin data safety, or full
 MySQL/InnoDB behavior. The all-old stale-claim safe retry case remains
 conservative/not fully solved, tests mostly count mutation evidence rows rather
 than deeply asserting every observed hash, and production auth, live source
-mutation, and the full push path remain pending.
+mutation, and the full push path remain pending. The authenticated Playground
+slice is authenticated local Playground source-site mutation evidence, not
+production Reprint auth: protocol HMAC, TLS deployment, production
+nonce/replay/session storage, production Application Password integration, real
+exporter credential binding, and full production push remain pending.
 
 The `test:playground:recovery` script exercises the lab-only failpoint
 `REPRINT_PUSH_LAB_FAIL_AFTER_MUTATIONS=N` / `labFailAfterMutations`. The

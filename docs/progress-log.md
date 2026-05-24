@@ -135,6 +135,39 @@ linked implementation artifacts.
   outside `npm run test:playground` because it starts real servers and takes
   around two minutes.
 
+## 2026-05-24 - Authenticated Local Playground Source Mutation Slice
+
+- `npm run test:playground:authenticated-http-push` passed as a standalone
+  local-only Playground REST harness for authenticated source-site mutation
+  evidence under `/wp-json/reprint-push-lab/v1/authenticated/*`.
+- The authenticated aliases use Basic-auth-shaped WordPress Application
+  Password credentials for bootstrapped Playground users and require
+  `manage_options`. Playground fallback caveat: core Application Password auth
+  did not establish `/wp-json/wp/v2/users/me` in this local Playground run, so
+  the lab route validates stored hashed app-password entries, sets the current
+  WordPress user, and then runs the capability check.
+- Preflight returns identity, capability, scope, session, expiry, and journal
+  evidence. Authenticated dry-run is read-only by authenticated snapshot
+  comparison and mints auth-bound receipts.
+- Authenticated apply validates receipt scope, expiry, identity, session,
+  route/request binding, and request body binding before DB idempotency claim
+  and mutation; requires `X-Reprint-Push-Idempotency-Key`; applies over real
+  local HTTP; and verifies the source changes through a fresh authenticated
+  snapshot.
+- Negative proof covers missing, bad, and malformed auth; insufficient
+  capability; forged `reprint_push_lab_auth` query/body/header values;
+  `AUTH_RECEIPT_MISMATCH` for tampered or wrong-identity receipts;
+  `AUTH_RECEIPT_EXPIRED` for expired receipts; missing idempotency key; stale
+  remote no-data-loss with no idempotency claim; and replay with zero fresh
+  mutation work.
+- Public legacy lab routes remain intentionally public for old smokes. This
+  authenticated evidence applies only to `/authenticated/*` and remains
+  authenticated local Playground source-site mutation evidence, not production
+  Reprint auth. Protocol HMAC, TLS deployment, production nonce/replay store,
+  production auth/session handling, production Application Password
+  integration, real exporter credential binding, and full production push
+  remain pending.
+
 ## 2026-05-24 - DB Journal Idempotency Slice
 
 - `npm run test:playground:db-journal-idempotency` passed as a standalone
@@ -231,7 +264,7 @@ linked implementation artifacts.
 | --- | ---: | --- | --- |
 | Merge invariants | 35% | Planner/apply tests; [scenario matrix](scenario-matrix.md); Playground snapshot planner/apply/protocol harness in [playground topology](playground-topology.md), including allowlisted plugin-owned fixture option/postmeta handling and detection-only custom-table/plugin metadata | SQL/file mutation semantics beyond the fixture harness, live-site mutation checks, production plugin semantics |
 | Recovery boundaries | 22% | In-memory applicator evidence; Playground lab fail-after-2 inspection through `npm run test:playground:recovery`; JSON-model file-backed JSONL journal through `npm run test:recovery:file-journal` with per-append `fsync` evidence, `blocked-recovery` at `2 new`/`6 old`, retry refusal, no-op completed replay, and drift detection; fixture-scoped DB apply journal events in `wp_reprint_push_lab_push_journal`; local Playground DB-only process-kill recovery block through `npm run test:playground:db-journal-process-kill`; DB-only missing-commit finalization through `npm run test:playground:db-journal-missing-commit-finalization` | Production DB table journal durability, production WordPress crash-boundary proof, all-old stale-claim safe retry, auto-repair policy |
-| Reliable executor and protocol | 20% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, and DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key` | Production Reprint protocol extension, real WordPress mutation executor, remote audit records |
+| Reliable executor and protocol | 22% | [protocol](protocol.md), [executor](executor.md), protocol fixtures, Playground snapshot extraction, guarded Playground apply, fixture-scoped Playground protocol smoke, standalone local-only REST lab harness, authenticated local Playground source-site mutation slice under `/authenticated/*`, and DB idempotency harness requiring `X-Reprint-Push-Idempotency-Key` | Production Reprint protocol extension, production Reprint auth/HMAC/TLS/session/nonce proof, real exporter credential binding, real WordPress mutation executor, remote audit records |
 | Fast path and chunking | 12% | [fast paths](fast-paths.md) and [performance model tests](../test/performance-model.test.js) | Real transfer benchmarks, streaming implementation, large-site runtime evidence |
 | Independent evidence and critique | 25% | [objective audit](../audits/objective-audit.md), [critic audit](../audits/critic.md), [source notes](source-notes.md) | External audit of live integration behavior |
 
@@ -259,9 +292,13 @@ linked implementation artifacts.
 - WordPress integration: Playground base/local/remote fixtures now smoke-test,
   export planner snapshots, run guarded apply into a fresh Playground source,
   exercise a lab-only fixture protocol endpoint with WordPress-visible readback,
-  and verify a standalone local-only REST lab namespace over real HTTP.
-  Production push behavior remains pending until mutations flow through the
-  intended authenticated source endpoint and are verified there.
+  verify a standalone local-only REST lab namespace over real HTTP, and verify
+  authenticated local Playground source-site mutation under `/authenticated/*`
+  with auth-bound receipts, `manage_options`, idempotency, stale refusal, and
+  fresh authenticated snapshot readback. Production push behavior remains
+  pending until mutations flow through the intended production source endpoint
+  with production Reprint auth, HMAC/TLS/session/nonce handling, real exporter
+  credential binding, and durable production audit/recovery records.
 - Plugin validators or drivers: pending until plugin-specific semantics are
   implemented and tested against real plugin-owned data. Current evidence is
   limited to allowlisted fixture option/postmeta apply plus detection-only

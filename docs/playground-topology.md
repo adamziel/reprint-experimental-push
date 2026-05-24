@@ -145,6 +145,62 @@ Playground runtime, and it does not prove production auth, sessions, nonce
 checks, signed receipts, durable journals, crash recovery, or live source-site
 mutation safety.
 
+## Authenticated Local-Only REST Lab Harness
+
+```bash
+npm run test:playground:authenticated-http-push
+```
+
+This standalone script verifies authenticated lab aliases under
+`/wp-json/reprint-push-lab/v1/authenticated/*` over real local HTTP. The public
+legacy lab routes under `reprint-push-lab/v1` remain intentionally public for
+the older smokes; authenticated evidence applies only to `/authenticated/*`.
+
+The authenticated routes include:
+
+- `GET /authenticated/preflight`
+- `POST /authenticated/dry-run`
+- `POST /authenticated/apply`
+- `GET /authenticated/snapshot`
+- `GET /authenticated/journal`
+- `GET /authenticated/db-journal`
+- `GET /authenticated/db-journal/schema`
+- `POST /authenticated/recovery/inspect`
+
+The auth shape uses Basic-auth-shaped WordPress Application Password
+credentials for bootstrapped Playground users. The route permission callback
+requires a verified WordPress identity and `manage_options`. Playground
+fallback caveat: core Application Password authentication did not establish
+`/wp-json/wp/v2/users/me` in this local Playground run, so the lab plugin also
+contains a fallback verifier that reads the stored hashed Application Password
+entries, validates the supplied password, sets the current WordPress user, and
+then runs the same capability check. This fallback is lab-only Playground
+auth evidence, not production Application Password integration.
+
+The preflight response returns identity, capability, scope, session, expiry,
+and journal details, including the `reprint-push-lab:authenticated-http-push`
+scope and `X-Reprint-Push-Idempotency-Key` requirement. Authenticated dry-run
+is read-only, verified by a before/after authenticated snapshot, and returns an
+auth-bound receipt. Authenticated apply validates receipt scope, expiry,
+identity, session, route/request binding, and request body binding before the
+DB idempotency claim and mutation. Successful apply mutates the disposable
+source over real local HTTP, then a fresh authenticated snapshot verifies the
+WordPress-visible source changes. Replaying the same idempotency key/body
+returns `BATCH_ALREADY_COMMITTED` with zero fresh mutation work.
+
+Negative proof covers missing, bad, and malformed auth; insufficient
+capability; forged `reprint_push_lab_auth` query/body/header values;
+`AUTH_RECEIPT_MISMATCH` for tampered or wrong-identity receipts;
+`AUTH_RECEIPT_EXPIRED` for expired receipts; missing
+`X-Reprint-Push-Idempotency-Key`; stale remote refusal with no data loss before
+idempotency claim; and replay without fresh mutation work.
+
+This is authenticated local Playground source-site mutation evidence only. It
+does not prove production Reprint auth, protocol HMAC, TLS deployment,
+production nonce/replay storage, production auth/session handling, real
+exporter credential binding, production Application Password integration, or
+full production push.
+
 ## DB Journal and Idempotency Lab
 
 ```bash

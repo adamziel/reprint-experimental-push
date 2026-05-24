@@ -35,6 +35,12 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Playground local REST namespace | Disposable Playground servers expose `reprint-push-lab/v1` with `GET /snapshot`, `GET /journal`, `POST /dry-run`, and `POST /apply` over real local HTTP. | `npm run test:playground:http-push` |
 | Playground local REST ready apply | Dry-run is read-only, returns a receipt, and receipt-backed apply writes the eight expected fixture mutations. | `npm run test:playground:http-push` |
 | Playground local REST receipt/stale/conflict refusals | Missing receipt rejects with `428 MISSING_DRY_RUN_RECEIPT`, tampered receipt with `409 RECEIPT_MISMATCH`, stale remote with `412 PRECONDITION_FAILED`, and conflict plans with `409 PLAN_NOT_READY` for row, file, and plugin-data classes. | `npm run test:playground:http-push` |
+| Playground authenticated REST namespace | Authenticated local routes live under `/wp-json/reprint-push-lab/v1/authenticated/*`; public legacy lab routes remain intentionally public for older smokes. | `npm run test:playground:authenticated-http-push` |
+| Playground authenticated preflight | Basic-auth-shaped WordPress Application Password credentials for bootstrapped users establish identity, require `manage_options`, and return identity/capability/scope/session/expiry/journal evidence. Playground fallback caveat: local Playground core did not establish `/wp-json/wp/v2/users/me`, so the lab route validates stored hashed app-password entries and sets the current user before capability checks. | `npm run test:playground:authenticated-http-push` |
+| Playground authenticated dry-run receipt | Authenticated dry-run is read-only by authenticated snapshot comparison and mints a receipt bound to auth scope, identity, session, request route, plan, and body. | `npm run test:playground:authenticated-http-push` |
+| Playground authenticated apply | Authenticated apply requires `X-Reprint-Push-Idempotency-Key`, validates receipt scope/expiry/identity/session/request binding before DB idempotency claim and mutation, applies over real local HTTP, and verifies source changes through a fresh authenticated snapshot. | `npm run test:playground:authenticated-http-push` |
+| Playground authenticated negative auth cases | Missing, bad, and malformed auth reject; insufficient capability rejects or remains auth-required if the limited Playground identity cannot be established; forged `reprint_push_lab_auth` query/body/header values do not bypass auth. | `npm run test:playground:authenticated-http-push` |
+| Playground authenticated receipt/stale/replay cases | Tampered or wrong-identity receipts reject with `AUTH_RECEIPT_MISMATCH`, expired receipts reject with `AUTH_RECEIPT_EXPIRED`, missing idempotency key rejects before mutation, stale remote state preserves target data and creates no idempotency claim, and replay performs zero fresh mutation work. | `npm run test:playground:authenticated-http-push` |
 | Playground DB journal requires idempotency key | `POST /apply` without `X-Reprint-Push-Idempotency-Key` rejects with `400 MISSING_IDEMPOTENCY_KEY` before mutation. | `npm run test:playground:db-journal-idempotency` |
 | Playground DB journal records apply boundaries | `wp_reprint_push_lab_push_journal` records `idempotency-opened`, `apply-started`, per-mutation `mutation-prepared`, per-mutation `mutation-applied`, `apply-committed`, replay, and conflict evidence separately from the legacy `wp_options` `/journal` evidence; compact mutation evidence stores hashes/metadata only. | `npm run test:playground:db-journal-idempotency` |
 | Playground DB idempotency replay | Same key plus same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`, no fresh mutation work, no extra mutation events, and an unchanged snapshot. | `npm run test:playground:db-journal-idempotency` |
@@ -59,7 +65,11 @@ The first executable matrix lives in `test/push-planner.test.js`.
 - Production Reprint HTTP source mutation endpoint for live source sites.
 - Reprint exporter protocol extension for authenticated push preflight,
   sessions, signed/expiring production receipts, and mutation batches.
-- Production auth/session/nonce proof for any source-site REST mutation route.
+- Production auth/session/nonce proof for any source-site REST mutation route;
+  the authenticated Playground slice is local lab evidence only and does not
+  prove production Reprint auth, protocol HMAC, TLS deployment, production
+  nonce/replay storage, production Application Password integration, real
+  exporter credential binding, or full production push.
 - File body streaming with large upload chunks.
 - Database transaction boundaries on MySQL and SQLite.
 - Remote plugin activation/update with dependency and recovery checks.

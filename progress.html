@@ -399,11 +399,12 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Experimental push-back from a pulled local WordPress site to the live source site. The current implementation is a JSON-snapshot safety model plus lab-scoped Playground apply, protocol-smoke, local-only REST and recovery harnesses, DB journal/idempotency/process-kill/finalization evidence, file-backed JSONL recovery journal evidence, and allowlisted plugin-owned fixture data, not a production WordPress transport.</p>
+        <p class="lead">Experimental push-back from a pulled local WordPress site to the live source site. The current implementation is a JSON-snapshot safety model plus lab-scoped Playground apply, protocol-smoke, local-only REST and authenticated source-site mutation harnesses, DB journal/idempotency/process-kill/finalization evidence, file-backed JSONL recovery journal evidence, and allowlisted plugin-owned fixture data, not a production WordPress transport.</p>
         <div class="meta" aria-label="Project status">
           <span class="pill">Last updated: May 24, 2026</span>
           <span class="pill">42 lab tests passing</span>
           <span class="pill">Playground REST and recovery labs passing</span>
+          <span class="pill">Authenticated Playground mutation lab passing</span>
           <span class="pill">DB recovery labs passing</span>
           <span class="pill">JSONL file journal lab passing</span>
           <span class="pill">Reprint HTTP mutation pending</span>
@@ -426,7 +427,7 @@
       </div>
       <div class="metric">
         <strong>1</strong>
-        <span>Playground integration for snapshot planning, guarded apply, fixture-scoped protocol smoke, local REST/recovery lab checks, DB idempotency/process-kill/finalization, and allowlisted plugin-owned forms data</span>
+        <span>Playground integration for snapshot planning, guarded apply, fixture-scoped protocol smoke, local REST/recovery lab checks, authenticated local source-site mutation, DB idempotency/process-kill/finalization, and allowlisted plugin-owned forms data</span>
       </div>
       <div class="metric">
         <strong>4</strong>
@@ -454,9 +455,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">20%</span></div>
-          <div class="bar" aria-label="Reliable executor and protocol 20 percent"><div class="fill amber" style="width:20%"></div></div>
-          <p class="note">The CLI can plan and apply deterministic JSON snapshots, the proposed Reprint push protocol has request/response fixtures, and Playground snapshot extraction is automated. Lab-only fixture endpoints now verify read-only dry-run, required dry-run receipts, X-Reprint-Push-Idempotency-Key for apply, MISSING_IDEMPOTENCY_KEY before mutation when missing, BATCH_ALREADY_COMMITTED replay, IDEMPOTENCY_KEY_CONFLICT refusal, stale rejection, conflict refusal, hash-bound receipt evidence, detection-only plugin-owned resources, and a local-only REST namespace over real HTTP; the production Reprint HTTP mutation endpoint, signed/auth-bound receipts, auth/session/nonce proof, and durable audit records are pending.</p>
+          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">22%</span></div>
+          <div class="bar" aria-label="Reliable executor and protocol 22 percent"><div class="fill amber" style="width:22%"></div></div>
+          <p class="note">The CLI can plan and apply deterministic JSON snapshots, the proposed Reprint push protocol has request/response fixtures, and Playground snapshot extraction is automated. Lab-only fixture endpoints now verify read-only dry-run, required dry-run receipts, authenticated routes under /wp-json/reprint-push-lab/v1/authenticated/*, Basic-auth-shaped Application Password credentials for bootstrapped users, manage_options, auth-bound receipt mismatch/expiry checks, X-Reprint-Push-Idempotency-Key for apply, MISSING_IDEMPOTENCY_KEY before mutation when missing, BATCH_ALREADY_COMMITTED replay, IDEMPOTENCY_KEY_CONFLICT refusal, stale rejection, conflict refusal, hash-bound receipt evidence, detection-only plugin-owned resources, and a local-only REST namespace over real HTTP; production Reprint auth, protocol HMAC, TLS, nonce/replay/session storage, real exporter credential binding, durable audit records, and full production push are pending.</p>
         </div>
 
         <div class="lane">
@@ -479,7 +480,7 @@
             <li><a href="docs/scenario-matrix.md">Scenario matrix</a> maps the current test coverage and remaining integration scenarios.</li>
             <li><a href="docs/approach-scorecard.md">Approach scorecard</a> ranks guarded three-way push and ForkPress-style merge highest.</li>
             <li><a href="docs/protocol.md">Protocol sketch</a> defines proposed push preflight, hashes, dry-run, apply, journal, and recovery endpoints.</li>
-            <li><a href="docs/playground-topology.md">Playground topology</a> exports base/local/remote WordPress snapshots, asserts planner outcomes, and documents guarded apply, fixture-scoped protocol smoke, allowlisted forms fixture data, the standalone local REST/recovery lab harnesses, DB journal/idempotency/process-kill/finalization labs, and the JSONL file journal lab.</li>
+            <li><a href="docs/playground-topology.md">Playground topology</a> exports base/local/remote WordPress snapshots, asserts planner outcomes, and documents guarded apply, fixture-scoped protocol smoke, allowlisted forms fixture data, standalone local REST/recovery lab harnesses, authenticated local source-site mutation under /authenticated/*, DB journal/idempotency/process-kill/finalization labs, and the JSONL file journal lab.</li>
             <li><a href="docs/progress-log.md">Progress log</a> records dated status entries and links to evidence.</li>
           </ul>
         </section>
@@ -487,9 +488,9 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Pending</span><p>Production Reprint HTTP source mutation endpoint for files, rows, and plugin state on a live source site, including auth/session/nonce proof.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Production Reprint HTTP source mutation endpoint for files, rows, and plugin state on a live source site, including production auth, HMAC/TLS/session/nonce/replay proof and real exporter credential binding.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Production DB-table recovery journal with crash/kill-process, storage-level durability, stale-claim retry coverage, and WordPress commit-boundary tests.</p></div>
-            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply, protocol smoke, local REST checks, DB idempotency/process-kill/finalization, recovery inspection, and JSONL file journal checks verify read-only dry-run, required receipt-backed apply, mandatory apply idempotency keys, DB-native unique claim opening keyed by claim_key_hash in SQLite, concurrent duplicate first-apply handling, missing/tampered receipt refusal, stale rejection, conflict refusal, BATCH_ALREADY_COMMITTED replay, BATCH_RECOVERY_FINALIZED finalization, IDEMPOTENCY_KEY_CONFLICT refusal, the current eight exact ready mutations, local SIGKILL/restart persistence through host-mount storage without false commit, DB-only RECOVERY_BLOCKED after hard kill, blocked-recovery after fail-after-2, mutation-prepared/mutation-applied hash-only evidence, PRECONDITION_FAILED/retry refusal, per-append fsync evidence, and fixture-scoped lab journal/audit records.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>Playground guarded apply, protocol smoke, local REST checks, authenticated /authenticated/* checks, DB idempotency/process-kill/finalization, recovery inspection, and JSONL file journal checks verify read-only dry-run, required receipt-backed apply, Basic-auth-shaped Application Password credentials for bootstrapped users, manage_options, Playground fallback verifier caveat, forged reprint_push_lab_auth rejection, AUTH_RECEIPT_MISMATCH and AUTH_RECEIPT_EXPIRED rejection, mandatory apply idempotency keys, DB-native unique claim opening keyed by claim_key_hash in SQLite, concurrent duplicate first-apply handling, missing/tampered receipt refusal, stale rejection, conflict refusal, BATCH_ALREADY_COMMITTED replay, BATCH_RECOVERY_FINALIZED finalization, IDEMPOTENCY_KEY_CONFLICT refusal, the current eight exact ready mutations, local SIGKILL/restart persistence through host-mount storage without false commit, DB-only RECOVERY_BLOCKED after hard kill, blocked-recovery after fail-after-2, mutation-prepared/mutation-applied hash-only evidence, PRECONDITION_FAILED/retry refusal, per-append fsync evidence, and fixture-scoped lab journal/audit records.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Plugin-specific validators or drivers that prove safe semantic merges before applying arbitrary production plugin-owned data; current forms evidence is fixture/allowlist-scoped.</p></div>
           </div>
         </section>
@@ -498,11 +499,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>The implemented path is lab-scoped. Playground apply, protocol smoke, local REST/recovery checks, DB idempotency/process-kill/finalization checks, JSONL file journal checks, and allowlisted plugin-owned forms fixtures are passing, while production Reprint HTTP mutation remains a proof gate.</p>
+              <p>The implemented path is lab-scoped. Playground apply, protocol smoke, local REST/recovery checks, authenticated local source-site mutation, DB idempotency/process-kill/finalization checks, JSONL file journal checks, and allowlisted plugin-owned forms fixtures are passing, while production Reprint HTTP mutation and production Reprint auth remain proof gates.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Pull base, local edits, and live remote snapshots feed a guarded plan. Playground apply, fixture protocol smoke, local REST checks, DB idempotency, DB recovery finalization, recovery inspection, and JSONL journal checks are verified in the lab and production Reprint HTTP mutation is still pending.</desc>
+              <desc id="map-desc">Pull base, local edits, and live remote snapshots feed a guarded plan. Playground apply, fixture protocol smoke, local REST checks, authenticated local source mutation, DB idempotency, DB recovery finalization, recovery inspection, and JSONL journal checks are verified in the lab and production Reprint HTTP mutation is still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>
