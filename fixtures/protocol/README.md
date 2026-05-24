@@ -28,7 +28,8 @@ The normal sequence is:
 20. `push-session-journal-proof.json`
 21. `push-auth-session-journal-proof.json`
 22. `push-recovery-path.json`
-23. `push-contract.json`
+23. `push-pull-mapping.json`
+24. `push-contract.json`
 
 Failure and recovery examples:
 

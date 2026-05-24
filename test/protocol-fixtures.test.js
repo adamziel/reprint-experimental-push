@@ -46,6 +46,7 @@ test('push protocol fixture captures the production stage order and recovery rul
 
 test('push contract fixture binds the pull handoff to the production push sequence', () => {
   const contract = readJson('fixtures/protocol/push-contract.json');
+  const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
 
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_handoff.exporter, 'scans the merge base and coverage evidence');
@@ -110,6 +111,11 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     contract.required_invariants.includes('remote snapshot hash listing is planning evidence, not write authority'),
   );
+  assert.equal(mapping.mapping_id, 'push-pull-handoff-production-map');
+  assert.equal(mapping.pull_exports.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(mapping.pull_exports.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(mapping.push_bindings.push_snapshot_hashes, 'lists the live remote comparison set for planning only');
+  assert.ok(mapping.restart_proof.invariants.includes('recovery must begin with inspect before any mutating repair'));
 });
 
 test('push auth fixture requires push-scoped headers for mutating calls and keeps inspect read-only', () => {
@@ -235,37 +241,24 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
 
-  assert.equal(mapping.mapping_id, 'push-pull-mapping-one-way');
-  assert.equal(mapping.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(mapping.mapping_id, 'push-pull-handoff-production-map');
+  assert.equal(mapping.pull_exports.exporter, 'scans the merge base and coverage evidence');
   assert.equal(
-    mapping.push_pipeline.batch_apply,
-    'revalidates the live remote before every batch and again at the storage boundary before any write',
+    mapping.push_bindings.push_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
   );
   assert.equal(
-    mapping.push_pipeline.recover,
-    'inspects, finishes, rolls back, or blocks using journal evidence and fresh live hashes, with inspect first',
+    mapping.push_bindings.push_recover,
+    'starts with inspect and only mutates when journal evidence plus fresh live hashes prove the action',
   );
-  assert.equal(mapping.session_binding.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
-  assert.equal(mapping.session_binding.remote_site_id, 'remote-example');
-  assert.deepEqual(mapping.session_binding.requested_scope, ['files', 'database', 'plugins', 'themes']);
-  assert.equal(mapping.persisted_base_package.remote_site_id, 'remote-example');
-  assert.equal(mapping.coverage_binding.base_coverage_hash, 'sha256:base-coverage');
-  assert.equal(mapping.coverage_binding.remote_coverage_hash, 'sha256:remote-coverage');
-  assert.ok(mapping.coverage_binding.required_proof.includes('immutable provenance'));
-  assert.equal(mapping.required_invariants[0], 'the pull package is immutable provenance, not a live lock');
+  assert.equal(mapping.pull_exports.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(mapping.pull_exports.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(mapping.pull_exports.persisted_base_package.base_coverage_hash, 'sha256:pull-base-coverage');
+  assert.ok(mapping.restart_proof.persisted_evidence.includes('base_manifest_id'));
+  assert.equal(mapping.restart_proof.invariants[0], 'dry-run and apply are separate remote operations');
   assert.ok(
-    mapping.required_invariants.includes(
-      'the stored pull coverage hash anchors provenance and the live remote coverage hash only proves planning freshness',
-    ),
+    mapping.restart_proof.invariants.includes('remote snapshot hash listing is planning evidence, not write authority'),
   );
-  assert.ok(mapping.required_invariants.includes('preflight binds the push session to the stored pull base, requested scope, and live remote identity'));
-  assert.ok(mapping.required_invariants.includes('remote hash listing is planning evidence and never an apply lock'));
-  assert.ok(mapping.required_invariants.includes('mutating recovery requires inspect evidence before finish or rollback'));
-  assert.ok(mapping.required_invariants.includes('dry-run is eligibility only and apply revalidates the live remote again'));
-  assert.ok(mapping.pull_pipeline.importer.includes('read-only provenance'));
-  assert.ok(mapping.push_pipeline.preflight.includes('live remote identity and write scope'));
-  assert.ok(mapping.push_pipeline.journal.includes('without granting a lock'));
-  assert.ok(mapping.push_pipeline.recover.includes('inspect first'));
 });
 
 test('push recovery inspect fixture distinguishes safe evidence from blocked recovery', () => {

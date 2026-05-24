@@ -162,6 +162,12 @@ The pull/export/import handoff is the provenance boundary that push consumes:
 - batch apply revalidates the live remote before every batch and at the storage boundary
 - journal inspection and recovery inspection read durable evidence before any mutating recovery mode can proceed
 
+The machine-readable companion for that handoff is
+[`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json).
+It records the immutable pull package, the push bindings layered on top of it,
+and the restart-proof invariants that keep dry-run, apply, and recovery
+separate.
+
 Shared harness rules:
 
 - Browser-visible inspection may use only the sandbox-provided `8080` ingress

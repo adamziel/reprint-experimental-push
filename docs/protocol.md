@@ -45,6 +45,12 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 7. `push_journal` and `push_recover` inspect durable evidence first, then
    allow mutating recovery only when fresh live hashes prove the action
 
+The machine-readable companion at
+[`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
+captures that one-way handoff in compact form. Tests can use it to prove the
+base package stays immutable provenance while push adds session, snapshot,
+dry-run, journal, and recovery evidence on top.
+
 For machine-readable verification, the compact contract fixture at
 [`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
 binds the pull handoff, push stages, and test topology into one proof object.
