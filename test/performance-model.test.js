@@ -23,6 +23,16 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.equal(pluginInstall.atomicGroupId, 'install-commerce-stack');
   assert.equal(pluginInstall.totals.groupStagingFinalizes, 1);
   assert.equal(pluginInstall.totals.atomicGroupCommits, 1);
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'compression-decision'),
+    'large upload models compression decisions',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'remote-index-probe'),
+    'plugin install models remote planning indexes',
+  );
+  assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
+  assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
@@ -256,6 +266,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('backpressure'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
+  assert.ok(rejectedById.get('live-chunk-publish').proposal.includes('live file path'));
+  assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('metadata-only-conflict-check').violates.includes('strong-resource-hashes'));
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {
