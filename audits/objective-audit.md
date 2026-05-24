@@ -214,9 +214,17 @@ production auth, or measured speed.
    guardrails. They do not move bytes, mutate a source site, measure memory,
    measure throughput, or verify that safety checks remain enabled under load.
 
-10. **The release suite is fragmented.** The highest-value evidence is split
-   across manually invoked scripts, so a green default test run still leaves
-   the strongest claims unproven unless the full matrix is run deliberately.
+10. **The highest-value missing edge case is a real crash matrix on the live
+    write boundaries.** The current smoke suite can show one process-kill path
+    and one stale-claim path, but it does not kill the executor at each
+    production-grade boundary for DB writes, filesystem writes, plugin
+    activation, finalization, and replay. Without that matrix, the "no data
+    loss" claim still rests on selective fixtures and model state, not on the
+    exact places the source site can lose or duplicate work.
+
+11. **The release suite is fragmented.** The highest-value evidence is split
+    across manually invoked scripts, so a green default test run still leaves
+    the strongest claims unproven unless the full matrix is run deliberately.
 
 ## Required Release Gates
 
