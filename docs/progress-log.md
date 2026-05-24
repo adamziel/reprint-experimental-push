@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-24 - Follow-Up Lane Integration Refresh
+
+- Integrated follow-up lane work for no-data-loss invariants, no-data-loss
+  recovery, reliable executor, fast paths, independent audit, and critic.
+- `npm test` now passes with `70` Node scenarios. The new coverage includes
+  stale owner-plugin context blocking across plugin files, metadata, and
+  plugin-owned data; durable old-remote retry journal evidence without duplicate
+  target records; and stricter fast-path staging/idempotency/recovery gates.
+- Protocol docs now include production contract language, auth header families,
+  request fixtures for preflight/snapshot hashes/journal/recovery, and executor
+  acceptance criteria. These are still contract/model evidence, not an
+  executable production Reprint endpoint.
+- [progress.html](../progress.html) and
+  [supervisor feedback](supervisor-feedback.md) were refreshed to keep the public
+  summary concise and to keep production readiness flat until a production-shaped
+  route slice mutates a real source site with durable audit/recovery proof.
+
 ## 2026-05-24 - Integrated Feedback And Verification Refresh
 
 - Integrated the feedback supervisor progress refresh into `main`.
@@ -567,11 +584,11 @@ linked implementation artifacts.
 
 | Area | Progress | What changed | Next proof |
 | --- | ---: | --- | --- |
-| Merge invariants | 38% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
-| Recovery boundaries | 24% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
-| Reliable executor and protocol | 28% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, and post-snapshot drift refusal exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, nonce/session cleanup, and durable audit records. |
-| Fast path and chunking | 12% | Performance model and fast-path design are documented. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
-| Independent evidence and critique | 25% | Objective audit, critic notes, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
+| Merge invariants | 41% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, stale owner-plugin context blocking, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
+| Recovery boundaries | 25% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, durable old-remote retry evidence, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
+| Reliable executor and protocol | 30% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, post-snapshot drift refusal, and production contract fixtures exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, nonce/session cleanup, and durable audit records. |
+| Fast path and chunking | 15% | Performance model covers staged chunks, group finalization, idempotency, missing receipts, pressure budgets, and rejected unsafe shortcuts. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
+| Independent evidence and critique | 27% | Objective audit, critic production gate, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
 
 ## 2026-05-24 - Explicit Pending Proof Gates
 

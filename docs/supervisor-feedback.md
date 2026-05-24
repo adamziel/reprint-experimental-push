@@ -5,6 +5,41 @@ Last updated: 2026-05-24
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-24 - Follow-Up Lane Refresh
+
+### Going Well
+
+- `npm test` now passes with 70 Node scenarios.
+- Invariants now block stale owner-plugin context across plugin files,
+  metadata, and plugin-owned data.
+- Recovery, reliable protocol, fast-path model, audit, and critic lanes added
+  sharper lab/model gates.
+
+### Not Going Well
+
+- Production readiness is still flat: no production Reprint mutation endpoint,
+  credential binding, nonce cleanup, durable audit, storage guard, or general
+  plugin driver proof has landed.
+- Fast paths remain model-level; there is no large-site runtime benchmark.
+
+### Progress Delta
+
+| Lane | Direction | Nudge |
+| --- | --- | --- |
+| No-data-loss invariants | Up in lab | Next: real WordPress graph identity with attachments, taxonomy, users, and serialized refs. |
+| No-data-loss recovery | Up in lab | Next: production DB journal durability, leases, and crash-boundary proof. |
+| Reliable executor | Up in contract | Next: one production-shaped route slice with guarded DB/file writes and recovery inspect. |
+| Fast paths | Up in model | Next: large-site transfer benchmark with receipts, staging, and resume cursors. |
+| Audit and critic | Up | Next: re-audit the first executable production-shaped mutation slice. |
+| Progress publisher | Needs sync | Next: keep Pages aligned with integrated main and concise enough to scan. |
+
+### Next Supervisor Nudge
+
+Stop adding proof breadth until reliable executor runs one production-shaped
+route slice end to end: preflight, snapshot hashes, dry-run receipt, guarded DB
+row, guarded file write, journal inspect, recovery inspect, replay, and
+different-body conflict refusal.
+
 ## 2026-05-24 - Evidence Checkpoint
 
 ### Going Well
