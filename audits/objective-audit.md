@@ -8,10 +8,11 @@ Derived release requirements from the objective:
 
 1. One-way pull from the base, then one-way push back to the live source.
 2. No silent data loss across the live WordPress graph, including related and plugin-owned data.
-3. Recovery that survives crashes, retries, replay, stale claims, and duplicate requests without dropping or duplicating writes.
-4. Auth, session, lease, fencing, durable journal, storage, and graph-identity checks enforced at the release boundary.
+3. Recovery that survives crashes, retries, replay, stale claims, duplicate requests, and mid-apply restarts without dropping, duplicating, or reordering writes.
+4. Auth, session, lease, fencing, durable journal, storage, graph-identity, and plugin-data-driver checks enforced at the release boundary.
 5. Evidence for the real remote/local topology, not only lab-backed or fixture-scoped route shapes.
 6. A measured, documented speed claim, or an explicit refusal to make one.
+7. One required release command that fails closed if any safety gate still reports `labBacked: true`, fixture-only scope, or missing live-source evidence.
 
 The repository now has meaningful lab evidence: three-way JSON snapshot
 planning, fixture-scoped Playground apply paths, authenticated local Playground
@@ -24,21 +25,21 @@ WordPress site without losing concurrent source changes, while remaining
 reliable and fast.
 
 The weakest current claim is still speed, but the more important release
-blocker is structural: the benchmark harness refuses an unsupported throughput
-claim while the repository still lacks a single enforced release gate that
-requires the auth/session, durable journal, storage, graph identity,
-plugin-data driver, real remote/local topology, crash-boundary, recovery, and
-benchmark checks to pass in one required command. The benchmark code lists
-blockers such as missing durable chunk receipts, missing live remote
-preconditions, missing durable journal integrity, missing graph-identity
-evidence, missing recovery evidence, and non-production storage or row-apply
-capabilities. That is a useful refusal mechanism, but it is still only a
-guardrail. It does not create the required release boundary, so the repo can
-still present a green default test run while the strongest claims remain
-skipped. In other words, the suite can reject unsafe release claims, but it
-does not yet enforce the full release claim. That means the current test story
-is strongest as a blocker generator, not as release-grade proof of no data
-loss, reliability, or speed.
+blocker is structural: the repository still lacks one enforced release gate
+that runs the auth/session, durable journal, storage, graph identity,
+plugin-data-driver, real remote/local topology, crash-boundary, recovery, and
+benchmark checks in a single required command and fails closed when any of
+them are still fixture-scoped or lab-backed. The benchmark code already
+refuses an unsupported throughput claim by listing blockers such as missing
+durable chunk receipts, missing live remote preconditions, missing durable
+journal integrity, missing graph-identity evidence, missing recovery evidence,
+and non-production storage or row-apply capabilities. That is a useful refusal
+mechanism, but it is still only a guardrail. It does not create the required
+release boundary, so the repo can still present a green default test run while
+the strongest claims remain skipped. In other words, the suite can reject
+unsafe release claims, but it does not yet enforce the full release claim.
+That means the current test story is strongest as a blocker generator, not as
+release-grade proof of no data loss, reliability, or speed.
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
@@ -293,6 +294,14 @@ In release terms, the default suite is a safety filter, not a production-safe
 proof. It can justify blocking bad changes; it cannot justify shipping the
 live-source no-data-loss, reliability, or speed claims by itself.
 
+The stronger smoke commands are better, but they are still not release proof.
+`npm run test:playground:production-shaped-push` and
+`npm run test:playground:production-plugin-package` both exercise the
+`/wp-json/reprint/v1/push/*` shape, replay behavior, and cross-route receipt
+rejection, yet they still report `labBacked: true`. That means they prove
+route shape and lab packaging, not production-backed auth, storage, journal,
+crash, or graph safety.
+
 `npm run test:playground` is also evidence, but it is only a partial lab chain:
 it runs plan/apply/push-protocol and then stops. The stronger auth, DB journal,
 storage-guard, process-kill, stale-claim, production-shaped route, plugin
@@ -369,7 +378,8 @@ invocation and can be skipped while `npm test` remains green.
    `npm run test:playground:production-plugin-package` prove route shape,
    replay behavior, and plugin packaging in the lab. They still report
    `labBacked: true`, so they are not proof that the live source mutation path
-   runs against production auth, storage, journaling, or graph semantics.
+   runs against production auth, storage, journaling, crash boundaries, or
+   graph semantics.
 
 4. **Speed is the clearest unreleased claim, and the benchmark code already
    agrees.** `test/guarded-executor-benchmark.test.js` exercises the benchmark
