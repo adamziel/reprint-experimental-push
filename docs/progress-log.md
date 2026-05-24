@@ -6,6 +6,25 @@ linked implementation artifacts.
 
 Newest entries stay short and link back to the evidence trail.
 
+## 2026-05-25 - Public Status Refresh 01:54:12
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 01:54:12 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Tightened the first screen so the gate, blocker, trend, and release-gate
+  checklist stay on one screen without repeating the same pending proof in
+  multiple places.
+- Public status remains conservative: 89 Node tests pass, production auth plus
+  durable journaling are still the top blocker, and executor, recovery
+  journal, Docker/Playground, graph identity, and plugin-driver proof remain
+  pending.
+- Evidence trail: [progress.html](../progress.html),
+  [docs/progress-log.md](progress-log.md), [docs/executor.md](executor.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md),
+  [docs/protocol.md](protocol.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Public Status Refresh 01:53:20
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
