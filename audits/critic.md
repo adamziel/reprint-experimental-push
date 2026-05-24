@@ -281,6 +281,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A stale manual-review artifact that once matched the plan hash must still be
   rejected if the live remote snapshot, coverage hash, or retry scope has
   changed.
+- The release gate fails closed on live remote drift, identity remapping on
+  create, plugin-owned data outside allowlists, partial file/DB/plugin side
+  effects, and stale manual-review artifacts even when a lab smoke passes.
 - The release suite runs the production-shaped auth, storage, recovery,
   plugin, graph, and audit checks together, not as isolated smoke tests.
 - The gate fails closed if a retry would reuse stale manual-review artifacts,
@@ -289,6 +292,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A manual resolution is only acceptable when the remote is preserved for
   audit and the retry path proves it re-planned from fresh evidence; the
   manual choice itself is not production proof.
+- Manual resolution can only count as production-grade when the reviewed
+  artifact is bound to the exact live snapshot that was approved and a stale
+  approval cannot authorize a different row, file, or plugin-owned surface.
 - The claim text explicitly says what is proven and what remains lab-only.
 - The release notes and branch status comments never cite route shape, fixture
   smokes, or packaged-plugin mounting as production safety proof.
