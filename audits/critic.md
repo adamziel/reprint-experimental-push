@@ -813,6 +813,10 @@ would reasonably read as equivalent.
 - Any production-readiness wording in docs, PRs, branch status, review
   comments, or release notes is backed by the live production path, fresh
   remote evidence, and a current reviewed artifact.
+- A stale manual-review artifact never becomes current authority just because
+  the same route or package name is reused; the next retry must reject the old
+  approval before write, preserve the remote for audit, and re-plan from a
+  fresh live snapshot.
 
 ## Reliability Language Gate
 
@@ -866,9 +870,10 @@ Before any production-grade push claim, the project needs all of these:
     ownership, plugin-owned state outside allowlists, partial file/DB/plugin
     side effects, route-shape-only evidence, fixture replay alone,
     `finalMatchesLocal` alone, any claim that only restates the lab route
-    shape, any stale approval that can be reused against a new snapshot, or
-    any create path that can renumber, alias, or reassign target identity
-    without a live remap proof.
+    shape, any stale approval that can be reused against a new snapshot or
+    widened into unrelated rows, files, relationship-bearing records, or
+    plugin-owned surfaces, or any create path that can renumber, alias, or
+    reassign target identity without a live remap proof.
 
 The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
