@@ -872,6 +872,9 @@ would reasonably read as equivalent.
 - Route-shape matches, package mounting, and fixture replay remain comparison
   evidence only; they cannot be used to claim remote preservation, identity
   stability, or plugin ownership safety without a live revalidation proof.
+- Reprint, ZS-Sync, and ForkPress comparisons are design input only; they are
+  never current proof that this repo has the same live executor boundary,
+  stale-artifact rejection, or remote-preserving retry behavior.
 - A route that only looks production-shaped is not evidence of production
   safety, reliability, or retry correctness.
 - A route-shape smoke, packaged-plugin mount, or `finalMatchesLocal` result
@@ -965,6 +968,9 @@ The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
 fixture replay still needs a live remote revalidation proof at the actual write
 boundary, plus stale-approval rejection and auditable retry behavior under drift.
+- Status comments, branch notes, and release notes must not cite source-note
+  comparisons or live-looking hashes as substitutes for current production
+  proof.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
