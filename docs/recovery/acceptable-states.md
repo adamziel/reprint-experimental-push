@@ -1,37 +1,30 @@
-# Acceptable Post-Failure States
+# Recovery states for atomic apply
 
-An apply attempt must end in one of these states, and only these states:
+Atomic apply has three acceptable post-failure outcomes:
 
-- `old-remote`: no remote mutation committed. The recovery artifact is the
-  journal that proves the plan can be retried after revalidation.
-- `fully-updated-remote`: every planned mutation is already present. Replay
-  may observe the completed journal, but it must not reapply inserts or stale
-  local data. A completed-plan replay is only acceptable if it stays
-  read-only and returns this state.
-- `blocked-recovery`: the remote is partial, drifted, or otherwise ambiguous.
-  The recovery artifact set must include the journal plus any observed remote
-  evidence needed to stop unsafe retry.
+1. `old-remote`
+   - Nothing visible changed on the remote.
+   - Recovery evidence may exist, but the remote content still matches the pre-apply state.
 
-Concrete boundaries map to these states:
+2. `fully-updated-remote`
+   - Every planned mutation is already visible on the remote.
+   - Replay must be inert and must not duplicate inserts or reapply stale local data.
 
-- failure before mutation, after staging, or after dependency validation must
-  stay `old-remote`
-- replaying a completed plan must stay `fully-updated-remote`
-- any partial remote mutation, stale completed replay, or ambiguous recovery
-  envelope must be reported as `blocked-recovery` with artifacts
+3. `blocked-recovery`
+   - The remote cannot be classified safely from the journal alone.
+   - Recovery must carry artifacts, including the journal and the observed remote snapshot.
 
-Anything else is unacceptable for a production partial remote mutation. If a
-remote was mutated but the recovery artifact is missing, incomplete, or
-uninspectable, treat that as a release blocker.
+The boundary rule is strict:
 
-Completed-plan replay must classify as `fully-updated-remote`. It may observe a
-completed journal envelope, but it must not duplicate inserts or resurrect
-stale local data.
+- A partial remote mutation without a recovery artifact is a release blocker.
+- Retries must never treat partial writes as safe.
+- Retries must never resurrect stale local data or duplicate inserts.
 
-## Retry Rules
+Durable journals should carry the evidence needed to inspect or resume after a crash:
 
-- Retrying an `old-remote` failure must not duplicate inserts.
-- Retrying a `fully-updated-remote` journal must not resurrect stale local
-  state or reapply any mutation.
-- Retrying a `blocked-recovery` state must stop until recovery is resolved and
-  the artifact envelope is inspectable again.
+- journal row or file state
+- mutation target records
+- completion or blocked markers
+- enough metadata to classify the remote as old, fully updated, or blocked
+
+JSON test fixtures and lab-only evidence are useful for proving the model, but they are not a substitute for durable journal storage with crash-safe writes, fsync or equivalent persistence, and recovery inspection on restart.
