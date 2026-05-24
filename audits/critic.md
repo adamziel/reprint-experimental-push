@@ -254,10 +254,14 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   Playground, fixture, or copied lab internals.
 - Route-shape matches, packaged-plugin mounting, and `finalMatchesLocal`
   outputs remain lab evidence only; they do not count as production mutation
-  proof even when the endpoint name looks correct.
+  proof, and they do not prove live-remote drift safety, create-time identity
+  stability, or plugin-owned state safety even when the endpoint name looks
+  correct.
 - A lab route that looks production-shaped is not production proof, even if it
   returns live hashes, mounts as a plugin, or replays successfully on a
-  fixture.
+  fixture. Those results only show compatibility with the lab path that was
+  exercised; they do not prove the live source mutation path is safe against
+  remote drift, identity remapping, or plugin-owned side effects.
 - Reprint, ZS-Sync, and ForkPress source notes are comparison evidence only;
   they do not transfer safety proof to this repository by resemblance alone.
 - The live remote is revalidated immediately before apply, and any stale
