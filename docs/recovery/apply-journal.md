@@ -145,6 +145,27 @@ fresh mutation work, and same key/different body remains
 hash for observed/actual/recovery state while retaining the pre-write hash that
 proves the JIT check passed.
 
+`npm run test:playground:storage-guarded-file-write` verifies the storage
+boundary immediately after that JIT hash passes for existing fixture file
+update mutations. For accepted fixture upload paths, and in the same code path
+for named fixture plugin file paths, apply compares the live file bytes/hash
+against the storage value observed after JIT, writes the planned content to a
+temp file in the same directory, then renames after the boundary comparison.
+Positive evidence covers an existing fixture upload file update with
+`storageGuard.outcome: applied`.
+
+If a lab hook drifts the file after JIT but before the write, apply returns
+`PRECONDITION_FAILED`, preserves the drifted file, records no
+`mutation-applied` for the failed file, records no later mutations, and records
+no `apply-committed`. Same key/body replay remains non-mutating with no fresh
+mutation work, and same key/different body remains
+`IDEMPOTENCY_KEY_CONFLICT`. Creates and deletes stay outside this file
+`storageGuard` slice and remain fallback/JIT-only. File evidence is hash-only:
+boundary `filesystem-compare-rename`, driver, operation, logical fixture path,
+compared fields, expected resource/storage hashes, actual/planned storage
+hashes, physical path hash, and outcome. It exposes neither raw file contents
+nor absolute host paths.
+
 The verified replay behavior is idempotent for the fixture batch: same key plus
 same body returns `BATCH_ALREADY_COMMITTED` with `idempotency.replayed: true`,
 does no fresh mutation work, adds no extra per-mutation events, and leaves the
@@ -184,14 +205,14 @@ This is useful DB-table shape and fixture storage-boundary evidence, but it is
 still local Playground SQLite/host-mount lab evidence, not production durable
 recovery, production source mutation, or storage-level crash proof. It does not
 prove storage `fsync`, rollback, transactions, locking, exactly-once
-production writes, generic MySQL/InnoDB compare-and-swap behavior, arbitrary
-plugin data safety, or storage guarding for inserts/deletes/files/plugin
-activation. The all-old stale-claim safe retry case remains conservative/not
-fully solved, tests mostly count mutation evidence rows rather than deeply
-asserting every observed hash, and production auth, live source mutation, and
-full push remain pending. Redaction is checked through forbidden keys and
-fixture values, not by a formal sanitizer for arbitrary future journal
-messages.
+production writes, generic MySQL/InnoDB or filesystem compare-and-swap
+behavior, arbitrary plugin data safety, arbitrary file safety, create/delete
+guarding, or storage guarding for plugin activation. The all-old stale-claim
+safe retry case remains conservative/not fully solved, tests mostly count
+mutation evidence rows rather than deeply asserting every observed hash, and
+production auth, live source mutation, and full push remain pending. Redaction
+is checked through forbidden keys and fixture values, not by a formal sanitizer
+for arbitrary future journal messages.
 
 ## Current Fixture Plugin Atomicity Failure Evidence
 

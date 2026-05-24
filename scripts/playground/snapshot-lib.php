@@ -305,6 +305,10 @@ function reprint_push_apply_resource(array $resource, array $payload): void
 
 function reprint_push_apply_resource_with_storage_guard(array $resource, array $payload, array $expected_resource_value, ?array $expected_storage_value = null): array
 {
+    if (($resource['type'] ?? null) === 'file') {
+        return reprint_push_apply_file_resource_with_storage_guard($resource, $payload, $expected_resource_value, $expected_storage_value);
+    }
+
     if (($resource['type'] ?? null) !== 'row' || !empty($payload['absent'])) {
         reprint_push_apply_resource($resource, $payload);
         return [
@@ -581,6 +585,10 @@ function reprint_push_get_storage_resource(array $resource): array
 {
     global $wpdb;
 
+    if (($resource['type'] ?? null) === 'file') {
+        return reprint_push_get_file_storage_resource((string) ($resource['path'] ?? ''));
+    }
+
     if (($resource['type'] ?? null) !== 'row') {
         return ['exists' => false, 'value' => null];
     }
@@ -661,6 +669,156 @@ function reprint_push_get_storage_resource(array $resource): array
     return ['exists' => false, 'value' => null];
 }
 
+function reprint_push_get_file_storage_resource(string $relative_path): array
+{
+    if (!reprint_push_is_fixture_file_guard_path($relative_path)) {
+        return ['exists' => false, 'value' => null];
+    }
+
+    $absolute_path = reprint_push_fixture_file_absolute_path($relative_path);
+    if (!is_file($absolute_path)) {
+        return ['exists' => false, 'value' => null];
+    }
+
+    $contents = file_get_contents($absolute_path);
+    if ($contents === false) {
+        throw new RuntimeException('Could not read fixture file for guarded write: ' . $relative_path);
+    }
+
+    return [
+        'exists' => true,
+        'value' => [
+            'type' => 'file',
+            'content' => $contents,
+        ],
+    ];
+}
+
+function reprint_push_hash_storage_resource_value(array $storage_value): string
+{
+    if (($storage_value['exists'] ?? false) !== true) {
+        return hash('sha256', '"__REPRINT_PUSH_ABSENT__"');
+    }
+    return hash('sha256', reprint_push_stable_json(reprint_push_normalize_snapshot_value($storage_value['value'] ?? null)));
+}
+
+function reprint_push_apply_file_resource_with_storage_guard(array $resource, array $payload, array $expected_resource_value, ?array $expected_storage_value = null): array
+{
+    $relative_path = (string) ($resource['path'] ?? '');
+    $is_delete = !empty($payload['absent']);
+
+    if (
+        $is_delete
+        || !reprint_push_is_fixture_file_guard_path($relative_path)
+        || ($expected_resource_value['exists'] ?? false) !== true
+        || ($expected_storage_value['exists'] ?? false) !== true
+    ) {
+        reprint_push_apply_resource($resource, $payload);
+        return [
+            'applied' => true,
+            'storageGuard' => null,
+        ];
+    }
+
+    $value = $payload['value'] ?? null;
+    $contents = is_array($value) && ($value['type'] ?? null) === 'file'
+        ? (string) ($value['content'] ?? '')
+        : (string) $value;
+
+    $absolute_path = reprint_push_fixture_file_absolute_path($relative_path);
+    $dir = dirname($absolute_path);
+    if (!is_dir($dir) && !wp_mkdir_p($dir)) {
+        throw new RuntimeException('Could not create fixture file directory for guarded write: ' . $relative_path);
+    }
+
+    $temp_path = tempnam($dir, '.reprint-push-');
+    if ($temp_path === false) {
+        throw new RuntimeException('Could not create temporary fixture file for guarded write: ' . $relative_path);
+    }
+
+    try {
+        if (file_put_contents($temp_path, $contents) === false) {
+            throw new RuntimeException('Could not write temporary fixture file for guarded write: ' . $relative_path);
+        }
+        $existing_mode = @fileperms($absolute_path);
+        if (is_int($existing_mode)) {
+            @chmod($temp_path, $existing_mode & 0777);
+        }
+
+        $current_storage_value = reprint_push_get_file_storage_resource($relative_path);
+        $expected_storage_hash = reprint_push_hash_storage_resource_value($expected_storage_value);
+        $current_storage_hash = reprint_push_hash_storage_resource_value($current_storage_value);
+        if ($current_storage_hash !== $expected_storage_hash) {
+            return [
+                'applied' => false,
+                'storageGuard' => reprint_push_file_storage_guard_evidence(
+                    $relative_path,
+                    'update',
+                    $expected_resource_value,
+                    $expected_storage_value,
+                    $current_storage_value,
+                    $contents,
+                    'stale-at-write'
+                ),
+            ];
+        }
+
+        if (!rename($temp_path, $absolute_path)) {
+            throw new RuntimeException('Could not replace fixture file with guarded write: ' . $relative_path);
+        }
+        $temp_path = null;
+
+        return [
+            'applied' => true,
+            'storageGuard' => reprint_push_file_storage_guard_evidence(
+                $relative_path,
+                'update',
+                $expected_resource_value,
+                $expected_storage_value,
+                $current_storage_value,
+                $contents,
+                'applied'
+            ),
+        ];
+    } finally {
+        if (is_string($temp_path) && $temp_path !== '' && file_exists($temp_path)) {
+            @unlink($temp_path);
+        }
+    }
+}
+
+function reprint_push_file_storage_guard_evidence(
+    string $relative_path,
+    string $operation,
+    array $expected_resource_value,
+    array $expected_storage_value,
+    array $current_storage_value,
+    string $planned_contents,
+    string $outcome
+): array {
+    return [
+        'boundary' => 'filesystem-compare-rename',
+        'driver' => reprint_push_is_fixture_upload_path($relative_path) ? 'fixture-upload-file' : 'fixture-plugin-file',
+        'operation' => $operation,
+        'logicalPath' => $relative_path,
+        'physicalPathHash' => hash('sha256', reprint_push_fixture_file_absolute_path($relative_path)),
+        'comparedFields' => ['file-bytes'],
+        'expectedResourceHash' => hash('sha256', reprint_push_stable_json(reprint_push_normalize_snapshot_value($expected_resource_value['value'] ?? null))),
+        'expectedStorageHash' => reprint_push_hash_storage_resource_value($expected_storage_value),
+        'actualStorageHash' => reprint_push_hash_storage_resource_value($current_storage_value),
+        'plannedStorageHash' => hash('sha256', reprint_push_stable_json([
+            'content' => $planned_contents,
+            'type' => 'file',
+        ])),
+        'outcome' => $outcome,
+    ];
+}
+
+function reprint_push_is_fixture_file_guard_path(string $relative_path): bool
+{
+    return reprint_push_is_fixture_upload_path($relative_path) || reprint_push_is_fixture_plugin_file_path($relative_path);
+}
+
 function reprint_push_fixture_marker_storage_row(int $post_id): ?array
 {
     global $wpdb;
@@ -723,7 +881,7 @@ function reprint_push_apply_file_resource(string $relative_path, bool $is_delete
         throw new RuntimeException('Refusing to write outside fixture files: ' . $relative_path);
     }
 
-    $absolute_path = WP_CONTENT_DIR . substr($relative_path, strlen('wp-content'));
+    $absolute_path = reprint_push_fixture_file_absolute_path($relative_path);
     if ($is_delete) {
         if (file_exists($absolute_path) && !unlink($absolute_path)) {
             throw new RuntimeException('Could not delete file: ' . $relative_path);
@@ -742,6 +900,11 @@ function reprint_push_apply_file_resource(string $relative_path, bool $is_delete
     if (file_put_contents($absolute_path, $contents) === false) {
         throw new RuntimeException('Could not write file: ' . $relative_path);
     }
+}
+
+function reprint_push_fixture_file_absolute_path(string $relative_path): string
+{
+    return WP_CONTENT_DIR . substr($relative_path, strlen('wp-content'));
 }
 
 function reprint_push_apply_row_resource(string $table, string $id, bool $is_delete, $value): void

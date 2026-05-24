@@ -44,6 +44,8 @@ the resource key, the live remote hash observed during planning, and the
 - Any supported fixture DB update whose stored row columns or required fixture
   ownership marker drift after the JIT hash check but before the guarded SQL
   `UPDATE`.
+- Any supported existing fixture file update whose live file storage hash
+  drifts after the JIT hash check but before the guarded file rename.
 
 Stopping means the plan status is `conflict` or `blocked`; apply must refuse
 the plan and leave the remote snapshot unchanged.
@@ -90,7 +92,31 @@ hashes, rows affected, outcome, and SQL shape hash. It does not include raw SQL
 values, post content, option values, meta values, forms payloads, snapshots, or
 plugin payloads.
 
-This is lab no-overwrite evidence, not production DB durability, production
-Reprint HTTP mutation, generic MySQL/InnoDB compare-and-swap proof,
-transactions, locking, rollback, inserts/deletes/files/plugin activation
-storage guarding, or arbitrary plugin/custom-table semantic safety.
+The storage-boundary file update smoke adds a narrow guarded filesystem proof
+after the JIT hash passes. Existing fixture file update mutations under
+accepted fixture upload paths, and the same code path for named fixture plugin
+file paths, compare the live file bytes/hash against the storage value observed
+after JIT. The planned content is written to a temp file in the same directory,
+then renamed after the boundary comparison. The positive smoke covers an
+existing fixture upload file update with `storageGuard.outcome: applied`.
+
+If the file drifts after JIT but before the write, apply returns
+`PRECONDITION_FAILED`, preserves the drifted file, writes no
+`mutation-applied` for the failed file, writes no later mutations, and writes
+no `apply-committed`. Same key/body replay is non-mutating with no fresh
+mutation work; same key/different body remains an idempotency conflict. Creates
+and deletes stay outside this file `storageGuard` slice and remain
+fallback/JIT-only.
+
+The file `storageGuard` evidence is hash-only: boundary
+`filesystem-compare-rename`, driver, operation, logical fixture path, compared
+fields, expected resource/storage hashes, actual/planned storage hashes,
+physical path hash, and outcome. It does not include raw file contents or
+absolute host paths.
+
+This is lab no-overwrite evidence, not production DB or filesystem durability,
+production Reprint HTTP mutation, generic MySQL/InnoDB or filesystem
+compare-and-swap proof, storage `fsync`, transactions, locking, rollback,
+create/delete guarding, arbitrary file guarding, plugin activation storage
+guarding, or arbitrary plugin/custom-table semantic safety. The standalone file
+smoke exercises an upload-file update, not a fixture plugin-file update.

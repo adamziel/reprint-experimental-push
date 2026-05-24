@@ -74,7 +74,10 @@ await withPlaygroundServer('storage-guard-positive', baseBlueprint, async (serve
   summary.positive = {
     applied: apply.body.applied,
     guardedTables: guardedTables(applied),
-    unsupportedGuardClaims: applied.filter((evidence) => unsupportedMutation(positivePlan, evidence)?.resource.type === 'file' && evidence.storageGuard).length,
+    unsupportedGuardClaims: applied.filter((evidence) => {
+      const mutation = unsupportedMutation(positivePlan, evidence);
+      return mutation && mutation.resource.type !== 'file' && evidence.storageGuard;
+    }).length,
   };
 });
 
@@ -413,6 +416,14 @@ function assertUnsupportedSurfacesDoNotClaimStorageGuard(evidenceEntries, plan) 
   for (const mutation of plan.mutations.filter((entry) => entry.resource.type !== 'row')) {
     const evidence = byMutation.get(mutation.id);
     assert.ok(evidence, `missing unsupported mutation evidence for ${mutation.id}`);
+    if (mutation.resource.type === 'file' && evidence.storageGuard) {
+      assert.equal(evidence.preconditionCheck, 'storage-boundary-cas');
+      assert.equal(evidence.storageGuard.boundary, 'filesystem-compare-rename');
+      assert.equal(evidence.storageGuard.operation, 'update');
+      assert.equal(evidence.storageGuard.outcome, 'applied');
+      assert.equal(evidence.storageGuard.logicalPath, mutation.resource.path);
+      continue;
+    }
     assert.equal(evidence.storageGuard, undefined, `unsupported surface claimed storageGuard: ${mutation.resourceKey}`);
     assert.equal(evidence.preconditionCheck, 'just-in-time');
   }

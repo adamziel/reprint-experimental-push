@@ -10,7 +10,8 @@ The core invariant is:
 2. Apply revalidates the live remote before every mutation batch and, in the
    current lab apply path, re-hashes each target immediately before its write.
    The accepted lab DB update slice then adds storage-boundary guarded SQL
-   updates for a narrow fixture row set.
+   updates for a narrow fixture row set, and the accepted lab file update slice
+   adds guarded compare-and-rename handling for existing fixture file updates.
 3. A failed or interrupted apply leaves a durable journal that lets recovery
    prove whether the remote is old, new, or blocked with artifacts.
 
@@ -187,6 +188,30 @@ not production Reprint HTTP mutation, not generic MySQL/InnoDB CAS proof, not
 transactions or locking, not rollback, and not storage guarding for
 inserts/deletes/files/plugin activation or arbitrary plugin/custom-table
 semantics.
+
+For the accepted storage-boundary file update slice, the same JIT hash check
+still runs first. If it passes for an existing fixture file update under an
+accepted fixture upload path or named fixture plugin file path, the apply path
+compares the live file bytes/hash against the storage value observed after JIT,
+writes the planned content to a temp file in the same directory, then renames
+after the boundary comparison. Positive evidence from
+`npm run test:playground:storage-guarded-file-write` covers an existing fixture
+upload file update with `storageGuard.outcome: applied`. The failure path
+injects drift after JIT but before the write and returns
+`PRECONDITION_FAILED`, preserves the drifted file, records no
+`mutation-applied` for the failed file, runs no later mutations, and records no
+`apply-committed`; same key/body replay does no fresh mutation work and same
+key/different body conflicts. Creates and deletes stay outside this file
+`storageGuard` slice and remain fallback/JIT-only. Evidence is hash-only:
+boundary `filesystem-compare-rename`, driver, operation, logical fixture path,
+compared fields, expected resource/storage hashes, actual/planned storage
+hashes, physical path hash, and outcome. It exposes neither raw file contents
+nor absolute host paths. This is local Playground fixture evidence only, not
+production filesystem durability, not `fsync`, not a production filesystem
+CAS/lock, not rollback, not create/delete guarding, not arbitrary files, not
+production Reprint HTTP mutation, and not a generic WordPress filesystem safety
+proof. The code path supports named fixture plugin file paths, but the new
+standalone smoke exercises an upload-file update.
 
 ## Resource Model
 
