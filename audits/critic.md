@@ -29,7 +29,8 @@ What the notes do prove is narrower: Reprint gives the transport rhythm we can
 borrow, ZS-Sync shows that bounded scanning is feasible, and ForkPress shows
 that reviewed resolution and crash classification are the right failure
 language. None of them prove that this repository has matched those semantics
-at the mutation boundary.
+at the mutation boundary, and none of them prove that a positive lab result
+survives a fresh live snapshot, a drifted remote, or a narrowed retry scope.
 
 The current design also still has five unproven failure classes that matter for
 production push safety: live remote drift between dry-run and apply, create-time
@@ -573,7 +574,7 @@ would reasonably read as equivalent.
 - A fixture replay, packaged-plugin smoke, or `finalMatchesLocal` result is
   never treated as production proof unless the same path also proves live
   remote revalidation, stale-approval rejection, and safe retry from a fresh
-  snapshot.
+  snapshot with the exact approved scope.
 - Route-shape matches, package mounting, and fixture replay remain comparison
   evidence only; they cannot be used to claim remote preservation, identity
   stability, or plugin ownership safety without a live revalidation proof.
