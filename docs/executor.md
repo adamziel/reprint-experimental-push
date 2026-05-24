@@ -102,6 +102,11 @@ The mapping to the existing pull pipeline is one-way:
   storage boundary
 - push journal and push recover inspect read durable evidence only
 
+That mapping is the production handoff boundary. Pull proves the merge base
+and coverage. Push consumes that immutable package, binds it to the live
+remote identity, and then proves liveness again at apply time instead of
+trusting the earlier snapshot hash listing.
+
 The executor should preserve this pull-to-push provenance boundary:
 
 - the exporter/importer create the immutable base package
@@ -440,6 +445,16 @@ For Playground, use separate disposable blueprints for `remote-base`,
 `local-edited`, and `remote-changed`, and keep the same `8080` ingress rule
 for browser-visible inspection. The important proof is that apply revalidates
 fresh live state after dry-run, not that the same snapshot happened to persist.
+
+The topology is not just a packaging choice. It is the proof shape that shows
+the same remote identity at two different times:
+
+- `remote-base` seeds the persisted pull base and the preflight identity bind.
+- `local-edited` stays isolated as the edited local clone used to plan.
+- `remote-changed` is the same remote observed later and must be able to make
+  stale dry-run apply fail.
+- `runner` is the only actor allowed to call preflight, snapshot listing,
+  dry-run, apply, journal inspect, and recovery.
 
 For both Docker and Playground, the topology proof is a four-role matrix:
 
