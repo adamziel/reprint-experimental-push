@@ -4,18 +4,19 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Progress Publisher Refresh
+## 2026-05-25 - Current Public Refresh
 
 - Last update: 2026-05-25 00:36 CEST.
-- Status: public progress view refreshed to keep the visible timestamp current
-  and the summary concise. No new executor, recovery-journal, Docker/
-  Playground, or plugin-driver proof was added in this pass.
-- Evidence links: [progress.html](../progress.html), [executor docs](executor.md),
-  [recovery journal notes](recovery/apply-journal.md),
-  [Playground topology](playground-topology.md), and
-  [supervisor feedback](supervisor-feedback.md).
-- Reminder: keep production gates blocked until those pending systems are
-  proven with executable evidence.
+- Status: `89` Node tests pass after supervised lane merges; production push is
+  still blocked.
+- Evidence: [progress.html](../progress.html) shows the current public summary
+  and visible update stamp, while linked docs continue to hold the detailed
+  lab and protocol evidence.
+- Trend: planner, recovery, fast-path, protocol, critic, and audit evidence
+  remain in lab/model scope. Real WordPress executor, recovery journal,
+  Docker/Playground integration, and plugin drivers are still pending proof.
+- Next check: keep the public page concise, keep the pending gates explicit,
+  and avoid claiming production readiness before a new executable proof lands.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 - Last update: 2026-05-25 00:36 CEST.
