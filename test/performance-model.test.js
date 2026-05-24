@@ -83,10 +83,21 @@ test('chunk uploads stay staged until a guarded publish step', () => {
   assert.ok(chunkUploads.every((action) => action.canonicalVisible === false));
   assert.ok(chunkUploads.every((action) => action.chunkDigest.startsWith('sha256:')));
   assert.ok(chunkUploads.every((action) => action.durableEvidence));
+  assert.ok(chunkUploads.every((action) => action.durableAckRequired === true));
+  assert.ok(chunkUploads.every((action) => action.completionRule === 'complete-after-durable-ack'));
   assert.ok(chunkUploads.every((action) => action.idempotencyKey));
+  assert.ok(chunkUploads.every((action) => action.receiptKey.includes(action.planId)));
+  assert.ok(chunkUploads.every((action) => action.receiptKey.includes(action.resourceKey)));
+  assert.ok(chunkUploads.every((action) => action.receiptKey.includes(action.chunkDigest)));
+  assert.ok(chunkUploads.every((action) => action.resumeCursor?.chunkDigest === action.chunkDigest));
+  assert.ok(chunkUploads.every((action) => action.resumeCursor?.offsetBytes === action.offsetBytes));
 
   assert.ok(filePublishes.length > 0);
   assert.ok(filePublishes.every((action) => action.precondition?.expectedHash));
+  assert.ok(filePublishes.every((action) => action.publishMode === 'compare-and-swap'));
+  assert.ok(
+    filePublishes.every((action) => action.requiresCompleteChunkReceipts === action.chunkCount),
+  );
   assert.ok(filePublishes.every((action) => action.assembledHash?.startsWith('sha256:')));
 });
 
@@ -120,6 +131,9 @@ test('plugin install remains invisible until the atomic group commit', () => {
   assert.equal(commit.atomicGroupId, pluginInstall.atomicGroupId);
   assert.equal(commit.commitPolicy, 'all-or-nothing');
   assert.equal(commit.preconditions, 'recheck-all-member-resource-hashes');
+  assert.ok(commit.validators.includes('dependency-preconditions'));
+  assert.ok(commit.validators.includes('plugin-metadata-preconditions'));
+  assert.ok(commit.validators.includes('activation-preconditions'));
 });
 
 test('parallelism limits and backpressure budgets are explicit', () => {
@@ -128,6 +142,15 @@ test('parallelism limits and backpressure budgets are explicit', () => {
   assert.equal(model.remoteIndex.use, 'planning-only');
   assert.equal(model.remoteIndex.forbiddenUse, 'apply-authorization');
 
+  const remoteIndexProbes = model.schedules.flatMap((schedule) =>
+    schedule.actions.filter((action) => action.type === 'remote-index-probe'),
+  );
+  assert.ok(remoteIndexProbes.every((action) => action.authorizesApply === false));
+  assert.ok(remoteIndexProbes.every((action) => action.bodyFetched === false));
+  assert.ok(remoteIndexProbes.every((action) => action.applyMustRevalidate === true));
+  assert.ok(remoteIndexProbes.every((action) => action.requiredFields.includes('strongHash')));
+  assert.ok(remoteIndexProbes.every((action) => action.requiredFields.includes('generation')));
+
   for (const schedule of model.schedules) {
     assert.equal(schedule.parallelism.remoteIndex, 1);
     assert.ok(schedule.parallelism.hash <= DEFAULT_LIMITS.maxHashConcurrency);
@@ -135,7 +158,15 @@ test('parallelism limits and backpressure budgets are explicit', () => {
     assert.ok(schedule.parallelism.dbPerTable <= DEFAULT_LIMITS.maxDbConcurrencyPerTable);
     assert.ok(schedule.backpressure.maxInFlightUploadBytes <= DEFAULT_LIMITS.maxBufferedUploadBytes);
     assert.ok(schedule.backpressure.maxQueuedDbBatches <= DEFAULT_LIMITS.maxPendingDbBatches);
+    assert.ok(schedule.backpressure.maxJournalLagMs <= DEFAULT_LIMITS.maxJournalLagMs);
+    assert.ok(schedule.backpressure.maxStagingDiskBytes <= DEFAULT_LIMITS.maxStagingDiskBytes);
     assert.ok(schedule.backpressure.pauseWhen.includes('journal-fsync-lag'));
+    assert.equal(schedule.backpressure.onPressure, 'pause-upstream-producers');
+    assert.equal(
+      schedule.backpressure.forbiddenResponse,
+      'drop-evidence-or-mark-unacknowledged-work-complete',
+    );
+    assert.ok(schedule.backpressure.resumeRequires.includes('durable-chunk-receipts'));
   }
 });
 
@@ -148,6 +179,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(rejectedById.get('fresh-dry-run-authorizes-apply').violates[0], 'live-preconditions');
   assert.ok(rejectedById.get('remote-index-authorizes-mutation').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
+  assert.ok(
+    rejectedById.get('skip-plugin-validators-on-package-hash').violates.includes('plugin-preconditions'),
+  );
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
   assert.ok(rejectedById.get('blind-sql-replace').violates.includes('row-preconditions'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));

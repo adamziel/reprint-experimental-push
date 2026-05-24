@@ -12,6 +12,8 @@ export const DEFAULT_LIMITS = Object.freeze({
   maxDbConcurrencyPerTable: 2,
   maxBufferedUploadBytes: 32 * MIB,
   maxPendingDbBatches: 4,
+  maxJournalLagMs: 250,
+  maxStagingDiskBytes: 4 * GIB,
 });
 
 export const SAFE_SPEEDUP_AREAS = Object.freeze([
@@ -100,6 +102,12 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'the sender can lose the evidence needed to resume or classify failure',
     violates: ['backpressure', 'durable-progress'],
   },
+  {
+    id: 'skip-plugin-validators-on-package-hash',
+    proposal: 'skip dependency, metadata, and activation validators when a plugin package hash is cached',
+    rejectedBecause: 'package identity does not prove that coupled remote resources are ready to commit',
+    violates: ['atomic-groups', 'plugin-preconditions'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
@@ -153,6 +161,7 @@ function largeUploadWorkload() {
     id: 'large-media-upload',
     kind: 'large-upload',
     description: 'A large archive upload that must be staged before a guarded publish.',
+    planId: 'plan-large-media-upload-v1',
     atomicGroup: null,
     files: [
       {
@@ -183,6 +192,7 @@ function pluginInstallWorkload() {
     id: 'plugin-install-commerce-stack',
     kind: 'plugin-install',
     description: 'A plugin install with files, plugin metadata, dependency checks, and large row batches.',
+    planId: 'plan-plugin-install-commerce-stack-v1',
     atomicGroup,
     files: [
       pluginFile('file:wp-content/plugins/payments/payments.php', 2 * MIB, 'text/x-php', true, atomicGroup.id),
@@ -244,15 +254,27 @@ function scheduleWorkload(workload, limits) {
       workloadId: workload.id,
       purpose: 'avoid-body-fetch-during-planning',
       authorizesApply: false,
+      bodyFetched: false,
+      freshnessEvidence: 'generation-and-scanner-cursor',
+      applyMustRevalidate: true,
+      requiredFields: [
+        'resourceKey',
+        'resourceType',
+        'strongHash',
+        'sizeBytes',
+        'generation',
+        'pluginOwner',
+        'tombstone',
+      ],
     },
   ];
 
   for (const file of workload.files) {
-    actions.push(...scheduleFile(file, limits));
+    actions.push(...scheduleFile(file, workload.planId, limits));
   }
 
   for (const rowGroupEntry of workload.rowGroups) {
-    actions.push(...scheduleRowGroup(rowGroupEntry, limits));
+    actions.push(...scheduleRowGroup(rowGroupEntry, workload.planId, limits));
   }
 
   for (const pluginResource of workload.pluginResources) {
@@ -265,7 +287,7 @@ function scheduleWorkload(workload, limits) {
         expectedHash: pluginResource.remoteBeforeHash,
       },
       canonicalVisible: false,
-      idempotencyKey: `${pluginResource.atomicGroupId}:${pluginResource.resourceKey}`,
+      idempotencyKey: `${workload.planId}:${pluginResource.atomicGroupId}:${pluginResource.resourceKey}`,
     });
   }
 
@@ -275,6 +297,11 @@ function scheduleWorkload(workload, limits) {
       atomicGroupId: workload.atomicGroup.id,
       dependencies: [...workload.atomicGroup.dependencies],
       preconditions: 'recheck-all-member-resource-hashes',
+      validators: [
+        'dependency-preconditions',
+        'plugin-metadata-preconditions',
+        'activation-preconditions',
+      ],
       commitPolicy: workload.atomicGroup.commitPolicy,
       canonicalVisible: true,
     });
@@ -297,11 +324,20 @@ function scheduleWorkload(workload, limits) {
         limits.chunkSizeBytes * limits.maxUploadConcurrency,
       ),
       maxQueuedDbBatches: limits.maxPendingDbBatches,
+      maxJournalLagMs: limits.maxJournalLagMs,
+      maxStagingDiskBytes: limits.maxStagingDiskBytes,
       pauseWhen: [
         'upload-acks-lag',
         'journal-fsync-lag',
         'staging-disk-budget-hit',
         'remote-latency-budget-hit',
+      ],
+      onPressure: 'pause-upstream-producers',
+      forbiddenResponse: 'drop-evidence-or-mark-unacknowledged-work-complete',
+      resumeRequires: [
+        'durable-chunk-receipts',
+        'database-batch-commit-records',
+        'journal-fsync-caught-up',
       ],
     },
     actions,
@@ -309,7 +345,7 @@ function scheduleWorkload(workload, limits) {
   };
 }
 
-function scheduleFile(file, limits) {
+function scheduleFile(file, planId, limits) {
   const chunkCount = Math.ceil(file.sizeBytes / limits.chunkSizeBytes);
   const actions = [
     {
@@ -333,41 +369,58 @@ function scheduleFile(file, limits) {
   for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
     const offsetBytes = chunkIndex * limits.chunkSizeBytes;
     const sizeBytes = Math.min(limits.chunkSizeBytes, file.sizeBytes - offsetBytes);
+    const chunkDigest = `sha256:${file.resourceKey}:chunk:${chunkIndex}`;
     actions.push({
       type: 'chunk-upload',
+      planId,
       resourceKey: file.resourceKey,
       atomicGroupId: file.atomicGroupId || null,
       chunkIndex,
       chunkCount,
       offsetBytes,
       sizeBytes,
-      chunkDigest: `sha256:${file.resourceKey}:chunk:${chunkIndex}`,
+      chunkDigest,
       destination: 'plan-staging',
       canonicalVisible: false,
       durableEvidence: 'chunk-digest-and-idempotency-key',
-      idempotencyKey: `${file.localHash}:${chunkIndex}`,
+      durableAckRequired: true,
+      completionRule: 'complete-after-durable-ack',
+      receiptKey: `${planId}:${file.resourceKey}:${file.localHash}:${chunkIndex}:${chunkDigest}`,
+      resumeCursor: {
+        planId,
+        resourceKey: file.resourceKey,
+        localHash: file.localHash,
+        chunkIndex,
+        chunkDigest,
+        offsetBytes,
+        sizeBytes,
+      },
+      idempotencyKey: `${planId}:${file.localHash}:${chunkIndex}`,
     });
   }
 
   actions.push({
     type: 'file-publish',
+    planId,
     resourceKey: file.resourceKey,
     atomicGroupId: file.atomicGroupId || null,
     source: 'plan-staging',
     destination: file.atomicGroupId ? 'atomic-group-staging' : 'live-path',
     canonicalVisible: !file.atomicGroupId,
+    publishMode: 'compare-and-swap',
     precondition: {
       resourceKey: file.resourceKey,
       expectedHash: file.remoteBeforeHash,
     },
     assembledHash: file.localHash,
     chunkCount,
+    requiresCompleteChunkReceipts: chunkCount,
   });
 
   return actions;
 }
 
-function scheduleRowGroup(rowGroupEntry, limits) {
+function scheduleRowGroup(rowGroupEntry, planId, limits) {
   const actions = [];
   const batchCount = Math.ceil(rowGroupEntry.rowCount / limits.maxDbBatchRows);
 
@@ -391,7 +444,14 @@ function scheduleRowGroup(rowGroupEntry, limits) {
         kind: 'per-row-hash',
         count: rowCount,
       },
-      idempotencyKey: `${rowGroupEntry.atomicGroupId || 'independent'}:${rowGroupEntry.table}:${batchIndex}`,
+      resumeCursor: {
+        planId,
+        table: rowGroupEntry.table,
+        firstRow,
+        rowCount,
+        order: 'primary-key',
+      },
+      idempotencyKey: `${planId}:${rowGroupEntry.atomicGroupId || 'independent'}:${rowGroupEntry.table}:${batchIndex}`,
     });
   }
 
