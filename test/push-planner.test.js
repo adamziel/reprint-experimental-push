@@ -3334,6 +3334,38 @@ test('stale completed replay blocks instead of duplicating inserts or reviving s
   assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('durable stale completed replay blocks without duplicating inserts or rewriting drifted remote data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.db.wp_posts['ID:2'].post_title = 'Externally edited after completion';
+  const replayBefore = JSON.stringify(replayRemote);
+
+  const replayError = captureError(() =>
+    applyPlan(replayRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }));
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.code, 'RECOVERY_BLOCKED');
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replayError.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Externally edited after completion');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records.length, 0);
+});
+
 test('completed replay stays inert even if the local source diverges after completion', () => {
   const base = baseSite();
   const local = baseSite();
