@@ -496,13 +496,32 @@ linked implementation artifacts.
   reliable executor moved up in the lab, while production endpoint/auth/journal
   claims remain blocked.
 
+## 2026-05-24 - Supervisor Evidence Checkpoint
+
+- The current checkpoint found no newer merged executable evidence after the
+  authenticated CLI push smoke and feedback refresh. The visible trend is
+  therefore flat, not a readiness increase.
+- [progress.html](../progress.html) keeps the current status to a concise
+  one-screen summary with a visible May 24, 2026 update date and links to the
+  detailed evidence instead of embedding long audit text.
+- [supervisor feedback](supervisor-feedback.md) now names the next nudge per
+  lane: production-shaped Reprint endpoint/auth/audit proof for reliable
+  executor, WordPress graph identity for invariants, production crash-boundary
+  durability for recovery, real plugin validator coverage for plugin data,
+  executable chunking benchmarks for fast paths, and live-integration re-audit
+  for audit lanes.
+- Production readiness is unchanged. The repository still lacks a production
+  Reprint source-site mutation endpoint, production credential binding,
+  nonce/session cleanup proof, durable production audit/recovery records,
+  production filesystem/DB durability proof, and arbitrary plugin data safety.
+
 ## 2026-05-24 - Status By Area
 
 | Area | Progress | What changed | Next proof |
 | --- | ---: | --- | --- |
 | Merge invariants | 38% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
 | Recovery boundaries | 24% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, and stale-at-write refusal are lab-proved. | Production DB journal durability, `fsync`/locking/leases, and crash-boundary behavior. |
-| Reliable executor and protocol | 27% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, and an authenticated CLI push smoke exist. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, and durable audit records. |
+| Reliable executor and protocol | 27% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, and an authenticated CLI push smoke exist; no newer production-shaped endpoint proof has landed. | Production Reprint endpoint, auth/TLS/session/nonce binding, real exporter credentials, nonce/session cleanup, and durable audit records. |
 | Fast path and chunking | 12% | Performance model and fast-path design are documented. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
 | Independent evidence and critique | 25% | Objective audit, critic notes, source notes, and supervisor feedback are linked. | External review against live integration behavior. |
 

@@ -5,6 +5,52 @@ Last updated: 2026-05-24
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-24 - Evidence Checkpoint
+
+### Going Well
+
+- The public status surfaces still agree: the current proof is lab-scoped, and
+  the production push claim remains blocked by missing endpoint, auth, durable
+  journal, and storage-boundary evidence.
+- The authenticated CLI smoke gives a useful command-shaped path for the next
+  executor slice: snapshot, dry-run, apply, idempotency, replay, and
+  changed-source refusal are all visible in one lab flow.
+- Recovery and storage-guard evidence is no longer just design text. The lab
+  now has DB journal, process-kill, missing-commit finalization, stale-claim,
+  JIT drift, guarded DB write, and guarded upload-file write smokes.
+
+### Not Going Well
+
+- Progress is flat since the CLI refresh. No new production-shaped Reprint
+  endpoint contract, credential binding, nonce/session cleanup, or durable
+  production audit record has landed.
+- WordPress graph safety is still under-proved. Posts, postmeta, attachments,
+  taxonomy relationships, generated files, serialized options, multisite, and
+  arbitrary plugin tables remain outside the current proof.
+- Fast-path work is still documentation and model-level. There are no
+  executable chunk cursors, transfer benchmarks, resume receipts, or memory
+  ceilings for a large source site.
+
+### Progress Delta
+
+| Lane | Direction | Nudge |
+| --- | --- | --- |
+| No-data-loss invariants | Flat | Owner: no-data-loss invariants. Gap: WordPress graph identity. Next test: fixture with post, postmeta, attachment, taxonomy, and remote drift in one revalidated plan. |
+| No-data-loss recovery | Flat after lab gains | Owner: no-data-loss recovery. Gap: production durability. Next test: kill at each DB/file boundary with DB journal evidence and old/new/blocked classification. |
+| Reliable executor | Flat since CLI refresh | Owner: reliable executor. Gap: production route/auth contract. Next test: replace lab route names and auth assumptions with production-shaped Reprint preflight, dry-run, apply, nonce/session cleanup, and audit records. |
+| Plugin data | Flat | Owner: no-data-loss invariants. Gap: arbitrary plugin state. Next test: one real plugin validator/driver beyond the allowlisted forms and atomic fixture plugins. |
+| Fast paths | Flat | Owner: fast paths. Gap: executable chunking proof. Next test: large upload/table benchmark that preserves receipts, preconditions, journals, and resume cursors. |
+| Independent audit and critic | Flat | Owner: independent auditor and critic. Gap: live integration behavior. Next test: re-audit the first production-shaped source mutation slice, not the lab aliases. |
+| Progress publisher | Flat | Owner: progress publisher and feedback supervisor. Gap: page/log drift. Next test: keep the page to one-screen status and link the detailed evidence. |
+
+### Next Supervisor Nudge
+
+Ask reliable executor for a production-shaped endpoint contract before more
+lab breadth: real Reprint route names, production credential binding, signed
+preflight/dry-run/apply, nonce/session cleanup, one guarded DB row, one guarded
+file, DB audit rows, same-key replay, different-body conflict refusal,
+recovery inspect, and explicit rollback/blocking semantics.
+
 ## 2026-05-24 - CLI Push Refresh
 
 ### Going Well
