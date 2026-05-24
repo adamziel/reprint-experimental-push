@@ -384,7 +384,8 @@ or an operator-facing success message that is stronger than the proof.
 3. Introduce a complete production coverage manifest and make unknown plugin,
    custom-table, generated-file, cache, and multisite resources hard blocks.
    Missing proof: a live remote plugin-owned surface outside the manifest is
-   rejected before any write.
+   rejected before any write, even if a route-shape smoke, packaged-plugin
+   mount, or `finalMatchesLocal` result looks healthy.
 4. Define plugin-owned resource contracts for tables, files, options, cron,
    cache, activation hooks, and generated side effects, with rollback or
    block behavior for unknown ownership and for ownership changes discovered
@@ -412,17 +413,23 @@ or an operator-facing success message that is stronger than the proof.
    partial write. The proof must cover file-only, DB-only, and plugin-only
    failures separately, not just a happy-path combined commit.
 9. Build a durable production journal with kill-at-every-boundary tests across
-   DB, filesystem, plugin activation, and stale-claim recovery.
+   DB, filesystem, plugin activation, and stale-claim recovery. Missing
+   proof: a partial apply never reports success while any one of those
+   boundaries remains in a mixed state.
 10. Add tombstone and resurrection policy for delete/restore cases so a retry
     cannot silently revive intentionally deleted remote content.
 11. Publish production audit/redaction schemas and a release gate that runs the
     full safety-critical suite before the project can use production-grade
     wording.
 12. Prove the push endpoint is genuinely production-backed rather than a
-    production-shaped route that still resolves to lab or Playground code.
+   production-shaped route that still resolves to lab or Playground code.
+   Missing proof: the same request path stays production-backed after a
+   remote drift event and does not silently fall back to fixture behavior.
 13. Prove the claimed reliability wording against live source mutation, not
-    against fixture replay, route-shape smoke tests, or model-only recovery
-    classification.
+   against fixture replay, route-shape smoke tests, or model-only recovery
+   classification. Missing proof: the wording must be backed by a live apply
+   that rejects stale approval before any write and preserves the remote for
+   audit.
 14. Keep route-shape and packaged-plugin smokes explicitly labeled as
     lab-backed evidence only, with no production-readiness inference attached.
 
@@ -448,6 +455,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   remote drift, identity remapping, or plugin-owned side effects.
 - Reprint, ZS-Sync, and ForkPress source notes are comparison evidence only;
   they do not transfer safety proof to this repository by resemblance alone.
+  Their notes can justify transport shape, scanner shape, or reliability
+  vocabulary, but they do not prove this repo's live write path, identity
+  reservation, plugin ownership enforcement, or stale-artifact rejection.
 - No design claim may cite those notes as proof that this repo has already
   matched their safety bars; the repo still needs its own live drift,
   identity, plugin-ownership, and crash-recovery proof at the mutation
@@ -464,7 +474,8 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   after remote drift or partial apply recovery.
 - A stale approval, stale snapshot, or stale manual-review artifact cannot be
   recycled as evidence for a new apply, even if the plan hash or endpoint name
-  has not changed.
+  has not changed. If the remote drifted, the old record stays auditable but
+  unusable, and the next retry must start from fresh live evidence.
 - A green route-shape smoke or packaged-plugin mount does not refresh a stale
   manual-review artifact; those signals stay lab evidence only and cannot turn
   old approval into current authority.
@@ -486,7 +497,8 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   proves the live snapshot still matches the reviewed approval; those signals
   stay compatibility evidence only, even when they return live-looking hashes.
 - Every mutation surface has an explicit coverage manifest entry, or the push
-  hard-blocks before apply.
+  hard-blocks before apply. Unknown plugin-owned state is not "covered by
+  inference"; it is a block.
 - Every plugin-owned resource has a declared contract, or the push hard-blocks
   before apply.
 - Every graph-bearing row class either has a proven rewrite rule or is
@@ -502,6 +514,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   readiness.
 - Every apply boundary has durable recovery evidence that can classify the
   target as old, new, or blocked after a crash.
+- Every production-readiness claim must separate compatibility evidence from
+  mutation proof; route shape, packaged-plugin mounting, and `finalMatchesLocal`
+  never qualify as production safety evidence on their own.
 - Every partial side effect path is either rolled back, fenced, or preserved
   for audit and retry with no false success claim.
 - Every route-shape, packaged-plugin, or `finalMatchesLocal` smoke remains
