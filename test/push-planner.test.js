@@ -1382,6 +1382,10 @@ test('replaying a completed plan twice stays inert and keeps the fully updated r
   assert.equal(JSON.stringify(firstReplay.site), beforeSecondReplay);
   assert.equal(JSON.stringify(secondReplay.site), beforeSecondReplay);
   assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(
+    Object.keys(secondReplay.site.db.wp_posts).filter((key) => key === 'ID:2').length,
+    1,
+  );
   assert.equal(secondReplay.site.files['index.php'], '<?php echo "local";');
   assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
