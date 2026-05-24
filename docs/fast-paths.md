@@ -71,6 +71,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed row batch still cannot skip backpressure for a plugin update, because queue pressure can pause work without proving the paused rows, validators, or group commit survived failure.
 - A fresh remote index plus cached row-batch receipts still cannot prove plugin install finished, because live row preconditions and the atomic-group commit still need durable evidence.
 - A fresh remote index plus compressed row receipts still cannot prove a dependency-heavy plugin update finished, because compressed summaries cannot prove the per-row preconditions, dependency checks, or atomic-group commit survived failure.
+- A fresh remote index plus compressed row receipts still cannot skip the group finalize barrier for a plugin update, because compressed summaries cannot prove the finalize ran, the dependency checks held, or the atomic-group visibility boundary survived failure.
 - A fresh remote index plus durable chunk receipts still cannot skip the live file compare before publish.
 - A fresh remote index plus cached chunk receipts still cannot skip the guarded publish finalize for a large upload.
 - A dependency-heavy plugin update still cannot use a fresh remote index or a cached package hash to skip dependency preconditions at the atomic-group barrier.

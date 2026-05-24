@@ -186,6 +186,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(
     model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'index-and-compressed-row-receipts-skips-group-finalize',
+    ),
+    'model rejects treating compressed row receipts plus a fresh remote index as a way to skip group finalize',
+  );
+  assert.ok(
+    model.rejectedFastPaths.some(
       (rejection) => rejection.id === 'index-and-compressed-row-summary-completes-plugin-update',
     ),
     'model rejects treating a compressed row summary plus a fresh remote index as plugin-update completion',

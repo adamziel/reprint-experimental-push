@@ -770,6 +770,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'index-and-compressed-row-receipts-skips-group-finalize',
+    proposal: 'treat a fresh remote index plus compressed row receipts as enough proof to skip the group finalize barrier for a plugin update',
+    rejectedBecause: 'compressed row receipts can summarize durable progress, but they cannot prove the group finalize ran, the dependency checks held, or the atomic-group visibility boundary survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
