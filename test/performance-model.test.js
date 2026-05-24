@@ -583,6 +583,35 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('index-and-package-hash-skips-plugin-validators').rejectedGate,
     'group',
   );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-upload-queue-completes-plugin-install')
+      .violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-upload-queue-completes-plugin-install')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-upload-queue-completes-plugin-install')
+      .violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-upload-queue-completes-plugin-install')
+      .violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-upload-queue-completes-plugin-install')
+      .violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-upload-queue-completes-plugin-install').rejectedGate,
+    'recovery',
+  );
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
   assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
@@ -627,6 +656,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-chunk-receipts-skip-file-compare',
     'index-and-package-hash-completes-plugin-install',
     'index-and-package-hash-skips-plugin-validators',
+    'index-and-compressed-upload-queue-completes-plugin-install',
     'index-and-table-checksum-skips-batch-preconditions',
     'full-digest-completes-chunk-resume',
     'manifest-hash-completes-large-upload',
