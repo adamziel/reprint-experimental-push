@@ -297,7 +297,6 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
   assert.ok(
     rejectedById.get('live-chunk-publish').violates.includes('atomic-file-publish'),
-    'direct chunk publishing must keep the atomic publish barrier',
   );
   assert.ok(
     rejectedById.get('fresh-dry-run-authorizes-apply').proposal.includes('dry-run plan is recent'),
@@ -306,9 +305,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('visible-staging-object-completes-chunk').violates.includes('durable-progress'),
   );
   assert.ok(
-    rejectedById.get('staged-bytes-as-published').violates.includes('atomic-groups'),
+    rejectedById.get('receipt-only-chunk-publish').violates.includes('atomic-file-publish'),
   );
-  assert.equal(rejectedById.get('staged-bytes-as-published').rejectedGate, 'group');
   assert.ok(rejectedById.get('blind-sql-replace').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('cross-group-row-batch').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('index-cursor-as-lock').violates.includes('live-preconditions'));

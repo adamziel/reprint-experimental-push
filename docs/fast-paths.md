@@ -260,6 +260,8 @@ validators, and the final durable commit record.
   compare-and-swap predicates.
 - Treating chunk receipts as optional and publishing staged bytes without a
   guarded finalize step.
+- Publishing staged chunk bytes the moment a receipt exists, without the
+  finalize comparison that still guards the live file path.
 - Merging rows from different plugin owners or atomic groups into one visible
   batch because the SQL shape matches.
 - Using index freshness, cursor freshness, tombstone state, or a successful dry run as a live

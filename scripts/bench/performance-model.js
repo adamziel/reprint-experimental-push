@@ -231,6 +231,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['durable-progress', 'chunk-receipts'],
   },
   {
+    id: 'receipt-only-chunk-publish',
+    proposal: 'publish staged chunk bytes as soon as a receipt exists, without a guarded finalize step',
+    rejectedBecause: 'a receipt proves staging progress, not that the live file can be made visible safely',
+    rejectedGate: 'group',
+    violates: ['atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'fresh-dry-run-authorizes-apply',
     proposal: 'skip apply preconditions when the dry-run plan is recent',
     rejectedBecause: 'remote edits after dry-run would be overwritten without a live compare',
