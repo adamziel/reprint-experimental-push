@@ -6,26 +6,25 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 00:27 CEST.
-- Status: `89` Node tests pass after supervised lane merges.
-- New proof: planner coverage checks matching independent delete/edit cases;
-  recovery has a concise acceptable-state contract; fast-path docs and tests
-  now pin benchmark workloads to hashing, chunking, row batching, and rejected
-  shortcuts; protocol docs tighten journal and recovery semantics; critic and
-  objective audits reflect the evidence.
-- Trend: no-data-loss, recovery, fast-path, reliable-executor, and audit lanes
-  improved inside lab/model scope. Production readiness is still blocked.
-- Supervision: next-proof fast-path, critic, and reliable-executor outputs were
-  reviewed and integrated. The same-plan graph worker remains active and
-  unmerged; the stale progress-publisher output was rejected because it used a
-  future timestamp and heavy screenshot assets.
+- Last update: 2026-05-25 00:33 CEST.
+- Status: `89` Node tests pass, and the public page now reflects the same
+  blocked-production message with a fresh timestamp.
+- New proof: no new boundary evidence landed in this checkpoint; the visible
+  refresh is a status alignment only.
+- Trend: the lab/model evidence remains stable, but production readiness is
+  still blocked by missing auth, durable storage, lease, graph identity, and
+  plugin-driver proof.
+- Supervision: lane nudges stay narrow. Keep the same-plan graph, recovery,
+  reliable-executor, fast-path, and audit lanes pointed at one missing proof
+  each.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
   and arbitrary plugin drivers remain unproven.
 - Next nudge: keep production gates blocked until a worker proves production
   auth/session/journal internals and graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update
-  date and keeps details behind links.
+  date and links to the detailed evidence files instead of embedding long
+  audits.
 
 <details>
 <summary>Earlier progress entries</summary>

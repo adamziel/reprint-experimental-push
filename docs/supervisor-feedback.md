@@ -1,9 +1,35 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:33 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 00:33 CEST - Status Checkpoint
+
+- Going well: the evidence surface still agrees that `89` Node tests pass and
+  the guarded lab slices are intact.
+- Not going well: no new production proof landed; auth/session storage,
+  durable journal ownership, leases, graph identity mapping, Docker/full
+  Playground integration, and arbitrary plugin drivers are still blocked by
+  missing evidence.
+- Progress change: this is a timestamp refresh, not a readiness jump. The
+  blocked production gates are unchanged since the last review.
+- Next nudge: keep each lane focused on one missing proof, one test, and one
+  owner. Do not widen claims until a production-backed executor or graph proof
+  lands.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Prove same-plan graph HTTP smoke against a real source shape. |
+| Recovery | Move replay/failure proof into production journal storage. |
+| Reliable executor | Replace lab auth/session storage with production credentials and journal rows. |
+| Fast paths | Run the guarded benchmark against a real large site. |
+| Audit and critic | Re-audit the current proof; keep the blocker language strict. |
+| Progress publisher | Keep the page dated, concise, and linked to detailed evidence. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-25 00:27 CEST - Supervised Lane Merge Refresh
 
@@ -33,9 +59,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Run guarded benchmark proof against a real large site. |
 | Audit and critic | Re-audit current proof while implementation lanes run. |
 | Progress publisher | Keep Pages dated, concise, and explicit about active lanes. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 23:24 CEST - Scoped Credential And Graph Safety Refresh
 
