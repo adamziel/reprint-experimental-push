@@ -3807,3 +3807,60 @@ test('blocked partial recovery keeps inspectable artifacts instead of pretending
   assert.equal(persisted.integrity.status, 'ok');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state');
 });
+
+test('durable no-data-loss recovery keeps pre-mutation failures old and completed replay inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+
+  for (const [label, options, expectedJournalStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const remote = baseSite();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const before = JSON.stringify(remote);
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        ...options,
+        durableJournal,
+      }));
+    durableJournal.close();
+
+    const persisted = readRecoveryJournal(journalPath);
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(persisted.integrity.status, 'ok', label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: replayWriter,
+  });
+  replayWriter.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
+});
