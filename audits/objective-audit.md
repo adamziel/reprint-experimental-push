@@ -104,7 +104,29 @@ separate entrypoints:
 - Light Playground chain: `npm run test:playground`
 - Stronger manual opt-ins: authenticated HTTP/CLI, DB journal, storage guard,
   process-kill recovery, stale-claim recovery, plugin atomicity, production-
-  shaped route/package, and mid-apply drift smokes
+  shaped route/package, mid-apply drift, and benchmark smokes
+
+## Test Audit
+
+The current tests are strongest where they reject unsafe claims, and weakest
+where they are asked to prove production release safety.
+
+- `npm test` proves the model and selected fixture logic are internally
+  consistent. It does not prove live source mutation, production storage, or a
+  live WordPress graph.
+- `npm run test:playground` proves a bundled lab path through plan/apply/push
+  protocol. It does not invoke the stronger auth, journal, storage, recovery,
+  plugin, graph, or benchmark gates.
+- `npm run test:playground:production-shaped-push` and
+  `npm run test:playground:production-plugin-package` prove route shape and
+  packaging behavior. They still report `labBacked: true`, so they are
+  explicitly not production proof.
+- `scripts/bench/guarded-executor-benchmark.js` proves the benchmark can block
+  unsupported throughput claims. It does not itself measure a live push path
+  or enforce a release threshold unless the claim gate is explicitly invoked.
+
+The practical consequence is that the suite is good at proving "do not claim
+release yet." It is not yet good enough to prove "release is safe."
 
 That split matters because a green default run still does not mean the release
 gates were exercised.
