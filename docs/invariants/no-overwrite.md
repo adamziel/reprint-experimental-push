@@ -47,6 +47,10 @@ the resource key, the live remote hash observed during planning, and the
 - Conflict evidence must identify resources, hashes, change kinds, presence,
   and file types, but not raw file bodies, row contents, option values, or
   plugin configuration payloads.
+- Atomic dependency evidence must keep only normalized plugin names, version
+  requirements, hash requirements, and activation requirements. Raw dependency
+  payload fields from push intents are not copied into blockers or
+  atomic-group dependency summaries.
 
 ## Must Stop
 
