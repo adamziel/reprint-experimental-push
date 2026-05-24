@@ -1130,6 +1130,30 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById
+      .get('index-and-compressed-manifest-hash-completes-large-upload')
+      .violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-manifest-hash-completes-large-upload')
+      .violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-manifest-hash-completes-large-upload')
+      .violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById
+      .get('index-and-compressed-manifest-hash-completes-large-upload')
+      .violates.includes('live-preconditions'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-manifest-hash-completes-large-upload').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById
       .get('index-and-compressed-buffer-completes-chunk-resume')
       .violates.includes('compression'),
   );
@@ -1484,6 +1508,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'index-and-compressed-row-summary-completes-plugin-install',
     'index-and-compressed-row-summary-completes-plugin-update',
     'index-and-compressed-upload-queue-completes-large-upload',
+    'index-and-compressed-manifest-hash-completes-large-upload',
     'index-and-compressed-buffer-completes-chunk-resume',
     'index-and-compressed-buffer-completes-plugin-update',
     'index-and-compressed-buffer-completes-plugin-install',
@@ -1497,6 +1522,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'compressed-file-hash-skips-chunk-receipts',
     'compressed-chunk-receipts-complete-large-upload',
     'compressed-receipts-plus-cached-hash-complete-large-upload',
+    'index-and-compressed-manifest-hash-completes-large-upload',
     'index-and-table-checksum-skips-batch-preconditions',
     'full-digest-completes-chunk-resume',
     'manifest-hash-completes-large-upload',
