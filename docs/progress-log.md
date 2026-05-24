@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 00:27 CEST.
+- Last update: 2026-05-25 00:44 CEST.
 - Status: `89` Node tests pass after supervised lane merges.
 - New proof: planner coverage checks matching independent delete/edit cases;
   recovery has a concise acceptable-state contract; fast-path docs and tests
@@ -18,14 +18,16 @@ linked implementation artifacts.
 - Supervision: next-proof fast-path, critic, and reliable-executor outputs were
   reviewed and integrated. The same-plan graph worker remains active and
   unmerged; the stale progress-publisher output was rejected because it used a
-  future timestamp and heavy screenshot assets.
+  future timestamp and heavy screenshot assets. This lane refresh only tightened
+  the live-page wording and did not add new production evidence.
 - Blocker: production credential lifecycle, durable storage, leases/fencing,
   full WordPress graph identity mapping, Docker/full Playground integration,
   and arbitrary plugin drivers remain unproven.
 - Next nudge: keep production gates blocked until a worker proves production
   auth/session/journal internals and graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update
-  date and keeps details behind links.
+  date and keeps details behind links. In this lane, the updated page becomes
+  live only after merge to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>

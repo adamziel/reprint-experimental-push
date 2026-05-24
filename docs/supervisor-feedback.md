@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 00:27 CEST
+Last updated: 2026-05-25 00:44 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -24,6 +24,22 @@ changed, what is helping, what is not helping, and the next nudge.
   output was rejected instead of merged.
 - Next nudge: keep workers focused on production-backed auth/journal proof and
   graph identity mapping.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Finish same-plan graph HTTP smoke before merge. |
+| Recovery | Move model replay/failure proof into production journal storage. |
+| Reliable executor | Turn protocol docs into production push credentials and journal rows. |
+| Fast paths | Run guarded benchmark proof against a real large site. |
+| Audit and critic | Re-audit current proof while implementation lanes run. |
+| Progress publisher | Keep Pages dated, concise, and explicit about active lanes. |
+
+## 2026-05-25 00:44 CEST - Feedback Sweep
+
+- Going well: the public status surface is already concise and linked; the lane-owned docs still agree on the same blocked production gates.
+- Not going well: no new production proof landed in this sweep, so auth, journal durability, graph identity, integration, and plugin drivers stay unproven.
+- Progress change: no material evidence shift since the last entry; this update only tightens the live-page wording.
+- Next nudge: keep the graph HTTP smoke and production auth/journal proof as the next measurable gap.
 
 | Lane | Nudge |
 | --- | --- |
