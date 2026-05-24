@@ -1,9 +1,34 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 22:32 CEST
+Last updated: 2026-05-24 22:41 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-24 22:41 CEST - Signed Store Cleanup
+
+- Going well: `70` Node tests pass, the production-shaped route smoke passes,
+  and the packaged plugin now proves expired signed session and nonce options
+  are cleaned while unexpired ones are retained.
+- Not going well: cleanup is still lab-backed WordPress option storage. Real
+  credential lifecycle, durable journal storage, leases, and plugin drivers
+  remain unproven.
+- Progress change: reliable executor gained signed-store hygiene evidence;
+  production readiness is still blocked by missing production internals.
+- Next nudge: turn the packaged route from lab internals into production auth
+  and durable journal behavior, keeping replay/conflict refusal intact.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Add real graph fixtures before widening automatic apply. |
+| Recovery | Prove kill-at-boundary journal durability. |
+| Reliable executor | Replace lab auth/session storage with production lifecycle. |
+| Fast paths | Measure chunking without weakening receipts or preconditions. |
+| Audit and critic | Re-audit signed-store cleanup as lab evidence only. |
+| Progress publisher | Keep Pages concise and dated after each proof change. |
+
+<details>
+<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 22:32 CEST - Package Nudge
 
@@ -27,9 +52,6 @@ changed, what is helping, what is not helping, and the next nudge.
 | Fast paths | Benchmark large chunks with receipts and resume cursors. |
 | Audit and critic | Re-audit this packaged endpoint before any readiness jump. |
 | Progress publisher | Keep the page dated, one-screen, and caveat-linked. |
-
-<details>
-<summary>Earlier feedback entries</summary>
 
 ## 2026-05-24 - Current Nudge
 

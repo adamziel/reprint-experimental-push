@@ -212,10 +212,13 @@ Current packaged-plugin note:
 `reprint-push` plugin package from [plugins/reprint-push](../plugins/reprint-push),
 mounts it as a normal plugin, activates it through a Blueprint step, confirms
 the public `reprint-push-lab/v1` namespace is disabled, and applies the same
-eight fixture mutations through `/wp-json/reprint/v1/push/*`. This improves the
-packaging proof but is still not production readiness: the endpoint internals
-remain lab-backed until production auth, session cleanup, durable journal
-storage, leases, and plugin drivers replace the fixture implementation.
+eight fixture mutations through `/wp-json/reprint/v1/push/*`. It also seeds
+expired and unexpired signed session/nonce option artifacts and proves
+preflight deletes the expired artifacts while retaining unexpired ones. This
+improves the packaging and signed-store hygiene proof but is still not
+production readiness: the endpoint internals remain lab-backed until production
+auth, credential lifecycle, durable journal storage, leases, and plugin drivers
+replace the fixture implementation.
 
 ### 3. Remote Snapshot Hash Listing
 
