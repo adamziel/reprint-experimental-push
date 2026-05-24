@@ -1860,11 +1860,12 @@ test('injected failure before commit returns no partially mutated remote state',
   const before = JSON.stringify(remote);
   const plan = planFor(base, local, remote);
 
-  assert.throws(
-    () => applyPlan(remote, plan, { failBeforeCommitAtMutation: 1 }),
-    (error) => error instanceof PushPlanError && error.code === 'INJECTED_FAILURE_BEFORE_COMMIT',
-  );
+  const error = captureError(() => applyPlan(remote, plan, { failBeforeCommitAtMutation: 1 }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_COMMIT');
   assert.equal(JSON.stringify(remote), before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
 });
 
 test('injected failure before mutation leaves the old remote with a journal artifact', () => {
