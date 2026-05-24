@@ -43,6 +43,15 @@ the safe list even when they improve a throughput metric.
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
 
+Two details keep those safe paths narrow:
+
+- Chunk upload may retry or resume from receipts, but it never treats a present staging object as complete without the matching digest, plan, and journal evidence.
+- Database batching may reuse a prepared statement shape, but it still carries one idempotency key and one row-level precondition per row.
+- Compression may save wire bytes, but it never changes the canonical hash used for conflict checks.
+- Remote indexes may remove body fetches from planning, but they never authorize apply writes.
+- Backpressure may pause producers, but it does not summarize away the evidence needed for recovery.
+- Atomic group boundaries stay fixed: files, rows, metadata, and validators can stage ahead of time, but only the final group commit makes them visible together.
+
 The safe version of a fast path is usually a "skip duplicate staging work" or
 "stage earlier" optimization, not a "commit earlier" optimization. The commit
 point is where no-data-loss guarantees are easiest to lose, so it stays narrow,
@@ -222,6 +231,12 @@ validators, and the final durable commit record.
 - Treating a remote index generation as permission to mutate.
 - Using mtime, size, row count, or table checksum instead of strong resource
   hashes for conflict checks.
+- Treating a present staging object as completed work without the matching
+  receipt, digest, or compare-and-swap finalize step.
+- Reusing a batch statement shape while dropping row-level preconditions or
+  idempotency keys.
+- Using compressed bytes as the canonical resource hash.
+- Treating a remote index listing as a live apply authorization.
 - Splitting a plugin install so files publish before database rows, dependency
   checks, plugin metadata, and activation state are ready.
 - Activating or upgrading a plugin before validators and dependency
@@ -255,6 +270,10 @@ validators, and the final durable commit record.
 - Letting backpressure drop queued precondition evidence or compress buffered
   state into a summary that cannot identify the affected resources after a
   crash.
+- Committing a plugin install boundary before dependency checks, metadata
+  validation, and activation validators all have durable receipts.
+- Letting a retry path advance work without the original plan-scoped
+  idempotency key and the same visibility boundary.
 
 The reject list is not just theoretical. It blocks the tempting shortcuts that
 break the no-data-loss contract:

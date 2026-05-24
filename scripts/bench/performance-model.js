@@ -280,6 +280,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['atomic-groups', 'plugin-preconditions'],
   },
   {
+    id: 'remote-dependency-hash-authorizes-plugin-change',
+    proposal: 'treat a dependency package hash as enough evidence to stage or activate a plugin change',
+    rejectedBecause: 'dependency hash evidence is planning input, not a live commit authorization for coupled plugin state',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'plugin-preconditions', 'live-preconditions'],
+  },
+  {
     id: 'cross-group-row-batch',
     proposal: 'merge database rows from different plugin owners or atomic groups into one visible batch',
     rejectedBecause: 'recovery could not prove which group owns a partial row result after failure',
@@ -412,12 +419,14 @@ function pluginInstallWorkload() {
         remoteBeforeHash: 'sha256:absent',
         localHash: 'sha256:payments-2.1.0-active',
         atomicGroupId: atomicGroup.id,
+        dependencyPlan: 'commerce depends on payments>=2.1.0',
       },
       {
         resourceKey: 'plugin:commerce',
         remoteBeforeHash: 'sha256:absent',
         localHash: 'sha256:commerce-1.0.0-active',
         atomicGroupId: atomicGroup.id,
+        dependencyPlan: 'commerce depends on payments and shared metadata validators',
       },
     ],
   };
@@ -491,6 +500,17 @@ function scheduleWorkload(workload, limits) {
       canonicalVisible: false,
       durableEvidence: 'plugin-metadata-staging-record',
       idempotencyKey: `${workload.planId}:${pluginResource.atomicGroupId}:${pluginResource.resourceKey}`,
+    });
+    actions.push({
+      type: 'plugin-dependency-check',
+      planId: workload.planId,
+      resourceKey: pluginResource.resourceKey,
+      atomicGroupId: pluginResource.atomicGroupId,
+      dependencyPlan: pluginResource.dependencyPlan,
+      precondition: 'dependency-graph-and-live-package-hash',
+      canonicalVisible: false,
+      durableEvidence: 'dependency-validator-record',
+      idempotencyKey: `${workload.planId}:${pluginResource.atomicGroupId}:${pluginResource.resourceKey}:dependency-check`,
     });
   }
 
@@ -699,7 +719,12 @@ function scheduleRowGroup(rowGroupEntry, planId, limits) {
         rowCount,
         order: 'primary-key',
       },
-      idempotencyKey: `${planId}:${rowGroupEntry.atomicGroupId || 'independent'}:${rowGroupEntry.table}:${batchIndex}`,
+      batchCursor: {
+        startRow: firstRow,
+        endRow: firstRow + rowCount - 1,
+        rowCount,
+      },
+      idempotencyKey: `${planId}:${rowGroupEntry.atomicGroupId || 'independent'}:${rowGroupEntry.table}:rows-${firstRow}-${rowCount}:batch-${batchIndex}`,
     });
   }
 

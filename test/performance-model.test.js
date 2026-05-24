@@ -43,6 +43,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     pluginInstall.actions.some((action) => action.type === 'db-row-batch'),
     'plugin install models database row batching',
   );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'plugin-dependency-check'),
+    'plugin install models dependency-heavy plugin changes',
+  );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
 });
@@ -185,6 +189,9 @@ test('database batching is bounded and keeps per-row preconditions', () => {
   assert.ok(dbBatches.every((batch) => batch.order === 'primary-key'));
   assert.ok(dbBatches.every((batch) => batch.durableEvidence));
   assert.ok(dbBatches.every((batch) => batch.idempotencyKey));
+  assert.ok(dbBatches.every((batch) => batch.batchCursor?.rowCount === batch.rowCount));
+  assert.ok(dbBatches.every((batch) => batch.batchCursor?.startRow >= 0));
+  assert.ok(dbBatches.every((batch) => batch.batchCursor?.endRow >= batch.batchCursor?.startRow));
 });
 
 test('plugin install remains invisible until the atomic group commit', () => {
@@ -268,6 +275,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(rejectedById.get('split-plugin-install').rejectedGate, 'group');
   assert.ok(
     rejectedById.get('skip-plugin-validators-on-package-hash').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('remote-dependency-hash-authorizes-plugin-change').violates.includes('plugin-preconditions'),
+  );
+  assert.equal(
+    rejectedById.get('remote-dependency-hash-authorizes-plugin-change').rejectedGate,
+    'group',
   );
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
   assert.ok(rejectedById.get('blind-sql-replace').violates.includes('row-preconditions'));
