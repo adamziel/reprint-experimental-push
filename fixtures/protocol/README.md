@@ -21,8 +21,9 @@ The normal sequence is:
 13. `push-recovery-response.json`
 14. `push-recovery-inspect-request.json`
 15. `push-recovery-inspect-response.json`
-16. `push-topology.json`
-17. `push-flow.json`
+16. `push-recovery-inspect-blocked-response.json`
+17. `push-topology.json`
+18. `push-flow.json`
 
 Failure and recovery examples:
 
@@ -38,6 +39,8 @@ Failure and recovery examples:
   successful recovery finalization after a read-only inspect step.
 - `push-recovery-inspect-request.json` and `push-recovery-inspect-response.json`
   show the read-only evidence lookup used before any mutating recovery mode.
+- `push-recovery-inspect-blocked-response.json` shows the same inspect step
+  when the remote can prove that finish or rollback is not safe.
 - `push-recovery-blocked-response.json` shows the evidence returned when the
   remote cannot prove a safe finish or rollback.
 - `push-pull-mapping.json` shows how the persisted pull base package becomes
@@ -80,6 +83,9 @@ requires idempotency for all recovery requests.
 `push_recover` `mode: "inspect"` is the evidence reader that decides whether
 the next safe step is finish, rollback, retry, or block. Neither call should
 be treated as a live write lock.
+`push_recover` `mode: "inspect"` must happen before any mutating recovery
+mode, and the blocked inspect fixture proves that the read-only path can
+return a definitive stop without authorizing repair.
 
 The open-journal and inspect fixtures intentionally keep the proof surface
 small but explicit:

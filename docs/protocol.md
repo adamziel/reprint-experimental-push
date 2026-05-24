@@ -256,6 +256,14 @@ Recovery classification:
 - `open`: the batch is still in flight or the journal shows a live claim that
   may resume under the same request identity.
 
+The inspect-first recovery fixture set includes both a successful evidence
+read and a blocked evidence read:
+
+- `push-recovery-inspect-response.json` shows the journal and live-hash review
+  result when inspect can narrow the next safe step.
+- `push-recovery-inspect-blocked-response.json` shows the same inspect call
+  when the remote can prove that finish or rollback is not safe.
+
 The existing pull exporter/importer still owns the base package format. Push
 does not invent a second notion of truth; it layers live remote verification
 and mutation receipts on top of the pull artifacts already persisted on disk.

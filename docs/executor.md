@@ -872,6 +872,9 @@ Recovery should always begin with `push_journal` or `push_recover` in
 claim, session, and live hashes that were present when the batch opened, the
 executor must treat the attempt as blocked and stop rather than replaying a
 stale dry-run receipt.
+The inspect call can itself return a blocked result; that is the proof that
+the executor must not advance to `finish`, `rollback`, or `auto` without new
+evidence.
 
 ## Playground Test Topology
 

@@ -1,0 +1,25 @@
+{
+  "ok": false,
+  "code": "RECOVERY_BLOCKED",
+  "state": "inspect",
+  "message": "Inspection proved the batch cannot be safely finished or rolled back.",
+  "details": {
+    "dry_run_id": "dry_01j00000000000000000000000",
+    "batch_id": "batch-1",
+    "journal_cursor": "journal:dry_01j00000000000000000000000:3",
+    "live_hashes": [
+      {
+        "resource_key": "file:index.php",
+        "before_hash": "sha256:base-index",
+        "actual_hash": "sha256:unexpected-live-index",
+        "state": "blocked"
+      }
+    ],
+    "target_state_counts": {
+      "old": 0,
+      "new": 0,
+      "blocked": 1,
+      "unknown": 0
+    }
+  }
+}
