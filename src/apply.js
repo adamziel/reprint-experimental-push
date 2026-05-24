@@ -990,25 +990,35 @@ function sanitizeRecoveryRemote(remote, plan) {
 
 function validatePreconditions(remote, plan) {
   const preconditions = Array.isArray(plan.preconditions) ? plan.preconditions : [];
-  if (preconditions.length !== (plan.mutations || []).length) {
+  const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
+  if (preconditions.length !== mutations.length) {
     throw new PushPlanError(
       'PRECONDITION_FAILED',
       'Refusing to apply a ready plan without one live remote precondition per mutation.',
       {
-        mutationCount: (plan.mutations || []).length,
+        mutationCount: mutations.length,
         preconditionCount: preconditions.length,
       },
     );
   }
-  for (const precondition of plan.preconditions || []) {
-    if (precondition.checkedAgainst !== 'live-remote') {
+  const preconditionsByMutationId = new Map();
+  for (const precondition of preconditions) {
+    preconditionsByMutationId.set(precondition.mutationId, precondition);
+  }
+  for (const mutation of mutations) {
+    const precondition = preconditionsByMutationId.get(mutation.id);
+    if (
+      !precondition
+      || precondition.resourceKey !== mutation.resourceKey
+      || precondition.checkedAgainst !== 'live-remote'
+      || precondition.expectedHash !== mutation.remoteBeforeHash
+    ) {
       throw new PushPlanError(
         'PRECONDITION_FAILED',
-        `Refusing to apply mutation ${precondition.mutationId || '(unknown)'} without a live-remote precondition.`,
+        `Refusing to apply mutation ${mutation.id} without its matching live remote precondition.`,
         {
-          mutationId: precondition.mutationId || null,
-          resourceKey: precondition.resourceKey || null,
-          checkedAgainst: precondition.checkedAgainst || null,
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
         },
       );
     }

@@ -161,6 +161,24 @@ test('executor rejects forged ready plans missing live remote preconditions', ()
   assert.equal(JSON.stringify(remote), before);
 });
 
+test('executor rejects forged ready plans with mismatched live remote preconditions', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+
+  const ready = planFor(base, local, baseSite());
+  const forged = tamperReadyPlan(ready, (plan) => {
+    plan.preconditions[0].resourceKey = 'file:wp-content/themes/theme/style.css';
+  });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(remote), before);
+});
+
 test('keeps remote-only changes and does not overwrite them', () => {
   const base = baseSite();
   const remote = baseSite();
