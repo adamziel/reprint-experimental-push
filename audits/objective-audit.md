@@ -136,7 +136,7 @@ no data loss, reliability, or speed for a live source WordPress push.
 The default suite passed locally on 2026-05-25, but it is still mostly model
 proof plus fixture-scoped lab evidence. Passing it does not close the
 production release gap. The strongest available proofs are split across
-separate entrypoints:
+separate entrypoints, and that split is itself part of the problem:
 
 - Executable default proof: `npm test`
 - Light Playground chain: `npm run test:playground`
@@ -147,6 +147,8 @@ separate entrypoints:
 The unresolved release issue is not the absence of interesting tests. It is the
 absence of one enforced command that composes the strongest checks and fails
 closed when any required proof remains lab-backed, fixture-scoped, or missing.
+That missing command is a procedural blocker even if every optional smoke stays
+green.
 
 ## Test Audit
 
@@ -164,8 +166,9 @@ where they are asked to prove production release safety.
   packaging behavior. They still report `labBacked: true`, so they are
   explicitly not production proof.
 - `scripts/bench/guarded-executor-benchmark.js` proves the benchmark can block
-  unsupported throughput claims. It does not itself measure a live push path
-  or enforce a release threshold unless the claim gate is explicitly invoked.
+  unsupported throughput claims. It does not itself measure a live push path,
+  set a required threshold, or enforce a release decision unless the claim
+  gate is explicitly invoked.
 
 The practical consequence is that the suite is good at proving "do not claim
 release yet." It is not yet good enough to prove "release is safe."
@@ -259,6 +262,8 @@ workflow that chains those checks into one required release path, so a green
 run can still omit the exact proof the objective needs. This is a release
 blocker, not a documentation gap: until one required command exists, the
 project can keep producing passing lab runs without proving production safety.
+The strongest route smokes still report `labBacked: true`, which is a direct
+signal that route-shaped success is not production proof.
 
 - `npm test` is the default automated suite, but it only covers the model and
   selected fixture logic.
