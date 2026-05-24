@@ -1,6 +1,6 @@
 # Acceptable Post-Failure States
 
-An apply attempt must end in one of these states:
+An apply attempt must end in one of these states, and only these states:
 
 - `old-remote`: no remote mutation committed. The recovery artifact is the
   journal that proves the plan can be retried after revalidation.
@@ -15,11 +15,14 @@ Anything else is unacceptable for a production partial remote mutation. If a
 remote was mutated but the recovery artifact is missing, incomplete, or
 uninspectable, treat that as a release blocker.
 
+Completed-plan replay must classify as `fully-updated-remote`. It may observe a
+completed journal envelope, but it must not duplicate inserts or resurrect
+stale local data.
+
 ## Retry Rules
 
 - Retrying an `old-remote` failure must not duplicate inserts.
 - Retrying a `fully-updated-remote` journal must not resurrect stale local
-  state.
+  state or reapply any mutation.
 - Retrying a `blocked-recovery` state must stop until recovery is resolved and
   the artifact envelope is inspectable again.
-
