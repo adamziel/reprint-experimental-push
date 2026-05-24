@@ -210,11 +210,11 @@ production push support.
 
 ### Reprint
 
-The Reprint source notes support staged, resumable transport: preflight, files
-pull, DB pull, DB apply, flat document root, runtime apply, and optional start.
-Reprint source notes support the staged, resumable transport shape: preflight,
-files pull, DB pull, DB apply, flat docroot, runtime apply, and start. That is
-a good transport primitive for push, but it is not a mutation proof.
+The Reprint source notes support staged, resumable transport: preflight,
+files pull, DB pull, DB apply, flat document root, runtime apply, and
+optional start. They describe pull and export mechanics, not a live
+source-site mutation proof. That is a good transport primitive for push, but
+it is not a mutation proof.
 
 Scenario: push applies plugin files, then the process dies before the related
 options, custom-table rows, or activation state are committed. The file side is
@@ -233,8 +233,9 @@ survives file/DB/plugin boundaries separately.
 ### ZS-Sync
 
 The ZS-Sync notes are useful for scanner composition, cursors, resource
-providers, and bounded changed-resource listing. They are not a source-site
-mutation policy.
+providers, and bounded changed-resource listing. They frame one site as
+authoritative and the others as consumers of changed resources. They are not
+a source-site mutation policy.
 
 Scenario: the scanner says the known tables and files are current, but a plugin
 stores state in an unregistered custom table, a generated file, or a runtime
@@ -253,7 +254,8 @@ push must block on unknown or incomplete coverage.
 The ForkPress notes provide the closest production reliability bar:
 three-way merge records, reviewed conflict resolution, plugin validators,
 revalidation, and crash consistency where failure is old, new, or blocked with
-artifacts.
+artifacts. They cover branch merge auditability and crash consistency across
+WordPress files and SQLite data, not live push of a remote source site.
 
 Scenario: an operator reviews a conflict, picks "take local," and retries after
 the source site changed again or after a partial apply left a mixed remote
