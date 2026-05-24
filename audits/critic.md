@@ -249,6 +249,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A stale approval, stale snapshot, or stale manual-review artifact cannot be
   recycled as evidence for a new apply, even if the plan hash or endpoint name
   has not changed.
+- A green route-shape smoke or packaged-plugin mount does not refresh a stale
+  manual-review artifact; those signals stay lab evidence only and cannot turn
+  old approval into current authority.
 - A stale manual-review artifact must be rejected before write even when the
   route shape matches, the plugin package mounts cleanly, or a fixture replay
   returns `finalMatchesLocal`; those signals remain lab evidence only.
