@@ -89,6 +89,27 @@ contract:
 - `blocked`: the journal or fresh live hashes prove finish or rollback would
   be unsafe.
 
+The production executor maps directly to the pull pipeline:
+
+| Pull artifact or stage | Push consumer | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base to one live remote identity and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Treat the listing as planning evidence only. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan and return a receipt, not a lock. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
+
+That mapping is one-way:
+
+- exporter/importer establish immutable provenance
+- preflight binds that provenance to one live remote identity and one short-lived push session
+- snapshot hashes remain planning evidence only
+- dry-run uploads a canonical plan and returns an eligibility receipt, not a lock
+- apply is the first write stage and must revalidate fresh live evidence before every batch and at the storage boundary
+- journal inspection stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh live hashes prove the action
+
 That sequence is the runtime form of the pull pipeline handoff:
 
 - exporter scans the merge base and coverage evidence
@@ -224,6 +245,15 @@ The same role split applies in Docker and Playground:
 | `local-edited` | `local-edited` | `local-edited` |
 | `remote-changed` | `remote-changed` | `remote-changed` |
 | `runner` | `runner` | `local test process` |
+
+The same topology is the production proof shape in both harnesses:
+
+- `remote-base` seeds the persisted pull base and the live remote identity
+- `local-edited` holds the imported local edits that become the candidate plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+- remote tunnels remain disallowed
 
 Both harnesses must keep browser-visible inspection on the sandbox-provided
 `8080` ingress with a local-only proxy. That rule is part of the production

@@ -84,6 +84,31 @@ In other words, the pull/export/import pipeline produces immutable provenance,
 and the push executor consumes that provenance without ever rewriting it to
 make stale evidence look current.
 
+The mapping is intentionally one-way:
+
+| Pull artifact or stage | Push consumer | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base to one live remote identity and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live hash listing. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan, but do not reserve a lock. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and again at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
+
+That ladder is the production contract in miniature:
+
+- exporter/importer establish immutable provenance
+- preflight binds that provenance to one live remote identity and one
+  short-lived push session
+- snapshot hashes remain planning evidence only
+- dry-run uploads a canonical plan and returns an eligibility receipt, not a
+  lock
+- apply is the first write stage and must revalidate fresh live evidence
+  before every batch and at the storage boundary
+- journal inspection stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes prove the action
+
 The one-remote, one-local, one-drift-witness test shape is the same in Docker
 and Playground: `remote-base` seeds the persisted pull base, `local-edited`
 holds the imported local edits, `remote-changed` is the same remote identity
