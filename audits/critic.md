@@ -4805,6 +4805,10 @@ False reliability claims to reject:
   the same live boundary and keeps the remote auditable.
 - "manual resolution succeeded" when the preserved remote, rejection point,
   and fresh retry artifact are not all recorded for the same live boundary.
+- "manual resolution succeeded" when the same readable artifact is widened
+  to a later remapped create target or later-discovered plugin-owned surface
+  just because the route family, package mount, or reviewer wording still
+  matches.
 - "manual resolution succeeded" when a later-discovered plugin-owned table,
   file, cron row, runtime registry entry, generated asset, cache record, or
   serialized blob appears after the first write but never gets its own
