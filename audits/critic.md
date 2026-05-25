@@ -9,6 +9,10 @@ Must change before any production-grade push claim:
 - prove the live mutation boundary rejects stale authority before the first
   write, preserves the remote for audit, and rebuilds retry scope from fresh
   live hashes on this branch;
+- prove the claim is rerun on the same live drift case here; a matching
+  route family, package mount, fixture replay, readable review artifact, or
+  `finalMatchesLocal` result is compatibility evidence only and cannot
+  substitute for the branch-local live rerun;
 - prove a stale approval or readable review artifact cannot be widened into
   a different row, file, relationship-bearing record, or plugin-owned
   surface after drift;
