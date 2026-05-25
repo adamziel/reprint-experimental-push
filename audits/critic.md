@@ -109,10 +109,12 @@ Release gate for any production wording:
   is classified as blocked, not retroactively folded into a success claim or
   treated as a safe continuation without fresh live evidence.
 - Show that the comparison set is conservative: Reprint proves staged
-  transport rhythm, ZS-Sync proves bounded discovery, and ForkPress proves
-  reviewed-resolution vocabulary plus a crash-consistency target. None of
-  them proves this branch's live write path, preserved-remote retry, or
-  plugin-owned coverage without a same-boundary recheck here.
+  transport rhythm and resumable pull structure, ZS-Sync proves bounded
+  discovery and cursoring, and ForkPress proves reviewed-resolution
+  vocabulary plus a crash-consistency target. None of them proves this
+  branch's live write path, preserved-remote retry, create-time remap
+  handling, plugin-owned coverage, or partial-write classification without a
+  same-boundary recheck here.
 - Show that any readable manual-review artifact or source-note comparison is
   audit-only unless this branch reran the same live boundary and recorded the
   preserved remote, rejection point, and fresh retry scope on this branch.
@@ -156,9 +158,9 @@ Release gate for any production wording:
   boundary and failure case.
 - Show that any Reprint, ZS-Sync, or ForkPress citation stays historical
   context unless this branch names the exact upstream revision or worktree
-  state, rechecks the same live boundary here, and records the same drift or
-  retry case against the current worktree; a matching note without that
-  branch-local rerun is not production evidence.
+  state, rechecks the same live boundary here, and records the same drift,
+  remap, or retry case against the current worktree; a matching note without
+  that branch-local rerun is not production evidence.
 - Show that branch-local revalidation exists for the exact same stale-remote,
   create-time remap, plugin-owned surface, or partial-write case being
   described; otherwise even a correct upstream note, matching route family,
@@ -249,7 +251,8 @@ Must-fix blockers before any production wording:
   otherwise the late surface can still hide a partial-write loss mode.
 - Reprint, ZS-Sync, and ForkPress comparisons stay historical unless the
   exact upstream revision or worktree state and the same live mutation
-  boundary were reverified on this branch.
+  boundary were reverified on this branch, with preserved-remote evidence
+  and fresh retry scope captured here.
 - A matching upstream commit or worktree state is only provenance, not
   current authority; if the branch did not recheck the same live mutation
   boundary here, the citation stays audit-only even when the route family or
