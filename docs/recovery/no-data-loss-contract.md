@@ -1,32 +1,21 @@
 # No Data Loss Recovery Contract
 
-This lane models recovery around three acceptable post-failure states:
+This lane keeps the push path inside three acceptable post-failure states:
 
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery` with inspectable artifacts
+1. `old-remote`
+2. `fully-updated-remote`
+3. `blocked-recovery` with inspectable artifacts
 
-The model tests in `test/push-planner.test.js` prove those states for:
+The contract is intentionally conservative:
 
-- failure before mutation
-- failure after staging
-- failure after dependency validation
-- mid-apply failure
-- completed replay
-- stale completed replay
+- A failure before remote mutation must leave the remote unchanged and surface only the journal artifacts needed to inspect the attempt.
+- A completed plan replay must stay read-only and classify as `fully-updated-remote`.
+- A partial commit is only acceptable when recovery is explicitly blocked and the durable artifacts include enough evidence to inspect the partial remote safely.
 
-What the model does not prove by itself:
+Durable recovery evidence is not the same as lab or JSON evidence:
 
-- durable on-disk journal writes
-- `fsync`/flush behavior
-- lease or fencing correctness across writers
-- production plugin activation or process restarts
+- JSON or in-memory fixtures can help model the boundary.
+- Production recovery requires durable journal rows, flushed file or DB writes, and a usable inspect path.
+- Retry logic must not duplicate inserts, resurrect stale local data, or treat a partial write without artifacts as safe.
 
-The release bar for this lane is simple:
-
-- a partial remote mutation without a recovery artifact is not acceptable
-- retry must not duplicate inserts
-- retry must not resurrect stale local data
-- replay of a completed plan must either stay inert or block with artifacts
-
-Use the model results as the shape of the contract, then back them with a durable journal implementation and inspectable recovery evidence in production paths.
+The tests in `test/push-planner.test.js` are the executable version of this contract.
