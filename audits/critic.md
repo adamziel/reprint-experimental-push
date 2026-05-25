@@ -3814,3 +3814,11 @@ show the following with branch-local live evidence, not lab shape:
 - any Reprint, ZS-Sync, or ForkPress citation names the exact upstream
   revision or worktree state, states what that note proves, and explicitly
   states what it does not prove for this branch.
+
+Do not let the release gate downgrade missing proof into a softer wording
+bucket. A claim is still not production-grade if it says the comparison or
+manual resolution "passed" but does not also name the preserved remote, the
+stale rejection point, the fresh retry artifact, and the exact live mutation
+boundary where the new boundary was reclassified. A readable stale artifact
+or a matching upstream note remains audit evidence only until this branch
+shows that it was unusable as retry authority for the later boundary.
