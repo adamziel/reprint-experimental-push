@@ -213,8 +213,20 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'transport-only',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys')?.visibilityBoundary,
+    'recovery-evidence-only',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'parallelize-independent-owner-index-scans-within-site-budgets')?.visibilityBoundary,
     'planning-only-with-site-budgets',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches')?.failureEvidence,
+    'index cursor, dependency graph, and batch idempotency key',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize')?.rejectedGate,
+    'group',
   );
 });
 
