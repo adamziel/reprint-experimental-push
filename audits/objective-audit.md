@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven in this checkout. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. This checkout also still exposes only helper-oriented commands in `package.json`; there is no checked-in `verify`, `verify:release`, or `release` script here. That command-surface gap matters, but it is not the full blocker by itself. The concrete release gate remains closed until a checked invocation proves live-source preflight, apply-time revalidation, dry-run receipt, apply-time receipt verification, recovery/journal readback, production auth/session lifecycle, durable journal semantics, graph identity, and plugin-driver coverage together.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven in this checkout. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. This checkout also still exposes only helper-oriented commands in `package.json`; there is no checked-in `verify`, `verify:release`, or `release` script here. That command-surface gap matters, but it is secondary. Even if another branch reports a passing `npm run verify:release`, the release gate stays closed here until the live-boundary evidence is explicit and checked: production auth/session lifecycle, durable journal semantics, graph identity, and plugin-driver coverage in the same invocation.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -69,7 +69,7 @@ The tests do the right kind of negative work, but they are not positive release 
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the guarded benchmark can move staged buffers and row payloads through durable evidence while refusing unsupported throughput claims. It does not prove the live push path is fast or release-ready.
 - [`test:playground:authenticated-http-push`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:production-shaped-push`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:production-plugin-package`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), and the DB journal smokes prove helper- and lab-scoped behavior, including authenticated and production-shaped routes. They still do not prove the live-source boundary or production storage durability in this checkout, and they do not compose into one mandatory release command.
 - `npm test -- --test-reporter=spec` was rechecked in this worktree on 2026-05-25 and passed at `89/89`. That is regression evidence only. It does not certify no data loss, reliability, or speed on the live source boundary.
-- The strongest live-boundary claims still missing are not hypothetical. They are the production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver behavior at apply time.
+- The strongest live-boundary claims still missing are not hypothetical. They are the production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver behavior at apply time. The lack of a checked release command in this checkout remains a release-engineering gap, but it is not the primary blocker.
 
 ## Current Command Surface
 
@@ -93,7 +93,7 @@ Minimum properties of that gate:
 4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
 5. it must be the command CI or another default entrypoint actually invokes
 
-Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence.
+Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle, durable journal semantics, graph identity, and plugin-driver behavior, not just the absence of a script name.
 
 ## Conclusion
 
