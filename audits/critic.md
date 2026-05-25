@@ -138,7 +138,9 @@ Release gate for any production wording:
   vocabulary plus a crash-consistency target. None of them proves this
   branch's live write path, preserved-remote retry, create-time remap
   handling, plugin-owned coverage, or partial-write classification without a
-  same-boundary recheck here.
+  same-boundary recheck here, and none of them may be treated as current
+  proof unless the exact upstream revision or worktree state and the same
+  live boundary are named on this branch.
 - Show that any readable manual-review artifact or source-note comparison is
   audit-only unless this branch reran the same live boundary and recorded the
   preserved remote, rejection point, and fresh retry scope on this branch.
