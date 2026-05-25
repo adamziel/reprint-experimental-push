@@ -15633,6 +15633,36 @@ test('durable no-data-loss recovery keeps failures old-remote and completed repl
     assert.equal(inspection.status, 'old-remote', label);
   }
 
+  const partialJournalPath = tempRecoveryJournalPath();
+  const partialDurableJournal = openRecoveryJournal(partialJournalPath, { truncate: true, now: fixedNow });
+  const partialRemote = baseSite();
+  const partialFailure = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      durableJournal: partialDurableJournal,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  partialDurableJournal.close();
+
+  assert.ok(partialFailure instanceof PushPlanError);
+  assertFailureRecoveryState(partialFailure.details.recovery, 'blocked-recovery');
+  assert.ok(partialFailure.details.recovery.artifacts.remote, 'partial commit must keep remote artifacts');
+  assert.ok(partialFailure.details.recovery.artifacts.journal, 'partial commit must keep journal artifacts');
+  assert.equal(partialFailure.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(
+    Object.keys(partialFailure.details.recovery.artifacts.remote.db.wp_posts).filter((key) => key === 'ID:2').length <= 1,
+    true,
+  );
+
+  const partialInspection = inspectRecoveryJournal({
+    journal: readRecoveryJournal(partialJournalPath),
+    plan,
+    current: partialFailure.details.recovery.artifacts.remote,
+  });
+  assert.equal(partialInspection.status, 'blocked-recovery');
+
   const completedJournalPath = tempRecoveryJournalPath();
   const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
