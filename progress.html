@@ -474,20 +474,20 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Lab evidence only. Flat trend. 0/4 release gates verified. Top blocker: production WordPress executor/auth. New audit entry linked below.</p>
-        <time class="update-stamp" datetime="2026-05-25T06:34:39+02:00">Last updated: May 25, 2026, 06:34:39 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T06:35:48+02:00">Last updated: May 25, 2026, 06:35:48 CEST</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">Status: lab proof only; production executor/auth, recovery journal, Docker/Playground, graph identity, and plugin drivers remain pending</span>
+          <span class="pill">Status: lab proof only; production executor/auth remains the top blocker</span>
           <span class="pill">Trend: flat until production proof lands</span>
           <span class="pill">Top risk: production WordPress executor/auth remains unproven</span>
           <span class="pill">Release gates verified by evidence: 0/4</span>
-          <span class="pill">Pending gates: executor/auth, recovery journal, Docker/Playground, graph identity, plugin drivers</span>
-          <span class="pill">Newest audit entry: <a href="docs/progress-log.md#2026-05-25-public-status-audit-063439">2026-05-25 06:34:39</a></span>
+          <span class="pill">Pending gates are listed in the checklist below</span>
+          <span class="pill">Newest audit entry: <a href="docs/progress-log.md#2026-05-25-public-status-audit-063548">2026-05-25 06:35:48</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-063439">Open newest audit: 2026-05-25 06:34:39</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-063548">Open newest audit: 2026-05-25 06:35:48</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
-        <p><strong>Audit trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="docs/approach-scorecard.md">scorecard</a>, <a href="docs/executor.md">executor</a>, <a href="docs/recovery/apply-journal.md">recovery</a>, <a href="docs/playground-topology.md">playground</a>, <a href="docs/protocol.md">protocol</a>, <a href="docs/supervisor-feedback.md">feedback</a>.</p>
+          <p><strong>Audit trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="docs/approach-scorecard.md">scorecard</a>, <a href="docs/executor.md">executor</a>, <a href="docs/recovery/apply-journal.md">recovery</a>, <a href="docs/playground-topology.md">playground</a>, <a href="docs/protocol.md">protocol</a>, <a href="docs/supervisor-feedback.md">feedback</a>.</p>
       </div>
     </header>
 
@@ -554,7 +554,7 @@
           <ul class="compact-list">
             <li><strong>What is proven</strong><span>89 Node tests pass in lab evidence; see <a href="audits/objective-audit.md">objective audit</a> and the linked executor, recovery, playground, protocol, and feedback docs.</span></li>
             <li><strong>Top risk</strong><span>Real WordPress executor/auth still blocks any production push-safety claim.</span></li>
-            <li><strong>Release gates</strong><span>Four gate buckets remain unverified: executor/auth, recovery journal, Docker/Playground, and graph identity plus plugin drivers.</span></li>
+            <li><strong>Release gates</strong><span>The detailed pending buckets are listed in the release-gate checklist below.</span></li>
             <li><strong>Audit note</strong><span>The newest dated entry is linked above and the fuller trail stays below.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
@@ -595,11 +595,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Lab snapshots prove guarded plans and fixture apply/refusal paths. Real executor/auth, durable journal storage, Docker integration, and plugin-driver proof remain pending.</p>
+              <p>Lab snapshots prove guarded plans and fixture apply/refusal paths. Real executor/auth and the remaining release gates stay pending until the checklist is backed by production evidence.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Real executor/auth, durable journal storage, Docker integration, and plugin drivers are still pending.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Real executor/auth and the remaining release gates are still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>
