@@ -6,35 +6,24 @@ point. That lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence. It is a
 real improvement over the earlier route-shape-only claims, but it is still not
-branch-local retry authority and it does not close the live-boundary gap on
-this worktree.
+branch-local retry authority.
 
-That evidence is useful because it now names executor/session/journal details
-instead of only route shape. It is not sufficient for production wording until
-the same live boundary is rerun here against a real local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL`, with the rejected remote preserved, dry-run
-receipt shown, apply-time revalidation repeated, and journal/recovery state
-inspected on the same mutation.
+Single strongest blocker: this worktree still has no rerunnable live release
+command that proves the first executor/auth/preserved-remote boundary on a
+real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. Until that exact
+boundary exists here, production-grade push wording stays false reliability.
 
-What improved in the supervised lane: the retained-source handoff now carries
-session shape, commit application, and journal row evidence instead of only
-route-shape claims. What remains unproven on this branch is the next required
-proof: a rerunnable live release command against a real local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote,
-revalidates at apply time, and inspects recovery/journal state on the same
-mutation.
+What improved in the supervised lane is narrow but real: the retained-source
+handoff now names executor/session/journal details instead of only route
+shape. What it does not prove here is the next required proof: a rerunnable
+live release command against a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
+apply time, and inspects recovery/journal state on the same mutation.
 
 Treat that result as a stronger lab baseline, not as production retry
-authority: it still does not prove this branch can rerun the same live
-boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`,
-preserve the rejected remote, and revalidate apply-time behavior from fresh
-live hashes on retry.
-
-The branch-local gap is now narrower and exact: this worktree still has no
-rerunnable live release command that proves the first executor/auth/
-preserved-remote boundary on a real local, Playground, or Docker source. That
-is the blocker for production-grade wording here, not the presence or absence
-of `verify:release` in the supervised lane.
+authority. It still does not prove this branch can rerun the same live
+boundary, preserve the rejected remote, and revalidate apply-time behavior
+from fresh live hashes on retry.
 
 The right reading of that evidence is narrow: it shows the supervised lane has
 advanced, not that this worktree can yet claim production-grade push support.
