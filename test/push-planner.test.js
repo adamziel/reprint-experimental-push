@@ -6040,6 +6040,53 @@ test('durable recovery contract keeps the only acceptable post-failure states ac
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
 
+test('durable completed replay stays inert after local divergence and does not duplicate stale inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completed = applyPlan(baseSite(), plan);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+
+  local.files['index.php'] = '<?php echo "stale local divergence";';
+  local.db.wp_posts['ID:2'].post_title = 'Stale inserted title';
+
+  const firstReplay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  const firstReplaySnapshot = JSON.stringify(replayRemote);
+  const secondReplay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(JSON.stringify(replayRemote), firstReplaySnapshot);
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(firstReplay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(firstReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(secondReplay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assertAcceptableRecoveryState(firstReplay.recoveryState);
+  assertRecoveryStateArtifacts(firstReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(firstReplay.recoveryState.artifacts.remote, undefined);
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records.filter((record) => record.type === 'journal-replayed').length, 2);
+  assert.equal(persisted.records.every((record) => record.state !== 'blocked-recovery'), true);
+});
+
 test('no-data-loss recovery only accepts old remote, fully updated remote, or blocked recovery states', () => {
   const base = baseSite();
   const local = baseSite();
