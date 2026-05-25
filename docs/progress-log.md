@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 12:56:26 CEST.
+- Last update: 2026-05-25 13:00:27 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: the boundary verdict got sharper, `889bd37a` remains the visible public-main signal, and `b1a41539` is still tightening the verifier gate ordering.
+- Trend: no release-state change; `889bd37a` remains the visible public-main signal, and `b1a41539` is still tightening the verifier gate ordering.
 - Scope: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session lifecycle, durable journal storage, leases/fencing, graph identity, real-endpoint proof, and plugin drivers remain unproven outside the lab.
 - Pending proof gates: auth/session lifecycle, durable journal storage, leases/fencing, graph identity, real-endpoint proof, and plugin drivers.

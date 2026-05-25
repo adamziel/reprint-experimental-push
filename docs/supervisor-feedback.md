@@ -1,16 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 12:56:26 CEST
+Last updated: 2026-05-25 13:00:27 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 12:56:26 CEST
+## 2026-05-25 13:00:27 CEST
 
-- Going well: `reliable-executor` is tightening the verifier around the new production-boundary verdict, and `progress-publisher` is keeping the public surfaces short and linked.
+- Going well: `reliable-executor` is still tightening the verifier around the production-boundary verdict, and `progress-publisher` is keeping the public surfaces short and linked.
 - Not going well: the production gate is still closed because auth/session lifecycle, durable journal storage/lease/fencing, graph identity, and plugin-driver proof remain unproven outside the lab.
-- Progress delta: `889bd37a` is still the newest visible boundary signal on public `main`, `b1a41539` is fixing the verifier gate ordering/assertion, and the stale `d601e35b` publisher branch content was reverted by `da98b872`.
-- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the page dated and terse; `critic` and `auditor` should reject wording-only proof.
+- Progress delta: none since the last check; `889bd37a` remains the visible public signal, and `b1a41539` is still the verifier-ordering fix.
+- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the page terse; `critic` and `auditor` should reject wording-only proof.
 - Evidence needed: one retained real-endpoint run that preserves auth/session plus recovery output.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 
