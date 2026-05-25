@@ -2603,6 +2603,41 @@ test('blocks a stale completed replay when the remote drifted after completion',
   assert.ok(error.details.recovery.artifacts.remote, 'blocked replay must carry remote artifacts');
 });
 
+test('completed replay stays inert on retry and blocks later drift with inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+
+  const firstReplay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(firstReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(firstReplay.site.files['index.php'], '<?php echo "local";');
+  assertRecoveryStateArtifacts(firstReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(firstReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(firstReplay.recoveryState.artifacts.remote, undefined);
+
+  replayRemote.files['index.php'] = '<?php echo "drifted";';
+  const driftSnapshot = JSON.stringify(replayRemote);
+  const blocked = captureError(() => applyPlan(replayRemote, plan, { journal: completed.journal }));
+
+  assert.equal(JSON.stringify(replayRemote), driftSnapshot);
+  assert.ok(blocked instanceof PushPlanError);
+  assert.equal(blocked.code, 'RECOVERY_BLOCKED');
+  assertRecoveryStateArtifacts(blocked.details.recovery, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts.remote, 'blocked replay must retain remote artifacts');
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(blocked.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('documented post-failure states stay limited to old remote, fully updated remote, or blocked recovery', () => {
   const base = baseSite();
   const local = baseSite();
