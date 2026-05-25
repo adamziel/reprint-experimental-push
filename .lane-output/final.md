@@ -13,17 +13,18 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants/.lane-output/final.md)
 
 Commands run:
+- `node --test --test-name-pattern='blocks local comments and users graph resources while preserving remote-only plugin drift|blocks local serialized block references while preserving remote-only plugin drift|blocks plugin-owned resources when the declared driver does not match the table while preserving remote-only plugin drift|keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent file delete, a matching file type swap, a matching independent edit, and remote-only plugin removals after apply revalidation' test/push-planner.test.js`
 - `node --test --test-name-pattern='blocks plugin-owned resources when the declared driver does not match the table|blocks plugin-owned resources when the declared driver does not match the table while preserving remote-only plugin drift' test/push-planner.test.js`
 - `git status --short --branch`
 
 Push result:
-- Not pushed
+- Pushed on `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` at `2375ddd0`
 
 Worktree status:
-- Dirty tracked files: `src/planner.js`, `test/push-planner.test.js`, `docs/scenario-matrix.md`, `.lane-output/final.md`
+- Clean tracked state
 - Branch: `lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-- `HEAD`: `ae8ce5d3`
+- `HEAD`: `2375ddd0`
 - `origin/lane/no-data-loss-invariants`: `5b25867b`
 
 Next supervisor nudge:
-- If this lane should keep moving, assign the next unsupported boundary to hard-block; otherwise reconcile and push the current head with the existing dirty planner file handled separately.
+- Assign the next distinct unsupported boundary to hard-block, or stop the lane if this proof set is sufficient for publication.
