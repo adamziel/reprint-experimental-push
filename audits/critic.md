@@ -6328,6 +6328,17 @@ Concise release-gate summary:
   discovered plugin-owned surface or remapped create target unless that later
   boundary separately preserved the remote, rejected stale authority, and
   rebuilt retry scope from live hashes on this branch.
+- an earlier readable approval, comparison note, or manual-resolution
+  artifact cannot be widened to cover a second live boundary after the first
+  write, even if the later boundary reuses the same route family, package
+  mount, reviewer wording, or fixture shape; the later boundary must still
+  prove its own preserved remote, rejection point, and fresh live-hash retry
+  scope before it can be called retry authority.
+- if the later boundary is a remapped create target, a late-discovered
+  plugin-owned surface, or a partial file/DB/plugin side effect, the missing
+  proof is still the same: the earlier artifact is audit-only until that
+  later boundary has its own preserve / reject / retry cycle and old/new/
+  blocked classification.
 
 Boundary-transfer rule:
 
