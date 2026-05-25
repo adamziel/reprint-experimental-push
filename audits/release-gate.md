@@ -71,6 +71,10 @@ or comparison-only.
 - The claim shows partial file, DB, or plugin side effects do not leave an
   implied success state just because one store committed; mixed writes need
   old/new/blocked evidence for the whole path.
+- The claim shows conflict policy is explicit for any late-discovered
+  plugin-owned surface: the remaining work must be named old, new, or blocked,
+  and a blocked late surface cannot be recast as a successful second phase on
+  the same live write boundary.
 - The claim shows a stale manual-review artifact cannot be widened into a
   different row, file, relationship-bearing record, or plugin-owned surface
   after drift; if it can be reused that way, the push is not production-safe.
@@ -142,6 +146,10 @@ or comparison-only.
   the remote was preserved for audit, the stale artifact stayed unusable, and
   the retry rebuilt scope from fresh live evidence on the same live write
   boundary.
+- The claim does not let a blocked late-discovered plugin-owned surface be
+  recast as a successful manual resolution, a compatibility pass, or a
+  harmless second phase unless the preserved remote, the blocked surface, and
+  the fresh retry scope are all named separately.
 - The claim includes the exact upstream revision or worktree state for any
   Reprint, ZS-Sync, or ForkPress comparison, and says whether that exact
   state was reverified at the same live write boundary. If not, the

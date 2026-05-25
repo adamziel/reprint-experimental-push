@@ -28,6 +28,10 @@ Release gate for any production wording:
   second successful write just because the first write already happened; the
   proof must separate the preserved remote, the blocked late surface, and the
   fresh retry scope for the remaining work.
+- Show that conflict policy stays unambiguous when the late-discovered surface
+  is blocked: the proof must record whether the remaining work is old, new, or
+  blocked, and it must not relabel a blocked late surface as a successful
+  manual resolution on the same write boundary.
 - Show each touched store as old, new, or blocked, and show retry rebuilt
   scope from fresh live evidence instead of inheriting the old decision.
 - Show the release claim is anchored in live-boundary evidence, not a copied
@@ -73,6 +77,10 @@ Must-fix blockers before any production wording:
   second write against a late-discovered plugin-owned surface; the proof has
   to show that the late surface was blocked or separately classified before
   any retry continued.
+- A blocked late-discovered plugin-owned surface must not be relabeled as a
+  successful manual resolution, a compatibility pass, or a harmless second
+  phase unless the proof names the preserved remote, the blocked surface, and
+  the fresh retry scope separately.
 - A readable stale manual-review artifact must not be mistaken for branch-
   local revalidation. If the live write boundary, preserved remote, and fresh
   retry scope were not rechecked on this branch, the artifact stays
