@@ -19,6 +19,9 @@ support.
   for audit.
 - The claim says whether any comparison to Reprint, ZS-Sync, or ForkPress
   was re-verified against the current upstream commit or worktree state.
+- The claim does not treat an unverified Reprint, ZS-Sync, or ForkPress
+  comparison as current proof, even if the endpoint path, package layout, or
+  expected hash looks production-shaped.
 - If the cited upstream commit or worktree state was not re-verified against
   the exact live mutation boundary being claimed, the comparison stays
   historical context only and cannot be promoted into current proof by a

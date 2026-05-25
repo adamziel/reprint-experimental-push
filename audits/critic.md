@@ -232,6 +232,9 @@ must stay lab-backed or comparison-only.
   upstream commit or worktree state that was reverified and the exact live
   write boundary that was exercised. If either is missing, the citation is
   historical context only and cannot support production wording.
+- An unverified Reprint, ZS-Sync, or ForkPress comparison is never current
+  proof, even when the path, package shape, or expected hash looks
+  production-shaped.
 - The observed upstream commit or worktree state in the source notes is
   historical context only. It cannot be treated as current upstream proof
   unless this branch re-verifies the same behavior at the live mutation
