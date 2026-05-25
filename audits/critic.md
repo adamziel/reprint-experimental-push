@@ -10,12 +10,12 @@ real-site rerun. The canonical release-gate checklist lives in
 That means the next acceptable proof must move off retained-source lab
 evidence and into a production WordPress auth/session lifecycle, with durable
 journal semantics plus explicit graph-identity, plugin-driver, and plugin-
-owned surface coverage on the live boundary.
-The older critique that no `verify:release` command exists is retired; the
-remaining issue is that the command still does not prove preserved-remote
-safety, apply-time revalidation, production auth/session lifecycle, graph
-identity, or plugin-driver coverage on a real-site boundary. A wrapper,
-comparison note, or polished smoke name never replaces that proof.
+owned surface coverage on the live boundary. The older critique that no
+`verify:release` command exists is retired; the remaining issue is that the
+command still does not prove preserved-remote safety, apply-time
+revalidation, production auth/session lifecycle, graph identity, or
+plugin-driver coverage on a real-site boundary. A wrapper, comparison note,
+or polished smoke name never replaces that proof.
 The comparison rule is equally strict: any Reprint, ZS-Sync, or ForkPress
 note is provenance only unless it names the exact upstream commit or worktree
 state, says what it proves here, says what it does not prove here, and is
