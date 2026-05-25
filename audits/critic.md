@@ -224,6 +224,12 @@ Concrete failure scenarios that still block production wording:
   trap appears, it is a new boundary unless it is separately enumerated or
   blocked before write, even if the route family, package mount, or reviewer
   wording looks unchanged;
+- stale manual-review artifacts that look fresh after a rerun are still not
+  proof of production safety unless they identify the exact rejected
+  boundary, the preserved remote for that boundary, and the fresh live-hash
+  retry scope for the rerun; a polished note can still hide a second
+  boundary, a remapped create target, or a late plugin-owned surface that was
+  never part of the original preserve / reject / retry cycle;
 - false reliability claims: missing proof is that "comparison passed",
   "manual resolution succeeded", or "production-ready" names the rejected
   remote, the rejection point, and the exact live boundary that was retried;
@@ -6470,3 +6476,9 @@ Comparison release gate:
   does not prove here, and the rerun status on this branch must fail closed,
   even if the route family, package layout, or reviewer wording matches the
   production path.
+- any Reprint, ZS-Sync, or ForkPress note described only as historical
+  context, compatibility evidence, or design lineage must stay in that class
+  unless this branch reran the same live boundary with preserved remote
+  evidence, stale rejection before the first write, and a fresh retry scope
+  rebuilt from live hashes; route-family or reviewer-wording similarity does
+  not promote it to live retry proof.
