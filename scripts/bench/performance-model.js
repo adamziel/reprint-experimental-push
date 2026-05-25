@@ -68,6 +68,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'file-hashing',
+    reduces: ['duplicate-local-hash-work', 'planning-round-trips'],
+    allowedShortcut: 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning',
+    guardrails: [
+      'remote-index-remains-planning-evidence-only',
+      'live-publish-still-revalidates-remote-resource-hash',
+    ],
+    gateProofs: {
+      skip: 'the planner can reuse a remote-index cursor to avoid re-scanning unchanged files while it prepares strong hashes',
+      live: 'the eventual publish still compares the live remote resource hash against the expected file precondition',
+      group: 'the cursor only shortens planning for one file boundary and never widens an atomic group',
+      recovery: 'the planning cursor is advisory; durable chunk receipts and the guarded publish record still classify failure',
+    },
+    visibilityBoundary: 'planning-only-before-file-publish',
+    failureEvidence: 'planning cursor plus cached digest and guarded file-publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'file-hashing',
     reduces: ['duplicate-chunk-rehash-work', 'resume-recompute-time'],
     allowedShortcut: 'reuse-plan-scoped-chunk-digests-for-large-file-resume',
     guardrails: [

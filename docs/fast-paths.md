@@ -37,6 +37,7 @@ the safe list even when they improve a throughput metric.
 | Area | Safe fast path | Required guardrail |
 | --- | --- | --- |
 | File hashing | Cache strong file hashes behind a local fingerprint such as size, mtime, inode, mode, and the previous digest. Stream only uncached or fingerprint-changed files, and keep per-chunk hashes for large files so resume can skip work safely. | Size, mtime, or inode can only skip a rehash when they match a cached strong digest. The apply precondition remains the live remote resource hash. |
+| File hashing | Reuse a remote-index cursor to avoid rescanning unchanged files while planning the next strong hash set. | The cursor is planning evidence only. The eventual publish still revalidates the live remote resource hash before any file becomes visible. |
 | File hashing | Reuse plan-scoped chunk digests for large-file resume so the sender can skip recomputing chunk hashes that already have durable receipts. | Cached chunk digests are only resume evidence. They do not replace the live publish compare or the guarded file-publish record. |
 | File hashing | Reuse a cached chunk ledger for large-file resume so duplicate chunk hashing can be skipped when the ledger matches the plan-scoped receipt set. | The chunk ledger only trims duplicate hashing. The live publish compare and guarded publish record still decide visibility. |
 | File hashing | Hash large files in bounded parallel chunks within the plan-scoped budget so retries can reuse durable chunk receipts without rehashing the whole body. | Chunk hashing may overlap, but each chunk still needs a durable receipt and the guarded publish compare still decides visibility. |
@@ -198,6 +199,8 @@ fails in a different way:
   live remote compare is still required.
 - File hashing can reuse a cached chunk ledger to skip duplicate hashing, but
   it still cannot skip the live publish compare or guarded publish record.
+- File hashing can reuse a remote-index cursor to skip duplicate hash planning,
+  but it still cannot skip the live publish compare or guarded publish record.
 - Chunk upload cannot treat a visible staging object or a matching digest as a
   substitute for the durable receipt and guarded finalize step.
 - Chunk upload for large archives cannot treat a cached manifest or archive hash

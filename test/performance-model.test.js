@@ -164,12 +164,20 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'plan-staging-window-only',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.visibilityBoundary,
+    'planning-only-before-file-publish',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions')?.rejectedGate,
     'live',
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'fingerprint-skips-live-publish-compare')?.rejectedGate,
     'live',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.failureEvidence,
+    'planning cursor plus cached digest and guarded file-publish record',
   );
 });
 
