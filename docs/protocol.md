@@ -45,6 +45,20 @@ The production ladder is fixed and ordered:
    the action safe with fresh live evidence and the same auth floor as the
    write path.
 
+That means the production push extension has six distinct remote states:
+
+- `push_preflight` creates the short-lived binding between imported provenance
+  and one live remote identity.
+- `push_snapshot_hashes` lists the live remote comparison surface for
+  planning only.
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt.
+- `push_batch_apply` is the first mutating stage and must revalidate fresh
+  live evidence before every batch and at the storage boundary.
+- `push_journal` is durable evidence only.
+- `push_recover inspect` and `push_recover auto|finish|rollback` split
+  read-only recovery classification from any later mutating repair.
+
 The stage contract stays narrow:
 
 - `push_preflight` binds immutable pull provenance to one live remote
@@ -139,6 +153,17 @@ In that harness:
 - Docker uses one private network, and Playground uses separate disposable
   blueprints, but both keep the same route names and the same local-only
   `8080` browser ingress rule
+
+The topology contract is therefore:
+
+| Stage | Docker | Playground |
+| --- | --- | --- |
+| Preflight | `runner` binds the imported pull base package to `remote-base`. | local test process binds the imported pull base package to `remote-base`. |
+| Snapshot hashes | `runner` reads the live remote comparison surface only. | local test process reads the live remote comparison surface only. |
+| Dry-run | `runner` uploads the canonical plan as a receipt, not a lock. | local test process uploads the canonical plan as a receipt, not a lock. |
+| Apply | `runner` revalidates fresh live evidence before every batch and at the storage boundary. | local test process revalidates fresh live evidence before every batch and at the storage boundary. |
+| Journal | `runner` inspects durable evidence only. | local test process inspects durable evidence only. |
+| Recovery | `runner` starts with inspect before any mutating repair. | local test process starts with inspect before any mutating repair. |
 
 Use these fixtures as the canonical proof bundle:
 

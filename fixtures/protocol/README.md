@@ -75,6 +75,9 @@ The production proof bundle is intentionally layered:
 - `push-executor-topology-proof.json` is the shortest proof that the executor
   keeps the same remote identity, the same route names, and the
   sandbox-provided `8080` ingress rule aligned across Docker and Playground.
+- `push-protocol-extension-contract.json` is the best single fixture when a
+  review needs the full preflight, snapshot hash listing, dry-run, apply,
+  journal inspect, and recovery ladder in one object.
 
 The canonical end-to-end bundle for the push extension is:
 

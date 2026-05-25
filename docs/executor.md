@@ -53,6 +53,18 @@ The executor contract is intentionally linear:
 7. mutate only when the inspect result and auth floor still prove the branch
    safe in `push_recover auto|finish|rollback`
 
+The implementation rule is equally linear:
+
+- preflight is the first live remote binding after importer provenance exists
+- remote snapshot hash listing is planning evidence only and never write
+  authority
+- dry-run and apply are separate remote operations
+- apply must revalidate fresh live evidence before every batch and at the
+  storage boundary
+- journal inspection is read-only
+- recovery starts with inspect and may mutate only when fresh live hashes and
+  journal evidence still prove the branch safe
+
 The canonical topology is fixed across both harnesses:
 
 | Role | Docker | Playground |
@@ -99,6 +111,23 @@ The same story applies in both Docker and Playground:
   order, and `8080` ingress rule stay identical.
 - In both harnesses, browser-visible inspection stays local-only and never
   opens a remote tunnel.
+
+The executor topology proof is the same in both harnesses:
+
+| Stage | Docker | Playground |
+| --- | --- | --- |
+| Remote source | `remote-base` | `remote-base` |
+| Local edited site | `local-edited` | `local-edited` |
+| Drift witness | `remote-changed` | `remote-changed` |
+| Runner | `runner` | local test process |
+
+The practical boundary is unchanged across both environments:
+
+- `remote-base` seeds the persisted pull base package
+- `remote-changed` is the same remote identity observed later after drift
+- `local-edited` is the imported local site that produces the candidate plan
+- `runner` is the only actor that may preflight, list hashes, upload the dry
+  run plan, apply batches, inspect the journal, or start recovery
 
 The canonical proof stack for that executor story is the same one named in
 [protocol.md](protocol.md):
