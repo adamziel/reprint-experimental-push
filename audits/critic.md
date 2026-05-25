@@ -95,10 +95,11 @@ That includes lab/fixture route names that mimic production paths: a matching
 URL family can still hide a copied executor, so the claim must also show the
 preserved remote, the stale rejection point, and the fresh live-hash retry
 scope for the same boundary before any production-grade wording is allowed.
-The same warning applies to a readable manual-review artifact: it may prove
-auditability, but it does not prove that the remote was preserved, stale
-authority was rejected before the first write, or the retry scope was rebuilt
-from live hashes for the same live boundary.
+The same warning applies to a readable manual-review artifact or historical
+source note: it may prove auditability or provenance, but it does not prove
+that the remote was preserved, stale authority was rejected before the first
+write, or the retry scope was rebuilt from live hashes for the same live
+boundary on this branch.
 
 Anti-trap clarification: a readable manual-review artifact can help audit the
 history of a boundary, but it is not retry authority unless the branch also
