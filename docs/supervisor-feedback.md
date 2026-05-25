@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 05:21:46 CEST
+Last updated: 2026-05-25 05:22:19 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 05:21:46 CEST - Supervisor Snapshot
+## 2026-05-25 05:22:19 CEST - Supervisor Snapshot
 
-- Going well: the page and log still line up, and the newest entry stays scan-friendly.
+- Going well: the page and log still line up, and the newest entry now stays compact without repeating the full gate list.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no evidence delta; repeated lane history now stays folded behind the details block.
+- Progress change: no evidence delta; the public page now reads as a short summary with the proof trail pushed into linked docs.
 - Next nudge: keep each lane to one owner, one proof gap, and one concrete test.
 
 | Lane | Current nudge |
