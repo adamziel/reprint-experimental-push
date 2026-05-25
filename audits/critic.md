@@ -40,7 +40,9 @@ real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` has yet proven
 preserved-remote retention after rejection, apply-time revalidation from
 fresh live hashes, production auth/session lifecycle, durable journal storage
 with lease/fencing, graph identity, and plugin-driver coverage on the same
-mutation.
+mutation. Until one command can be rerun here and still show the rejected
+remote preserved for audit and retry, the rest of the evidence remains lab
+progress.
 
 Before the project can claim production-grade push support, the proof set
 must include all of the following on one rerunnable live boundary:
@@ -205,7 +207,9 @@ branch reran the same live boundary here. The observed anchors in
 `docs/source-notes.md` are `27c5f25`, `d9334a0`, and `55f9879`; matching
 route family, package layout, reviewer wording, or retained-source lab
 behavior is not enough to promote those notes from design input to retry
-authority.
+authority, and none of them prove production WordPress auth/session
+lifecycle, durable journal lease/fencing, graph identity, or plugin-driver
+coverage on this branch.
 
 ## Release Gate Checklist
 
