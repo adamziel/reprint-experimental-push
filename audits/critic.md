@@ -1802,7 +1802,8 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   independently reverified.
 - A claim that cites those notes must say whether the upstream revision or
   worktree was reverified. If it was not, the note is historical context only
-  and cannot support production wording.
+  and cannot support production wording. A matching route path, package mount,
+  or live-looking hash does not upgrade that status.
 - Any unverified Reprint, ZS-Sync, or ForkPress note remains historical
   context even if the route name, package mount, or expected hash looks
   production-shaped; it is not current upstream proof without the exact live
@@ -1825,6 +1826,9 @@ of the following in the same evidence set:
 - The live remote drift happened between dry-run and apply.
 - The stale approval was rejected before mutation and remained readable for
   audit only.
+- The rejected approval cannot be reused as retry authority for the same row,
+  a different row, a file, a relationship-bearing record, or a plugin-owned
+  surface after drift.
 - The retry started from fresh live hashes and a fresh scope decision.
 - The create-time identity case either had a durable remap proof or was
   hard-blocked before write.
@@ -1839,6 +1843,10 @@ of the following in the same evidence set:
   enough to upgrade a historical source-note comparison into current proof;
   the claim still needs the live write boundary, stale-authority rejection,
   and preserved remote evidence for the current repository state.
+- The claim does not say "manual resolution succeeded" unless the preserved
+  remote can still be audited, the stale artifact was rejected before write,
+  and the retry rebuilt scope from fresh live hashes instead of reusing the
+  old approval.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
@@ -1868,11 +1876,14 @@ Concrete failure scenarios that still need repo-local proof:
   proof is a live revalidation check that fails closed before any mutation and
   preserves the rejected hashes for later audit.
 - A create path renumbers or aliases the target ID during apply. The missing
-  proof is either a durable remap reservation or a hard block before write.
+  proof is either a durable remap reservation or a hard block before write,
+  plus an audit trail that names the exact live identity that was reserved,
+  aliased, or rejected.
 - A plugin owns custom tables, serialized state, cron rows, generated files,
   or runtime registries outside the allowlist. The missing proof is an exact
   owned-surface manifest and apply-time revalidation, or a durable block with
-  an auditable rejection reason.
+  an auditable rejection reason that cannot be promoted into current authority
+  later.
 - A write succeeds in one store but not another, leaving mixed DB/file/plugin
   state. The missing proof is durable old/new/blocked classification and a
   retry path that starts from fresh live evidence instead of inherited
@@ -1913,3 +1924,6 @@ Production-readiness release gate for wording:
 - Treat "manual resolution" as a failed production proof unless the remote is
   preserved for audit, the stale approval is rejected on retry, and the retry
   can be independently audited from fresh live hashes.
+- Treat a stale manual-review artifact as audit-only unless the claim shows
+  the rejection-before-write path, the preserved remote, and the fresh retry
+  scope; otherwise the artifact is current authority by mistake.
