@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven in this checkout. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. This checkout also does not expose a checked-in `verify:release` or `release` entrypoint, so even a successful helper run would not by itself become an enforced release verdict here.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven in this checkout. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. This checkout does not expose a checked-in `verify:release` or `release` entrypoint, so even a successful helper run would not by itself become an enforced release verdict here.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -67,7 +67,7 @@ The tests do the right kind of negative work, but they are not positive release 
 - [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) proves the benchmark model carries safety gates and refuses to claim production throughput. It does not measure the live push path, and it is not a performance result.
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the guarded benchmark can move staged buffers and row payloads through durable evidence while refusing unsupported throughput claims. It does not prove the live push path is fast or release-ready.
 - [`test:playground:authenticated-http-push`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:production-shaped-push`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:production-plugin-package`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), and the DB journal smokes prove helper- and lab-scoped behavior, including authenticated and production-shaped routes. They still do not prove the live-source boundary or production storage durability in this checkout, and they do not compose into one mandatory release command.
-- `npm test -- --test-reporter=spec` was rechecked in this worktree and passed at `89/89`. That is regression evidence only. It does not certify no data loss, reliability, or speed on the live source boundary.
+- `npm test -- --test-reporter=spec` was rechecked in this worktree on 2026-05-25 and passed at `89/89`. That is regression evidence only. It does not certify no data loss, reliability, or speed on the live source boundary.
 
 ## Current Command Surface
 
