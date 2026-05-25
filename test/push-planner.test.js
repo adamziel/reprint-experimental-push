@@ -10180,12 +10180,18 @@ test('durable recovery boundary states stay limited to old remote, fully updated
     const persisted = readRecoveryJournal(journalPath);
 
     assert.ok(error instanceof PushPlanError, label);
+    assert.equal(error.code, options.failBeforeMutation ? 'INJECTED_FAILURE_BEFORE_MUTATION' : options.failAfterStaging ? 'INJECTED_FAILURE_AFTER_STAGING' : 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION', label);
     assert.equal(JSON.stringify(remote), before, label);
     assertAcceptableRecoveryState(error.details.recovery);
     assertRecoveryStateArtifacts(error.details.recovery, expectedRecoveryStatus);
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(
+      persisted.records.some((record) => record.type === 'mutation-observed'),
+      false,
+      label,
+    );
     assert.equal(
       persisted.records.some((record) => record.type === 'recovery-state' && record.state === expectedRecoveryStatus),
       true,
@@ -10214,6 +10220,14 @@ test('durable recovery boundary states stay limited to old remote, fully updated
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'target-planned').length,
+    completedPersisted.records.filter((record) => record.type === 'target-planned').length,
+  );
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'mutation-observed').length,
+    completedPersisted.records.filter((record) => record.type === 'mutation-observed').length,
+  );
   assert.equal(
     replayPersisted.records.filter((record) => record.type === 'journal-replayed').length,
     completedPersisted.records.filter((record) => record.type === 'journal-replayed').length + 1,
