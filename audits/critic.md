@@ -7065,14 +7065,15 @@ are true on this worktree:
 
 Lead finding for the current release-proof claim:
 
-- `npm run test:playground:production-shaped-release-proof` is still a proof
-  wrapper unless a real-site command exists in `package.json` and is rerun
-  against a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`; the
-  next acceptable evidence must be one exact command string, one exact live
-  source URL, one preserved remote that stayed inspectable after rejection,
-  one apply-time revalidation on that same boundary, one journal/recovery
-  inspect step that justifies retry scope, and one auth/session boundary
-  record before the first write.
-- if that rerun cannot print the exact executor identity and the rejected
-  remote in the same run, then the claim is still setup-only and production
-  wording must fail closed.
+- `npm run test:playground:production-shaped-release-proof` remains a proof
+  wrapper, because there is no matching real script entry in `package.json`
+  here and no rerun against a live local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`; the next acceptable evidence must be one exact
+  command string, one exact live source URL, one preserved remote that stayed
+  inspectable after rejection, one apply-time revalidation on that same
+  boundary, one journal/recovery inspect step that justifies retry scope, and
+  one auth/session boundary record before the first write.
+- if that rerun cannot print the exact executor identity, the rejected remote,
+  and the live source URL in the same run, then the claim is still setup-only
+  and production wording must fail closed; a wrapper name plus lab-shaped
+  output is not production proof.
