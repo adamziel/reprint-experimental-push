@@ -9,7 +9,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 - Going well: the page, log, and feedback note still line up, and the scan view stays short.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the public page is still compact and easier to scan.
+- Progress change: no new evidence landed; the page stays scan-first and the proof trail stays linked out.
 - Next nudge: keep each lane to one proof gap, one concrete test, and one owner, starting with auth/session.
 
 | Lane | Current nudge |
