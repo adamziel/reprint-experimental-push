@@ -140,7 +140,12 @@ Failure and recovery examples:
 - `push-deployment-topology-contract.json` gives the smallest topology-only
   contract for Docker and Playground. It isolates the one-remote, one-local,
   one-drift-witness shape and keeps the pull-to-push mapping and ingress rules
-  visible in one compact object.
+  visible in one compact object. Use it when a test needs to prove the
+  production push ladder end to end in a small form: exporter/importer feed
+  preflight, snapshot-hash listing stays planning-only, dry-run returns a
+  receipt, apply revalidates before every batch and at the storage boundary,
+  journal inspect stays read-only, and recovery must start with inspect before
+  any mutating repair.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
