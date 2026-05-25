@@ -53,6 +53,21 @@ The production claim also fails closed if any of these are only shown on a lab f
 
 Manual resolution is not success unless the remote is preserved after rejection, the retry is auditable against fresh live hashes, and the exact boundary can be replayed safely.
 
+## Release gate checklist
+
+Before any doc or status line says "production-grade" or "release-ready", it must point to a rerunnable live boundary that shows:
+
+- one exact `REPRINT_PUSH_SOURCE_URL` on a real local, Playground, or Docker source;
+- the rejected remote preserved and still inspectable after the refusal;
+- a dry-run receipt that is not reused as retry authority;
+- apply-time revalidation against fresh live hashes from the same boundary;
+- WordPress auth/session lifecycle that survives the real boundary, not just a lab-shaped session mint;
+- durable journal storage with lease/fencing on production-like storage;
+- graph identity for create-time remaps and late-discovered relationship-bearing records; and
+- plugin-driver coverage for any plugin-owned surface that appears outside the initial allowlist.
+
+If any one of those bullets is missing, the wording must stay in the lab/prototype bucket.
+
 ## Strongest blocker
 
 This worktree still lacks one named, rerunnable live release command on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at apply time, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing, graph identity, and plugin-driver coverage on the same mutation.
