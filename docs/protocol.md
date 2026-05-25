@@ -65,6 +65,22 @@ The canonical test topology is also fixed:
   through a local-only proxy
 - remote tunnels are disallowed
 
+The topology proof is carried by the production fixture set:
+
+- `push-production-pull-bridge-contract.json` proves the immutable
+  exporter/importer handoff into the persisted pull base package
+- `push-remote-snapshot-listing-contract.json` proves planning-only remote
+  hash listing
+- `push-production-revalidation-contract.json` proves dry-run and apply stay
+  separate and that apply revalidates fresh live evidence before every batch
+  and at the storage boundary
+- `push-production-auth-session-journal-recovery-inspect-contract.json`
+  proves the auth, session, journal, and inspect-first recovery floor
+- `push-remote-liveness-topology-contract.json` proves the one-remote,
+  one-local, one-drift harness plus the liveness split
+- `push-production-topology-contract.json` proves the Docker and Playground
+  harness shape
+
 The canonical production proof bundle is reviewed in this order:
 
 1. `push-production-pull-bridge-contract.json` for the immutable pull-to-push bridge.

@@ -18,6 +18,21 @@ The concrete production proof shape is fixed:
   through a local-only proxy
 - remote tunnels are disallowed
 
+The production proof stack is fixed and should be read in this order:
+
+1. `push-production-pull-bridge-contract.json` for the immutable
+   exporter/importer handoff into push.
+2. `push-remote-snapshot-listing-contract.json` for planning-only remote
+   hash listing.
+3. `push-production-revalidation-contract.json` for dry-run separation and
+   apply-time revalidation.
+4. `push-production-auth-session-journal-recovery-inspect-contract.json` for
+   the auth/session/journal/inspect-first recovery floor.
+5. `push-remote-liveness-topology-contract.json` for the one-remote,
+   one-local, one-drift harness plus the liveness split.
+6. `push-production-topology-contract.json` for the Docker and Playground
+   harness shape.
+
 The executor follows the same production ladder the protocol defines:
 
 1. pull exporter/importer create the immutable base package.
@@ -87,6 +102,18 @@ The topology is fixed for both Docker and Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+
+Docker and Playground differ only in harness shape, not in protocol
+semantics:
+
+- Docker uses one private network around `remote-base`, `local-edited`,
+  `remote-changed`, and `runner`.
+- Playground uses separate disposable blueprints for the same four roles.
+- In both harnesses, `remote-base` seeds the persisted pull base package,
+  `local-edited` carries the imported edits, and `remote-changed` is the same
+  remote identity observed later after drift.
+- In both harnesses, the runner is the only actor that may preflight, list
+  hashes, dry-run, apply, inspect the journal, or recover.
 
 Docker and Playground differ only in how they provision the same proof:
 
