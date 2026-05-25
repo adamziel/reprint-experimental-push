@@ -47,7 +47,7 @@ Proof buckets used below:
 
 ## Test Audit
 
-The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own. In particular, they do not prove the three release claims the objective cares about most:
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own. In particular, they do not prove the three release claims the objective cares about most, and they do not replace the missing mandatory release command that would have to turn those claims into a single verdict:
 
 - `No data loss`: the planner and recovery suites prove classification behavior, restart envelopes, and redaction, but they do not mutate live source storage and then re-read the same production boundary to prove writes survived without loss, duplication, or reordering.
 - `Reliable`: no current test composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks into one enforced release decision against real storage. The current passes are distributed across helper paths, not concentrated in a required gate.
