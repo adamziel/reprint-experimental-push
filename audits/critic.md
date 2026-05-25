@@ -1048,14 +1048,15 @@ push must block on unknown or incomplete coverage.
 
 ### ForkPress
 
-The ForkPress notes provide the closest production reliability bar:
-three-way merge records, reviewed conflict resolution, plugin validators,
-revalidation, and crash consistency where failure is old, new, or blocked with
-artifacts. They cover branch merge auditability and crash consistency across
-WordPress files and SQLite data, not live push of a remote source site. ForkPress
-is the strongest comparison point because it treats manual conflict handling as
-a first-class audited state, but it still does not prove this repository's live
-remote path, graph identity remapping, or plugin-owned state handling.
+The ForkPress notes provide the strongest observed comparison point for
+reviewed conflict handling: three-way merge records, reviewed conflict
+resolution, plugin validators, revalidation, and crash consistency where
+failure is old, new, or blocked with artifacts. They cover branch merge
+auditability and crash consistency across WordPress files and SQLite data, not
+live push of a remote source site. ForkPress is useful as a reliability
+reference because it treats manual conflict handling as a first-class audited
+state, but it still does not prove this repository's live remote path, graph
+identity remapping, or plugin-owned state handling.
 
 What ForkPress source notes do prove:
 
