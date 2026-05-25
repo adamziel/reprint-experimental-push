@@ -30,9 +30,12 @@ unless the remote was preserved for audit, the stale approval was rejected
 before mutation, the retry rebuilt scope from fresh live hashes, and any
 later-discovered plugin-owned surface was handled as a separate boundary.
 Reprint, ZS-Sync, and ForkPress each fail for a different missing proof:
-Reprint does not prove preserved-remote push safety on this branch, ZS-Sync
-does not prove plugin-owned surface coverage or identity-remap safety, and
-ForkPress does not prove stale-review artifacts stay audit-only after drift.
+Reprint does not prove preserved-remote push safety, production auth/session
+lifecycle, graph identity, or plugin-driver coverage on this branch; ZS-Sync
+does not prove plugin-owned surface coverage, graph identity, or identity-
+remap safety; and ForkPress does not prove stale-review artifacts stay audit-
+only after drift or that plugin-driver coverage can be inferred from audit
+vocabulary alone.
 In other words: a named feature family is not enough. The branch must be able
 to point to the exact upstream commit or worktree state and the exact live
 mutation boundary that was exercised here, or the comparison stays historical
