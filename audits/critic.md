@@ -7209,3 +7209,18 @@ Lead finding for the current release-proof claim:
   plugin-owned surface classification; any missing item means the branch has
   not yet proven the exact retry boundary and must not use production-ready
   wording.
+
+Exact next proof required from `25c4ef54`:
+
+- rerun `npm run test:playground:production-shaped-release-verify` against one
+  live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- print the executor identity and auth/session boundary before the first
+  write;
+- preserve the rejected remote so it remains inspectable after rejection;
+- show the exact rejection point before the first write;
+- show apply-time revalidation on that same live boundary;
+- inspect the journal and recovery state that defines retry scope;
+- classify every touched row, file, relationship-bearing record, and
+  plugin-owned surface old, new, or blocked before retry starts; and
+- separately preserve, reject, and retry any later-discovered plugin-owned
+  surface or remapped create target instead of widening the earlier proof.
