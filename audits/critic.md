@@ -2346,6 +2346,13 @@ Production-readiness checklist:
   snapshot, the stale rejection point, and the fresh retry scope in the same
   claim block; otherwise the artifact is only inspection evidence, not retry
   authority.
+- Show the exact upstream revision or worktree state for any Reprint, ZS-Sync,
+  or ForkPress comparison, and name what that note actually proves. Reprint
+  only supports staged transport and resumability, ZS-Sync only supports
+  bounded discovery, and ForkPress only supports reviewed-resolution and
+  crash-consistency vocabulary. If the same claim block does not also name the
+  live mutation boundary in this repo, the preserved remote, and the stale
+  rejection point, the comparison remains historical context only.
 - Show that route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` are only compatibility evidence unless the same live
   write boundary is reverified against a drifted remote in this repo and the
