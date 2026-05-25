@@ -3492,7 +3492,8 @@ Production release gate checklist:
   earlier artifact cannot authorize the new boundary.
 - Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
   revision or worktree state and show branch-local revalidation of the same
-  live boundary; otherwise it is historical context only.
+  live boundary; otherwise it is historical context only and cannot become
+  retry authority.
 - Any source-note comparison that only matches route shape, package layout,
   or `finalMatchesLocal` is still compatibility evidence only until it names
   the exact live mutation boundary and the preserved remote after reject.
