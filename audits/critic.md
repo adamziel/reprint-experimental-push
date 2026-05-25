@@ -9,6 +9,9 @@ Release-gate checklist for production-readiness wording:
 - Name the exact live write path and the exact stale-remote drift case it
   survived; route shape, package layout, and `finalMatchesLocal` stay
   compatibility evidence only.
+- Name the exact upstream revision or worktree state for any Reprint,
+  ZS-Sync, or ForkPress comparison, plus the exact live write boundary that
+  was reverified here; otherwise the comparison is historical context only.
 - Show that the stale approval was rejected before mutation, remained
   readable for audit, and could not be reused as authority for any other
   row, file, relationship-bearing record, plugin-owned surface, or hidden
@@ -31,6 +34,9 @@ Release-gate checklist for production-readiness wording:
   revision or worktree state and say whether it was reverified at the same
   live mutation boundary; otherwise the comparison is historical context
   only.
+- For this branch, the source-note commits `27c5f25`, `d9334a0`, and
+  `55f9879` remain historical input until a branch-local live-boundary
+  recheck is recorded here.
 - If a source note names the right upstream commit but this branch did not
   reverify that exact upstream state at the same live write boundary, the
   citation stays historical context only. A correct commit id without a fresh
@@ -306,6 +312,9 @@ Release-grade checklist:
 - If a comparison note was not rechecked at the same live mutation boundary,
   it stayed historical even if the endpoint, package mount, or hash looked
   current.
+- If the note is only a source-note summary and not a branch-local live
+  boundary recheck, it cannot support a production claim, no matter how
+  closely the route or package shape matches.
 
 Release-go/no-go scenarios:
 
