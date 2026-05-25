@@ -1664,7 +1664,7 @@ test('keeps remote-only plugin removals while a live-preconditioned delete, matc
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assertEveryMutationHasLiveRemotePrecondition(plan);
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/cover.txt'), false);
-  assert.equal(result.site.files['wp-content/uploads/gallery'].type, 'directory');
+  assert.deepEqual(result.site.files['wp-content/uploads/gallery'], { type: 'directory' });
   assert.equal(result.site.files['wp-content/themes/theme/style.css'], 'body { color: black; }');
   assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
@@ -2025,7 +2025,7 @@ test('keeps remote-only plugin removals while a live-preconditioned delete, matc
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assertEveryMutationHasLiveRemotePrecondition(plan);
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/cover.txt'), false);
-  assert.equal(result.site.files['wp-content/uploads/gallery'].type, 'directory');
+  assert.deepEqual(result.site.files['wp-content/uploads/gallery'], { type: 'directory' });
   assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Matched post title');
   assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
@@ -5070,6 +5070,57 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and ma
   assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
   assert.equal(JSON.stringify(remote), before);
+});
+
+test('keeps remote-only plugin changes while a live-preconditioned row delete, matching independent edit, and file type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+
+  const local = baseSite();
+  delete local.db.wp_posts['ID:1'];
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Shared independent title',
+    post_status: 'publish',
+  };
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Shared independent title',
+    post_status: 'publish',
+  };
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const rowDelete = mutationFor(plan, 'row:["wp_posts","ID:1"]');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(rowDelete.action, 'delete');
+  assert.equal(rowDelete.changeKind, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'create');
+  assert.equal(editDecision.change.remoteChange, 'create');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Shared independent title');
+  assert.equal(result.site.files['wp-content/uploads/gallery'], 'shared replacement file');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent edit stay safe with apply verification', () => {
