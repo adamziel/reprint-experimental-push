@@ -5,8 +5,9 @@ comment, status comment, or release note can claim production-grade push
 support. If any item is missing, the wording must stay explicitly lab-backed
 or comparison-only.
 
-- The claim cites a live write-path proof on the actual request path, not only
-  route shape, packaged-plugin mounting, fixture replay, or `finalMatchesLocal`.
+- The claim cites a live write-path proof on the actual request path, and
+  treats route shape, packaged-plugin mounting, fixture replay, and
+  `finalMatchesLocal` as compatibility evidence only.
 - The same request path was re-run against a live remote after drift, and the
   stale attempt failed before any mutation.
 - The claim names the exact stale remote hash set, the rejected approval, the
@@ -49,7 +50,8 @@ or comparison-only.
   old/new/blocked evidence for the whole path.
 - The claim shows the same live write path rejected stale authority before
   mutation, and that a route-shaped smoke or packaged-plugin mount only counts
-  as compatibility evidence if it exercised that exact boundary.
+  as compatibility evidence if it exercised that exact boundary on a drifted
+  remote.
 - The claim includes the failure classification for any partial file, DB, or
   plugin side effect and shows recovery cannot silently widen the old approval
   to unrelated rows, files, relationship-bearing records, or plugin-owned
@@ -67,7 +69,8 @@ or comparison-only.
   mutation boundary, and the exact stale remote-drift case that failed closed.
 - The claim does not rely on route shape, packaged-plugin mounting,
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
-  production proof.
+  production proof unless the same live write boundary was reverified against a
+  drifted remote.
 - The claim does not treat a fixture-backed or copied-lab mount as production
   proof, even if it returns live-looking hashes through a production-shaped
   route.

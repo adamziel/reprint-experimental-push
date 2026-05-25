@@ -159,7 +159,9 @@ scenario still has to name the live mutation boundary, the stale rejection,
 and the preserved remote before it can support production wording.
 
 Release-grade wording has a hard checklist too. If any item is missing, the
-claim must stay lab-backed or comparison-only:
+claim must stay lab-backed or comparison-only. A route-shaped smoke, packaged
+mount, or `finalMatchesLocal` match never upgrades to production proof unless
+it exercised the exact live mutation boundary against a drifted remote:
 
 - Name the exact live write boundary that was exercised, not just the route
   shape or package mount.
@@ -472,7 +474,8 @@ Treat the following as hard blockers for production wording:
   auth, production storage durability, live remote preservation, or that the
   exercised route is the real write executor instead of a lab-backed stand-in.
   Matching ingress or endpoint names is not enough to turn a lab-backed route
-  into production proof.
+  into production proof, and a mounted plugin shell is not proof that the live
+  mutation boundary ran.
 - Those notes also do not justify production wording by association. A future
   doc or status comment must still show live write-path proof in this repo; a
   strong transport shape, scanner model, or crash vocabulary is not enough.
