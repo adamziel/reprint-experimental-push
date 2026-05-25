@@ -10,6 +10,14 @@ real-site command that runs against a live local, Playground, or Docker
 after rejection, and prints the exact executor/auth boundary before the first
 write.
 
+Scenario: a reviewer points to `npm run test:playground:production-shaped-release-proof`
+and treats the commit as a release gate. Missing proof: the repo surface still
+does not expose that command in `package.json`, so the claim is a wrapper over
+missing inputs unless the next run names the exact real-site command string,
+the live `REPRINT_PUSH_SOURCE_URL`, the preserved remote that remained
+auditable after rejection, the apply-time revalidation boundary, the recovery
+journal inspection, and the auth/session boundary before the first write.
+
 Scenario: someone points to `npm run test:playground:production-shaped-release-proof`
 and treats the name as a release gate. Missing proof: `package.json` does not
 expose that command, and the commit does not supply a live source endpoint,
@@ -52,6 +60,17 @@ prints those three facts, can be rerun on demand, and preserves the rejected
 remote for audit. Until that command exists and can be rerun, any
 production-readiness wording is still just a wrapper around compatibility
 evidence.
+
+Release-gate checklist for production wording:
+
+- exact branch-local command string, runnable without prose edits;
+- exact live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- preserved remote that stays inspectable after rejection;
+- apply-time revalidation on the same boundary before the first write;
+- journal and recovery inspection that defines retry scope;
+- executor identity plus auth/session boundary before the first write; and
+- the same run must show which remote was rejected, not just that a retry
+  path exists.
 
 This is still the current answer to the loop focus: there is no branch-local
 command that has been run against a real local, Playground, or Docker
