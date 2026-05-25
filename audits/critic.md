@@ -1954,7 +1954,9 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   approval was rejected before any write, and the preserved remote snapshot
   can still be audited and retried safely. If the evidence set does not show
   the exact live request path and storage boundary, the route remains
-  compatibility evidence only.
+  compatibility evidence only. A route can look production-shaped while still
+  executing copied-lab internals behind the mount, so a green hash there is
+  never production proof by itself.
 - The release claim must name the exact request path, auth mode, and storage
   boundary used for that drifted-remote proof; matching route shape or
   package layout alone is compatibility evidence, not production proof.
@@ -2093,7 +2095,10 @@ Concrete failure scenarios that still need repo-local proof:
   worktree state and a fresh recheck at the same live write boundary.
 - Route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` are not reliability proof on their own, because they do
-  not show the live write boundary preserving the remote under drift.
+  not show the live write boundary preserving the remote under drift. They
+  also do not rule out a copied-lab executor behind a production-shaped mount,
+  which means any live-looking hash from that path is still compatibility
+  evidence only.
 
 Production-readiness release gate for wording:
 
