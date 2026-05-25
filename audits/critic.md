@@ -3423,6 +3423,26 @@ Source-note proof boundary, restated:
   retry, the second write is not retry proof and does not authorize
   production wording.
 
+Conservative comparison matrix:
+
+- Reprint `27c5f25` proves resumable pull flow, protocol framing, and bounded
+  exporter shape. It does not prove this branch's live push executor, stale
+  rejection before mutation, preserved-remote auditability, or late
+  plugin-owned surface handling. Missing repo proof: a branch-local rerun of
+  the same stale-remote mutation boundary with the preserved remote recorded
+  after reject.
+- ZS-Sync `d9334a0` proves continuous scanning, cursoring, and bounded
+  resource selection. It does not prove source-side mutation safety, create-
+  time identity remapping, or plugin-owned surface coverage on this branch.
+  Missing repo proof: a same-boundary live write rerun that shows the remote
+  was preserved and the stale attempt was rejected before mutation.
+- ForkPress `55f9879` proves merge auditability, reviewed resolution, plugin-
+  validator boundaries, and crash-consistency goals. It does not prove this
+  branch's live write path preserved the remote, blocked late-discovered
+  plugin-owned state, or separated audit-only artifacts from retry authority.
+  Missing repo proof: the same drifted-remote case rerun here with fresh live
+  hashes, explicit late-surface classification, and a fresh retry scope.
+
 Production release gate checklist:
 
 - Live remote drift after dry-run must be rejected on the live write path,
