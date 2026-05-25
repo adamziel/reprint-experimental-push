@@ -1,18 +1,19 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `68664884`, with earlier retained-source proof steps `889bd37a`
+remote head `2ac32891`, with earlier retained-source proof steps `889bd37a`
 and `63a3502f` still useful as history, not as release proof. The latest
 explicit verdict on that lane is `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`,
 and the lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence. That is
-real progress, but it still does not prove a live production boundary because
-the retained-source run does not show preserved-remote retention across
-rejection, live WordPress auth/session lifecycle, apply-time revalidation
-against a fresh real-site source, durable journal storage and lease/fencing
-semantics outside the Playground harness, graph identity under remap, or
-plugin-driver coverage for late-discovered plugin-owned surfaces.
+real progress, and `2ac32891` tightens the release-proof contract, but it
+still does not prove a live production boundary because the retained-source
+run does not show preserved-remote retention across rejection, live WordPress
+auth/session lifecycle, apply-time revalidation against a fresh real-site
+source, durable journal storage and lease/fencing semantics outside the
+Playground harness, graph identity under remap, or plugin-driver coverage for
+late-discovered plugin-owned surfaces.
 Production-grade wording is still false if it relies on lab-session shape,
 retained-source journal rows, or route compatibility as a stand-in for live
 WordPress auth/session durability.
@@ -40,7 +41,8 @@ preserved-remote retry evidence that can be rerun and audited from this branch.
 ## Single strongest blocker
 
 This worktree still has no branch-local named real-site release command that
-can be rerun unchanged on the same live boundary. Until that exact boundary
+can be rerun unchanged on the same live boundary with preserved-remote
+retention and fresh live-hash revalidation. Until that exact boundary
 exists here, production-grade push wording is false reliability, even if the
 supervised lane has stronger retained-source evidence and an explicit boundary
 verdict.
