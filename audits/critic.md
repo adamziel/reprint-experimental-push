@@ -503,6 +503,9 @@ Treat the following as hard blockers for production wording:
   Sync, or ForkPress only anchors the comparison text. It does not prove that
   the upstream repo still has the cited semantics today or that this branch
   has matched them at the mutation boundary.
+- If the comparison does not pin the exact upstream commit hash or worktree
+  state that was reverified at the live write boundary, then it is historical
+  context only, even if the route, package, or hash shape looks current.
 - Any future comparison claim that leans on those notes must also re-verify
   the current upstream commit or worktree state; otherwise the note is only
   historical context and cannot support production wording.
@@ -648,6 +651,9 @@ attached to the current commit or worktree state:
 - A production-language claim must include the live remote drift case it used,
   the stale approval that was rejected, and the fresh retry evidence that
   rebuilt scope from current hashes rather than reusing the old decision.
+- A comparison note that is missing the exact upstream commit hash or worktree
+  state is not a production proof, even if it names the same project or
+  feature; the claim still needs the live mutation boundary in this repo.
 - Durable journals and kill-at-every-boundary recovery proofs across DB,
   filesystem, and plugin boundaries.
 

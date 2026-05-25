@@ -91,6 +91,9 @@ lab route, fixture replay, or package mount is the real production executor.
 If the claim cannot show the exact live request path, preserved remote state,
 and stale-authority rejection at the current write boundary, the comparison
 remains context only.
+If the comparison does not also pin the exact upstream commit hash or
+worktree state that was reverified, it stays historical context even when the
+feature name matches and the route shape looks production-shaped.
 That rule also applies to manual resolution: if the remote was not preserved,
 the stale artifact was not rejected before mutation, and the next retry did
 not start from fresh live hashes, the comparison stays historical context and
