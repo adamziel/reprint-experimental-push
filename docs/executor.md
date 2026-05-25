@@ -66,7 +66,8 @@ The remote liveness contract stays strict:
 
 The checked proof path for this document is `node --test test/protocol-fixtures.test.js`.
 That test pins the route matrix, the one-remote/one-local/one-drift topology,
-and the explicit missing-secret failure contract that blocks preflight, dry-run,
+the production handshake from preflight through inspect-first recovery, and
+the explicit missing-secret failure contract that blocks preflight, dry-run,
 and apply when the real push secret is unavailable.
 
 ## Canonical Proof Set

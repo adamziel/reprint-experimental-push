@@ -163,6 +163,12 @@ Those fixtures should read as one chain:
 - the auth floor is at least as strict as current Reprint HMAC usage
 - when real credentials are unavailable, the harness must fail fast with an explicit missing-secret error before preflight, dry-run, or apply
 
+The checked proof path for this protocol document is `node --test test/protocol-fixtures.test.js`.
+That command exercises the production push handshake, live-source preflight,
+remote snapshot hash listing, dry-run plan upload, apply-time revalidation,
+journal inspection, and inspect-first recovery boundary against the fixture
+contracts that model the one-remote, one-local, one-drift topology.
+
 The bridge also preserves the existing pull/export/import provenance chain:
 
 | Pull pipeline object | Push consumer | Result |
