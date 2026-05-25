@@ -121,6 +121,15 @@ The executor uses the same stage contract as the protocol:
 - `push_recover auto|finish|rollback` may mutate only after inspect proves
   the branch safe with the same auth floor as the write path
 
+The executor reviews the compact proof set in this order:
+
+1. `push-production-pull-bridge-contract.json` for the immutable pull-to-push provenance handoff.
+2. `push-remote-snapshot-listing-contract.json` for planning-only remote hash listing.
+3. `push-production-revalidation-contract.json` for dry-run separation and apply-time revalidation.
+4. `push-production-auth-session-journal-recovery-inspect-contract.json` for auth, session, journal, and inspect-first recovery.
+5. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology.
+6. `push-production-topology-contract.json` for the Docker and Playground harness proof.
+
 The pull-to-push bridge is one-way:
 
 | Pull provenance | Push use | Boundary rule |

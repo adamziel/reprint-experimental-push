@@ -44,6 +44,15 @@ The canonical test topology is also fixed:
   through a local-only proxy
 - remote tunnels are disallowed
 
+The canonical production proof bundle is reviewed in this order:
+
+1. `push-production-pull-bridge-contract.json` for the immutable pull-to-push bridge.
+2. `push-remote-snapshot-listing-contract.json` for planning-only remote hash listing.
+3. `push-production-revalidation-contract.json` for dry-run separation and apply-time revalidation.
+4. `push-production-auth-session-journal-recovery-inspect-contract.json` for the auth/session/journal/recovery boundary.
+5. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology.
+6. `push-production-topology-contract.json` for the Docker and Playground harness proof.
+
 ## Production Contract
 
 The push executor may mutate only after it proves a safe three-way plan from
