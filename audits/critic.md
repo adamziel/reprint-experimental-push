@@ -5,10 +5,10 @@ Current baseline: reliable-executor commit `3089aee2`.
 still local Playground lab evidence and not live retry authority unless the
 branch also proves the live production WordPress auth/session boundary,
 durable journal semantics, graph identity, and plugin-driver coverage on a
-real-site rerun. Do not resurrect the old "no `verify:release` exists"
-critique; the blocker now is that the retained-source command still does not
-move the proof onto a rerunnable live boundary with preserved-remote audit
-evidence. The canonical release-gate checklist lives in
+real-site rerun. The old "no `verify:release` exists" critique is retired;
+the blocker now is that the retained-source command still does not move the
+proof onto a rerunnable live boundary with preserved-remote audit evidence.
+The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
 Primary critic finding:
