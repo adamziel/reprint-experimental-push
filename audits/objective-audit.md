@@ -222,6 +222,7 @@ What they do not prove:
 - They do not prove speed for the live boundary because no required benchmark runs there, and no enforced gate requires that proof.
 - They do not prove that any single green command is sufficient for release, because the evidence is still split across optional commands.
 - They do not prove a production speed claim because the benchmark checks are model-level or refusal-only; no live push path benchmark is enforced here.
+- They do not prove a release-safe no-loss or reliability claim either, because the strongest recovery artifacts still come from fixtures and lab-backed routes, not from a required live-source gate.
 
 Claim-by-claim test verdict:
 
