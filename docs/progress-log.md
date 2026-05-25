@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 12:29:41
+
+<a id="2026-05-25-public-status-audit-122941"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 12:29:41 CEST`) and kept the public anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- The first screen keeps `5de7ee40`, `981236d8`, `63a3502f`, `68664884`, and
+  `e269f0d3` visible: durable-journal boundary, `447/447` planner tests, and
+  retained-source lab proof remain explicit while release gates stay `0/4`.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 12:27:15
 
 <a id="2026-05-25-public-status-audit-122715"></a>
