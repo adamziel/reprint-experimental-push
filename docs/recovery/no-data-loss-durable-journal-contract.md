@@ -1,25 +1,45 @@
-# No Data Loss Durable Journal Contract
+# Durable Journal Contract
 
-The no-data-loss lane treats atomic apply as safe only when every failure boundary lands in one of these states:
+The recovery model in this lane is only acceptable when the apply path can be
+reconstructed from durable artifacts that survive interruption.
+
+Accepted post-failure states:
 
 - `old-remote`
 - `fully-updated-remote`
-- `blocked-recovery` with inspectable journal plus remote artifacts
+- `blocked-recovery`
 
-That contract is intentionally strict:
+The important distinction is the artifact boundary, not whether a local replay
+can be simulated in-memory.
 
-- Failure before mutation must leave the remote untouched and record an `old-remote` journal artifact.
-- Failure after staging must still leave the remote untouched and record an `old-remote` journal artifact.
-- Failure after dependency validation must still leave the remote untouched and record an `old-remote` journal artifact.
-- A completed replay must stay read-only and report `fully-updated-remote`.
-- A stale or partial replay must block recovery and preserve both journal and remote artifacts.
+## What each state requires
 
-Release blocker:
+- `old-remote`
+  - No remote mutation may be visible.
+  - Durable journal evidence must explain where apply stopped.
+- `fully-updated-remote`
+  - All planned mutations are visible on the remote.
+  - The completed replay must remain inert on retry.
+- `blocked-recovery`
+  - A partial remote mutation may exist only when the recovery artifacts are
+    inspectable.
+  - Both journal and remote artifacts must be available for recovery.
 
-- A partial remote mutation without a durable recovery artifact is unsafe.
-- Retry logic must not treat partial writes as safe input, duplicate inserts, or resurrect stale local data.
+## Release blocker
 
-Model versus production:
+A partial remote mutation without a durable recovery artifact is unsafe and is
+a release blocker.
 
-- The tests use in-memory JSON and ephemeral files to prove the state machine.
-- Production still needs durable journal storage, flush/fsync semantics, fencing or lease ownership, and restart-readable recovery inspection data.
+## Durable versus lab evidence
+
+The in-memory model can prove the shape of the contract, but production recovery
+must come from durable journal rows or files that survive a process crash.
+That means the production path needs:
+
+- journal rows or files that are fsynced or otherwise durably committed
+- recovery inspect data that can classify the current state after interruption
+- plugin activation or lease/fencing evidence when the apply path depends on
+  ownership
+
+Lab-only JSON evidence is useful for regression testing, but it is not a
+substitute for durable recovery storage.
