@@ -3749,6 +3749,10 @@ Source-note proof boundary, restated:
   this branch's live executor rejected stale authority, preserved the remote
   after reject, or handled the full WordPress/plugin surface without missing
   side effects.
+- None of those source notes prove production-grade push support on this
+  branch unless the exact same live boundary was rerun here and the preserved
+  remote, rejection point, and fresh retry scope were recorded from this
+  worktree.
 - A correct upstream commit or worktree state is provenance, not current
   authority. If the branch did not re-run the same live drift, retry, or
   create-time identity case here, the comparison must stay historical. A
@@ -3827,6 +3831,10 @@ Production release gate checklist:
 - Any partial file, DB, or plugin side effect must be classified old, new,
   or blocked, and retry must rebuild scope from fresh live hashes rather than
   from the stale manual-review artifact.
+- Any later-discovered partial side effect must not inherit the earlier
+  approval. If the branch cannot show the fresh live hash that classified the
+  later boundary, the previous success story is incomplete and cannot be
+  recast as production-safe retry evidence.
 - Any stale manual-review artifact must remain audit-only after drift; it
   cannot become retry authority for another row, file, relationship-bearing
   record, or plugin-owned surface.
@@ -3834,6 +3842,10 @@ Production release gate checklist:
   write touches a late-discovered plugin-owned surface; if the proof does not
   show that surface was blocked or durably classified before retry, then the
   earlier artifact cannot authorize the new boundary.
+- A readable review artifact may help the operator audit what happened, but it
+  does not prove the remote was preserved, the stale boundary was rejected
+  before mutation, or the later plugin-owned surface was safely separated from
+  the first retry.
 - A late-discovered plugin-owned surface cannot be folded into the earlier
   success story just because the first write committed cleanly; the proof must
   show a preserved remote, a separate rejection or classification point for
