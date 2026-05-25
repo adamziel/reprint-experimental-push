@@ -17,7 +17,9 @@ the stale approval was rejected before mutation.
 The same rule applies to Reprint, ZS-Sync, and ForkPress comparisons: they
 can justify the design direction, but they do not become current proof unless
 this branch reverified the cited upstream state at the exact live write
-boundary being claimed.
+boundary being claimed. A stale manual-review artifact may remain readable for
+audit, but it is not current authority after remote drift and must not be
+treated as retry permission.
 
 The next production-proof gap is not general reliability jargon. It is five
 specific missing proofs:
