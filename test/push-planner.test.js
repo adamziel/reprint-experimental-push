@@ -1518,6 +1518,37 @@ test('completed replay stays inert and does not duplicate inserts or stale local
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
 });
 
+test('durable completed replay stays inert after stale local changes and keeps the insert set stable', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+
+  local.files['index.php'] = '<?php echo "stale-local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Stale local insert', post_status: 'draft' };
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+});
+
 test('blocks a completed replay when the remote drifts and preserves recovery artifacts', () => {
   const base = baseSite();
   const local = baseSite();
