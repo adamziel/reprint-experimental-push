@@ -519,6 +519,39 @@ Must-fix blockers before any production wording:
 
 Source-note comparison summary:
 
+What still needs proof before any production wording:
+
+- a stale remote must fail closed on the live write path before the first
+  mutation, and the preserved remote must remain inspectable after reject;
+- a readable approval, comparison note, or manual-review artifact must not
+  be reusable as retry authority for a different row, file, relationship-
+  bearing record, or plugin-owned surface after drift;
+- any late-discovered plugin-owned state must be either enumerated or hard-
+  blocked before the next write, including cron rows, cache entries,
+  registries, generated assets, custom tables, serialized blobs, and plugin-
+  owned files;
+- partial file, DB, or plugin side effects must be classified old, new, or
+  blocked before retry, so mixed writes cannot be relabeled as success; and
+- source-note comparisons must stay historical unless this branch names the
+  exact upstream revision or worktree state and reruns the same live mutation
+  boundary on this repo.
+
+Failure scenarios that remain unproven:
+
+- the remote drifts after dry-run, but the stale approval is still usable and
+  the later write silently lands on the wrong state;
+- the first write succeeds, then a later live snapshot reveals a new
+  plugin-owned row, file, registry entry, or generated asset, and the earlier
+  manual-review artifact is widened into authority for that second boundary;
+- create-time identity remapping aliases or renumbers the target, so the write
+  lands on a different identity than the one the planner reviewed;
+- a plugin mutates state outside the allowlist, but the change is only
+  discovered after apply and is folded into the success story instead of
+  being blocked or separately classified; and
+- a route-shaped smoke, package mount, fixture replay, or `finalMatchesLocal`
+  match is mistaken for live proof even though it may only reflect a copied
+  executor behind the same URL family.
+
 - Reprint `27c5f25`
   - Proves: staged transport and resumable delivery rhythm in the upstream
     pull pipeline.
