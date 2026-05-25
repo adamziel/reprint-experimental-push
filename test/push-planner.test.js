@@ -1798,6 +1798,48 @@ test('accepts only the documented post-failure states for atomic apply recovery'
   }
 });
 
+test('codifies the no-data-loss recovery matrix across failure boundaries and completed replay', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const failureScenarios = [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote'],
+    ['after staging', { failAfterStaging: true }, 'old-remote'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote'],
+  ];
+
+  for (const [label, options, expectedStatus] of failureScenarios) {
+    const snapshot = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, expectedStatus);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(remote, plan);
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
+  assert.equal(completed.appliedMutations, 2);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+});
+
 test('durable recovery keeps failure boundaries and completed replay recoverable', () => {
   const scenarios = [
     {
