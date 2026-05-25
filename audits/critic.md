@@ -4,9 +4,11 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the latest fetched remote head `536015fb` surfacing the explicit durable-journal boundary verdict plus the earlier `ec1c9952` protocol extension and `0c703230` snapshot-hash proofs. That is concrete retained-source progress, but it is still lab evidence until one live mutation boundary preserves the rejected remote, revalidates from fresh live hashes at apply time, and survives replay on production-like storage with a real WordPress auth/session lifecycle.
+The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the latest fetched remote head `536015fb` surfacing the explicit durable-journal boundary verdict plus the earlier `ec1c9952` protocol extension and `0c703230` snapshot-hash proofs. That is concrete retained-source progress, but it is still lab evidence until one live mutation boundary preserves the rejected remote, revalidates from fresh live hashes at apply time, survives replay on production-like storage, and proves a real WordPress auth/session lifecycle.
 
 The latest remote evidence also reached `889bd37a` with the exact verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. That is the clearest current boundary: the release gate is still closed because production WordPress auth/session lifecycle, durable journal storage plus lease/fencing, preserved-remote retention after rejection, apply-time revalidation, graph identity, and plugin-driver coverage are not yet proven together on one rerunnable live boundary.
+
+The next proof must be one rerunnable live WordPress push boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, not another retained-source or route-shaped smoke.
 
 The single blocker is one rerunnable live mutation boundary on one exact source URL. Until that boundary preserves the rejected remote for audit and retry, re-derives authority from fresh live hashes at apply time, re-enters the same WordPress auth/session after rejection, and classifies plugin-owned surfaces before the first write, production wording stays false.
 
@@ -38,6 +40,14 @@ What must happen before production wording is defensible:
 - write through a lease-fenced durable journal on production-like storage, not just report row counts;
 - preserve graph identity across create-time remap and late-discovered relationship-bearing records; and
 - classify late plugin-owned surfaces before the first write, not after a manual review artifact exists, on that same rerunnable boundary.
+
+Production wording also needs a single rerunnable boundary that can be replayed by another operator without hidden state:
+
+- the same exact command string must be rerunnable against the same live source URL;
+- the rejected remote must remain inspectable after refusal so audit and retry are possible;
+- apply-time revalidation must use fresh live hashes, not cached approval text or fixture snapshots;
+- graph identity must survive create-time remap and late relationship-bearing records; and
+- plugin-driver coverage must catch late plugin-owned surfaces before they can be folded into the first approval.
 
 The project still lacks production proof for these concrete failure modes:
 
