@@ -8,7 +8,7 @@ linked implementation artifacts.
 
 - Last update: 2026-05-25 05:26:48 CEST.
 - Status: lab evidence still holds; production proof is still missing.
-- Trend: the visible page and log still line up, and the newest copy stays terse without changing the blocked gates.
+- Trend: the visible page and log still line up, and the newest copy keeps the proof trail linked instead of repeated inline.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: production auth/session, durable journal writes, leases/fencing, WordPress graph identity, Playground integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to the proof trail instead of repeating it.
