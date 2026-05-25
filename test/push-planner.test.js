@@ -4527,6 +4527,40 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and ma
   assert.equal(JSON.stringify(remote), before);
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent edit stay safe with apply verification', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.db.wp_posts['ID:1'];
+  local.files['index.php'] = '<?php echo "shared edit";';
+
+  const remote = baseSite();
+  remote.files['index.php'] = '<?php echo "shared edit";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const rowDelete = mutationFor(plan, 'row:["wp_posts","ID:1"]');
+  const editDecision = decisionFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(rowDelete.action, 'delete');
+  assert.equal(rowDelete.changeKind, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
+  assert.equal(result.site.files['index.php'], '<?php echo "shared edit";');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete, matching independent edit, and file type swap stay safe', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
