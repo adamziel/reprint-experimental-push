@@ -156,6 +156,24 @@ try {
         'journal readback must show durable mutation evidence',
       );
 
+      const durableJournalProof = spawnSync(process.execPath, ['scripts/recovery/file-journal-restart-smoke.mjs'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        maxBuffer: 1024 * 1024 * 20,
+        env: {
+          ...process.env,
+          NODE_NO_WARNINGS: '1',
+        },
+      });
+      assert.equal(durableJournalProof.status, 0, durableJournalProof.stderr || durableJournalProof.stdout);
+
+      const durableJournalSummary = JSON.parse(durableJournalProof.stdout);
+      assert.ok(Array.isArray(durableJournalSummary.journal?.checked), 'durable journal proof must report checked journal files');
+      assert.ok(
+        durableJournalSummary.journal.checked.length > 0,
+        'durable journal proof must check at least one persistent journal file',
+      );
+
       const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
       const remoteBaseSnapshot = await exportSnapshot('remote-base', remoteServer.baseUrl);
       const liveDrift = {
@@ -195,6 +213,10 @@ try {
             },
             releaseProof: proof,
             durableJournal: {
+              proof: {
+                status: durableJournalProof.status,
+                journal: durableJournalSummary.journal,
+              },
               rows: proof.dbJournal.rows,
               applyCommitted: proof.dbJournal.applyCommitted,
               mutationApplied: proof.dbJournal.mutationApplied,
