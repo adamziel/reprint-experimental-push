@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The blocker is structural: there is still no mandatory command that proves the one-way pull base plus one-way push back to the live source on the real storage and transport path. `node --test` passes, but the passing subtests are still fixture-, model-, refusal-, or lab-backed, and `npm test` is green at `89/89` without changing that boundary. `package.json` exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers, but no `verify`, `verify:release`, or `release` command. I also confirmed there is no checked-in `.github/workflows/` entrypoint in this checkout, so there is no enforced automation path that could force a release verdict. The top release blocker is the missing real-site push preflight command: there is no checked-in invocation that reaches the live-source boundary and fails closed before release when live proof is absent. The strongest production-shaped smokes still self-identify as `labBacked: true`, so they remain lab proof rather than live-source proof. The benchmark surface is also explicit: it reports `productionThroughput: 'not-claimed'`, and the guarded benchmark tests refuse to upgrade that into a claim. That is refusal evidence, not release proof. Until a required gate reaches the live-source boundary, rechecks apply-time state, and emits a machine-checkable verdict, `speed unclaimed` is the only defensible production-facing wording. No current green run can legitimately be read as proof that writes are lossless, that the live push path is reliable under crash/retry/replay, or that production speed has been measured. The existing [`audits/release-proof-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-proof-matrix.md) repeats that same gap in tabular form; it is supporting audit evidence, not a release gate. The evidence deficit is categorical, not incremental: nothing currently on the command surface owns the live-source verdict, and every helper path still stops short of proving crash survival or lossless mutation on the live boundary.
+The blocker is structural: there is still no mandatory command that proves the one-way pull base plus one-way push back to the live source on the real storage and transport path. `node --test` passes, but the passing subtests are still fixture-, model-, refusal-, or lab-backed, and `npm test` is green at `89/89` without changing that boundary. `package.json` exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers, but no `verify`, `verify:release`, or `release` command. I also confirmed there is no checked-in `.github/workflows/` entrypoint or any `.github` tree in this checkout, so there is no enforced automation path that could force a release verdict. The top release blocker is the missing real-site push preflight command: there is no checked-in invocation that reaches the live-source boundary and fails closed before release when live proof is absent. The strongest production-shaped smokes still self-identify as `labBacked: true`, so they remain lab proof rather than live-source proof. The benchmark surface is also explicit: it reports `productionThroughput: 'not-claimed'`, and the guarded benchmark tests refuse to upgrade that into a claim. That is refusal evidence, not release proof. Until a required gate reaches the live-source boundary, rechecks apply-time state, and emits a machine-checkable verdict, `speed unclaimed` is the only defensible production-facing wording. No current green run can legitimately be read as proof that writes are lossless, that the live push path is reliable under crash/retry/replay, or that production speed has been measured. The existing [`audits/release-proof-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-proof-matrix.md) repeats that same gap in tabular form; it is supporting audit evidence, not a release gate. The evidence deficit is categorical, not incremental: nothing currently on the command surface owns the live-source verdict, and every helper path still stops short of proving crash survival or lossless mutation on the live boundary.
 
 The uncomfortable reading is that this is not a missing assertion problem. The repo already has assertions, refusals, and green regression runs. What it lacks is a mandatory release command that binds those checks to a live-source apply step and can fail closed when the live verdict is still absent.
 
@@ -55,7 +55,7 @@ Release preflight absence:
 - there is still no checked-in command that reaches the live-source boundary and fails closed when live proof is absent
 - there is still no checked-in real-site push preflight command on the required path, only helper scripts and lab smokes
 - there is still no checked-in release command that can serve as the real-site push preflight and fail closed on missing live proof
-- there is still no checked-in workflow entrypoint in this checkout to enforce that verdict
+- there is still no checked-in workflow entrypoint or `.github` tree in this checkout to enforce that verdict
 - until that changes, the top release blocker remains the missing real-site push preflight command
 - fixture-only or lab-backed work is still insufficient for shipping, even when it is green
 - a real-site preflight command must exist on the checked-in command surface before the release verdict can move
@@ -66,7 +66,7 @@ Release command audit:
 - `npm test` only executes `node --test`; it does not force a live-source apply boundary
 - `test:playground:*` helpers are optional and lab-scoped
 - `test:recovery:file-journal` proves file-backed restart behavior only
-- there is no checked-in workflow in this checkout that can upgrade regression evidence into a release gate
+- there is no checked-in workflow or `.github` tree in this checkout that can upgrade regression evidence into a release gate
 
 ## Release Gate Definition
 
@@ -144,7 +144,7 @@ The point of this table is separation, not synthesis: executable proof, lab / fi
 Release-command check:
 
 - there is still no checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json)
-- this checkout also has no checked-in `.github/workflows/` entrypoint that could enforce a live-source verdict
+- this checkout also has no checked-in `.github/workflows/` entrypoint or `.github` tree that could enforce a live-source verdict
 - that absence is the top release blocker because it leaves fixture-only and lab-backed work able to stay green without proving the live boundary
 - any new fixture-only or lab-only work remains insufficient for shipping until a checked-in release command exists and fails closed on missing live-source proof
 
