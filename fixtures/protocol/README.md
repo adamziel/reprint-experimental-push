@@ -150,6 +150,17 @@ identity across `remote-base` and `remote-changed`:
   provenance into the production push topology when a review needs the proof
   chain in compact form.
 
+The canonical topology proof is always one remote source, one imported local
+edited site, and one later drift observation of the same remote identity:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` holds the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run upload, apply, journal
+  inspect, and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress via
+  a local-only proxy
+
 The canonical end-to-end bundle for the push extension is:
 
 | Fixture | Role |

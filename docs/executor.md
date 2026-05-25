@@ -54,6 +54,20 @@ The same pull-to-push bridge applies here:
 - inspect-first recovery is the only safe starting point for mutating
   recovery
 
+The production test topology is the same in Docker and Playground:
+
+- one remote source site (`remote-base`)
+- one imported local edited site (`local-edited`)
+- one later observation of the same remote identity after drift
+  (`remote-changed`)
+- one runner process that owns all push protocol calls
+- browser-visible inspection only through the sandbox-provided `8080` ingress
+  and a local-only proxy
+
+`push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
+`push-remote-liveness-topology-contract.json` are the fixtures that pin that
+shared topology.
+
 ## Stage Semantics
 
 The executor needs the same boundary discipline as the protocol:

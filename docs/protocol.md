@@ -44,6 +44,24 @@ The ladder maps directly to the pull pipeline:
 - recovery starts with inspect and only mutates when journal evidence and
   fresh live hashes still prove the branch safe
 
+The machine-readable bridge is split across the fixtures:
+
+- `push-preflight-contract.json` captures the first live binding between the
+  importer-owned base package, the live remote identity, and the short-lived
+  push session
+- `push-pull-mapping.json` and `push-pull-to-topology-contract.json` map the
+  immutable pull provenance into the push stages without turning it into
+  write authority
+- `push-dry-run-apply-revalidation-contract.json` keeps dry-run and apply
+  separate while proving the live remote is revalidated before each batch and
+  again at the storage boundary
+- `push-journal-inspect-contract.json` and the recovery contracts keep
+  journal inspection read-only before any mutating repair
+- `push-topology-matrix.json` and `push-deployment-topology-contract.json`
+  define the Docker and Playground test topology with one remote source, one
+  imported local site, one drift witness, and the sandbox-provided `8080`
+  ingress rule
+
 ## Stage Semantics
 
 Each stage has one job and one boundary:
