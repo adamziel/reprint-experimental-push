@@ -37,6 +37,7 @@ The normal sequence is:
 29. `push-recovery-inspect-contract.json`
 30. `push-snapshot-hashes-page-contract.json`
 31. `push-dry-run-apply-revalidation-contract.json`
+32. `push-remote-liveness-contract.json`
 
 Failure and recovery examples:
 
@@ -117,6 +118,10 @@ Failure and recovery examples:
   snapshot planning, dry-run eligibility, apply-time revalidation, and
   storage-boundary guards stay separate even when the remote drifts between
   dry-run and apply.
+- `push-remote-liveness-contract.json` gives the compact proof that
+  preflight, remote snapshot hash listing, dry-run receipt, batched apply,
+  journal inspect, and inspect-first recovery stay on separate liveness
+  boundaries.
 - `push-recovery-revalidation-contract.json` gives the compact proof that the
   same drift case still requires fresh live hashes before each apply batch and
   before any mutating recovery path.

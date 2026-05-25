@@ -1,0 +1,49 @@
+{
+  "contract_id": "push-remote-liveness-contract",
+  "purpose": "compact proof that preflight, snapshot listing, dry-run, apply, journal inspect, and recovery stay on separate liveness boundaries",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance"
+  },
+  "push_liveness": {
+    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "snapshot_hash_listing": "returns live remote comparison evidence for planning only",
+    "dry_run": "uploads eligibility evidence and returns a receipt, not a lock",
+    "apply": "revalidates live evidence before every batch and again at the storage boundary",
+    "journal": "reads durable claim, lease, and fencing evidence without authorizing mutation",
+    "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair"
+  },
+  "live_remote_proof": {
+    "remote_base": "remote-base",
+    "remote_changed": "remote-changed",
+    "same_identity_at_two_times": true,
+    "proof": [
+      "remote-base and remote-changed are the same remote identity observed at different times",
+      "dry-run and apply remain separate remote operations",
+      "apply revalidates fresh live evidence before every batch and at the storage boundary",
+      "journal inspection stays read-only before inspect-first recovery can mutate"
+    ]
+  },
+  "auth_floor": {
+    "required": "at least as strict as current Reprint HMAC usage",
+    "mutating_calls": [
+      "dry-run",
+      "apply",
+      "mutating recovery"
+    ],
+    "read_only_calls": [
+      "snapshot listing",
+      "journal inspect",
+      "recovery inspect"
+    ]
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "remote snapshot hash listing is planning evidence, not write authority",
+    "dry-run is a receipt, not a lock",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage"
+  ]
+}

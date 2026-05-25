@@ -609,6 +609,63 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   );
 });
 
+test('push remote-liveness fixture keeps the read-only and mutating boundaries separate', () => {
+  const liveness = readJson('fixtures/protocol/push-remote-liveness-contract.json');
+
+  assert.equal(liveness.contract_id, 'push-remote-liveness-contract');
+  assert.equal(
+    liveness.push_liveness.preflight,
+    'binds the persisted pull base to the live remote identity and a short-lived push session',
+  );
+  assert.equal(
+    liveness.push_liveness.snapshot_hash_listing,
+    'returns live remote comparison evidence for planning only',
+  );
+  assert.equal(
+    liveness.push_liveness.dry_run,
+    'uploads eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    liveness.push_liveness.apply,
+    'revalidates live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    liveness.push_liveness.journal,
+    'reads durable claim, lease, and fencing evidence without authorizing mutation',
+  );
+  assert.equal(
+    liveness.push_liveness.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(liveness.live_remote_proof.same_identity_at_two_times, true);
+  assert.ok(
+    liveness.live_remote_proof.proof.includes(
+      'remote-base and remote-changed are the same remote identity observed at different times',
+    ),
+  );
+  assert.ok(
+    liveness.live_remote_proof.proof.includes(
+      'journal inspection stays read-only before inspect-first recovery can mutate',
+    ),
+  );
+  assert.equal(liveness.auth_floor.required, 'at least as strict as current Reprint HMAC usage');
+  assert.deepEqual(liveness.auth_floor.mutating_calls, ['dry-run', 'apply', 'mutating recovery']);
+  assert.deepEqual(liveness.auth_floor.read_only_calls, [
+    'snapshot listing',
+    'journal inspect',
+    'recovery inspect',
+  ]);
+  assert.deepEqual(liveness.required_invariants, [
+    'dry-run and apply are separate remote operations',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run is a receipt, not a lock',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+  ]);
+});
+
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {
   const topology = readJson('fixtures/protocol/push-topology.json');
 
