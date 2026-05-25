@@ -11,6 +11,7 @@ The atomic apply flow has only three acceptable outcomes after a failure or repl
 - `old-remote` means the remote still matches the before-hash envelope for every planned target.
 - `fully-updated-remote` means the remote matches the after-hash envelope for every planned target and the plan can replay without reapplying mutations.
 - `blocked-recovery` means the remote cannot be classified safely from the journal envelope and must carry recovery artifacts.
+- A completed replay is only safe when the persisted journal still provides the full before-hash and after-hash envelope for every planned target.
 - A completed replay is only safe when every planned target still matches the journaled after-hash envelope.
 - A completed replay that sees drift must stop as `blocked-recovery`, not silently fall back to `old-remote`.
 
