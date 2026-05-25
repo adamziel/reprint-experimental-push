@@ -31,6 +31,7 @@ Current command-surface gap:
 - Optional scripts such as `test:recovery:file-journal`, `test:playground:*`, and the raw `node --test` suite do not substitute for a release gate.
 - If a candidate gate does not touch the live-source boundary in the same invocation, it is still not release proof, even if it also exercises auth, journal, or recovery logic.
 - The current production-shaped routes still label themselves `labBacked: true`, so the real remote/local topology is still unproven.
+- The practical meaning is simple: `npm test` can stay green while the repository still has no mandatory command that can certify no data loss, reliability, or speed on the live source.
 
 ## Release Gate Definition
 
