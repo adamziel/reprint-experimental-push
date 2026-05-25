@@ -43,6 +43,20 @@ The executor keeps the same bridge rules as the protocol:
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes still prove the action safe
 
+The canonical proof stack for that executor story is the same one named in
+[protocol.md](protocol.md):
+
+- `push-protocol-extension-contract.json` for the full production ladder
+- `push-pull-to-topology-contract.json` for the pull-to-push bridge
+- `push-executor-topology-proof.json` for the shortest Docker/Playground
+  executor proof
+- `push-topology-matrix.json` for the stage-level Docker/Playground matrix
+- `push-preflight-contract.json` for the first live binding between imported
+  provenance, scope, and session
+- `push-recovery-inspect-contract.json` for the read-only recovery classifier
+- `push-recovery-revalidation-contract.json` for mutating recovery after
+  inspect proves the branch safe
+
 That handoff is the same one defined in [protocol.md](protocol.md):
 
 - exporter discovers the merge base and coverage evidence

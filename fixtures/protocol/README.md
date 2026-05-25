@@ -76,6 +76,20 @@ The production proof bundle is intentionally layered:
   keeps the same remote identity, the same route names, and the
   sandbox-provided `8080` ingress rule aligned across Docker and Playground.
 
+The canonical end-to-end bundle for the push extension is:
+
+| Fixture | Role |
+| --- | --- |
+| `push-protocol-extension-contract.json` | Full production ladder from preflight through inspect-first recovery. |
+| `push-pull-to-topology-contract.json` | Compact bridge from pull provenance into the production push topology. |
+| `push-executor-topology-proof.json` | Shortest Docker/Playground proof for one remote, one local, one drift witness. |
+| `push-topology-matrix.json` | Machine-readable stage matrix for Docker and Playground. |
+| `push-preflight-contract.json` | First live binding between immutable pull provenance, scope, and session. |
+| `push-remote-liveness-contract.json` | Separate planning-only and write-side liveness boundaries. |
+| `push-dry-run-apply-revalidation-contract.json` | Dry-run/apply separation plus revalidation at batch and storage boundaries. |
+| `push-recovery-inspect-contract.json` | Read-only inspect step that classifies recovery before mutation. |
+| `push-recovery-revalidation-contract.json` | Mutating recovery still requires fresh live hashes after inspect. |
+
 Failure and recovery examples:
 
 - `push-precondition-failed-response.json` shows apply-time liveness
