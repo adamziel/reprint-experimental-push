@@ -16,6 +16,14 @@ command still does not prove preserved-remote safety, apply-time
 revalidation, production auth/session lifecycle, graph identity, or
 plugin-driver coverage on a real-site boundary. A wrapper, comparison note,
 or polished smoke name never replaces that proof.
+Concretely, the next proof must be one rerunnable command against a real
+local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that shows the exact
+executor/auth boundary before the first write, the rejected remote that
+remains inspectable after rejection, dry-run receipt, apply-time
+revalidation, journal/recovery inspection, graph identity, and
+old/new/blocked classification for every touched row, file,
+relationship-bearing record, and plugin-owned surface on the same live
+boundary.
 Do not let any wording imply that route shape, fixture replay, or a green
 Playground preflight proves production readiness. Production wording only
 becomes defensible after one rerun shows the preserved remote, the exact
