@@ -292,6 +292,21 @@ test('push protocol fixture readme keeps the production ladder and topology brid
       'push-production-missing-secret-contract.json',
     ),
   );
+  const missingSecret = readJson('fixtures/protocol/push-production-missing-secret-contract.json');
+  assert.equal(missingSecret.contract_id, 'push-production-missing-secret-contract-one-remote-one-local');
+  assert.equal(missingSecret.config.explicit_missing_secret_error.code, 'REPRINT_PUSH_SECRET_REQUIRED');
+  assert.ok(
+    missingSecret.config.explicit_missing_secret_error.message.includes(
+      'before running preflight, dry-run, or apply',
+    ),
+  );
+  assert.ok(
+    missingSecret.required_invariants.includes(
+      'production push must fail fast when the real push secret is missing',
+    ),
+  );
+  assert.equal(missingSecret.topology.networking.ingress_port, 8080);
+  assert.equal(missingSecret.topology.networking.proxy_policy, 'local-only');
   assert.ok(
     executorDocs.replace(/\s+/g, ' ').includes(
       'push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary, separate from dry-run',

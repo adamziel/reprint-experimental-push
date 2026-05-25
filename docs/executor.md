@@ -64,6 +64,11 @@ The remote liveness contract stays strict:
 - journal inspect is read-only and never authorizes mutation
 - recovery inspect is read-only and must happen before any mutating repair
 
+The checked proof path for this document is `node --test test/protocol-fixtures.test.js`.
+That test pins the route matrix, the one-remote/one-local/one-drift topology,
+and the explicit missing-secret failure contract that blocks preflight, dry-run,
+and apply when the real push secret is unavailable.
+
 ## Canonical Proof Set
 
 The executor should cite the same proof chain as the protocol document:
