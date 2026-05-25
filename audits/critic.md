@@ -19,6 +19,12 @@ What must happen before production wording is defensible:
 - preserve graph identity across create-time remap and late-discovered relationship-bearing records; and
 - classify late plugin-owned surfaces before the first write, not after a manual review artifact exists.
 
+The upstream source notes remain provenance only until the same live boundary is rerun here:
+
+- Reprint can justify staged transport and resumability vocabulary, but not preserved-remote retention, auth/session re-entry, or apply-time revalidation on the same live boundary;
+- ZS-Sync can justify bounded discovery and cursoring vocabulary, but not create-time remap safety, graph identity, or plugin-owned surface coverage on the same live boundary; and
+- ForkPress can justify audit and crash-consistency vocabulary, but not lease-fenced durability, preserved-remote auditability, or retry authority on the same live boundary.
+
 If this branch lacks a command, file, or note that the supervised remote already has, treat that as a branch-local merge gap. Do not upgrade the release claim because of that local gap; the gate only opens when the same rerunnable live boundary exists and preserves the rejected remote.
 The supervised remote already improved the command surface and retained-source release verification, so the critique must not fall back to "no `verify:release` exists." The missing proof is the production WordPress boundary itself: live auth/session lifecycle, preserved-remote retention after rejection, lease-fenced durable journal semantics, create-time remap graph identity, and plugin-driver coverage all on one rerunnable live mutation.
 The remote lane's retained-source `verify:release` progress still counts as lab evidence, but it does not become production proof until the live WordPress boundary shows preserved-remote retention, fresh apply-time revalidation, lease/fenced journal semantics, graph identity, and plugin-driver coverage together.
