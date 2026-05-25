@@ -19,6 +19,27 @@ boundary. That proof still has to preserve the rejected remote, show apply-time
 revalidation, and keep later-discovered plugin-owned surfaces on their own
 preserve / reject / retry cycle.
 
+Production-grade push support checklist:
+
+- one rerunnable live command against a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`, not a wrapper label or compatibility smoke;
+- executor identity, auth/session boundary, preserved remote, exact rejection
+  point, dry-run receipt, apply-time revalidation, and journal/recovery
+  inspection from the same rerun;
+- live old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts;
+- explicit enumeration or blocking of hidden plugin-owned data traps outside
+  the allowlist, including cron rows, runtime registries, generated files,
+  caches, serialized blobs, and plugin-owned files;
+- create-time remaps either proven live at apply time or hard-blocked before
+  mutation;
+- later-discovered plugin-owned surfaces treated as new live boundaries with
+  their own preserve / reject / retry cycle; and
+- Reprint, ZS-Sync, and ForkPress comparisons labeled as provenance unless
+  the branch names the exact upstream state, states what the note proves
+  here, states what it does not prove here, and reruns the same live
+  boundary on this worktree.
+
 Must-change-before-production-grade wording:
 
 - replace retained-source `npm run verify:release` language with one rerunnable
@@ -40,6 +61,22 @@ Must-change-before-production-grade wording:
   names the exact upstream state, states what each note proves here, states
   what it does not prove here, and reruns the same live boundary on this
   worktree.
+
+False reliability traps that must fail closed:
+
+- Scenario: a "production-shaped" or "authenticated" smoke reaches the right
+  route but never proves the preserved remote, rejection point, or retry
+  scope. Missing proof: the user still cannot audit the rejected remote or
+  safely retry from live hashes.
+- Scenario: a manual-resolution note covers the first conflict, then a later
+  plugin-owned table, cron row, generated file, cache entry, serialized blob,
+  or remapped create target appears after the first write. Missing proof: the
+  later surface never got its own preserve / reject / retry cycle, so the
+  note is audit context only.
+- Scenario: a review cites Reprint, ZS-Sync, or ForkPress because the route
+  family or wording looks similar. Missing proof: the exact upstream state,
+  the exact live boundary on this branch, and a branch-local rerun that says
+  what the note proves here and what it does not prove here.
 
 Before this project can claim production-grade push support, all of the
 following must be true on the same rerunnable live boundary:
