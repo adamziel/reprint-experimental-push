@@ -3200,6 +3200,10 @@ artifact is recorded separately from the stale review artifact. If a second
 write touches that late-discovered plugin-owned surface, the proof must show
 the surface was already classified before retry started; otherwise the second
 write is a new boundary, not a production-safe continuation of the first one.
+That rule also applies when the first write succeeded cleanly: a later write
+against a newly discovered plugin-owned surface is not covered by the earlier
+success unless the proof separately preserves the remote, blocks or
+classifies the late surface, and records a fresh retry scope.
 
 Source-note proof boundary, restated:
 
