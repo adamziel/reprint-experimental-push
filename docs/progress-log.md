@@ -8,7 +8,7 @@ linked implementation artifacts.
 
 - Last update: 2026-05-25 07:27:38 CEST.
 - Status: blocked; the visible page, log, and latest audit note still line up.
-- Trend: no production evidence delta in this pass; the public surfaces stay short, scan-first, and linked.
+- Trend: no production evidence delta in this pass; the public surfaces stay short and linked.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: production auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) stays compact and keeps the proof trail linked.
