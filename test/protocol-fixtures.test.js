@@ -463,6 +463,39 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(productionRecoveryDriftContract.topology.networking.ingress_port, 8080);
   assert.equal(
+    authSessionJournalRecoveryInspectContract.contract_id,
+    'push-auth-session-journal-recovery-inspect-contract-one-remote-one-local',
+  );
+  assert.deepEqual(authSessionJournalRecoveryInspectContract.auth.push_requires, [
+    'push session',
+    'canonical push signature',
+    'idempotency key',
+  ]);
+  assert.deepEqual(authSessionJournalRecoveryInspectContract.auth.inspect_requires, [
+    'HMAC-authenticated request',
+    'read-only recovery mode',
+  ]);
+  assert.equal(
+    authSessionJournalRecoveryInspectContract.session.remote_site_id,
+    'remote-example',
+  );
+  assert.equal(
+    authSessionJournalRecoveryInspectContract.journal_row.storage_guard,
+    'filesystem-compare-rename',
+  );
+  assert.equal(authSessionJournalRecoveryInspectContract.recovery_inspect.mode, 'inspect');
+  assert.equal(authSessionJournalRecoveryInspectContract.recovery_inspect.mutates, false);
+  assert.ok(
+    authSessionJournalRecoveryInspectContract.required_invariants.includes(
+      'inspect is read-only and must come before any mutating recovery mode',
+    ),
+  );
+  assert.ok(
+    authSessionJournalRecoveryInspectContract.required_invariants.includes(
+      'fresh live hashes must still be checked before finish, rollback, or auto',
+    ),
+  );
+  assert.equal(
     productionPushRecoveryContract.contract_id,
     'push-production-push-recovery-contract-one-remote-one-local',
   );
