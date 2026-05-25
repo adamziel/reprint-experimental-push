@@ -32,6 +32,12 @@ this branch.
   supervised reliable-executor lane has a completed retained-source
   `npm run verify:release` handoff with `authSessionType`, `applyCommitted`,
   or `durableJournal.rows: 17`.
+- Treat the retained-source `verify:release` handoff as material harness
+  progress, but not as the missing production proof: the next proof must show
+  the same live boundary against production WordPress auth/session
+  lifecycle, durable journal storage semantics outside Playground, graph
+  identity, and plugin-driver coverage, with preserved-remote evidence and a
+  rerunnable real-site command.
 - If a later-discovered plugin-owned surface, remapped create target, or
   mixed file/DB/plugin side effect appears after the first write, the branch
   records it as a new live boundary with its own preserve / reject / retry
@@ -66,3 +72,9 @@ this branch.
   rejection point, and fresh retry scope are all present in the same rerun.
 - If the claim only has a lab, fixture, or wrapper command, it must say so
   explicitly and cannot be treated as release evidence.
+- Current blocker for production wording: no branch-local proof yet shows a
+  real-site command rerun on a live local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL` that simultaneously preserves the rejected
+  remote, records dry-run receipt and apply-time revalidation, inspects the
+  durable journal/recovery trail, and proves graph identity plus
+  plugin-driver coverage under the WordPress auth/session lifecycle.
