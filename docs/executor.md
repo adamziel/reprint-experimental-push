@@ -4,6 +4,18 @@ This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
+The executor should be read against three concrete proofs:
+
+| Proof | Use it for |
+| --- | --- |
+| `push-protocol-extension-contract.json` | The full production ladder from preflight through inspect-first recovery. |
+| `push-deployment-topology-contract.json` | The one-remote, one-local, one-drift Docker/Playground topology. |
+| `push-recovery-inspect-contract.json` | The read-only recovery inspect boundary and live-hash classification. |
+
+Those three fixtures are enough to show the executor never treats a dry-run
+receipt as write authority and never treats journal inspection as mutation
+authority.
+
 The executor has one production shape:
 
 - it starts from a persisted pull base package
@@ -23,6 +35,16 @@ The auth and session boundary is part of the production shape:
 - dry-run, apply, and mutating recovery must use the push session plus the
   canonical push signature and idempotency key.
 - the push session scopes the write path, but it does not reserve remote state.
+
+Recovery uses a separate read-only inspection step from the durable journal
+readback:
+
+- `push_journal` reads claim, lease, and fencing evidence for interrupted or
+  ambiguous applies.
+- `push_recover inspect` classifies finish, rollback, retry, or block before
+  any mutating repair.
+- `push_recover auto|finish|rollback` may mutate only after inspect and fresh
+  live hashes prove the action safe.
 
 That split is the production liveness rule:
 

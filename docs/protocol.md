@@ -17,6 +17,21 @@ The production extension has one non-negotiable shape:
 - recovery must begin with inspect before any mutating finish or rollback
 - authentication must be at least as strict as current Reprint HMAC usage
 
+The shortest way to read the production ladder is this:
+
+| Stage | Evidence boundary | Pull provenance mapping |
+| --- | --- | --- |
+| `push_preflight` | Binds one persisted pull base to one live remote identity and one short-lived session. | Exporter merge-base scan -> preflight. |
+| `push_snapshot_hashes` | Planning-only live hash listing; paging never grants write authority. | Importer persisted base package -> snapshot listing. |
+| `push_plan_dry_run` | Eligibility receipt only; never a lock. | Coverage evidence -> canonical plan upload. |
+| `push_batch_apply` | First write stage; revalidates before every batch and at the storage boundary. | Canonical pull manifest -> batch apply. |
+| `push_journal` | Read-only durable evidence. | Persisted provenance checksum -> journal inspect. |
+| `push_recover inspect` | Read-only recovery classification before any mutating repair. | Coverage and lineage replay -> inspect-first recovery. |
+| `push_recover auto|finish|rollback` | Mutating recovery only when inspect plus fresh live hashes prove the action. | Inspect result -> safe recovery mutation. |
+
+That ladder keeps dry-run and apply separate, keeps journal inspection read-only,
+and keeps recovery inspect-first even when the remote is cursorable or drifted.
+
 The remote write path is deliberately split into a planning half and a write
 half:
 
