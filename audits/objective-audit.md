@@ -13,7 +13,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `c036004c`
 - `origin/lane/progress-publisher` -> `43a230f8`
-- `origin/lane/same-plan-wordpress-graph-create` -> `383bb025`
+- `origin/lane/same-plan-wordpress-graph-create` -> `70925d88`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f0b2fcde`
 - `origin/main` -> `4b7b47a6`
@@ -36,8 +36,8 @@ but it did not change the release conclusion:
   evidence at `c036004c`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `43a230f8`.
-- `origin/lane/same-plan-wordpress-graph-create` now adds same-plan term
-  taxonomy proof at `383bb025`.
+- `origin/lane/same-plan-wordpress-graph-create` now records a silent smoke
+  blocker at `70925d88`.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.

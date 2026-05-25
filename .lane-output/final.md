@@ -7,7 +7,7 @@ Evidence checked:
 - `origin/lane/fast-paths` at `ff1915fb`
 - `origin/lane/critic` at `c036004c`
 - `origin/lane/progress-publisher` at `43a230f8`
-- `origin/lane/same-plan-wordpress-graph-create` at `383bb025`
+- `origin/lane/same-plan-wordpress-graph-create` at `70925d88`
 - `origin/lane/independent-auditor` at `33b839f0`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` at `f0b2fcde`
 - `audits/objective-audit.md`
@@ -18,7 +18,7 @@ Evidence checked:
 
 What I found:
 - The audit verdict still holds: the repository is not releasable as a production WordPress push path.
-- The current heads do not add a new production-backed mutation, recovery, or measured-speed proof that would move the release gates.
+- The current heads do not add a new production-backed mutation, recovery, or measured-speed proof that would move the release gates, including the new same-plan silent smoke blocker.
 - The audit file needed a live-head refresh, but the release blockers and verdict did not change.
 
 Changed files:
