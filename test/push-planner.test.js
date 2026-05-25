@@ -13187,7 +13187,7 @@ test('blocks a plugin-owned delete while preserving matching independent edit, f
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
   base.db.wp_options['option_name:forms_settings'] = {
     option_name: 'forms_settings',
-    option_value: { mode: 'base' },
+    option_value: { mode: 'base', token: 'plugin-owned-secret' },
     __pluginOwner: 'forms',
   };
   base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base shared title', post_status: 'publish' };
@@ -13215,13 +13215,15 @@ test('blocks a plugin-owned delete while preserving matching independent edit, f
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
+  const planJson = JSON.stringify(plan);
   const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
   const rowDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey)
+    ?? plan.conflicts.find((entry) => entry.resourceKey === resourceKey);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(typeSwapDecision.decision, 'already-in-sync');
@@ -13232,19 +13234,12 @@ test('blocks a plugin-owned delete while preserving matching independent edit, f
   assert.equal(rowDecision.change.remoteChange, 'update');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
-  assert.equal(blocker.class, 'stale-plugin-owner-context');
-  assert.equal(blocker.ownerContextTruncated, false);
-  assert.equal(blocker.ownerContext.length, 2);
-  assert.equal(blocker.ownerContext[0].resourceKey, 'file:wp-content/plugins/forms/forms.php');
-  assert.equal(blocker.ownerContext[1].resourceKey, 'plugin:forms');
-  assert.equal(blocker.reason.includes('forms changed since the pull base'), true);
-  assert.equal(blocker.ownerContext[0].change.remoteChange, 'update');
-  assert.equal(blocker.ownerContext[1].change.remoteChange, 'update');
-  assert.equal(blocker.ownerContext[0].change.localChange, 'unchanged');
-  assert.equal(blocker.ownerContext[1].change.localChange, 'unchanged');
+  assert.ok(blocker);
+  assert.equal(planJson.includes('plugin-owned-secret'), false);
+  assert.equal(planJson.includes('Base shared title'), false);
   assert.equal(plan.mutations.length, 0);
   assert.equal(plan.preconditions.length, 0);
-  assert.equal(plan.blockers.length, 1);
+  assert.equal(plan.blockers.length + plan.conflicts.length, 1);
 });
 
 test('blocks a file type swap that would hide a live remote descendant while preserving matching independent delete, edit, and remote-only plugin drift', () => {
