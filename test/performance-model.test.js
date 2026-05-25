@@ -495,6 +495,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('blind-sql-replace').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('compressed-row-batch-replaces-atomic-group').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('parallel-finalize-merged-across-groups').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('parallelize-finalize-across-groups').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('backpressure-drops-queued-receipts').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('unbounded-parallel-large-upload-resume').violates.includes('backpressure'));
   assert.ok(rejectedById.get('unbounded-parallel-large-upload-resume').violates.includes('durable-progress'));
