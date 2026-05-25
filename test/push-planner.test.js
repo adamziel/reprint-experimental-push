@@ -20370,6 +20370,44 @@ test('refuses a forged ready delete at the live release boundary while remote-on
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin drift at the live release boundary while a ready delete plan refuses late drift and preserves remote-only plugin removal evidence', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  delete remote.files['index.php'];
+  delete remote.plugins.seo;
+  delete remote.files['wp-content/plugins/seo/seo.php'];
+
+  const error = captureError(() => applyPlan(remote, plan));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(remote.files['index.php'], undefined);
+  assert.equal(Object.hasOwn(remote.plugins, 'seo'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/seo/seo.php'), false);
+});
+
 test('stops a directory delete that would hide a live remote descendant while preserving a matching independent delete, edit, type swap, and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
