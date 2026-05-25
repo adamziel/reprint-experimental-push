@@ -4973,3 +4973,35 @@ can show compatibility with the expected URL shape or review flow while the
 real production executor is still copied, fixture-backed, or missing the
 preserve / reject / retry cycle for a drifted remote, a remapped create target,
 or a late-discovered plugin-owned surface.
+
+Current blocking scenarios still needing branch-local proof:
+
+- live remote drift between preflight and apply, where the write must fail
+  before the first mutation and keep the rejected remote auditable for retry;
+- create-time identity remapping, aliasing, or renumbering, where a fixture or
+  review note can preserve the wrong shape without proving the live target
+  stayed stable;
+- plugin-owned state outside the allowlist, including hidden tables, files,
+  cron rows, runtime registries, generated assets, caches, and serialized
+  blobs that may appear after the first write;
+- mixed file, database, and plugin side effects, where only the committed
+  subset is visible unless the surviving state is classified as old, new, or
+  blocked before retry; and
+- stale manual-review artifacts, where a readable note survives drift but has
+  not been separately rejected, preserved, and rebuilt into a fresh retry
+  scope for a later boundary.
+
+Minimum evidence still missing for production wording:
+
+- live proof that stale authority fails before the first mutation and that
+  the rejected remote remains inspectable after reject;
+- live proof that any create-time remap case is either preserved safely or
+  hard-blocked before write;
+- live enumeration or explicit blocking for every plugin-owned surface
+  outside the allowlist, including late-discovered surfaces that appear after
+  the first write;
+- old/new/blocked classification for the full mixed write path, not just the
+  successful subparts; and
+- source-note comparisons that name the exact upstream state, say what the
+  note proves here and what it does not prove here, and stay historical unless
+  the same live boundary was rerun on this branch.
