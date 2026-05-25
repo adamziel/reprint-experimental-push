@@ -78,15 +78,21 @@ Gate shape still missing from this checkout:
 
 The test suite is still an audit harness, not a release harness.
 
-- It proves local invariants and refusal logic. `npm test` currently passes 89 tests, but that count is still only internal consistency evidence.
-- It does not prove no data loss on the live source boundary. The planner and recovery tests show conflict handling, replay classifying, redaction, and fixture persistence, but they never observe a real live-source push path.
+- `npm test` proves local invariants and refusal logic, but that is still internal consistency evidence only. Passing local tests is not release approval.
+- It does not prove no data loss on the live source boundary. The planner and recovery tests cover conflict handling, replay classification, redaction, and fixture persistence, but they never observe a real live-source push path.
 - It does not prove real-world reliability. Crash, retry, duplicate request, lease expiry, stale claim, and mid-apply restart behavior are modeled or fixture-backed, not proven against production storage and transport.
 - It does not prove speed. The benchmark code refuses unsupported claims instead of timing the live push path, so it can only block false speed claims, not establish a speed claim.
+- It does not prove graph identity, plugin-data-driver behavior, or real remote/local topology at the production boundary.
 - It does not prove a release-safe default because no checked-in command forces the whole proof matrix.
-- It does not prove a default release path because all stronger checks remain opt-in scripts.
 - It does not prove that any `npm run test:playground:*` command is release-safe; those scripts are evidence collectors, not release approvers.
-- It does not yet prove the production graph identity, plugin-data-driver, or topology claims that the objective requires at release time.
 - It does not prove that `labBacked: true` evidence has been eliminated anywhere the release decision would depend on it.
+
+The current test claims break down like this:
+
+- No data loss: not proven. The suite only shows local planner and journal behavior plus fixture recovery. It does not show a live source surviving a failed push without losing or duplicating data.
+- Reliability: not proven. The crash and replay cases are valuable, but they stay inside fixture or lab boundaries.
+- Speed: not proven. The benchmark suite blocks unsupported throughput claims, but it does not measure the live push path against a threshold.
+- Release safety: not proven. There is still no required release gate that composes the proof matrix and fails closed.
 
 Current test audit, stripped down:
 
@@ -112,6 +118,13 @@ Current test verdict, tightened:
 - Until one enforced gate consumes all required proof buckets together, every green run remains bypassable by command choice.
 
 The weakest current claim is still the release gate itself. That is the claim most worth tightening because it is the one that converts every existing proof fragment into an enforceable decision. Until the repo has a required `verify:release`-style command and a checked-in automation path that runs it, every other proof bucket remains optional and therefore bypassable. The immediate actionable requirement is not more lab coverage; it is a fail-closed release command that prints the first missing proof bucket, rejects `labBacked: true` and fixture-only evidence, and is the default path in CI or equivalent automation.
+
+Current release-gate action items:
+
+1. Add one required `verify:release` entrypoint to `package.json`.
+2. Make that command fail closed on `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
+3. Make the command print the last failing proof bucket so the blocker is explicit.
+4. Wire the same command into checked-in automation so a green casual run cannot bypass the safety matrix.
 
 One important distinction for this audit: refusal tests are still useful, but they are not release approval. A test can be honest about missing proof, and still be insufficient to prove the positive claim. In this checkout, the benchmark and recovery suites are credible blockers because they refuse unsupported claims and model some failure modes, but they do not certify the live-source boundary the objective requires.
 
