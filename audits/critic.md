@@ -1506,11 +1506,13 @@ would reasonably read as equivalent.
   never current proof that this repo has the same live executor boundary,
   stale-artifact rejection, or remote-preserving retry behavior, and they
   cannot be read as current upstream proof unless the cited upstream revision
-  or worktree was reverified at the same state.
+  or worktree was reverified at the same state and at the same live mutation
+  boundary.
   Their source-note provenance is limited to `docs/source-notes.md` and does
   not by itself prove any live mutation boundary in this repo.
 - A route that only looks production-shaped is not evidence of production
-  safety, reliability, or retry correctness.
+  safety, reliability, or retry correctness, and a matching package mount does
+  not prove the live executor ran.
 - A copied lab route that happens to share the production pathname is still
   not production proof unless the same live write boundary was exercised on a
   drifted remote and revalidated immediately before mutation.
@@ -1563,13 +1565,37 @@ would reasonably read as equivalent.
 - A stale manual-review artifact never becomes current authority just because
   the same route or package name is reused; the next retry must reject the old
   approval before write, preserve the remote for audit, and re-plan from a
-  fresh live snapshot.
+  fresh live snapshot. Readability is audit value only.
 - A stale manual-review artifact must fail closed on the first live-hash
   mismatch even when the same request path still returns the expected route
   shape or a fixture-level `finalMatchesLocal` result.
 - A plugin-owned surface is not "covered" unless the claim names the exact
   owned resource set and shows the apply-time revalidation result; route shape,
   package mount, or fixture success alone cannot stand in for that proof.
+
+## Production Claim Blockers
+
+Before this project can claim production-grade push support, all of the
+following still need repo-local proof or an explicit hard block:
+
+1. Live remote drift between dry-run and apply fails closed before the first
+   write, and the rejected snapshot stays auditable without being reusable.
+2. Create-time identity remapping either has a durable proof or is blocked
+   whenever the target can renumber, alias, or reassign under the same path.
+3. Plugin-owned state outside the declared allowlist is discovered and
+   rejected at apply time, including custom tables, generated files, cron,
+   cache, runtime registries, and other plugin side effects.
+4. Partial file, DB, or plugin side effects are durably classified as old,
+   new, or blocked, and a retry starts from fresh live evidence rather than
+   stale approval.
+5. Manual-review artifacts stay readable for audit while becoming unusable
+   as retry authority after drift or partial recovery.
+6. Reprint, ZS-Sync, and ForkPress comparisons remain historical unless the
+   exact upstream revision or worktree was reverified at the same live
+   mutation boundary.
+7. Route-shape, packaged-plugin mounting, fixture replay, and
+   `finalMatchesLocal` remain compatibility evidence only until the live write
+   boundary, stale-authority rejection, and preserved remote are proven.
 
 ## Reliability Language Gate
 
