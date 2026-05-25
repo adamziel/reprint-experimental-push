@@ -21,6 +21,18 @@ can be considered release-safe:
 - recovery inspection that can distinguish old remote, fully updated remote,
   and blocked partial recovery
 
+The current executable regression harness for this contract is:
+
+```bash
+node --test test/push-planner.test.js
+```
+
+That suite must keep proving:
+
+- failure before mutation, after staging, and after dependency validation land in `old-remote`
+- completed replay stays `fully-updated-remote` and remains inert on retry
+- mid-apply partial writes stay `blocked-recovery` with inspectable artifacts
+
 ## Why this boundary matters
 
 Model-only replay proves the state machine, but it does not protect against a
