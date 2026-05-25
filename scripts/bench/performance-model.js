@@ -1334,6 +1334,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'compressed-receipt-summary-skips-large-upload-publish',
+    proposal: 'treat a compressed receipt summary as enough proof to skip the guarded publish step for a large upload',
+    rejectedBecause: 'a compressed summary can reduce recovery storage, but it cannot prove the live compare or guarded publish barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',

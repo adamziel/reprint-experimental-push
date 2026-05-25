@@ -553,6 +553,9 @@ under load:
 - compressed manifest or package summary cannot complete plugin install
   because dependency checks, metadata writes, row receipts, and the atomic-group
   commit still need durable evidence.
+- compressed receipt summaries cannot replace the guarded publish barrier for
+  large uploads, because recovery still needs the raw chunk receipts and live
+  compare evidence.
 - dependency-heavy plugin update cannot be fast-pathed by index freshness alone
   because dependency checks still have to survive the atomic-group barrier.
 - split plugin install is rejected because files, rows, metadata, dependency
