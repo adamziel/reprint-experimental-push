@@ -104,11 +104,13 @@ If the remote is not fully old or fully updated, the recovery result must be blo
 
 The JSON-lab recovery model is useful because it proves the state contract, but
 it is not the same as a production durable journal. Production still needs
-durable writes, sync/fence guarantees, and restart-readable artifacts before a
+restart-readable DB rows or files, fsync or equivalent flush guarantees,
+plugin activation fencing or leases, and durable recovery artifacts before a
 partial remote mutation can be treated as safely recoverable.
 
 ## Production note
 
 The JSON and in-memory lab fixtures validate the model. Production recovery still needs
-durable journal storage, sync guarantees, and restart-readable recovery artifacts before
-any partial remote mutation can be considered recoverable.
+durable journal storage, sync guarantees, restart-readable recovery artifacts,
+and explicit recovery inspection paths before any partial remote mutation can
+be considered recoverable.

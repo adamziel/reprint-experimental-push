@@ -8916,6 +8916,49 @@ test('no-data-loss recovery boundaries remain old remote, fully updated remote, 
   );
 });
 
+test('durable stale completed replay is blocked with artifacts and does not duplicate inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const persistedAfterApply = readRecoveryJournal(journalPath);
+
+  const staleReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  staleReplayRemote.files['index.php'] = '<?php echo "stale local";';
+
+  const staleReplayError = captureError(() =>
+    applyPlan(staleReplayRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  const persistedAfterReplay = readRecoveryJournal(journalPath);
+
+  assert.ok(staleReplayError instanceof PushPlanError);
+  assert.equal(staleReplayError.code, 'RECOVERY_BLOCKED');
+  assertAcceptableRecoveryState(staleReplayError.details.recovery);
+  assertRecoveryStateArtifacts(staleReplayError.details.recovery, 'blocked-recovery');
+  assert.ok(staleReplayError.details.recovery.artifacts.remote, 'blocked replay must keep remote artifacts');
+  assert.ok(staleReplayError.details.recovery.artifacts.journal, 'blocked replay must keep journal artifacts');
+  assert.equal(staleReplayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
+  assert.equal(
+    staleReplayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+    'blocked replay must not duplicate inserts',
+  );
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery').length,
+    persistedAfterApply.records.filter((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery').length + 1,
+    'durable blocked replay should append a recovery-state record',
+  );
+});
+
 test('recovery failure boundaries stay on old remote and completed replay stays inert', () => {
   const base = baseSite();
   const local = baseSite();
