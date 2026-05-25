@@ -7,6 +7,9 @@ support.
 - The claim cites a live write-path proof on the actual request path, not
   only route shape, packaged-plugin mounting, fixture replay, or
   `finalMatchesLocal`.
+- A lab-shaped route that only matches ingress, endpoint name, or package
+  layout is compatibility evidence only; it does not prove the production
+  executor ran, the remote was preserved, or stale authority failed closed.
 - The claim says whether any comparison to Reprint, ZS-Sync, or ForkPress
   was re-verified against the current upstream commit or worktree state.
 - If that upstream comparison was not re-verified, the claim must label it as
