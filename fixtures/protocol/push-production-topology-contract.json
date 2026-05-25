@@ -29,8 +29,7 @@
     "snapshot_hash_listing": "planning evidence only and never write authority",
     "dry_run_receipt": "eligibility evidence only and never a lock",
     "apply_revalidation": "refreshes fresh live evidence before every batch and at the storage boundary",
-    "journal_inspect": "reads the journal, claim, lease, and recovery fence without authorizing mutation",
-    "journal_inspect": "reads durable evidence without authorizing mutation",
+    "journal_inspect": "reads durable evidence, claim, lease, and recovery fence without authorizing mutation",
     "recovery_inspect": "must happen before any mutating recovery path",
     "auth_floor": "at least as strict as current Reprint HMAC usage"
   },
