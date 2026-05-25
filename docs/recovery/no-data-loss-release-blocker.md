@@ -1,40 +1,27 @@
 # No Data Loss Release Blocker
 
-The atomic apply boundary is only safe when the recovery story is explicit.
+This lane only allows three post-failure outcomes:
 
-Acceptable post-failure states:
-
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery`
+1. `old-remote`
+   - No remote mutation became visible.
+   - The durable journal may contain opened, staged, or validation evidence.
+2. `fully-updated-remote`
+   - Every planned mutation is already on the remote.
+   - Completed replays must stay inert.
+3. `blocked-recovery`
+   - The remote is partially updated or drifted.
+   - Recovery artifacts must be preserved for inspection and fencing.
 
 Anything else is a release blocker.
 
-The replay boundary is part of the same contract:
+The important distinction is not whether a test-model replay succeeds. It is
+whether a retry can be explained by durable evidence:
 
-- a completed replay must stay `fully-updated-remote` and remain inert
-- a stale completed replay must become `blocked-recovery` with journal and remote artifacts
-- a blocked replay must stay blocked on retry until recovery evidence changes
-- a mid-apply partial commit must never be treated as safe without recovery artifacts
+- failure before mutation, after staging, or after dependency validation stays
+  `old-remote`
+- replaying a completed plan stays `fully-updated-remote`
+- any partial remote mutation without durable recovery artifacts is blocked
 
-## Release-blocker rule
-
-A partial remote mutation without a durable recovery artifact is never
-acceptable. If the remote changed and the persisted journal cannot explain the
-state, the branch must stay blocked until recovery evidence is written or the
-mutation is rolled back.
-
-## Production requirement
-
-Lab JSON fixtures can prove the model, but production recovery needs durable
-journal rows or files, crash-safe persistence, and restart-readable inspection.
-The persisted journal must be able to explain why the remote is old, fully
-updated, or blocked after a restart.
-
-## Retry rule
-
-Retries must not:
-
-- duplicate inserts
-- resurrect stale local data
-- treat a partial write as safe
+JSON fixtures and lab evidence are useful for proving the model, but the
+production boundary must come from durable journal rows or files that survive a
+restart.

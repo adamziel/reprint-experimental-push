@@ -11570,6 +11570,11 @@ test('no-data-loss recovery accepts only old remote, fully updated remote, or bl
   assertAcceptableRecoveryState(blockedError.details.recovery);
   assert.ok(blockedError.details.recovery.artifacts.remote);
   assert.ok(blockedError.details.recovery.artifacts.journal);
+  assert.equal(blockedError.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(
+    blockedError.details.recovery.artifacts.journal.entries.every((entry) => entry.status === 'applied'),
+    true,
+  );
 });
 
 test('reopened durable journals keep the replay boundary inert after a dependency-validation failure boundary', () => {
