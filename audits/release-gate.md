@@ -67,7 +67,8 @@ or comparison-only.
 - The claim shows the same live write path rejected stale authority before
   mutation, and that a route-shaped smoke or packaged-plugin mount only counts
   as compatibility evidence if it exercised that exact boundary on a drifted
-  remote.
+  remote and the audit names the preserved remote, stale rejection point, and
+  fresh retry scope.
 - The claim includes the failure classification for any partial file, DB, or
   plugin side effect and shows recovery cannot silently widen the old approval
   to unrelated rows, files, relationship-bearing records, or plugin-owned
@@ -88,6 +89,10 @@ or comparison-only.
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
   production proof unless the same live write boundary was reverified against a
   drifted remote.
+- The claim does not let a comparison note become current proof unless it
+  names the exact upstream revision or worktree state, the exact live
+  mutation boundary, the preserved remote, and the stale-authority rejection
+  case.
 - The claim does not treat a fixture-backed or copied-lab mount as production
   proof, even if it returns live-looking hashes through a production-shaped
   route.

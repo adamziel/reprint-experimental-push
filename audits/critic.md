@@ -2345,16 +2345,19 @@ Production-readiness checklist:
   after the remote changes again.
 - Show that route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` are only compatibility evidence unless the same live
-  write boundary is reverified in this repo.
+  write boundary is reverified against a drifted remote in this repo and the
+  proof names the preserved remote, stale rejection point, and fresh retry
+  scope.
 - Show that any Reprint, ZS-Sync, or ForkPress comparison was reverified at
   the cited upstream revision or worktree, at the same live mutation
-  boundary, on the same live mutation executor; otherwise the note remains
+  boundary, on the same live mutation executor, and with the exact preserved
+  remote and stale-authority rejection case; otherwise the note remains
   historical context only and cannot support any production wording.
 - Show a release gate that fails closed when any of the above is missing and
   that records the exact rejection reason for audit and retry. A gate that
   only logs "manual resolution" or "comparison passed" without the preserved
-  remote, stale-artifact rejection point, and fresh retry scope is not a
-  release gate.
+  remote, stale-artifact rejection point, fresh retry scope, and exact live
+  write boundary is not a release gate.
 
 False reliability claims to avoid:
 
@@ -2384,6 +2387,10 @@ False reliability claims to avoid:
 - "Recovery succeeded" when the apply left mixed file, DB, or plugin state
   but the failure was not durably classified as partial with a fresh retry
   scope.
+- "Current proof" when a comparison note names Reprint, ZS-Sync, or ForkPress
+  but does not also name the exact upstream revision or worktree state, the
+  exact live mutation boundary, the preserved remote, and the stale rejection
+  point.
 
 Additional production-readiness blockers that still need explicit proof:
 
