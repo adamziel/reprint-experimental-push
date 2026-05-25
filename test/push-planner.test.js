@@ -16936,3 +16936,55 @@ test('durable recovery boundaries classify every failure cut point and completed
     true,
   );
 });
+
+test('durable recovery accepts only old remote, fully updated remote, or blocked recovery states with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const beforeMutationJournalPath = tempRecoveryJournalPath();
+  const beforeMutationJournal = openRecoveryJournal(beforeMutationJournalPath, { truncate: true, now: fixedNow });
+  const oldRemote = baseSite();
+  const oldRemoteFailure = captureError(() =>
+    applyPlan(oldRemote, plan, {
+      durableJournal: beforeMutationJournal,
+      failBeforeMutation: true,
+    }),
+  );
+  beforeMutationJournal.close();
+
+  assertFailureRecoveryState(oldRemoteFailure.details.recovery, 'old-remote');
+  assert.equal(oldRemoteFailure.details.recovery.artifacts.remote, undefined);
+  assert.equal(oldRemoteFailure.details.recovery.artifacts.journal.status, 'opened');
+  assertAcceptableRecoveryState(oldRemoteFailure.details.recovery);
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedJournal });
+  completedJournal.close();
+
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assert.equal(completed.recoveryState.status, 'fully-updated-remote');
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+
+  const blockedJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const blockedRemote = JSON.parse(JSON.stringify(completed.site));
+  blockedRemote.files['index.php'] = '<?php echo "drifted";';
+  const blocked = captureError(() =>
+    applyPlan(blockedRemote, plan, {
+      durableJournal: blockedJournal,
+      journal: completed.journal,
+    }),
+  );
+  blockedJournal.close();
+
+  assertFailureRecoveryState(blocked.details.recovery, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts.remote);
+  assert.ok(blocked.details.recovery.artifacts.journal);
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assertAcceptableRecoveryState(blocked.details.recovery);
+});
