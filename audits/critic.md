@@ -12,7 +12,7 @@ That makes the next proof requirement narrower, not looser: one rerunnable live 
 
 The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
 
-Reprint, ZS-Sync, and ForkPress only supply provenance for transport, discovery, and crash-consistency vocabulary. Their notes are useful context, but they are not retry authority here: they do not prove preserved-remote retention after rejection, stale-authority rejection before the first write, live auth/session lifecycle, lease/fenced durability, graph identity, or plugin-driver coverage on this branch.
+Reprint, ZS-Sync, and ForkPress only supply provenance for transport, discovery, and crash-consistency vocabulary. Their observed anchors (`27c5f25`, `d9334a0`, `55f9879`) are useful context, but they are not retry authority here: they do not prove preserved-remote retention after rejection, stale-authority rejection before the first write, live auth/session lifecycle, lease/fenced durability, graph identity, or plugin-driver coverage on this branch.
 
 - Reprint notes help explain resumable transport and staged delivery, but they do not prove a WordPress auth/session lifecycle or a preserved remote that survives rejection on the same live boundary.
 - ZS-Sync notes help explain discovery and batching, but they do not prove create-time remap handling, graph identity, or late plugin-owned surface classification.
