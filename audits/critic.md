@@ -7195,18 +7195,18 @@ are true on this worktree:
 
 Lead finding for the current release-proof claim:
 
-- `npm run test:playground:production-shaped-release-proof` remains a proof
-  wrapper, because there is no matching real script entry in `package.json`
-  here and no rerun against a live local, Playground, or Docker
-  `REPRINT_PUSH_SOURCE_URL`; the next acceptable evidence must be one exact
-  command string, one exact live source URL, one preserved remote that stayed
-  inspectable after rejection, one apply-time revalidation on that same
-  boundary, one journal/recovery inspect step that justifies retry scope, and
-  one auth/session boundary record before the first write.
-- if that rerun cannot print the exact executor identity, the rejected remote,
-  and the live source URL in the same run, then the claim is still setup-only
-  and production wording must fail closed; a wrapper name plus lab-shaped
-  output is not production proof.
+- `npm run verify:release` is not a proof command on this branch because there
+  is no matching script entry in `package.json` here; the current surface only
+  exposes `plan`, `apply`, and the various `test:playground:*` flows. Even the
+  new `test:playground:production-shaped-release-verify` path is still only a
+  Playground live-preflight unless it is rerun against a live local,
+  Playground, or Docker `REPRINT_PUSH_SOURCE_URL` and prints the exact
+  preserved-remote boundary on that live source.
+- if the branch cannot print the exact executor identity, the exact live
+  source URL, the rejected remote that remained inspectable after rejection,
+  and the exact rejection point before the first write in the same run, then
+  the claim is still setup-only and production wording must fail closed; a
+  wrapper name plus lab-shaped output is not production proof.
 - production-grade push support is still blocked until one exact executable
   command, one exact live source URL, and one preserved remote can be shown in
   the same rerun together with apply-time revalidation, journal/recovery
@@ -7234,4 +7234,5 @@ Exact next proof required from `25c4ef54`:
 
 If the rerun cannot produce those facts from one executable command on one
 live source URL, the claim stays compatibility-only and no production-grade
-wording is allowed.
+wording is allowed. Route topology, lab preflight, and a polished script name
+do not close the gap.
