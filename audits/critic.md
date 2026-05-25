@@ -84,6 +84,23 @@ Changes that must happen before any production-grade push claim:
   upstream commit or worktree state being cited and the exact live mutation
   boundary being claimed, or label it historical only.
 
+Production-grade wording requires the claim to name all of the following, or
+it stays non-production regardless of route shape, package mount, or
+`finalMatchesLocal`:
+
+- the exact live write boundary that was exercised;
+- the exact stale remote hash set that caused rejection;
+- the exact preserved remote snapshot that remained auditable after rejection;
+- the exact retry scope rebuilt from fresh live evidence;
+- the exact create-time identity decision, including reservation, remap, or
+  hard block;
+- the exact plugin-owned surfaces in scope, or an explicit hard block for
+  unknown surfaces;
+- the exact partial side-effect classification for file, DB, or plugin writes;
+- the exact reviewer artifact that became audit-only after drift; and
+- whether any Reprint, ZS-Sync, or ForkPress comparison was reverified
+  against the cited upstream revision or worktree state.
+
 Release-grade checklist:
 
 - The exercised path was the live mutation executor, not a lab-backed route
