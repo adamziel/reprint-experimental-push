@@ -1,7 +1,4 @@
-Diagnosis for `test/performance-model.test.js` hang
-
-- Hanging command: `node --test test/performance-model.test.js`
-- Observed result: printed only `TAP version 13` and did not complete within the prior 60s timeout.
-- Narrowed check: `node --test --test-concurrency=1 test/performance-model.test.js`
-- Narrowed result: passed, `18/18` subtests, `12.259s` total.
-- Conclusion: the default full-file stall is pre-existing to the test file's concurrent execution path, not a failure of the sequential subtests themselves.
+Focused command: timeout 20s node --test --test-name-pattern='guarded executor report keeps the large-upload and plugin-install evidence visible' test/performance-model.test.js
+Result: passed (EXIT:0); the focused benchmark test completed in about 7.6s and printed 1..1 / pass 1.
+Full-file command: timeout 60s node --test test/performance-model.test.js
+Result: passed (EXIT:0); the full file completed in about 18.8s with 18/18 tests passing.
