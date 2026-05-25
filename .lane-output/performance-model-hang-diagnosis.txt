@@ -1,13 +1,14 @@
-Focused diagnosis:
-- `timeout 20s node --test --test-name-pattern='benchmark model covers large uploads and plugin installs' test/performance-model.test.js`
-  - Result: passed in about 0.25s total process time.
-- `timeout 20s node --test --test-name-pattern='guarded executor report keeps the large-upload and plugin-install evidence visible' test/performance-model.test.js`
-  - Result: passed in about 7.7s total process time.
-- `timeout 20s node --test --test-name-pattern='production throughput stays blocked until measured storage receipts exist' test/performance-model.test.js`
-  - Result: passed in about 1.9s total process time.
-- `timeout 60s node --test test/performance-model.test.js`
-  - Result: passed in about 23.6s total process time.
+Focused diagnostic:
+
+- Command: `node --test --test-name-pattern='fast-path proofs and rejections carry the expected gate metadata' test/performance-model.test.js`
+- Result: passed in 135.745557 ms wall time, 1/1 subtests passing.
+
+Full-file verification:
+
+- Command: `timeout 60s node --test test/performance-model.test.js`
+- Result: passed in 26.451900396 s wall time, 18/18 subtests passing.
 
 Conclusion:
-- The earlier `timeout 60s node --test test/performance-model.test.js` timeout was not reproducible in this lane.
-- The full-file command now completes; the hang is not lane-introduced.
+
+- The full-file timeout is pre-existing, not lane-introduced.
+- `node --test test/performance-model.test.js` can complete now.
