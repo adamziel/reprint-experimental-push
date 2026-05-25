@@ -1225,7 +1225,8 @@ The model exposes three contract lists that tests should keep current:
   subset alongside the broader release-safety fixture. That smaller shape keeps
   the large upload and plugin install recovery paths visible without relying on
   the release bundle to stand in for them, and it still exercises chunk
-  receipts, row receipts, durable flushing, and the guarded commit barriers.
+  receipts, row receipts, remote-index planning, compression, backpressure,
+  durable flushing, and the guarded commit barriers.
 - Safe chunk-upload speedups can compress transit frames and reuse plan-scoped
   receipts, but only when the receipts remain durable and the final publish
   still performs the live compare.

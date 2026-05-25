@@ -1167,6 +1167,18 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'compression-decision')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'atomic-group-commit')));
+  assert.ok(
+    fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'remote-index-probe')),
+    'recovery fixture keeps remote-index planning visible',
+  );
+  assert.ok(
+    fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'compression-decision')),
+    'recovery fixture keeps compression evidence visible',
+  );
+  assert.ok(
+    fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')),
+    'recovery fixture keeps backpressure evidence visible',
+  );
   assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'chunk-upload')));
   assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'db-row-batch')));
   assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'durable-receipt-flush')));
