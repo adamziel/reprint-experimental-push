@@ -62,6 +62,18 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it is the canonical bridge from the persisted pull base package into the production push executor
 - it preserves the one-way mapping from immutable pull provenance to mutable push execution
 
+The executor consumes that bridge in the same order:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` binds the persisted base package to one live remote identity and one short-lived push session
+- `push_snapshot_hashes` stays planning-only and never upgrades into write authority
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and again at the storage boundary
+- `push_journal` stays read-only
+- `push_recover inspect` classifies finish, rollback, retry, or block before any mutating recovery
+- `push_recover auto|finish|rollback` mutates only when inspect proves the branch safe and the auth floor still holds
+
 The executor follows the same ordered stages defined in the protocol:
 
 1. `push_preflight` binds the imported pull base package to one live remote
@@ -183,6 +195,15 @@ The same pull-to-push bridge applies here:
 - journal inspection stays read-only.
 - inspect-first recovery is the only safe starting point for mutating
   recovery.
+
+The production harness is the same in Docker and Playground:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
 
 The imported pull base package is the anchor point for the executor:
 

@@ -106,6 +106,18 @@ The canonical production ladder bundle is `push-protocol-extension-contract.json
 - it is the canonical machine-readable bridge from the exporter/importer pull pipeline into the push write path
 - it preserves the one-way rule that pull provenance is immutable push input, not a mutable snapshot cache
 
+The bridge is exactly:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` remains planning-only evidence and never becomes write authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and again at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any mutating repair
+- `push_recover auto|finish|rollback` may mutate only after inspect proves the branch safe with the same auth floor as the write path
+
 The Docker and Playground topology contract is intentionally one remote, one
 local, one drift witness:
 
@@ -116,6 +128,14 @@ local, one drift witness:
 - both harnesses keep browser-visible inspection on the sandbox-provided
   `8080` ingress through a local-only proxy
 - remote tunnels are disallowed
+
+The same topology is reused in both harnesses:
+
+- `remote-base` is the source site that seeds the persisted pull base package
+- `local-edited` is the imported local site carrying candidate edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery
+- the browser-facing path stays on the sandbox-provided `8080` ingress through a local-only proxy
 
 For the harness shape, keep the topology pair together:
 

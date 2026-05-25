@@ -65,6 +65,8 @@ identity across `remote-base` and `remote-changed`:
   dry-run, batched apply, journal inspect, and inspect-first recovery story in
   one object, with dry-run and apply kept separate while apply revalidates
   fresh live evidence before every batch and at the storage boundary.
+- It is the canonical machine-readable bridge from the exporter/importer pull
+  pipeline into the push write path.
 - `push-production-revalidation-contract.json` is the compact proof that
   keeps preflight, planning-only snapshot hashes, dry-run eligibility,
   apply-time revalidation, journal evidence, and inspect-first recovery
@@ -108,6 +110,11 @@ identity across `remote-base` and `remote-changed`:
   liveness proof that keeps dry-run and apply separate while apply
   revalidates fresh live evidence before every batch and at the storage
   boundary.
+- `push-deployment-topology-contract.json` and
+  `push-remote-liveness-topology-contract.json` are the two compact topology
+  fixtures to cite when you need one remote source site, one imported local
+  edited site, one later drift observation of the same remote identity, and
+  the sandbox-provided `8080` ingress rule.
 - `push-executor-topology-proof.json` is the shortest one-remote, one-local,
   one-drift topology proof that keeps the route names and `8080` ingress
   aligned in Docker and Playground.
