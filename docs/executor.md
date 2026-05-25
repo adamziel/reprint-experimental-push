@@ -7,6 +7,43 @@ site, and one later drift observation of the same remote identity. The
 production harness keeps dry-run and apply separate, revalidates at apply
 time, and uses the same `8080`-visible topology in Docker and Playground.
 
+## Executor Summary
+
+The executor runs one fixed production ladder in both Docker and Playground:
+
+| Stage | Route | Authority |
+| --- | --- | --- |
+| `preflight` | `preflight` | Binds imported pull provenance to one live remote identity and a short-lived session. |
+| `snapshot-hashes` | `snapshot-hashes` | Planning-only hash listing. |
+| `dry-run` | `dry-run` | Eligibility receipt only. |
+| `apply` | `apply` | Separate remote mutation that revalidates before every batch and at the storage boundary. |
+| `journal` | `journal` | Read-only durability evidence. |
+| `recovery-inspect` | `recovery-inspect` | Read-only recovery classification. |
+| `recovery-mutate` | `recovery-mutate` | Mutating recovery only after inspect and auth-floor checks. |
+
+That ladder comes straight from the pull/export/import pipeline:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the immutable pull base package
+- `preflight` is the first live bind after importer persistence
+- `snapshot-hashes` is planning-only evidence
+- `dry-run` is a receipt, not a lock
+- `apply` revalidates again at apply time
+- `journal` stays read-only
+- `recovery-inspect` must happen before any mutating repair
+- `recovery-mutate` uses the same HMAC floor as apply
+
+The shared test topology is fixed:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns the push protocol calls
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
+
 ## Canonical Executor Contract
 
 The executor should treat the production push extension as a fixed ladder:

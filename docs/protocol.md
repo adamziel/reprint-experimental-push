@@ -6,6 +6,43 @@ that keeps pull provenance immutable, separates planning from mutation,
 revalidates the live remote identity at apply time, and keeps the dry-run and
 apply liveness split explicit.
 
+## Canonical Push Contract
+
+The production push extension is the same in Docker and Playground:
+
+| Stage | Contract |
+| --- | --- |
+| `push_preflight` | Bind the persisted pull base package to one live remote identity and one short-lived push session. |
+| `push_snapshot_hashes` | List remote hashes for planning only and never gain write authority. |
+| `push_plan_dry_run` | Upload the canonical plan and return an eligibility receipt, not a lock. |
+| `push_batch_apply` | Revalidate fresh live evidence before every batch and again at the storage boundary. |
+| `push_journal` | Record durable evidence without authorizing mutation. |
+| `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
+| `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe and the auth floor still holds. |
+
+That ladder maps directly onto the pull/export/import pipeline:
+
+| Pull pipeline object | Push consumer | Why the boundary stays separate |
+| --- | --- | --- |
+| Exporter merge-base and coverage scan | `push_preflight` | First live bind after importer persistence. |
+| Importer persisted base package | `push_snapshot_hashes` | Planning-only remote comparison evidence. |
+| Immutable pull provenance | `push_plan_dry_run` | Eligibility receipt, not a lock. |
+| Persisted pull base package plus live drift evidence | `push_batch_apply` | Fresh live revalidation before every batch and at the storage boundary. |
+| Durable pull provenance | `push_journal` | Read-only evidence for later recovery. |
+| Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before mutation. |
+| Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only when inspect and auth-floor checks pass. |
+
+The fixed test topology is also shared:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns the push protocol calls
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
+
 ## Canonical Production Extension
 
 The canonical push extension is the smallest production proof that still
