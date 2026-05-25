@@ -1315,6 +1315,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('durable-progress'));
+  assert.equal(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation').rejectedGate, 'group');
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation').violates.includes('file-hashing'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-activation').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback').violates.includes('plugin-preconditions'));
