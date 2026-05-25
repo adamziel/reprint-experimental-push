@@ -118,7 +118,11 @@ the following on the same live boundary:
 ## What must change before production-grade wording is defensible
 
 Until those proofs exist on the same live boundary, any wording that says the
-system is production-ready is a claim without audit-grade support.
+system is production-ready is a claim without audit-grade support. A retained-
+source `verify:release` run, a lab session trace, or a reviewer note about the
+same route family is not enough unless the preserved remote can still be
+inspected after rejection and the exact boundary can be rerun from fresh live
+hashes.
 
 Any hidden-loss mode that is not proven there remains a blocker:
 
@@ -202,7 +206,8 @@ adjustment on the retained-source lane.
 ## Release gate
 
 Production-grade push support remains blocked until a rerunnable live boundary
-on this branch proves, on the same mutation:
+on this branch proves, on the same mutation and with replayable preserved-
+remote evidence:
 
 - preserved-remote retention after rejection, with exact audit/retry evidence;
 - production WordPress auth/session lifecycle, not just retained-source
