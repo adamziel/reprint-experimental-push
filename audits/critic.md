@@ -152,6 +152,11 @@ Release gate for any production wording:
   same-boundary recheck here, and none of them may be treated as current
   proof unless the exact upstream revision or worktree state and the same
   live boundary are named on this branch.
+- Show that a comparison note cannot be promoted to production-grade push
+  support unless this branch reran the exact drifted remote on the live write
+  boundary; a matching Reprint, ZS-Sync, or ForkPress note without that
+  branch-local rerun is provenance only, even when the route shape, package
+  mount, or `finalMatchesLocal` output looks correct.
 - Show that any readable manual-review artifact or source-note comparison is
   audit-only unless this branch reran the same live boundary and recorded the
   preserved remote, rejection point, and fresh retry scope on this branch.
