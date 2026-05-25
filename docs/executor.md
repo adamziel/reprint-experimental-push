@@ -52,6 +52,24 @@ The executor follows the same production ladder the protocol defines:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe.
 
+The executor should treat that as one replay-safe boundary:
+
+- exporter/importer create the immutable pull base package
+- `persisted_pull_base_package` is the only pull-derived input the executor
+  may consume
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` stays planning-only and never becomes write
+  authority
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not
+  a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` records durable evidence, but never authorizes mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe
+
 The executor runs that ladder against one persisted pull base package and one
 fixed remote identity:
 
@@ -81,6 +99,17 @@ The executor is therefore not a general remote write loop:
 - recovery starts with inspect
 - journal inspection never authorizes mutation by itself
 - push auth must be at least as strict as current Reprint HMAC usage
+
+That split matters operationally:
+
+- preflight authenticates the session and binds the immutable pull base to
+  one live remote identity
+- snapshot listing can page through large sites, but it never becomes a lock
+- dry-run produces eligibility evidence, not write authority
+- apply must revalidate the live remote before every batch and at the
+  storage boundary
+- journal inspect only resolves ambiguity after timeout or crash
+- mutating recovery must re-check the same auth floor before it writes
 
 The recovery fence is the journal-side guard that inspect must re-read before
 any mutating branch:
@@ -157,6 +186,18 @@ Docker and Playground differ only in how they provision the same proof:
 - Browser-visible inspection stays behind the sandbox-provided `8080` ingress
   through a local-only proxy.
 - Remote tunnels stay disallowed.
+
+Docker and Playground differ only in how they provision the same roles:
+
+- Docker uses one private network around `remote-base`, `local-edited`,
+  `remote-changed`, and `runner`
+- Playground uses separate disposable blueprints for the same four roles
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported edits
+- `remote-changed` is the same remote identity observed later after drift
+- the runner is the only actor that may preflight, list hashes, dry-run,
+  apply, inspect the journal, or recover
+- the `8080` ingress and local-only proxy are the only browser-visible path
 
 ## Production Shape
 

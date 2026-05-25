@@ -23,6 +23,25 @@ The production push extension is the same ladder the fixtures prove:
 8. `push_recover auto|finish|rollback` may mutate only after inspect proves
    the branch safe.
 
+Read as one production contract, the push ladder is:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable handoff object
+- `push_preflight` binds that handoff to one live remote identity and one
+  short-lived push session
+- `push_snapshot_hashes` lists the live remote comparison surface for
+  planning only
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe with the same auth floor as the write path
+
 In implementation terms, the push executor is a strict request ladder over a
 single persisted pull base package:
 
@@ -52,6 +71,19 @@ That ladder is one-way:
 - mutating recovery keeps the same auth floor as the write path
 - push auth must be at least as strict as current Reprint HMAC usage
 
+The read-only and mutating branches are deliberately separated:
+
+- preflight authenticates a push-scoped session but does not authorize
+  mutation
+- snapshot hash listing is planning evidence only and may page large sites
+- dry-run uploads the canonical plan, but the receipt is never a lock
+- apply must revalidate the live remote before every batch and at the storage
+  boundary
+- journal inspect reads durable evidence and classifies ambiguity, but never
+  grants write authority
+- mutating recovery requires inspect first and uses the same auth floor as
+  the write path
+
 The canonical test topology is also fixed:
 
 - one remote source site, `remote-base`
@@ -80,6 +112,16 @@ The topology proof is carried by the production fixture set:
   one-local, one-drift harness plus the liveness split
 - `push-production-topology-contract.json` proves the Docker and Playground
   harness shape
+
+The pull-to-push handoff is the same contract expressed as machine-readable
+artifacts:
+
+- exporter/importer produce immutable provenance
+- `push-pull-mapping.json` maps that provenance into preflight, snapshot
+  listing, dry-run, batched apply, journal inspect, and inspect-first
+  recovery
+- `push-protocol-extension-contract.json` ties the bridge, auth floor,
+  revalidation, recovery fence, and topology proof into the umbrella bundle
 
 The canonical production proof bundle is reviewed in this order:
 
