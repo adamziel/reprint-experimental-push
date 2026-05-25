@@ -4,6 +4,20 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+Must change before any production-grade push claim:
+
+- prove the live mutation boundary rejects stale authority before the first
+  write, preserves the remote for audit, and rebuilds retry scope from fresh
+  live hashes on this branch;
+- prove a stale approval or readable review artifact cannot be widened into
+  a different row, file, relationship-bearing record, or plugin-owned
+  surface after drift;
+- enumerate or hard-block late-discovered plugin-owned state, including
+  custom tables, generated files, cron rows, runtime registries, serialized
+  blobs, and other hidden side effects; and
+- classify partial file, DB, and plugin side effects as old, new, or blocked
+  before retry so a mixed write cannot be relabeled as success.
+
 Most important unresolved trap:
 
 If the first write succeeds on a narrower surface and a later live snapshot
