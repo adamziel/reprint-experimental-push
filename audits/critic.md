@@ -97,6 +97,23 @@ What must happen before any production-grade push claim:
   paired with the preserved remote and a fresh retry scope rebuilt from live
   hashes on this worktree.
 
+Release-claim hard stop:
+
+- if the evidence does not name the exact live boundary, the exact stale-drift
+  case, and the exact rejection point before the first write, the claim fails;
+- if the rejected remote is not still inspectable for audit and retry, the
+  claim fails, even when a readable note says "manual resolution" or
+  "comparison passed";
+- if any touched file, DB row, relationship-bearing record, or plugin-owned
+  surface is missing old/new/blocked classification before retry starts, the
+  claim fails;
+- if a later-discovered plugin-owned surface or remapped create target is
+  being folded back into an earlier approval, the claim fails unless that
+  later boundary got its own preserve / reject / retry cycle; and
+- if the only support is route shape, package layout, fixture replay,
+  readable review output, or `finalMatchesLocal`, the claim stays
+  compatibility-only.
+
 Release-gate checklist for production-grade wording:
 
 - name the exact live boundary and the exact stale-drift case, not just the
