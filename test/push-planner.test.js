@@ -854,16 +854,14 @@ test('keeps remote-only plugin changes while a matching independent deletion sta
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const deleteMutation = mutationFor(plan, 'file:index.php');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const result = applyPlan(remote, plan);
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.mutations, 0);
-  assert.equal(deleteDecision.decision, 'already-in-sync');
-  assert.equal(deleteDecision.change.localChange, 'delete');
-  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(deleteMutation, undefined);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
@@ -1530,6 +1528,47 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   assert.equal(result.site.plugins.forms.version, '1.1.0');
   assert.equal(result.site.plugins.forms.active, false);
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
+test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent edit, and file type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/archive'] = { type: 'directory' };
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/archive'] = 'shared replacement file';
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  const remote = baseSite();
+  remote.files['wp-content/uploads/archive'] = 'shared replacement file';
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/archive');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.files['wp-content/uploads/archive'], 'shared replacement file');
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Shared independent title');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('keeps remote-only plugin changes while recognizing a matching independent file type swap', () => {
