@@ -1,7 +1,7 @@
 No material evidence delta landed since the last handoff, so the critic audit remains unchanged after a fresh fetch.
 
 Evidence checked:
-- `origin/lane/critic` matches `HEAD` at `3041eae6`.
+- `origin/lane/critic` matches `HEAD` at `e2511560`.
 - `origin/lane/reliable-executor` is at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` is at `668f886c`.
 - `origin/lane/no-data-loss-recovery` is at `47b675c0`.
@@ -31,12 +31,13 @@ Commands run:
 - `scripts/supervision/accountability.sh`
 
 Push result:
-- No new push
-- `HEAD` matches `origin/lane/critic` at `3041eae6`
+- Pushed successfully to `origin/lane/critic`
+- New head: `e2511560` (`Refresh critic handoff`)
 
 Worktree status:
 - One tracked update in `.lane-output/final.md`
 - Branch still reports `ahead 1534, behind 198` relative to `origin/main`
+- After the push, `HEAD` and `origin/lane/critic` are aligned at `e2511560`; the ahead/behind count vs `origin/main` is still expected for this lane branch.
 
 Next supervisor nudge:
 - Re-poll `reliable-executor` only when it lands a concrete new proof delta that changes the production-readiness verdict.
