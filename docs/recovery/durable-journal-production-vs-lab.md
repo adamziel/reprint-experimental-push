@@ -4,6 +4,13 @@ The recovery tests in this lane use JSON fixtures and in-memory inspection to
 prove the apply contract. That is useful for validating behavior, but it is not
 the same as production durability.
 
+The production rule is narrower: a failed apply must end in exactly one of
+these states:
+
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery` with inspectable artifacts
+
 ## What the lab model proves
 
 - failure before mutation returns `old-remote`
@@ -21,10 +28,11 @@ For a real durable recovery journal, the implementation needs:
 - activation, locking, or lease fencing so only one writer can advance the
   recovery state
 - restart-readable recovery metadata for inspection without replaying the plan
+- a blocked partial mutation artifact that survives restart and explains why the
+  remote is not safe to treat as current
 
 ## Release blocker rule
 
 A partial remote mutation without inspectable recovery artifacts is unsafe.
 If the remote changed and the recovery state cannot be classified from durable
 artifacts, the system must stay blocked until recovery inspection resolves it.
-
