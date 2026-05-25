@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 07:41:10 CEST
+Last updated: 2026-05-25 07:41:44 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 07:41:10 CEST - Supervisor Snapshot
+## 2026-05-25 07:41:44 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and latest audit note still agree on the blocked state.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
@@ -28,7 +28,7 @@ Audit note: [audits/supervisor-note-20260525-073717.md](../audits/supervisor-not
 <details>
 <summary>Earlier entries</summary>
 
-- 2026-05-25 07:41:10 CEST: refreshed the scan view timestamp and kept the blocked assessment, proof links, and lane nudges aligned.
+- 2026-05-25 07:41:44 CEST: refreshed the scan view timestamp and kept the blocked assessment, proof links, and lane nudges aligned.
 - 2026-05-25 07:37:17 CEST: tightened the public scan view to remove repeated wording while keeping the blocked assessment and proof links intact.
 - 2026-05-25 07:32:57 CEST: refreshed the snapshot without changing the blocked assessment and kept the page/log/audit links aligned.
 - 2026-05-25 07:29:32 CEST: removed the duplicate lane-nudges block from the public page and kept the blocked state intact.
