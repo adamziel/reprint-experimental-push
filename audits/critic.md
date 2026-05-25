@@ -2326,3 +2326,25 @@ False reliability claims to avoid:
 - "Recovery succeeded" when the apply left mixed file, DB, or plugin state
   but the failure was not durably classified as partial with a fresh retry
   scope.
+
+Additional production-readiness blockers that still need explicit proof:
+
+- Hidden data-loss modes must be named and closed, including live remote
+  drift, create-time identity remap, plugin-owned side effects outside the
+  allowlist, partial file/DB/plugin writes, and stale review artifacts that
+  remain readable after drift.
+- Ambiguous conflict policy must be removed. Every manual-resolution path
+  must say whether the remote was preserved, whether the stale artifact was
+  rejected as authority, and what fresh live evidence rebuilt the retry
+  scope.
+- Plugin data traps must be proven safe or blocked with an explicit surface
+  list. A single allowlisted option, row, generated file, or plugin route does
+  not prove the rest of the plugin-owned graph is safe.
+- False reliability claims must be barred from release wording, including any
+  statement that route shape, package mount, fixture replay, or
+  `finalMatchesLocal` proves production safety; those are compatibility checks
+  only.
+- Any comparison to Reprint, ZS-Sync, or ForkPress must stay conservative:
+  it may describe design context, but it does not become current proof unless
+  the exact upstream revision or worktree state was reverified at the same
+  live mutation boundary.
