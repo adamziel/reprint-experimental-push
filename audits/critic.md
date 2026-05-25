@@ -597,9 +597,9 @@ wording is allowed:
 
 | Source note | What it proves | What it does not prove | Missing repo proof |
 | --- | --- | --- | --- |
-| Reprint | Transport stages, resumability, protocol framing, and chunked delivery shape. | Live source overwrite safety, drift rejection at apply time, production auth, or durable write semantics. | A live mutation path that fails closed on stale remote hashes and preserves the remote for audit. |
-| ZS-Sync | Bounded discovery, cursor-driven rescans, and changed-resource enumeration. | Write policy, create-time identity reservation, ownership revalidation, or plugin-side effects. | A mutation policy that maps every scanned resource to a safe write rule or a hard block. |
-| ForkPress | Reviewed-resolution vocabulary, crash-consistency language, and merge audit framing. | Proof that this repo has the same live-remote executor, stale-artifact expiry, or partial-apply recovery. | A durable reviewed-resolution artifact that expires on drift and forces retry from fresh live evidence. |
+| Reprint | Transport stages, resumability, protocol framing, and chunked delivery shape. | Live source overwrite safety, drift rejection at apply time, production auth, or durable write semantics. | A live mutation path that fails closed on stale remote hashes and preserves the remote for audit, reverified against the cited upstream state at the same live boundary. |
+| ZS-Sync | Bounded discovery, cursor-driven rescans, and changed-resource enumeration. | Write policy, create-time identity reservation, ownership revalidation, or plugin-side effects. | A mutation policy that maps every scanned resource to a safe write rule or a hard block, reverified against the cited upstream state at the same live boundary. |
+| ForkPress | Reviewed-resolution vocabulary, crash-consistency language, and merge audit framing. | Proof that this repo has the same live-remote executor, stale-artifact expiry, or partial-apply recovery. | A durable reviewed-resolution artifact that expires on drift and forces retry from fresh live evidence, reverified against the cited upstream state at the same live boundary. |
 
 ### Reprint
 
@@ -2340,6 +2340,9 @@ Production-readiness checklist:
   the stale approval become current retry authority, and without letting a
   readable manual-review artifact widen to a different row, file, relation, or
   plugin-owned surface after drift.
+- Show explicit rejection of stale manual-review artifacts before write, and
+  prove those artifacts stay audit-only rather than becoming retry authority
+  after the remote changes again.
 - Show that route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` are only compatibility evidence unless the same live
   write boundary is reverified in this repo.
