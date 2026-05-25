@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the latest supervised reliable-executor
-lane head `2e30a637` on `origin/lane/reliable-executor`, extending the
+lane head `e7de778c` on `origin/lane/reliable-executor`, extending the
 retained-source evidence anchored at `63a3502f` and the explicit verdict
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. The remote lane now proves a
 retained-source `npm run verify:release` lineage, durable-journal proof folded
