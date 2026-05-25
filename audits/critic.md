@@ -363,6 +363,9 @@ Release gate for any production wording:
   and the exact rejection point before mutation.
 - Show the preserved remote stayed auditable after reject and that the stale
   approval or review artifact could not be reused as retry authority.
+- Show the live rerun on this branch, not just the upstream family name, and
+  show that the retry scope was rebuilt from fresh live hashes on the same
+  boundary after the reject.
 - Show that any later write, including a plugin-owned surface discovered
   after the first write, was classified separately and not authorized by the
   earlier comparison note or manual-review artifact.
@@ -427,6 +430,9 @@ Release gate for any production wording:
   boundary; a matching Reprint, ZS-Sync, or ForkPress note without that
   branch-local rerun is provenance only, even when the route shape, package
   mount, or `finalMatchesLocal` output looks correct.
+- Show that the note stays historical even when the exact upstream revision
+  is named, unless this branch also rechecked the same live boundary and
+  recorded the preserved remote and rejection point here.
 - Show that any readable manual-review artifact or source-note comparison is
   audit-only unless this branch reran the same live boundary and recorded the
   preserved remote, rejection point, and fresh retry scope on this branch.
