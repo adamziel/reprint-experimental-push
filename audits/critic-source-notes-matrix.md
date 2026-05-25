@@ -26,6 +26,10 @@ retry.
 If the repo does not yet expose a named real-site release command, then the
 current `plan`, `apply`, `test`, and `test:playground:*` scripts are still
 compatibility evidence, not release proof.
+Where a branch already has retained-source `npm run verify:release` evidence,
+that is still only local lab evidence until the same live boundary is rerun
+against a real local, Playground, or Docker source and preserves the rejected
+remote for audit.
 
 ## Reprint
 
