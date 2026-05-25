@@ -42,6 +42,22 @@ That ladder maps to distinct remote boundaries:
 - recovery starts with inspect and only mutates when journal evidence and
   fresh live hashes still prove the branch safe
 
+The canonical proof points for this production extension are:
+
+- `push_preflight` is the first live binding after the importer has already
+  persisted the immutable pull base package
+- `push_snapshot_hashes` lists the live remote comparison surface for
+  planning only
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` stays read-only
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating recovery branch
+- `push_recover auto|finish|rollback` may mutate only after inspect proves
+  the branch safe with the same auth floor as the write path
+
 ## Stage Semantics
 
 Each stage has one job and one boundary:
@@ -112,8 +128,8 @@ The topology proof means:
 - `local-edited` carries the imported local edits used to form the canonical
   push plan
 - `remote-changed` is the same remote identity observed later after drift
-- `runner` is the only actor that may run preflight, snapshot listing,
-  dry-run upload, batched apply, journal inspect, or recovery
+- `runner` is the only actor that may run preflight, remote snapshot hash
+  listing, dry-run upload, batched apply, journal inspect, or recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - Docker and Playground both model the same one-remote, one-local,
