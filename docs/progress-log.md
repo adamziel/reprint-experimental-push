@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 04:06:32 CEST.
+- Last update: 2026-05-25 04:07:19 CEST.
 - Status: Lab/model evidence still holds; production proof remains blocked.
-- Trend: the visible page, this log, and the supervisor note still line up, and the latest copy stays short without changing the evidence position.
+- Trend: the visible page, this log, and the supervisor note still line up, and the latest copy is a little tighter without changing the evidence position.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: production credential lifecycle, durable storage, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) keeps the blocked-by-missing-evidence state compact and points to the proof trail.
 - Pending proof gates: production auth/session storage, durable journal ownership, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers.
 - Next nudge: keep production gates blocked until a worker proves one concrete gap at a time, starting with production auth/session/journal internals or graph identity mapping.
-- Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. This lane-local copy becomes live only after merge to `main`, so GitHub Pages may lag the branch.
+- Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. This lane-local copy becomes live only after merge to `main`, so GitHub Pages will lag the branch until then.
 
 Note: the page is lane-local until this branch merges to `main`.
 
