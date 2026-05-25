@@ -160,6 +160,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'The production test topology is intentionally fixed:',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'browser-visible inspection stays on the sandbox-provided `8080` ingress',
     ),
   );

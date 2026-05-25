@@ -147,6 +147,19 @@ The production topology proof is the same in Docker and Playground:
   through a local-only proxy
 - remote tunnels are disallowed
 
+The production test topology is intentionally fixed:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits derived from that package
+- `remote-changed` reuses the same remote identity after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 That same proof bundle keeps the one-remote, one-local, one-drift topology
 explicit:
 
