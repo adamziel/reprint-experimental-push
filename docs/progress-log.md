@@ -563,9 +563,9 @@ linked implementation artifacts.
 
 - The current checkpoint found no newer merged executable evidence after the
   authenticated CLI push smoke and feedback refresh. The visible trend is
-  therefore flat, not a readiness increase.
+  flat, not a readiness increase.
 - [progress.html](../progress.html) keeps the current status to a concise
-  one-screen summary with a visible May 24, 2026 update date and links to the
+  one-screen summary with a visible May 25, 2026 update date and links to the
   detailed evidence instead of embedding long audit text.
 - [supervisor feedback](supervisor-feedback.md) now names the next nudge per
   lane: production-shaped Reprint endpoint/auth/audit proof for reliable
