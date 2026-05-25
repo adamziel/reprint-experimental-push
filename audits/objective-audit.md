@@ -60,7 +60,7 @@ entrypoint that composes the strongest checks and fails closed.
 | Required release command | Optional npm scripts and opt-in smokes exist. | One mandatory `verify:release`-style entrypoint that fails closed. | Yes: no mandatory gate or CI workflow. |
 | Enforced release entrypoint | `npm test` and `npm run test:playground` prove some local invariants and lab flows. | A single required release path that includes auth/session, durable journal, lease/fencing, graph identity, plugin-driver, real topology, crash-boundary, and benchmark checks. | Yes: the strongest checks are still opt-in scripts. |
 
-Executable proof is concentrated in `npm test`, `test/recovery-journal.test.js`, and the Playground smokes. The default suite still passes at 89/89 on 2026-05-25. Those tests do prove useful local properties: monotonic journal sequences, no raw-value leakage in journal records, crash/restart classification, idempotency replay refusal, storage-boundary CAS failures, and guarded file/database mutations. They do **not** prove that the live-source push boundary preserves all WordPress data during production auth/session, journal, lease/fencing, graph-identity, and plugin-driver execution.
+Executable proof is concentrated in `npm test`, `test/recovery-journal.test.js`, and the Playground smokes. The default suite still passes at 89/89 on 2026-05-25. Those tests do prove useful local properties: monotonic journal sequences, no raw-value leakage in journal records, crash/restart classification, idempotency replay refusal, storage-boundary CAS failures, and guarded file/database mutations. They do **not** prove that the live-source push boundary preserves all WordPress data during production auth/session, journal, lease/fencing, graph-identity, and plugin-driver execution. The recovery-journal tests are explicitly temp-file and in-process restart checks, so they remain local logic proof rather than production durability proof.
 
 A fresh repo scan on 2026-05-25 also found no checked-in `.github` workflow
 directory and no enforced CI entrypoint that could serve as a required release
@@ -119,6 +119,7 @@ The test audit is therefore uncomfortable but clear:
 - `npm test` proves the model and selected fixture invariants, plus some
   refusal logic, but it does not prove that a live source site keeps every
   related row, file, option, and plugin-owned record intact through a push.
+  Its recovery coverage is temp-file based, not production-storage based.
 - `npm run test:playground` proves a bundled local lab path through plan,
   apply, and push protocol, but it still avoids the production-backed auth,
   durable journal, lease/fencing, and graph-identity gates.
@@ -146,6 +147,8 @@ The test audit is therefore uncomfortable but clear:
 The strongest executable checks are still split between the default suite and
 manual Playground opt-ins. That split matters because the green path is still
 allowed to stop before the enforced release boundary that actually matters.
+There is also still no checked-in `.github/workflows` directory, so the repo
+has no enforced CI entrypoint closing that gap.
 
 The current test story also fails a simpler release-bar test: the repository
 does not define one required release command that chains the stronger checks,
