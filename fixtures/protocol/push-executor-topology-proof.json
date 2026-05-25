@@ -11,6 +11,17 @@
       "remote_site_id": "remote-example"
     }
   },
+  "pull_to_push_mapping": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "preflight": "binds that persisted base package to the live remote identity and a short-lived session",
+    "snapshot_hashes": "lists the live remote comparison set for planning only",
+    "dry_run": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
+    "apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "journal": "reads durable evidence without authorizing mutation",
+    "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block without mutation",
+    "recovery": "allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action"
+  },
   "push_pipeline": {
     "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
     "snapshot_hashes": "returns the live remote comparison set for planning only and never acts as write authority",
@@ -73,6 +84,7 @@
     "recovery must begin with inspect before any mutating repair",
     "push preflight must mint a short-lived session bound to one remote identity and one persisted pull base",
     "authentication must be at least as strict as current Reprint HMAC usage",
-    "pull exporter/importer establish the immutable base package before any push stage runs"
+    "pull exporter/importer establish the immutable base package before any push stage runs",
+    "pull exporter/importer are the provenance source for push preflight, dry-run, apply, journal, and recovery"
   ]
 }

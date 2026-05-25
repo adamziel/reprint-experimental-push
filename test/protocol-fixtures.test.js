@@ -237,6 +237,15 @@ test('push contract fixture binds the pull handoff to the production push sequen
     readJson('fixtures/protocol/push-production-ladder-contract.json').remote_liveness.recovery_mutate,
     'requires fresh live hashes plus journal evidence',
   );
+  assert.equal(
+    readJson('fixtures/protocol/push-executor-topology-proof.json').pull_to_push_mapping.preflight,
+    'binds that persisted base package to the live remote identity and a short-lived session',
+  );
+  assert.ok(
+    readJson('fixtures/protocol/push-executor-topology-proof.json').required_invariants.includes(
+      'pull exporter/importer are the provenance source for push preflight, dry-run, apply, journal, and recovery',
+    ),
+  );
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
   assert.equal(
     contract.proofs.auth_session_journal,
