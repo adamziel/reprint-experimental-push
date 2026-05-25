@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 09:10:15 CEST.
+- Last update: 2026-05-25 09:11:07 CEST.
 - Status: blocked; the visible page, log, and latest audit note still agree.
-- Trend: no evidence delta; the public wording is a little tighter and easier to scan.
+- Trend: no evidence delta; the public page is a little tighter and easier to scan.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) stays compact and keeps the proof trail linked.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
 - Next nudge: keep the gates blocked until a worker proves one concrete gap at a time, with one owner and one production-backed test per lane.
-- Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy becomes live only after merge to `main`; GitHub Pages will lag until then.
+- Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy becomes live only after merge to `main`; GitHub Pages lags until then.
 - Audit note: the newest scan pass only trimmed repeated wording; no new production-backed proof landed.
 
 ## 2026-05-25 - Supervisor Follow-up
@@ -27,7 +27,7 @@ linked implementation artifacts.
 - Visible page: [progress.html](../progress.html) remains scan-first and keeps the detailed trail in linked docs.
 - Pending proof gates: one gap at a time, starting with auth/session or crash-safe journal evidence.
 - Next nudge: do not expand scope until one lane can show a concrete production-backed check.
-- Public page: [progress.html](../progress.html) still becomes live only after merge to `main`; GitHub Pages will lag until then.
+- Public page: [progress.html](../progress.html) still becomes live only after merge to `main`; GitHub Pages lags until then.
 
 <details>
 <summary>Earlier progress entries</summary>
