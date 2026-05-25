@@ -1596,3 +1596,11 @@ of the following in the same evidence set:
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
+
+Evidence boundary addendum: if a future claim cannot name the exact live
+request path, the exact stale-approval rejection, the exact preserved remote
+snapshot, and the exact reverified upstream revision or worktree state, it is
+still only comparison context or compatibility evidence. A route-shaped smoke
+or package mount can look production-shaped without proving the production
+executor, the remote-preserving retry path, or the audit-only status of the
+rejected approval after drift.
