@@ -886,6 +886,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'index-and-compressed-row-batch-skips-live-compare',
+    proposal: 'treat a fresh remote index plus a compressed row batch as enough proof to skip the live row compare in a plugin update',
+    rejectedBecause: 'planning evidence and compressed batches can reduce lookup and replay work, but they cannot replace the live compare-and-swap predicate on each row',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'live-preconditions'],
+  },
+  {
     id: 'index-and-compressed-row-summary-completes-plugin-update',
     proposal: 'treat a fresh remote index plus a compressed row summary as proof that a plugin update already finished',
     rejectedBecause: 'planning evidence and a compressed row summary can reduce lookup work, but they cannot prove the dependency checks, row receipts, or the atomic-group commit survived failure',
@@ -912,6 +919,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'compressed batches can reduce recovery work, but they cannot prove the dependency checks held, the group finalize ran, or the atomic-group visibility boundary survived failure',
     rejectedGate: 'group',
     violates: ['compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
+    id: 'compressed-row-batch-skips-live-compare',
+    proposal: 'treat a compressed row batch as enough proof to skip the live per-row compare during plugin apply',
+    rejectedBecause: 'compressed batches can reduce replay work, but they cannot replace the live compare-and-swap predicate required for each row at mutation time',
+    rejectedGate: 'live',
+    violates: ['compression', 'row-preconditions', 'live-preconditions'],
   },
   {
     id: 'index-and-compressed-row-summary-completes-plugin-activation',
@@ -1136,6 +1150,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'queue compression can reduce memory pressure, but it cannot prove which chunk acknowledgements survived a crash or restore the guarded publish boundary',
     rejectedGate: 'recovery',
     violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
+    id: 'compressed-upload-queue-skips-backpressure',
+    proposal: 'treat a compressed upload queue as proof that backpressure can be skipped for large uploads',
+    rejectedBecause: 'queue compression can lower memory pressure, but it cannot prove the sender still has the receipts and journal order needed to recover after a pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
     id: 'compressed-upload-queue-replaces-chunk-receipts',

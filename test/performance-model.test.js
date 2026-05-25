@@ -242,6 +242,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-upload-queue-skips-backpressure').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-upload-queue-skips-backpressure').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-upload-queue-after-pause-skips-chunk-receipts').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-upload-queue-after-pause-skips-chunk-receipts').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-upload-queue-after-pause-skips-chunk-receipts').violates.includes('chunk-receipts'));
@@ -296,6 +298,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-large-upload-publish').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('index-and-compressed-row-batch-skips-backpressure').violates.includes('backpressure'));
   assert.ok(rejectedById.get('index-and-compressed-row-batch-skips-backpressure').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('index-and-compressed-row-batch-skips-live-compare').violates.includes('live-preconditions'));
+  assert.ok(rejectedById.get('compressed-row-batch-skips-live-compare').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('index-and-compressed-chunk-receipts-completes-plugin-update').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('index-and-compressed-chunk-receipts-completes-plugin-update').violates.includes('compression'));
   assert.ok(rejectedById.get('index-and-compressed-chunk-receipts-completes-plugin-update').violates.includes('chunk-receipts'));

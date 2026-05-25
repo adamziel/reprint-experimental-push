@@ -128,10 +128,12 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed upload queue still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
 - A fresh remote index plus a compressed upload buffer still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
 - A compressed upload queue still cannot skip missing chunk receipts during a large-upload resume, because queue compression cannot prove which acknowledgements survived a crash or restore the guarded publish boundary.
+- A compressed upload queue still cannot skip backpressure for large uploads, because queue compression cannot prove the sender still has the receipts and journal order needed to recover after a pause or crash.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove chunk resume is complete, because compressed pressure relief does not replace missing chunk acknowledgements.
 - Compressed chunk receipts plus a cached file hash still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
 - A compressed manifest hash plus cached chunk receipts still cannot skip the guarded publish step for a large upload, because manifest compression and cached receipts cannot prove the live compare or guarded publish barrier survived failure.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove a dependency-heavy plugin update finished, because dependency checks, row receipts, and the atomic-group commit still need durable evidence.
+- A fresh remote index plus a compressed row batch still cannot skip live row compares, because planning evidence and batch compression cannot replace the live compare-and-swap predicate on each row.
 - A fresh remote index plus a cached file digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
 - A fresh remote index plus a compressed manifest hash still cannot prove a large upload finished, because the live compare, every chunk receipt, and the guarded publish record still need to survive failure.
 - A matching archive hash still cannot replace missing chunk receipts during large-upload resume, because the hash does not prove which acknowledgements survived a crash or lost response.
@@ -277,6 +279,9 @@ The rejected examples are not abstract lint. They are concrete failure modes:
   classifiable after crash or retry.
 - Backpressure cannot drop receipts or journals because the missing evidence is
   what makes failure classification unambiguous.
+- Backpressure cannot be skipped just because the queue is compressed, because
+  pressure relief cannot stand in for the receipts and journal order needed
+  after a pause or crash.
 
 ## File Hashing
 
