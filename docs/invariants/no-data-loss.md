@@ -18,6 +18,7 @@ The push planner must preserve remote-only state unless it has a live remote pre
 - Remote-only plugin removals can also coexist with a live-preconditioned ordinary delete, matching independent edit, and matching file type swap without widening the overwrite boundary.
 - Remote-only plugin removals can also coexist with a live-preconditioned row delete, matching independent file edit, and matching file type swap without widening the overwrite boundary.
 - Remote-only plugin drift can coexist with a live-preconditioned file delete, matching independent edit, and matching file type swap without widening the overwrite boundary.
+- Even when a plugin-owned mutation is blocked, unrelated matching independent deletions, edits, and file type swaps still stay `already-in-sync`, and remote-only plugin drift still stays preserved.
 - In all of those mixed cases, the remote-only plugin removal stays `keep-remote`; it never grants extra overwrite permission to the unrelated mutation.
 
 ## Must preserve
