@@ -107,6 +107,16 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
     ),
   );
   assert.ok(
+    executorDocs.replace(/\s+/g, ' ').includes(
+      'The executor treats those fields as immutable provenance, not a reusable snapshot cache',
+    ),
+  );
+  assert.ok(
+    executorDocs.replace(/\s+/g, ' ').includes(
+      'Recovery stays inspect-first even when the journal is present',
+    ),
+  );
+  assert.ok(
     executorDocs.includes(
       'it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary',
     ),

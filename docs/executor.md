@@ -225,6 +225,29 @@ The imported pull base package is the anchor point for the executor:
 | `base_coverage_hash` | Pins the coverage evidence that justified the import. |
 | `remote_site_id` | Binds the package back to the source remote identity. |
 
+The executor treats those fields as immutable provenance, not a reusable
+snapshot cache:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` may page the live comparison surface, but it stays
+  planning-only
+- `push_plan_dry_run` returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and live hashes before any
+  mutating repair
+
+Recovery stays inspect-first even when the journal is present:
+
+1. read the journal
+2. inspect live hashes
+3. classify finish, rollback, retry, or block
+4. mutate only when the journal and fresh live evidence still prove the
+   branch safe
+
 The pull pipeline is the provenance source for the executor ladder:
 
 - exporter scans the merge base and coverage evidence
