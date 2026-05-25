@@ -43,11 +43,15 @@ The normal sequence is:
 35. `push-deployment-topology-contract.json`
 36. `push-protocol-extension-contract.json`
 37. `push-pull-to-topology-contract.json`
+38. `push-preflight-contract.json`
 
 The production proof bundle is intentionally layered:
 
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
+- `push-preflight-contract.json` keeps the first live binding explicit: the
+  imported base, requested scope, and short-lived session are tied together
+  before snapshot listing starts.
 - `push-remote-liveness-contract.json`, `push-dry-run-apply-revalidation-contract.json`,
   and `push-recovery-revalidation-contract.json` keep the liveness split and
   inspect-first recovery rules explicit.

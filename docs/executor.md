@@ -6,7 +6,8 @@ pipeline, and how to test one remote site and one local site.
 
 The pull-to-push mapping is one-way: exporter/importer establish immutable
 provenance, and push consumes it without rewriting it. The imported pull base
-package is the only starting point for push planning.
+package is the only starting point for push planning, and preflight binds that
+package to one live remote identity plus one short-lived session.
 
 The production proof for that mapping is a one-remote, one-local topology:
 
@@ -16,6 +17,11 @@ The production proof for that mapping is a one-remote, one-local topology:
   different times
 - `runner` is the only actor that may preflight, list hashes, upload the dry
   run plan, apply batches, inspect the journal, or start recovery
+
+Docker and Playground both use the same route names, the same `8080` ingress
+rule for browser-visible inspection, and the same live-drift story: the remote
+is observed once as the seeded base site and again as the drift witness after
+the dry-run receipt exists.
 
 ## Executor Contract
 
@@ -36,7 +42,7 @@ The production ladder is fixed and the executor follows it exactly:
 1. `push_preflight` binds the persisted pull base to one live remote identity
    and one short-lived push session.
 2. `push_snapshot_hashes` performs the remote snapshot hash listing for
-   planning only.
+   planning only and never becomes write authority.
 3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
    eligibility receipt, not a lock.
 4. `push_batch_apply` revalidates fresh live evidence before every batch and
@@ -109,6 +115,7 @@ The canonical proof stack for that scope is:
 | Proof | What it pins down |
 | --- | --- |
 | [`fixtures/protocol/push-pull-mapping.json`](../fixtures/protocol/push-pull-mapping.json) | The one-way bridge from exporter/importer provenance into the push ladder. |
+| [`fixtures/protocol/push-preflight-contract.json`](../fixtures/protocol/push-preflight-contract.json) | The preflight binding between the imported pull base, the live remote identity, the requested scope, and the short-lived push session. |
 | [`fixtures/protocol/push-protocol-extension-contract.json`](../fixtures/protocol/push-protocol-extension-contract.json) | The full push ladder: preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery. |
 | [`fixtures/protocol/push-remote-liveness-contract.json`](../fixtures/protocol/push-remote-liveness-contract.json) | The compact proof that dry-run and apply stay separate remote operations and that apply revalidates fresh live evidence. |
 | [`fixtures/protocol/push-deployment-topology-contract.json`](../fixtures/protocol/push-deployment-topology-contract.json) | The one-remote, one-local, one-drift topology in Docker and Playground. |

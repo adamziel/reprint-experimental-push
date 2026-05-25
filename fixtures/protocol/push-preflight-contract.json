@@ -1,0 +1,42 @@
+{
+  "contract_id": "push-preflight-contract-one-remote-one-local",
+  "purpose": "proves that preflight binds the immutable pull base to one live remote identity, one requested scope, and one short-lived push session",
+  "pull_provenance": {
+    "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+    "base_manifest_hash": "sha256:pull-base-manifest",
+    "base_coverage_hash": "sha256:pull-base-coverage",
+    "remote_site_id": "remote-example"
+  },
+  "live_binding": {
+    "remote_site_id": "remote-example",
+    "requested_scope": ["files", "database", "plugins", "themes"],
+    "push_session": "psh_01j00000000000000000000000",
+    "expires_at": "2026-05-24T00:10:00Z",
+    "binding_hash": "sha256:push-preflight-binding"
+  },
+  "auth": {
+    "export_hmac_family": "hmac-sha256",
+    "push_hmac_family": "hmac-sha256",
+    "required_for_preflight": [
+      "HMAC-authenticated request",
+      "canonical push signature",
+      "push session mint"
+    ]
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "same_remote_identity": true,
+    "docker_ingress_port": 8080,
+    "proxy_policy": "local-only"
+  },
+  "required_invariants": [
+    "preflight is the first live-remote binding step after importer provenance exists",
+    "preflight binds one immutable pull base package to one live remote identity and one short-lived session",
+    "preflight records requested scope but does not reserve remote state",
+    "preflight authentication must be at least as strict as current Reprint HMAC usage",
+    "preflight does not authorize dry-run, apply, or recovery on its own"
+  ]
+}

@@ -16,7 +16,7 @@ The production ladder is fixed and ordered:
 1. `push_preflight` binds the persisted pull base package to one live remote
    identity and one short-lived push session.
 2. `push_snapshot_hashes` performs the remote snapshot hash listing for
-   planning only.
+   planning only and never upgrades into write authority.
 3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
    eligibility receipt, not a lock.
 4. `push_batch_apply` is the first mutation batch apply stage and must
@@ -40,7 +40,7 @@ Push consumes immutable provenance from the existing pull pipeline:
 
 | Pull artifact or stage | Push consumer | Boundary rule |
 | --- | --- | --- |
-| Exporter merge-base scan | `push_preflight` | Bind the imported base package to one live remote identity and one short-lived session. |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base package to one live remote identity, one requested scope, and one short-lived session. |
 | Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live snapshot hash listing. |
 | Coverage evidence | `push_plan_dry_run` | Upload the canonical plan, but do not reserve a lock. |
 | Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |

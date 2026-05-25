@@ -50,6 +50,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const topologyMatrix = readJson('fixtures/protocol/push-topology-matrix.json');
   const deploymentTopologyContract = readJson('fixtures/protocol/push-deployment-topology-contract.json');
   const protocolExtensionContract = readJson('fixtures/protocol/push-protocol-extension-contract.json');
+  const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
 
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
@@ -214,6 +215,21 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.lab_topology.remote_base.identity, 'remote-example');
   assert.equal(protocolExtensionContract.lab_topology.local_edited.identity, 'local-dev-site');
   assert.equal(protocolExtensionContract.lab_topology.remote_changed.identity, 'remote-example');
+  assert.equal(preflightContract.contract_id, 'push-preflight-contract-one-remote-one-local');
+  assert.equal(preflightContract.pull_provenance.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(preflightContract.pull_provenance.remote_site_id, 'remote-example');
+  assert.equal(preflightContract.live_binding.remote_site_id, 'remote-example');
+  assert.deepEqual(preflightContract.live_binding.requested_scope, ['files', 'database', 'plugins', 'themes']);
+  assert.equal(preflightContract.topology.remote_base, 'remote-base');
+  assert.equal(preflightContract.topology.local_edited, 'local-edited');
+  assert.equal(preflightContract.topology.remote_changed, 'remote-changed');
+  assert.equal(preflightContract.topology.same_remote_identity, true);
+  assert.equal(preflightContract.topology.docker_ingress_port, 8080);
+  assert.ok(
+    preflightContract.required_invariants.includes(
+      'preflight binds one immutable pull base package to one live remote identity and one short-lived session',
+    ),
+  );
   assert.equal(topologyMatrix.push_pipeline.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
   assert.equal(topologyMatrix.push_pipeline.snapshot_hash_listing, 'returns the live remote comparison set for planning only');
   assert.equal(topologyMatrix.push_pipeline.dry_run_plan_upload, 'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock');
