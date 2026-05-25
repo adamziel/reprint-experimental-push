@@ -363,6 +363,45 @@ test('topology matrix fixture keeps the Docker and Playground route matrix align
   ]);
 });
 
+test('production route matrix fixture keeps the shared Docker and Playground route names aligned with the push ladder', () => {
+  const routeMatrix = readJson('fixtures/protocol/push-production-route-matrix-contract.json');
+
+  assert.equal(routeMatrix.contract_id, 'push-production-route-matrix-contract-one-remote-one-local');
+  assert.deepEqual(routeMatrix.stage_order, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.deepEqual(routeMatrix.route_matrix.docker, {
+    preflight: 'preflight',
+    snapshot_hashes: 'snapshot-hashes',
+    dry_run: 'dry-run',
+    apply: 'apply',
+    journal: 'journal',
+    recovery_inspect: 'recovery-inspect',
+    recovery_mutate: 'recovery-mutate',
+  });
+  assert.deepEqual(routeMatrix.route_matrix.playground, {
+    preflight: 'preflight',
+    snapshot_hashes: 'snapshot-hashes',
+    dry_run: 'dry-run',
+    apply: 'apply',
+    journal: 'journal',
+    recovery_inspect: 'recovery-inspect',
+    recovery_mutate: 'recovery-mutate',
+  });
+  assert.equal(routeMatrix.topology.networking.ingress_port, 8080);
+  assert.equal(routeMatrix.topology.networking.proxy_policy, 'local-only');
+  assert.equal(routeMatrix.topology.networking.tunnels, 'disallowed');
+  assert.ok(routeMatrix.topology.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.ok(routeMatrix.required_invariants.includes('dry-run and apply are separate remote operations'));
+  assert.ok(routeMatrix.required_invariants.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+});
+
 test('production bridge and revalidation fixtures keep the pull handoff and live revalidation proof aligned', () => {
   const bridge = readJson('fixtures/protocol/push-production-pull-bridge-contract.json');
   const revalidation = readJson('fixtures/protocol/push-production-revalidation-contract.json');
