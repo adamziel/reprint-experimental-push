@@ -158,6 +158,13 @@ try {
         durableJournalSummary.journal.checked.length > 0,
         'durable journal proof must check at least one persistent journal file',
       );
+      assert.equal(
+        durableJournalSummary.leaseFence?.storageGuard,
+        'filesystem-compare-rename',
+        'durable journal proof must report the storage guard used for lease fencing',
+      );
+      assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
+      assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
 
       const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
       const remoteBaseSnapshot = await exportSnapshot('remote-base', remoteServer.baseUrl);
@@ -205,15 +212,16 @@ try {
               },
             },
             releaseProof: proof,
-            durableJournal: {
-              proof: {
-                status: durableJournalProof.status,
-                journal: durableJournalSummary.journal,
-              },
-              rows: proof.dbJournal.rows,
-              applyCommitted: proof.dbJournal.applyCommitted,
-              mutationApplied: proof.dbJournal.mutationApplied,
-              idempotencyOpened: proof.dbJournal.idempotencyOpened,
+          durableJournal: {
+            proof: {
+              status: durableJournalProof.status,
+              journal: durableJournalSummary.journal,
+              leaseFence: durableJournalSummary.leaseFence,
+            },
+            rows: proof.dbJournal.rows,
+            applyCommitted: proof.dbJournal.applyCommitted,
+            mutationApplied: proof.dbJournal.mutationApplied,
+            idempotencyOpened: proof.dbJournal.idempotencyOpened,
             },
           },
           null,

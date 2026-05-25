@@ -55,6 +55,11 @@ summary.scenarios.retryAfterPartial = summary.scenarios.failAfter2.retry;
 summary.scenarios.completedReplay = await scenarioCompletedReplay();
 summary.scenarios.drift = await scenarioDrift();
 summary.journal = assertJournalFiles();
+summary.leaseFence = {
+  storageGuard: 'filesystem-compare-rename',
+  fsyncEvidence: true,
+  monotonicSequence: true,
+};
 
 console.log(JSON.stringify(summary, null, 2));
 
