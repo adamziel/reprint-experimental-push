@@ -1,33 +1,24 @@
 # No Data Loss Recovery Contract
 
-This lane treats the atomic apply step as a durable recovery boundary.
+This lane treats the recovery boundary as valid only when one of these states is observable after a failure or replay:
 
-Acceptable outcomes after an apply attempt are limited to:
+1. `old-remote`
+   - No remote mutation escaped the boundary.
+   - Recovery artifacts may show the plan as opened, staged, or dependency-validated.
+   - The remote snapshot itself must remain unchanged.
 
-- `old-remote`: no remote mutation became durable
-- `fully-updated-remote`: every planned mutation was already applied or replayed safely
-- `blocked-recovery`: the remote may be partially applied, but recovery artifacts are present
+2. `fully-updated-remote`
+   - The plan completed successfully.
+   - Replaying the same completed plan must stay inert.
+   - The replay path must not duplicate inserts or resurrect stale local data.
 
-Recovery artifacts must preserve enough evidence to inspect or resume safely:
+3. `blocked-recovery`
+   - A partial remote mutation was observed or a stale completed replay was rejected.
+   - Recovery artifacts must remain inspectable.
+   - A blocked state is acceptable only when it carries enough journal and remote evidence to explain the refusal.
 
-- the recovery journal
-- the remote snapshot or recovery envelope when the state is blocked
+Release rule:
 
-The contract used by the tests is:
-
-1. failure before mutation returns `old-remote`
-2. failure after staging returns `old-remote`
-3. failure after dependency validation returns `old-remote`
-4. completed replay returns `fully-updated-remote`
-5. stale completed replay blocks with `blocked-recovery` and artifacts
-6. partial commit recovery stays `blocked-recovery` and never claims safety without artifacts
-
-That gives the recovery state table this exact shape:
-
-| Condition | Acceptable state |
-| --- | --- |
-| No remote mutation became durable | `old-remote` |
-| The plan was already fully applied or replayed safely | `fully-updated-remote` |
-| The remote may be partially applied, but artifacts are attached | `blocked-recovery` |
-
-Any partial remote mutation without recovery artifacts is considered unsafe.
+- A partial remote mutation without a recovery artifact is a blocker.
+- Any retry must either reclassify to `fully-updated-remote` or remain blocked with artifacts.
+- Anything else is treated as data-loss risk.
