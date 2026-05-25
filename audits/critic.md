@@ -100,6 +100,10 @@ What must change before any production-grade push claim:
 - the branch must show a live write boundary that rejects stale remote drift
   before the first mutation, preserves the remote for audit, and rebuilds a
   fresh retry scope from live hashes on this branch;
+- the evidence must name the exact stale-drift case and the exact rejection
+  point, because a readable manual-resolution note or comparison summary is
+  false reliability if it cannot prove the same live boundary was retried
+  from fresh live hashes;
 - any "manual resolution" outcome must name the exact rejected boundary and
   keep the preserved remote inspectable for audit/retry; if the artifact does
   not prove the same live boundary was retried from fresh live hashes, it is
@@ -121,6 +125,9 @@ What must change before any production-grade push claim:
 - every plugin-owned surface outside the allowlist must be enumerated live or
   blocked at apply time, including late-discovered tables, files, cron rows,
   runtime registries, generated assets, caches, and serialized blobs;
+- any plugin-owned surface discovered after the first write is a new live
+  boundary, not retroactive proof that the earlier manual-review artifact or
+  comparison note was correct;
 - if a later snapshot reveals a new plugin-owned table, file, registry entry,
   generated asset, cache entry, or serialized blob, that surface becomes a new
   boundary with its own preserve / reject / retry cycle; the earlier artifact
@@ -255,8 +262,9 @@ live executor, preserved remote, or fresh retry scope. Route shape alone is
 never production proof here, even if the surface looks production-shaped or
 the same path returns live-looking output from a copied or fixture-backed
 executor. A production claim must show the exact live boundary, the exact
-stale drift case, and the exact fresh retry artifact on this branch; without
-those three pieces, the wording is only compatibility or design context.
+stale drift case, the exact rejection point, and the exact fresh retry
+artifact on this branch; without those pieces, the wording is only
+compatibility or design context.
 That includes lab/fixture route names that mimic production paths: a matching
 URL family can still hide a copied executor, so the claim must also show the
 preserved remote, the stale rejection point, and the fresh live-hash retry
