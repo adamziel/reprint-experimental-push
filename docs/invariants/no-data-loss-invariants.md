@@ -48,6 +48,9 @@ It must preserve:
 - a file type swap can stop while a separate matching delete still remains in
   the plan behind a live remote precondition and matching edits or restores stay
   already-in-sync
+- a directory delete that would hide a live remote descendant can stop while
+  matching independent edits stay already-in-sync and unrelated plugin drift is
+  kept out of the conflict payload
 - remote-only plugin drift while a plugin-owned delete is safely preconditioned
 - matching independent deletes, edits, restores, and file type swaps even when
   a separate mutation is rejected for a live remote conflict
