@@ -6178,6 +6178,11 @@ The design still has not closed the following production-grade gaps:
 
 Release gate for this branch:
 
+- before any production-grade push claim, verify that the exact live boundary
+  is named, the stale-drift case is named, the preserved remote stayed
+  inspectable after rejection, the rejection point happened before the first
+  write, the fresh retry scope was rebuilt from live hashes, and every
+  touched surface is classified old, new, or blocked;
 - no production-grade push claim unless the exact drift case is named and the
   remote stayed inspectable after rejection for audit/retry;
 - no production-grade push claim unless the stale approval or review artifact
@@ -6202,6 +6207,8 @@ Release gate for this branch:
 - no production-grade push claim unless the evidence is live-boundary proof,
   not route shape, package mount, fixture replay, readable review output, or
   `finalMatchesLocal`.
+- if any item above is missing, the wording stays audit-only and cannot be
+  promoted to production-grade push support.
 
 Production-grade proof still missing on this branch:
 
