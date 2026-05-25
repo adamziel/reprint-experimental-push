@@ -50,6 +50,12 @@ Do not use production wording unless the branch has all of the following for the
   rejection point, and fresh retry artifact rebuilt from live hashes.
 - a source-note comparison is only historical context unless it names the exact upstream state, states what it proves here, states what it does not prove here, and this branch reran the same live boundary; the anchors in `docs/source-notes.md` are provenance only, not current retry authority.
 
+Evidence classes:
+
+- historical context: upstream notes, old review artifacts, and comparisons that describe design lineage but do not authorize this branch's live retry;
+- compatibility evidence: route shape, package mount shape, fixture replay, `finalMatchesLocal`, and similar smoke results that show surface similarity but not live boundary safety; and
+- live retry proof: the branch-local live boundary rerun with preserved-remote evidence, stale-authority rejection, a fresh retry scope rebuilt from live hashes, and per-surface old/new/blocked classification.
+
 False success to reject:
 
 - "manual resolution later" is not success if the readable artifact is still

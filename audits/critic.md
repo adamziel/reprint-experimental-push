@@ -5998,6 +5998,16 @@ Final production-grade deltas still required on this branch:
 - reject any wording that uses `manual resolution`, `comparison passed`, `finalMatchesLocal`, or route-shaped smokes as current proof unless the preserved remote stayed inspectable after rejection and the retry scope was rebuilt from live hashes; and
 - keep the release-gate language explicit that production-grade push support is blocked until the branch can show the live executor, preserved-remote auditability, stale-authority rejection, fresh retry scope, and per-surface classification for every touched boundary.
 
+Production-grade release gate:
+
+- name the exact live boundary and the exact stale-drift case before claiming push support;
+- show the preserved remote stayed inspectable after rejection and cannot be reused as retry authority;
+- show the fresh retry scope was rebuilt from live hashes on this branch, not copied from the first approval;
+- classify every touched row, file, relationship-bearing record, and plugin-owned surface as old, new, or blocked before retry starts;
+- enumerate or block any plugin-owned surface outside the allowlist, including late-discovered tables, files, cron rows, runtime registries, generated assets, caches, and serialized blobs;
+- treat any later-discovered plugin-owned surface or remapped create target as a new boundary with its own preserve / reject / retry cycle; and
+- keep Reprint, ZS-Sync, and ForkPress comparisons labeled as historical context unless the branch reran the same live boundary with the same drift case.
+
 Production-ready wording gate:
 
 - if the evidence only shows route shape, package layout, fixture replay, readable review output, or `finalMatchesLocal`, the claim stays compatibility-only;
