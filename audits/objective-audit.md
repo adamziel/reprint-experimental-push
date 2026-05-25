@@ -13,6 +13,7 @@ Derived release requirements from the objective:
 5. Evidence for the real remote/local topology, not only lab-backed or fixture-scoped route shapes.
 6. A measured, documented speed claim, or an explicit refusal to make one.
 7. One required release command that fails closed if any safety gate still reports `labBacked: true`, fixture-only scope, or missing live-source evidence.
+8. A release gate that is mandatory in CI or an equivalent enforced entrypoint, not just a script name, so a green default run cannot bypass auth/session, journal durability, lease/fencing, graph identity, plugin-driver, crash-boundary, or benchmark proof.
 
 Release interpretation:
 
@@ -83,6 +84,9 @@ The test audit is therefore uncomfortable but clear:
   They prove that unsupported throughput claims are blocked and that the
   proposed fast paths retain proof obligations, but they do not measure a real
   push path or establish a production runtime/memory threshold.
+- None of the current tests prove no data loss, reliability, or speed for the
+  live source boundary. They are evidence that those claims remain blocked,
+  not evidence that the claims are ready to ship.
 
 The current test story also fails a simpler release-bar test: the repository
 does not define one required release command that chains the stronger checks.
