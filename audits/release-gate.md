@@ -113,18 +113,23 @@ or comparison-only.
 - The claim does not treat matching route shape plus a green lab smoke as
   evidence of production safety if the underlying path never revalidated the
   live remote or the hidden plugin-owned surface at apply time.
+- The claim does not treat live-looking hashes from a route-shaped smoke as
+  proof of current authority unless the same evidence set also shows the
+  rejected approval, preserved remote, and fresh retry scope.
 - The claim does not treat manual resolution as success unless the remote is
-  preserved, the stale artifact stays auditable but unusable, and server-side
+  preserved, the stale artifact stays auditable but unusable, server-side
   rejection forces the retry to rebuild scope from fresh live hashes before
-  any write. "Manual resolution later" is still a failure state until the
-  rejected snapshot cannot be reused as authority.
+  any write, and the proof names the same live write boundary that drifted.
+  "Manual resolution later" is still a failure state until the rejected
+  snapshot cannot be reused as authority.
 - The claim does not treat a stale manual-review artifact as a reusable
   decision token for a new row, file, relationship-bearing record, or
   plugin-owned surface after remote drift.
 - The claim does not treat "manual resolution later" as a success state unless
   the preserved remote is still auditable, the stale artifact cannot authorize
-  a retry, and the next attempt starts from fresh live evidence rather than the
-  old approval.
+  a retry, the next attempt starts from fresh live evidence rather than the
+  old approval, and the claim names the same live write boundary that was
+  revalidated.
 - The claim does not let a stale approval be widened to a different row, file,
   relationship-bearing record, or plugin-owned surface on retry.
 - The claim does not treat a production claim as valid if the proof set omits

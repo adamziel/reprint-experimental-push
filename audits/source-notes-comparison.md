@@ -95,6 +95,10 @@ lab route, fixture replay, or package mount is the real production executor.
 If the claim cannot show the exact live request path, preserved remote state,
 and stale-authority rejection at the current write boundary, the comparison
 remains context only.
+It also cannot be used to claim production safety for a manual-resolution
+flow unless the remote was preserved for audit, the stale approval was
+rejected before mutation, and the retry rebuilt scope from fresh live hashes
+instead of reusing the old decision.
 It also cannot be used to claim that manual resolution was successful unless
 the remote was preserved for audit, the stale approval was rejected before
 mutation, and the retry rebuilt scope from fresh live hashes instead of
