@@ -11474,6 +11474,8 @@ test('blocks a plugin-owned delete without ownership metadata while preserving m
   assert.ok(blocker);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.reason.includes('not covered by a supported resource driver policy'), true);
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(planJson.includes('Shared shared title'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);

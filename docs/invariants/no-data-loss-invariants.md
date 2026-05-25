@@ -54,6 +54,9 @@ It must preserve:
 - remote-only plugin drift while a plugin-owned delete is safely preconditioned
 - matching independent deletes, edits, restores, and file type swaps even when
   a separate mutation is rejected for a live remote conflict
+- a plugin-owned delete without ownership metadata can stop while matching
+  independent deletes, edits, file type swaps, and remote-only plugin drift are
+  preserved
 - bounded conflict evidence that explains why a resource stopped without
   leaking raw payloads
 
