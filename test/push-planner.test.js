@@ -10111,6 +10111,45 @@ test('durable completed replay stays inert and preserves the completed recovery 
   );
 });
 
+test('durable completed replay stays read-only and does not append fresh mutation evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const persistedBeforeReplay = readRecoveryJournal(journalPath);
+
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+
+  durableJournal.close();
+  const persistedAfterReplay = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'target-planned').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'target-planned').length,
+  );
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'mutation-observed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'mutation-observed').length,
+  );
+});
+
 test('durable recovery boundary states stay limited to old remote, fully updated remote, or blocked recovery with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
