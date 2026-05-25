@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven in this checkout. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. This checkout does not expose a checked-in `verify:release` or `release` entrypoint, so even a successful helper run would not by itself become an enforced release verdict here.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven in this checkout. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. The command surface here is still helper-oriented, so even a successful helper run would not by itself become an enforced release verdict.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -55,7 +55,7 @@ Evidence buckets used below:
 | Durable journal semantics | [`test:playground:db-journal-idempotency`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:db-journal-process-kill`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), and [`test:recovery:file-journal`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) prove local and Playground journal integrity | Live-source journal durability that survives the apply boundary in this checkout | Journal proof is split across helpers and fixtures, not the live release boundary |
 | Graph identity mapping | Guarded benchmark encodes graph identity expectations | Production push-path graph identity proof on the retained source endpoint in this checkout | Identity is still modeled, not shipped |
 | Plugin-driver coverage | [`test:playground:production-plugin-package`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:plugin-atomic-install`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), and route smokes cover helper/plugin install flows | End-to-end plugin-driver behavior in the required release gate in this checkout | Plugin proof is still helper-scoped |
-| Required release gate | None in this checkout | A checked-in `verify:release`-style command that runs the live boundary and fails closed on missing proof | There is no enforced release verdict here, so the remaining claims stay unshipped |
+| Required release gate | Helper and Playground scripts only | A checked-in `verify:release`-style command that runs the live boundary and fails closed on missing proof | There is no enforced release verdict here, so helper success cannot be promoted to release proof |
 | CI/default enforcement | None | A checked-in workflow or default entrypoint that runs the gate | Green default runs can still bypass release proof |
 
 ## Test Audit
@@ -74,7 +74,7 @@ The tests do the right kind of negative work, but they are not positive release 
 Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
-- This checkout does not expose a checked-in `verify`, `verify:release`, or `release` script.
+- This checkout exposes helper and Playground scripts, but no checked-in `verify`, `verify:release`, or `release` script.
 - There is no checked-in `test:playground:production-shaped-release-proof` entry here, and the existing `production-shaped` helper remains a lab-shaped route smoke rather than a release gate.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
 - The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation.
@@ -95,4 +95,4 @@ Until that gate exists, the strongest evidence remains regression or lab evidenc
 
 ## Conclusion
 
-The repository has good refusal, journaling, and benchmark-model evidence. It does not yet have a checked-in live-source release gate that proves production auth/session lifecycle, durable journal semantics, graph identity, and plugin-driver coverage at apply time. That is the actionable blocker, and it keeps the release gate closed.
+The repository has good refusal, journaling, and benchmark-model evidence. It does not yet have live-boundary proof that production auth/session lifecycle, durable journal semantics, graph identity, and plugin-driver coverage all hold at apply time. That is the actionable blocker, and it keeps the release gate closed.
