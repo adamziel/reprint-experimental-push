@@ -830,6 +830,49 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   assert.equal(remote.plugins.forms.active, false);
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent edit and type swap stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = { type: 'directory' };
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  local.files['wp-content/uploads/cover'] = 'shared replacement file';
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  remote.files['wp-content/uploads/cover'] = 'shared replacement file';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Shared independent title');
+  assert.equal(result.site.files['wp-content/uploads/cover'], 'shared replacement file');
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.plugins.forms.active, false);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
 test('recognizes matching independent file edits as already in sync', () => {
   const base = baseSite();
   base.files['index.php'] = '<?php echo "base";';
