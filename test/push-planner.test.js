@@ -1721,6 +1721,52 @@ test('keeps remote-only plugin removals while a live-preconditioned delete, matc
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('keeps remote-only plugin removals while a matching independent deletion, edit, and type swap stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = { type: 'directory' };
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.db.wp_posts['ID:1'];
+  local.files['about.php'] = '<?php echo "shared edit";';
+  local.files['wp-content/uploads/cover'] = 'shared replacement file';
+  const remote = baseSite();
+  delete remote.files['index.php'];
+  delete remote.db.wp_posts['ID:1'];
+  remote.files['about.php'] = '<?php echo "shared edit";';
+  remote.files['wp-content/uploads/cover'] = 'shared replacement file';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const rowDelete = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(rowDelete.decision, 'already-in-sync');
+  assert.equal(rowDelete.change.localChange, 'delete');
+  assert.equal(rowDelete.change.remoteChange, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'create');
+  assert.equal(editDecision.change.remoteChange, 'create');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(plan.preconditions.length, 0);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
+  assert.equal(result.site.files['about.php'], '<?php echo "shared edit";');
+  assert.equal(result.site.files['wp-content/uploads/cover'], 'shared replacement file');
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('recognizes matching independent plugin context edits as already in sync', () => {
   const base = baseSite();
   const local = baseSite();
