@@ -19728,6 +19728,37 @@ test('production durable journal claims fail closed when the writer cannot inspe
   assert.equal(error.details.requiresDurableJournal, true);
 });
 
+test('production durable journal claims fail closed when restart inspection is not journal-readable', () => {
+  const writer = {
+    nextSequence: 1,
+    appendEvent() {
+      this.nextSequence += 1;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return { status: 'ok' };
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.equal(error.details.requiresDurableJournal, true);
+});
+
 test('production durable journal claims allow a restart-oriented writer contract', () => {
   const events = [];
   const writer = {

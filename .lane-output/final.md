@@ -22,3 +22,26 @@ Worktree status:
 Next supervisor nudge:
 1. Hand `reliable-executor` the missing live production storage/restart-read path so the release gate can move from fail-closed boundary to a real backend-backed proof.
 2. If that backend still does not exist in this worktree, keep `requireProductionDurableJournal` as the explicit unsupported-production boundary and do not broaden the claim surface.
+Changed files:
+- [`src/apply.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/apply.js)
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js)
+- [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md)
+
+Commands run:
+- `node --test test/push-planner.test.js -t "production durable journal claims fail closed without a restart-readable writer" -t "production durable journal claims fail closed when the writer cannot inspect restart state" -t "production durable journal claims fail closed when restart inspection is not journal-readable" -t "production durable journal claims allow a restart-oriented writer contract"`
+
+Result:
+- `425/425` passed
+- `assertProductionDurableJournalSupport()` now rejects writers whose `inspect()` surface does not return restart-readable `records`, which keeps the production durability gate fail-closed on unsupported shapes.
+- Added a focused negative test for an `inspect()` method that exists but is not journal-readable.
+
+Push result:
+- Not yet pushed.
+
+Worktree status:
+- `git status --short --branch` shows `lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery...origin/main [ahead 636]`
+- Dirty tracked files: `src/apply.js`, `test/push-planner.test.js`, `.lane-output/final.md`
+
+Next supervisor nudge:
+1. If a real restart-readable production journal backend exists, wire it into the release-candidate path; otherwise keep this lane at the explicit fail-closed boundary.
+2. Do not broaden the supported durability claim surface until the restart-readable journal evidence exists.

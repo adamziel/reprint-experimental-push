@@ -589,6 +589,7 @@ function assertProductionDurableJournalSupport(options, writer) {
     && typeof writer.flush === 'function'
     && typeof writer.close === 'function'
     && typeof writer.inspect === 'function'
+    && durableJournalInspectSurface(writer)
   ) {
     return;
   }
@@ -606,6 +607,19 @@ function assertProductionDurableJournalSupport(options, writer) {
       requiresDurableJournal: true,
     },
   );
+}
+
+function durableJournalInspectSurface(writer) {
+  try {
+    const inspected = writer.inspect();
+    return Boolean(
+      inspected
+      && typeof inspected === 'object'
+      && Array.isArray(inspected.records),
+    );
+  } catch (error) {
+    return false;
+  }
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
