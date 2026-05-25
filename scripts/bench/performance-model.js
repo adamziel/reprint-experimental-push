@@ -2481,6 +2481,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+    proposal: 'use a compressed remote index plus cached row receipts to skip plugin-update finalize after a pause',
+    rejectedBecause: 'planning evidence and cached row receipts can trim replay, but they cannot prove the live row compares, dependency checks, or atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
