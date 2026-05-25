@@ -30,6 +30,8 @@ The next proof has to be a real rerunnable live boundary, not another retained-s
 
 The retained-source `verify:release` run, minted session shape, and apply-revalidation proof are useful evidence, but they are still not the release gate. The release gate only opens when one rerunnable live boundary on one exact source URL preserves the rejected remote, revalidates from fresh live hashes at apply time, survives auth/session expiry and re-entry, writes through a lease-fenced durable journal, preserves graph identity across remap, and classifies late plugin-owned surfaces before the first write.
 
+Reprint, ZS-Sync, and ForkPress remain provenance, not retry authority. Reprint explains staged transport and resumability; ZS-Sync explains bounded discovery and cursoring; ForkPress explains merge-audit and crash-consistency vocabulary. None of them prove the missing branch-local live boundary, and none of them justify production wording here unless the same live mutation was rerun on this worktree with the rejected remote preserved.
+
 ## Immediate blocker for release wording
 
 The only acceptable transition to production wording is one rerunnable live WordPress boundary that proves all of these together:
@@ -149,6 +151,14 @@ Any claim that skips the live boundary, or replaces it with a retained-source ha
 Any claim that relies on manual resolution, cached approval text, or a retained-source verdict without a rerunnable live boundary is false reliability. The preserved remote must remain inspectable after rejection, or the claim is not auditable retry authority.
 
 If any one of those bullets is missing, the wording must stay in the lab/prototype bucket.
+
+Use the upstream notes conservatively:
+
+- Reprint can justify transport, staged delivery, and resumability vocabulary, but it does not prove live push safety, preserved-remote retention, or stale-drift rejection here.
+- ZS-Sync can justify bounded discovery and cursoring vocabulary, but it does not prove source-mutation safety, graph identity, or plugin-owned surface coverage here.
+- ForkPress can justify review and crash-consistency vocabulary, but it does not prove retry authority, preserved-remote auditability, or authority over a later live boundary discovered after rejection.
+
+Any stronger reading of those notes is false reliability until this branch reruns the same live boundary and preserves the rejected remote.
 
 ## Exact next proof
 
