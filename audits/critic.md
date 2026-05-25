@@ -32,6 +32,24 @@ Primary critic finding:
   even if the executor, route shape, and retained-source replay all look
   correct.
 
+What still blocks production-grade wording:
+
+- a live rerun must print the exact command string, executor identity, live
+  auth/session boundary, preserved remote, rejection point, dry-run receipt,
+  apply-time revalidation, and journal/recovery inspect for the same boundary;
+- the evidence must classify every touched row, file, relationship-bearing
+  record, and plugin-owned surface old, new, or blocked before retry starts,
+  including hidden tables, cron rows, runtime registries, generated files,
+  caches, serialized blobs, and plugin-owned files outside the allowlist;
+- create-time identity remaps must be proven at apply time on that live
+  rerun, not assumed from route shape, fixture replay, or review wording;
+- any later-discovered plugin-owned surface, remapped create target, or mixed
+  file/DB/plugin side effect must get its own preserve / reject / retry cycle
+  unless it was already enumerated before the first write; and
+- "manual resolution", "comparison passed", and "production-ready" remain
+  false reliability unless the preserved remote stayed inspectable after
+  rejection and the retry scope was rebuilt from live hashes on this branch.
+
 What must change before production-grade wording is defensible:
 
 - one rerunnable live release command must exist and print the exact command
@@ -55,16 +73,32 @@ What must change before production-grade wording is defensible:
 
 Comparison with the source notes stays conservative:
 
-- Reprint gives transport and staged-pull vocabulary, but it does not prove
-  this branch can preserve a rejected remote, fence stale authority, or
+- Reprint gives staged-transport and resumability vocabulary, but it does not
+  prove this branch can preserve a rejected remote, fence stale authority, or
   rerun live push on a WordPress source boundary;
 - ZS-Sync gives bounded discovery and batching vocabulary, but it does not
   prove plugin-owned surface coverage, identity remapping, or retry-safe
   handling of partial file, DB, and plugin side effects; and
 - ForkPress gives audit and crash-consistency vocabulary, but it does not
-  prove live remote preservation, a durable journal on this branch, leases or
-  fencing, or that later-discovered plugin-owned surfaces cannot inherit an
-  earlier approval.
+  prove live remote preservation, durable journal semantics on this branch,
+  leases or fencing, or that later-discovered plugin-owned surfaces cannot
+  inherit an earlier approval.
+
+Production-grade wording must also stay explicit about what the notes do not
+prove here:
+
+- none of the source notes prove preserved-remote auditability on the live
+  boundary, because they are historical context until this branch reruns the
+  same live mutation case;
+- none of them prove production auth/session lifecycle or graph identity on
+  the write boundary, because route shape and reviewer wording are not live
+  retry proof;
+- none of them prove plugin-driver coverage for hidden plugin-owned data
+  traps outside the allowlist, because late-discovered tables, cron rows,
+  runtime registries, generated files, caches, serialized blobs, and plugin-
+  owned files must be enumerated before write; and
+- none of them prove a later-discovered row, file, remapped create target, or
+  plugin-owned surface can inherit retry authority from the first approval.
 
 Current critic bar for this baseline:
 
