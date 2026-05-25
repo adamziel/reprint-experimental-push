@@ -4144,6 +4144,12 @@ show the following with branch-local live evidence, not lab shape:
   revision or worktree state, states what that note proves, and explicitly
   states what it does not prove for this branch.
 
+A claim does not become production-grade just because it has a readable
+manual-review artifact, a route-shaped smoke, or a named upstream note. It
+must still prove the live write boundary on this branch, preserve the remote
+for audit after reject, and show the fresh retry scope was rebuilt from live
+hashes rather than inherited from a stale approval.
+
 Do not let the release gate downgrade missing proof into a softer wording
 bucket. A claim is still not production-grade if it says the comparison or
 manual resolution "passed" but does not also name the preserved remote, the

@@ -3,6 +3,12 @@
 This note is intentionally narrow: it records what the source notes support and
 what they do not support for production push wording.
 
+Treat the three upstream families separately: Reprint supports staged pull and
+export sequencing ideas, ZS-Sync supports scanner/resource batching ideas, and
+ForkPress supports audit and recovery vocabulary. None of them, by themselves,
+prove this branch's live push executor, stale-drift rejection, or remote-
+preserving retry behavior.
+
 These notes are snapshots of previously observed upstream behavior, not
 current upstream proof. They only become current proof if this branch
 reverified the exact cited revision or worktree and the exact live mutation
