@@ -105,6 +105,38 @@ test('safety contract covers required speedup areas and terminal states', () => 
   }
 });
 
+test('fast-path proofs and rejections carry the expected gate metadata', () => {
+  const model = buildBenchmarkModel();
+
+  assert.ok(model.safeFastPaths.length > 0);
+  assert.ok(model.rejectedFastPaths.length > 0);
+  assert.ok(
+    model.safeFastPaths.every((fastPath) =>
+      fastPath.gateProofs &&
+      typeof fastPath.gateProofs.skip === 'string' &&
+      typeof fastPath.gateProofs.live === 'string' &&
+      typeof fastPath.gateProofs.group === 'string' &&
+      typeof fastPath.gateProofs.recovery === 'string' &&
+      typeof fastPath.visibilityBoundary === 'string' &&
+      typeof fastPath.failureEvidence === 'string' &&
+      fastPath.bypassesLivePreconditions === false &&
+      fastPath.splitsAtomicGroup === false &&
+      fastPath.publishesStagedDataEarly === false,
+    ),
+  );
+  assert.ok(
+    model.rejectedFastPaths.every((fastPath) =>
+      typeof fastPath.rejectedGate === 'string' &&
+      Array.isArray(fastPath.violates) &&
+      fastPath.violates.length > 0,
+    ),
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-publish')?.rejectedGate,
+    'recovery',
+  );
+});
+
 test('file hashing and compression decisions preserve canonical hashes', () => {
   const model = buildBenchmarkModel();
   const hashActions = model.schedules.flatMap((schedule) =>
