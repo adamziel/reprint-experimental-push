@@ -10,6 +10,8 @@ It may apply automatically when:
 - a local and remote change converge to the same ordinary resource content
 - matching file deletions, file restores, row deletes, row restores, and file
   type swaps are preserved as already-in-sync instead of being re-written
+- a live-preconditioned delete can still apply when matching independent
+  restores and file type swaps converge on the same hash
 - a remote-only change is unrelated to the local mutation set and can be
   preserved as `keep-remote`
 
