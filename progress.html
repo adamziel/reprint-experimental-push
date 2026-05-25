@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. Newer release evidence in `471440b9` proves `REPRINT_PUSH_SECRET_REQUIRED` fails closed without production credentials; `889bd37a` still emits `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and `5de7ee40` / `981236d8` keep the durable-journal boundary plus `447/447` planner tests visible. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
-        <time class="update-stamp" datetime="2026-05-25T12:49:23+02:00">Last updated: May 25, 2026, 12:49:23 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. Newer release evidence in `3d8748b6` now makes the command fail closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`; `471440b9` still proves `REPRINT_PUSH_SECRET_REQUIRED` fails closed without production credentials, and `889bd37a` still emits `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
+        <time class="update-stamp" datetime="2026-05-25T13:04:09+02:00">Last updated: May 25, 2026, 13:04:09 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `471440b9` adds a fail-closed secret gate while `889bd37a` still marks the production boundary as missing, not ready</span>
+          <span class="pill">Trend: `3d8748b6` adds a fail-closed live-source gate while `471440b9` and `889bd37a` still keep the remaining production boundaries visible</span>
           <span class="pill">Top blocker: real WordPress executor/auth plus durable journal semantics still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-124923">2026-05-25 12:49:23</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-130409">2026-05-25 13:04:09</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-124923">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-130409">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-        <span>Latest lane evidence adds a fail-closed missing-secret gate; production executor and auth proof are still absent</span>
+        <span>Latest lane evidence adds a fail-closed live-source gate; production executor and auth proof are still absent</span>
       </div>
       <div class="metric">
         <strong>Flat</strong>
