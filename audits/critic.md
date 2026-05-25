@@ -4263,11 +4263,14 @@ Release gate additions needed before production-grade push support:
    drift and must not become retry authority for a different row, file,
    relationship-bearing record, remapped create target, or plugin-owned
    surface. Readability alone is not proof that the remote was preserved or
-   that retry scope was rebuilt.
+   that retry scope was rebuilt. The proof must show the rejection point, the
+   preserved remote, and the fresh retry artifact for the same boundary.
 6. Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
    revision or worktree state, say what that note proves here, and say what it
    does not prove. A named note can justify transport shape, discovery shape,
-   or review vocabulary, but not live mutation safety on this branch.
+   or review vocabulary, but not live mutation safety on this branch. If the
+   note is the only evidence, production wording must fail closed until this
+   branch reruns the same live boundary and records the preserved remote.
 7. The release gate must fail closed and record the exact rejection reason
    whenever any of the above proofs is missing; route shape, package mount,
    fixture replay, readable review artifacts, source-note comparison, and
