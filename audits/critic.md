@@ -31,6 +31,10 @@ claim production-grade push support here unless the same live boundary is
 runnable on this branch and the rejected remote remains auditable and retryable.
 If the only available proof is a retained-source or fixture replay, the claim
 must stay at "lab progress" rather than "production-ready."
+The next acceptable proof is not another replay of the retained-source lane;
+it must be a live WordPress auth/session boundary with preserved-remote
+retention, apply-time revalidation, and journal/recovery inspection that can
+be rerun and audited from this branch.
 
 ## Single strongest blocker
 
