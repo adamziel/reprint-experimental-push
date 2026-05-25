@@ -85,6 +85,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'push-production-pull-bridge-contract.json` pairs with',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'push-protocol-extension-contract.json` is the top-level production ladder',
     ),
   );
@@ -108,7 +113,7 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     protocolDocs.includes(
-      'push-protocol-extension-contract.json` is the most complete production',
+      'it is the canonical machine-readable bridge from the exporter/importer pull pipeline into the push write path',
     ),
   );
   assert.ok(
@@ -128,12 +133,12 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     executorDocs.replace(/\s+/g, ' ').includes(
-      'The executor treats those fields as immutable provenance, not a reusable snapshot cache',
+      'importer persists the base package as immutable provenance',
     ),
   );
   assert.ok(
     executorDocs.replace(/\s+/g, ' ').includes(
-      'Recovery stays inspect-first even when the journal is present',
+      'mutating recovery only happens after inspect proves the branch safe',
     ),
   );
   assert.ok(
@@ -148,7 +153,7 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     executorDocs.includes(
-      'dry-run and apply remain separate remote operations even when the same',
+      'That order is the production proof stack:',
     ),
   );
   assert.ok(
@@ -168,7 +173,7 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     executorDocs.includes(
-      'That topology is also the live-drift proof:',
+      'mutating recovery only happens after inspect proves the branch safe',
     ),
   );
 });

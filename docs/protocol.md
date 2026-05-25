@@ -181,6 +181,12 @@ For review and test planning, the production proof stack is:
 3. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology plus dry-run/apply separation.
 4. `push-production-topology-contract.json` for the compact topology and provenance bundle.
 
+Those four proofs are the canonical production sequence:
+
+- the protocol extension contract defines the stage order and recovery guards
+- the pull bridge contract proves the immutable exporter/importer handoff into push
+- the remote liveness topology contract proves dry-run/apply separation on one remote source, one imported local edit site, and one drift witness
+- the production topology contract bundles the same topology with the pull provenance and apply-time revalidation proof
 The bridge is machine-readable and stage-ordered:
 
 1. `push_preflight` binds the imported pull base package to one live remote identity and one short-lived push session.

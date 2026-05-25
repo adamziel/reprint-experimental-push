@@ -86,6 +86,12 @@ For quick navigation, use this proof order:
 3. `push-remote-liveness-topology-contract.json` for the liveness split on the one-remote, one-local topology.
 4. `push-production-topology-contract.json` for the compact production topology bundle.
 
+That order is the production proof stack:
+
+- extension contract for stage order and recovery gates
+- pull bridge contract for immutable provenance handoff
+- remote liveness topology contract for dry-run/apply separation with live drift
+- production topology contract for the one-remote, one-local, one-drift harness proof
 The bridge is reviewed in a fixed order:
 
 1. exporter/importer create the immutable pull base package.
