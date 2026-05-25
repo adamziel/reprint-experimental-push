@@ -18614,6 +18614,64 @@ test('durable recovery keeps the failure-before-mutation, failure-after-staging,
   assert.equal(persisted.integrity.status, 'ok');
 });
 
+test('durable recovery replay writes the recovery-state boundary before journal-replayed and leaves interruption cuts old-remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options, expectedJournalStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+
+    const failure = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+    durableJournal.close();
+
+    assert.ok(failure instanceof PushPlanError, label);
+    assert.equal(failure.details.recovery.status, 'old-remote', label);
+    assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(readRecoveryJournal(journalPath).integrity.status, 'ok', label);
+  }
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  const persisted = readRecoveryJournal(completedJournalPath);
+
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
+  assert.equal(persisted.records[persisted.records.length - 2].state, 'fully-updated-remote');
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
+});
+
 test('durable replay drift closes into blocked recovery with inspectable artifacts', () => {
   const base = baseSite();
   const local = baseSite();
