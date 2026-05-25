@@ -1,16 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 05:00:25 CEST
+Last updated: 2026-05-25 05:01:10 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 05:00:25 CEST - Supervisor Snapshot
+## 2026-05-25 05:01:10 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and feedback note still line up, and the scan view stays short.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no evidence delta landed; the blocked gates stay explicit.
-- Next nudge: keep each lane to one proof gap, one concrete test, and one owner.
+- Progress change: no evidence delta landed; the current update is a clarity pass, not a readiness claim.
+- Next nudge: keep each lane to one proof gap, one concrete test, and one owner, starting with the first missing production-backed check.
 
 | Lane | Current nudge |
 | --- | --- |
