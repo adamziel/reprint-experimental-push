@@ -4554,6 +4554,8 @@ False reliability claims to reject:
   wording; shape similarity is compatibility evidence only and does not
   prove the live executor, preserved remote, or fresh retry scope on this
   branch.
+- "manual resolution succeeded" when the preserved remote, rejection point,
+  and fresh retry artifact are not all recorded for the same live boundary.
 
 Production wording must also satisfy the release gate in
 [`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md).
@@ -4626,6 +4628,10 @@ true on this branch:
 - the proof for the first boundary is not being recycled for a later
   boundary just because the route family, package mount, fixture replay, or
   reviewer wording still looks the same.
+- a route-shaped smoke, fixture replay, or `finalMatchesLocal` result can
+  still come from a copied or fixture-backed executor behind the same URL
+  shape, so shape alone is compatibility evidence only and not proof of live
+  executor safety.
 
 Route-shaped smokes and fixture replays are useful compatibility evidence, but
 they do not establish production safety unless the branch separately proves the
