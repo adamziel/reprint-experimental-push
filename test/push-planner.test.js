@@ -1587,6 +1587,56 @@ test('durable retry after an old-remote failure reopens append-only without dupl
   assert.equal(persisted.integrity.status, 'ok');
 });
 
+test('durable mid-apply failure blocks recovery and keeps the partial remote inspectable', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+
+  const writer = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      failDuringCommitAtMutation: 1,
+      durableJournal: writer,
+      mutateRemote: true,
+    }));
+  writer.close();
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assertAcceptableRecoveryState(error.details.recovery);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal, 'blocked recovery must keep journal artifacts');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked recovery must keep remote artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'blocked');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(remote.files['index.php'], '<?php echo "local";');
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+
+  const retryBefore = JSON.stringify(remote);
+  const retryError = captureError(() => applyPlan(remote, plan, {
+    journal: error.details.recovery.artifacts.journal,
+  }));
+
+  assert.ok(retryError instanceof PushPlanError);
+  assert.equal(retryError.code, 'RECOVERY_BLOCKED');
+  assert.equal(JSON.stringify(remote), retryBefore);
+  assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+  assert.ok(retryError.details.recovery.artifacts.journal);
+  assert.ok(retryError.details.recovery.artifacts.remote);
+  assert.equal(retryError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+
+  const persisted = readRecoveryJournal(journalPath);
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.ok(persisted.records.some((record) => record.type === 'journal-opened'));
+  assert.ok(persisted.records.some((record) => record.type === 'apply-committing'));
+  assert.ok(persisted.records.some((record) => record.type === 'mutation-observed'));
+});
+
 test('atomic apply recovery boundaries only land in old remote, fully updated remote, or blocked recovery with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
