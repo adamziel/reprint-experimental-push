@@ -4,16 +4,18 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Derived release requirements from the objective:
+## Derived Requirements
 
-1. One-way pull from the base, then one-way push back to the live source.
-2. No silent data loss across the live WordPress graph, including related and plugin-owned data.
-3. Recovery that survives crashes, retries, replay, stale claims, duplicate requests, and mid-apply restarts without dropping, duplicating, or reordering writes.
-4. Auth, session, lease, fencing, durable journal, storage, graph-identity, and plugin-data-driver checks enforced at the release boundary.
-5. Evidence for the real remote/local topology, not only lab-backed or fixture-scoped route shapes.
-6. A measured, documented speed claim, or an explicit refusal to make one.
-7. One required release command that fails closed if any safety gate still reports `labBacked: true`, fixture-only scope, or missing live-source evidence.
-8. A release gate that is mandatory in CI or an equivalent enforced entrypoint, not just a script name, so a green default run cannot bypass auth/session, journal durability, lease/fencing, graph identity, plugin-driver, crash-boundary, or benchmark proof.
+The objective implies the following minimum release requirements:
+
+1. Pull the base one way, then push back to the live source one way.
+2. Preserve all WordPress data shapes that can be affected by a push, including related rows, files, and plugin-owned data.
+3. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes.
+4. Enforce auth, session, lease, fencing, durable journal, storage, graph identity, and plugin-data-driver checks at the release boundary.
+5. Prove the real remote/local topology, not just a local lab route shape or fixture mount.
+6. Either publish a measured speed claim or explicitly refuse to make one.
+7. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, or missing live-source proof.
+8. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
 
 Those requirements are the minimum release bar, not aspirational extras.
 
@@ -44,7 +46,7 @@ entrypoint that composes the strongest checks and fails closed.
 
 | Requirement | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| One-way pull base, one-way push to live source | Planner and fixture smokes preserve remote-only changes and reject unsafe overwrites. | A live-source push boundary that mutates the real source site after a pull-base snapshot. | Yes: live boundary is still lab-backed. |
+| One-way pull base, one-way push to live source | Planner and fixture smokes preserve remote-only changes and reject unsafe overwrites. | A live-source push boundary that mutates the real source site after a pull-base snapshot. | Yes: the boundary remains lab-backed. |
 | No silent data loss | Model and fixture tests cover row/file/plugin-data conflicts, recovery labels, and stale claims. | Exhaustive live-source coverage for DB rows, files, plugin-owned data, and mid-apply restarts. | Yes: indirect evidence is insufficient. |
 | Reliability under crash/retry/replay/duplicate requests | Process-kill, stale-claim, idempotency, and replay smokes exist. | Production-backed journal durability and crash recovery on the real transport and storage path. | Yes: recovery is still fixture-scoped. |
 | Auth, session, lease, fencing, journal, graph identity, plugin-driver gates | Authenticated local Playground routes, DB journal slices, and graph-identity assertions exist in lab scope. | A required production release gate that enforces all of them together. | Yes: no enforced gate exists. |
