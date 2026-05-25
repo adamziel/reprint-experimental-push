@@ -5457,6 +5457,51 @@ test('blocks unsupported plugin-owned option updates while preserving matching i
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
 });
 
+test('blocks unsupported plugin-owned option updates while preserving matching independent delete, edit, type swap, and remote-only plugin removal', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Base post title',
+    post_status: 'publish',
+  };
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery/cover.txt'];
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Matched post title',
+    post_status: 'publish',
+  };
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+
+  const remote = baseSite();
+  delete remote.files['wp-content/uploads/gallery/cover.txt'];
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Matched post title',
+    post_status: 'publish',
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery/cover.txt').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'row:["wp_posts","ID:2"]').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+});
+
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
   const base = baseSite();
