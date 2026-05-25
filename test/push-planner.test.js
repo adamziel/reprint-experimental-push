@@ -21337,6 +21337,76 @@ test('keeps same-remote graph identity at the live release boundary while a read
   assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* late remote plugin drift */');
 });
 
+test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent row delete, a matching plugin-owned resource, and refuses late remote-only plugin drift on re-apply', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:4'] = { ID: 4, post_title: 'Base post 4', post_status: 'publish' };
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  delete local.db.wp_posts['ID:4'];
+  local.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  delete remote.db.wp_posts['ID:4'];
+  remote.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingRowDelete = decisionFor(plan, 'row:["wp_posts","ID:4"]');
+  const matchingPluginOwned = decisionFor(plan, 'row:["wp_options","option_name:forms_settings"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingRowDelete.decision, 'already-in-sync');
+  assert.equal(matchingRowDelete.change.localChange, 'delete');
+  assert.equal(matchingRowDelete.change.remoteChange, 'delete');
+  assert.equal(matchingPluginOwned.decision, 'already-in-sync');
+  assert.equal(matchingPluginOwned.change.localChange, 'update');
+  assert.equal(matchingPluginOwned.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(completed.site.db.wp_posts, 'ID:4'), false);
+  assert.equal(completed.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'shared');
+  assert.equal(completed.site.db.wp_options['option_name:forms_settings'].__pluginOwner, 'forms');
+  assert.equal(completed.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(completed.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.plugins.forms.description = 'late plugin drift';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.plugins.forms.description, 'late plugin drift');
+});
+
 test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching plugin-owned resource and refuses late plugin-owned drift without disturbing remote-only plugin drift', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
