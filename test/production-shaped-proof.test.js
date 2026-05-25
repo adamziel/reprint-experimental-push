@@ -19,8 +19,14 @@ test('production-shaped proof wrapper emits the checked proof summary and exact 
 
   assert.equal(proof.status, 0);
   assert.match(proof.stdout, /"protocol": \{\s*"status": 0\s*\}/);
-  assert.match(proof.stdout, /"missingSecret": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_SECRET_REQUIRED"\s*\}/);
-  assert.match(proof.stdout, /"missingLiveSource": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/);
+  assert.match(
+    proof.stdout,
+    /"missingSecret": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_SECRET_REQUIRED",\s*"stderr": "REPRINT_PUSH_SECRET_REQUIRED: production push credentials are missing; provide REPRINT_PUSH_SIGNING_SECRET or REPRINT_PUSH_APPLICATION_PASSWORD before running preflight, dry-run, or apply\."\s*\}/,
+  );
+  assert.match(
+    proof.stdout,
+    /"missingLiveSource": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",\s*"stderr": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\."\s*\}/,
+  );
   assert.equal(proof.stderr, '');
   assert.ok(proof.stdout.includes('protocol'));
   assert.ok(proof.stdout.includes('missingSecret'));

@@ -58,10 +58,12 @@ process.stdout.write(
       missingSecret: {
         status: smokeResult.status,
         code: 'REPRINT_PUSH_SECRET_REQUIRED',
+        stderr: smokeResult.stderr.trim(),
       },
       missingLiveSource: {
         status: liveSourceResult.status,
         code: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+        stderr: liveSourceResult.stderr.trim(),
       },
     },
     null,
