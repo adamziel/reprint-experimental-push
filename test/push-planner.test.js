@@ -11849,7 +11849,7 @@ test('durable recovery keeps append-only retries and completed replays idempoten
   );
 });
 
-test('durable recovery accepts only old remote, fully updated remote, or blocked recovery with artifacts', () => {
+test('durable recovery keeps pre-commit failures in old-remote with journal artifacts', () => {
   const base = baseSite();
   const local = baseSite();
   local.files['index.php'] = '<?php echo "local";';
@@ -11906,6 +11906,14 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
       label,
     );
   }
+});
+
+test('durable recovery replays a completed plan as fully-updated-remote without reapplying mutations', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
 
   const journalPath = tempRecoveryJournalPath();
   const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
@@ -11930,6 +11938,11 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
   assert.equal(
     replay.recoveryState.artifacts.journal.entries.every((entry) => entry.status === 'applied'),
     true,
+  );
+  const persisted = readRecoveryJournal(journalPath);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
   );
 });
 

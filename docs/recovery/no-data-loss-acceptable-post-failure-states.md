@@ -14,6 +14,8 @@ The atomic apply flow has only three acceptable outcomes after a failure or repl
 - A completed replay is only safe when the persisted journal still provides the full before-hash and after-hash envelope for every planned target.
 - A completed replay is only safe when every planned target still matches the journaled after-hash envelope.
 - A completed replay that sees drift must stop as `blocked-recovery`, not silently fall back to `old-remote`.
+- Failure before mutation, after staging, and after dependency validation are only acceptable when they still report `old-remote`.
+- A partial remote mutation without recovery artifacts is a release blocker.
 
 ## Artifact Rule
 
