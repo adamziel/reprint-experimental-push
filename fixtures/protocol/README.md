@@ -60,6 +60,31 @@ The normal sequence is:
 52. `push-production-executor-flow-contract.json`
 53. `push-protocol-extension-topology-contract.json`
 
+The six protocol surfaces are the ones the executor must treat as distinct
+remote boundaries:
+
+- preflight
+- remote snapshot hash listing
+- dry-run plan upload
+- mutation batch apply
+- journal inspect
+- recovery
+
+That same proof bundle keeps the one-remote, one-local, one-drift topology
+explicit:
+
+- The topology proof is intentionally the same one-remote, one-local, one-drift
+  shape in Docker and Playground.
+- The mapping from pull exporter/importer to push surfaces is explicit and
+  one-way.
+- `remote-base` and `remote-changed` are the same remote identity at
+  different times
+- `local-edited` is the imported local site derived from the persisted pull
+  base package
+- `runner` uses the same route names in Docker and Playground
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
 

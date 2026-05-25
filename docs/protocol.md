@@ -25,6 +25,19 @@ The production push protocol is a fixed ladder:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
+The six protocol surfaces are the ones the executor must treat as distinct
+remote boundaries:
+
+| Surface | Contract |
+| --- | --- |
+| `push_preflight` | Bind the immutable pull base package to one live remote identity and one short-lived push session. |
+| `push_snapshot_hashes` | List remote snapshot hashes for planning only and never become write authority. |
+| `push_plan_dry_run` | Upload the canonical dry-run plan and return an eligibility receipt, not a lock. |
+| `push_batch_apply` | Revalidate fresh live evidence before every batch and again at the storage boundary. |
+| `push_journal` | Record durable evidence without authorizing mutation. |
+| `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
+| `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe with the same auth floor as the write path. |
+
 The remote liveness boundary is part of the ladder, not an implementation
 detail:
 
@@ -57,6 +70,19 @@ The pull/export/import pipeline is the immutable source of push provenance:
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe and the auth floor still holds
 
+The mapping from pull exporter/importer to push surfaces is explicit and
+one-way:
+
+| Pull stage | Push surface | Why it stays separate |
+| --- | --- | --- |
+| Exporter merge-base and coverage scan | `push_preflight` | The first live bind after importer persistence. |
+| Importer persisted base package | `push_snapshot_hashes` | Planning-only comparison evidence. |
+| Immutable pull provenance | `push_plan_dry_run` | Canonical plan upload with an eligibility receipt, not a lock. |
+| Persisted pull base plus live drift evidence | `push_batch_apply` | Fresh live revalidation before every batch and at the storage boundary. |
+| Durable pull provenance | `push_journal` | Read-only evidence for later recovery. |
+| Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before any mutation. |
+| Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only after inspect and auth-floor checks pass. |
+
 The pull-to-push bridge is the executor contract boundary, not just a note in
 the docs:
 
@@ -75,6 +101,16 @@ the docs:
   repair
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe with the same auth floor as the write path
+
+Recovery is inspect-first by design:
+
+- `push_journal` is never a write gate
+- `push_recover inspect` reads the journal, claim, lease, and live-hash
+  evidence before deciding whether the branch is safe
+- `push_recover auto|finish|rollback` is only available when inspect sees a
+  safe branch and the current remote still matches the live proof
+- live drift between dry-run and apply is expected, so apply-time revalidation
+  is mandatory and separate from dry-run
 
 The bridge also maps to the persisted pull package that the importer stores:
 
@@ -102,6 +138,21 @@ Authentication stays at least as strict as current Reprint HMAC usage:
 - journal inspect is read-only and never authorizes mutation by itself
 - recovery stays inspect-first and may mutate only when the journal row and
   fresh live hashes still prove the branch safe
+
+The auth boundary is the same one the current Reprint HMAC flow already uses
+or exceeds:
+
+- `push_preflight` authenticates the request and mints a short-lived push
+  session
+- `push_snapshot_hashes` uses the same authenticated identity but remains
+  planning-only
+- `push_plan_dry_run` uploads the canonical plan without granting mutation
+- `push_batch_apply` revalidates live evidence before every batch and at the
+  storage boundary
+- `push_journal` stays read-only
+- `push_recover inspect` stays read-only
+- `push_recover auto|finish|rollback` requires the same auth floor plus the
+  live recovery proof
 
 The bridge is also easiest to review as a source-to-sink mapping:
 
@@ -147,6 +198,26 @@ site, and one later drift observation of the same remote identity:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+
+The topology proof is intentionally the same one-remote, one-local, one-drift
+shape in both environments:
+
+| Role | Identity | Meaning |
+| --- | --- | --- |
+| Remote source | `remote-base` | Seeds the persisted pull base package. |
+| Local edit site | `local-edited` | Carries the imported local edits. |
+| Drift witness | `remote-changed` | Reuses the same remote identity after drift. |
+| Runner | `runner` | Owns preflight, hash listing, dry-run, apply, journal inspect, and recovery. |
+
+Docker and Playground differ only in harness mechanics:
+
+- Docker uses one private network.
+- Playground uses separate disposable blueprints.
+- both harnesses use the same route names for preflight, snapshot hashes,
+  dry-run, apply, journal, recovery inspect, and recovery mutate
+- both harnesses keep browser-visible inspection on the sandbox-provided
+  `8080` ingress through a local-only proxy
+- both harnesses forbid remote tunnels
 
 The machine-readable proof bundle is layered around that same ladder:
 

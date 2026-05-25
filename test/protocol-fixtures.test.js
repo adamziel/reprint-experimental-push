@@ -55,12 +55,12 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
-      'The canonical topology proof is always one remote source, one imported local',
+      'The six protocol surfaces are the ones the executor must treat as distinct',
     ),
   );
   assert.ok(
     protocolReadme.includes(
-      'The pull handoff is equally explicit:',
+      'The topology proof is intentionally the same one-remote, one-local, one-drift',
     ),
   );
   assert.ok(
@@ -115,6 +115,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'The mapping from pull exporter/importer to push surfaces is explicit and',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'push-protocol-extension-contract.json` is the top-level production ladder',
     ),
   );
@@ -132,6 +137,7 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     'recovery-mutate',
   ]);
   assert.ok(flow.lab_topology.live_drift.proof.includes('dry-run and apply remain separate remote operations'));
+  assert.ok(flow.lab_topology.live_drift.proof.includes('apply revalidates fresh live evidence before every batch and again at the storage boundary'));
 });
 
 test('production topology fixture keeps the pull bridge, dry-run/apply split, and topology proof aligned', () => {
@@ -155,6 +161,7 @@ test('production topology fixture keeps the pull bridge, dry-run/apply split, an
   assert.ok(topology.topology.docker.proof.includes('apply revalidates fresh live evidence before every batch and at the storage boundary'));
   assert.ok(topology.topology.docker.proof.includes('journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch'));
   assert.ok(topology.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.ok(topology.topology.playground.proof.includes('runner uses the same route names as Docker'));
   assert.deepEqual(topology.required_invariants, [
     'dry-run and apply are separate remote operations',
     'apply must revalidate the live remote before every batch and at the storage boundary',

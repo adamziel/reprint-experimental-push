@@ -16,6 +16,15 @@ Use the same logical harness in Docker and Playground:
 | Drift witness | `remote-changed` | Reuses the same remote identity after drift. |
 | Runner | `runner` | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
 
+The topology proof is one remote source, one imported local edit site, one
+later drift observation of the same remote identity, and one runner:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run,
+  apply, inspect the journal, or recover
+
 The topology is intentionally minimal:
 
 - one remote source site, `remote-base`
@@ -30,6 +39,18 @@ The topology rules are fixed:
 - Browser-visible inspection stays on the sandbox-provided `8080` ingress.
 - The local inspection proxy stays local-only.
 - Remote tunnels are disallowed.
+
+The executor uses the same route names in Docker and Playground:
+
+| Stage | Route name |
+| --- | --- |
+| Preflight | `preflight` |
+| Snapshot hashes | `snapshot-hashes` |
+| Dry-run | `dry-run` |
+| Apply | `apply` |
+| Journal | `journal` |
+| Recovery inspect | `recovery-inspect` |
+| Recovery mutate | `recovery-mutate` |
 
 That is the production topology in compact form:
 
@@ -64,6 +85,19 @@ drift production harness:
   through a local-only proxy.
 - Remote tunnels are disallowed in both harnesses.
 
+The executor also maps the pull/export/import pipeline directly onto the push
+stages:
+
+| Pull provenance | Push stage | Executor rule |
+| --- | --- | --- |
+| Exporter discovers merge base and coverage evidence | `push_preflight` | Bind the persisted pull base package to one live remote identity and one short-lived push session. |
+| Importer persists the base package as immutable provenance | `push_snapshot_hashes` | Read live comparison evidence for planning only. |
+| Persisted pull base package | `push_plan_dry_run` | Upload the canonical plan as an eligibility receipt, not a lock. |
+| Immutable pull provenance | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
+| Durable pull provenance | `push_journal` | Record durable evidence without authorizing mutation. |
+| Immutable provenance plus fresh live hashes | `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
+| Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe with the same auth floor as the write path. |
+
 Docker and Playground prove the same three-site story with different harness
 shapes:
 
@@ -95,6 +129,15 @@ The executor treats each write-path step as a separate remote boundary:
 | `push_journal` | Durable evidence only; never authorizes mutation. |
 | `push_recover inspect` | Read-only recovery inspection; must happen before any mutating repair. |
 | `push_recover auto|finish|rollback` | Mutating recovery only after inspect proves the branch safe and the auth floor still holds. |
+
+The remote liveness split stays explicit across the whole executor:
+
+- dry-run and apply are separate remote operations
+- apply must revalidate the live remote before every batch and at the storage
+  boundary
+- journal inspection is read-only and never authorizes mutation by itself
+- recovery must begin with inspect before any mutating repair
+- authentication must be at least as strict as current Reprint HMAC usage
 
 The production proof uses one remote identity across both the base and drift
 observations, with the imported local edit site carrying the only local
