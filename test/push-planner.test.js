@@ -12056,6 +12056,55 @@ test('durable recovery replays a completed plan as fully-updated-remote without 
   assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('durable completed replay stays append-only and does not duplicate targets', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-completed').length,
+    1,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote'),
+    true,
+  );
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('durable replay blocks drifted completed state instead of collapsing into old-remote', () => {
   const base = baseSite();
   const local = baseSite();
