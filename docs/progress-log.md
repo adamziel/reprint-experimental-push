@@ -4,6 +4,25 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 01:56:16
+
+<a id="2026-05-26-public-status-audit-015616"></a>
+
+- Refreshed [progress.html](../progress.html) after `reliable-executor`
+  tightened the live release-verify harness with shorter startup waits,
+  bounded fetches, and explicit child cleanup on timeout. The public gate
+  posture stays at `0/4` because the focused proof still needs a concrete
+  readiness failure or pass before the verdict can move.
+- `0c4fd10f` remains the newest reliable-executor head, but the harness change
+  is still proof support rather than release proof. `c99b19d0` remains the
+  newest release-surface proof, `b725b2d3` still adds the explicit production
+  auth/session release boundary, and `b9aebe71`, `47b675c0`, and
+  `e717f61c` remain the supporting no-data-loss, recovery, and integration
+  evidence.
+- The public release posture remains `0/4`; this update only sharpens the
+  blocker text so the page stays conservative while the next live proof run
+  tries to surface a concrete readiness result.
+
 # 2026-05-26 - Public Status Audit 01:29:00
 
 <a id="2026-05-26-public-status-audit-012900"></a>
