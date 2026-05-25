@@ -2370,6 +2370,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
+    proposal: 'use a compressed remote index plus a cached dependency graph to skip plugin-update backpressure after a pause',
+    rejectedBecause: 'planning evidence and dependency shape can reduce rescans, but they cannot prove which row receipts, plugin preconditions, or atomic-group evidence survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

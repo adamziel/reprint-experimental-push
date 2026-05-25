@@ -889,6 +889,10 @@ under load:
   is rejected because planning evidence and cached row receipts can reduce
   replay work, but they cannot prove the queue order, journal order, or
   atomic-group commit order needed to recover a partial plugin update.
+- compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause
+  is rejected because planning evidence and a cached dependency graph can
+  reduce rescans, but they cannot prove which row receipts, plugin
+  preconditions, or atomic-group evidence survived the pause.
 - compressed-remote-index-and-compressed-row-batch-skips-plugin-update-finalize
   is rejected because planning compression and batch compression can reduce
   replay work, but they cannot prove the dependency checks, live row compares,
