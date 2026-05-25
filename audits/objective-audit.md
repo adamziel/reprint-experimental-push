@@ -10,12 +10,13 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-invariants` -> `668f886c`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/independent-auditor` -> `eed47bfa`
+- `origin/lane/independent-auditor` -> `e288f424`
 - `origin/lane/critic` -> `e02a31ac`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4cbb022d`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `dbae02fa`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `741f3a36`
 - `origin/main` -> `4b7b47a6`
 
 The current remote state still adds no production-backed auth/session
@@ -36,9 +37,11 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `eed47bfa`.
+  `e288f424`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `4cbb022d`.
+  refreshes the supervisor evidence snapshot at `dbae02fa`.
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
+  records the latest progress handoff at `741f3a36`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a stale term
   taxonomy identity proof at `24c58564`, so the same-plan path still stops short of release-
   grade proof.
