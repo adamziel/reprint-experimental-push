@@ -1255,6 +1255,38 @@ test('keeps remote-only plugin changes while a matching independent row restore 
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
+test('keeps remote-only plugin removals while a local file delete and matching independent restore stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery/cover.txt'];
+  local.files['wp-content/uploads/gallery/restored.txt'] = 'restored content';
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
+  remote.files['wp-content/uploads/gallery/restored.txt'] = 'restored content';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:wp-content/uploads/gallery/cover.txt');
+  const restoreDecision = decisionFor(plan, 'file:wp-content/uploads/gallery/restored.txt');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(deleteMutation.remoteBeforeHash.length, 64);
+  assert.equal(deleteMutation.baseHash.length, 64);
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'create');
+  assert.equal(restoreDecision.change.remoteChange, 'create');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete, matching restore, edit, and type swap stay safe', () => {
   const base = baseSite();
   delete base.files['index.php'];
