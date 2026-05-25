@@ -250,6 +250,11 @@ Blocked production claims:
   discoveries such as options, custom tables, generated files, hooks, cron
   rows, caches, runtime registries, serialized blobs, and external side
   effects.
+- "plugin-owned surface covered" is blocked if the proof only checked a
+  representative sample or a static allowlist; the claim must show either a
+  live inventory of every owned surface on the exercised remote or a hard
+  block for anything unknown, including surfaces discovered only after the
+  first write.
 - "safe create handling" is blocked until the create-time identity decision
   is explicit and durable, including rename, alias, or renumber cases on the
   live remote.
@@ -452,7 +457,8 @@ Release-gate addendum for the next production claim:
 - Any plugin-owned data claim must enumerate or block the full owned surface at
   apply time, including late-discovered options, custom tables, generated
   files, cron rows, caches, runtime registries, serialized blobs, activation
-  hooks, and external side effects.
+  hooks, and external side effects; a sample-based allowlist review is not
+  enough to claim production safety.
 - Any partial-write claim must classify each touched store as old, new, or
   blocked and must show that retry rebuilt scope from fresh live evidence
   instead of inheriting the partial result as authority.
