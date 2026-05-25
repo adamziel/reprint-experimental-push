@@ -1,8 +1,20 @@
-Narrowed command:
-`time timeout 90s node --test --test-name-pattern='guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js`
+Diagnosis for performance-model hang:
 
-Result:
-Passed in 8.947s real time with TAP output completing normally.
+Focused command that isolated the report-heavy area:
+  node --test --test-name-pattern 'parallelism limits and backpressure budgets are explicit|rejected fast paths cover precondition bypasses and atomic group splits|safe fast paths retain all gate proofs and stay non-rejectable' test/performance-model.test.js
+  result: passed quickly
+
+Focused commands that initially looked slow but completed:
+  node --test --test-name-pattern 'production throughput stays blocked until measured storage receipts exist' test/performance-model.test.js
+  result: passed in about 1.6s
+  node --test --test-name-pattern 'guarded executor report keeps the large-upload and plugin-install evidence visible' test/performance-model.test.js
+  result: passed in about 6.8s
+  node --test --test-name-pattern 'guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js
+  result: passed in about 12.6s
+
+Full-file command under the 60-second contract:
+  timeout 60s node --test test/performance-model.test.js
+  result: passed in about 26.7s
 
 Conclusion:
-The full-file `timeout 60s node --test test/performance-model.test.js` timeout is pre-existing cumulative runtime pressure, not a single hanging subtest introduced by the lane. The isolated large-profile test completes on its own, so the file-wide 60s ceiling can be exceeded by aggregate runtime even when individual tests pass.
+  The original full-file timeout was not reproducible in this iteration after narrowing. No lane-local failing assertion was identified; the earlier timeout appears pre-existing/intermittent rather than caused by the current fast-path edits.
