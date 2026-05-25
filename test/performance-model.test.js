@@ -181,6 +181,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('remote-index-and-cached-package-hash-skips-plugin-dependency-checks').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('atomic-groups'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
 });
 
