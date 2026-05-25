@@ -407,6 +407,7 @@ test('push topology matrix fixture captures the minimal docker and playground pr
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
   const executorTopology = readJson('fixtures/protocol/push-executor-topology-proof.json');
+  const contract = readJson('fixtures/protocol/push-contract.json');
 
   assert.equal(mapping.mapping_id, 'push-pull-handoff-production-map');
   assert.equal(mapping.pull_exports.exporter, 'scans the merge base and coverage evidence');
@@ -443,6 +444,20 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
   assert.ok(executorTopology.topology.playground.proof.includes('separate disposable blueprints'));
   assert.ok(
     executorTopology.required_invariants.includes(
+      'authentication must be at least as strict as current Reprint HMAC usage',
+    ),
+  );
+  assert.equal(contract.pull_handoff.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(
+    contract.pull_handoff.push_recover,
+    'starts with inspect, then finishes, rolls back, or blocks only when journal evidence plus fresh live hashes prove the action',
+  );
+  assert.equal(
+    contract.push_guards.recovery_inspect,
+    'must happen before any mutating recovery mode and may block when finish or rollback cannot be proven safe',
+  );
+  assert.ok(
+    contract.required_invariants.includes(
       'authentication must be at least as strict as current Reprint HMAC usage',
     ),
   );
