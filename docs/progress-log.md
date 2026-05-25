@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:45:58
+
+<a id="2026-05-25-public-status-audit-094558"></a>
+
+- Published the latest public update in [progress.html](../progress.html): the
+  production-shaped proof now has a signed live-preflight branch when
+  `REPRINT_PUSH_SOURCE_URL` and production-shaped auth are provided.
+- Kept the public status conservative: release gates remain 0/4 verified and
+  the real WordPress executor/auth, recovery journal, Docker/Playground, and
+  plugin drivers stay pending.
+- Evidence trail: [progress.html](../progress.html),
+  [production-shaped proof](../scripts/playground/production-shaped-proof.mjs),
+  [live-source smoke](../scripts/playground/production-shaped-live-source-gate-smoke.mjs),
+  [newest audit](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 09:41:01
 
 <a id="2026-05-25-public-status-audit-094101"></a>
