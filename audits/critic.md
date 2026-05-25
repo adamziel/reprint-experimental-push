@@ -256,6 +256,10 @@ Release-gate checklist for production-grade wording:
   fresh retry scope rebuilt from live hashes, and old/new/blocked
   classification for every touched surface, including any later-discovered
   plugin-owned surface;
+- the Reprint, ZS-Sync, and ForkPress notes are cited only as historical
+  context unless this branch also reran the same live boundary and can point
+  to the preserved remote, rejection point, and fresh retry scope for that
+  exact case;
 - the rejected remote stays inspectable after the first failed write, so the
   user can audit the drift and retry safely from fresh live hashes;
 - the stale approval, readable review artifact, or manual-resolution note is
@@ -394,7 +398,11 @@ Non-negotiable release gate:
   worktree state, what each note proves here, what it does not prove here,
   whether this branch reran the same live boundary, and whether any later-
   discovered plugin-owned table, file, registry entry, generated asset, cache
-  entry, or serialized blob is explicitly in scope or explicitly excluded; and
+  entry, or serialized blob is explicitly in scope or explicitly excluded;
+- no production-grade push claim is allowed unless the same proof set also
+  names the exact live boundary, the preserved remote, the stale rejection
+  point, the fresh retry scope from live hashes, and the old/new/blocked
+  status for every touched surface on this branch; and
 - no production-grade push claim is allowed if the evidence rests only on
   route shape, package mount shape, fixture replay, readable manual-review
   artifacts, `finalMatchesLocal`, or a "manual resolution" label without the
