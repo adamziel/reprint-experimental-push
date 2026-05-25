@@ -15920,6 +15920,53 @@ test('durable recovery accepts only the approved failure and replay states acros
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('mid-apply durable failures stay blocked with artifacts and do not duplicate inserts on retry', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const partialRemote = baseSite();
+  const partialFailure = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      durableJournal,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(partialFailure instanceof PushPlanError);
+  assertFailureRecoveryState(partialFailure.details.recovery, 'blocked-recovery');
+  assert.equal(partialFailure.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(
+    Object.keys(partialFailure.details.recovery.artifacts.remote.db.wp_posts).filter((key) => key === 'ID:2').length,
+    1,
+  );
+
+  const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retry = applyPlan(partialRemote, plan, {
+    durableJournal: retryJournal,
+    journal: partialFailure.details.recovery.artifacts.journal,
+    mutateRemote: true,
+  });
+  retryJournal.close();
+
+  assertAcceptableRecoveryState(retry.recoveryState);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(retry.recoveryState.artifacts.remote, undefined);
+  assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(retry.appliedMutations, 0);
+  assert.equal(
+    Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length,
+    1,
+  );
+  assert.equal(partialRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(partialRemote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('completed recovery replay stays inert on repeated retries and preserves the fully updated remote', () => {
   const base = baseSite();
   const local = baseSite();
