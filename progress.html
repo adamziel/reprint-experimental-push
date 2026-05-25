@@ -473,20 +473,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Verified signal: 89 Node tests pass. Current gate: production auth plus durable journaling. Top blocker: production executor/auth proof.</p>
-        <time class="update-stamp" datetime="2026-05-25T02:20:00+02:00">Last updated: May 25, 2026, 02:20:00 CEST</time>
+        <p class="lead">Verified signal: 89 Node tests pass. Current gate: production auth plus durable journaling. Top blocker: gate 1, production executor/auth proof.</p>
+        <time class="update-stamp" datetime="2026-05-25T02:20:30+02:00">Last updated: May 25, 2026, 02:20:30 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Current gate: production auth + durable journaling</span>
           <span class="pill">89 Node tests passing</span>
           <span class="pill">Trend flat until production proof lands</span>
           <span class="pill">Release gates proven: 0/4</span>
-          <span class="pill">Top blocker: production executor/auth proof</span>
-          <span class="pill">Pending proof: real executor, recovery journal, Docker/Playground, graph identity, plugin drivers</span>
+          <span class="pill">Top blocker: gate 1, production executor/auth proof</span>
+          <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, graph identity, plugin drivers</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>One screen shows the current state, trend, top risk, and links. History below stays dated, concise, and evidence-led.</p>
+        <p>One screen shows current state, trend, top risk, and links. History below stays dated, concise, and evidence-led.</p>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="docs/executor.md">executor</a>, <a href="docs/recovery/apply-journal.md">recovery</a>, <a href="docs/playground-topology.md">playground</a>, <a href="docs/protocol.md">protocol</a>, <a href="docs/supervisor-feedback.md">feedback</a>.</p>
       </div>
     </header>
@@ -595,7 +595,7 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Lab snapshots prove guarded plans and fixture apply/refusal paths. Production mutation/auth, durable storage, Docker integration, and graph safety remain pending.</p>
+              <p>Lab snapshots prove guarded plans and fixture apply/refusal paths. Production mutation/auth, durable storage, Docker integration, graph safety, and plugin-driver proof remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
