@@ -51,6 +51,8 @@ The strongest current runnable evidence still falls into two classes:
 
 Neither class proves the live-source release boundary by itself.
 
+For a narrower test-by-test breakdown, see [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md).
+
 ## Required Release Gate
 
 The repo still needs one enforced release gate that closes the gap between lab evidence and a releasable live push path. That gate must fail closed unless it can prove, in the same run, all of the following:
