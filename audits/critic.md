@@ -13,6 +13,12 @@ branch can name the command that performs it, any doc, PR, or review wording
 is still lab-backed or comparison-only, no matter how production-shaped the
 route or reviewer language looks.
 
+This is the critical production gate because the current scripts can still
+prove only fixture or lab behavior. They do not prove that a live remote was
+preserved after rejection, that a stale approval was rejected before the first
+write, or that a later-discovered plugin-owned surface, remapped create target,
+or mixed file/DB/plugin side effect was classified before retry started.
+
 What still has to change before any production-grade claim is credible:
 
 - the branch must show the exact live boundary, the exact stale-drift case, and the exact rejection point before the first write;
@@ -22,6 +28,7 @@ What still has to change before any production-grade claim is credible:
 - any later-discovered plugin-owned surface or remapped create target must become a new live boundary unless it was already enumerated before write and separately blocked or classified;
 - any conflict-policy claim must say whether the next action is block, preserve, retry, or manual review, and it must prove that the preserved remote stays inspectable for audit and retry instead of being repackaged as generic success evidence;
 - any lab fixture, copied executor, or production-shaped route smoke can still preserve the wrong remote, skip a hidden plugin-owned surface, or replay stale approval, so a matching URL or mount shape is compatibility evidence only and never proof of live push safety;
+- any claim that "we can release" or "we are production-ready" fails if it does not name the exact command that will rerun against an actual remote and prove the remote was preserved after rejection;
 - if the route family, package layout, reviewer wording, or fixture shape matches an earlier approval, that only proves surface similarity; the later boundary still needs its own preserved remote, rejection point, and fresh retry scope rebuilt from live hashes;
 - any readable manual-resolution note or comparison summary must not be allowed to retroactively authorize a later-discovered plugin-owned surface, remapped create target, or relationship-bearing record, even if the route family, package layout, or reviewer wording stays identical;
 - any source-note comparison to Reprint, ZS-Sync, or ForkPress is provenance only unless it names the exact upstream state, the exact live boundary, what it proves here, what it does not prove here, and whether this branch reran that same boundary locally; shape similarity alone must never become retry authority;
