@@ -83,6 +83,8 @@ The user-facing claims fail for the same reason: the suite stops at guarded mode
 - `Reliable`: the tests prove refusal behavior, restart states, and local journal integrity, but they do not prove the one-way pull base plus one-way push back to live source is durable under the production storage semantics named by the objective, nor that stale claims and mid-apply restarts are safe on live storage.
 - `Fast`: the benchmark suite is intentionally refusal-first. It can reject unsupported throughput claims, but it does not report a measured live-path throughput result or a release threshold for production speed. Until that changes, release-facing copy should not imply positive throughput.
 
+The weakest claim remains speed, and it is currently weaker than the rest of the release story because the repo has no measured live-path number at all. That means even a perfect lab auth/journal story would still leave the production speed claim blocked. The audit should treat any future throughput language as release-blocked until it is tied to the live-source boundary and an explicit threshold.
+
 ## Release Blockers
 
 The objective stays blocked for five concrete reasons:
@@ -97,6 +99,7 @@ The objective stays blocked for five concrete reasons:
 8. The current benchmark surfaces are explicitly refusal-oriented; they are acceptable as anti-claim evidence, but they still do not establish a live-path speed claim.
 9. The lab route coverage is still self-described as `labBacked: true` on the strongest push paths, so even the authenticated success cases remain local proof, not production release proof.
 10. No test or smoke in this checkout demonstrates the one-way pull base plus one-way push back to live source under the production storage semantics named by the objective.
+11. The repository still has no measured live-path throughput result, so speed is blocked even if all of the lab safety claims remain green.
 
 The weakest claim is speed, and the audit should keep treating it as blocked until there is a measured live-path number with a threshold. The practical consequence is simple: do not convert the current refusal-only benchmark into release language. If the repo cannot measure production throughput yet, the release gate should fail closed on that missing measurement instead of implying performance confidence from models or smokes. A refusal-only benchmark is useful because it prevents overclaiming, but it is not evidence that the live push path is fast enough.
 
