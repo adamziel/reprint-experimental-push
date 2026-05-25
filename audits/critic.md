@@ -170,6 +170,29 @@ boundary proofs here, the source note remains design context only, even when
 the upstream state is named precisely or the route/package/reviewer wording
 matches.
 
+Release-gate checklist before any production-grade push wording:
+
+- the exact live boundary on this branch is named, and the exact stale-drift
+  case being rejected is named with the preserved remote still inspectable
+  after rejection;
+- the first write is blocked or retried only after fresh live hashes rebuild
+  the retry scope for that same boundary;
+- any create-time identity remap, alias, or renumbering has either live
+  identity proof or a pre-write hard block;
+- every touched file, DB row, relationship-bearing record, and plugin-owned
+  surface is classified old, new, or blocked before retry starts, including
+  mixed side effects;
+- every plugin-owned surface outside the allowlist is either enumerated live
+  before write or blocked at apply time, including late-discovered tables,
+  cron rows, runtime registries, generated assets, caches, and serialized
+  blobs;
+- any readable manual-review artifact is still audit-only unless it names the
+  rejected boundary, preserved remote, and fresh retry scope for that same
+  live boundary; and
+- every Reprint, ZS-Sync, or ForkPress comparison states what the note proves
+  here, what it does not prove here, and whether the same live boundary was
+  rerun on this branch.
+
 Release gate for the remaining gap:
 
 - any comparison note, readable manual-review artifact, or `finalMatchesLocal`
