@@ -21,6 +21,7 @@ The push planner must preserve remote-only state unless it has a live remote pre
 - Remote-only plugin removals can also coexist with a live-preconditioned row delete, matching independent file edit, and matching file type swap without widening the overwrite boundary.
 - Remote-only plugin removals can also coexist with a live-preconditioned file delete, matching independent edit, matching row edit, and matching file type swap without widening the overwrite boundary.
 - Remote-only plugin drift can coexist with a live-preconditioned file delete, matching independent edit, and matching file type swap without widening the overwrite boundary.
+- Remote-only plugin removals can also coexist with a live-preconditioned file delete, matching independent edit, and matching file type swap without widening the overwrite boundary.
 - Even when a plugin-owned mutation is blocked, unrelated matching independent deletions, edits, and file type swaps still stay `already-in-sync`, and remote-only plugin drift still stays preserved.
 - Even when a plugin-owned mutation is blocked, unrelated matching independent deletions, edits, and file type swaps still stay `already-in-sync`, and remote-only plugin removals still stay `keep-remote`.
 - A plugin-owned row with declared ownership but no driver metadata must stop as `missing-plugin-driver`; the planner may preserve unrelated remote-only plugin drift, but it may not guess the driver or leak the local payload.
@@ -35,11 +36,13 @@ The push planner must preserve remote-only state unless it has a live remote pre
 - Blocker evidence is bounded to a short owner-context or graph-reference slice, with a truncation marker when more context exists.
 - The live remote state for every resource that is not targeted by a validated mutation.
 - Any remote-only plugin drift that the local plan does not directly target.
+- Any remote-only plugin removal when the plan only touches unrelated mutations that already carry live remote preconditions.
 
 ## Must stop
 
 - Local mutations that would overwrite a remote edit on the same resource.
 - Deletions or file type swaps that would hide remote-only descendants.
+- Deletions or file type swaps that would force unrelated remote-only plugin removals or edits to be overwritten.
 - Plugin-owned data changes when owner context or dependency evidence is stale.
 - Any mutation that lacks a live remote precondition.
 - Any plan that assumes remote plugin removal makes a stale plugin-context mutation safe.
