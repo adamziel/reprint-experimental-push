@@ -1,13 +1,13 @@
 # Critic Audit
 
-Current baseline for this critique: the supervised reliable-executor lane
-through remote head `9975dfc9`, with `68664884` and `63a3502f` as earlier
-retained-source proof points. That lane's completed `npm run verify:release`
-result, including `authSessionType`, minted session shape, `applyCommitted`,
-and `durableJournal.rows: 17`, is material retained-source lab evidence.
-It is a real improvement over the earlier route-shape-only claims, but it is
-still not branch-local retry authority and it does not close the live-boundary
-gap on this worktree.
+Current baseline for this critique: the supervised reliable-executor lane at
+remote head `68664884`, with `63a3502f` as an earlier retained-source proof
+point. That lane's completed `npm run verify:release` result, including
+`authSessionType`, minted session shape, `applyCommitted`, and
+`durableJournal.rows: 17`, is material retained-source lab evidence. It is a
+real improvement over the earlier route-shape-only claims, but it is still not
+branch-local retry authority and it does not close the live-boundary gap on
+this worktree.
 
 That evidence is useful because it now names executor/session/journal details
 instead of only route shape. It is not sufficient for production wording until
@@ -29,6 +29,12 @@ authority: it still does not prove this branch can rerun the same live
 boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`,
 preserve the rejected remote, and revalidate apply-time behavior from fresh
 live hashes on retry.
+
+The branch-local gap is now narrower and exact: this worktree still has no
+rerunnable live release command that proves the first executor/auth/
+preserved-remote boundary on a real local, Playground, or Docker source. That
+is the blocker for production-grade wording here, not the presence or absence
+of `verify:release` in the supervised lane.
 
 The right reading of that evidence is narrow: it shows the supervised lane has
 advanced, not that this worktree can yet claim production-grade push support.
