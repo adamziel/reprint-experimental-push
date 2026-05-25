@@ -4,6 +4,45 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 15:14:15
+
+<a id="2026-05-25-public-status-audit-151415"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 15:14:15 CEST`) and kept the first screen concise with the
+  accountability lead: last 12 hours evidence progressed while release gates
+  remain `0/4`.
+- `0c703230` is the newest material evidence: the checked release proof now
+  includes `remoteSnapshotHashes` with the live remote base and changed
+  hashes. `7e0f27f2` still fails closed on apply-time revalidation with
+  `PRECONDITION_FAILED`; `35731b11` still shows `releaseProof.mode: "apply"`
+  and `rows: 17`; `ee43e194` keeps the verifier bound to the supplied source
+  URL. Production WordPress auth/session lifecycle and durable journal
+  storage with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 15:13:18
+
+<a id="2026-05-25-public-status-audit-151318"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 15:13:18 CEST`) and kept the first screen concise with the
+  accountability lead: last 12 hours evidence progressed while release gates
+  remain `0/4`.
+- `0c703230` is the newest material evidence: the checked release proof now
+  includes `remoteSnapshotHashes` with the live remote base and changed
+  hashes. `7a9301d4` still keeps the 528/528 no-data-loss planner proof
+  visible; `7e0f27f2` still fails closed on apply-time revalidation with
+  `PRECONDITION_FAILED`; `35731b11` still shows `releaseProof.mode: "apply"`
+  and `rows: 17`; `ee43e194` keeps the verifier bound to the supplied source
+  URL. Production WordPress auth/session lifecycle and durable journal
+  storage with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 14:56:16
 
 <a id="2026-05-25-public-status-audit-145616"></a>
