@@ -10,7 +10,7 @@ The push executor may mutate only after it proves a safe three-way plan from
 the persisted pull base package, the edited local site, and the live remote
 site.
 
-The production ladder is fixed:
+The production ladder is fixed and ordered:
 
 1. `push_preflight` binds the persisted pull base package to one live remote
    identity and one short-lived push session.
@@ -107,6 +107,17 @@ Recovery stays inspect-first:
   mutating repair is allowed.
 - `push_recover auto|finish|rollback` is the mutating branch and must never run
   without a prior inspect result.
+
+The extension is intentionally aligned with the pull pipeline:
+
+- exporter/importer create the immutable pull base package
+- preflight turns that base package into a live-remote-scoped push session
+- snapshot listing is the planning-only read of the live remote hash surface
+- dry-run uploads the canonical plan as a receipt
+- batch apply mutates in bounded units and revalidates before each mutation
+- journal inspect preserves durable evidence without widening authority
+- recovery starts by inspecting the journal and only mutates when the live
+  hashes still prove the repair path safe
 
 The machine-readable proofs that back this contract are:
 

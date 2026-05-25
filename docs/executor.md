@@ -20,7 +20,7 @@ The executor has one production shape:
 - it inspects the journal before any mutating recovery
 - it never uses dry-run as a lock or snapshot listing as write authority
 
-The production ladder is fixed:
+The production ladder is fixed and the executor follows it exactly:
 
 1. `push_preflight` binds the persisted pull base to one live remote identity
    and one short-lived push session.
@@ -62,6 +62,16 @@ The journal and recovery split is intentionally narrow:
 - `push_recover inspect` is a read-only classifier over journal rows and live
   hashes.
 - `push_recover auto|finish|rollback` is the only mutating recovery path.
+
+The executor never upgrades planning evidence into write authority:
+
+- `push_snapshot_hashes` can be paginated, but every page remains planning-only
+  and must never be treated as a lock.
+- `push_plan_dry_run` is a receipt-producing upload, not a reservation.
+- `push_batch_apply` must revalidate the live remote before every batch and at
+  the storage boundary.
+- `push_journal` is durable readback only.
+- `push_recover inspect` must run before any mutating recovery branch.
 
 That split is the production liveness rule:
 
@@ -185,6 +195,17 @@ The pull-to-push handoff stays one-way:
 - push dry-run uploads a receipt, not a lock
 - push batch apply revalidates before every batch and at the storage boundary
 - push journal and push recover inspect read durable evidence first
+
+The proof stack is the canonical review order:
+
+1. `push-pull-mapping.json`
+2. `push-protocol-extension-contract.json`
+3. `push-remote-liveness-contract.json`
+4. `push-deployment-topology-contract.json`
+5. `push-topology-matrix.json`
+6. `push-auth-session-fencing-contract.json`
+7. `push-auth-session-recovery-contract.json`
+8. `push-recovery-inspect-contract.json`
 
 The pull-to-push bridge is easiest to review through the fixtures:
 
