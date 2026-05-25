@@ -19,6 +19,9 @@ This note captures the planner boundary in plain language.
 - A plugin-owned delete may still coexist with matching independent edits and
   unrelated remote-only plugin removals, as long as the delete keeps its live
   remote hash check and the removed plugin stays preserved as `keep-remote`.
+- Live-preconditioned file deletes and file type swaps may coexist in the same
+  plan with matching independent edits when each mutation keeps its own live
+  remote hash check and unrelated remote-only plugin drift stays `keep-remote`.
 - A file type swap that would hide a live remote descendant must still stop
   even when the remote side removed an unrelated plugin; the unrelated plugin
   removal stays `keep-remote` and the file-topology evidence stays bounded.
@@ -48,6 +51,9 @@ This note captures the planner boundary in plain language.
 - Matched independent resources in `already-in-sync` state rather than
   converting them into mutations when another resource in the same plan needs
   a live remote precondition.
+- Mixed mutation plans must still prove each mutation against the live remote
+  hash before apply, even when a matching independent edit and unrelated
+  remote-only plugin drift are present.
 
 ## Must Stop
 
