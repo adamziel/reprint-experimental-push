@@ -1,16 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 00:39 CEST
+Last updated: 2026-05-26 00:40 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 00:39 CEST - Same-Plan Dependency Proof Expands
+## 2026-05-26 00:40 CEST - Same-Plan Taxonomy Proof Expands
 
-- Going well: both `node --test --test-name-pattern="allows local postmeta references to a post created by the same plan" test/push-planner.test.js` and `node --test --test-name-pattern="applies an atomic plugin install when dependencies are included in the same plan" test/push-planner.test.js` passed, and the lane pushed the graph-identity branch cleanly.
+- Going well: `node --test --test-name-pattern="allows term taxonomy and relationships to reference same-plan terms and posts" test/push-planner.test.js` passed, adding a third distinct same-plan graph proof on top of the existing postmeta, parent-post, and thumbnail cases.
 - Not going well: the broader production gate is still not closed on `main`, so the release gate should stay conservative until the merged proof is visible there.
-- Progress change: the executable evidence now covers both same-plan graph identity and same-plan dependency atomicity instead of only the earlier smoke timeout.
-- Next nudge: keep the page brief, dated, and explicit that these planner proofs exist but the wider production gate remains closed.
+- Progress change: the executable evidence now covers a third same-plan graph edge, widening the planner proof without changing the closed production gate.
+- Next nudge: keep the page brief, dated, and explicit that lane proofs are widening while the merged production gate remains closed.
 
 | Lane | Nudge |
 | --- | --- |

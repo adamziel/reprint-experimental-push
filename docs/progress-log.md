@@ -6,14 +6,12 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `node --test --test-name-pattern="allows local postmeta references to a post created by the same plan" test/push-planner.test.js`
-  and `node --test --test-name-pattern="applies an atomic plugin install when
-  dependencies are included in the same plan" test/push-planner.test.js`
-  passed, and the lane pushed the graph-identity branch successfully. The
-  earlier `timeout 180s node scripts/playground/push-protocol-smoke.mjs`
-  result still exists, but it is no longer the newest proof.
-- New proof: same-plan graph identity and same-plan dependency atomicity now
-  have concrete passing Node tests.
+- Status: `node --test --test-name-pattern="allows term taxonomy and relationships to reference same-plan terms and posts" test/push-planner.test.js`
+  passed, adding a third same-plan graph proof to the existing postmeta,
+  parent-post, and thumbnail cases. The earlier planner proofs still stand,
+  but the broader production gate remains closed on `main`.
+- New proof: same-plan taxonomy terms, term taxonomy rows, and term
+  relationships now have concrete passing Node coverage.
 - Trend: evidence improved for the planner lane, while the broader production
   gate is still not closed on `main`.
 - Blocker: the merged production path still needs a visible end-to-end proof

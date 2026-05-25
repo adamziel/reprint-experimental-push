@@ -1176,6 +1176,105 @@ test('allows a local thumbnail reference to an attachment created by the same pl
   assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_value, 2);
 });
 
+test('allows term taxonomy and relationships to reference same-plan terms and posts', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-body',
+    post_status: 'publish',
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const references = relationshipMutation.wordpressGraphReferences;
+  const relationshipReferenceTypes = references.map((reference) => reference.relationshipType).sort();
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(taxonomyMutation),
+    'term create must be ordered before dependent taxonomy',
+  );
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'taxonomy create must be ordered before dependent relationship',
+  );
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(relationshipMutation),
+    'post create must be ordered before dependent relationship',
+  );
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.deepEqual(
+    relationshipMutation.dependsOnMutationIds.slice().sort(),
+    [postMutation.id, taxonomyMutation.id].sort(),
+  );
+  assert.deepEqual(relationshipReferenceTypes, [
+    'term-relationship-object',
+    'term-relationship-taxonomy',
+  ]);
+  assert.equal(
+    references.find((reference) => reference.relationshipType === 'term-relationship-object').targetResourceKey,
+    postResourceKey,
+  );
+  assert.equal(
+    references.find((reference) => reference.relationshipType === 'term-relationship-taxonomy').targetResourceKey,
+    taxonomyResourceKey,
+  );
+  assert.equal(references[0].resolutionPolicy, 'same-plan-local-create');
+  assert.equal(
+    references.some((reference) => reference.relationshipType === 'term-relationship-object'),
+    true,
+  );
+  assert.equal(
+    references.some((reference) => reference.relationshipType === 'term-relationship-taxonomy'),
+    true,
+  );
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local taxonomy term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].term_id, 7);
+  assert.equal(result.site.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'].object_id, 3);
+  assert.equal(result.site.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'].term_taxonomy_id, 9);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
