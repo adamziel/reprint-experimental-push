@@ -134,6 +134,16 @@ Operational release gate:
   live boundary was revalidated on this branch with preserved-remote proof;
   shape alone does not show the live executor, auth path, or write boundary.
 
+Hard stop on proof substitution:
+
+- a readable manual-review artifact, source-note comparison, or production-
+  shaped route name must never be treated as current retry authority unless
+  this branch also shows the exact live drift case, the preserved remote,
+  the stale rejection point, and a fresh retry scope rebuilt from live
+  hashes; if any one of those branch-local proofs is missing, the comparison
+  remains historical context only, even when the upstream note is correctly
+  cited and the route family looks production-shaped.
+
 Source-note comparison rule:
 
 - Reprint, ZS-Sync, and ForkPress notes are historical context unless the
