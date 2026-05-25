@@ -2,9 +2,10 @@
 
 Current baseline: reliable-executor commit `3089aee2`.
 `npm run verify:release` is now material retained-source evidence, but it is
-still local Playground lab evidence unless the branch also proves the live
-production WordPress auth/session boundary, durable journal semantics, graph
-identity, and plugin-driver coverage on a real-site rerun.
+still local Playground lab evidence and not live retry authority unless the
+branch also proves the live production WordPress auth/session boundary,
+durable journal semantics, graph identity, and plugin-driver coverage on a
+real-site rerun.
 That means the next acceptable proof must move off retained-source lab
 evidence and into a production WordPress auth/session lifecycle, with durable
 journal semantics plus explicit graph-identity and plugin-driver coverage on
