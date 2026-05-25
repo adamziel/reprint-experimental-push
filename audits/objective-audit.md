@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The release gate stays closed for two precise reasons: this checkout still does not own a checked, in-tree production-boundary verdict for auth/session lifecycle and it still does not own a checked, in-tree verdict for durable journal semantics at the live apply boundary. The current upstream release verifier on `origin/lane/reliable-executor` (`91ef2b06`) is real remote evidence: it fails closed with `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` when the live source or secrets are missing, and its companion boundary proof names durable journal storage as a separate remaining requirement. The upstream verifier also reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback with `rows: 17`, but that evidence is upstream-only until this checkout has an equivalent enforced command or default entrypoint.
+The release gate stays closed for two precise reasons: this checkout still does not own a checked, in-tree production-boundary verdict for auth/session lifecycle and it still does not own a checked, in-tree verdict for durable journal semantics at the live apply boundary. The current upstream release verifier on `origin/lane/reliable-executor` (`423c8a4e`) is real remote evidence: it fails closed with `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` when the live source or secrets are missing, and its companion boundary proof names durable journal storage as a separate remaining requirement. The upstream verifier also reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback with `rows: 17`, but that evidence is upstream-only until this checkout has an equivalent enforced command or default entrypoint.
 
 Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and real topology still need production-boundary proof too, but they are secondary to the missing auth/session plus durable journal verdict.
 
@@ -44,7 +44,7 @@ Evidence buckets:
 | Graph identity | [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves stable remote identity in a benchmark model | A checked live-boundary verdict that identity mapping survives the real push path | Graph identity remains lab-backed |
 | Plugin-driver behavior | [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) models plugin install batching and atomic groups | Production plugin-driver behavior on the live apply path | Plugin behavior is still modeled, not proven at release boundary |
 | Real topology and preserved-remote drift | Upstream verifier starts retained-source Playground sites and reports live drift evidence between base and changed fixtures | A checked in-tree command that proves the same preserved-remote behavior on the live source boundary | Topology and drift proof remain upstream-only |
-| CI or default enforcement | `origin/lane/reliable-executor` exposes `verify:release`; this checkout does not | A checked default entrypoint in this checkout that owns the release verdict | No enforced in-tree gate yet |
+| CI or default enforcement | `origin/lane/reliable-executor` exposes `verify:release` on the current remote tip; this checkout does not | A checked default entrypoint in this checkout that owns the release verdict | No enforced in-tree gate yet |
 
 ## Test Audit
 
@@ -57,9 +57,9 @@ Evidence buckets:
 
 ## Current Command Surface
 
-Direct command-surface recheck on `origin/lane/reliable-executor` at `91ef2b06`:
+Direct command-surface recheck on `origin/lane/reliable-executor` at `423c8a4e`:
 
-- `origin/lane/reliable-executor` at `91ef2b06` exposes `verify:release`, `test:playground:production-shaped-release-verify`, `test:playground:production-shaped-live-preflight`, `test:playground:production-shaped-missing-live-source`, and `test:playground:production-shaped-missing-secret`.
+- `origin/lane/reliable-executor` at `423c8a4e` exposes `verify:release`, `test:playground:production-shaped-release-verify`, `test:playground:production-shaped-live-preflight`, `test:playground:production-shaped-missing-live-source`, and `test:playground:production-shaped-missing-secret`.
 - `verify:release` maps to `test:playground:production-shaped-release-verify` on that upstream tip.
 - `scripts/playground/production-shaped-release-verify.mjs` fails closed when no live source or no secret is provided, and it emits the remaining boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` plus the durable-journal blocker `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
 - The same script reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback `rows: 17` when the release path succeeds.
