@@ -198,6 +198,28 @@ test('executor rejects forged ready delete plans missing live remote preconditio
   assert.equal(JSON.stringify(remote), before);
 });
 
+test('executor rejects forged ready file type swap plans missing live remote preconditions', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = 'base file bytes';
+  base.files['wp-content/uploads/cover/keep.txt'] = 'base descendant';
+  const local = baseSite();
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/cover/keep.txt'];
+  const remote = JSON.parse(JSON.stringify(base));
+
+  const ready = planFor(base, local, remote);
+  const typeSwapMutationId = mutationFor(ready, 'file:wp-content/uploads/cover').id;
+  const forged = tamperReadyPlan(ready, (plan) => {
+    plan.preconditions = plan.preconditions.filter((entry) => entry.mutationId !== typeSwapMutationId);
+  });
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(remote), before);
+});
+
 test('keeps remote-only changes and does not overwrite them', () => {
   const base = baseSite();
   const remote = baseSite();
