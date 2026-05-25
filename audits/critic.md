@@ -1134,6 +1134,9 @@ evidence must be attached or directly referenced:
    new, or blocked classification.
 10. The claim does not use `finalMatchesLocal`, fixture replay, route shape,
     or packaging shape as proof of production safety by themselves.
+11. The claim does not treat Reprint, ZS-Sync, or ForkPress source notes as
+    current upstream proof unless the same upstream revision or worktree state
+    was reverified and the live write boundary was exercised in this repo.
 
 ## Minimum Production Claim Gates
 
@@ -1203,6 +1206,9 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   gate.
 - Route-shape-only evidence, fixture replay alone, and `finalMatchesLocal`
   alone are never enough to claim production support.
+- A comparison note from Reprint, ZS-Sync, or ForkPress is never enough on
+  its own; if the upstream revision or worktree was not reverified, the note
+  is historical context only and cannot support production wording.
 - A route that only proves endpoint shape, packaged-plugin mounting, or
   copied-lab route wiring must fail the release gate unless the same live
   remote mutation path was reproduced with a drifted remote and the stale
