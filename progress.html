@@ -475,7 +475,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until production evidence lands. Linked docs hold the proof trail.</p>
-        <time class="update-stamp" datetime="2026-05-25T07:26:48+02:00">Last updated: May 25, 2026, 07:26:48 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T07:27:38+02:00">Last updated: May 25, 2026, 07:27:38 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production evidence</span>
           <span class="pill">Proof trail lives in linked docs</span>
@@ -531,111 +531,49 @@
       </div>
     </section>
 
-    <div class="layout">
-      <section class="section" aria-labelledby="lanes">
-        <div class="section-head">
-          <h2 id="lanes">Work Lanes</h2>
-          <span>Evidence, not optimism</span>
-        </div>
+    <section class="panel" aria-labelledby="proof-links">
+      <div class="section-head">
+        <h2 id="proof-links">Evidence Links</h2>
+        <span>Short path to the proof trail</span>
+      </div>
+      <p class="note">This lane-local copy stays scan-first. The detailed evidence lives in the linked docs, and the published GitHub Pages copy updates only after merge to <code>main</code>.</p>
+      <ul class="link-list">
+        <li><a href="docs/supervisor-feedback.md">Supervisor feedback</a></li>
+        <li><a href="docs/progress-log.md">Progress log</a></li>
+        <li><a href="audits/supervisor-note-20260525-072330.md">Latest audit note</a></li>
+        <li><a href="audits/objective-audit.md">Objective audit</a></li>
+        <li><a href="audits/critic.md">Critic audit</a></li>
+        <li><a href="docs/supervised-lanes.md">Supervised lane audit</a></li>
+      </ul>
+    </section>
 
-        <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">Lab-only evidence</span></div>
-          <div class="bar" aria-label="No data loss merge invariants lab evidence"><div class="fill green" style="width:45%"></div></div>
-          <p class="note">Lab delete/edit cases still match. Gap: prove graph identity mapping on a real site.</p>
-        </div>
+    <section class="panel" aria-labelledby="gaps">
+      <div class="section-head">
+        <h2 id="gaps">Pending Proof Gates</h2>
+        <span>What still blocks production readiness</span>
+      </div>
+      <div class="proof-list">
+        <div class="proof-item"><span class="status">Missing</span><p>Production auth/session proof.</p></div>
+        <div class="proof-item"><span class="status">Missing</span><p>Durable journal, crash, lease, and fencing proof.</p></div>
+        <div class="proof-item"><span class="status">Missing</span><p>Playground integration beyond fixture labs.</p></div>
+        <div class="proof-item"><span class="status">Missing</span><p>WordPress graph identity, plugin drivers, and rollback proof.</p></div>
+      </div>
+    </section>
 
-        <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">Lab-only evidence</span></div>
-          <div class="bar" aria-label="No data loss recovery boundaries lab evidence"><div class="fill green" style="width:29%"></div></div>
-          <p class="note">Replay and failure-state coverage is model-only. Gap: durable journal writes under crash boundaries.</p>
-        </div>
-
-        <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">Blocked on proof</span></div>
-          <div class="bar" aria-label="Reliable executor and protocol blocked"><div class="fill amber" style="width:42%"></div></div>
-          <p class="note">Protocol docs name the flow, but the proof is still local. Gap: production auth, session, and lease behavior.</p>
-        </div>
-
-        <div class="lane">
-          <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">Pending proof</span></div>
-          <div class="bar" aria-label="Fast path and chunking pending"><div class="fill" style="width:19%"></div></div>
-          <p class="note">Rejected fast paths now name the safety gate. Gap: benchmark a real large site before rollout claims.</p>
-        </div>
-
-        <div class="lane">
-          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">Needs review</span></div>
-          <div class="bar" aria-label="Independent evidence and critique review due"><div class="fill red" style="width:30%"></div></div>
-          <p class="note">Objective and critic audits match the current evidence. Gap: re-audit the next production-backed slice.</p>
-        </div>
-      </section>
-
-      <aside aria-label="Evidence and pending proof">
-        <section class="panel latest-evidence-panel" aria-labelledby="latest-evidence">
-          <h2 id="latest-evidence">Evidence Links</h2>
-          <p class="note">Open the linked docs for the proof trail and dated lane history. The latest audit note is linked directly so the public page does not repeat the full audit text.</p>
-          <details>
-            <summary>Proof trail</summary>
-            <ul class="link-list">
-              <li><a href="docs/supervisor-feedback.md">Supervisor feedback</a></li>
-              <li><a href="docs/progress-log.md">Progress log</a></li>
-              <li><a href="audits/supervisor-note-20260525-072330.md">Latest audit note</a></li>
-              <li><a href="audits/objective-audit.md">Objective audit</a></li>
-              <li><a href="audits/critic.md">Critic audit</a></li>
-              <li><a href="docs/supervised-lanes.md">Supervised lane audit</a></li>
-            </ul>
-          </details>
-        </section>
-
-        <section class="panel" aria-labelledby="proof-gates">
-          <h2 id="proof-gates">Pending Proof Gates</h2>
-          <p class="note">The linked docs hold the proof trail. The public page only names the remaining gaps, so it stays easy to scan.</p>
-          <details open>
-            <summary>Current gaps</summary>
-            <div class="proof-list">
-              <div class="proof-item"><span class="status">Lab evidence</span><p>Local routes still prove credential checks and fixture mutations only.</p></div>
-              <div class="proof-item"><span class="status">Missing</span><p>Production auth/session proof.</p></div>
-              <div class="proof-item"><span class="status">Missing</span><p>Durable journal, crash, lease, and fencing proof.</p></div>
-              <div class="proof-item"><span class="status">Missing</span><p>Playground integration beyond fixture labs.</p></div>
-              <div class="proof-item"><span class="status">Missing</span><p>WordPress graph identity, plugin drivers, and rollback proof.</p></div>
-            </div>
-          </details>
-        </section>
-
-        <section class="panel evidence-map-panel" aria-labelledby="evidence-map-title">
-          <figure class="evidence-map">
-            <figcaption>
-              <h2 id="evidence-map-title">Evidence Path</h2>
-              <p class="note">Keep the proof trail in the linked docs; this map only shows the current path and remaining production gaps.</p>
-            </figcaption>
-            <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
-              <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers fixture apply and refusal paths. Production mutation, durable storage, and WordPress graph identity remain pending.</desc>
-              <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
-              <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
-              <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>
-              <rect x="24" y="116" width="126" height="44" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
-              <text x="87" y="143" text-anchor="middle" class="map-label">Local edits</text>
-              <rect x="210" y="116" width="126" height="44" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
-              <text x="273" y="143" text-anchor="middle" class="map-label">Live remote</text>
-              <path d="M150 63 H438" fill="none" stroke="#1d5d9b" stroke-width="3"></path>
-              <path d="M150 138 H178 C194 138 194 83 210 83 H438" fill="none" stroke="#5b636b" stroke-width="2"></path>
-              <path d="M336 138 H370 C390 138 398 83 418 83 H438" fill="none" stroke="#5b636b" stroke-width="2"></path>
-              <rect x="438" y="48" width="132" height="70" rx="8" fill="#edf6ff" stroke="#1d5d9b"></rect>
-              <text x="504" y="78" text-anchor="middle" class="map-label">Guarded</text>
-              <text x="504" y="97" text-anchor="middle" class="map-label">JSON plan</text>
-              <path d="M570 83 H622" fill="none" stroke="#9a6400" stroke-width="3" stroke-dasharray="7 7"></path>
-              <rect x="622" y="48" width="74" height="70" rx="8" fill="#fff4e5" stroke="#9a6400"></rect>
-              <text x="659" y="78" text-anchor="middle" class="map-label">WP</text>
-              <text x="659" y="97" text-anchor="middle" class="map-small">lab apply</text>
-            </svg>
-          </figure>
-        </section>
-        <details class="panel">
-          <summary><strong>Older supervisor history</strong></summary>
-          <p class="note">Earlier entries stay in the linked docs so this page can stay short and scan-first.</p>
-        </details>
-      </aside>
-    </div>
+    <section class="panel" aria-labelledby="lane-nudges">
+      <div class="section-head">
+        <h2 id="lane-nudges">Lane Nudges</h2>
+        <span>One proof gap per lane</span>
+      </div>
+      <ul class="compact-list" aria-label="Lane nudges">
+        <li><strong>Invariants</strong><span>Owner: lane. Gap: graph identity mapping on a real site. Next test: prove it against live content.</span></li>
+        <li><strong>Recovery</strong><span>Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill mid-write and inspect restart state.</span></li>
+        <li><strong>Reliable executor</strong><span>Owner: lane. Gap: auth, session, and lease behavior in production. Next test: prove the auth/session path on a real endpoint.</span></li>
+        <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the benchmark and record the bound.</span></li>
+        <li><strong>Audit and critic</strong><span>Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim.</span></li>
+        <li><strong>Progress publisher</strong><span>Owner: lane. Gap: keep the page dated, concise, and linked to evidence. Next test: keep the page and log aligned after each refresh.</span></li>
+      </ul>
+    </section>
   </main>
 </body>
 </html>
