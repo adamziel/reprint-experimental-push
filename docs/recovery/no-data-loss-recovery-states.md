@@ -20,17 +20,20 @@ it does not replace production durability.
   preserve the journal artifact that explains the blocked retry boundary.
 - Failure after staging must keep the remote on `old-remote`.
 - Failure after dependency validation must keep the remote on `old-remote`.
+- Replaying a completed plan against the same remote must remain
+  `fully-updated-remote` and stay inert.
 - Replaying a completed plan against a matching remote must remain
   `fully-updated-remote`.
 - Replaying a completed plan against drift must become `blocked-recovery` and
   preserve the journal plus remote artifacts that explain the block.
+- A partial remote mutation without a durable recovery artifact is a release
+  blocker, even if the mutated resources happen to resemble the target state.
 
 ## Release blocker
 
-A partial remote mutation without a durable recovery artifact is unsafe.
-
 Retries must not duplicate inserts, resurrect stale local data, or treat
-partial writes without artifacts as safe.
+partial writes without artifacts as safe. The blocked recovery state must keep
+inspectable artifacts so a restart can explain the failure instead of guessing.
 
 ## Production durability
 
@@ -41,3 +44,7 @@ Production recovery needs durable evidence that survives process failure:
 - fencing or claim ownership so only one writer advances the journal
 - restart-readable recovery metadata
 - inspect tooling that can explain the recovered remote state after restart
+
+The test suite in this lane uses JSON fixtures and temporary journal writers to
+model these guarantees. That is useful for contract coverage, but production
+durability still needs real storage boundaries.
