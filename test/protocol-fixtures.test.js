@@ -1420,6 +1420,49 @@ test('push remote-liveness fixture keeps the read-only and mutating boundaries s
   ]);
 });
 
+test('push remote-liveness topology fixture ties the liveness split to the one-remote one-local drift harness', () => {
+  const topology = readJson('fixtures/protocol/push-remote-liveness-topology-contract.json');
+
+  assert.equal(topology.contract_id, 'push-remote-liveness-topology-contract');
+  assert.equal(topology.pull_pipeline.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(topology.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.deepEqual(topology.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(topology.push_guards.remote_snapshot_hash_listing, 'planning evidence only and never write authority');
+  assert.equal(topology.push_guards.dry_run_receipt, 'eligibility evidence only and never a lock');
+  assert.equal(topology.push_guards.apply_revalidation, 'refreshes fresh live evidence before every batch and at the storage boundary');
+  assert.equal(topology.push_guards.journal_inspect, 'reads durable evidence without authorizing mutation');
+  assert.equal(topology.push_guards.recovery_inspect, 'must happen before any mutating recovery path');
+  assert.equal(topology.push_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(topology.topology.remote_base, 'remote-base');
+  assert.equal(topology.topology.local_edited, 'local-edited');
+  assert.equal(topology.topology.remote_changed, 'remote-changed');
+  assert.equal(topology.topology.runner, 'runner');
+  assert.equal(topology.topology.same_remote_identity, true);
+  assert.equal(topology.topology.networking.ingress_port, 8080);
+  assert.equal(topology.topology.networking.proxy_policy, 'local-only');
+  assert.equal(topology.topology.networking.tunnels, 'disallowed');
+  assert.ok(topology.topology.docker.proof.includes('dry-run and apply remain separate remote calls'));
+  assert.ok(topology.topology.docker.proof.includes('apply revalidates fresh live evidence before every batch and at the storage boundary'));
+  assert.ok(topology.topology.playground.proof.includes('runner uses the same route names as Docker'));
+  assert.ok(topology.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.deepEqual(topology.required_invariants, [
+    'dry-run and apply are separate remote operations',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+  ]);
+});
+
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {
   const topology = readJson('fixtures/protocol/push-topology.json');
 
