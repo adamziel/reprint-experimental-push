@@ -10049,6 +10049,10 @@ test('a durable pre-mutation failure can be retried into a completed replay with
     completedPersisted.records.filter((record) => record.type === 'journal-replayed').length + 1,
   );
   assert.equal(
+    replayPersisted.records.some((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote'),
+    true,
+  );
+  assert.equal(
     replayPersisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
     false,
   );

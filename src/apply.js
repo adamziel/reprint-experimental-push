@@ -78,6 +78,7 @@ export function applyPlan(remote, plan, options = {}) {
       };
       try {
         recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
+        recordDurableRecoveryState(durableJournal, remote, plan, recoveryState);
       } catch (error) {
         throw journalWriteFailureFullyUpdated(error, remote, plan, completedJournal, 'journal-replayed');
       }
@@ -833,6 +834,10 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
   try {
     recordDurableBoundary(durableJournal, 'journal-completed', committed, plan, {
       state: 'completed',
+    });
+    recordDurableRecoveryState(durableJournal, committed, plan, {
+      status: 'fully-updated-remote',
+      reason: 'All planned mutations were committed.',
     });
   } catch (error) {
     return {
