@@ -31,10 +31,10 @@ only shows a route-shaped smoke, packaged mount, fixture replay, readable
 manual-review artifact, or `finalMatchesLocal`, the comparison remains
 non-authoritative for production wording.
 Even when the exact upstream revision is named, the note stays historical
-unless this branch also rechecked the same live boundary here and separately
-proved any late-discovered plugin-owned surface was blocked or classified
-before retry. Provenance plus route family is not enough to become current
-retry authority.
+unless this branch also rechecked the same live boundary here, preserved the
+remote after reject, and separately proved any late-discovered plugin-owned
+surface was blocked or classified before retry. Provenance plus route family
+is not enough to become current retry authority.
 
 Concrete failure scenarios that still disqualify production wording:
 
