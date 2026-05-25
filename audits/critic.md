@@ -47,13 +47,14 @@ with an auditable rejected remote, so the rest of the evidence remains lab
 progress.
 
 Next proof required: one rerunnable live command on a real local, Playground,
-or Docker `REPRINT_PUSH_SOURCE_URL` that rejects stale drift before the first
-write, preserves the remote after rejection, revalidates at apply time from
-fresh live hashes, and records journal/recovery, graph identity, plugin-driver
-coverage, and auth/session lifecycle on the same mutation. The command must
-leave the rejected remote inspectable after failure and must be safe to retry
-from fresh live hashes; anything shorter is still lab evidence, not
-production-grade push support.
+or Docker `REPRINT_PUSH_SOURCE_URL` that proves the real WordPress
+auth/session lifecycle, rejects stale drift before the first write, preserves
+the rejected remote for audit, revalidates at apply time from fresh live
+hashes, and records journal/recovery, graph identity, plugin-driver coverage,
+and durable journal storage plus lease/fencing on the same mutation. The
+command must leave the rejected remote inspectable after failure and must be
+safe to retry from fresh live hashes; anything shorter is still lab
+evidence, not production-grade push support.
 
 Before the project can claim production-grade push support, the proof set
 must include all of the following on one rerunnable live boundary:
