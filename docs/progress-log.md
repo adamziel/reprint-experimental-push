@@ -6,13 +6,13 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 11:59:09 CEST.
+- Last update: 2026-05-25 12:01:04 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: the lab release harness tightened again, but the production gate stayed closed.
+- Trend: no new release evidence landed; the lab release harness remains tighter, but the production gate stayed closed.
 - Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, real-endpoint proof, and plugin drivers remain unproven outside the lab.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, real-endpoint proof, and plugin drivers.
-- Next nudge: `reliable-executor` owns the next real-endpoint proof; `progress-publisher` keeps the public page terse and linked; `critic` and `auditor` should reject wording-only proof.
+- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the public page terse and linked; `critic` and `auditor` should reject wording-only proof.
 - Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages only after merge to `main`.
 - Audit note: [audits/supervisor-note-20260525-115909.md](../audits/supervisor-note-20260525-115909.md) captures the newest evidence-backed release-harness note; the release state still does not move.
 
