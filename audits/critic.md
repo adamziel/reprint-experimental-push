@@ -4526,6 +4526,9 @@ False reliability claims to reject:
   stale by definition unless this branch records a separate preserve / reject
   / retry cycle for that exact later boundary, and the preserved remote from
   the first boundary remains audit-only rather than becoming retry authority;
+  the earlier manual-review note cannot be promoted into retry authority for
+  the later boundary just because the route family, package mount, or
+  reviewer wording still looks the same;
 - "plugin-safe push" when any plugin-owned surface outside the allowlist,
   including a late-discovered table, file, registry entry, generated asset,
   cache entry, cron row, or serialized blob, is still only implied rather
