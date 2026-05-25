@@ -11,6 +11,19 @@ and one later observation of the same remote identity after drift. In both
 Docker and Playground, that proof keeps browser-visible inspection on the
 sandbox-provided `8080` ingress through a local-only proxy.
 
+The pull pipeline is the immutable provenance source:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` stays planning-only
+- `push_plan_dry_run` returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+
 The concrete lab roles are:
 
 - `remote-base`: the source site that seeds the persisted pull base package
