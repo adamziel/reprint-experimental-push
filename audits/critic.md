@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `848ca1e5` on `origin/lane/reliable-executor`. The latest explicit
+remote head `68664884` on `origin/lane/reliable-executor`. The latest explicit
 verdict on that lane is `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the
 lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
@@ -60,6 +60,26 @@ boundary with preserved-remote retention, apply-time revalidation,
 journal/recovery inspection, lease/fencing proof outside Playground, graph
 identity proof, plugin-driver coverage, and exact preserved-remote retry
 evidence that can be rerun and audited from this branch.
+
+## What must change before production-grade wording is defensible
+
+Before the project can claim production-grade push support, the proof set
+must include all of the following on one rerunnable live boundary:
+
+- exact stale-drift rejection before the first write;
+- preserved remote still inspectable after rejection;
+- dry-run receipt and apply-time revalidation on the same mutation;
+- journal and recovery inspection that survives retry;
+- graph identity proof for create-time remaps and late-discovered
+  relationship-bearing records;
+- plugin-driver coverage for late-discovered plugin-owned surfaces outside
+  the initial allowlist; and
+- auditable retry scope rebuilt from fresh live hashes rather than manual
+  resolution text.
+
+Manual resolution is not success unless the remote is preserved, the retry is
+auditable from fresh live hashes, and the user can safely replay the exact
+boundary without trusting stale review text.
 
 ## Hidden-loss scenarios that remain unproven
 
@@ -161,8 +181,6 @@ the following on the same live boundary:
 - a preserved-remote receipt that is still inspectable after rejection and
   lets a reviewer audit, retry, and compare the exact boundary without
   depending on manual resolution or stale review text.
-
-## What must change before production-grade wording is defensible
 
 Until those proofs exist on the same live boundary, any wording that says the
 system is production-ready is a claim without audit-grade support. A retained-
