@@ -17118,3 +17118,53 @@ test('replaying a completed plan through the durable journal stays fully updated
     true,
   );
 });
+
+test('durable recovery keeps the approved failure envelope and retries do not duplicate inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options, expectedJournalStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const remoteSnapshot = JSON.stringify(remote);
+
+    const failure = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+    durableJournal.close();
+
+    assert.ok(failure instanceof PushPlanError, label);
+    assertFailureRecoveryState(failure.details.recovery, 'old-remote');
+    assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(JSON.stringify(remote), remoteSnapshot, label);
+    assertAcceptableRecoveryState(failure.details.recovery);
+
+    const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+    const retry = applyPlan(baseSite(), plan, {
+      durableJournal: retryJournal,
+      journal: failure.details.recovery.artifacts.journal,
+    });
+    retryJournal.close();
+
+    assertAcceptableRecoveryState(retry.recoveryState);
+    assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+    assert.equal(retry.recoveryState.artifacts.remote, undefined);
+    assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+    assert.equal(retry.appliedMutations, plan.mutations.length);
+    assert.equal(retry.site.files['index.php'], '<?php echo "local";');
+    assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+    assert.equal(Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  }
+});

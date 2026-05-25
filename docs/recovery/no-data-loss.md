@@ -13,6 +13,20 @@ replay must stay inert and leave the remote unchanged. If the live remote has
 drifted or a durable write fails after mutation, recovery must block and carry
 the journal plus remote artifacts needed for inspection.
 
+The executable proof for this lane is:
+
+```bash
+node --test test/push-planner.test.js
+```
+
+That test file covers the boundary matrix for:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+- replaying a completed plan
+- blocked recovery with artifacts
+
 Relevant coverage lives in `test/push-planner.test.js`:
 
 - failure before mutation
