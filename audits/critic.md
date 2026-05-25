@@ -66,6 +66,25 @@ evidence only. A note only counts as current proof if the exact upstream
 state is named and the same live boundary was rerun here with fresh
 preserved-remote and retry evidence.
 
+Production-readiness checklist:
+
+- name the exact stale-drift case and the exact live boundary being rerun;
+- preserve the remote for audit after rejection, but do not treat that
+  preserved remote as retry authority until live hashes rebuild a fresh retry
+  scope on this branch;
+- reject stale approval or review artifacts before the first write, and prove
+  they cannot be widened to a different row, file, relationship-bearing
+  record, remapped create target, or plugin-owned surface;
+- classify every touched surface as old, new, or blocked before retry starts,
+  including mixed file, DB, and plugin side effects;
+- enumerate or hard-block every plugin-owned surface outside the allowlist,
+  including late-discovered tables, files, cron rows, runtime registries,
+  generated assets, caches, and serialized blobs; and
+- treat Reprint, ZS-Sync, and ForkPress notes as historical context only
+  unless the exact upstream state is named and the same live boundary was
+  rerun here with preserved-remote, rejection-point, and fresh retry
+  evidence.
+
 Production-grade comparison gate:
 
 - Reprint `27c5f25` only proves staged pull delivery, resumable transport, and
