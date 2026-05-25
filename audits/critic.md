@@ -214,6 +214,10 @@ The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprin
   mounted route that returns live-looking hashes still does not prove the
   production executor ran; it can still be a fixture-backed or copied-lab
   stand-in that happens to answer on the right path.
+- A release-gate proof that a stale review artifact remains readable for
+  audit but cannot authorize apply after the remote changes, cannot be
+  widened to a different row, file, or plugin-owned surface, and is
+  invalidated by the exact live snapshot that broke the match.
 - The source-note snapshots themselves are not current upstream proof: a
   locally observed commit, worktree state, or README claim in Reprint, ZS-
   Sync, or ForkPress only anchors the comparison text. It does not prove that
@@ -235,6 +239,9 @@ The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprin
   layout is still compatibility evidence only; it does not prove the
   production executor ran, that remote drift was checked at the write
   boundary, or that the remote was preserved for audit before retry.
+- A plugin-owned write outside the allowlist is only acceptable if the audit
+  shows the exact owned surface, the live revalidation that checked it, and
+  the failure path when that surface drifted or was discovered late.
 - A route that looks production-shaped, returns live hashes, or passes a
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
