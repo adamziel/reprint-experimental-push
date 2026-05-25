@@ -3254,6 +3254,9 @@ Source-note proof boundary, restated:
 - Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress `55f9879` are
   historical design inputs here unless this branch rechecked the exact live
   mutation boundary on the same scenario and preserved the remote for audit.
+- Those revisions are provenance, not current safety proof: if the branch did
+  not rerun the same drifted-remote case here, a source-note citation plus a
+  production-shaped route still cannot claim live push safety.
 - Reprint source notes prove a resumable pull pipeline, protocol framing, and
   bounded exporters. They do not prove live push mutation safety, stale
   rejection before write, identity remapping on create, or durable recovery
@@ -3320,3 +3323,7 @@ Production release gate checklist:
 - Any claim that relies on route shape, packaged-plugin mount, fixture
   replay, or `finalMatchesLocal` must say explicitly that those are
   compatibility checks, not production proof.
+- A release gate that only has source-note provenance, route shape, or
+  `finalMatchesLocal` must fail closed until it also shows branch-local live
+  drift rejection and a preserved remote that can still be audited after
+  reject.
