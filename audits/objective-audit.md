@@ -146,6 +146,7 @@ Highest-value next fix:
 2. Make that command the checked-in CI default.
 3. Require the live-source, journal, lease/fencing, graph identity, plugin-driver, and benchmark checks to run in one enforced sequence.
 4. Make the gate fail if the final proof set does not include a real remote/local topology, a durable journal on the production storage path, and a measured end-to-end benchmark with a stated threshold.
+5. Make it impossible for `npm test` or `npm run test:playground` to satisfy the release bar on their own. If either command can clear release, the release bar is not enforced.
 
 ## Release Gate Gap
 
