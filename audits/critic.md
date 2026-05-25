@@ -182,6 +182,8 @@ a second drift.
 Before the project can use production-grade push wording, the audit needs
 evidence for all of these, not just a plausible design:
 
+The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md); it is the shorter checklist for docs, PRs, review comments, and status updates.
+
 - The source notes for Reprint, ZS-Sync, and ForkPress are treated as
   conservative design input only. They do not prove live remote drift
   rejection, stable identity reservation for creates, plugin-owned state
