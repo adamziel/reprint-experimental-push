@@ -4204,19 +4204,29 @@ Release gate additions needed before production-grade push support:
 1. A live remote-drift case must fail closed before the first write and leave
    the preserved remote auditable after rejection.
 2. A create-time identity remap or alias case must be either durably proven
-   safe with live identity evidence or hard-blocked before write.
+   safe with live identity evidence or hard-blocked before write. A fixture
+   that keeps the same ID is not enough if the live target can renumber or
+   alias the row, file, or relationship-bearing record.
 3. Every plugin-owned surface outside the allowlist must be enumerated live or
    blocked at apply time, including late-discovered tables, generated files,
    cron rows, runtime registries, serialized blobs, caches, and plugin files.
+   The proof must cover both the first write and the next live snapshot if the
+   extra surface appears only after initial success.
 4. Every partial file, DB, or plugin side effect must be durably classified as
-   old, new, or blocked, and the next retry must rebuild from fresh live
-   hashes instead of inherited approval.
+   old, new, or blocked before retry, and the next retry must rebuild from
+   fresh live hashes instead of inherited approval. Mixed success/failure is
+   not production-safe until the branch shows how the surviving partial state
+   is preserved for audit and prevented from being relabeled as success.
 5. Any readable stale manual-review artifact must remain audit-only after
    drift and must not become retry authority for a different row, file,
-   relationship-bearing record, or plugin-owned surface.
+   relationship-bearing record, remapped create target, or plugin-owned
+   surface. Readability alone is not proof that the remote was preserved or
+   that retry scope was rebuilt.
 6. Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
-   revision or worktree state and show branch-local revalidation of the same
-   live mutation boundary.
+   revision or worktree state, say what that note proves here, and say what it
+   does not prove. A named note can justify transport shape, discovery shape,
+   or review vocabulary, but not live mutation safety on this branch.
 7. The release gate must fail closed and record the exact rejection reason
    whenever any of the above proofs is missing; route shape, package mount,
-   fixture replay, and `finalMatchesLocal` are compatibility evidence only.
+   fixture replay, readable review artifacts, source-note comparison, and
+   `finalMatchesLocal` are compatibility evidence only.
