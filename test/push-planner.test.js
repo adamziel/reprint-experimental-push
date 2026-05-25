@@ -1388,6 +1388,91 @@ test('accepts only the documented post-failure states for atomic apply recovery'
   }
 });
 
+test('durable recovery keeps failure boundaries and completed replay recoverable', () => {
+  const scenarios = [
+    {
+      name: 'failure before mutation',
+      options: { failBeforeMutation: true },
+      expectedStatus: 'old-remote',
+      expectedJournalStatus: 'opened',
+    },
+    {
+      name: 'failure after staging',
+      options: { failAfterStaging: true },
+      expectedStatus: 'old-remote',
+      expectedJournalStatus: 'staged',
+    },
+    {
+      name: 'failure after dependency validation',
+      options: { failAfterDependencyValidation: true },
+      expectedStatus: 'old-remote',
+      expectedJournalStatus: 'dependencies-validated',
+    },
+    {
+      name: 'completed replay',
+      replay: true,
+      expectedStatus: 'fully-updated-remote',
+      expectedJournalStatus: 'completed',
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    const base = baseSite();
+    const local = baseSite();
+    local.files['index.php'] = '<?php echo "local";';
+    local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+    const plan = planFor(base, local, baseSite());
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+    if (scenario.replay) {
+      const completed = applyPlan(baseSite(), plan);
+      const replayRemote = JSON.parse(JSON.stringify(completed.site));
+      const replayBefore = JSON.stringify(replayRemote);
+
+      const replay = applyPlan(replayRemote, plan, {
+        journal: completed.journal,
+        durableJournal,
+      });
+      durableJournal.close();
+
+      const persisted = readRecoveryJournal(journalPath);
+
+      assert.equal(JSON.stringify(replayRemote), replayBefore, scenario.name);
+      assert.equal(replay.appliedMutations, 0, scenario.name);
+      assert.equal(replay.recoveryState.status, scenario.expectedStatus, scenario.name);
+      assert.equal(replay.recoveryState.artifacts.journal.status, scenario.expectedJournalStatus, scenario.name);
+      assert.equal(replay.recoveryState.artifacts.remote, undefined, scenario.name);
+      assert.equal(persisted.integrity.status, 'ok', scenario.name);
+      assert.ok(persisted.records.some((record) => record.type === 'journal-replayed'), scenario.name);
+      continue;
+    }
+
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        ...scenario.options,
+        durableJournal,
+      }));
+    durableJournal.close();
+
+    const persisted = readRecoveryJournal(journalPath);
+
+    assert.ok(error instanceof PushPlanError, scenario.name);
+    assert.equal(JSON.stringify(remote), before, scenario.name);
+    assert.equal(error.details.recovery.status, scenario.expectedStatus, scenario.name);
+    assert.equal(error.details.recovery.artifacts.journal.status, scenario.expectedJournalStatus, scenario.name);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, scenario.name);
+    assert.equal(persisted.integrity.status, 'ok', scenario.name);
+    assert.ok(persisted.records.some((record) => record.type === 'journal-opened'), scenario.name);
+    assert.ok(
+      persisted.records.some((record) => record.type === 'recovery-state'),
+      scenario.name,
+    );
+  }
+});
+
 test('documented recovery states carry the expected artifact shapes', () => {
   const base = baseSite();
   const local = baseSite();
