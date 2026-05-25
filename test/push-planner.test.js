@@ -7690,6 +7690,20 @@ test('apply boundary failures stay in old-remote and completed replay stays full
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
   }
 
+  const partialRemote = baseSite();
+  const partialError = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  assert.ok(partialError instanceof PushPlanError, 'mid-apply failure');
+  assert.equal(partialError.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(partialError.details.recovery.status, 'blocked-recovery');
+  assert.ok(partialError.details.recovery.artifacts.journal, 'mid-apply failure must keep journal artifacts');
+  assert.ok(partialError.details.recovery.artifacts.remote, 'mid-apply failure must keep remote artifacts');
+
   const completed = applyPlan(baseSite(), plan);
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
