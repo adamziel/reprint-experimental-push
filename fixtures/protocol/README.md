@@ -64,6 +64,10 @@ Failure and recovery examples:
   that keeps push auth at least as strict as the export HMAC family while
   binding the session, journal row, lease fence, and inspect-first recovery
   path together.
+- `push-auth-headers.json` shows the authentication floor for read-only
+  inspection versus mutating push requests: inspect stays on the existing HMAC
+  family, while dry-run, apply, and mutating recovery require the push
+  session, idempotency key, and canonical push signature.
 - `push-auth-session-recovery-contract.json` is the compact contract that
   binds push auth, the minted session, the journal fence, and inspect-only
   recovery in one place.

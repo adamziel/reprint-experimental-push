@@ -62,6 +62,15 @@ The machine-readable companion at
 captures that one-way handoff in compact form. Tests can use it to prove the
 base package stays immutable provenance while push adds session, snapshot,
 dry-run, journal, and recovery evidence on top.
+The compact auth-and-recovery proof at
+[`fixtures/protocol/push-auth-session-journal-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-journal-proof.json)
+shows the stricter mutating request floor: push-scoped HMAC auth, a short-lived
+session, an idempotency key, durable journal fencing, and inspect-first
+recovery. The corresponding
+[`fixtures/protocol/push-auth-headers.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-headers.json)
+fixture keeps read-only inspection on the existing HMAC family while dry-run,
+apply, and mutating recovery require the push session plus canonical push
+signature.
 The compact inspect-first recovery companion at
 [`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json)
 ties the minted session, journal row, live drift evidence, and blocked-or-safe
@@ -85,7 +94,8 @@ assert the production stage order directly: preflight binds the persisted
 pull base to the live remote identity, snapshot listing stays planning only,
 dry-run returns a receipt rather than a lock, apply revalidates before every
 batch and at the storage boundary, journal inspection stays read-only, and
-recovery must begin with inspect.
+recovery must begin with inspect and only mutating recovery modes may finish
+or roll back after fresh live proof.
 
 - Docker uses one private network and browser-visible inspection through the
   sandbox-provided `8080` ingress with a local-only proxy.

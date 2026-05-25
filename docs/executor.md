@@ -237,6 +237,13 @@ Its `push_guards` fields mirror the executor rules: preflight binds the
 persisted base, snapshot listing is planning-only, dry-run is a receipt, apply
 revalidates before each batch and at the storage boundary, and inspect-first
 recovery is mandatory before any mutating repair.
+The separate
+[`fixtures/protocol/push-pull-mapping.json`](../fixtures/protocol/push-pull-mapping.json)
+fixture is the provenance bridge from the pull exporter/importer pipeline into
+push: exporter/importer create the immutable base package, preflight binds that
+package to the live remote identity, snapshot listing is planning evidence,
+dry-run is a receipt, apply revalidates fresh live evidence, and journal plus
+recovery inspection remain read-only until live proof allows a mutating repair.
 The narrowest proof for the dry-run/apply boundary is
 [`fixtures/protocol/push-dry-run-apply-revalidation-contract.json`](../fixtures/protocol/push-dry-run-apply-revalidation-contract.json).
 It records the pull handoff, the planning bindings, the apply-time
