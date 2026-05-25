@@ -15919,3 +15919,46 @@ test('durable recovery accepts only the approved failure and replay states acros
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
+
+test('completed recovery replay stays inert on repeated retries and preserves the fully updated remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: durableJournal });
+  durableJournal.close();
+
+  const retryRemote = JSON.parse(JSON.stringify(completed.site));
+  const retrySnapshot = JSON.stringify(retryRemote);
+  const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const firstRetry = applyPlan(retryRemote, plan, {
+    durableJournal: retryJournal,
+    journal: completed.journal,
+  });
+  const firstRetrySnapshot = JSON.stringify(retryRemote);
+  const secondRetry = applyPlan(retryRemote, plan, {
+    durableJournal: retryJournal,
+    journal: firstRetry.journal,
+  });
+  retryJournal.close();
+
+  assert.equal(JSON.stringify(retryRemote), retrySnapshot);
+  assert.equal(JSON.stringify(retryRemote), firstRetrySnapshot);
+  assert.equal(firstRetry.appliedMutations, 0);
+  assert.equal(secondRetry.appliedMutations, 0);
+  assertAcceptableRecoveryState(firstRetry.recoveryState);
+  assertAcceptableRecoveryState(secondRetry.recoveryState);
+  assert.equal(firstRetry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(secondRetry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(firstRetry.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondRetry.recoveryState.artifacts.remote, undefined);
+  assert.equal(firstRetry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(secondRetry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(retryRemote.files['index.php'], '<?php echo "local";');
+  assert.equal(retryRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(retryRemote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
