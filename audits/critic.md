@@ -6351,16 +6351,21 @@ Release-gate wording also needs to stay explicit about what is not proof:
 Comparison release gate:
 
 - Reprint comparisons must be limited to staged pull, resumability, and
-  transport vocabulary; they do not prove live push safety, preserved-remote
-  retention, or stale-drift rejection on this branch.
+  transport vocabulary; here they support only transport framing and do not
+  prove live push safety, preserved-remote retention, stale-drift rejection,
+  or any later row/file/plugin boundary on this branch.
 - ZS-Sync comparisons must be limited to bounded scanning and resource
-  discovery vocabulary; they do not prove source mutation safety, plugin
-  ownership enumeration, or late-discovered surface handling on this branch.
+  discovery vocabulary; here they support only change-discovery framing and
+  do not prove source mutation safety, plugin ownership enumeration,
+  create-time remap handling, or late-discovered surface coverage on this
+  branch.
 - ForkPress comparisons must be limited to audit and crash-consistency
-  vocabulary; they do not prove that a readable review artifact can become
-  retry authority for a later row, file, remapped create target, or
-  plugin-owned surface on this branch.
+  vocabulary; here they support only review and durability framing and do not
+  prove that a readable review artifact can become retry authority for a
+  later row, file, remapped create target, or plugin-owned surface on this
+  branch.
 - any comparison to Reprint, ZS-Sync, or ForkPress that omits the exact
-  upstream state, the exact live boundary, and the note's scope of proof must
-  fail closed, even if the route family, package layout, or reviewer wording
-  matches the production path.
+  upstream state, the exact live boundary, what the note proves here, what it
+  does not prove here, and the rerun status on this branch must fail closed,
+  even if the route family, package layout, or reviewer wording matches the
+  production path.
