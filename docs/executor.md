@@ -102,6 +102,23 @@ The pull/export/import pipeline is the only immutable provenance source:
 - `push_recover auto|finish|rollback` mutates only after inspect proves the
   branch safe with the same auth floor as the write path
 
+The executor proof should be read as one compact production bundle:
+
+1. exporter/importer create the immutable pull base package.
+2. `push_preflight` binds that package to one live remote identity and one
+   short-lived push session.
+3. `push_snapshot_hashes` lists the live remote comparison surface for
+   planning only.
+4. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and
+   at the storage boundary.
+6. `push_journal` records durable evidence without authorizing mutation.
+7. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+8. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe with the same auth floor as the write path.
+
 In executor terms, that bridge is a one-remote, one-local, one-drift story:
 
 - `remote-base` seeds the persisted pull base package
@@ -114,6 +131,19 @@ In executor terms, that bridge is a one-remote, one-local, one-drift story:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+
+That same bridge is the Docker and Playground topology definition:
+
+- Docker uses one private network with `remote-base`, `local-edited`,
+  `remote-changed`, and `runner` as separate route names.
+- Playground uses separate disposable blueprints for the same four logical
+  roles.
+- The `runner` is the only actor that may call preflight, snapshot listing,
+  dry-run, apply, journal inspect, or recovery.
+- `remote-base` and `remote-changed` are the same remote identity observed at
+  different times.
+- `local-edited` is the imported local site derived from the persisted pull
+  base package.
 
 For executor review, the pull pipeline maps to the push stages like this:
 

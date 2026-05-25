@@ -41,6 +41,38 @@ The pull/export/import pipeline is the immutable source of push provenance:
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe and the auth floor still holds
 
+The pull-to-push bridge is the executor contract boundary, not just a note in
+the docs:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable handoff object push consumes
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning evidence only and may page, but never
+  becomes write authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary
+- `push_journal` is read-only durable evidence
+- `push_recover inspect` is read-only and must happen before any mutating
+  repair
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe with the same auth floor as the write path
+
+Authentication stays at least as strict as current Reprint HMAC usage:
+
+- preflight requires an HMAC-authenticated request, a canonical push
+  signature, and a short-lived push session mint
+- dry-run uses the same HMAC-authenticated identity proof but never grants
+  mutation authority
+- apply requires the short-lived push session, the canonical push signature,
+  and an idempotency key, then revalidates fresh live evidence before every
+  batch and at the storage boundary
+- journal inspect is read-only and never authorizes mutation by itself
+- recovery stays inspect-first and may mutate only when the journal row and
+  fresh live hashes still prove the branch safe
+
 The bridge is also easiest to review as a source-to-sink mapping:
 
 - exporter produces the immutable pull provenance

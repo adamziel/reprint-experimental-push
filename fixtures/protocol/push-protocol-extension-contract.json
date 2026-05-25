@@ -70,6 +70,22 @@
     "auth_floor": "at least as strict as current Reprint HMAC usage"
   },
   "bridge_rule": "the importer-owned base package is immutable provenance for planning, apply, journal, and recovery",
+  "auth": {
+    "export_hmac_family": "hmac-sha256",
+    "push_hmac_family": "hmac-sha256",
+    "preflight": "requires an HMAC-authenticated request, canonical push signature, and push session mint",
+    "dry_run": "requires the same HMAC-authenticated request and canonical push signature as the live session but never grants mutation authority",
+    "apply": "requires the short-lived push session, canonical push signature, and idempotency key, then revalidates fresh live evidence before every batch and at the storage boundary",
+    "journal_inspect": "requires an HMAC-authenticated read-only request and never authorizes mutation by itself",
+    "recovery": "requires inspect-first recovery and the same auth floor as the write path before any mutating repair"
+  },
+  "session": {
+    "push_session": "psh_01j00000000000000000000000",
+    "remote_site_id": "remote-example",
+    "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+    "identity_hash": "sha256:remote-identity",
+    "expires_at": "2026-05-24T00:10:00Z"
+  },
   "auth_session_recovery_proofs": {
     "auth_session_fencing": "fixtures/protocol/push-auth-session-fencing-contract.json",
     "auth_session_recovery": "fixtures/protocol/push-auth-session-recovery-contract.json",
