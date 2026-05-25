@@ -29,6 +29,20 @@ it does not replace production durability.
 - A partial remote mutation without a durable recovery artifact is a release
   blocker, even if the mutated resources happen to resemble the target state.
 
+## Test evidence
+
+The lane-level regression suite exercises four boundaries that must stay
+stable:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+- replaying a completed plan
+
+Those tests only consider a boundary safe when the persisted recovery state is
+one of the accepted outcomes above. Anything else is treated as a blocked
+recovery artifact, not a safe retry target.
+
 ## Release blocker
 
 Retries must not duplicate inserts, resurrect stale local data, or treat
