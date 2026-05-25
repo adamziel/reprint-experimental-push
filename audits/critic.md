@@ -4956,8 +4956,25 @@ The local source-note anchors in `docs/source-notes.md` are the observed
 historical references `27c5f25` for Reprint, `d9334a0` for ZS-Sync, and
 `55f9879` for ForkPress. Those anchors can justify transport, discovery, and
 review vocabulary, but they do not prove live push safety, preserved-remote
-retention, or retry authority on this branch. Matching the same route family,
-package layout, or reviewer wording remains compatibility evidence only.
+retention, create-time remap safety, or retry authority on this branch. The
+missing proof is branch-local and live: the exact stale-drift case was rejected
+before the first write, the remote stayed auditable after rejection, and each
+later-discovered plugin-owned surface was either blocked or given its own
+preserve / reject / retry cycle. Matching the same route family, package
+layout, or reviewer wording remains compatibility evidence only.
+
+Conservatively compared:
+
+- Reprint can support staged transport and resumability vocabulary, but not
+  live source mutation safety, stale-remote rejection, or create-time identity
+  remapping proof on this worktree;
+- ZS-Sync can support bounded discovery and cursoring vocabulary, but not
+  source-side write safety, partial-write classification, or plugin-owned
+  surface enumeration proof here; and
+- ForkPress can support merge-audit and crash-consistency vocabulary, but not
+  the live executor, preserved-remote audit trail, or manual-review authority
+  for a different row, remapped create target, or late-discovered
+  plugin-owned surface on this branch.
 
 One remaining false-reliability trap is the "preflight looked fine, so manual
 resolution later succeeded" story. If the remote drifted between preflight and
@@ -4985,6 +5002,21 @@ worktree:
   ForkPress comparison, plus an explicit statement of what that note proves
   here and what it does not prove, including whether it says anything about a
   later boundary or only the original one.
+
+Release-readiness filter:
+
+- if the branch only shows route shape, package mount shape, fixture replay,
+  readable review output, or `finalMatchesLocal`, the production claim must
+  fail closed;
+- if manual resolution is the only stated success path, the remote must still
+  be preserved for audit, the stale artifact must be unusable as retry
+  authority, and the fresh retry artifact must be rebuilt from live hashes on
+  this worktree;
+- if a late-discovered plugin-owned surface appears after the first write, it
+  is a separate boundary until it gets its own reject/classify/retry cycle;
+  and
+- if a comparison note is used as proof, it must name the exact upstream
+  state and state plainly what it does not prove here.
 
 Do not let a lab-shaped route, package mount, fixture replay, or
 `finalMatchesLocal` output stand in for the live boundary above. Those signals
