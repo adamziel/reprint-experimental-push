@@ -11,6 +11,7 @@
     "recovery": "allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action"
   },
   "test_topology": {
+    "topology_id": "one-remote-one-local-one-drift",
     "remote_base": "one source site that seeds the persisted pull base",
     "local_edited": "one imported local site with user edits",
     "remote_changed": "the same remote site after independent drift",
@@ -24,6 +25,34 @@
       "recovery-inspect",
       "recovery-mutate"
     ],
+    "harness": {
+      "docker": {
+        "route_names": [
+          "preflight",
+          "snapshot-hashes",
+          "dry-run",
+          "apply",
+          "journal",
+          "recovery-inspect",
+          "recovery-mutate"
+        ],
+        "ingress": 8080,
+        "proxy_policy": "local-only"
+      },
+      "playground": {
+        "route_names": [
+          "preflight",
+          "snapshot-hashes",
+          "dry-run",
+          "apply",
+          "journal",
+          "recovery-inspect",
+          "recovery-mutate"
+        ],
+        "ingress": 8080,
+        "proxy_policy": "local-only"
+      }
+    },
     "drift_proof": [
       "remote-base and remote-changed are the same remote identity observed at different times",
       "exporter/importer establish the immutable pull base package",

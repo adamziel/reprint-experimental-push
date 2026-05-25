@@ -1926,6 +1926,7 @@ test('push topology matrix fixture captures the minimal docker and playground pr
     'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run',
   );
   assert.equal(matrix.test_topology.runner, 'the only actor allowed to run the push protocol');
+  assert.equal(matrix.test_topology.topology_id, 'one-remote-one-local-one-drift');
   assert.deepEqual(matrix.test_topology.proof_order, [
     'preflight',
     'snapshot-hashes',
@@ -1940,6 +1941,26 @@ test('push topology matrix fixture captures the minimal docker and playground pr
       'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
     ),
   );
+  assert.deepEqual(matrix.test_topology.harness.docker.route_names, [
+    'preflight',
+    'snapshot-hashes',
+    'dry-run',
+    'apply',
+    'journal',
+    'recovery-inspect',
+    'recovery-mutate',
+  ]);
+  assert.deepEqual(matrix.test_topology.harness.playground.route_names, [
+    'preflight',
+    'snapshot-hashes',
+    'dry-run',
+    'apply',
+    'journal',
+    'recovery-inspect',
+    'recovery-mutate',
+  ]);
+  assert.equal(matrix.test_topology.harness.docker.ingress, 8080);
+  assert.equal(matrix.test_topology.harness.playground.proxy_policy, 'local-only');
   assert.equal(matrix.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(matrix.pull_pipeline.importer, 'persists the base package as immutable provenance');
   assert.equal(matrix.pull_pipeline.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
