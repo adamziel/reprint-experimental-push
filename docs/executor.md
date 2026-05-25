@@ -967,6 +967,10 @@ The compact auth-and-session recovery proof at
 captures that same inspect-first boundary in a machine-readable form: it binds
 the push HMAC floor, the minted session, the fenced journal row, and the
 blocked-or-safe recovery decision into one recovery proof.
+[`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json)
+is the smaller companion fixture when a test only needs the auth floor, the
+minted session, the journal row, the lease fence, and the inspect-first
+recovery boundary together.
 
 The executor must also respect the pull-to-push provenance boundary:
 

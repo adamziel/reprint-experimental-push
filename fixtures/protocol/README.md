@@ -27,18 +27,19 @@ The normal sequence is:
 19. `push-recovery-decision.json`
 20. `push-session-journal-proof.json`
 21. `push-auth-session-journal-proof.json`
-22. `push-auth-session-recovery-contract.json`
-23. `push-pull-mapping.json`
-24. `push-contract.json`
-25. `push-topology-matrix.json`
-26. `push-production-ladder-contract.json`
-27. `push-executor-topology-proof.json`
-28. `push-recovery-path.json`
-29. `push-recovery-inspect-contract.json`
-30. `push-snapshot-hashes-page-contract.json`
-31. `push-dry-run-apply-revalidation-contract.json`
-32. `push-remote-liveness-contract.json`
-33. `push-deployment-topology-contract.json`
+22. `push-auth-session-fencing-contract.json`
+23. `push-auth-session-recovery-contract.json`
+24. `push-pull-mapping.json`
+25. `push-contract.json`
+26. `push-topology-matrix.json`
+27. `push-production-ladder-contract.json`
+28. `push-executor-topology-proof.json`
+29. `push-recovery-path.json`
+30. `push-recovery-inspect-contract.json`
+31. `push-snapshot-hashes-page-contract.json`
+32. `push-dry-run-apply-revalidation-contract.json`
+33. `push-remote-liveness-contract.json`
+34. `push-deployment-topology-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -51,8 +52,12 @@ The production proof bundle is intentionally layered:
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
   listing clearly in the planning-only lane.
 - `push-auth-headers.json`, `push-auth-session-journal-proof.json`, and
-  `push-auth-session-recovery-contract.json` show the auth floor that is at
-  least as strict as current Reprint HMAC usage.
+  `push-auth-session-fencing-contract.json` show the auth floor that is at
+  least as strict as current Reprint HMAC usage and keep the session, lease
+  fence, and inspect-first recovery proof together.
+- `push-auth-session-recovery-contract.json` keeps the stronger auth floor and
+  the recovery fence together when a test wants to prove the claim is still
+  fenced at recovery time.
 - `push-topology.json`, `push-topology-matrix.json`, and
   `push-deployment-topology-contract.json` prove the one-remote, one-local,
   one-drift-witness topology in both Docker and Playground.
@@ -170,6 +175,9 @@ inspect fence can be asserted independently or together:
 - `push-auth-session-journal-proof.json` binds push auth, session minting,
   claim generation, lease expiry, and inspect-first recovery to the same
   journal row.
+- `push-auth-session-fencing-contract.json` keeps the same auth/session proof
+  in a compact form when a test wants one fixture that ties the journal row,
+  lease fence, and inspect-first recovery boundary together.
 - `push-auth-session-recovery-contract.json` keeps the stronger auth floor and
   the recovery fence together when a test wants to prove the claim is still
   fenced at recovery time.

@@ -432,6 +432,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const blockedInspect = readJson('fixtures/protocol/push-recovery-inspect-blocked-response.json');
   const recoveryDecision = readJson('fixtures/protocol/push-recovery-decision.json');
   const authSessionJournalProof = readJson('fixtures/protocol/push-auth-session-journal-proof.json');
+  const authSessionFencingContract = readJson('fixtures/protocol/push-auth-session-fencing-contract.json');
   const authSessionRecoveryContract = readJson('fixtures/protocol/push-auth-session-recovery-contract.json');
   const sessionJournalProof = readJson('fixtures/protocol/push-session-journal-proof.json');
   const recoveryPath = readJson('fixtures/protocol/push-recovery-path.json');
@@ -503,6 +504,28 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(authSessionRecoveryContract.recovery.blocked_when.includes('the journal cannot prove a safe finish or rollback'));
   assert.ok(authSessionRecoveryContract.recovery.blocked_when.includes('the claim lease has expired and the worker is fenced'));
   assert.ok(authSessionRecoveryContract.required_invariants.includes('inspect is read-only and must come before any mutating recovery mode'));
+  assert.equal(authSessionFencingContract.contract_id, 'push-auth-session-fencing-contract-one-remote-one-local');
+  assert.equal(authSessionFencingContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.deepEqual(authSessionFencingContract.auth.mutating_requires, [
+    'push session',
+    'canonical push signature',
+    'idempotency key',
+  ]);
+  assert.equal(authSessionFencingContract.session.push_session, 'psh_01j00000000000000000000000');
+  assert.equal(authSessionFencingContract.journal_row.claim_generation, 4);
+  assert.equal(authSessionFencingContract.journal_row.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(authSessionFencingContract.recovery.inspect_mode, 'inspect');
+  assert.equal(authSessionFencingContract.recovery.mutates, false);
+  assert.ok(
+    authSessionFencingContract.recovery.blocked_when.includes(
+      'the claim lease has expired and the worker is fenced',
+    ),
+  );
+  assert.ok(
+    authSessionFencingContract.required_invariants.includes(
+      'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
   assert.ok(headers.read_only_request_headers['X-Auth-Signature'].startsWith('hmac-sha256:'), 'read-only auth must stay HMAC-based');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Session'], 'mutating requests must carry a push session');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Idempotency-Key'], 'mutating requests must carry an idempotency key');
