@@ -56,22 +56,22 @@ The machine-readable bridge is split across the fixtures:
 
 - `push-preflight-contract.json` captures the first live binding between the
   importer-owned base package, the live remote identity, and the short-lived
-  push session
+  push session.
+- `push-remote-snapshot-listing-contract.json` and
+  `push-snapshot-hashes-page-contract.json` keep the remote hash listing
+  cursorable while still treating it as planning-only evidence.
 - `push-pull-mapping.json` and `push-pull-to-topology-contract.json` map the
   immutable pull provenance into the push stages without turning it into
-  write authority
+  write authority.
 - `push-dry-run-apply-revalidation-contract.json` keeps dry-run and apply
   separate while proving the live remote is revalidated before each batch and
-  again at the storage boundary
+  again at the storage boundary.
 - `push-journal-inspect-contract.json` and the recovery contracts keep
-  journal inspection read-only before any mutating repair
-- `push-topology-matrix.json` and `push-deployment-topology-contract.json`
-  define the Docker and Playground test topology with one remote source, one
-  imported local site, one drift witness, and the sandbox-provided `8080`
-  ingress rule
-- `push-remote-liveness-topology-contract.json` pairs that topology proof
-  with the dry-run/apply liveness split and the same one-remote,
-  one-local, one-drift harness
+  journal inspection read-only before any mutating repair.
+- `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
+  `push-remote-liveness-topology-contract.json` define the Docker and
+  Playground test topology with one remote source, one imported local site,
+  one drift witness, and the sandbox-provided `8080` ingress rule.
 
 ## Stage Semantics
 
@@ -185,15 +185,15 @@ persisted base package that importer saved:
 The pull-to-push bridge is intentionally one-way and preserves the same remote
 identity across the staged proof:
 
-- exporter discovers the merge base and coverage evidence
-- importer persists the base package as immutable provenance
+- exporter discovers the merge base and coverage evidence.
+- importer persists the base package as immutable provenance.
 - preflight binds that persisted package to one live remote identity, one
-  requested scope, and one short-lived push session
+  requested scope, and one short-lived push session.
 - snapshot hash listing reads the live remote comparison surface for planning
-  only and can page through large sites without becoming write authority
-- dry-run uploads the canonical plan and returns a receipt, not a lock
+  only and can page through large sites without becoming write authority.
+- dry-run uploads the canonical plan and returns a receipt, not a lock.
 - apply revalidates fresh live evidence before every batch and again at the
-  storage boundary, and it is a separate remote operation from dry-run
-- journal inspect stays read-only
+  storage boundary, and it is a separate remote operation from dry-run.
+- journal inspect stays read-only.
 - recovery starts with inspect and only mutates when the journal and fresh
-  live hashes still prove the branch safe
+  live hashes still prove the branch safe.

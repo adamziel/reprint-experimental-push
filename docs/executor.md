@@ -41,20 +41,20 @@ and one live remote identity that must be revalidated at apply time.
 
 The same pull-to-push bridge applies here:
 
-- exporter/importer provenance produces the immutable pull base package
+- exporter/importer provenance produces the immutable pull base package.
 - importer persistence is the only source of the base package that push may
-  bind to, so push never reads from a mutable snapshot cache
+  bind to, so push never reads from a mutable snapshot cache.
 - preflight binds that package to one live remote identity and one short-lived
-  push session
+  push session.
 - remote snapshot hash listing stays planning-only and may page through the
-  live remote comparison surface without upgrading into write authority
-- dry-run uploads a canonical plan receipt and never becomes a lock
+  live remote comparison surface without upgrading into write authority.
+- dry-run uploads a canonical plan receipt and never becomes a lock.
 - batched apply revalidates fresh live evidence before every batch and again
   at the storage boundary, and is a separate remote operation from dry-run
-  while also rechecking the auth floor before mutation
-- journal inspection stays read-only
+  while also rechecking the auth floor before mutation.
+- journal inspection stays read-only.
 - inspect-first recovery is the only safe starting point for mutating
-  recovery
+  recovery.
 
 The production test topology is the same in Docker and Playground:
 
@@ -68,12 +68,12 @@ The production test topology is the same in Docker and Playground:
 
 That gives the minimal remote/local pair the task asks for:
 
-- `remote-base` is the remote site under observation
-- `local-edited` is the imported local site carrying the candidate changes
-- `remote-changed` is the same remote site observed later after drift
+- `remote-base` is the remote site under observation.
+- `local-edited` is the imported local site carrying the candidate changes.
+- `remote-changed` is the same remote site observed later after drift.
 - the runner proves dry-run and apply are separate by taking a fresh snapshot
   listing, uploading a dry-run plan, and then applying only after live
-  revalidation succeeds
+  revalidation succeeds.
 
 `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
 `push-remote-liveness-topology-contract.json` are the fixtures that pin that
