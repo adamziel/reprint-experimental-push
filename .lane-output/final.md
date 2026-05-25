@@ -10,7 +10,7 @@ Evidence checked:
 - `git diff -- audits/objective-audit.md`
 
 What I found:
-- `origin/lane/independent-auditor` is now at `369fdd07`, and the audit now matches the refreshed remote head list.
+- `origin/lane/fast-paths` is now at `7f7f9b6c`, and the audit now matches the refreshed remote head list.
 - `origin/lane/same-plan-wordpress-graph-create` remains at `70925d88`, and the audit still records that its silent smoke blocker falls short of release-grade proof.
 - The overall release verdict is unchanged: the repository is still not releasable as a production WordPress push path.
 - No new production-backed mutation, recovery, or measured-speed evidence appeared in this pass.
