@@ -1353,6 +1353,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
+    proposal: 'treat a compressed remote index plus cached row receipts as enough proof to skip plugin-update row-batch recovery after a pause',
+    rejectedBecause: 'planning evidence and cached row receipts cannot prove the live row compares, batch ordering, or the atomic-group barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'backpressure', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-row-batch-skips-live-compare',
     proposal: 'treat a fresh remote index plus a compressed row batch as enough proof to skip the live row compare in a plugin update',
     rejectedBecause: 'planning evidence and compressed batches can reduce lookup and replay work, but they cannot replace the live compare-and-swap predicate on each row',
