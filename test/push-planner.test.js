@@ -9178,3 +9178,53 @@ test('durable recovery stays within the accepted post-failure states and complet
     completedPersisted.records.filter((record) => record.type === 'journal-replayed').length + 1,
   );
 });
+
+test('durable blocked partial recovery stays blocked on retry and preserves inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const partialRemote = baseSite();
+  const partialError = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 2,
+      durableJournal,
+    }),
+  );
+  const persistedAfterPartial = readRecoveryJournal(journalPath);
+
+  assert.ok(partialError instanceof PushPlanError);
+  assert.equal(partialError.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assertAcceptableRecoveryState(partialError.details.recovery);
+  assertRecoveryStateArtifacts(partialError.details.recovery, 'blocked-recovery');
+  assert.ok(partialError.details.recovery.artifacts.remote, 'partial recovery must keep remote artifacts');
+  assert.ok(partialError.details.recovery.artifacts.journal, 'partial recovery must keep journal artifacts');
+  assert.equal(partialRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+
+  const retryRemote = JSON.parse(JSON.stringify(partialError.details.recovery.artifacts.remote));
+  const retrySnapshot = JSON.stringify(retryRemote);
+  const retry = applyPlan(retryRemote, plan, {
+    journal: partialError.details.recovery.artifacts.journal,
+    durableJournal,
+  });
+  const persistedAfterRetry = readRecoveryJournal(journalPath);
+
+  assertAcceptableRecoveryState(retry.recoveryState);
+  assertRecoveryStateArtifacts(retry.recoveryState, 'fully-updated-remote');
+  assert.equal(JSON.stringify(retryRemote), retrySnapshot);
+  assert.equal(
+    retry.site.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+    'retry must not duplicate inserts or revive stale local data',
+  );
+  assert.equal(
+    persistedAfterRetry.records.filter((record) => record.type === 'journal-replayed').length,
+    persistedAfterPartial.records.filter((record) => record.type === 'journal-replayed').length + 1,
+  );
+});
