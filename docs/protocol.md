@@ -35,6 +35,18 @@ The production ladder is fixed:
    the action safe with fresh live evidence and the same auth floor as the
    write path.
 
+The stage contract is intentionally simple:
+
+| Stage | What it does | What it does not do |
+| --- | --- | --- |
+| `push_preflight` | Binds the imported pull base package to one live remote identity and one short-lived push session. | It does not authorize mutation. |
+| `push_snapshot_hashes` | Lists the live remote comparison surface for planning. | It does not become write authority or a lock. |
+| `push_plan_dry_run` | Uploads the canonical dry-run plan and returns an eligibility receipt. | It does not authorize apply. |
+| `push_batch_apply` | Applies the mutation plan in batches after fresh live revalidation. | It does not reuse the dry-run receipt as a lock. |
+| `push_journal` | Records durable evidence for inspect and recovery. | It does not authorize mutation. |
+| `push_recover inspect` | Reads the journal and fresh live hashes before any repair. | It does not mutate. |
+| `push_recover auto|finish|rollback` | Mutates only when inspect proves the branch safe. | It does not skip inspect or lower the auth floor. |
+
 The auth floor is never relaxed for push:
 
 - push authentication must be at least as strict as current Reprint HMAC
@@ -58,6 +70,25 @@ provenance:
 - `push_journal` is durable evidence only and never authorizes mutation
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating recovery branch
+
+Put differently, the exporter/importer handoff stays authoritative for the
+base package, and push only consumes that immutable package in the order
+above:
+
+1. exporter scans the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. `push_preflight` is the first live binding after importer persistence
+4. `push_snapshot_hashes` stays planning-only and never becomes write
+   authority
+5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock
+6. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary
+7. `push_journal` records durable evidence without authorizing mutation
+8. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair
+9. `push_recover auto|finish|rollback` may mutate only after inspect proves
+   the branch safe with the same auth floor as the write path
 
 The persisted pull base package is the concrete provenance object that push
 consumes:
@@ -153,6 +184,17 @@ The bridge is exactly:
 - `push_recover inspect` reads the journal and fresh live hashes before any mutating repair
 - `push_recover auto|finish|rollback` may mutate only after inspect proves the branch safe with the same auth floor as the write path
 
+That bridge is the production contract the tests should exercise:
+
+- one remote source site seeds the persisted pull base package
+- one imported local edited site carries the candidate changes
+- one later observation of the same remote identity proves live drift handling
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 The Docker and Playground topology contract is intentionally one remote, one
 local, one drift witness:
 
@@ -163,6 +205,16 @@ local, one drift witness:
 - both harnesses keep browser-visible inspection on the sandbox-provided
   `8080` ingress through a local-only proxy
 - remote tunnels are disallowed
+
+The same topology should be exercised in both harnesses:
+
+- Docker uses one private network around `remote-base`, `local-edited`,
+  `remote-changed`, and `runner`
+- Playground uses separate disposable blueprints with the same role names
+- both harnesses keep dry-run and apply separate
+- both harnesses require apply-time revalidation against fresh live hashes
+- both harnesses keep recovery inspect-first and read-only until the branch is
+  proven safe
 
 For review, the canonical one-remote, one-local test topology is:
 

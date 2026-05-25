@@ -31,6 +31,22 @@ The canonical push ladder is:
 | `push_recover inspect` | Classify finish, rollback, retry, or block before repair. | Inspect first; read-only. |
 | `push_recover auto|finish|rollback` | Perform a recovery branch only when inspect proves it safe. | Same auth floor as the write path. |
 
+The executor uses the same stage contract as the protocol:
+
+- `push_preflight` binds the imported pull base package to one live remote
+  identity and one short-lived push session
+- `push_snapshot_hashes` lists the live remote comparison surface for
+  planning only and never becomes write authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` records durable evidence only
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` may mutate only after inspect proves
+  the branch safe with the same auth floor as the write path
+
 The pull-to-push bridge is one-way:
 
 | Pull provenance | Push use | Boundary rule |
@@ -134,6 +150,17 @@ The same topology proof stays fixed in both Docker and Playground:
   through a local-only proxy.
 - remote tunnels are disallowed.
 
+That topology is the minimum production-shaped harness:
+
+- Docker uses one private network for `remote-base`, `local-edited`,
+  `remote-changed`, and `runner`
+- Playground uses separate disposable blueprints with the same role names and
+  route paths
+- both harnesses keep dry-run and apply separate remote operations
+- both harnesses require apply-time revalidation against fresh live hashes
+- both harnesses keep recovery inspect-first and read-only until the branch is
+  proven safe
+
 That handoff is intentionally one-way:
 
 - exporter/importer produce the immutable base package that push consumes
@@ -220,6 +247,24 @@ The same pull-to-push bridge applies here:
 - journal inspection stays read-only.
 - inspect-first recovery is the only safe starting point for mutating
   recovery.
+
+Read as a production chain, the executor consumes exporter/importer
+provenance in order:
+
+1. exporter scans the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. `push_preflight` is the first live binding after importer persistence
+4. `push_snapshot_hashes` stays planning-only and may page through large
+   sites, but it never becomes write authority
+5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock
+6. `push_batch_apply` revalidates before every batch and again at the storage
+   boundary
+7. `push_journal` stays read-only
+8. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair
+9. `push_recover auto|finish|rollback` may mutate only after inspect proves
+   the branch safe with the same auth floor as the write path
 
 The production harness is the same in Docker and Playground:
 
