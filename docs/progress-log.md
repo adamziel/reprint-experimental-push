@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 09:11:38
+## 2026-05-25 - Public Status Audit 09:15:42
 
-<a id="2026-05-25-public-status-audit-091138"></a>
+<a id="2026-05-25-public-status-audit-091542"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 09:11:38 CEST`) and kept the visible last-updated stamp current.
+  (`2026-05-25 09:15:42 CEST`) and kept the visible last-updated stamp current.
 - Tightened the first screen wording so the latest audit, top blocker, and open
   gates are easier to scan without changing the conservative status.
 - No new production proof was added; the real WordPress executor/auth,
@@ -19,80 +19,6 @@ linked implementation artifacts.
   [audits/objective-audit.md](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates),
   [newest audit](../progress.html#recent-public-audits).
-
-## 2026-05-25 - Public Status Audit 09:02:14
-
-<a id="2026-05-25-public-status-audit-090214"></a>
-
-- Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 09:02:14 CEST`) and kept the visible last-updated stamp current.
-- Kept the first screen release-gate oriented, with the newest audit linked
-  from both the header and recent-audits list.
-- No new production proof was added; the real WordPress executor/auth,
-  recovery journal, Docker/Playground integration, graph identity, and plugin
-  drivers remain pending until proven.
-- Evidence trail: [progress.html](../progress.html),
-  [audits/objective-audit.md](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates),
-  [newest audit](../progress.html#recent-public-audits).
-
-## 2026-05-25 - Public Status Audit 08:52:31
-
-<a id="2026-05-25-public-status-audit-085231"></a>
-
-- Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 08:52:31 CEST`) and kept the visible last-updated stamp current.
-- Tightened the top summary to name the real WordPress executor/auth blocker
-  explicitly while keeping the first screen conservative and concise.
-- No new production evidence was added; the real WordPress executor/auth,
-  recovery journal, Docker/Playground integration, and plugin drivers remain
-  pending until proven.
-- Evidence trail: [progress.html](../progress.html),
-  [audits/objective-audit.md](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates),
-  [newest audit](../progress.html#recent-public-audits).
-
-## 2026-05-25 - Public Status Audit 08:44:40
-
-<a id="2026-05-25-public-status-audit-084440"></a>
-
-- Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 08:44:40 CEST`) and kept the visible last-updated stamp current.
-- Kept the first screen concise and source-linked so the newest audit, flat
-  trend, 0/4 gates, top blocker, and evidence trail remain visible at a glance.
-- No new production proof was added; the real WordPress executor/auth,
-  recovery journal, Docker/Playground integration, graph identity, and plugin
-  drivers remain pending until proven.
-- Evidence trail: [progress.html](../progress.html),
-  [audits/objective-audit.md](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates),
-  [newest audit](../progress.html#recent-public-audits),
-  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
-  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md).
-
-Newest public summary stays concise by design; details belong in the linked
-evidence trail below.
-
-## 2026-05-25 - Public Status Audit 08:49:18
-
-<a id="2026-05-25-public-status-audit-084918"></a>
-
-- Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 08:49:18 CEST`) and kept the visible last-updated stamp current.
-- Kept the first screen concise and source-linked so the newest audit, flat
-  trend, 0/4 gates, top blocker, and evidence trail remain visible at a glance.
-- No new production proof was added; the real WordPress executor/auth,
-  recovery journal, Docker/Playground integration, graph identity, and plugin
-  drivers remain pending until proven.
-- Evidence trail: [progress.html](../progress.html),
-  [audits/objective-audit.md](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates),
-  [newest audit](../progress.html#recent-public-audits),
-  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
-  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md).
-
-Newest public summary stays concise by design; details belong in the linked
-evidence trail below.
 
 ## 2026-05-25 - Public Status Audit 08:40:26
 
