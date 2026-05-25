@@ -52,6 +52,8 @@ entrypoint that composes the strongest checks and fails closed.
 | Speed claim | Benchmark refusal tests block unsupported throughput claims. | A measured runtime or memory result from the production-shaped push path. | Yes: speed is unproven. |
 | Required release command | Optional npm scripts and opt-in smokes exist. | One mandatory `verify:release`-style entrypoint that fails closed. | Yes: no mandatory gate or CI workflow. |
 
+Executable proof is concentrated in `npm test`, `test/recovery-journal.test.js`, and the Playground smokes. Those tests do prove useful local properties: monotonic journal sequences, no raw-value leakage in journal records, crash/restart classification, idempotency replay refusal, storage-boundary CAS failures, and guarded file/database mutations. They do **not** prove that the real live-source boundary preserves all WordPress data during production auth/session, journal, lease/fencing, graph-identity, and plugin-driver execution.
+
 A fresh repo scan on 2026-05-25 also found no checked-in `.github` workflow
 directory and no enforced CI entrypoint that could serve as a required release
 gate. That absence matters because a release claim needs a single path that
@@ -118,6 +120,11 @@ The test audit is therefore uncomfortable but clear:
   They prove that unsupported throughput claims are blocked and that the
   proposed fast paths retain proof obligations, but they do not measure a real
   push path or establish a production runtime/memory threshold.
+- `test/recovery-journal.test.js` and `scripts/recovery/file-journal-restart-smoke.mjs`
+  prove local file-journal restart behavior, but the former is pure temp-file
+  coverage and the latter is still a local Playground host-mount harness. That
+  is stronger than a model-only proof, but still short of production storage
+  durability or a real remote/local release boundary.
 - None of the current tests prove no data loss, reliability, or speed for the
   live source boundary. They are evidence that those claims remain blocked,
   not evidence that the claims are ready to ship.
