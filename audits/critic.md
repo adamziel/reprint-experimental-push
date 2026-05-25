@@ -32,12 +32,14 @@ specific missing proofs:
 - a readable stale manual-review artifact must remain audit-visible but be
   unusable as a retry token after drift;
 - create-time identity remapping must either be proven safe or fail closed
-  before mutation, so a create cannot silently alias a different target;
+  before mutation, so a create cannot silently alias a different target or
+  reuse the wrong live identity after a rename, alias, or renumbering event;
 - plugin-owned state outside the allowlist must be discovered or blocked at
-  apply time, not inherited from stale local metadata or a fixture-only map;
+  apply time, not inherited from stale local metadata, a fixture-only map, or
+  a single representative option/custom-table/file sample;
 - partial file, DB, or plugin side effects must be durably classified so a
   retry cannot widen the old approval or turn recovery evidence into current
-  authority.
+  authority; and
 - a fixture-backed or copied-lab route cannot be treated as production proof
   just because it returns current-looking hashes, names the right endpoint, or
   matches `finalMatchesLocal`.
@@ -52,13 +54,14 @@ The failure scenarios that still need explicit proof are:
   expected; the missing proof is either a safe remap with preserved identity
   audit or a hard block before mutation.
 - A plugin owns data outside the allowlist, such as options, custom tables,
-  generated files, activation hooks, cron rows, cache entries, or runtime
-  registries; the missing proof is explicit discovery or hard failure at apply
-  time, not inference from a single representative record.
+  generated files, activation hooks, cron rows, cache entries, runtime
+  registries, or serialized blobs hidden behind a single row; the missing
+  proof is explicit discovery or hard failure at apply time, not inference
+  from a single representative record.
 - A partial apply writes one store but not another, or writes plugin-owned
   state that the core row audit does not mention; the missing proof is durable
-  old/new/blocked classification for each touched store and a retry rebuilt
-  from fresh live evidence.
+  old/new/blocked classification for each touched store, plus a retry rebuilt
+  from fresh live evidence instead of reusing the old authority token.
 - A manual-review artifact stays readable after drift; the missing proof is
   that it becomes audit-only and cannot authorize retry, widen to a different
   row or file, or target a relationship-bearing or plugin-owned surface.
@@ -67,13 +70,14 @@ Source-note comparison boundary:
 
 - Reprint at `27c5f25` proves a staged transport rhythm and resumable
   delivery shape; it does not prove that this repo has a live remote write
-  boundary that rejects stale authority before mutation.
+  boundary that rejects stale authority before mutation or preserves remote
+  drift evidence for retry.
 - ZS-Sync at `d9334a0` proves bounded discovery and scoped scanning; it does
   not prove create-time identity reservation, remote-preserving retry, or
-  plugin-owned write safety.
+  plugin-owned write safety at apply time.
 - ForkPress at `55f9879` proves review and conflict vocabulary; it does not
   prove that a stale review artifact cannot be reused as write authority after
-  the remote drifts.
+  the remote drifts or that the remote is preserved for audit after reject.
 
 Any comparison that omits the exact upstream revision or worktree state being
 reverified remains historical context only, even if it names the same feature
@@ -124,9 +128,11 @@ Changes that must happen before any production-grade push claim:
   named for the live remote.
 - Prove plugin-owned state outside the allowlist is either fully enumerated or
   hard-blocked, including ownership revalidation at apply time and a failure
-  path for late discovery.
+  path for late discovery of options, custom tables, generated files, hooks,
+  cron rows, caches, registries, or serialized blobs.
 - Prove partial file, DB, or plugin side effects are durably classified and do
-  not let a retry widen the old approval or inherit stale scope.
+  not let a retry widen the old approval, inherit stale scope, or treat a
+  partially committed store as a fully successful push.
 - Reverify any Reprint, ZS-Sync, or ForkPress comparison against the exact
   upstream commit or worktree state being cited and the exact live mutation
   boundary being claimed, or label it historical only.
@@ -143,10 +149,13 @@ it stays non-production regardless of route shape, package mount, or
 - the exact preserved remote snapshot that remained auditable after rejection;
 - the exact retry scope rebuilt from fresh live evidence;
 - the exact create-time identity decision, including reservation, remap, or
-  hard block;
+  hard block, and whether the live remote could rename, alias, or renumber the
+  target;
 - the exact plugin-owned surfaces in scope, or an explicit hard block for
-  unknown surfaces;
-- the exact partial side-effect classification for file, DB, or plugin writes;
+  unknown surfaces, including late-discovered options, custom tables, generated
+  files, hooks, cron rows, caches, registries, and serialized blobs;
+- the exact partial side-effect classification for file, DB, or plugin writes,
+  with old/new/blocked state named per touched store;
 - the exact reviewer artifact that became audit-only after drift; and
 - whether any Reprint, ZS-Sync, or ForkPress comparison was reverified
   against the cited upstream revision or worktree state.
@@ -163,7 +172,7 @@ Release-grade checklist:
   mutation and the preserved remote remained auditable for retry review.
 - The stale approval stayed auditable but could not authorize a retry, a
   different row, a different file, a relationship-bearing record, or a
-  plugin-owned surface.
+  plugin-owned surface, including a late-discovered one.
 - A readable manual-review artifact was demoted to audit-only and could not be
   reused as current write authority after drift.
 - Manual resolution stayed audit-visible but could not be reused as current
@@ -176,14 +185,16 @@ Release-grade checklist:
   assuming local IDs remained stable.
 - Every plugin-owned surface in scope was explicitly enumerated or hard-
   blocked, including options, custom tables, generated files, activation
-  hooks, cron, caches, and runtime registries.
+  hooks, cron, caches, runtime registries, and serialized blobs.
 - Any plugin-owned surface discovered late at apply time caused a hard failure
-  rather than being inherited from stale metadata or a fixture-only map.
+  rather than being inherited from stale metadata, a fixture-only map, or a
+  previously approved retry scope.
 - Partial file, DB, or plugin side effects were durably classified, and the
   retry rebuilt scope from fresh live evidence instead of inheriting the old
   approval.
 - If one store committed and another did not, the proof labeled the result
-  partial rather than claiming recovery success.
+  partial rather than claiming recovery success, and it preserved the old/new/
+  blocked distinction for each store.
 - Any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
   revision or worktree state that was reverified; otherwise it is historical
   context only.
