@@ -3,21 +3,19 @@
 Current baseline for this critique: the supervised reliable-executor lane at
 remote head `5822745b` on `origin/lane/reliable-executor`, with the retained-
 source evidence anchored at `63a3502f` and the later explicit verdict
-`PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. The latest remote evidence now
-includes the retained-source `npm run verify:release` lineage plus a durable-
-journal smoke, with `authSessionType`, minted session shape, `applyCommitted`,
-and `durableJournal.rows: 17`, and a broader command-topology proof. That is
-enough to retire any stale claim that there is no retained-source
-`verify:release` evidence at all. It is still material lab progress only. It
-does not prove a live production boundary because the retained-source run does
-not show preserved-remote retention across rejection, live WordPress
-auth/session lifecycle, apply-time revalidation against a fresh real-site
-source, durable journal storage and lease/fencing semantics outside the
-Playground harness, graph identity under remap, or plugin-driver coverage for
-late-discovered plugin-owned surfaces. Production-grade wording is still false
-if it relies on lab-session shape, retained-source journal rows, route
-compatibility, or command-topology proof as a stand-in for live WordPress
-auth/session durability.
+`PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. The remote lane now proves a
+retained-source `npm run verify:release` lineage, a broader command-topology
+proof, and the lab-session details `authSessionType`, minted session shape,
+`applyCommitted`, and `durableJournal.rows: 17`. That retires any stale claim
+that there is no retained-source `verify:release` evidence. It does not prove
+a live production boundary because the branch still lacks preserved-remote
+retention after rejection, live WordPress auth/session lifecycle, apply-time
+revalidation against a fresh real-site source, durable journal storage with
+lease/fencing outside the Playground harness, graph identity under remap, and
+plugin-driver coverage for late-discovered plugin-owned surfaces. Production
+wording is still false if it treats lab-session shape, retained-source journal
+rows, route compatibility, or command-topology proof as a substitute for a
+rerunnable live mutation boundary.
 
 Source-note comparison, kept conservative and non-authoritative unless this branch reran the same live boundary:
 
@@ -56,13 +54,13 @@ must include all of the following on one rerunnable live boundary:
 - auditable retry scope rebuilt from fresh live hashes rather than manual
   resolution text.
 
-The critique target is therefore narrow: this worktree still lacks a rerunnable
-live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
-that preserves the rejected remote, revalidates at apply time, and proves
-production WordPress auth/session lifecycle, durable journal storage and
-lease/fencing semantics outside the lab harness, graph identity,
-plugin-driver coverage, and preserved-remote drift handling on the same
-mutation. The supervised reliable-executor lane can provide material
+The critique target is therefore narrow: this worktree still lacks one
+rerunnable live boundary on a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
+apply time, and proves production WordPress auth/session lifecycle, durable
+journal storage and lease/fencing semantics outside the lab harness, graph
+identity, plugin-driver coverage, and preserved-remote drift handling on the
+same mutation. The supervised reliable-executor lane can provide material
 retained-source evidence for those shapes, but that evidence is not enough to
 claim production-grade push support here unless the same live boundary is
 runnable on this branch and the rejected remote remains auditable and
