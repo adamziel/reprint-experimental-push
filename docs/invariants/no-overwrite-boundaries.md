@@ -47,6 +47,9 @@ This note is the short form of the planner policy in
 - A file delete that would hide a live remote descendant must stop even when
   matching independent delete, edit, and file type swap resources are already
   safe in the same plan.
+- The same file-delete rule still holds when the unrelated safe resources are
+  an independent edit and a matching create or type swap, and remote-only
+  plugin drift must remain preserved.
 - The same file-delete rule still holds when the remote side also changed
   unrelated plugin metadata and plugin files: the matching edit and file type
   swap stay `already-in-sync`, the delete keeps its own live remote

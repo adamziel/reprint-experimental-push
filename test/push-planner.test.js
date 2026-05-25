@@ -13806,6 +13806,50 @@ test('blocks a file type swap that would hide a live remote descendant while pre
   assert.equal(plan.preconditions.length, 0);
 });
 
+test('blocks a file delete that would hide a live remote descendant while preserving matching independent edit, type swap, and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
+  base.db.wp_posts['ID:6'] = { ID: 6, post_title: 'Base matched title 6', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery'];
+  local.db.wp_posts['ID:6'] = { ID: 6, post_title: 'Shared matched title 6', post_status: 'publish' };
+  local.files['wp-content/uploads/cover'] = 'shared cover bytes';
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/uploads/gallery/keep.txt'] = 'remote descendant';
+  remote.db.wp_posts['ID:6'] = { ID: 6, post_title: 'Shared matched title 6', post_status: 'publish' };
+  remote.files['wp-content/uploads/cover'] = 'shared cover bytes';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteConflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:wp-content/uploads/gallery');
+  const matchingEditDecision = decisionFor(plan, 'row:["wp_posts","ID:6"]');
+  const matchingTypeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(deleteConflict.class, 'file-topology-conflict');
+  assert.equal(deleteConflict.relatedChange.localChange, 'delete');
+  assert.equal(deleteConflict.relatedChange.remoteChange, 'update');
+  assert.equal(matchingEditDecision.decision, 'already-in-sync');
+  assert.equal(matchingEditDecision.change.localChange, 'update');
+  assert.equal(matchingEditDecision.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwapDecision.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwapDecision.change.localChange, 'create');
+  assert.equal(matchingTypeSwapDecision.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(plan.mutations.length, 0);
+  assert.equal(plan.preconditions.length, 0);
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent edit, and matching independent type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
