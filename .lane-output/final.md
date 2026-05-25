@@ -40,5 +40,6 @@ Next supervisor nudge:
 - Make the next gate fail intentionally for one unsupported boundary, starting with `menu/navigation`, `serialized block references`, `comments/users`, or `plugin-owned custom tables`; keep the release verdict closed until that failing proof exists.
 
 Current pass note:
-- No new evidence changed since the last audit snapshot.
-- Keep the next pass focused on a single failing unsupported boundary, not another status refresh.
+- The audit surface changed because `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph surfaces including revision posts, menu/navigation posts, and serialized blocks.
+- Exact next executable proof: run or locate a checked-in release gate that fails closed on one unsupported boundary, starting with `menu/navigation`, `serialized block references`, `comments/users`, `plugin-owned custom tables`, or `revision posts`.
+- If that gate still does not exist, the next lane-owned action is to write down the missing command/dependency/blocker in the audit rather than refreshing status again.
