@@ -134,6 +134,32 @@
       "runner uses the same route names and keeps browser-visible inspection on local-only 8080 ingress"
     ]
   },
+  "lab_topology": {
+    "remote_base": {
+      "role": "remote source site",
+      "identity": "remote-example",
+      "produces": "persisted pull base package"
+    },
+    "local_edited": {
+      "role": "imported local site",
+      "identity": "local-dev-site",
+      "has_user_edits": true
+    },
+    "remote_changed": {
+      "role": "same remote source site later in time",
+      "identity": "remote-example",
+      "drift_witness": true
+    },
+    "live_drift": {
+      "between": ["remote_base", "remote_changed"],
+      "proof": [
+        "remote-base and remote-changed are the same remote identity observed at different times",
+        "dry-run and apply remain separate remote calls",
+        "apply revalidates fresh live evidence before every batch and again at the storage boundary",
+        "recovery inspect happens before any mutating repair"
+      ]
+    }
+  },
   "auth_session_fencing": {
     "preflight": "mints one short-lived session bound to one remote identity and one persisted pull base",
     "recovery_inspect": "must happen before any mutating repair",

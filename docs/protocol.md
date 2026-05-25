@@ -1934,3 +1934,22 @@ These are independent of the current export `protocol_version` because push can
 change mutating semantics without breaking pull clients. Pull preflight may
 advertise push support, but mutating push endpoints must still require
 `push_preflight` and push-scoped authentication.
+
+## Test Topology
+
+The production proof for push should be exercised on one remote source site and
+one local edited site:
+
+- `remote_base`: the source site that produced the persisted pull base package.
+- `local_edited`: the imported local site with user changes.
+- `remote_changed`: the same remote site observed later after independent drift.
+
+The executor must keep the remote base and remote changed identities equal and
+change only the live remote state between the preflight, snapshot-hash,
+dry-run, apply, journal, and recovery phases. That topology proves the dry-run
+receipt is not a lock, apply still revalidates fresh live state, and recovery
+still begins with inspect.
+
+For the sandboxed proof, the only exposed HTTP ingress is the sandbox-provided
+`8080` port, and any browser-visible inspection must stay on a local-only
+proxy. Remote tunnels are disallowed.
