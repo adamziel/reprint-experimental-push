@@ -144,7 +144,7 @@ The point of this table is separation, not synthesis: executable proof, lab / fi
 Release-command check:
 
 - there is still no checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json)
-- there is still no checked-in workflow entrypoint in this checkout to force a live-source verdict
+- this checkout also has no checked-in `.github/workflows/` entrypoint that could enforce a live-source verdict
 - that absence is the top release blocker because it leaves fixture-only and lab-backed work able to stay green without proving the live boundary
 - any new fixture-only or lab-only work remains insufficient for shipping until a checked-in release command exists and fails closed on missing live-source proof
 
