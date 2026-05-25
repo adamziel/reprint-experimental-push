@@ -21,6 +21,21 @@ Must change before any production-grade push claim:
 - classify partial file, DB, and plugin side effects as old, new, or blocked
   before retry so a mixed write cannot be relabeled as success.
 
+Required proof pack before the claim can move from compatibility wording to
+production wording:
+
+- the exact live write boundary and drifted remote that failed closed here;
+- the preserved remote evidence that stayed auditable after reject;
+- the rejection point that made the stale approval or review artifact unusable
+  as retry authority;
+- the fresh retry artifact on this branch, rebuilt from live hashes rather
+  than copied from the earlier approval;
+- the classification for every touched row, file, relationship-bearing record,
+  and plugin-owned surface as old, new, or blocked; and
+- the exact upstream revision or worktree state for every Reprint, ZS-Sync, or
+  ForkPress comparison, plus what that note proves here and what it does not
+  prove.
+
 Additional proof gaps that still need to be closed:
 
 - prove create-time identity remapping is either blocked before write or
