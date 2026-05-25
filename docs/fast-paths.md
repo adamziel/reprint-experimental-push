@@ -1240,3 +1240,22 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - Cached row receipts cannot skip plugin-update finalize, because the live row
   compares, dependency checks, and atomic-group finalize still need durable
   proof.
+
+The common failure mode across these rejections is the same: the shortcut
+removes either a live precondition check, a durable receipt, or the atomic
+group barrier that keeps coupled work visible together.
+
+- File hashing and chunk upload are rejected when they try to use cached
+  digests, chunk ledgers, or remote-index cursors as a substitute for the live
+  publish compare.
+- Database row batching is rejected when it tries to collapse row receipts,
+  row compares, or dependency checks into a checksum, compressed summary, or
+  cross-group batch.
+- Remote indexes are rejected whenever they try to authorize apply writes,
+  skip live revalidation, or act as a lock instead of planning evidence.
+- Compression is rejected whenever it tries to change the canonical resource
+  value or replace raw receipts with summaries.
+- Parallelism limits are rejected whenever they are widened past the atomic
+  group boundary or used to merge finalization for unrelated groups.
+- Backpressure is rejected whenever it drops receipts, treats an empty queue as
+  completion, or lets a drained buffer bypass the guarded publish barrier.

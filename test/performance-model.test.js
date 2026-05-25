@@ -200,6 +200,7 @@ test('safety contract covers required speedup areas and terminal states', () => 
 test('fast-path proofs and rejections carry the expected gate metadata', () => {
   const model = buildBenchmarkModel();
   const rejectedById = new Map(model.rejectedFastPaths.map((fastPath) => [fastPath.id, fastPath]));
+  const rejectedAreas = new Set(model.rejectedFastPaths.map((fastPath) => fastPath.violates).flat());
 
   assert.ok(model.safeFastPaths.length > 0);
   assert.ok(model.rejectedFastPaths.length > 0);
@@ -260,6 +261,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-resume-after-pause')?.rejectedGate,
     'recovery',
   );
+  for (const area of [
+    'file-hashing',
+    'chunk-receipts',
+    'row-preconditions',
+    'remote-index-planning-only',
+    'compression',
+    'parallelism-limits',
+    'backpressure',
+    'atomic-groups',
+  ]) {
+    assert.ok(rejectedAreas.has(area), `missing rejection coverage for ${area}`);
+  }
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-receipt-flush-skips-large-upload-publish-after-pause')?.rejectedGate,
     'recovery',
