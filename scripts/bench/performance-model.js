@@ -884,6 +884,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'remote-index-and-cached-file-hash-skips-plugin-update',
+    proposal: 'treat a fresh remote index plus a cached file hash as enough proof to skip a plugin update',
+    rejectedBecause: 'planning evidence and cached hashes can skip duplicate lookup and rehash work, but they cannot prove dependency checks, staged rows, or the atomic-group commit survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-package-cache-completes-plugin-update',
     proposal: 'treat a fresh remote index plus a compressed plugin package cache as proof that a plugin update already finished',
     rejectedBecause: 'planning evidence and package compression can reduce transfer work, but they cannot prove dependency checks, metadata writes, row receipts, or the atomic-group commit survived failure',
