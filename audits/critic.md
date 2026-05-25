@@ -1991,3 +1991,20 @@ Production-readiness release gate for wording:
 - Treat a stale manual-review artifact as audit-only unless the claim shows
   the rejection-before-write path, the preserved remote, and the fresh retry
   scope; otherwise the artifact is current authority by mistake.
+
+Source-note comparison scoreboard:
+
+- Reprint: useful for staged delivery rhythm and resumable work, but not
+  proof of a live source overwrite boundary, stale remote rejection, or
+  preserved-remote retry on this repo's write path.
+- ZS-Sync: useful for bounded scanning and change detection, but not proof of
+  create-time identity remapping, plugin-owned allowlist coverage, or
+  partial-side-effect classification at apply time.
+- ForkPress: useful for review vocabulary around merge and recovery, but not
+  proof that this repo's live mutation executor preserves the remote, blocks
+  stale authority, or keeps manual-review artifacts audit-only after drift.
+
+If any of those notes are cited in production-readiness language, the claim
+must also name the exact upstream revision or worktree state that was
+reverified at the same live mutation boundary. Otherwise the comparison is
+historical context only.
