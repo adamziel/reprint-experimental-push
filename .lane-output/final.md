@@ -6,12 +6,12 @@ Evidence checked:
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git status --short --branch`
 - `git diff -- audits/objective-audit.md .lane-output/final.md`
+- `git rev-parse --short HEAD`
 
 What changed:
-- `origin/lane/independent-auditor` is now recorded at `1ca05241`.
-- `origin/lane/critic` is now recorded at `a0abc3db`.
+- `origin/lane/critic` is now recorded at `a1c9714b`.
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` is now recorded at `53d4083d`.
 - `origin/lane/progress-publisher` is still recorded at `7695e1f9`.
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` is still recorded at `b14aa74d`.
 - `origin/lane/same-plan-wordpress-graph-create` is still recorded at `24c58564`.
 - The audit verdict remains unchanged: the repository is still not releasable as a production WordPress push path.
 - The current remote state still does not prove the missing production-backed auth/session lifecycle, durable journal ownership/lease/fencing/replay path, or production-safe live source mutation boundary.
@@ -21,7 +21,7 @@ Changed files:
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Push result:
-- Not pushed yet
+- Pending after commit
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`

@@ -11,11 +11,11 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `b54f1b34`
 - `origin/lane/independent-auditor` -> `1ca05241`
-- `origin/lane/critic` -> `a0abc3db`
+- `origin/lane/critic` -> `a1c9714b`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b14aa74d`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `53d4083d`
 - `origin/main` -> `4b7b47a6`
 
 The current remote state still adds no production-backed auth/session
