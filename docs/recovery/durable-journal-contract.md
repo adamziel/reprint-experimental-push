@@ -1,34 +1,33 @@
-# Durable Journal Contract
+# Durable Journal Recovery Contract
 
-This lane treats recovery evidence in two different categories:
+This lane treats recovery as a narrow, inspectable envelope around the atomic
+apply path.
 
-1. Lab evidence
-2. Durable production evidence
+Accepted post-failure states:
 
-Lab evidence is useful for model tests and local inspection. It can live entirely in JSON artifacts, in-memory fixtures, or test-only journals. That evidence proves the state machine, but it does not prove crash safety.
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery`
 
-Production recovery needs durable artifacts that survive interruption:
+Rules:
 
-- Journal rows or records written to persistent storage
-- `fsync` or equivalent flush semantics for file-backed journals
-- Plugin or worker activation state recorded durably
-- Lease or fencing checks that reject stale workers before mutation
-- Recovery inspection that can classify a remote as `old-remote`, `fully-updated-remote`, or `blocked-recovery`
+- A failure before any remote mutation must leave the remote unchanged and
+  record an `old-remote` recovery state with journal artifacts.
+- A failure after staging or after dependency validation must still leave the
+  remote unchanged and remain in the `old-remote` recovery envelope.
+- A completed replay must be inert on retry: it may observe the plan as already
+  applied, but it must not duplicate inserts or resurrect stale local data.
+- A partial commit without inspectable recovery artifacts is not acceptable.
+  It must block recovery and carry both journal and remote artifacts.
 
-Acceptable post-failure states are narrow by design:
+Boundary expectations:
 
-- `old-remote` means nothing observable escaped the pre-mutation boundary
-- `fully-updated-remote` means all planned mutations are committed and replay is inert
-- `blocked-recovery` means the remote may be partially changed, but durable artifacts exist so the operator can inspect and recover safely
+- `journal-opened` captures the initial recovery claim.
+- `apply-staged` captures the staged snapshot boundary.
+- `dependencies-validated` captures the dependency gate boundary.
+- `journal-completed` captures the durable completion boundary.
+- `recovery-state` records the inspectable post-failure envelope when durable
+  writes succeed.
 
-The inspectable recovery contract must be able to classify a plan into exactly one of those states after restart. If the journal cannot support that classification, the result is blocked recovery, not a best-effort guess.
-
-Anything that leaves a partially mutated remote without recovery artifacts is a release blocker.
-
-Retry safety rules:
-
-- Retries must not duplicate inserts
-- Retries must not resurrect stale local data
-- Partial writes without durable artifacts must not be treated as safe replay
-
-The code and tests in this lane should continue to prove the above contract at every new recovery boundary.
+This document is intentionally terse. The executable proof remains in
+`test/push-planner.test.js`.
