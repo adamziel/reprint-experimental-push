@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 02:52:23 CEST.
+- Last update: 2026-05-25 02:52:57 CEST.
 - Status: Lab/model evidence still holds; production proof is still missing.
-- Trend: the visible page, this log, and the newest supervisor note stay aligned; the newest pass kept the scan copy short and tightened the proof-gap wording without changing readiness.
+- Trend: the visible page, this log, and the newest supervisor note stay aligned; the newest pass tightened the page wording to avoid percentage-style progress language without changing readiness.
 - Supervision: the same-plan graph worker remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to this log and the feedback note for the evidence trail.
