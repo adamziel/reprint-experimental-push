@@ -29,6 +29,9 @@ Release gate for any production wording:
 - Treat route shape, package shape, fixture replay, and `finalMatchesLocal`
   as compatibility evidence only. None of them prove production durability,
   production auth, or production write safety.
+- Treat a source note, upstream commit id, or matching route family as design
+  provenance only. Unless this branch rechecked the same live write boundary
+  against the same stale-remote or retry case, it is not current proof.
 - Even when an upstream note names the exact commit and the same feature
   vocabulary, that only proves provenance. If this branch did not rerun the
   same live drift, retry, or create-time identity case at the same mutation
@@ -59,6 +62,10 @@ Must-fix blockers before any production wording:
   current authority; if the branch did not recheck the same live mutation
   boundary here, the citation stays audit-only even when the route family or
   package shape looks identical.
+- A route-shaped smoke or packaged-plugin mount is not a substitute for a
+  branch-local live drift recheck. If the preserved remote, stale rejection
+  point, and fresh retry scope were not observed here, the smoke only proves
+  compatibility with the lab path.
 - Route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` remain compatibility evidence only; they do not prove
   production durability, production auth, or production write safety.
@@ -341,6 +348,9 @@ Release-gate addendum for the next production claim:
   revision, or route shape remains historical context until the audit shows
   the live mutation executor, preserved remote, stale rejection point, and
   fresh retry scope on this branch.
+- Any comparison that points to a readable stale manual-review artifact
+  without showing the branch-local reject point and fresh retry artifact
+  remains historical context. Readability is not retry authority.
 - Any manual-resolution claim must show the preserved remote, the rejection
   point before mutation, and that the old artifact stayed audit-only: it
   cannot authorize a retry against a different row, file, relationship-
