@@ -519,7 +519,7 @@
         <a class="log-link" href="docs/supervisor-feedback.md">Open supervisor feedback</a>
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
         <a class="log-link" href="audits/objective-audit.md">Open objective audit</a>
-        <p>Scan view only. Detailed evidence and lane nudges stay in linked docs; this lane-local copy becomes live on GitHub Pages after merge to <code>main</code>.</p>
+        <p>Scan view only. Details stay in linked docs; this lane-local copy becomes live on GitHub Pages after merge to <code>main</code>.</p>
       </div>
     </header>
 
@@ -538,7 +538,7 @@
       </div>
       <div class="metric">
         <strong>Scope</strong>
-        <span>8 fast/low lanes plus the dedicated live progress watcher remain active.</span>
+        <span>8 fast/low lanes plus the live watcher remain active.</span>
       </div>
     </section>
 
@@ -549,9 +549,9 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>Reliable-executor kept the release harness fail-closed and no-data-loss-recovery kept adding durable replay evidence, while the 8 fast/low lanes plus the live watcher stay active.</span></li>
+          <li><strong>Going well</strong><span>Reliable-executor kept the release harness fail-closed while no-data-loss-recovery kept adding durable replay evidence, and the 8 fast/low lanes plus the live watcher stay active.</span></li>
           <li><strong>Not going well</strong><span>Production auth/session lifecycle and durable journal storage with lease/fencing are still unproven, so the shipping gate remains closed.</span></li>
-          <li><strong>Progress delta</strong><span>Lab and recovery evidence improved again, but it still does not prove a shippable real-endpoint boundary.</span></li>
+          <li><strong>Progress delta</strong><span>Lab and recovery evidence improved again, but the real-endpoint boundary is still unproven.</span></li>
           <li><strong>Next nudge</strong><span>Reliable-executor owns the next production-boundary proof; no-data-loss-recovery should keep tightening durable recovery evidence; progress-publisher should stay quiet unless material evidence changes.</span></li>
         </ul>
         <details class="lane-nudges">
