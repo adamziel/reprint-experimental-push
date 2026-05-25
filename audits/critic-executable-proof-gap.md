@@ -17,8 +17,9 @@ Primary finding:
   executor/auth/preserved-remote boundary, any production-grade push wording
   is false reliability and must fail closed. The next acceptable proof must
   move from local retained-source evidence to production WordPress
-  auth/session lifecycle and durable journal semantics, with graph identity
-  and plugin-driver coverage made explicit on that same live boundary;
+  auth/session lifecycle, durable journal, and lease/fencing semantics, with
+  graph identity and plugin-driver coverage made explicit on that same live
+  boundary;
 
 Supporting failures:
 
@@ -28,7 +29,8 @@ Supporting failures:
   scope rebuilt from live hashes;
 - a completed `npm run verify:release` run is still not production proof
   unless the same rerun also shows the live WordPress auth/session lifecycle,
-  durable journal semantics, graph identity, plugin-driver coverage, and the
+  durable journal semantics, lease/fencing semantics, graph identity,
+  plugin-driver coverage, and the
   preserved remote on a real local, Playground, or Docker
   `REPRINT_PUSH_SOURCE_URL`;
 - stale manual-review artifacts and older comparison notes stay audit evidence
