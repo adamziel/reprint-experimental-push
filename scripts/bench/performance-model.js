@@ -1984,6 +1984,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-publish',
+    proposal: 'use a compressed remote index plus a cached file hash to skip the guarded chunk-publish step for a large upload',
+    rejectedBecause: 'planning evidence and cached file hashes can trim duplicate hashing, but they cannot prove the live chunk compare, the surviving chunk acknowledgements, or the guarded publish barrier after a pause, retry, or crash',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'compressed-receipt-summary-skips-large-upload-publish',
     proposal: 'treat a compressed receipt summary as enough proof to skip the guarded publish step for a large upload',
     rejectedBecause: 'a compressed summary can reduce recovery storage, but it cannot prove the live compare or guarded publish barrier survived failure',
