@@ -12,6 +12,10 @@ Lab evidence is valid when it shows:
 - `fully-updated-remote` when a completed plan is replayed inertly
 - `blocked-recovery` when a partial or ambiguous remote needs inspection
 
+The lab model is intentionally narrow. It only needs to prove that each failure
+boundary lands in one of those three states and that retries do not duplicate
+inserts or revive stale local data.
+
 Lab fixtures are allowed to be synthetic because the point is to prove the
 state machine, not the persistence backend.
 
@@ -34,6 +38,15 @@ Concrete production surfaces include:
 
 If the remote mutated and the journal cannot explain it after restart, that is a
 release blocker.
+
+The acceptable post-failure states are still the same in production:
+
+- `old-remote` when nothing was durably committed yet
+- `fully-updated-remote` when replay proves the remote already matches the plan
+- `blocked-recovery` when the remote has partial or ambiguous evidence and the
+  recovery artifacts are preserved for inspection
+
+Anything else is an unsafe gap between the mutation path and the recovery path.
 
 ## Retry safety
 
