@@ -25,9 +25,10 @@ The supervised reliable-executor lane now has material retained-source evidence:
 
 ## Source-note comparison
 
-- Reprint contributes staged transport and resumable-delivery lineage, but not live mutation safety, preserved-remote retry, or auth/session proof on this branch.
-- ZS-Sync contributes discovery and batching lineage, but not source-mutation safety, identity remap safety, or plugin-owned surface coverage on this branch.
-- ForkPress contributes audit and crash-consistency vocabulary, but the source notes still do not prove a live WordPress boundary with preserved-remote auditability, lease/fencing, or plugin-driver coverage on this branch.
+- Reprint source notes contribute staged transport and resumable-delivery lineage, but not live mutation safety, preserved-remote retry, or WordPress auth/session lifecycle proof on this branch.
+- ZS-Sync source notes contribute discovery and batching lineage, but not source-mutation safety, create-time remap safety, or plugin-owned surface coverage on this branch.
+- ForkPress source notes contribute audit and crash-consistency vocabulary, but not a live WordPress boundary with preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
+- Any comparison to those notes must name the exact upstream revision or worktree state, say what the note proves here, and say what it does not prove here. If it only supports historical vocabulary, it stays provenance only.
 
 ## Changes required before production wording is defensible
 
@@ -41,6 +42,14 @@ Before the project can claim production-grade push support, one rerunnable live 
 - graph identity across create-time remaps and late-discovered relationship-bearing records;
 - plugin-driver coverage for late-discovered plugin-owned surfaces outside the initial allowlist; and
 - retry scope rebuilt from fresh live evidence, not manual-resolution text.
+
+The production claim also fails closed if any of these are only shown on a lab fixture, retained-source harness, or review artifact:
+
+- auth/session lifecycle shape without a live remote boundary;
+- journal rows without storage and lease/fencing behavior on production-like storage;
+- graph identity without create-time remap and late-discovered relationship-bearing record coverage;
+- plugin-driver behavior without a rerunnable boundary on a real source URL; or
+- preserved-remote wording without the rejected remote still being inspectable after rejection.
 
 Manual resolution is not success unless the remote is preserved, the retry is auditable, and the exact boundary can be replayed safely.
 
