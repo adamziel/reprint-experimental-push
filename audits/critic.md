@@ -247,7 +247,7 @@ The next acceptable proof is one rerunnable live WordPress mutation on one exact
 
 The boundary must be rerunnable by another operator with the same command and the same live `REPRINT_PUSH_SOURCE_URL`. If the only proof is wording, a retained-source verdict, or a manual-resolution artifact, it is not retry authority.
 
-Until that boundary exists, `verify:release`, retained-source verdicts, and the current release-boundary head remain useful lab evidence only.
+Until that boundary exists, the remote `verify:release` script, retained-source verdicts, and the current release-boundary head remain useful lab evidence only.
 
 If the next worker can only produce wording, local fixture output, or a manual-resolution artifact, that is not enough. The proof must leave the rejected remote preserved for audit and retry.
 
@@ -255,7 +255,7 @@ If the next worker can only produce wording, local fixture output, or a manual-r
 
 One rerunnable live mutation boundary on one exact source URL is still missing. The retained-source lane now proves more of the command and session surface, but it does not yet prove production WordPress auth/session expiry, refresh, and operator re-entry on the same rejected source URL, plus lease-fenced journal durability, preserved-remote retention after refusal, graph identity under remap, and plugin-driver coverage on the same replayable boundary.
 
-The strongest blocker is still one named, rerunnable live release boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that rejects stale authority before the first write, preserves the rejected remote for audit, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. This is the missing production proof on the branch; the supervised remote has improved retained-source evidence, but that evidence remains lab-bound until it is reproduced on one live boundary here.
+The strongest blocker is still one named, rerunnable live release boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that rejects stale authority before the first write, preserves the rejected remote for audit, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. This is the missing production proof on the branch; the supervised remote has improved retained-source evidence, including a working `verify:release` shape, but that evidence remains lab-bound until it is reproduced on one live boundary here.
 
 Do not treat separate retained-source verdicts, route-shape proofs, and review notes as a substitute for that single live boundary. Production wording is only defensible when the same mutation shows preserved-remote retention, fresh-hash apply-time revalidation, auth/session re-entry, durable journal semantics, graph identity, and plugin-driver coverage together.
 
