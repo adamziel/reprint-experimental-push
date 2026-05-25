@@ -55,6 +55,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const productionRevalidationContract = readJson(
     'fixtures/protocol/push-production-revalidation-contract.json',
   );
+  const productionPushRecoveryContract = readJson(
+    'fixtures/protocol/push-production-push-recovery-contract.json',
+  );
   const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
   const snapshotHashesPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
   const authSessionJournalRecoveryContract = readJson(
@@ -274,6 +277,48 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     productionRevalidationContract.required_invariants.includes(
       'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
+  assert.equal(
+    productionPushRecoveryContract.contract_id,
+    'push-production-push-recovery-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionPushRecoveryContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.deepEqual(productionPushRecoveryContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    productionPushRecoveryContract.push_liveness.apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    productionPushRecoveryContract.push_liveness.recovery_inspect,
+    'must happen before any mutating recovery mode',
+  );
+  assert.equal(
+    productionPushRecoveryContract.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(productionPushRecoveryContract.topology.networking.ingress_port, 8080);
+  assert.equal(productionPushRecoveryContract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(productionPushRecoveryContract.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    productionPushRecoveryContract.topology.proof.includes(
+      'dry-run and apply remain separate remote calls',
+    ),
+  );
+  assert.ok(
+    productionPushRecoveryContract.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
     ),
   );
   assert.ok(
