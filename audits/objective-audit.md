@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The blocker is structural: there is no mandatory command that proves the one-way pull base plus one-way push back to the live source on the real storage and transport path. `node --test` passes, but the passing subtests are still fixture-, model-, refusal-, or lab-backed, and `package.json` exposes only `test`, `plan`, `apply`, and optional `test:playground:*` helpers. There is no checked-in `verify`, `verify:release`, or `release` command, and there is no `.github/workflows/` entrypoint in this checkout to compensate. The strongest production-shaped smokes still self-identify as `labBacked: true`, so they remain lab proof rather than live-source proof. The benchmark surface is also explicit: it reports `productionThroughput: 'not-claimed'`, and the guarded benchmark tests refuse to upgrade that into a claim. That is refusal evidence, not release proof. Until a required gate reaches the live-source boundary, rechecks apply-time state, and emits a machine-checkable verdict, `speed unclaimed` is the only defensible production-facing wording. No current green run can legitimately be read as proof that writes are lossless, that the live push path is reliable under crash/retry/replay, or that production speed has been measured. The existing [`audits/release-proof-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-proof-matrix.md) repeats that same gap in tabular form; it is supporting audit evidence, not a release gate.
+The blocker is structural: there is no mandatory command that proves the one-way pull base plus one-way push back to the live source on the real storage and transport path. `node --test` passes, but the passing subtests are still fixture-, model-, refusal-, or lab-backed, and `package.json` exposes only `test`, `plan`, `apply`, and optional `test:playground:*` helpers. There is no checked-in `verify`, `verify:release`, or `release` command, and there is no `.github/workflows/` entrypoint in this checkout to compensate. The strongest production-shaped smokes still self-identify as `labBacked: true`, so they remain lab proof rather than live-source proof. The benchmark surface is also explicit: it reports `productionThroughput: 'not-claimed'`, and the guarded benchmark tests refuse to upgrade that into a claim. That is refusal evidence, not release proof. Until a required gate reaches the live-source boundary, rechecks apply-time state, and emits a machine-checkable verdict, `speed unclaimed` is the only defensible production-facing wording. No current green run can legitimately be read as proof that writes are lossless, that the live push path is reliable under crash/retry/replay, or that production speed has been measured. The existing [`audits/release-proof-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-proof-matrix.md) repeats that same gap in tabular form; it is supporting audit evidence, not a release gate. The evidence deficit is categorical, not incremental: nothing currently on the command surface owns the live-source verdict.
 
 ## Explicit Requirements
 
@@ -22,7 +22,7 @@ The objective implies these minimum release requirements:
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone.
 
 Minimum properties of that gate:
 
@@ -125,11 +125,11 @@ The weakest claim is any implication that the current suite can certify the live
 - `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
 - A green `node --test` run and green Playground smokes still do not prove no data loss, reliable crash recovery, or measured speed on the live-source path.
-- The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added.
+- The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added and wired into the default release path.
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
 - The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness.
 
-Actionably: the next release gate must be a checked-in command that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims." Any future claim of no data loss, reliability, or speed must point at that gate, not at `node --test` or the lab smokes.
+Actionably: the next release gate must be a checked-in command that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims." Any future claim of no data loss, reliability, or speed must point at that gate, not at `node --test` or the lab smokes, because those runs can still succeed without proving the live-source boundary.
 
 ## Proof Boundary
 
