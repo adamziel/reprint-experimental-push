@@ -45,12 +45,14 @@ Current proof must be judged against the live-source release boundary, not again
 - route smokes that still report `labBacked: true`
 - any proof that does not exercise the one-way pull base to one-way push to live source loop
 
-The strongest current runnable evidence still falls into two classes:
+The strongest current runnable evidence still falls into four classes:
 
-- executable lab proof: `npm test` and the fixture-backed or file-backed smokes
-- non-executable proof: prose in `README.md`, `progress.html`, and the supervisor/audit notes
+- executable proof: none that reaches the live-source boundary
+- lab / fixture proof: `npm test` and the fixture-backed or file-backed smokes
+- docs-only proof: prose in `README.md`, `progress.html`, and the supervisor/audit notes
+- missing proof: live-source apply-time mutation, durable crash survival on production storage, measured live-path throughput, and a required release gate
 
-Neither class proves the live-source release boundary by itself.
+Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary.
 
 For a narrower test-by-test breakdown, see [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md).
 
@@ -145,6 +147,8 @@ The objective stays blocked for five concrete reasons:
 9. The lab route coverage is still self-described as `labBacked: true` on the strongest push paths, so even the authenticated success cases remain local proof, not production release proof.
 10. No test or smoke in this checkout demonstrates the one-way pull base plus one-way push back to live source under the production storage semantics named by the objective.
 11. The repository still has no measured live-path throughput result, so speed is blocked even if all of the lab safety claims remain green.
+
+Those blockers are actionable, not abstract: the repo needs one mandatory command that reaches the live-source boundary, proves the release safety matrix in one run, and either prints a measured throughput result or explicitly prints `speed unclaimed` before it can be treated as releasable.
 
 The weakest claim is speed, and the audit should keep treating it as blocked until there is a measured live-path number with a threshold. The practical consequence is simple: do not convert the current refusal-only benchmark into release language. If the repo cannot measure production throughput yet, the release gate should fail closed on that missing measurement instead of implying performance confidence from models or smokes. A refusal-only benchmark is useful because it prevents overclaiming, but it is not evidence that the live push path is fast enough. Release copy should therefore say `speed unclaimed` until the live-path benchmark exists and is wired into a required gate that exits non-zero when `productionThroughput` is still `not-claimed`. Treat any other phrasing as a release blocker, not a placeholder.
 

@@ -13,7 +13,7 @@ This note is narrower than the objective audit. It only answers what the current
 
 ## Why The Suite Is Not Release Proof
 
-The tests are valuable because they catch local regressions and refuse unsafe claims. They are insufficient because they stop short of the live-source boundary that the objective requires. They prove guardrails, not no data loss, reliability, or speed on the production path.
+The tests are valuable because they catch local regressions and refuse unsafe claims. They are insufficient because they stop short of the live-source boundary that the objective requires. They prove guardrails, not no data loss, reliability, or speed on the production path. The practical implication is blunt: the suite can support a lab narrative, but it cannot by itself support a release narrative.
 
 The missing proof is structural:
 
@@ -27,3 +27,5 @@ The missing proof is structural:
 A passing suite here supports a cautious lab narrative. It does not support a production release narrative, and it should not be read as proof that the live push path is lossless, durable, or fast enough.
 
 If the repository wants to claim no data loss, reliability, or speed, those claims need a required live-source gate in addition to the current tests. Until then, the tests are evidence of guardrails, not release readiness.
+
+The actionable next step is therefore not to expand the current refusal checks in place. It is to add one mandatory command that reaches the live-source boundary and makes the release decision explicit, including an enforced `speed unclaimed` verdict if throughput remains unmeasured.
