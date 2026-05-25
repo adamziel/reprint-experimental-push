@@ -6,6 +6,49 @@ that keeps pull provenance immutable, separates planning from mutation,
 revalidates the live remote identity at apply time, and keeps the dry-run and
 apply liveness split explicit.
 
+## Canonical Production Extension
+
+The canonical push extension is the smallest production proof that still
+captures the full remote safety boundary:
+
+1. Exporter discovers the merge base and coverage evidence.
+2. Importer persists the pull base package as immutable provenance.
+3. `push_preflight` binds that persisted package to one live remote identity
+   and one short-lived push session.
+4. `push_snapshot_hashes` lists remote hashes for planning only.
+5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+6. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+7. `push_journal` records durable evidence without authorizing mutation.
+8. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+9. `push_recover auto|finish|rollback` may mutate only after inspect proves
+   the branch safe and the auth floor still holds.
+
+The pull-to-push bridge is one-way:
+
+- exporter/importer create and persist the immutable pull base package
+- `push_preflight` is the first live bind after importer persistence
+- `push_snapshot_hashes` is planning-only evidence
+- `push_plan_dry_run` is a receipt, not a lock
+- `push_batch_apply` revalidates again at apply time
+- `push_journal` is read-only evidence
+- `push_recover inspect` is read-only and must happen first
+- mutating recovery uses the same HMAC floor as apply
+
+The same extension is exercised in one fixed topology:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns the push protocol calls
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 ## Production Summary
 
 The production contract is the same in Docker and Playground:

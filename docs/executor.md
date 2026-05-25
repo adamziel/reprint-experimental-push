@@ -7,6 +7,63 @@ site, and one later drift observation of the same remote identity. The
 production harness keeps dry-run and apply separate, revalidates at apply
 time, and uses the same `8080`-visible topology in Docker and Playground.
 
+## Canonical Executor Contract
+
+The executor should treat the production push extension as a fixed ladder:
+
+1. `preflight`
+2. `snapshot-hashes`
+3. `dry-run`
+4. `apply`
+5. `journal`
+6. `recovery-inspect`
+7. `recovery-mutate`
+
+Those boundaries are not interchangeable:
+
+- `preflight` binds the persisted pull base package to one live remote
+  identity and one short-lived push session.
+- `snapshot-hashes` lists remote hashes for planning only and never becomes
+  write authority.
+- `dry-run` uploads the canonical plan and returns an eligibility receipt,
+  not a lock.
+- `apply` revalidates fresh live evidence before every batch and again at the
+  storage boundary.
+- `journal` is read-only evidence.
+- `recovery-inspect` reads the journal and fresh live hashes before any
+  mutating repair.
+- `recovery-mutate` only proceeds when inspect proves the branch safe and the
+  auth floor still holds.
+
+The executor maps those stages to the pull pipeline directly:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the immutable pull base package
+- `preflight` is the first live bind after importer persistence
+- `snapshot-hashes` is planning-only evidence
+- `dry-run` is a receipt, not a lock
+- `apply` revalidates again at apply time
+- `journal` remains read-only
+- `recovery-inspect` is the read-only recovery gate
+- `recovery-mutate` uses the same HMAC floor as apply
+
+The executor test topology is the same in Docker and Playground:
+
+| Role | Identity | Purpose |
+| --- | --- | --- |
+| Remote source | `remote-base` | Seeds the persisted pull base package. |
+| Local edit site | `local-edited` | Carries the imported local edits. |
+| Drift witness | `remote-changed` | Reuses the same remote identity after drift. |
+| Runner | `runner` | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
+
+The topology rules are fixed:
+
+- Docker uses one private network.
+- Playground uses separate disposable blueprints.
+- Browser-visible inspection stays on the sandbox-provided `8080` ingress.
+- The local inspection proxy stays local-only.
+- Remote tunnels are disallowed.
+
 ## Production Contract
 
 The executor owns these remote boundaries in order:
