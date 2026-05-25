@@ -44,6 +44,9 @@ No source note proves that a stale manual-review artifact can survive a live
 drift and still authorize apply, so any retry claim has to be backed by a
 fresh snapshot, a fresh plan, and a rejected old artifact that remains
 auditable rather than reusable.
+The same rule applies to "production-shaped" wording: a route, plugin mount,
+or response hash may look production-like, but without a live drifted remote
+and a failed-closed apply boundary it is still only compatibility evidence.
 None of the three source notes prove remote-drift rejection at apply time,
 stable identity reservation for creates, or revalidation of plugin-owned
 ownership changes immediately before write.
