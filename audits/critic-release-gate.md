@@ -7,11 +7,12 @@ Do not use production wording unless the branch has all of the following for the
 - the exact stale-drift case is named;
 - the remote that drifted is preserved and still inspectable after rejection;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
+- any stale manual-review artifact remains audit-only after drift and cannot be reused against a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
 - the fresh retry artifact is rebuilt from live hashes on this branch, not inherited from the earlier approval;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified as old, new, or blocked before retry starts;
 - any late-discovered plugin-owned surface is separately blocked or classified, not folded into the earlier success story;
 - any partial file, DB, or plugin side effect is durably classified before retry so a mixed write cannot be relabeled as success; and
-- any manual-resolution note, route-shaped smoke, fixture replay, or `finalMatchesLocal` result is treated as compatibility evidence only unless it is paired with the preserved remote, the rejection point, and the fresh retry artifact for that same boundary;
+- any manual-resolution note, route-shaped smoke, fixture replay, or `finalMatchesLocal` result is treated as compatibility evidence only unless it is paired with the preserved remote, the rejection point, the stale-artifact rejection, and the fresh retry artifact for that same boundary;
 - any source-note comparison to Reprint, ZS-Sync, or ForkPress is treated as historical context only unless it names the exact upstream revision or worktree state and the same live boundary; and
 - any source-note comparison is treated as historical context only unless the exact upstream revision or worktree state is named, the same live boundary was rerun on this branch, and the note explicitly says what it does not prove here; and
 - any source-note comparison that merely matches the same route family, package layout, or reviewer wording is still historical context only and cannot be treated as live proof; and

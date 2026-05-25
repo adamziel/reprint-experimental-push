@@ -4499,7 +4499,8 @@ False reliability claims to reject:
   the note proves here versus what it does not prove.
 - "production-safe route" when the only evidence is a production-shaped URL
   family or package layout but the branch has not proven the live executor,
-  the preserved remote, and the fresh retry scope on this branch.
+  the preserved remote, stale-artifact rejection, and the fresh retry scope
+  on this branch.
 - "source-note proof" when a Reprint, ZS-Sync, or ForkPress note only
   happens to match the same route family, package layout, or reviewer
   wording; shape similarity is compatibility evidence only and does not
@@ -4573,3 +4574,8 @@ true on this branch:
 - the proof for the first boundary is not being recycled for a later
   boundary just because the route family, package mount, fixture replay, or
   reviewer wording still looks the same.
+
+Route-shaped smokes and fixture replays are useful compatibility evidence, but
+they do not establish production safety unless the branch separately proves the
+live executor, preserved remote, stale-artifact rejection, and fresh retry
+scope for the exact same boundary.
