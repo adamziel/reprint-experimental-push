@@ -843,7 +843,10 @@ depends on the same write-boundary evidence the repo still lacks. Right now the
 repo only proves that selected fixtures survive selected lab paths, and those
 paths do not yet cover the same auth, storage, journal, and graph boundaries
 as a real source mutation. This means the current evidence is enough to reject
-unsafe optimism, but not enough to authorize a release.
+unsafe optimism, but not enough to authorize a release. The stricter and more
+actionable statement is: the repository does not yet have a non-bypassable
+release boundary, so both the safety claim and the speed claim remain
+non-release claims even when the individual smoke tests pass.
 
 To make the claim release-grade, the next proof must be a kill matrix that
 covers every guarded write boundary on a real push path, with live before/after
@@ -860,7 +863,9 @@ fixture or model:
 
 If any one of these boundaries is still only covered by a model or fixture
 smoke, the no-data-loss claim stays blocked and should not be softened in the
-README, release notes, status comments, or branch descriptions.
+README, release notes, status comments, or branch descriptions. The same is
+true for the speed claim: if the benchmark remains refusal-only or opt-in, the
+repo must not present performance as a release-ready property.
 
 The release gate should therefore fail closed on two separate conditions:
 
@@ -871,6 +876,14 @@ The current suite is therefore good at rejecting regressions, but it is not
 yet good enough to justify the live-source production claims. The most
 actionable next step is not more wording; it is live evidence for each guarded
 write class, retained with hashes and crash state.
+
+Practical release blocker summary:
+
+- no enforced `verify:release` or equivalent gate
+- no production-backed kill matrix for every guarded write boundary
+- no measured end-to-end speed evidence on the release path
+- no proof that the current lab-backed route/package smokes correspond to a
+  non-lab production implementation
 
 Current bottom line:
 
