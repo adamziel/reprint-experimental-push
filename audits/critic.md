@@ -34,6 +34,12 @@ Concrete failure scenarios that still block production wording:
   later plugin-owned data trap appears, it is a new boundary unless it is
   separately enumerated or blocked before write, even if the route family,
   package mount, or reviewer wording looks unchanged;
+- stale manual-review artifacts after a successful first write are still not
+  retry authority for a second boundary: if the later boundary is a remapped
+  create target, a late-discovered plugin-owned table, or a plugin-owned file
+  that was not in the original allowlist, the earlier artifact cannot be
+  widened back into success unless that later boundary also got its own
+  preserve / reject / retry cycle on live hashes;
 - Reprint, ZS-Sync, or ForkPress comparisons: missing proof is the exact
   upstream state plus a rerun of the same live boundary on this branch, not
   route shape, package layout, reviewer wording, fixture replay, or a
