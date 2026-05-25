@@ -38,9 +38,9 @@ export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
     rowPayloadBytes: 512,
   }),
   guardedLarge: Object.freeze({
-    fileBytes: 384 * MIB,
+    fileBytes: 128 * MIB,
     chunkSizeBytes: DEFAULT_LIMITS.chunkSizeBytes,
-    rowCount: 2_000,
+    rowCount: 1_000,
     rowPayloadBytes: 700,
   }),
 });
