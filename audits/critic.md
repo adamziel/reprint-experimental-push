@@ -4180,3 +4180,39 @@ later surface was either blocked or separately classified before retry, and
 it must do so with preserved-remote evidence on this branch. Without that,
 the claim can still hide a second-write data-loss path behind "manual
 resolution" language.
+
+Source-note comparison boundary:
+
+- Reprint proves staged pull delivery, resumability, and transport framing.
+  It does not prove live push mutation, stale remote rejection, create-time
+  remapping, plugin-owned allowlist coverage, or mixed-write classification.
+- ZS-Sync proves bounded scanning, resource discovery, and batching ideas.
+  It does not prove source-site mutation, runtime ownership discovery,
+  apply-time blocking of hidden plugin state, or recovery from a live remote
+  drifted between dry-run and apply.
+- ForkPress proves audit vocabulary, merge-review framing, and crash-
+  consistency intent. It does not prove a live executor, preserved-remote
+  retry authority, or that a readable manual-review artifact can safely
+  authorize a later retry boundary.
+
+Release gate additions needed before production-grade push support:
+
+1. A live remote-drift case must fail closed before the first write and leave
+   the preserved remote auditable after rejection.
+2. A create-time identity remap or alias case must be either durably proven
+   safe with live identity evidence or hard-blocked before write.
+3. Every plugin-owned surface outside the allowlist must be enumerated live or
+   blocked at apply time, including late-discovered tables, generated files,
+   cron rows, runtime registries, serialized blobs, caches, and plugin files.
+4. Every partial file, DB, or plugin side effect must be durably classified as
+   old, new, or blocked, and the next retry must rebuild from fresh live
+   hashes instead of inherited approval.
+5. Any readable stale manual-review artifact must remain audit-only after
+   drift and must not become retry authority for a different row, file,
+   relationship-bearing record, or plugin-owned surface.
+6. Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
+   revision or worktree state and show branch-local revalidation of the same
+   live mutation boundary.
+7. The release gate must fail closed and record the exact rejection reason
+   whenever any of the above proofs is missing; route shape, package mount,
+   fixture replay, and `finalMatchesLocal` are compatibility evidence only.
