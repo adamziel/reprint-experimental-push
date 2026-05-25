@@ -233,6 +233,9 @@ Release-gate checklist:
 - show the preserved remote stayed auditable after reject, and show the retry
   was rebuilt from fresh live hashes instead of inherited from the earlier
   approval;
+- show that a readable manual-review artifact or source-note comparison stays
+  audit-only for any later-discovered plugin-owned surface unless that later
+  surface has its own preserve / reject / retry evidence on this branch;
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface;
