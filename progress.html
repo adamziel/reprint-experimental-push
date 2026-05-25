@@ -500,11 +500,11 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `d6285b18` now surfaces the live remote snapshot hash listing, `66830e6f` keeps drift revalidation fail-closed with `PRECONDITION_FAILED`, and `fa491fa6` keeps the recovery envelope proof visible. Release gates stay at `0/4`; production WordPress auth/session lifecycle and durable journal semantics remain pending.</p>
-        <time class="update-stamp" datetime="2026-05-25T14:24:59+02:00">Last updated: May 25, 2026, 14:24:59 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `d6285b18` still surfaces the live remote snapshot hash listing, `66830e6f` keeps drift revalidation fail-closed with `PRECONDITION_FAILED`, and `2e30a637` now keeps the durable-journal proof in the checked release path. Release gates stay at `0/4`; production WordPress auth/session lifecycle and durable journal semantics remain pending.</p>
+        <time class="update-stamp" datetime="2026-05-25T14:29:20+02:00">Last updated: May 25, 2026, 14:29:20 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `d6285b18` adds live remote snapshot hash evidence; `66830e6f`, `fa491fa6`, and `86acf294` remain visible lane progress</span>
+          <span class="pill">Trend: `2e30a637` adds durable-journal proof to the checked release path; `d6285b18`, `66830e6f`, `fa491fa6`, and `86acf294` remain visible lane progress</span>
           <span class="pill">Top blocker: real WordPress executor/auth plus durable journal storage and lease/fencing still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-        <span>Latest lane evidence adds remote snapshot hash, drift, recovery, and bounded performance proof without changing the 0/4 release gates</span>
+        <span>Latest lane evidence adds durable-journal proof, remote snapshot hash, drift, recovery, and bounded performance proof without changing the 0/4 release gates</span>
       </div>
       <div class="metric">
         <strong>Flat</strong>
