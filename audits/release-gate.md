@@ -9,6 +9,8 @@ support.
   `finalMatchesLocal`.
 - The claim says whether any comparison to Reprint, ZS-Sync, or ForkPress
   was re-verified against the current upstream commit or worktree state.
+- If that upstream comparison was not re-verified, the claim must label it as
+  historical context only and must not present it as current proof.
 - The claim shows a live remote drift case between dry-run and apply, and the
   stale attempt fails closed before any mutation.
 - The claim shows create-time identity remapping is either safely represented
@@ -32,6 +34,9 @@ support.
 - The claim does not treat a lab route shape or fixture-shaped package mount
   as proof of current production safety, even if the path name matches the
   production route.
+- The claim does not treat manual resolution as success unless the remote is
+  preserved, the stale artifact stays auditable but unusable, and the retry
+  rebuilds scope from fresh live hashes before any write.
 
 If any item is missing, the wording must stay explicitly lab-backed or
 comparison-only.
