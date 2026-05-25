@@ -15,6 +15,15 @@ The repo still lacks one required command that proves the one-way pull base plus
 | Docs-only proof | The audit and blocker notes describe the intended one-way pull base plus one-way push flow. | Documentation cannot recheck live state or mutate production storage. | Prose cannot close the release gate. |
 | Missing proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict or enforced `speed unclaimed` refusal. | These are still absent from the mandatory command surface and from `package.json`'s enforced scripts. | The repo has no enforced release verdict, so green local evidence can still bypass release. |
 
+Current tests are therefore negative evidence only for the release claims:
+
+- `node --test` can prove some unsafe or stale states are rejected.
+- It cannot prove that the live source was mutated safely in the same run.
+- It cannot prove no data was lost at the real storage boundary.
+- It cannot prove crash recovery on production storage.
+- It cannot prove a release-grade speed claim.
+- The benchmark tests are especially explicit: they refuse unsupported throughput claims, but `productionThroughput: 'not-claimed'` remains the honest result until a mandatory release gate measures the live path.
+
 ## Weakest Current Claim
 
 The weakest claim is the production release verdict itself.
