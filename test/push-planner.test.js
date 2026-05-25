@@ -1497,6 +1497,31 @@ test('durable completed replay blocks partial drift instead of treating it as a 
   assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
 });
 
+test('completed replay on a durable journal stays inert and does not resurrect stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  local.files['index.php'] = '<?php echo "stale-local";';
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('accepts only old remote, fully updated remote, or blocked recovery across the atomic apply boundary', () => {
   const base = baseSite();
   const local = baseSite();
