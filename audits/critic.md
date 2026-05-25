@@ -32,6 +32,14 @@ preserved remote, exact rejection point, fresh live hashes, and per-surface
 old/new/blocked classification on the same live boundary, the comparison
 remains historical context even when the upstream note is accurate.
 
+The practical blocker is unchanged: this branch still has no named real-site
+release command, so any retained-source run, wrapper label, or route-shaped
+smoke remains compatibility evidence only until the same live boundary is
+rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
+That rerun must show preserved-remote auditability, apply-time revalidation,
+dry-run receipt, journal/recovery inspection, auth/session capture, graph
+identity, and plugin-owned surface classification in one command.
+
 Must-change-before-production wording:
 
 - move the proof boundary from retained-source `npm run verify:release`
@@ -54,6 +62,10 @@ Must-change-before-production wording:
 - keep Reprint, ZS-Sync, and ForkPress notes as historical provenance unless
   the branch reran the same live boundary here and the note says exactly what
   it proves here and what it does not prove here.
+
+If a source-note comparison cannot name the exact upstream state, the same
+live boundary, and the proof gap it leaves here, it is historical context and
+not a release gate.
 
 ## 2026-05-25 Current Verdict
 
@@ -6907,6 +6919,9 @@ Production-ready wording gate:
 - if any plugin-owned table, file, cron row, runtime registry entry, generated asset, cache entry, or serialized blob is outside the allowlist and not explicitly blocked before write, the branch does not have production-grade push proof;
 - if any file, DB row, or plugin side effect survives a failed apply, the whole touched set must be labeled old, new, or blocked before retry starts; a partially successful write cannot be relabeled as success; and
 - if a Reprint, ZS-Sync, or ForkPress note is cited, it must say exactly what the note proves here, what it does not prove here, and whether this branch reran the same live boundary; otherwise it remains historical context only and cannot support production wording.
+
+If the evidence only shows route shape, wrapper shape, retained-source output,
+or a polished note, the branch still lacks production-grade push proof.
 
 ## Remaining Production-Grade Gaps
 
