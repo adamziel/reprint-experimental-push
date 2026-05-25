@@ -26,7 +26,7 @@ The objective implies these minimum release requirements:
 2. Apply-time revalidation against the live source before mutating it. A stale preflight is not enough.
 3. End-to-end preservation of touched WordPress data shapes, including rows, files, plugin-owned data, serialized payloads, and graph identity.
 4. Survival of crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes.
-5. Production auth/session lifecycle and durable journal semantics proven at the release boundary, not only in helpers or optional smokes. Leases/fencing, graph identity, plugin-driver behavior, and preserved-remote drift also need release-boundary proof.
+5. Production auth/session lifecycle and durable journal semantics proven at the release boundary, not only in helpers or optional smokes. Leases/fencing, graph identity, plugin-driver behavior, and preserved-remote drift also need release-boundary proof, but they remain secondary to the missing auth/session plus journal verdict.
 6. Real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or storage abstraction.
 7. Either a measured live-path speed claim with an explicit threshold or an explicit refusal to claim speed.
 8. One required release command that fails closed when any safety gate is still lab-backed, fixture-only, benchmark-only, or missing live-source proof.
