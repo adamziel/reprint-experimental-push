@@ -78,8 +78,8 @@ The immediate action is to turn the strongest checks into one required
 `verify:release`-style gate that is wired into CI or another enforced
 entrypoint; until that exists, the current test story is stronger as a blocker
 generator than as release-grade proof of no data loss, reliability, or speed.
-The operational blocker is not "speed is weak"; it is "the live source
-boundary is still unproven."
+The operational blocker is not only "speed is weak"; it is "the live source
+boundary is still unproven and no required gate forces it to be proven."
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
