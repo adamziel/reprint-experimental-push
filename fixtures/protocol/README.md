@@ -178,8 +178,9 @@ identity across `remote-base` and `remote-changed`:
   provenance bridge and the production-shaped one-remote, one-local, one-drift
   harness in a single review path.
 - `push-production-executor-flow-contract.json` is the compact end-to-end
-  proof for the pull handoff, preflight, planning-only hash listing, dry-run
-  receipt, batched apply, journal inspect, and inspect-first recovery.
+  production bundle for the pull handoff, preflight, planning-only hash
+  listing, dry-run receipt, batched apply, journal inspect, and inspect-first
+  recovery on the one-remote, one-local, one-drift harness.
 - `push-production-journal-lease-recovery-inspect-contract.json` is the compact production proof for journal rows, lease fencing, and read-only recovery inspect after the dry-run/apply split.
 - `push-preflight-contract.json` and `push-remote-snapshot-listing-contract.json`
   are the short-form proofs for the first live binding and the planning-only
