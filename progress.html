@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The current public anchor is still `npm run verify:release` from commit `3089aee2`, with retained-source proof for live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback with `rows: 17`. The first screen now keeps `63a3502f` visible with `authSessionType`, `applyCommitted`, and `durableJournal.rows: 17`; `68664884` still keeps `durableJournal.mutationApplied: 7` and `durableJournal.idempotencyOpened: 1` visible, while `e269f0d3` keeps `releaseProof.apply.sessionType` and `freshMutationWork` in the retained-source lab proof. Release gates stay at `0/4`; the blocker remains `auth/session lifecycle and durable journal semantics`.</p>
-        <time class="update-stamp" datetime="2026-05-25T12:06:51+02:00">Last updated: May 25, 2026, 12:06:51 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. Newer lane evidence in `63a3502f` adds `authSessionType`, `applyCommitted`, and `durableJournal.rows: 17`; `68664884` adds `durableJournal.mutationApplied: 7` and `durableJournal.idempotencyOpened: 1`; `e269f0d3` keeps the retained-source proof focused on `releaseProof.apply.sessionType` and `freshMutationWork`. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
+        <time class="update-stamp" datetime="2026-05-25T12:13:54+02:00">Last updated: May 25, 2026, 12:13:54 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: retained-source proof is tighter, but production push is still blocked at auth/session and durable journal semantics</span>
-          <span class="pill">Top blocker: real WordPress executor/auth proof blocks any production push claim</span>
+          <span class="pill">Trend: release-verify still anchors the runtime proof; `63a3502f`, `68664884`, and `e269f0d3` tighten retained-source journal checks, not production release proof</span>
+          <span class="pill">Top blocker: real WordPress executor/auth plus durable journal semantics still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-120651">2026-05-25 12:06:51</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-121354">2026-05-25 12:13:54</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-120651">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-121354">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
