@@ -1,21 +1,7 @@
-Performance model hang diagnosis
+Diagnosis for `test/performance-model.test.js` hang
 
-Date: 2026-05-25
-
-Focused commands:
-- `timeout 20s node --test --test-name-pattern='benchmark model covers large uploads and plugin installs' test/performance-model.test.js`
-  - Result: passed
-- `timeout 20s node --test --test-name-pattern='guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js`
-  - Result: passed
-- `timeout 20s node --test --test-name-pattern='unsafe shortcuts stay rejected when they would bypass live preconditions or atomic groups' test/performance-model.test.js`
-  - Result: passed
-
-Full-file command:
-- `timeout 60s node --test test/performance-model.test.js`
-  - Result: passed
-  - Timing: `# duration_ms 14594.764972`
-
-Conclusion:
-- The earlier `TAP version 13` timeout was not reproduced in this iteration.
-- The full-file timeout appears pre-existing or intermittent rather than introduced by the lane's latest work.
-- `node --test test/performance-model.test.js` currently completes in this workspace.
+- Hanging command: `node --test test/performance-model.test.js`
+- Observed result: printed only `TAP version 13` and did not complete within the prior 60s timeout.
+- Narrowed check: `node --test --test-concurrency=1 test/performance-model.test.js`
+- Narrowed result: passed, `18/18` subtests, `12.259s` total.
+- Conclusion: the default full-file stall is pre-existing to the test file's concurrent execution path, not a failure of the sequential subtests themselves.
