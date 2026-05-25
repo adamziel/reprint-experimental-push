@@ -4,6 +4,17 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+Most important unresolved trap:
+
+If the first write succeeds on a narrower surface and a later live snapshot
+reveals an additional plugin-owned row, file, registry entry, generated asset,
+cache entry, or other hidden side effect, that later surface is a new
+mutation boundary. The design is still missing proof that this branch can
+preserve the remote for audit, reject the stale approval at the new boundary,
+and rebuild retry scope from fresh live hashes without widening the old
+approval into the new surface. Until that is shown, "manual resolution"
+language can still conceal a second-write data-loss path.
+
 Do not let lab-shaped success stand in for live proof. A production-shaped
 route, package mount, fixture replay, or `finalMatchesLocal` result can still
 come from a copied executor behind the same URL family; that is compatibility
