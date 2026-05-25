@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 15:13:48 CEST.
+- Last update: 2026-05-25 15:19:41 CEST.
 - Status: blocked; the visible page and log still agree.
 - Trend: `95164c8a` added file-journal lease/fence smoke to the lab release path, but the shipping gate is still closed.
 - Scope: 8 fast/low lanes plus the live watcher remain active.
