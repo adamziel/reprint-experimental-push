@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 02:47:54
+## 2026-05-25 - Public Status Audit 02:48:28
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 02:47:54 CEST`) and kept the visible last-updated stamp current.
-- Tightened the first-screen copy so the public page stays concise while still
-  naming the state, trend, blocker, and links.
+  (`2026-05-25 02:48:28 CEST`) and kept the visible last-updated stamp current.
+- Tightened the first screen so it stays concise while still naming the state,
+  trend, blocker, and evidence links.
 - Public status remains conservative: 89 Node tests pass, production auth plus
   durable journaling is still the gate, and the WordPress executor/auth,
   recovery journal, Docker/Playground integration, graph identity, and plugin
