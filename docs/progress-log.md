@@ -6,15 +6,27 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 05:22:19 CEST.
+- Last update: 2026-05-25 05:22:52 CEST.
 - Status: lab evidence still holds; production proof is still missing.
-- Trend: the visible page and this log still line up, and the public page now stays scan-first without repeating the whole gate list.
+- Trend: the visible page and this log still line up, and the public page stays scan-first without repeating the whole gate list.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: production auth/session, durable journal writes, leases/fencing, WordPress graph identity, Playground integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to the proof trail instead of repeating it.
 - Pending proof gates: production auth/session, durable journal writes, leases/fencing, WordPress graph identity, Playground integration, and plugin drivers.
 - Next nudge: keep the gates blocked until a worker proves one concrete gap at a time, starting with auth/session, journal internals, or graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. This lane-local copy becomes live only after merge to `main`, so GitHub Pages will lag until then.
+
+## 2026-05-25 - Supervisor Follow-up
+
+- Last update: 2026-05-25 05:22:52 CEST.
+- Status: still blocked; no production evidence delta landed in this pass.
+- Trend: the surfaces are cleaner, but the proof gaps are unchanged.
+- Supervision: keep the next pass narrow and evidence-driven.
+- Blocker: auth/session, durable journal writes, leases/fencing, WordPress graph identity, Playground integration, and plugin drivers are still missing proof.
+- Visible page: [progress.html](../progress.html) remains scan-first and keeps the detailed trail in linked docs.
+- Pending proof gates: one gap at a time, starting with auth/session or crash-safe journal evidence.
+- Next nudge: do not expand scope until one lane can show a concrete production-backed check.
+- Public page: [progress.html](../progress.html) still becomes live only after merge to `main`; GitHub Pages will lag until then.
 
 <details>
 <summary>Earlier progress entries</summary>

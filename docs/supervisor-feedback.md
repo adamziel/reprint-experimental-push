@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 05:22:19 CEST
+Last updated: 2026-05-25 05:22:52 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -11,6 +11,24 @@ changed, what is helping, what is not helping, and the next nudge.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
 - Progress change: no evidence delta; the public page now reads as a short summary with the proof trail pushed into linked docs.
 - Next nudge: keep each lane to one owner, one proof gap, and one concrete test.
+
+| Lane | Current nudge |
+| --- | --- |
+| Invariants | Owner: lane. Gap: graph identity mapping on a real site. Next test: prove the mapping against live content. |
+| Recovery | Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill the process mid-write and inspect restart state. |
+| Reliable executor | Owner: lane. Gap: auth, session, and lease behavior in production. Next test: prove the full auth/session path on a real endpoint. |
+| Fast paths | Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the large-site benchmark and record the bound. |
+| Audit and critic | Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim. |
+| Progress publisher | Owner: lane. Gap: keep the page dated, concise, and linked to evidence. Next test: keep the visible page and log aligned. |
+
+Note: this lane's page update becomes live only after merge to `main`; GitHub Pages lags until then.
+
+## 2026-05-25 05:22:52 CEST - Supervisor Snapshot
+
+- Going well: the public page stays scan-first, and the linked docs still carry the detailed proof trail.
+- Not going well: the same production gaps remain unproven, so the blocked state has not moved.
+- Progress change: no evidence delta; this pass just tightened the visible summary and kept the live-vs-merged note explicit.
+- Next nudge: keep each lane to one owner, one proof gap, and one concrete test, and do not widen scope until one gap closes.
 
 | Lane | Current nudge |
 | --- | --- |
