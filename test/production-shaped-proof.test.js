@@ -90,6 +90,28 @@ test('production-shaped live preflight smoke fails fast when the live source or 
   );
 });
 
+test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-topology-proof.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  assert.equal(proof.status, 0, proof.stderr);
+  assert.match(proof.stdout, /"ok": true/);
+  assert.match(proof.stdout, /"remoteBase": "remote-base"/);
+  assert.match(proof.stdout, /"localEdited": "local-edited"/);
+  assert.match(proof.stdout, /"remoteChanged": "remote-changed"/);
+  assert.match(proof.stdout, /"routeProfile": \{\s*"profile": "production-shaped"/);
+  assert.match(proof.stdout, /"restNamespace": "reprint\/v1"/);
+  assert.match(proof.stdout, /"routePrefix": "\/push"/);
+  assert.match(proof.stdout, /"indexStatus": 200/);
+});
+
 test('production-shaped topology proof wrapper emits the fixed one-remote one-local one-drift harness', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-topology-proof.mjs'], {
     cwd: repoRoot,

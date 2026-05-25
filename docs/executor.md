@@ -79,6 +79,11 @@ The checked topology proof is `npm run test:playground:production-shaped-topolog
 Use it when you need the fixed one-remote, one-local, one-drift harness summary
 and the shared Docker and Playground route matrix without live credentials.
 
+The release-facing live topology proof is `npm run test:playground:production-shaped-live-topology-proof`.
+Use it when you need a runnable command that starts a local Playground remote
+source, binds production-shaped preflight to it, and reports the same
+one-remote, one-local, one-drift topology with real HTTP output.
+
 The release-facing checked command is `npm run test:playground:production-shaped-proof`.
 Use it when you need one executable entry point that proves both the protocol
 ladder and the explicit missing-secret and missing-live-source gates.
