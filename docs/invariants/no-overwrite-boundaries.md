@@ -16,6 +16,10 @@ This note is the short form of the planner policy in
 - Matching independent deletions, edits, and file type swaps can also appear
   alongside a live-preconditioned deletion; they still stay `already-in-sync`,
   and the remote plugin drift stays preserved.
+- Matching independent row deletions, edits, and file type swaps can also
+  appear alongside a live-preconditioned file deletion; they still stay
+  `already-in-sync`, and the remote plugin drift stays preserved through
+  apply.
 - The same rule holds when the plan also includes a matching independent edit
   or file type swap plus unrelated remote-only plugin drift: the safe
   resources stay `already-in-sync`, the plugin drift stays `keep-remote`, and
