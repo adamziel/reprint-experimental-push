@@ -198,6 +198,10 @@ Changes that must happen before any production-grade push claim:
 - Reverify the cited Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress
   `55f9879` notes against the live boundary or stop treating them as current
   evidence.
+- Treat `docs/source-notes.md` as historical input unless the branch can name
+  the exact upstream commit or worktree state and the live write boundary that
+  was reverified; a local note file does not upgrade itself into production
+  proof.
 
 Production-grade wording requires the claim to name all of the following, or
 it stays non-production regardless of route shape, package mount, or
