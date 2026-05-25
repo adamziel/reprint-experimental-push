@@ -106,6 +106,10 @@ What it proves:
   a safe manual-resolution lifecycle.
 - It does not prove that a readable review artifact from a lab-shaped route
   can authorize retry on the live boundary without preserved-remote evidence.
+- It does not prove plugin data traps are safe just because the same review
+  vocabulary, route family, or package mount appears in a note; hidden plugin
+  state discovered after the first write still needs its own preserve / reject
+  / retry cycle.
 
 What it does not prove:
 

@@ -2088,6 +2088,10 @@ plugin-owned options, custom tables, generated files, activation hooks, cron,
 and cache entries can all mutate outside the main post/page row plan. If any
 plugin-owned surface can change without a declared contract, a fixture result
 or route-shape smoke is not proof that the push preserved remote state.
+That also means a historical source note does not prove hidden plugin state
+discovered after the first write is safe to fold into the earlier approval;
+the later surface still needs its own preserve / reject / retry cycle on this
+branch.
 The source-note comparisons are useful only as context for those failure
 classes; they do not prove the current upstream repos still have the cited
 behavior, and they do not prove this branch has the same live mutation
