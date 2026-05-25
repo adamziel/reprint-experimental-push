@@ -187,6 +187,10 @@ evidence for all of these, not just a plausible design:
   revalidation, durable recovery, remote-preserving retry after drift, stale
   manual-review artifact rejection, or a production write boundary in this
   repo.
+- A lab route, fixture route, packaged-plugin route, or copied source-note
+  route shape is compatibility evidence only. It does not prove production
+  auth, production storage durability, live remote preservation, or that the
+  exercised route is the real write executor instead of a lab-backed stand-in.
 - Those notes also do not justify production wording by association. A future
   doc or status comment must still show live write-path proof in this repo; a
   strong transport shape, scanner model, or crash vocabulary is not enough.
@@ -1199,6 +1203,10 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   gate.
 - Route-shape-only evidence, fixture replay alone, and `finalMatchesLocal`
   alone are never enough to claim production support.
+- A route that only proves endpoint shape, packaged-plugin mounting, or
+  copied-lab route wiring must fail the release gate unless the same live
+  remote mutation path was reproduced with a drifted remote and the stale
+  approval was rejected before any write.
 - Manual resolution is not a success state unless the remote is preserved for
   audit, the stale artifact is rejected before write, and the retry starts
   from fresh live evidence with no scope widening.
