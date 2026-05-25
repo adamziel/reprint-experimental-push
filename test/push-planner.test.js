@@ -1077,6 +1077,55 @@ test('allows local postmeta references to a post created by the same plan', () =
   assertInvalidMutationDependency(misorderedPlan);
 });
 
+test('allows a local post to reference a parent post created by the same plan', () => {
+  const parentResourceKey = 'row:["wp_posts","ID:2"]';
+  const childResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local child post',
+    post_content: 'local-private-child-body',
+    post_status: 'draft',
+    post_parent: 2,
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const childMutation = mutationFor(plan, childResourceKey);
+  const reference = childMutation.wordpressGraphReferences[0];
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent post create must be ordered before dependent child post',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, parentResourceKey);
+  assert.equal(reference.dependency.targetMutationId, parentMutation.id);
+  assert.equal(reference.dependency.targetLocalHash, parentMutation.localHash);
+  assert.equal(referenceJson.includes('local-private-child-body'), false);
+  assert.equal(referenceJson.includes('local-private-parent-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local parent post');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
