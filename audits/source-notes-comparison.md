@@ -59,6 +59,9 @@ What it does not prove:
   coverage, or partial file/DB/plugin side-effect classification.
 - It does not prove plugin data traps are safe just because a fixture-owned
   option, row, or route matches the expected shape.
+- It does not prove hidden plugin-owned state outside the allowlist is safe
+  just because the route family or package layout matches a known upstream
+  shape.
 - It does not prove a stale manual-review artifact can remain auditable while
   being unusable as authority after drift, or that a retry must rebuild scope
   from fresh live hashes instead of inheriting the old decision.
@@ -77,6 +80,8 @@ What it proves:
 - It does not prove that scanner coverage in a fixture or lab route implies
   the live executor saw the same plugin-owned surface list, remap case, or
   stale-approval boundary.
+- It does not prove create-time identity remap safety just because the same
+  scanner or batching pattern appears in a source note.
 
 What it does not prove:
 
@@ -119,6 +124,8 @@ What it does not prove:
   are safe to enumerate by fixture shape alone, including late-discovered
   tables, cron rows, runtime registries, serialized blobs, caches, and plugin
   files.
+- It does not prove a remapped create target stays covered when the live write
+  boundary moves to a different row, file, or relationship-bearing record.
 
 ## Rule For Production Claims
 
