@@ -153,6 +153,7 @@ test('safety contract covers required speedup areas and terminal states', () => 
 
 test('fast-path proofs and rejections carry the expected gate metadata', () => {
   const model = buildBenchmarkModel();
+  const rejectedById = new Map(model.rejectedFastPaths.map((fastPath) => [fastPath.id, fastPath]));
 
   assert.ok(model.safeFastPaths.length > 0);
   assert.ok(model.rejectedFastPaths.length > 0);
