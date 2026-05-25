@@ -107,7 +107,9 @@ Required behavior:
 
 - `push_preflight` authenticates a push-capable credential at least as strict
   as the current export HMAC, binds the request to the pulled base identity,
-  negotiates capabilities, and mints a short-lived push session.
+  negotiates capabilities, and mints a short-lived push session. The same
+  HMAC floor must continue to protect dry-run, apply, and mutating recovery,
+  with the push session plus canonical push signature layered on top.
 - `push_snapshot_hashes` returns a complete, cursorable live remote hash list
   plus coverage proof for the requested scopes. It is a planning read only and
   must be treated as stale as soon as live remote state changes.
@@ -141,7 +143,8 @@ Endpoint specifics:
 - `push_batch_apply` is the only normal mutation path. It must revalidate the
   live remote before every batch and again at the storage boundary before any
   write. Dry-run evidence is not sufficient by itself, and a live mismatch at
-  either boundary must stop the batch instead of replaying stale proof.
+  either boundary must stop the batch instead of replaying stale proof. A
+  valid dry-run receipt never upgrades into liveness authority.
 - `push_journal` is a read-only journal inspector for lost-response recovery,
   idempotency resolution, lease/fencing evidence, and apply classification.
   It reads durable journal rows only; it does not mint a new lock or rewrite a
