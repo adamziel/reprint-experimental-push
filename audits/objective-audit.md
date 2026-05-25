@@ -795,10 +795,10 @@ Evidence table summary:
 
 | Bucket | Current proof | Missing proof | Release blockers |
 | --- | --- | --- | --- |
-| Executable proof | Planner conflict detection, recovery journal classification, fixture-scoped storage guards, and benchmark refusal logic. | Production auth/session, live topology, and real WordPress graph mutation. | None by themselves; these are bounded proof slices only. |
-| Lab/fixture proof | Playground plan/apply/push-protocol flows, journal/recovery smokes, authenticated lab routes, and production-shaped route/package smokes. | Live-source crash recovery, durable production journal writes, and production plugin/data-driver behavior. | `labBacked: true` remains a release blocker for route/package smokes. |
-| Docs-only proof | Objective text, progress page, script names, and audit prose. | Any executable proof at the live boundary. | Documentation cannot authorize release. |
-| Missing proof | One required `verify:release`-style gate, wired into CI or another enforced entrypoint, that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks. | An enforced production release path. | The release still fails closed until this exists. |
+| Executable proof | Planner conflict detection, recovery journal classification, fixture-scoped storage guards, and benchmark refusal logic. These checks do prove that some unsafe states are rejected. | Production auth/session, live topology, and real WordPress graph mutation. | None by themselves; they are bounded proof slices only. |
+| Lab/fixture proof | Playground plan/apply/push-protocol flows, journal/recovery smokes, authenticated lab routes, and production-shaped route/package smokes. These checks prove controlled lab behavior and route shape. | Live-source crash recovery, durable production journal writes, and production plugin/data-driver behavior. | `labBacked: true` remains a release blocker for route/package smokes, so they cannot be treated as production proof. |
+| Docs-only proof | Objective text, progress page, script names, and audit prose. These describe the desired bar but do not exercise it. | Any executable proof at the live boundary. | Documentation cannot authorize release. |
+| Missing proof | One required `verify:release`-style gate, wired into CI or another enforced entrypoint, that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks. | An enforced production release path. | The release still fails closed until this exists, so the objective remains blocked even if optional smokes stay green. |
 
 ## Test Verdict
 
