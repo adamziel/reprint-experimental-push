@@ -10,7 +10,7 @@ Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, 
 
 ## 12h Delta
 
-The last 12 hours changed the remote evidence but not the gate: `origin/lane/reliable-executor` moved from `ec1c9952` to `536015fb`, `origin/lane/no-data-loss-invariants` is now `093932fe`, `origin/lane/critic` is now `b73a2f26`, and `origin/lane/independent-auditor` is now `1d6cb6fd`. The new reliable-executor head adds an explicit durable-journal boundary verdict and a wrapper test that checks that verdict, but it still ends on `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` and `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
+Remote evidence moved and the gate stayed closed: `origin/lane/reliable-executor` is now `536015fb`, `origin/lane/no-data-loss-invariants` is `093932fe`, `origin/lane/critic` is `b73a2f26`, and `origin/lane/independent-auditor` is `e2258b60`. The reliable-executor tip now carries the stronger retained-source release verifier, including the explicit durable-journal boundary verdict, but it still ends on `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` and `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
 
 Release gates stay `0/4` because the proof is still upstream-only at the live boundary. The exact proof that would move one gate is a checked `npm run verify:release` from this checkout that, in one run, emits apply-time auth/session validation, durable journal readback from production storage, recovery inspect evidence, live-source topology proof, preserved-remote drift evidence, and an explicit machine-checkable verdict that closes a remaining production boundary instead of only restating the open ones. The next command to demand is that same `npm run verify:release` run from this worktree.
 
