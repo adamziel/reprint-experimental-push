@@ -221,6 +221,23 @@ the exact upstream revision or worktree state, the exact live write boundary
 on this branch, the exact stale-drift case, and the exact preserved remote
 that stayed inspectable after rejection.
 
+Conservative comparison rule:
+
+- Reprint `27c5f25` is historical design input for staged transport and
+  resumability vocabulary only; it does not prove current stale-drift
+  rejection, preserved-remote auditability, or live push safety on this
+  branch.
+- ZS-Sync `d9334a0` is historical design input for bounded discovery and
+  cursoring only; it does not prove current source-mutation safety,
+  plugin-owned surface coverage, or retry authority on this branch.
+- ForkPress `55f9879` is historical design input for merge review and crash
+  consistency vocabulary only; it does not prove that a readable manual
+  review can authorize a later row, file, remapped create target, or
+  plugin-owned surface on this branch.
+- If a comparison note does not say what it proves here and what it does not
+  prove here, the note is ambiguous and must fail closed instead of being
+  treated as production evidence.
+
 Comparison proof rule: when a source note is cited, the citation must say
 which exact upstream revision or worktree state it refers to, whether it is
 historical context or live retry proof, and what live boundary was rerun on
