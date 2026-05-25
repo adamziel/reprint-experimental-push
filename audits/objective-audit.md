@@ -271,6 +271,13 @@ Current proof must be judged against the live-source release boundary, not again
 - route smokes that still report `labBacked: true`
 - any proof that does not exercise the one-way pull base to one-way push to live source loop on the real release boundary
 
+Evidence rule:
+
+- executable proof must touch the live-source boundary in the same required invocation
+- lab / fixture proof can support debugging, but it cannot close release
+- docs-only proof can explain intent, but it cannot certify durability, reliability, or speed
+- missing proof is a release blocker until the required gate exists and fails closed
+
 The strongest current runnable evidence still falls into four classes:
 
 - executable proof: none that reaches the live-source boundary; the strongest tests are [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js), [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js), [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js), and [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js), but every one of them remains fixture-, model-, or refusal-backed rather than live-source-backed
@@ -318,6 +325,12 @@ Proof buckets used below:
 | Reliability | Auth/session scaffolding, replay rejection, and journal guardrails | One mandatory gate that composes auth/session, journal, leases/fencing, graph identity, and plugin-driver checks | Distributed helper proofs do not close the release decision |
 | Speed | `productionThroughput: 'not-claimed'` and refusal-only benchmark behavior, which is a refusal to overclaim rather than a measured live-path result | A measured live-path threshold or an enforced `speed unclaimed` verdict from a required release command | Refusal is not performance evidence |
 | Mandatory release gate | Optional smokes and `npm test` | A checked-in `verify`, `verify:release`, or `release` command, plus a checked-in workflow or other default entrypoint that invokes it | Optional runs can bypass the live-source verdict |
+
+Bottom line:
+
+- if a claim is supported only by fixtures, Playground, lab routes, refusal tests, or prose, it remains unproven for release
+- if the same invocation does not reach the live-source boundary and return a machine-checkable verdict, it is not release proof
+- the release blocker is the absence of one enforced command that can fail closed on missing live-source proof
 
 Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path. A passing lab suite here is still compatible with a release that would lose writes, fail under a crash, or have no measured throughput at all.
 
