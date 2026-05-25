@@ -28,7 +28,8 @@ The benchmark model encodes the same gates in `fastPathGates`. Each
 `safeFastPaths` entry must carry a concrete proof for all four gates, even when
 the proof is that a gate is not doing mutation work, such as remote indexes or
 backpressure pauses. Each rejected entry names the first gate it breaks through
-`rejectedGate`; that keeps "fast but ambiguous after failure" proposals out of
+`rejectedGate`; `violates` records the broader contract breaks that make the
+proposal unsafe. That keeps "fast but ambiguous after failure" proposals out of
 the safe list even when they improve a throughput metric.
 
 ## Safe Speedups
