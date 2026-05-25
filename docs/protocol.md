@@ -14,8 +14,9 @@ pipeline, not a mutable snapshot cache.
 The production shape is fixed:
 
 - exporter/importer establish the immutable pull base package
-- preflight binds that package to one live remote identity and one short-lived
-  push session
+- preflight is the first live-remote binding step after importer provenance
+  exists and it binds that package to one live remote identity and one
+  short-lived push session
 - snapshot hash listing reads the live remote comparison surface for planning
   only
 - dry-run uploads the canonical plan as an eligibility receipt, not a lock
@@ -98,6 +99,21 @@ Use these fixtures as the canonical proof bundle:
   for Docker and Playground ingress behavior.
 - `push-topology-matrix.json` is the machine-readable one-remote,
   one-local, one-drift matrix.
+
+The canonical test topology is always the same:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| Remote source | `remote-base` | `remote-base` |
+| Local edited site | `local-edited` | `local-edited` |
+| Drift witness | `remote-changed` | `remote-changed` |
+| Runner | `runner` | local test process |
+
+The remote source and drift witness are two observations of the same remote
+identity. The local edited site is the imported clone derived from the
+persisted pull base package, and the runner is the only actor that may run
+preflight, snapshot hash listing, dry-run, apply, journal inspect, or
+recovery.
 
 ## Pull To Push Mapping
 

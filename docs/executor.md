@@ -9,6 +9,20 @@ and one later observation of the same remote identity after drift. In both
 Docker and Playground, that proof keeps browser-visible inspection on the
 sandbox-provided `8080` ingress through a local-only proxy.
 
+The pull pipeline is the provenance source for every push stage:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to one live remote identity, one
+  requested scope, and one short-lived push session
+- snapshot hash listing is planning-only and never write authority
+- dry-run uploads the canonical plan as a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect is read-only and does not widen authority
+- recovery begins with inspect and only mutates when the journal plus fresh
+  live hashes still prove the branch safe
+
 The executor contract is intentionally linear:
 
 1. bind the persisted pull base package to one live remote identity in
@@ -23,6 +37,15 @@ The executor contract is intentionally linear:
    `push_recover inspect`
 7. mutate only when the inspect result and auth floor still prove the branch
    safe in `push_recover auto|finish|rollback`
+
+The canonical topology is fixed across both harnesses:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| Remote source | `remote-base` | `remote-base` |
+| Local edited site | `local-edited` | `local-edited` |
+| Drift witness | `remote-changed` | `remote-changed` |
+| Runner | `runner` | local test process |
 
 The pull-to-push mapping is one-way: exporter/importer establish immutable
 provenance, and push consumes it without rewriting it. The imported pull base
