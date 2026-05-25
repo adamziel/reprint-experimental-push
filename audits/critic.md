@@ -2,14 +2,14 @@
 
 Current baseline for this critique: the supervised reliable-executor lane
 through remote head `68664884`, with `63a3502f` as the earlier retained-source
-proof point. `npm run verify:release` is now material retained-source
-evidence, but it is still local Playground lab evidence and not live retry
-authority unless the branch also proves the live production WordPress
-auth/session boundary, durable journal semantics, graph identity, and
-plugin-driver coverage on a real-site rerun. The retired critique is the one
-that said no `verify:release` command exists; do not reintroduce it on this
-branch. The current blocker is the missing rerunnable live boundary with
-preserved-remote audit evidence on a real local, Playground, or Docker
+proof point. That lane's `npm run verify:release` result is material
+retained-source lab evidence, but it is still not live retry authority unless
+the same branch also proves the live production WordPress auth/session
+boundary, durable journal semantics, graph identity, and plugin-driver
+coverage on a real-site rerun. The retired critique is the one that said no
+`verify:release` command exists; do not reintroduce it on this branch. The
+current blocker on this audit branch is the missing rerunnable live boundary
+with preserved-remote audit evidence on a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL`.
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
@@ -47,6 +47,10 @@ What still blocks production-grade wording:
 - any later-discovered plugin-owned surface, remapped create target, or mixed
   file/DB/plugin side effect must get its own preserve / reject / retry cycle
   unless it was already enumerated before the first write; and
+- a retained-source `verify:release` run, route-shape smoke, or readable
+  review artifact stays compatibility evidence only until the same live
+  boundary is rerun on a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`;
 - "manual resolution", "comparison passed", and "production-ready" remain
   false reliability unless the preserved remote stayed inspectable after
   rejection and the retry scope was rebuilt from live hashes on this branch.
