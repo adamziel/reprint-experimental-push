@@ -558,6 +558,9 @@ linked implementation artifacts.
 - The main progress page keeps the same linked evidence trail:
   reliable executor moved up in the lab, while production endpoint/auth/journal
   claims remain blocked.
+- The current pass kept the visible progress page aligned with the log, but it
+  did not add new production evidence. The page still stays scan-only and
+  becomes live only after merge to `main`.
 
 ## 2026-05-24 - Supervisor Evidence Checkpoint
 
