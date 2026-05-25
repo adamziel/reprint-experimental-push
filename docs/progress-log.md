@@ -6,6 +6,20 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Live Progress Refresh
 
+- Last update: 2026-05-25 02:40:59 CEST.
+- Status: `89` Node tests still pass, the supervised swarm remains active, and
+  production push is still blocked.
+- Trend: the latest lane evidence at 02:40:18 CEST stayed aligned on recovery,
+  protocol, critic, and objective-audit details, so the release posture
+  remains flat.
+- Blocker: production auth/session binding, durable journal storage, graph
+  identity, plugin drivers, live Docker/Playground topology, recovery
+  boundaries, and release-gate evidence remain unproven.
+- Public page: [progress.html](../progress.html) now shows the visible current
+  timestamp, a concise first screen, and links the latest evidence.
+
+## 2026-05-25 - Live Progress Refresh
+
 - Last update: 2026-05-25 02:36:35 CEST.
 - Status: `89` Node tests still pass, the supervised swarm remains active, and
   production push is still blocked.
