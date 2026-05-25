@@ -1480,6 +1480,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers',
+    proposal: 'use a compressed remote index to justify unbounded database row parallelism across plugin groups once batching begins',
+    rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded row parallelism can still erase the group-owned commit order and backpressure evidence needed to recover a partial failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

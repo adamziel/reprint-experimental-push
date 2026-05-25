@@ -324,6 +324,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-unbounded-upload-parallelism-skips-backpressure').violates.includes('durable-progress'),
   );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('compressed-upload-queue-skips-large-upload-resume').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-upload-queue-replaces-chunk-receipts').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-upload-queue-replaces-chunk-receipts').violates.includes('chunk-receipts'));
