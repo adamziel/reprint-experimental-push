@@ -76,6 +76,11 @@ Source-note comparison stays provenance only:
 - ForkPress proves audit/merge/crash-consistency intent, not a branch-local
   live rerun with preserved-remote evidence, apply-time revalidation, or
   later-surface preserve / reject / retry handling.
+- Even when a comparison note shares the same route family, package mount, or
+  reviewer wording as this branch, it remains provenance only unless it names
+  the exact upstream state, states what it proves here and what it does not
+  prove here, and is backed by a rerun of the same live boundary on this
+  worktree.
 - The upstream anchors recorded in `docs/source-notes.md` are `27c5f25`
   for Reprint, `d9334a0` for ZS-Sync, and `55f9879` for ForkPress; they are
   still provenance only until this branch reruns the same live boundary and
