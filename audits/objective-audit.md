@@ -233,6 +233,12 @@ The weakest claim remains speed, and it is the easiest one to overstate because 
 
 The current test suite proves negative claims better than positive release claims. It proves that unsupported throughput can be refused, but it does not prove a production throughput floor or a live-path SLO. That means the safest release-language reading is not "fast enough is likely", but "fastness is intentionally unclaimed until the required gate exists". Any softer reading would overstate what the tests actually cover, and any claim of no data loss or reliability would be equally overstated because the suite never reaches the live-source boundary that would be needed to prove them.
 
+For release purposes, the three claims should be read this way:
+
+- `No data loss`: unproven at the live-source boundary; current tests only prove guarded local and fixture replay behavior.
+- `Reliable`: unproven at the live-source boundary; current tests only prove refusal, restart classification, and journal integrity in lab storage.
+- `Fast`: intentionally unclaimed until a mandatory release command prints a live-path verdict or an explicit `speed unclaimed` failure.
+
 That also means the release gate must be opinionated enough to reject a green run that never reaches the live-source verdict. A command that only replays fixture checks or optional smokes and then exits zero is not a release decision, even if it accurately refuses to claim throughput. The required gate has to surface one of two outcomes in the same run: a measured live-path throughput result, or an explicit `speed unclaimed` verdict that is part of the release decision itself.
 
 The actionable rule is simple: add one default release command, wire it into CI, and make it print either a measured live-path throughput result or a deliberate `speed unclaimed` verdict. Anything softer than that still leaves the release language ambiguous, because optional smokes and refusal-only benchmarks can prove the project is cautious without proving the live push path is ready. The command should fail closed if it cannot emit one of those two outcomes in the same run.
