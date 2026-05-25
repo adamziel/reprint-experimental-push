@@ -16676,6 +16676,63 @@ test('failure after dependency validation keeps the remote old and replays witho
   assert.equal(Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('durable recovery blocks stale claims before mutation and preserves inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'worker-a',
+  });
+  const remote = baseSite();
+  const remoteSnapshot = JSON.stringify(remote);
+
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      mutateRemote: true,
+      beforeMutation({ mutationIndex }) {
+        assert.equal(mutationIndex, 1);
+        const competingWriter = openRecoveryJournal(journalPath, {
+          now: new Date(fixedNow.getTime() + 5000),
+          claimId: 'worker-b',
+        });
+        appendStaleClaimAdvanced(competingWriter, {
+          plan,
+          current: remote,
+          previousClaimId: 'worker-a',
+          claimId: 'worker-b',
+          staleThresholdMs: 1000,
+          previousClaimAgeMs: 5000,
+        });
+        competingWriter.close();
+      },
+    }),
+  );
+
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.code, 'RECOVERY_CLAIM_STALE');
+  assert.equal(failure.details.recovery.status, 'blocked-recovery');
+  assert.equal(JSON.stringify(remote), remoteSnapshot);
+  assert.equal(failure.details.recovery.artifacts.remote.files['index.php'], '<?php echo "base";');
+  assert.equal(failure.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.ok(failure.details.recovery.artifacts.journal);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'blocked');
+  assert.equal(
+    persisted.records.some((record) => record.type === 'mutation-observed'),
+    false,
+  );
+});
+
 test('durable recovery artifacts keep the approved envelope inspectable across failure and replay boundaries', () => {
   const base = baseSite();
   const local = baseSite();
