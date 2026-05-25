@@ -4504,3 +4504,26 @@ A stale manual-review artifact is also not success by itself: if it remains
 readable after drift, the note still has to show the preserved remote, the
 stale authority rejection point, and a fresh retry artifact rebuilt from live
 hashes on this branch.
+
+Production-grade push support is still blocked until all of the following are
+true on this branch:
+
+- live remote drift between dry-run and apply is rejected before the first
+  write, and the preserved remote stays auditable after rejection;
+- create-time identity remapping, aliasing, or renumbering is either proven
+  safe with live identity evidence or hard-blocked before write;
+- every plugin-owned surface outside the allowlist is either enumerated live
+  or blocked at apply time, including late-discovered tables, generated
+  files, cron rows, runtime registries, serialized blobs, caches, and plugin
+  files;
+- any partial file, DB, or plugin side effect is classified as old, new, or
+  blocked before retry, so mixed writes cannot be relabeled as success;
+- any stale manual-review artifact stays audit-only after drift and cannot
+  become retry authority for a different row, file, relationship-bearing
+  record, remapped create target, or plugin-owned surface;
+- any route-shaped smoke, packaged-plugin mount, fixture replay, readable
+  review artifact, or `finalMatchesLocal` result is treated as compatibility
+  evidence only; and
+- any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
+  revision or worktree state and says what that note proves here and what it
+  does not prove.
