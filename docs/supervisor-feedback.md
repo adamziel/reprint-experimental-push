@@ -16,7 +16,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 01:05 CEST - Remote Head Refresh
 
-- Fresh `git ls-remote` evidence moved several lane heads: `critic` is now `4e487df4`, `fast-paths` is `b54f1b34`, `feedback-supervisor` is `f386dfa6`, `progress-publisher` is `7695e1f94`, `same-plan-wordpress-graph-create` is `732e1251`, and `no-data-loss-invariants` is `fa0ce3ea`.
+- Fresh `git ls-remote` evidence moved several lane heads: `critic` is now `4e487df4`, `fast-paths` is `b54f1b34`, `feedback-supervisor` is `f386dfa6`, `progress-publisher` is `7695e1f94`, `same-plan-wordpress-graph-create` is `24c58564`, and `no-data-loss-invariants` is `fa0ce3ea`.
 - `reliable-executor` stayed at `0c4fd10f`, so the live proof still has not advanced beyond the fixture-suite recheck.
 - `independent-auditor` remains at `33b839f0` and `no-data-loss-recovery` remains at `47b675c0`; those heads are current, but there is no new gate verdict to promote.
 - The feedback surface needed a real sync because the prior queue values were stale on multiple lanes; the public page should keep the gate closed and keep the production-proof blockers explicit.
