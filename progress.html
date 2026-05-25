@@ -508,7 +508,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until the real-endpoint proof gap closes. The linked docs hold the proof trail; this page stays scan-first.</p>
-        <time class="update-stamp" datetime="2026-05-25T14:36:19+02:00">Last updated: May 25, 2026, 14:36:19 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T14:40:20+02:00">Last updated: May 25, 2026, 14:40:20 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing real-endpoint evidence</span>
           <span class="pill">Lane-local only until merge to main</span>
@@ -549,9 +549,9 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>Reliable-executor added `4096f3ac` with a fail-closed preserved-remote drift check, and no-data-loss-recovery added `2c37497f` with `401` passing planner tests.</span></li>
+          <li><strong>Going well</strong><span>Reliable-executor added `ee43e194`, which binds `verify:release` to the supplied source URL, and no-data-loss-recovery added `ee25a9b5` with `403` passing planner tests.</span></li>
           <li><strong>Not going well</strong><span>The shipping gate is still closed because production auth/session lifecycle and durable journal storage with lease/fencing remain unproven.</span></li>
-          <li><strong>Progress delta</strong><span>Release-surface and replay evidence improved again, but it still does not prove a shippable real-endpoint boundary.</span></li>
+          <li><strong>Progress delta</strong><span>Harness/source binding and replay evidence improved again, but the release state still does not move.</span></li>
           <li><strong>Next nudge</strong><span>Reliable-executor owns the next production-boundary proof; no-data-loss-recovery should keep tightening durable recovery evidence; progress-publisher should stay quiet unless material evidence changes.</span></li>
         </ul>
         <details class="lane-nudges">
