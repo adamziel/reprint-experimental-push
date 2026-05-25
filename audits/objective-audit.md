@@ -33,6 +33,18 @@ good negative evidence, but it is still not direct proof for the objective:
 pushing local edits back to a live source WordPress site without losing
 concurrent source changes, while remaining reliable and fast.
 
+## Evidence Table
+
+| Requirement | Current proof | Missing proof | Release blocker |
+| --- | --- | --- | --- |
+| One-way pull base, one-way push to live source | Planner and fixture smokes preserve remote-only changes and reject unsafe overwrites. | A live-source push boundary that mutates the real source site after a pull-base snapshot. | Yes: live boundary is still lab-backed. |
+| No silent data loss | Model and fixture tests cover row/file/plugin-data conflicts, recovery labels, and stale claims. | Exhaustive live-source coverage for DB rows, files, plugin-owned data, and mid-apply restarts. | Yes: indirect evidence is insufficient. |
+| Reliability under crash/retry/replay/duplicate requests | Process-kill, stale-claim, idempotency, and replay smokes exist. | Production-backed journal durability and crash recovery on the real transport and storage path. | Yes: recovery is still fixture-scoped. |
+| Auth, session, lease, fencing, journal, graph identity, plugin-driver gates | Authenticated local Playground routes, DB journal slices, and graph-identity assertions exist in lab scope. | A required production release gate that enforces all of them together. | Yes: no enforced gate exists. |
+| Real remote/local topology | Playground blueprints and local HTTP route smokes approximate the topology. | Evidence from the actual remote/local production topology. | Yes: topology proof remains lab-only. |
+| Speed claim | Benchmark refusal tests block unsupported throughput claims. | A measured runtime or memory result from the production-shaped push path. | Yes: speed is unproven. |
+| Required release command | Optional npm scripts and opt-in smokes exist. | One mandatory `verify:release`-style entrypoint that fails closed. | Yes: no mandatory gate. |
+
 A fresh repo scan on 2026-05-25 also found no checked-in `.github` workflow
 directory and no enforced CI entrypoint that could serve as a required release
 gate. That absence matters because a release claim needs a single path that
