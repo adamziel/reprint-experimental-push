@@ -974,6 +974,60 @@ test('blocks a directory delete that would hide a live remote descendant while p
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('blocks a directory delete that would hide a live remote descendant while preserving matching independent delete, edit, type swap, and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/cover'] = { type: 'directory' };
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base shared title', post_status: 'publish' };
+
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.files['wp-content/uploads/gallery'];
+  delete local.db.wp_posts['ID:1'];
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+  local.files['wp-content/uploads/cover'] = 'shared replacement file';
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/remote-only.jpg'] = 'remote private image bytes';
+  delete remote.db.wp_posts['ID:1'];
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+  remote.files['wp-content/uploads/cover'] = 'shared replacement file';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const matchingDelete = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const remoteBefore = JSON.stringify(remote);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery');
+  assert.equal(conflict.relatedResourceKey, 'file:wp-content/uploads/gallery/remote-only.jpg');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(JSON.stringify(conflict).includes('remote private image bytes'), false);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('keeps remote-only plugin changes while suppressing unsafe topology mutations', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
