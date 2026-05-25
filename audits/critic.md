@@ -207,7 +207,7 @@ or production auth/session lifecycle.
 The remote reliable-executor head now gives better lab evidence, not release
 proof:
 
-- `68664884` keeps the release boundary explicit and confirms the retained-
+- `bd9ef3e8` keeps the release boundary explicit and confirms the retained-
   source verifier path is still being tightened, but it still stays inside the
   supervised lane's lab harness.
 - The evidence still does not show a production WordPress auth/session
