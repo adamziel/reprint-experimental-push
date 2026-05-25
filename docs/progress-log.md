@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 10:01:38 CEST.
+- Last update: 2026-05-25 10:06:57 CEST.
 - Status: blocked; the visible page, log, and latest audit note still agree.
 - Trend: no release-state change; integration still owns the next real-site command and the gate remains explicit.
 - Supervision: 8 fast/low worker lanes plus the dedicated live progress watcher remain active.
@@ -15,7 +15,7 @@ linked implementation artifacts.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
 - Next nudge: integration owns the next real-site release command and must return retained live source/auth/recovery output; invariants/recovery should align to that same command, and reliable-executor should keep the gate bound to a real URL/topology.
 - Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages only after merge to `main`; the deployed copy lags until then.
-- Audit note: [audits/supervisor-note-20260525-100138.md](../audits/supervisor-note-20260525-100138.md) captures the newest scan pass; the release state still does not move.
+- Audit note: [audits/supervisor-note-20260525-100657.md](../audits/supervisor-note-20260525-100657.md) captures the newest scan pass; the release state still does not move.
 
 ## 2026-05-25 - Supervisor Follow-up
 
