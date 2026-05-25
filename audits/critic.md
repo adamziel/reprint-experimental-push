@@ -128,6 +128,11 @@ Must change before any production-grade push claim:
 - prove a manual-resolution label never becomes success by itself; it is only
   audit context until the remote is preserved, the stale approval is rejected
   before mutation, and the fresh retry scope is rebuilt from live hashes;
+- prove a later-discovered plugin-owned surface does not inherit the earlier
+  manual-resolution label, because a hidden table, generated file, cron row,
+  runtime registry entry, cache entry, or serialized blob that appears after
+  the first write is a new live boundary and must get its own preserved
+  remote, rejection point, and fresh retry scope;
 - enumerate or hard-block late-discovered plugin-owned state, including
   custom tables, generated files, cron rows, runtime registries, serialized
   blobs, cache entries, and other hidden side effects; and

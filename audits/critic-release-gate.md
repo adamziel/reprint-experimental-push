@@ -91,6 +91,7 @@ Production-readiness language checklist:
 - name the exact live boundary and the exact stale-drift case;
 - show the preserved remote stayed auditable after rejection;
 - show the stale approval, review artifact, or comparison note was rejected before mutation and cannot widen to a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
+- show any later-discovered plugin-owned surface is a new boundary, not an inherited success case, even if it shares the same route family, package mount, or reviewer wording as the first write;
 - show the fresh retry artifact was rebuilt from live hashes on this branch, not inherited from earlier approval or copied from a note;
 - show the exact live boundary was rerun here, not just a matching route shape or package mount;
 - classify every touched surface as old, new, or blocked before retry starts;
