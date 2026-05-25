@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:37:09 CEST
+Last updated: 2026-05-25 09:38:15 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 09:38:15 CEST
+
+- Going well: the blocked snapshot still reads cleanly and the linked evidence trail stays compact.
+- Not going well: no new production-backed proof landed for auth/session, durable journal writes, leases/fencing, graph identity, integration, or plugin drivers.
+- Progress change: none; this is a decision update because the release state did not move.
+- Next nudge: the integration lane still owns the next real-site release command and must produce one real-endpoint check for live source/auth/recovery plus retained output.
+- Audit note: [audits/supervisor-note-20260525-093815.md](../audits/supervisor-note-20260525-093815.md) records this decision in one screen.
 
 ## 2026-05-25 09:37:09 CEST
 
