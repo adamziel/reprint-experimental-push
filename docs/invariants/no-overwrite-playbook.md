@@ -50,10 +50,16 @@ This is the short operational version of the planner invariant policy.
   even when the remote side has already removed an unrelated plugin; the
   unrelated plugin removal stays `keep-remote` and the file-topology evidence
   stays bounded.
+- The same file type swap stop condition also holds when the unrelated plugin
+  was removed entirely and a matching independent edit remains
+  `already-in-sync`.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Local delete or file type swap only if it preserves remote-only plugin
   drift rather than overwriting it.
+- Local file type swap must still stop when it would hide a live remote
+  descendant, even if the remote side already removed an unrelated plugin and
+  a matching independent edit is present.
 - Plugin-context and plugin-owned data mutations only when their required live
   remote plugin context still matches the pull base or the local side
   independently matches the live remote context.
