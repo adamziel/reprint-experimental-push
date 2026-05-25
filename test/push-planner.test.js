@@ -213,6 +213,27 @@ test('stops a local deletion when the remote edited the same resource', () => {
   assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote secret editorial update');
 });
 
+test('blocks restoring a remote-deleted post after the local copy diverged', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Local restored editorial update';
+  const remote = baseSite();
+  delete remote.db.wp_posts['ID:1'];
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.resourceKey, 'row:["wp_posts","ID:1"]');
+  assert.equal(conflict.change.localChange, 'update');
+  assert.equal(conflict.change.remoteChange, 'delete');
+  assert.equal(JSON.stringify(conflict).includes('Local restored editorial update'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(Object.hasOwn(remote.db.wp_posts, 'ID:1'), false);
+});
+
 test('stops a local directory deletion that would remove a remote-only descendant', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
