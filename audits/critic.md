@@ -5661,6 +5661,11 @@ Proof-substitution fail-closed rule:
   inspectable so the operator can audit the drift and safely retry from fresh
   live hashes. Otherwise the later surface remains blocked or audit-only,
   regardless of how similar it looks to the earlier boundary.
+- if the later boundary reuses the same route family, package mount,
+  reviewer wording, or upstream anchor, that similarity still does not
+  transfer retry authority; the earlier artifact remains audit evidence only
+  until this branch shows the later boundary's own preserved remote, stale
+  rejection point, and fresh retry scope rebuilt from live hashes.
 
 Source-note comparison rule:
 
