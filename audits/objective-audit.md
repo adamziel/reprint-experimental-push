@@ -22,7 +22,7 @@ The objective implies these minimum release requirements:
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone. The actionable fix is not another lab helper; it is a checked-in `verify` or `release` gate that fails closed unless it can prove live-source state at apply time.
 
 Right now the best available commands are `node --test`, `npm run test:playground`, `plan`, and `apply`. Those are useful, but they are support paths, not a release gate, because none of them force a live-source verdict in the same invocation.
 
@@ -205,7 +205,7 @@ The uncomfortable conclusion is that the current tests are good enough to block 
 | `test/recovery-journal.test.js` | Local journal sequencing, redaction, restart classification, and recovery inspection against temporary files | Durable production storage, crash survival on live state, live-boundary replay safety, and final-commit durability on the real source |
 | `test/performance-model.test.js` | Benchmark guardrails and refusal of unsupported throughput claims | Measured live-path throughput and any positive speed claim |
 | `test/guarded-executor-benchmark.test.js` | Tamper detection, graph-identity bookkeeping, and refusal to upgrade unsupported benchmark claims without a live measurement | A release-grade performance verdict on the real push path |
-| `npm test` as a whole | The repository can reject unsafe claims in lab, fixture, and model scope; it does not assert live-source release readiness | A mandatory live-source verdict that can certify no data loss, reliability, or speed |
+| `npm test` as a whole | The repository can reject unsafe claims in lab, fixture, and model scope; `npm test` is green at `89/89` | A mandatory live-source verdict that can certify no data loss, reliability, or speed |
 
 ## Test Verdict
 
