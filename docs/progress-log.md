@@ -4,14 +4,15 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 04:08:18
+## 2026-05-25 - Public Status Audit 04:09:02
 
-<a id="2026-05-25-public-status-audit-040818"></a>
+<a id="2026-05-25-public-status-audit-040902"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 04:08:18 CEST`) and kept the visible last-updated stamp current.
-- Tightened the first screen so it shows trend, top blocker, and the release
-  gates once, with the pending proof areas pushed into the checklist.
+  (`2026-05-25 04:09:02 CEST`) and kept the visible last-updated stamp current.
+- Kept the first screen conservative and auditable: trend, top blocker, and
+  the 0/5 gate state stay on one screen, while the pending proof areas remain
+  in the checklist.
 - Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
   [docs/approach-scorecard.md](approach-scorecard.md), [docs/executor.md](executor.md),
   [docs/recovery/apply-journal.md](recovery/apply-journal.md),
