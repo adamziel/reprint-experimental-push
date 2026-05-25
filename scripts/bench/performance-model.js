@@ -2157,6 +2157,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish-backpressure',
+    proposal: 'use a compressed remote index plus cached chunk receipts to skip backpressure before the large-upload publish step',
+    rejectedBecause: 'planning evidence and cached receipts can trim duplicate work, but they cannot prove the queue stayed bounded, the chunk acknowledgements survived the pause, or the guarded publish barrier is still intact',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing',
     proposal: 'use a compressed remote index plus cached chunk receipts to skip large-upload window sizing after a pause',
     rejectedBecause: 'planning evidence and cached chunk receipts can trim duplicate replay, but they cannot prove the next bounded window still matches the live queue order or restore the guarded publish barrier after failure',

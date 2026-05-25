@@ -1160,6 +1160,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-chunk-send-backpressure').violates.includes('chunk-receipts'),
   );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish-backpressure').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish-backpressure').violates.includes('atomic-file-publish'),
+  );
   assert.equal(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate, 'recovery');
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('compression'));
