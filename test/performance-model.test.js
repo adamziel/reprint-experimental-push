@@ -189,6 +189,10 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-upload-queue-replaces-chunk-receipts').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-upload-queue-replaces-chunk-receipts').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-upload-queue-replaces-chunk-receipts').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('compressed-upload-queue-after-pause-skips-chunk-receipts').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-upload-queue-after-pause-skips-chunk-receipts').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-upload-queue-after-pause-skips-chunk-receipts').violates.includes('chunk-receipts'));

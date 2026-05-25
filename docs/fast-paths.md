@@ -565,6 +565,9 @@ under load:
   failure.
 - compressed-queue-drains-completes-work is rejected because a drained queue
   can still hide missing chunk or batch acknowledgements.
+- compressed-upload-queue-completes-large-upload is rejected because a drained
+  compressed queue can still hide missing chunk receipts, the live compare, or
+  the guarded publish record needed after a failure.
 - fingerprint-completes-large-upload is rejected because a local fingerprint
   can skip duplicate hashing, but it cannot prove chunk receipts, guarded
   publish, or durable upload completion survived failure.
