@@ -3204,3 +3204,27 @@ Source-note proof boundary, restated:
   does not show the late surface was blocked or durably classified before the
   retry, the second write is not retry proof and does not authorize
   production wording.
+
+Production release gate checklist:
+
+- Live remote drift after dry-run must be rejected on the live write path,
+  before mutation, with the preserved remote still auditable after reject.
+- Any create-time rename, alias, or renumber must be either durably
+  represented or hard-blocked before write; if the claim only shows a
+  fixture identity map, it is not enough.
+- Any plugin-owned surface outside the allowlist, including hidden cron,
+  cache, registry, generated-file, custom-table, or plugin-file state, must
+  be enumerated or blocked at apply time; a fixture plugin row does not prove
+  the rest of the plugin-owned graph is safe.
+- Any partial file, DB, or plugin side effect must be classified old, new,
+  or blocked, and retry must rebuild scope from fresh live hashes rather than
+  from the stale manual-review artifact.
+- Any stale manual-review artifact must remain audit-only after drift; it
+  cannot become retry authority for another row, file, relationship-bearing
+  record, or plugin-owned surface.
+- Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
+  revision or worktree state and show branch-local revalidation of the same
+  live boundary; otherwise it is historical context only.
+- Any claim that relies on route shape, packaged-plugin mount, fixture
+  replay, or `finalMatchesLocal` must say explicitly that those are
+  compatibility checks, not production proof.
