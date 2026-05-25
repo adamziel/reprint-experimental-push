@@ -4892,6 +4892,10 @@ does prove here, and say exactly what it does not prove here. If that note is
 being used to imply live write safety, remote preservation, stale-drift
 rejection, or retry authority on this branch, the proof is missing and the
 claim must fail closed.
+That rule also applies to any later-discovered plugin-owned boundary: a note
+that only covered the original row, file, or relation cannot silently widen to
+cover a new table, registry entry, generated asset, cache entry, serialized
+blob, or cron side effect without its own preserve / reject / retry evidence.
 
 ## Production Gate Summary
 
