@@ -4333,9 +4333,12 @@ Release gate additions needed before production-grade push support:
    preserved remote, and the fresh retry artifact for the same boundary.
 6. Any route-shape smoke, packaged-plugin mount, fixture replay, readable
    review artifact, or `finalMatchesLocal` result must be described as
-   compatibility evidence only. If the claim implies durability, retry
-   authority, or production safety, it must also show the live rejection
-   point, preserved remote, and fresh retry artifact from this branch.
+   compatibility evidence only. A lab-shaped or fixture-shaped route family
+   does not prove production safety, and a production-shaped URL path does
+   not prove the live executor, auth path, or write boundary was production-
+   safe. If the claim implies durability, retry authority, or production
+   safety, it must also show the live rejection point, preserved remote, and
+   fresh retry artifact from this branch.
 7. Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
    revision or worktree state, say what that note proves here, and say what it
    does not prove. A named note can justify transport shape, discovery shape,
@@ -4351,6 +4354,8 @@ Release gate additions needed before production-grade push support:
    fixture replay, readable review artifacts, source-note comparison, and
    `finalMatchesLocal` are compatibility evidence only. They do not prove the
    live executor ran, and they do not replace a live drift-rejection proof.
+   They also do not prove that a production-shaped URL family or package
+   layout was safe on the live boundary.
 
 False reliability claims to reject:
 
