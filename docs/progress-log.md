@@ -4,17 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-Newest public summary stays concise by design; details belong in the linked
-evidence trail below.
+## 2026-05-25 - Public Status Audit 08:05:14
 
-## 2026-05-25 - Public Status Audit 08:04:26
-
-<a id="2026-05-25-public-status-audit-080426"></a>
+<a id="2026-05-25-public-status-audit-080514"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 08:04:26 CEST`) and kept the visible last-updated stamp current.
+  (`2026-05-25 08:05:14 CEST`) and kept the visible last-updated stamp current.
 - Kept the public summary concise and evidence-first: lab evidence only,
-  `0/4` verified gates, and the newest audit link now point at this entry.
+  `0/4` verified gates, and the newest audit link now points at this entry.
 - No new production proof was added; the real WordPress executor/auth,
   recovery journal, Docker/Playground integration, and plugin drivers remain
   pending until proven.
