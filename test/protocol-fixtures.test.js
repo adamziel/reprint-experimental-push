@@ -2570,9 +2570,31 @@ test('push protocol extension fixture keeps the canonical production ladder and 
     'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
   );
   assert.equal(protocolExtension.topology.same_remote_identity, true);
+  assert.equal(protocolExtension.topology.remote_base, 'remote-base');
+  assert.equal(protocolExtension.topology.local_edited, 'local-edited');
+  assert.equal(protocolExtension.topology.remote_changed, 'remote-changed');
+  assert.equal(protocolExtension.topology.runner, 'runner');
+  assert.equal(protocolExtension.topology.networking.ingress_port, 8080);
+  assert.equal(protocolExtension.topology.networking.proxy_policy, 'local-only');
+  assert.equal(protocolExtension.topology.networking.tunnels, 'disallowed');
   assert.ok(protocolExtension.topology.docker.proof.includes('remote-base seeds the persisted pull base'));
+  assert.ok(protocolExtension.topology.docker.proof.includes('dry-run and apply remain separate remote operations'));
+  assert.ok(protocolExtension.topology.docker.proof.includes('apply revalidates fresh live evidence before every batch and at the storage boundary'));
   assert.ok(
     protocolExtension.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'),
+  );
+  assert.ok(
+    protocolExtension.pull_to_push_mapping.push_preflight.includes('one live remote identity and one short-lived push session'),
+  );
+  assert.ok(
+    protocolExtension.pull_to_push_mapping.push_plan_dry_run.includes('eligibility evidence'),
+  );
+  assert.ok(
+    protocolExtension.pull_to_push_mapping.push_batch_apply.includes('fresh live evidence'),
+  );
+  assert.equal(
+    protocolExtension.pull_to_push_mapping['push_recover auto|finish|rollback'],
+    'may mutate only when journal evidence plus fresh live hashes prove the action safe',
   );
   assert.deepEqual(protocolExtension.required_invariants, [
     'dry-run and apply are separate remote operations',

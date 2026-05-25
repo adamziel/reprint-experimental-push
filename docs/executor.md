@@ -59,6 +59,8 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary
 - it carries the one-remote, one-local, one-drift topology in both Docker and Playground
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
+- it is the canonical bridge from the persisted pull base package into the production push executor
+- it preserves the one-way mapping from immutable pull provenance to mutable push execution
 
 The executor follows the same ordered stages defined in the protocol:
 

@@ -103,6 +103,8 @@ The canonical production ladder bundle is `push-protocol-extension-contract.json
 - it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary
 - it carries the one-remote, one-local, one-drift topology in both Docker and Playground
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
+- it is the canonical machine-readable bridge from the exporter/importer pull pipeline into the push write path
+- it preserves the one-way rule that pull provenance is immutable push input, not a mutable snapshot cache
 
 The Docker and Playground topology contract is intentionally one remote, one
 local, one drift witness:
