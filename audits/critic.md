@@ -2700,8 +2700,9 @@ Minimum proof artifacts before any production-grade push wording:
 6. A durable old/new/blocked classification for every touched file, DB, or
    plugin side effect, so partial writes cannot be relabeled as success.
 7. A source-note comparison record that names the exact upstream revision or
-   worktree state and says whether it was reverified at the same live write
-   boundary; otherwise the comparison remains historical context only.
+   worktree state, says whether it was reverified at the same live write
+   boundary, and records the branch-local same-boundary recheck; otherwise
+   the comparison remains historical context only.
 
 False reliability claims to avoid:
 
@@ -2709,8 +2710,9 @@ False reliability claims to avoid:
   the stale artifact was not rejected before mutation, or the retry was not
   rebuilt from fresh live evidence.
 - "The comparison proves it" when the Reprint, ZS-Sync, or ForkPress note did
-  not cite the exact upstream revision or worktree state and was not rechecked
-  at the same live write boundary.
+  not cite the exact upstream revision or worktree state, was not rechecked
+  at the same live write boundary, or lacks the branch-local same-boundary
+  recheck.
 - "The plugin is handled" when the claim only covers the main row and not the
   complete plugin-owned surface list, including late-discovered side effects.
 - "Recovery succeeded" when only one store committed and the others were
