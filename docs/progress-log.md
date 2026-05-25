@@ -4,15 +4,15 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Refresh 02:14:57
+## 2026-05-25 - Public Status Refresh 02:15:27
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 02:14:57 CEST`) and kept the visible last-updated stamp in the
+  (`2026-05-25 02:15:27 CEST`) and kept the visible last-updated stamp in the
   header.
 - Tightened the first-screen copy so the public summary stays one-screen,
   dated, and conservative while the proof gaps remain unchanged.
-- Public status remains conservative: 89 Node tests pass, production auth plus
-  durable journaling is still the gate, and executor/auth, recovery journal,
+- Public status remains conservative: 89 Node tests pass, the only open gate is
+  production auth plus durable journaling, and executor/auth, recovery journal,
   Docker/Playground, graph identity, and plugin-driver proof remain pending.
 - Evidence trail: [progress.html](../progress.html),
   [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
