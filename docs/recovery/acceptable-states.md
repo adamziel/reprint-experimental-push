@@ -1,26 +1,37 @@
-# Recovery states
+# Recovery States
 
-The atomic apply path should only ever end in one of these post-failure states:
+The no-data-loss recovery contract allows only three post-failure outcomes:
 
-- `old-remote`: no mutation reached the remote state.
-- `fully-updated-remote`: every planned mutation is already present and a replay is safe.
-- `blocked-recovery`: a partial or drifted remote was observed and recovery artifacts must be preserved.
+1. `old-remote`
+   - No remote mutation should be visible.
+   - Recovery artifacts must include the durable journal.
+   - The journal may describe the plan, staged boundaries, and why the apply stopped.
 
-Rules:
+2. `fully-updated-remote`
+   - All planned mutations are already present on the remote.
+   - Recovery artifacts must include the durable journal.
+   - Replay must be inert and must not duplicate inserts or reintroduce stale local data.
 
-- A partial remote mutation without recovery artifacts is a release blocker.
-- Retry must not duplicate inserts or resurrect stale local data.
-- A replay of a completed plan is only safe when the remote still matches the completed journal.
-- If the remote has drifted, replay must stay blocked and keep inspectable journal and remote artifacts.
+3. `blocked-recovery`
+   - The remote was partially mutated and cannot be trusted as safe.
+   - Recovery artifacts must include both the durable journal and the drifted remote snapshot.
+   - Retry is only acceptable if it preserves the blocked state and keeps the artifacts available for inspection.
 
-Failure boundaries:
+## Durable Journal Requirements
 
-- failure before mutation, after staging, and after dependency validation should classify as `old-remote`;
-- replaying a completed plan with a matching remote should classify as `fully-updated-remote`;
-- any partial or drifted remote must classify as `blocked-recovery` and carry artifacts.
+The journal is the durable source of recovery evidence. It must survive process failure and carry enough information to distinguish:
 
-Artifact expectations:
+- failure before any mutation,
+- failure after staging,
+- failure after dependency validation,
+- completed replay,
+- stale completed replay,
+- and blocked partial recovery.
 
-- `old-remote` and `fully-updated-remote` must carry journal evidence.
-- `blocked-recovery` must carry both journal and remote artifacts.
-- Durable journal records should be enough to distinguish the boundary that failed, but not replace production durability checks.
+The journal should be backed by durable storage, not just in-memory or lab-only evidence. In production that means the journal row or file must be written durably before the apply is considered recoverable.
+
+## What Counts As A Blocker
+
+A partial remote mutation without a recovery artifact is a release blocker.
+
+If recovery cannot explain the remote state from the durable journal, the result must not be treated as safe.
