@@ -6,7 +6,7 @@ This design still cannot claim production-grade push support.
 
 The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but it is still retained-source lab evidence. It does not yet prove a live WordPress auth/session lifecycle, durable journal semantics on production-like storage, graph identity, plugin-driver coverage, or preserved-remote retention after rejection on one rerunnable live boundary. The local audit branch can only record the critique; it cannot substitute for the supervised remote lane plus one rerunnable live boundary on a real source URL.
 
-The missing production proof is now precise: one rerunnable live mutation boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence, even when the supervised lane has a passing `verify:release`, minted session shape, and release-boundary verdict.
+The missing production proof is now precise: one rerunnable live mutation boundary on one exact source URL must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence, even when the supervised lane has a passing `verify:release`, minted session shape, and release-boundary verdict.
 
 ## False reliability claims
 
@@ -99,7 +99,7 @@ Before the project can claim production-grade push support, one rerunnable live 
 
 If any one of those proofs is only available through retained-source lab output, the release claim remains false.
 
-The shortest acceptable production gate is one rerunnable live WordPress release boundary with a preserved rejected remote, fresh-live-hash apply-time revalidation, lease-fenced journal writes on production-like storage, and graph/plugin classification before the first write. Until those appear together, retained-source `verify:release` output stays useful but insufficient.
+The shortest acceptable production gate is one rerunnable live WordPress release boundary with a preserved rejected remote, fresh-live-hash apply-time revalidation, lease-fenced journal writes on production-like storage, graph/plugin classification before the first write, and an auditable retry path that preserves the rejected remote after refusal. Until those appear together, retained-source `verify:release` output stays useful but insufficient.
 
 The branch-local audit file may document the critique, but it cannot stand in for the missing live boundary. A retained-source `verify:release` run, a minted session shape, or a release-boundary verdict is still not enough unless the rejected remote survives the refusal and can be re-audited on the same live source URL.
 
