@@ -477,6 +477,11 @@ Non-negotiable release gate:
   surface is being backfilled into an earlier note, because that later surface
   is a separate boundary and the earlier note cannot widen to cover it without
   new live proof on this branch.
+- no production-grade push claim is allowed if a readable approval note or
+  source comparison is being reused for a later plugin-owned table, cron row,
+  runtime registry entry, generated asset, cache entry, serialized blob, or
+  remapped create target that was not named in that note; the later boundary
+  still needs its own preserve / reject / retry cycle on live hashes.
 - no production-grade push claim is allowed if any upstream note is described
   as a proof source instead of historical context, because the branch still
   needs live boundary evidence for stale drift, remapped create targets,
