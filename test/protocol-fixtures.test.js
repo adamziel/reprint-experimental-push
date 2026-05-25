@@ -76,6 +76,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
       'push-remote-liveness-topology-contract.json` is the smallest topology plus',
     ),
   );
+  assert.ok(
+    protocolReadme.includes(
+      'push-production-revalidation-contract.json` is the compact proof that',
+    ),
+  );
 });
 
 test('push remote liveness topology fixture keeps planning, apply, and recovery separate', () => {
@@ -140,6 +145,50 @@ test('push remote liveness topology fixture keeps planning, apply, and recovery 
       'recovery must begin with inspect before any mutating repair',
     ),
     true,
+  );
+});
+
+test('push production revalidation contract keeps the auth floor and apply revalidation explicit', () => {
+  const contract = readJson('fixtures/protocol/push-production-revalidation-contract.json');
+
+  assert.equal(
+    contract.contract_id,
+    'push-production-revalidation-contract-one-remote-one-local',
+  );
+  assert.equal(
+    contract.purpose,
+    'binds preflight, planning-only snapshot hashes, dry-run eligibility, apply-time revalidation, journal evidence, and inspect-first recovery into one production proof',
+  );
+  assert.equal(contract.auth.push_hmac_family, 'hmac-sha256');
+  assert.deepEqual(contract.auth.mutating_requires, [
+    'push session',
+    'canonical push signature',
+    'idempotency key',
+  ]);
+  assert.equal(
+    contract.push_phases.batch_apply,
+    'revalidates fresh live evidence before every batch and at the storage boundary, and remains separate from dry-run',
+  );
+  assert.equal(
+    contract.push_phases.recovery_inspect,
+    'runs before any mutating recovery branch and classifies finish, rollback, retry, or block',
+  );
+  assert.equal(contract.topology.networking.ingress_port, 8080);
+  assert.equal(contract.topology.networking.proxy_policy, 'local-only');
+  assert.ok(
+    contract.required_invariants.includes(
+      'apply must revalidate the live remote before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    contract.required_invariants.includes(
+      'authentication must be at least as strict as current Reprint HMAC usage',
+    ),
+  );
+  assert.ok(
+    contract.required_invariants.includes(
+      'fresh live hashes must still be checked before finish, rollback, or auto',
+    ),
   );
 });
 
