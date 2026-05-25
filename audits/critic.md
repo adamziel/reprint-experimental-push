@@ -1752,6 +1752,9 @@ would reasonably read as equivalent.
 - A route-shape smoke, packaged-plugin mount, or `finalMatchesLocal` result
   must never be treated as proof of live remote safety, identity stability,
   plugin-owned side-effect safety, or durable recovery.
+- Route shape, package shape, `finalMatchesLocal`, or a live-looking hash
+  still do not prove the live mutation executor ran, the remote was preserved,
+  or stale authority failed closed before mutation.
 - Comparisons to Reprint, ZS-Sync, and ForkPress remain source-note evidence
   only; they cannot be upgraded into proof of production push support without a
   repo-specific live mutation path, and they must not be treated as current
@@ -2286,6 +2289,9 @@ False reliability claims to avoid:
 - "The compare note proves it" when the Reprint, ZS-Sync, or ForkPress
   source note was not reverified against the exact upstream revision or
   worktree state at the live write boundary.
+- "The route or hash proves it" when the evidence only shows route shape,
+  package shape, a copied-lab mount, or `finalMatchesLocal` without the live
+  drift rejection boundary and preserved remote proof.
 - "Manual resolution succeeded" when the remote was not preserved for audit,
   the stale approval stayed reusable, or the retry was not rebuilt from fresh
   live evidence.
