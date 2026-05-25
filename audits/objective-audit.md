@@ -130,6 +130,12 @@ The current tests are strongest where they reject unsafe claims, and weakest whe
 That is not a wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push. No current test proves a release-safe runtime or memory ceiling on the live boundary.
 The implication is straightforward: the current tests are credible blockers, but they are not release approvers. A green run can still coexist with an unproven live-source push boundary, unmeasured throughput, and an absent enforced gate.
 
+The specific claims the tests do not yet prove are the ones the objective cares about most:
+
+- No data loss on a live WordPress source site after pull-base reuse, retry, or replay.
+- Reliability across crash, duplicate request, stale claim, lease expiry, and mid-apply restart on the real boundary.
+- Speed on the production-shaped push path, with an actual measured threshold instead of a refusal-only benchmark model.
+
 Concretely, the suite currently proves:
 
 - `npm test` can validate planner and journal invariants in isolated Node tests.
