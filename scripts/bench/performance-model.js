@@ -604,6 +604,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'file-hashing', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
   {
+    id: 'compressed-file-hash-cache-skips-large-upload-resume-after-pause',
+    proposal: 'treat a compressed file-hash cache plus a paused queue as enough proof to skip missing chunk receipts during large-upload resume',
+    rejectedBecause: 'hash compression and a paused queue can reduce recovery work, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'file-hashing', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
     id: 'index-and-digest-skips-row-preconditions',
     proposal: 'use a fresh remote index plus a cached digest to skip per-row preconditions in a database batch',
     rejectedBecause: 'row-level compare-and-swap still has to guard each mutating write at apply time',
