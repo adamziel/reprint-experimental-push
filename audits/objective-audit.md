@@ -238,7 +238,7 @@ Without that command, every passing test remains support evidence only.
 
 ## Weakest Current Claim
 
-The weakest claim is any sentence that treats the current green suite as proof of release readiness. That claim fails because the checked-in command surface still stops at `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers, and none of those commands must touch live source storage and emit a machine-checkable verdict in the same run. The repository can therefore still go green while the release decision remains unmade.
+The weakest claim is any sentence that treats the current green suite as proof of release readiness. That claim fails because the checked-in command surface still stops at `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers, and none of those commands must touch live source storage and emit a machine-checkable verdict in the same run. The repository can therefore still go green while the release decision remains unmade. The blocker is not "more regression coverage"; it is the absence of one enforced live-source gate.
 
 That makes the current green status a regression signal, not a release signal. Treat every fixture, lab, refusal, or benchmark result as support evidence only until one enforced command proves the live-source apply boundary in the same invocation and fails closed when proof is missing.
 
@@ -252,6 +252,7 @@ That makes the current green status a regression signal, not a release signal. T
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
 - The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness, or that optional smokes are equivalent to a required release gate.
 - Said differently: the strongest present tests prove that the repository knows how to refuse unsafe claims, not that it can make the objective's positive claims on a live source.
+- The release blocker remains the missing checked-in `verify:release` or `release` command, plus the missing default automation path that would make it mandatory.
 
 Actionable next step:
 
