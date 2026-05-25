@@ -17363,4 +17363,43 @@ test('the durable recovery boundary remains fail-closed until a release-gate com
     undefined,
     'release-gate proof cannot be wired in this repo until verify:release exists',
   );
+
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const drifted = JSON.parse(JSON.stringify(completed.site));
+  drifted.files['index.php'] = '<?php echo "drifted";';
+
+  const inspection = inspectRecoveryJournal({
+    journalPath,
+    plan,
+    current: drifted,
+  });
+
+  const blockedJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const blocked = captureError(() =>
+    applyPlan(drifted, plan, {
+      durableJournal: blockedJournal,
+      journal: completed.journal,
+    }),
+  );
+  blockedJournal.close();
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.equal(inspection.journal.integrity.status, 'ok');
+  assert.equal(inspection.claim.status, 'none');
+  assert.ok(inspection.reason.includes('partially updated') || inspection.reason.includes('cannot be classified'));
+  assert.ok(blocked instanceof PushPlanError);
+  assert.equal(blocked.details.recovery.status, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts.journal);
+  assert.ok(blocked.details.recovery.artifacts.remote);
+  assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
 });
