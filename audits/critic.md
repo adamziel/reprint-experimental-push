@@ -3767,7 +3767,9 @@ Release gate checklist for any production-readiness wording:
    proves here and what it does not prove.
 9. The claim does not promote route shape, package mount shape,
    fixture replay, `finalMatchesLocal`, or a readable review artifact into
-   production proof.
+   production proof, because none of those artifacts prove the live mutation
+   boundary, preserved remote, stale rejection point, or fresh retry
+   authority on this branch.
 10. The claim does not treat "manual resolution" as success unless the
     preserved remote, stale rejection point, and fresh retry artifact are all
     recorded on this branch for the same boundary.
