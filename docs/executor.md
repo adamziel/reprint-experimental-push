@@ -4,6 +4,9 @@ This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
+The pull-to-push mapping is one-way: exporter/importer establish immutable
+provenance, and push consumes it without rewriting it.
+
 The executor should be read against three concrete proofs:
 
 | Proof | Use it for |
@@ -166,7 +169,7 @@ That split is the core liveness guarantee:
   live hashes prove the action.
 
 For focused production proofs, the compact machine-readable contract is
-[`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json).
+[`fixtures/protocol/push-protocol-extension-contract.json`](../fixtures/protocol/push-protocol-extension-contract.json).
 It ties the pull exporter/importer handoff to preflight, remote hash listing,
 dry-run upload, batched apply, journal inspection, inspect-first recovery, and
 the one-remote, one-local, one-drift topology used in both Docker and
