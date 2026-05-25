@@ -54,7 +54,7 @@ The strongest current runnable evidence still falls into four classes:
 
 The test surfaces themselves are not stronger than that evidence boundary. [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md) records the same limit from the test side: the suite proves guardrails and refusals, not no data loss, reliability, or speed at the live-source boundary.
 
-Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push.
+Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path.
 
 For a narrower test-by-test breakdown, see [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md).
 
@@ -172,7 +172,7 @@ Add a required release entrypoint that fails closed unless it can prove, in one 
 1. a measured live-path throughput result plus an explicit release threshold, or
 2. an intentional refusal to make any production speed claim.
 
-If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command such as `npm run verify:release`. That command should exit non-zero unless it can surface the live-path measurement or the deliberate `speed unclaimed` verdict in the same run. Until that command exists, `speed unclaimed` is not a deferment; it is the current release verdict.
+If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command such as `npm run verify:release`. That command should exit non-zero unless it can surface the live-path measurement or the deliberate `speed unclaimed` verdict in the same run. Until that command exists, `speed unclaimed` is not a deferment; it is the current release verdict, and the suite remains insufficient for any no-loss or reliability claim at the live-source boundary.
 
 ## Audit Rule
 
