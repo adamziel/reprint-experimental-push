@@ -44,7 +44,7 @@ Release translation:
 Current command-surface gap:
 
 - `package.json` exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and many `test:playground:*` helpers.
-- It still does not define a required `verify`, `verify:release`, or `release` command.
+- It still does not define a required `verify`, `verify:release`, or `release` command, so there is no checked-in real-site push preflight or release gate on the command surface.
 - Optional scripts such as `test:recovery:file-journal`, `test:playground:*`, and the raw `node --test` suite do not substitute for a release gate.
 - If a candidate gate does not touch the live-source boundary in the same invocation, it is still not release proof, even if it also exercises auth, journal, or recovery logic.
 - The current production-shaped routes still label themselves `labBacked: true`, so the real remote/local topology is still unproven.
