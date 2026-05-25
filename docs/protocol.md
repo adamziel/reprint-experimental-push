@@ -124,12 +124,12 @@ The machine-readable bridge is split across the fixtures:
 - `push-remote-liveness-topology-contract.json` also proves that dry-run and
   apply are separate remote calls and that apply revalidates fresh live
   evidence before every batch and at the storage boundary.
-- `push-production-topology-contract.json` keeps the same topology and the
-  full push stage sequence in one compact production object.
 - `push-protocol-extension-contract.json` is the canonical production ladder
   bundle. It ties the persisted pull base to preflight, remote snapshot hash
   listing, dry-run plan upload, batched apply, journal inspect, and
   inspect-first recovery in one object.
+- `push-production-topology-contract.json` keeps the same topology and the
+  full push stage sequence in one compact production object.
 
 The compact production proof stack is:
 
@@ -183,6 +183,14 @@ The topology model is deliberately minimal:
 - `remote-changed` is the same remote identity observed later after drift.
 - `runner` is the only actor that may preflight, list hashes, dry-run,
   apply, inspect the journal, or recover.
+- `push_preflight` is the first live binding after importer persistence.
+- `push_snapshot_hashes` is planning-only and never becomes write authority.
+- `push_plan_dry_run` returns an eligibility receipt, not a lock.
+- `push_batch_apply` revalidates before every batch and at the storage
+  boundary.
+- `push_journal` is read-only durable evidence.
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating recovery branch.
 - journal inspection remains read-only and recovery must begin with inspect
   before any mutating repair.
 
