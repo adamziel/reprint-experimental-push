@@ -1139,6 +1139,8 @@ The harness contracts that pin that shape are:
 - `push-production-push-recovery-contract.json` and
   `push-production-recovery-inspect-contract.json` for the production auth,
   session, journal, lease, and inspect-first recovery pair
+- `push-production-recovery-drift-contract.json` for the production-shaped
+  inspect-first recovery proof after live drift
 
 Use `push-deployment-topology-contract.json` for the smallest topology proof
 and `push-remote-liveness-topology-contract.json` when you need the dry-run
@@ -1373,6 +1375,9 @@ The canonical proof stack for that executor story is the same one named in
 - `push-production-recovery-inspect-contract.json` for the compact proof that
   recovery inspect stays read-only while the journal row, lease fence, auth
   floor, and `8080` topology still match the write path
+- `push-production-recovery-drift-contract.json` for the compact proof that
+  recovery inspect stays read-only after live drift while pull provenance,
+  auth, and the one-remote, one-local topology still line up
 - `push-production-auth-session-journal-recovery-inspect-contract.json` for
   the compact production proof that keeps the auth floor, minted push
   session, journal row, lease fence, and read-only recovery inspect together

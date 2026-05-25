@@ -296,6 +296,47 @@ test('umbrella production contract keeps the pull bridge, apply revalidation, re
   ]);
 });
 
+test('production recovery drift contract keeps inspect-first recovery aligned after live drift', () => {
+  const recoveryDrift = readJson('fixtures/protocol/push-production-recovery-drift-contract.json');
+
+  assert.equal(
+    recoveryDrift.contract_id,
+    'push-production-recovery-drift-contract-one-remote-one-local',
+  );
+  assert.ok(
+    recoveryDrift.purpose.includes('inspect-first recovery after live drift while preserving pull provenance'),
+  );
+  assert.equal(recoveryDrift.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(recoveryDrift.auth_and_session.required_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.ok(
+    recoveryDrift.auth_and_session.mutating_calls.includes('push session, canonical push signature, and idempotency key'),
+  );
+  assert.equal(recoveryDrift.journal_row.storage_guard, 'filesystem-compare-rename');
+  assert.equal(recoveryDrift.live_evidence.same_remote_identity, true);
+  assert.deepEqual(recoveryDrift.recovery.classification, ['finish', 'rollback', 'retry', 'block']);
+  assert.ok(recoveryDrift.recovery.inspect_proof.includes('journal row and live hashes'));
+  assert.ok(
+    recoveryDrift.recovery.blocked_when.includes('fresh live hashes do not match the journaled target'),
+  );
+  assert.equal(recoveryDrift.topology.networking.ingress_port, 8080);
+  assert.equal(recoveryDrift.topology.networking.proxy_policy, 'local-only');
+  assert.equal(recoveryDrift.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    recoveryDrift.topology.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.deepEqual(recoveryDrift.required_invariants, [
+    'pull exporter/importer establish the immutable base package before push',
+    'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'fresh live hashes must still be checked before finish, rollback, or auto',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+  ]);
+});
+
 test('production executor flow contract keeps the pull handoff, ladder, and topology in one production-shaped proof', () => {
   const flow = readJson('fixtures/protocol/push-production-executor-flow-contract.json');
 

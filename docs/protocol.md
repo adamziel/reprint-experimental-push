@@ -107,6 +107,9 @@ The machine-readable proof bundle is layered around that same ladder:
 - `push-production-recovery-inspect-contract.json` proves inspect-first
   recovery stays aligned with the journal row, lease fence, and fresh live
   hashes
+- `push-production-recovery-drift-contract.json` proves inspect-first
+  recovery after live drift while the pull provenance, auth floor, and
+  one-remote, one-local topology still line up for a safe mutating branch
 - `push-remote-liveness-topology-contract.json` proves the one-remote,
   one-local, one-drift harness plus the liveness split
 - `push-production-topology-contract.json` proves the Docker and Playground
@@ -459,6 +462,7 @@ extension:
 - `push-production-auth-session-journal-recovery-inspect-contract.json` proves the auth/session/journal/recovery floor.
 - `push-production-push-recovery-contract.json` proves the full push ladder from preflight through mutating recovery.
 - `push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.
+- `push-production-recovery-drift-contract.json` proves inspect-first recovery after live drift while the pull provenance, auth floor, and one-remote, one-local topology still line up for a safe mutating branch.
 - `push-remote-liveness-topology-contract.json` proves the one-remote, one-local, one-drift harness plus the liveness split.
 - `push-production-topology-contract.json` proves the Docker and Playground harness shape.
 - `push-topology-matrix.json` is the compact machine-readable topology map for the same one-remote, one-local, one-drift harness and shared route names.
