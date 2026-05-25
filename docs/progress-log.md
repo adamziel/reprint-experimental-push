@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 11:15:16 CEST.
+- Last update: 2026-05-25 11:20:47 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: no release-state change; the newest audit note keeps the gate explicit without expanding the proof trail.
+- Trend: no release-state change; the newest supervisor note sharpens the next ownership handoff without adding false proof.
 - Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
