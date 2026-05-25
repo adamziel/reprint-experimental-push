@@ -12212,6 +12212,49 @@ test('durable recovery boundary matrix keeps pre-commit failures old-remote and 
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('stale completed replay stays blocked with inspectable artifacts instead of collapsing to old-remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replayError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      durableJournal: replayJournal,
+      journal: completed.journal,
+    }),
+  );
+  replayJournal.close();
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.journal, 'stale replay must preserve journal artifacts');
+  assert.ok(replayError.details.recovery.artifacts.remote, 'stale replay must preserve remote artifacts');
+  assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(
+    readRecoveryJournal(journalPath).records.some(
+      (record) => record.type === 'recovery-state' && record.state === 'blocked-recovery',
+    ),
+    true,
+  );
+  assert.equal(
+    readRecoveryJournal(journalPath).records.some(
+      (record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote',
+    ),
+    true,
+  );
+});
+
 test('durable mid-apply failures stay blocked with recovery artifacts and never become a safe replay', () => {
   const base = baseSite();
   const local = baseSite();
