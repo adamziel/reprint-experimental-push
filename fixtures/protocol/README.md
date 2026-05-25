@@ -114,6 +114,10 @@ identity across `remote-base` and `remote-changed`:
   the compact production proof that keeps auth, session minting, journal rows,
   lease fencing, and inspect-first recovery aligned on the same remote
   identity and local edit site.
+- The shortest review path through the production bundle is
+  `push-protocol-extension-contract.json`, `push-production-topology-contract.json`,
+  `push-production-auth-session-journal-recovery-inspect-contract.json`, and
+  `push-production-executor-flow-contract.json`.
 - `push-remote-snapshot-listing-contract.json` is the compact proof that
   keeps planning-only remote hash discovery separate from write authority.
 - `push-production-revalidation-contract.json` is the compact proof that

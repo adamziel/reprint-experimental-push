@@ -196,6 +196,18 @@ The compact end-to-end production proof is
 - it preserves the same auth floor as the write path and the same dry-run
   versus apply liveness split
 
+The shortest review path through the production bundle is:
+
+1. `push-protocol-extension-contract.json` for the full production ladder and
+   pull/export/import bridge.
+2. `push-production-topology-contract.json` for the one-remote, one-local,
+   one-drift harness in Docker and Playground.
+3. `push-production-auth-session-journal-recovery-inspect-contract.json` for
+   the auth/session/journal/lease/recovery-inspect proof on the same remote
+   identity.
+4. `push-production-executor-flow-contract.json` when you need the entire
+   production flow in one object.
+
 The pull/export/import pipeline is the only immutable provenance source:
 
 - exporter discovers the merge base and coverage evidence
