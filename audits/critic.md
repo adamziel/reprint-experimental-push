@@ -146,6 +146,9 @@ What must change before any production-grade push claim:
   and safely retry from fresh live hashes; preserving it alone is not proof
   unless the same boundary was rejected before write and re-planned on this
   branch;
+- any Reprint, ZS-Sync, or ForkPress comparison must name the exact upstream
+  revision or worktree state and say what it proves here and what it does not
+  prove here before it can be cited for anything beyond historical context;
 - create-time identity remapping, aliasing, or renumbering must be either
   proven safe with live identity evidence or hard-blocked before write;
 - every touched surface must be classified as old, new, or blocked before
@@ -213,7 +216,10 @@ the upstream state is named precisely or the route/package/reviewer wording
 matches. A source note can explain why a design choice exists, but it cannot
 by itself prove that this worktree rejected the stale boundary, preserved the
 remote, and rebuilt retry scope from live hashes for the same live mutation
-boundary.
+boundary. A precise note also cannot become retry authority unless it names
+the exact upstream revision or worktree state, the exact live write boundary
+on this branch, the exact stale-drift case, and the exact preserved remote
+that stayed inspectable after rejection.
 
 Comparison proof rule: when a source note is cited, the citation must say
 which exact upstream revision or worktree state it refers to, whether it is

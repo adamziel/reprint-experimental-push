@@ -305,6 +305,10 @@ or comparison-only.
 - The claim does not let a source-note comparison become current proof unless
   the same live write boundary was reverified on this branch at the cited
   upstream state; otherwise it stays historical context only.
+- The claim does not let a source-note comparison become retry authority
+  unless it names the exact upstream revision or worktree state, the exact
+  live write boundary on this branch, the exact stale-drift case, and the
+  preserved remote that stayed inspectable after rejection.
 - The claim does not treat a production claim as valid if the proof set omits
   the create-time remap decision, the plugin-owned allowlist decision, or the
   partial side-effect classification for the exercised write path.
