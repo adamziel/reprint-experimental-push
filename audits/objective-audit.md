@@ -259,7 +259,7 @@ Concrete read:
 
 | Requirement | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| One-way pull base, then one-way push to the live source | Planner, refusal, and model tests prove directionality and guardrails in fixtures or lab mode | A required live-source invocation that actually mutates the source boundary in the same run | No checked-in command forces the live-source boundary, so the top release blocker remains the missing real-site push preflight command |
+| One-way pull base, then one-way push to the live source | Planner, refusal, and model tests prove directionality and guardrails in fixtures or lab mode | A required live-source invocation that actually mutates the source boundary in the same run | No checked-in command forces the live-source boundary, so the top release blocker remains the missing real-site push preflight command; fixture-only work cannot clear this |
 | Recheck live source at apply time before mutating it | Stale-claim and replay guards show the intent in tests | Apply-time revalidation on the real source before mutation | The current suite stops before the live apply boundary |
 | Preserve WordPress data shapes without loss | Local integrity checks cover some data-shape handling | Proof over rows, files, plugin-owned data, serialized payloads, and graph identity on live storage | No live-source data-shape proof exists |
 | Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart | Recovery and journal tests cover file-backed and modeled recovery cases | Crash-boundary proof on production storage and transport | No release gate exercises the real crash boundary |
@@ -387,7 +387,7 @@ Proof buckets used below:
 | No data loss | Local journal sequencing and replay classification | Live-boundary no-loss proof on production storage | Fixture replay is not production durability |
 | Reliability | Auth/session scaffolding, replay rejection, and journal guardrails | One mandatory gate that composes auth/session, journal, leases/fencing, graph identity, and plugin-driver checks | Distributed helper proofs do not close the release decision |
 | Speed | `productionThroughput: 'not-claimed'` and refusal-only benchmark behavior, which is a refusal to overclaim rather than a measured live-path result | A measured live-path threshold or an enforced `speed unclaimed` verdict from a required release command | Refusal is not performance evidence |
-| Mandatory release gate | Optional smokes and `npm test` | A checked-in `verify`, `verify:release`, or `release` command, plus a checked-in workflow or other default entrypoint that invokes it | Optional runs can bypass the live-source verdict |
+| Mandatory release gate | Optional smokes and `npm test` | A checked-in `verify`, `verify:release`, or `release` command, plus a checked-in workflow or other default entrypoint that invokes it | Optional runs can bypass the live-source verdict, so the missing command remains the top release blocker |
 
 Bottom line:
 
