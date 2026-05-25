@@ -95,6 +95,10 @@ or comparison-only.
   side-effect classification, or stale approval expiry unless the same live
   write boundary was reverified at the exact upstream revision or worktree
   state.
+- The claim does not let a stale manual-review artifact become retry authority
+  just because it is readable; if it can be reused against a new row, file,
+  relationship-bearing record, or plugin-owned surface, the claim is not
+  production-safe.
 - The claim includes the exact upstream revision or worktree state for any
   Reprint, ZS-Sync, or ForkPress comparison, and says whether that state was
   reverified at the same live write boundary. If not, the comparison is
