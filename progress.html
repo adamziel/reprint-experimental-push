@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `66830e6f` adds drift revalidation proof with `PRECONDITION_FAILED`, and `fa491fa6` adds the newest recovery-envelope proof; release gates stay at `0/4`, and production WordPress `auth/session lifecycle` plus durable journal semantics remain pending.</p>
-        <time class="update-stamp" datetime="2026-05-25T14:16:16+02:00">Last updated: May 25, 2026, 14:16:16 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `d6285b18` now surfaces the live remote snapshot hash listing, `66830e6f` keeps drift revalidation fail-closed with `PRECONDITION_FAILED`, and `fa491fa6` keeps the recovery envelope proof visible. Release gates stay at `0/4`; production WordPress auth/session lifecycle and durable journal semantics remain pending.</p>
+        <time class="update-stamp" datetime="2026-05-25T14:24:59+02:00">Last updated: May 25, 2026, 14:24:59 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `66830e6f` adds drift revalidation proof and `fa491fa6` adds recovery-envelope proof while the gates stay closed</span>
-          <span class="pill">Top blocker: real WordPress executor/auth plus durable journal semantics still block any production push claim</span>
+          <span class="pill">Trend: `d6285b18` adds live remote snapshot hash evidence; `66830e6f`, `fa491fa6`, and `86acf294` remain visible lane progress</span>
+          <span class="pill">Top blocker: real WordPress executor/auth plus durable journal storage and lease/fencing still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-141616">2026-05-25 14:16:16</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-142459">2026-05-25 14:24:59</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-141616">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-142459">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-        <span>Latest lane evidence adds drift revalidation and recovery-envelope proof without changing the 0/4 release gates</span>
+        <span>Latest lane evidence adds remote snapshot hash, drift, recovery, and bounded performance proof without changing the 0/4 release gates</span>
       </div>
       <div class="metric">
         <strong>Flat</strong>
@@ -644,7 +644,7 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Release Gate Checklist</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Lab proof</span><p>89 Node tests and local packaged-route runs show scoped credential rejection, cleanup of 2 expired signed artifacts, and 7 graph-safe mutations in lab-scoped evidence. The runtime anchor remains `npm run verify:release` from commit `3089aee2`, which now also chains `test:playground:production-shaped-topology-proof` before the checked release and recovery steps; the proof still passed with live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback with `rows: 17`. `2e30a637` moves durable-journal proof into that checked release path, while `3d8748b6` keeps the release command fail-closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` keeps `REPRINT_PUSH_SECRET_REQUIRED` visible, `889bd37a` still emits `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, `6fc3ab64` adds the retained `test:recovery:file-journal` smoke, and `d3d04595` keeps the recovery envelope artifact-backed in lab/model evidence only. This remains lab evidence, not production executor proof. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/progress-log.md#2026-05-25-public-status-audit-135616">latest log entry</a>.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>89 Node tests and local packaged-route runs show scoped credential rejection, cleanup of 2 expired signed artifacts, and 7 graph-safe mutations in lab-scoped evidence. The runtime anchor remains `npm run verify:release` from commit `3089aee2`, which now also chains `test:playground:production-shaped-topology-proof` before the checked release and recovery steps; the proof still passed with live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback with `rows: 17`. `3d8748b6` keeps the release command fail-closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` keeps `REPRINT_PUSH_SECRET_REQUIRED` visible, `889bd37a` still emits `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, `6fc3ab64` adds the retained `test:recovery:file-journal` smoke, and `d3d04595` keeps the recovery envelope artifact-backed in lab/model evidence only. This remains lab evidence, not production executor proof. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/progress-log.md#2026-05-25-public-status-audit-142301">latest log entry</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production WordPress executor and auth, with fail-closed source-gate proof in the production-shaped release command. Evidence: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>, <a href="scripts/playground/production-shaped-release-verify.mjs">release-verify runner</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Evidence: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 3</span><p>Pending: Docker/full Playground integration beyond fixture labs. Evidence: <a href="docs/playground-topology.md">playground topology</a>.</p></div>
