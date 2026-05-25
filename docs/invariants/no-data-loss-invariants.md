@@ -28,6 +28,11 @@ This note summarizes the planner's no-overwrite contract.
 - A live-preconditioned delete may coexist with a matching independent row
   restore, edit, or file type swap when each matching resource independently
   reaches the live remote hash and plugin drift remains preserved.
+- A plugin-owned delete may coexist with a matching independent edit while
+  remote-only plugin drift stays preserved and the delete keeps its own live
+  remote precondition.
+- A plugin-owned delete must stop when the live plugin owner context drifted,
+  even if unrelated matching edits and remote-only plugin drift are present.
 - Matching independent file type swaps stay `already-in-sync` when they end on
   the same hash as the live remote, even if a separate delete is the only
   emitted mutation.
@@ -63,6 +68,8 @@ This note summarizes the planner's no-overwrite contract.
   `already-in-sync` instead of being rewritten as mutations.
 - File-topology conflicts should name the related descendant or ancestor path
   and stop the unsafe delete or type swap without exposing file contents.
+- Plugin-owned deletes should preserve unrelated matching edits and remote-only
+  plugin drift instead of widening into unrelated overwrites.
 
 ## Must Stop
 
