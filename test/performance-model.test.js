@@ -173,6 +173,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-compressed-upload-queue-skips-backpressure')?.rejectedGate,
     'recovery',
   );
@@ -875,6 +879,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-receipt-summary-skips-large-upload-publish').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-receipt-summary-skips-large-upload-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-receipt-summary-skips-large-upload-publish').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation').violates.includes('atomic-groups'));
   assert.equal(
     rejectedById.get('compressed-receipt-summary-skips-large-upload-publish').rejectedGate,
     'recovery',
