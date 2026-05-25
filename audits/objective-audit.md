@@ -10,10 +10,10 @@ The objective implies the following minimum release requirements:
 
 1. Pull the base one way, then push back to the live source one way, with the live source rechecked at apply time.
 2. Preserve every WordPress data shape a push can affect, including related rows, files, plugin-owned data, serialized payloads, and graph identity.
-3. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary.
+3. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary, with the same behavior enforced on the real production storage and transport path.
 4. Enforce auth, session, lease, fencing, durable journal, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts.
 5. Prove the real remote/local topology, not just a local lab route shape, local Playground route, or fixture mount with the same hostname and different backing storage.
-6. Either publish a measured speed claim or explicitly refuse to make one.
+6. Either publish a measured speed claim from the live push path or explicitly refuse to make one.
 7. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, missing live-source proof, or benchmark-only.
 8. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
 9. Keep the optional smokes available for local evidence collection, but do not let them stand in for release proof.
