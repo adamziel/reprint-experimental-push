@@ -4,6 +4,11 @@ This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
+The production proof is one remote source site, one imported local edit site,
+and one later observation of the same remote identity after drift. In both
+Docker and Playground, that proof keeps browser-visible inspection on the
+sandbox-provided `8080` ingress through a local-only proxy.
+
 The pull-to-push mapping is one-way: exporter/importer establish immutable
 provenance, and push consumes it without rewriting it. The imported pull base
 package is the only starting point for push planning, and preflight binds that
@@ -50,6 +55,34 @@ Docker and Playground both use the same route names, the same `8080` ingress
 rule for browser-visible inspection, and the same live-drift story: the remote
 is observed once as the seeded base site and again as the drift witness after
 the dry-run receipt exists.
+
+The executor test topology is fixed:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` is the imported local site that produces the candidate plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor allowed to preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or start recovery
+
+| Environment | Remote source | Local edited site | Drift witness | Runner |
+| --- | --- | --- | --- | --- |
+| Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
+| Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
+
+The test topology is intentionally the same in both harnesses so the executor
+proof stays aligned with the pull pipeline:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to the live remote identity and
+  requested scope
+- snapshot hash listing reads the live comparison set for planning only
+- dry-run uploads the canonical plan as a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes still prove the action safe
 
 The one-remote, one-local proof is fixed and reusable:
 

@@ -219,6 +219,21 @@ protocol:
 - recovery begins with inspect and only mutates when the journal plus fresh
   live hashes still prove the branch safe
 
+The same proof is also the pull-to-push bridge:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to one live remote identity, one
+  requested scope, and one short-lived push session
+- snapshot hash listing reads the live remote comparison surface for planning
+  only
+- dry-run uploads the canonical plan as a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes still prove the action safe
+
 That proof is what the fixtures below pin down, so the docs and tests stay
 aligned:
 
