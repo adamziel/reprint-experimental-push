@@ -7,14 +7,15 @@ linked implementation artifacts.
 Newest public summary stays concise by design; details belong in the linked
 evidence trail below.
 
-## 2026-05-25 - Public Status Audit 05:53:09
+## 2026-05-25 - Public Status Audit 05:57:23
 
-<a id="2026-05-25-public-status-audit-055309"></a>
+<a id="2026-05-25-public-status-audit-055723"></a>
 
 - Reconciled [progress.html](../progress.html) with the live `date` output
-  (`2026-05-25 05:53:09 CEST`) and kept the visible last-updated stamp current.
-- Tightened the first-screen wording so the pending gates read as four
-  evidence buckets, with graph identity and plugin drivers grouped together.
+  (`2026-05-25 05:57:23 CEST`) and kept the visible last-updated stamp current.
+- Kept the public first screen short and conservative: lab evidence only,
+  flat trend, `0/4` release gates verified, and the same production
+  WordPress executor/auth blocker.
 - No new production proof was added; real WordPress executor/auth, durable
   recovery journaling, Docker/Playground integration, and graph identity plus
   plugin drivers remain pending until proven.
@@ -22,7 +23,7 @@ evidence trail below.
   [docs/approach-scorecard.md](approach-scorecard.md), [docs/executor.md](executor.md),
   [docs/recovery/apply-journal.md](recovery/apply-journal.md),
   [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
-  [docs/supervisor-feedback.md](supervisor-feedback.md).
+  [docs/supervisor-feedback.md](supervisor-feedback.md), [release-gate checklist](../progress.html#proof-gates).
 
 ## 2026-05-25 - Public Status Audit 05:45:47
 
