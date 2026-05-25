@@ -119,6 +119,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed file-hash cache plus a paused queue still cannot skip missing chunk receipts during large-upload resume, because backpressure relief cannot prove which acknowledgements survived the pause or restore the guarded publish barrier.
 - A cached chunk ledger still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
 - A cached chunk ledger still cannot skip the guarded publish finalize for a large upload, because the ledger can narrow duplicate hashing but cannot prove the live compare or publish barrier survived failure.
+- A local fingerprint still cannot skip the live remote compare before publish, because size, mtime, inode, or mode can only skip a rehash and cannot authorize the mutation boundary.
 - A compressed manifest hash still cannot skip the live file compare before a large upload publish, because compression can shrink recovery data but cannot prove the live object still matches the publish precondition after a crash or retry.
 - A compressed remote index plus a cached file hash still cannot skip the guarded publish step for a large upload, because planning evidence and cached hashes cannot prove the live compare, every chunk acknowledgement, or the publish barrier survived failure.
 - A compressed remote index plus a paused upload queue still cannot skip the guarded publish step for a large upload, because planning evidence and backpressure state cannot prove chunk receipts, the live compare, or the publish barrier survived failure.
@@ -170,6 +171,8 @@ fails in a different way:
   live remote compare is still required.
 - File hashing cannot treat a cached chunk ledger as publish authority when the
   live compare and guarded publish record are still required.
+- File hashing cannot treat a local fingerprint as publish authority when the
+  live remote compare is still required.
 - File hashing can reuse a cached chunk ledger to skip duplicate hashing, but
   it still cannot skip the live publish compare or guarded publish record.
 - Chunk upload cannot treat a visible staging object or a matching digest as a
@@ -594,6 +597,9 @@ under load:
 - fingerprint-completes-large-upload is rejected because a local fingerprint
   can skip duplicate hashing, but it cannot prove chunk receipts, guarded
   publish, or durable upload completion survived failure.
+- fingerprint-skips-live-publish-compare is rejected because a local
+  fingerprint can skip duplicate rehash work, but it cannot authorize the live
+  mutation boundary or replace the storage precondition that guards publish.
 - fingerprint-and-compressed-upload-queue-completes-large-upload is rejected
   because a local fingerprint and queue compression can reduce work, but they
   cannot prove chunk acknowledgements or the guarded publish survived failure.

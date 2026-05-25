@@ -1257,6 +1257,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['file-hashing', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
+    id: 'fingerprint-skips-live-publish-compare',
+    proposal: 'treat a local fingerprint match as enough proof to skip the live remote compare before publish',
+    rejectedBecause: 'a local fingerprint can skip duplicate rehash work, but it cannot authorize the live mutation boundary or replace the storage precondition that guards publish',
+    rejectedGate: 'live',
+    violates: ['file-hashing', 'live-preconditions', 'visibility-boundary'],
+  },
+  {
     id: 'index-and-compressed-chunk-receipts-completes-plugin-update',
     proposal: 'treat a fresh remote index plus compressed chunk receipts as proof that a plugin update already finished',
     rejectedBecause: 'chunk receipts can prove staged upload progress, but compression and planning evidence cannot prove dependency checks, row receipts, or the atomic-group commit survived failure',

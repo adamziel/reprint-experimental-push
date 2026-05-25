@@ -143,6 +143,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-compressed-upload-queue-skips-backpressure')?.rejectedGate,
     'recovery',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'fingerprint-skips-live-publish-compare')?.rejectedGate,
+    'live',
+  );
 });
 
 test('file hashing and compression decisions preserve canonical hashes', () => {
