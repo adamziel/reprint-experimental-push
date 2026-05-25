@@ -34,6 +34,14 @@ Minimum properties of that gate:
 
 ## Evidence Table
 
+Evidence buckets used below:
+
+- `Executable proof` means a required command reaches the live-source boundary and can fail the release.
+- `Lab / fixture proof` means the evidence is real code execution, but it is still scoped to local fixtures, Playground, or model-only storage.
+- `Docs-only proof` means prose, labels, or audit statements with no executable boundary.
+- `Missing proof` means the repo has no current evidence for the requirement at the release boundary.
+- `Release blocker` states why the requirement still prevents a production claim.
+
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
 | Executable proof | `node --test` proves refusal behavior, recovery classification, local integrity checks, and the benchmark stance that `productionThroughput` stays `not-claimed`. | Nothing in the current executable set reaches the one-way pull base plus one-way push to live source boundary, rechecks live state at apply time, or emits a release verdict. | These tests are valid regression evidence, but they are not positive proof of a safe live push. |
@@ -49,6 +57,13 @@ Treat indirect evidence as insufficient:
 - Refusal benchmarks can show unsupported claims are blocked.
 - None of those prove the live source was safely mutated, recovered, and measured in one required release run.
 - If the only green evidence is fixture-, lab-, or refusal-backed, the release blocker is still active.
+
+Current blocker summary:
+
+- There is no enforced live-source release gate.
+- The strongest push and recovery evidence is still `labBacked: true` or fixture-backed.
+- No current test proves no data loss, reliability under crash/replay, or measured live-path speed on the real source boundary.
+- `speed unclaimed` remains the only defensible speed statement until the live path is measured by a required command.
 
 ## Test Audit
 
