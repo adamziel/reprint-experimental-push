@@ -1,9 +1,18 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 23:49 CEST
+Last updated: 2026-05-26 00:19 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 00:19 CEST - Main Window Swarm Check
+
+- Running: `reliable-executor` pushed `2dae5631` on `origin/lane/reliable-executor` with replay idempotency added to the checked release path, and the follow-up lane is still active.
+- Preserved/pushed: the reliable lane remained fast-forward safe; the follow-up handoff reports a clean worktree and a successful push of the replay check commit.
+- Still in flight: `test/protocol-fixtures.test.js` has failing exact-output assertions in the missing-secret/drift release-proof branches, so the follow-up is not yet a green handoff.
+- Next proof owner: `reliable-executor` owns the test-fix follow-up and needs to prove the release script’s failure output matches the fixture expectations before anyone treats the lane as passed.
+- Swarm note: `same-plan-wordpress-graph-create` is already green at `a0b82397`, `no-data-loss-invariants` preserves `98c0ce26`, `critic` is at `0af85e6d`, and `independent-auditor` is at `ceca2af4`.
+- Gate status: no release gate should move on this note alone; the reliable lane still needs the failing exact-output assertions resolved and rechecked.
 
 ## 2026-05-25 23:49 CEST - Release-State Check
 
