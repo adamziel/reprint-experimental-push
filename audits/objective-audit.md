@@ -52,7 +52,7 @@ entrypoint that composes the strongest checks and fails closed.
 | Speed claim | Benchmark refusal tests block unsupported throughput claims. | A measured runtime or memory result from the production-shaped push path. | Yes: speed is unproven. |
 | Required release command | Optional npm scripts and opt-in smokes exist. | One mandatory `verify:release`-style entrypoint that fails closed. | Yes: no mandatory gate or CI workflow. |
 
-Executable proof is concentrated in `npm test`, `test/recovery-journal.test.js`, and the Playground smokes. Those tests do prove useful local properties: monotonic journal sequences, no raw-value leakage in journal records, crash/restart classification, idempotency replay refusal, storage-boundary CAS failures, and guarded file/database mutations. They do **not** prove that the real live-source boundary preserves all WordPress data during production auth/session, journal, lease/fencing, graph-identity, and plugin-driver execution.
+Executable proof is concentrated in `npm test`, `test/recovery-journal.test.js`, and the Playground smokes. The default suite still passes at 89/89 on 2026-05-25. Those tests do prove useful local properties: monotonic journal sequences, no raw-value leakage in journal records, crash/restart classification, idempotency replay refusal, storage-boundary CAS failures, and guarded file/database mutations. They do **not** prove that the real live-source boundary preserves all WordPress data during production auth/session, journal, lease/fencing, graph-identity, and plugin-driver execution.
 
 A fresh repo scan on 2026-05-25 also found no checked-in `.github` workflow
 directory and no enforced CI entrypoint that could serve as a required release
@@ -134,12 +134,16 @@ manual Playground opt-ins. That split matters because the green path is still
 allowed to stop before the enforced release boundary that actually matters.
 
 The current test story also fails a simpler release-bar test: the repository
-does not define one required release command that chains the stronger checks.
-`package.json` exposes `npm test`, the bundled lab chain `npm run test:playground`,
-and a set of opt-in smokes such as `test:playground:authenticated-http-push`,
-`test:playground:db-journal-idempotency`, `test:playground:storage-guarded-db-write`,
-`test:playground:storage-guarded-file-write`, `test:playground:production-shaped-push`,
-and `test:playground:production-plugin-package`. Those commands are evidence
+does not define one required release command that chains the stronger checks,
+and there is still no checked-in `.github/workflows` entrypoint to enforce it
+in CI. `package.json` exposes `npm test`, the bundled lab chain
+`npm run test:playground`, and a set of opt-in smokes such as
+`test:playground:authenticated-http-push`,
+`test:playground:db-journal-idempotency`,
+`test:playground:storage-guarded-db-write`,
+`test:playground:storage-guarded-file-write`,
+`test:playground:production-shaped-push`, and
+`test:playground:production-plugin-package`. Those commands are evidence
 sources, not a release gate. A green default run can still omit auth/session,
 durable journal, lease/fencing, graph-identity, plugin-data-driver, real
 topology, crash-boundary, and benchmark evidence. The missing artifact is not
