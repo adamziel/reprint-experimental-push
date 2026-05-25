@@ -6134,6 +6134,53 @@ test('completed-plan replay reuses the durable journal without duplicating targe
   );
 });
 
+test('replaying a completed plan keeps stale drift blocked and preserves the durable replay journal', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+
+  const staleReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  staleReplayRemote.files['index.php'] = '<?php echo "stale drift";';
+  staleReplayRemote.db.wp_posts['ID:2'].post_title = 'Stale inserted local';
+  const staleReplaySnapshot = JSON.stringify(staleReplayRemote);
+
+  const staleReplayError = captureError(() =>
+    applyPlan(staleReplayRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(staleReplayRemote), staleReplaySnapshot);
+  assert.ok(staleReplayError instanceof PushPlanError);
+  assert.equal(staleReplayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(staleReplayError.details.recovery.artifacts.journal);
+  assert.ok(staleReplayError.details.recovery.artifacts.remote);
+  assert.equal(staleReplayError.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(staleReplayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale drift";');
+  assert.equal(
+    staleReplayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Stale inserted local',
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    0,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-opened').length,
+    1,
+  );
+});
+
 test('completed-plan replay blocks stale drift and keeps the remote inspectable', () => {
   const base = baseSite();
   const local = baseSite();
