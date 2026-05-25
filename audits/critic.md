@@ -86,8 +86,10 @@ The failure scenarios that still need explicit proof are:
   old/new/blocked classification for each touched store, plus a retry rebuilt
   from fresh live evidence instead of reusing the old authority token.
 - A manual-review artifact stays readable after drift; the missing proof is
-  that it becomes audit-only and cannot authorize retry, widen to a different
-  row or file, or target a relationship-bearing or plugin-owned surface.
+  that it becomes audit-only, cannot authorize retry, and forces the next
+  attempt to rebuild scope from fresh live evidence after the remote was
+  preserved for audit instead of widening to a different row or file, or
+  targeting a relationship-bearing or plugin-owned surface.
 
 Source-note comparison boundary:
 
@@ -101,6 +103,10 @@ Source-note comparison boundary:
 - ForkPress at `55f9879` proves review and conflict vocabulary; it does not
   prove that a stale review artifact cannot be reused as write authority after
   the remote drifts or that the remote is preserved for audit after reject.
+- None of those notes prove that a readable stale manual-review artifact is
+  unusable as retry authority unless the remote stayed preserved and the next
+  attempt rebuilt scope from fresh live evidence at the same live write
+  boundary.
 
 Any comparison that omits the exact upstream revision or worktree state being
 reverified remains historical context only, even if it names the same feature
