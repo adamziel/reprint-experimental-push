@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:55:47
+
+<a id="2026-05-25-public-status-audit-095547"></a>
+
+- Aligned [progress.html](../progress.html)'s recent-audits panel with the
+  newest public audit so the header and first-screen audit list now agree on
+  2026-05-25 09:55:47.
+- Kept the public status unchanged in substance: the runnable live-topology
+  proof is still the current material step, and the real executor/auth,
+  recovery journal, Docker/Playground, and plugin driver gates remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [newest audit](../progress.html#recent-public-audits),
+  [live-topology proof](../scripts/playground/production-shaped-live-topology-proof.mjs),
+  [objective audit](../audits/objective-audit.md).
+
 ## 2026-05-25 - Public Status Audit 09:54:15
 
 <a id="2026-05-25-public-status-audit-095415"></a>
