@@ -2514,6 +2514,24 @@ Source-note comparison scoreboard:
   proof that this repo's live mutation executor preserves the remote, blocks
   stale authority, or keeps manual-review artifacts audit-only after drift.
 
+Current-proof boundary for comparisons:
+
+- A correct upstream commit id is provenance only. It does not become
+  current proof unless this branch also rechecked the same live mutation
+  boundary here and recorded the preserved remote, stale rejection point, and
+  fresh retry scope.
+- A matching route shape, package mount, or `finalMatchesLocal` hash is
+  compatibility evidence only. It does not prove the live executor, create-
+  time identity decision, plugin-owned surface coverage, or partial side-
+  effect classification.
+- A stale manual-review artifact stays audit-only even when it is readable.
+  It cannot authorize a retry against a late-discovered plugin-owned surface,
+  a remapped create target, or any other row, file, relationship-bearing
+  record, or side effect that was not already classified on the first pass.
+- If a source-note comparison lacks the exact upstream revision or worktree
+  state, the exact live write boundary, or the branch-local same-boundary
+  recheck, the comparison must remain historical context only.
+
 Production-grade push wording is still blocked unless the current evidence set
 proves all of the following in the same live write boundary:
 
