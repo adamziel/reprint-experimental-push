@@ -107,6 +107,21 @@ Production liveness is split on purpose:
 - Mutating recovery only proceeds after the journal and fresh live hashes
   prove the action.
 
+Recovery uses four concrete restart classifications:
+
+- `old`: the journal proves the prior write already committed.
+- `new`: the remote advanced independently and the stale attempt must be
+  discarded or replanned from fresh evidence.
+- `open`: the attempt is still in flight and inspect-first recovery must
+  continue.
+- `blocked`: the journal or fresh live hashes prove finish or rollback would
+  be unsafe.
+
+Those classifications keep `push_journal` and `push_recover inspect`
+read-only. They do not authorize mutation by themselves; they only explain
+which mutating recovery path, if any, is safe after fresh live hashes are
+checked again.
+
 ## Pull Handoff
 
 The pull/export/import pipeline maps to push as a one-way provenance handoff:

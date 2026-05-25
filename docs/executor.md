@@ -238,6 +238,19 @@ The executor also treats the pushed session as bounded provenance:
 - any scope or identity change requires a fresh preflight rather than a reused
   session
 
+Restart classification stays inspect-first and mirrors the protocol states:
+
+- `old` means the journal proves the prior write already committed.
+- `new` means the remote advanced independently and the stale attempt must be
+  replanned from fresh evidence.
+- `open` means the attempt is still in flight and inspection must continue.
+- `blocked` means the journal or fresh live hashes prove finish or rollback
+  would be unsafe.
+
+Those states explain recovery; they never widen write authority. The executor
+still has to revalidate live evidence before each batch and at the storage
+boundary.
+
 The same pull/export/import handoff remains the provenance source for every
 push run:
 
