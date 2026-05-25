@@ -81,11 +81,11 @@ Direct command-surface recheck on 2026-05-25:
 - This checkout exposes helper and Playground scripts, but it does not carry a checked `verify:release` command surface in-tree. That is an enforcement gap in this lane, not the root release blocker.
 - Upstream release-verifier claims move the discussion from command absence to the remaining production boundary: auth/session lifecycle plus durable journal semantics, with graph identity, plugin-driver behavior, leases/fencing, preserved-remote drift, and topology still needing release-boundary proof. Reported passing output there includes live preflight, dry-run, apply, recovery inspect, and journal readback, but that remains upstream evidence until this checkout owns the same verdict.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
-- The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, and the targeted planner/recovery/benchmark tests were rechecked at `86/86`, but both remain regression-only evidence rather than a live-boundary release verdict.
+- The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, and the targeted planner/recovery/benchmark tests were rechecked at `86/86`, but both remain regression-only evidence rather than a live-boundary release verdict. That is enforcement debt in this checkout, not a substitute for production-boundary proof.
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone, even if a release wrapper exists upstream.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone, even if a release wrapper exists upstream and reports passing live preflight, dry-run, apply, recovery inspect, and journal readback.
 
 Minimum properties of that gate:
 
