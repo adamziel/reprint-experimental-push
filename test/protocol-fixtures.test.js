@@ -67,6 +67,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
     contract.pull_handoff.push_batch_apply,
     'applies mutation batches only after fresh live revalidation before every batch and again at the storage boundary',
   );
+  assert.equal(
+    contract.production_shape.remote_snapshot_hash_listing,
+    'a cursorable live remote hash listing used only for planning',
+  );
   assert.deepEqual(contract.protocol_sequence, [
     'push_preflight',
     'push_snapshot_hashes',

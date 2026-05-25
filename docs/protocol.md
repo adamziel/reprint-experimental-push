@@ -105,8 +105,8 @@ That mapping is intentionally one-way:
   stale remote look current
 - the live snapshot hash listing is planning evidence only
 - the dry-run receipt is eligibility evidence only
-- apply must re-read live state before every batch even when the dry-run
-  receipt is still valid
+- apply must re-read live state before every batch and at the storage
+  boundary even when the dry-run receipt is still valid
 - the importer must persist enough lineage, coverage, and resource identity to
   let preflight bind the later push session to the exact imported base
 - if the persisted base cannot be matched back to the remote identity that
@@ -227,7 +227,7 @@ Push is split into a read-only planning phase and a write phase:
 - `push_plan_dry_run` uploads a canonical plan and records a non-mutating
   receipt, not a lock.
 - `push_batch_apply` executes accepted plans in bounded batches with live
-  revalidation before every write.
+  revalidation before every write and at the storage boundary.
 - `push_journal` resolves lost responses and crash ambiguity.
 - `push_recover` is the only endpoint allowed to finish, roll back, or block a
   partially applied batch after proof from the journal and live hashes.
