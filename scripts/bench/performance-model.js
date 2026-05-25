@@ -1348,6 +1348,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'compressed-receipt-log-authorizes-apply',
+    proposal: 'treat a compressed durable receipt log as enough proof to authorize apply after a crash',
+    rejectedBecause: 'receipt compression can shrink recovery storage, but it cannot prove the live compare or the atomic-group barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'live-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
