@@ -5798,6 +5798,43 @@ test('durable replay of a completed plan stays inert after an interrupted attemp
   );
 });
 
+test('durable completed replay ignores stale local source changes and stays read-only', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  const staleLocal = JSON.parse(JSON.stringify(local));
+  staleLocal.files['index.php'] = '<?php echo "stale-local";';
+  staleLocal.db.wp_posts['ID:2'].post_title = 'Stale local insert';
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(staleLocal.files['index.php'], '<?php echo "stale-local";');
+  assert.equal(staleLocal.db.wp_posts['ID:2'].post_title, 'Stale local insert');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.ok(persisted.records.some((record) => record.type === 'journal-replayed'));
+});
+
 test('durable completed replay stays append-only across repeated retries and never reopens targets', () => {
   const base = baseSite();
   const local = baseSite();
