@@ -215,6 +215,11 @@ Release-gate checklist for production-readiness wording:
   live-boundary recheck is still not current proof.
   If the branch-local drift or retry case differs from the upstream note's
   scenario, the citation stays historical context only.
+- A comparison that only matches the upstream commit or worktree state still
+  does not prove production push support unless this branch also reran the
+  same live drift, stale-reject, and fresh-retry scenario on the current
+  worktree. The missing proof is branch-local live evidence, not another
+  comparison note.
 - Matching route family, package shape, or mount shape still does not upgrade
   an upstream citation into current proof unless the live executor on this
   branch rejected stale authority before mutation and preserved the remote
