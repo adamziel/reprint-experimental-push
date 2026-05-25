@@ -2582,6 +2582,29 @@ test('durable journal write failures before commit include old-remote recovery a
   }
 });
 
+test('durable journal write failure after all mutations are committed blocks recovery with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const plan = planFor(base, local, remote);
+  const durableJournal = failingDurableJournal('journal-completed');
+
+  const error = captureError(() => applyPlan(remote, plan, { durableJournal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'JOURNAL_WRITE_FAILED');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal, 'blocked recovery must include journal artifacts');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked recovery must include remote artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Local title');
+});
+
 test('old-remote injected failures keep recovery artifacts if terminal recovery-state append fails', () => {
   const base = baseSite();
   const local = baseSite();
