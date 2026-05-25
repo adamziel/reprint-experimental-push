@@ -102,6 +102,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed manifest hash still cannot skip the live file compare before a large upload publish, because compression can shrink recovery data but cannot prove the live object still matches the publish precondition after a crash or retry.
 - Compressed chunk receipts still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
 - A fresh remote index plus compressed chunk receipts still cannot prove a plugin update finished, because chunk acknowledgements do not replace dependency checks, row receipts, or the atomic-group commit.
+- A fresh remote index plus compressed chunk receipts still cannot prove a dependency-heavy plugin update finished, because dependency checks, staged rows, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus compressed chunk receipts still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need durable evidence.
 - A compressed remote index plus cached chunk receipts still cannot skip the guarded publish step for a large upload, because planning evidence and cached receipts cannot prove the live compare or publish barrier survived failure.
 - A local fingerprint match still cannot skip the live file compare before publish, because size, mtime, inode, or mode can only skip a rehash and cannot authorize the mutation boundary.
