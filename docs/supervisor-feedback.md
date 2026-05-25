@@ -7,7 +7,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 00:24 CEST - Keep-Busy Swarm Check
 
-- `reliable-executor` is not green yet: the follow-up worktree is still dirty with edits in `scripts/playground/production-shaped-release-verify.mjs`, `src/authenticated-http-push-client.js`, and `test/protocol-fixtures.test.js`, and the handoff still says the exact-output assertions are failing in the missing-secret/drift branches.
+- `reliable-executor` is still in the fix loop: the follow-up handoff reports a clean push of `2dae5631`, but `test/protocol-fixtures.test.js` still fails the missing-secret/drift exact-output assertions and the worktree is now dirty with edits in `scripts/playground/production-shaped-release-verify.mjs`, `src/authenticated-http-push-client.js`, and `test/protocol-fixtures.test.js`.
 - `no-data-loss-recovery` is unchanged: the direct planner proof still passes, and the HTTP smoke remains blocked by the ready-plan fixture state rather than the recovery logic.
 - Next nudge: ask `reliable-executor` to re-run the release-proof path against the exact fixture expectations and report the specific assertion delta before anyone treats the lane as passed.
 - Gate status: still closed; there is a concrete patch in flight, but no rechecked end-to-end confirmation yet.
