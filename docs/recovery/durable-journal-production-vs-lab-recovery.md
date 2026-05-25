@@ -19,6 +19,14 @@ inserts or revive stale local data.
 Lab fixtures are allowed to be synthetic because the point is to prove the
 state machine, not the persistence backend.
 
+The model evidence is still useful as a release gate because it proves the
+boundary contract that production must preserve:
+
+- failure before mutation, after staging, and after dependency validation stay `old-remote`
+- replay of a completed plan stays `fully-updated-remote`
+- any partial or ambiguous mutation must stay `blocked-recovery` with artifacts
+- a partial remote mutation without a durable recovery artifact is a release blocker
+
 ## Production recovery requirements
 
 Production recovery needs durable artifacts that survive process failure:
