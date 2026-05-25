@@ -8,17 +8,19 @@ Do not use production wording unless the branch has all of the following for the
 - the remote that drifted is preserved and still inspectable after rejection;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
 - any stale manual-review artifact remains audit-only after drift and cannot be reused against a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
+- any stale manual-review artifact cannot become retry authority for a later-discovered plugin-owned surface that appears only after the first write;
 - the fresh retry artifact is rebuilt from live hashes on this branch, not inherited from the earlier approval;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified as old, new, or blocked before retry starts;
 - any late-discovered plugin-owned surface is separately blocked or classified, not folded into the earlier success story;
 - any partial file, DB, or plugin side effect is durably classified before retry so a mixed write cannot be relabeled as success; and
 - any manual-resolution note, route-shaped smoke, fixture replay, or `finalMatchesLocal` result is treated as compatibility evidence only unless it is paired with the preserved remote, the rejection point, the stale-artifact rejection, the fresh retry artifact, and the same live boundary on this worktree;
-- any source-note comparison to Reprint, ZS-Sync, or ForkPress is historical context only unless it names the exact upstream revision or worktree state, says what the note proves here, says what it does not prove here, and the same live boundary was rerun on this branch; and
+- any source-note comparison to Reprint, ZS-Sync, or ForkPress is historical context only unless it names the exact upstream revision or worktree state, says what the note proves here, says what it does not prove here, and the same live boundary was rerun on this branch; the note still cannot become current retry authority without preserved-remote evidence and a fresh live-hash retry scope;
 - any source-note comparison that merely matches the same route family, package layout, or reviewer wording is still historical context only and cannot be treated as live proof of retry authority, preserved-remote safety, or stale-authority rejection; and
 - any claim of "production-grade push support" is rejected unless the same live boundary shows preserved-remote evidence, stale-authority rejection, fresh retry scope, and per-surface old/new/blocked classification; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
 - any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success.
 - any claim that "manual resolution" succeeded without the preserved remote, the rejection point, and a fresh retry artifact for the same live boundary is false reliability, not success.
+- any claim that "manual resolution" succeeded is also false reliability if the first write committed but a later plugin-owned surface was discovered afterwards and never got its own preserve/reject/retry cycle.
 - proof for one live boundary is not transferable to a later boundary, even if
   the route family, package mount, fixture replay, or reviewer wording is the
   same; the later row, file, relationship-bearing record, remapped create
