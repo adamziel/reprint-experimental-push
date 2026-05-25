@@ -30,24 +30,24 @@ good negative evidence, but it is still not direct proof for the objective:
 pushing local edits back to a live source WordPress site without losing
 concurrent source changes, while remaining reliable and fast.
 
-The weakest current claim is still speed. The more important release blocker
-is structural: the repository still lacks one enforced release gate that runs
-the auth/session, durable journal, storage, graph identity, plugin-data-
-driver, real remote/local topology, crash-boundary, recovery, and benchmark
-checks in a single required command and fails closed when any of them are
-still fixture-scoped or lab-backed. The benchmark code already refuses an
-unsupported throughput claim by listing blockers such as missing durable
-chunk receipts, missing live remote preconditions, missing durable journal
-integrity, missing graph-identity evidence, missing recovery evidence, and
-non-production storage or row-apply capabilities. That is useful refusal
-logic, but it is still only refusal logic: it does not measure a production-
-shaped runtime or memory ceiling, and it cannot substitute for a required
-release command. `npm test` and `npm run test:playground` remain green even
-when the strongest checks are skipped, so the repo can look healthy while the
-objective remains unproven. The immediate action is to turn the strongest
-checks into one required `verify:release`-style gate; until that exists, the
-current test story is stronger as a blocker generator than as release-grade
-proof of no data loss, reliability, or speed.
+The weakest current claim is still speed, but the more important release
+blocker is structural: the repository still lacks one enforced release gate
+that runs the auth/session, durable journal, storage, graph identity,
+plugin-data-driver, real remote/local topology, crash-boundary, recovery, and
+benchmark checks in a single required command and fails closed when any of
+them are still fixture-scoped or lab-backed. The benchmark code already
+refuses an unsupported throughput claim by listing blockers such as missing
+durable chunk receipts, missing live remote preconditions, missing durable
+journal integrity, missing graph-identity evidence, missing recovery
+evidence, and non-production storage or row-apply capabilities. That is
+useful refusal logic, but it is still only refusal logic: it does not measure
+a production-shaped runtime or memory ceiling, and it cannot substitute for a
+required release command. `npm test` and `npm run test:playground` remain
+green even when the strongest checks are skipped, so the repo can look
+healthy while the objective remains unproven. The immediate action is to turn
+the strongest checks into one required `verify:release`-style gate; until
+that exists, the current test story is stronger as a blocker generator than
+as release-grade proof of no data loss, reliability, or speed.
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
@@ -195,7 +195,7 @@ gates were exercised.
 
 | Area | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| Release gate | Executable proof: there are many narrow checks for planner safety, journal states, authenticated lab routes, and benchmark refusal logic. Lab/fixture proof: `test:playground:*`, `test:recovery:*`, and the production-shaped route/package smokes cover useful slices of the push workflow. Docs-only proof: the audit and script names describe an intended safety matrix. | No required command chains auth/session, durable journal, storage-boundary guards, graph identity, plugin-data-driver checks, real remote/local topology, crash boundaries, recovery, and benchmark evidence into one enforced release path. The stronger checks remain opt-in, and the production-shaped smokes still report `labBacked: true`. | Add a single enforced `verify:release`-style command and wire it into CI or another required entrypoint so the strongest checks cannot be skipped. Until that exists, the suite can only prove that release is still blocked, not that release is safe. |
+| Release gate | Executable proof: there are narrow checks for planner safety, journal states, authenticated lab routes, and benchmark refusal logic. Lab/fixture proof: `test:playground:*`, `test:recovery:*`, and the production-shaped route/package smokes cover useful slices of the push workflow. Docs-only proof: the audit and script names describe an intended safety matrix. | No required command chains auth/session, durable journal, storage-boundary guards, graph identity, plugin-data-driver checks, real remote/local topology, crash boundaries, recovery, and benchmark evidence into one enforced release path. The stronger checks remain opt-in, and the production-shaped smokes still report `labBacked: true`. | Add a single enforced `verify:release`-style command and wire it into CI or another required entrypoint so the strongest checks cannot be skipped. Until that exists, the suite can only prove that release is still blocked, not that release is safe. |
 | No-overwrite planner | Executable proof: unit tests cover unchanged remote mutations, remote-only preservation, deletion behind preconditions, delete/update conflict, directory deletion that would hide a remote-only descendant, file type swap that would hide a remote-only descendant, matching independent edits, plugin dependency drift, stale precondition refusal, and redacted plugin-data conflict evidence. Lab/fixture proof: the Playground and route smokes exercise the same planner shape against fixtures. Docs-only proof: README and audit text describe graph safety intentions. | These proofs are still mostly JSON-model resources plus fixture policy, not WordPress graph semantics. They do not prove post/postmeta/attachment/taxonomy/menu/plugin relationships are complete, nor do they prove arbitrary plugin-owned data is safe. | Add one real WordPress graph fixture where local and remote edit different related resources, then prove the planner blocks or preserves every relationship explicitly. |
 | Recovery and idempotency | Executable proof: unit tests cover JSONL journal creation, monotonic sequences, per-record `fsync` evidence, old/new/blocked classification, corrupt/truncated journal blocking, missing-target blocking, completed replay, journal envelope mismatch, and partial remote mutation as blocked recovery. Lab/fixture proof: Playground smokes cover DB journal, same-key replay, conflict refusal, process kill, missing-commit finalization, and all-old stale-claim retry. Lab/fixture proof: the production-shaped route smoke proves committed replay and recovery inspect for the fixture route profile. Docs-only proof: script names and comments describe durability intent. | JSONL recovery is still a model. Playground DB recovery is fixture-scoped local storage evidence. The production-shaped route is still lab-backed. None of this proves production MySQL/InnoDB, filesystem durability, leases/fencing, rollback, or every WordPress write boundary. The current suite can demonstrate blocked recovery states, but it does not prove that a live source site survives crash/retry cycles without data loss or duplicate mutation at each guarded boundary. | Kill the production-backed executor at every guarded DB/file/plugin boundary and retain DB journal plus live hash evidence for old/new/blocked classification. |
 | Speed | Executable proof: `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove a deterministic model for chunk staging, bounded DB batches, preconditions, atomic group visibility, backpressure, and benchmark evidence gates. Lab/fixture proof: the benchmark harness can express production-claim blockers and currently refuses a throughput claim when the required evidence is missing. Docs-only proof: scripts and audit text explain why the claim is blocked. | No bytes move in a production executor, no live source site is mutated, and no benchmark runs against the real push path or a production-shaped substitute with measured runtime and memory ceilings. The current benchmark only proves that unsupported speed claims are rejected. It does not prove that the path is fast, or even that the tested path corresponds to the live release path. The tests are useful as a guardrail, but they are not a speed measurement. Until measured runtime is wired into one required release command, speed remains blocked rather than supported. | Run a large-file and large-table benchmark through the executor with durable chunk receipts, live remote preconditions, journal cursors, retries, measured runtime and memory, and an explicit pass/fail threshold tied to the production push path. |
