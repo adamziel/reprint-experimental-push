@@ -18,6 +18,7 @@ Do not use production wording unless the branch has all of the following for the
 - any late-discovered plugin-owned surface is separately blocked or classified, not folded into the earlier success story;
 - any partial file, DB, or plugin side effect is durably classified before retry so a mixed write cannot be relabeled as success; and
 - any manual-resolution note, route-shaped smoke, fixture replay, or `finalMatchesLocal` result is treated as compatibility evidence only unless it is paired with the preserved remote, the rejection point, the stale-artifact rejection, the fresh retry artifact rebuilt from live hashes, and the same live boundary on this worktree;
+- a matching route family, package mount, or production-shaped URL can still be served by a copied or fixture-backed executor, so route shape is compatibility evidence only and never proof of the live write boundary by itself;
 - any source-note comparison to Reprint, ZS-Sync, or ForkPress is historical context only unless it names the exact upstream revision or worktree state, says what the note proves here, says what it does not prove here, and the same live boundary was rerun on this branch; use the observed anchors from `docs/source-notes.md` (`27c5f25`, `d9334a0`, `55f9879`) as provenance only, because the note still cannot become current retry authority without preserved-remote evidence and a fresh live-hash retry scope;
 - any source-note comparison that only matches route family, package mount, or reviewer wording is compatibility evidence only, even if the note is otherwise well formed;
 - any source-note comparison that merely matches the same route family, package layout, reviewer wording, or production-shaped route name is still historical context only and cannot be treated as live proof of retry authority, preserved-remote safety, stale-authority rejection, or live write coverage; and
@@ -42,6 +43,9 @@ False success to reject:
 - "manual resolution later" is not success if the readable artifact is still
   being reused as authority after drift, or if the later boundary never got
   its own preserve/reject/retry cycle on this worktree;
+- "manual resolution later" is not success if the route shape merely matches
+  production while the executor is copied or fixture-backed behind that same
+  URL shape;
 - "manual resolution later" is also not success if a remapped create target or
   late-discovered plugin-owned surface was silently folded into the first
   approval instead of getting its own preserve/reject/retry cycle;
