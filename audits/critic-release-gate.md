@@ -113,3 +113,10 @@ Production-readiness language checklist:
 - reject any claim that the same route shape, reviewer wording, or fixture replay proves a later boundary; each later-discovered plugin-owned surface still needs its own preserve / reject / retry cycle;
 - treat route shape, package mount shape, fixture replay, readable review output, and `finalMatchesLocal` as compatibility evidence only; and
 - name the exact upstream revision or worktree state for any Reprint, ZS-Sync, or ForkPress comparison, use the observed anchors from `docs/source-notes.md` (`27c5f25`, `d9334a0`, `55f9879`) when naming the source note, and say what that note proves here and what it does not prove.
+
+Evidence-classification rule:
+
+- if a claim does not explicitly say whether a note, artifact, or smoke is historical context, compatibility evidence, or live retry proof, the wording is ambiguous and must fail closed;
+- a Reprint, ZS-Sync, or ForkPress note is historical context unless the exact upstream state and the same live boundary were rerun here;
+- a readable manual-review artifact is audit evidence only unless it is paired with the preserved remote, the rejection point, and a fresh retry scope rebuilt from live hashes on this branch; and
+- a route-shaped smoke, package-mount match, or `finalMatchesLocal` result is compatibility evidence only and cannot be upgraded into proof for a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface.
