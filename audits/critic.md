@@ -15,6 +15,19 @@ In particular, a green lab result never counts as production proof unless the
 same live write path was exercised against a drifted remote and the audit shows
 the stale approval was rejected before mutation.
 
+The next production-proof gap is not general reliability jargon. It is four
+specific missing proofs:
+
+- live remote drift must be rejected on the exact write path, with the stale
+  hash set, rejected approval, and preserved remote all auditable;
+- create-time identity remapping must either be proven safe or fail closed
+  before mutation, so a create cannot silently alias a different target;
+- plugin-owned state outside the allowlist must be discovered or blocked at
+  apply time, not inherited from stale local metadata or a fixture-only map;
+- partial file, DB, or plugin side effects must be durably classified so a
+  retry cannot widen the old approval or turn recovery evidence into current
+  authority.
+
 Changes that must happen before any production-grade push claim:
 
 - Tie the claim to a real live write-path proof on the exact request path,
@@ -114,6 +127,9 @@ claim must stay lab-backed or comparison-only:
 - Show that partial file, DB, or plugin side effects are durably classified and
   cannot widen the old approval to a different row, file, relationship, or
   plugin-owned surface on retry.
+- Show that stale manual-review artifacts stay readable for audit but cannot
+  authorize a different row, file, relationship-bearing record, or plugin-
+  owned surface after drift.
 - If Reprint, ZS-Sync, or ForkPress are cited, name the exact upstream
   revision or worktree state that was reverified at the same live mutation
   boundary. Otherwise the comparison is historical context only.
