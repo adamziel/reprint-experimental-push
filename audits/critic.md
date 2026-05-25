@@ -11,6 +11,28 @@ and old/new/blocked classification for every touched surface. Lab-shaped
 route matches, package-mount matches, fixture replay, readable manual-review
 artifacts, and `finalMatchesLocal` stay compatibility evidence only.
 
+Production-readiness gate, in one place:
+
+- the exact live boundary and the exact stale-drift case are named;
+- the rejected remote stays inspectable after rejection so the user can audit
+  the drift and retry from fresh live hashes;
+- the stale approval or manual-review artifact is rejected before the first
+  write and cannot widen to a later row, file, relationship-bearing record,
+  remapped create target, or plugin-owned surface;
+- any later-discovered plugin-owned surface is treated as a new boundary
+  unless it was enumerated before write or separately blocked with its own
+  preserve / reject / retry cycle;
+- every touched file, DB row, relationship-bearing record, and plugin-owned
+  surface is classified old, new, or blocked before retry starts, including
+  mixed file/DB/plugin side effects;
+- any comparison to Reprint, ZS-Sync, or ForkPress names the exact upstream
+  state, says what the note proves here, says what it does not prove here,
+  and is rerun against the same live boundary on this branch; and
+- route shape, package layout, fixture replay, readable review output, and
+  `finalMatchesLocal` remain compatibility evidence only unless they are
+  paired with the preserved remote and a fresh retry scope rebuilt from live
+  hashes on this worktree.
+
 Proof-classification rule: if a comparison note, manual-review artifact, or
 release comment does not explicitly say whether it is historical context,
 compatibility evidence, or live retry proof, it must fail closed. The same
