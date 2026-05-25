@@ -2181,3 +2181,20 @@ Production-readiness checklist:
   boundary; otherwise the note remains historical context only.
 - Show a release gate that fails closed when any of the above is missing and
   that records the exact rejection reason for audit and retry.
+
+False reliability claims to avoid:
+
+- "The route is production-grade" when the proof only covers a lab route,
+  packaged mount, or `finalMatchesLocal` hash.
+- "The compare note proves it" when the Reprint, ZS-Sync, or ForkPress
+  source note was not reverified against the exact upstream revision or
+  worktree state at the live write boundary.
+- "Manual resolution succeeded" when the remote was not preserved for audit,
+  the stale approval stayed reusable, or the retry was not rebuilt from fresh
+  live evidence.
+- "The plugin is safe" when the proof omits plugin-owned state outside the
+  allowlist, including generated files, cron rows, runtime registries, custom
+  tables, or other late-discovered side effects.
+- "Recovery succeeded" when the apply left mixed file, DB, or plugin state
+  but the failure was not durably classified as partial with a fresh retry
+  scope.
