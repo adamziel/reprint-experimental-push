@@ -9,6 +9,7 @@ What still has to change before any production-grade claim is credible:
 - the branch must show the exact live boundary, the exact stale-drift case, and the exact rejection point before the first write;
 - the rejected remote must stay inspectable for audit and retry, not merely be mentioned in a readable note;
 - every touched file, DB row, relationship-bearing record, and plugin-owned surface must be classified old, new, or blocked before retry starts, including mixed file/DB/plugin side effects;
+- a later-discovered plugin-owned surface, remapped create target, or relationship-bearing record must get its own live-boundary proof; a prior readable note cannot be widened to cover it retroactively;
 - any later-discovered plugin-owned surface or remapped create target must become a new live boundary unless it was already enumerated before write and separately blocked or classified;
 - any readable manual-resolution note or comparison summary must not be allowed to retroactively authorize a later-discovered plugin-owned surface, remapped create target, or relationship-bearing record, even if the route family, package layout, or reviewer wording stays identical;
 - any "manual resolution" or "comparison passed" wording must stay audit-only unless it names the preserved remote, the upstream source-note state, and the same live boundary rerun on this branch; and
