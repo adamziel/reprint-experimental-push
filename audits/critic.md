@@ -4478,6 +4478,11 @@ False reliability claims to reject:
 - "production-safe route" when the only evidence is a production-shaped URL
   family or package layout but the branch has not proven the live executor,
   the preserved remote, and the fresh retry scope on this branch.
+- "source-note proof" when a Reprint, ZS-Sync, or ForkPress note only
+  happens to match the same route family, package layout, or reviewer
+  wording; shape similarity is compatibility evidence only and does not
+  prove the live executor, preserved remote, or fresh retry scope on this
+  branch.
 
 Production wording must also satisfy the release gate in
 [`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md).
@@ -4540,3 +4545,6 @@ true on this branch:
 - any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
   revision or worktree state and says what that note proves here and what it
   does not prove.
+- any Reprint, ZS-Sync, or ForkPress note that merely matches the same route
+  family, package layout, or reviewer wording is still historical context
+  only and cannot be recast as live proof.
