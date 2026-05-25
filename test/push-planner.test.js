@@ -13262,6 +13262,39 @@ test('keeps remote-only plugin changes while a live-preconditioned file delete, 
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('stops a local file delete conflict while preserving matching remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  delete local.files['about.php'];
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "remote about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:about.php'), undefined);
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.reason, 'Local and remote both changed this resource after the pull base.');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('<?php echo "remote about";'), false);
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(planJson.includes('base about'), false);
+  assert.equal(plan.preconditions.length, 0);
+});
+
 test('blocks a plugin-owned delete while preserving matching independent edit, file type swap, and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();

@@ -27,6 +27,7 @@ It must preserve:
 It must stop when:
 
 - a mutation would overwrite a live remote change without a live precondition
+- a local delete conflicts with a live remote same-file edit
 - a file or directory topology change would hide a live remote descendant
 - plugin-owned data lacks the ownership context needed to prove the mutation is
   safe
