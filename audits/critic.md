@@ -79,6 +79,12 @@ Source-note comparison policy:
   crash-consistency target. They do not prove production push support on this
   branch unless the same drifted remote, preserved remote, and fresh retry
   scope were rerun and recorded here.
+- The exact upstream revisions used elsewhere in this audit are historical
+  anchors only: Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress
+  `55f9879`. They describe upstream source-note context, not current
+  branch-local proof, and they do not establish safe retry authority unless
+  this branch reran the same live boundary and recorded the preserved remote,
+  rejection point, and fresh retry scope here.
 - Any note that names the right family but omits the exact upstream revision
   or worktree state remains provenance only, even if it matches route shape,
   package mount shape, or a readable review artifact.
