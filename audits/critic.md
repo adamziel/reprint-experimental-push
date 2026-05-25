@@ -6,11 +6,10 @@ point and `68664884` as the prior boundary-verdict step. That lane's completed
 `npm run verify:release` result, including `authSessionType`, minted session
 shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
 retained-source lab evidence. The newer boundary verdict at `889bd37a`
-retires the old "no verify:release exists" critique, but it does not convert
+retires the stale "no verify:release exists" critique, but it does not convert
 retained-source evidence into branch-local retry authority or production
-proof.
-The remote lane now also exposes `verify:release` in `package.json`, so any
-remaining absence of that command on this checkout is only a branch-local
+proof. The remote lane now also exposes `verify:release` in `package.json`, so
+any remaining absence of that command on this checkout is only a branch-local
 merge gap, not a project-wide absence.
 
 Exact evidence that improved in the supervised lane: the retained-source run
@@ -33,8 +32,9 @@ relationship-bearing record, and plugin-owned surface.
 
 What improved in the supervised lane is narrow but real: the retained-source
 harness now names executor/session/journal details instead of only route
-shape. What it does not prove here is the next required proof: a rerunnable
-live release command against a real local, Playground, or Docker
+shape, and the remote evidence now includes a boundary verdict instead of a
+shape-only smoke. What it does not prove here is the next required proof: a
+rerunnable live release command against a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
 apply time, and inspects recovery/journal state on the same mutation.
 
@@ -114,9 +114,9 @@ live boundary with preserved-remote audit evidence. A newer upstream commit, a
 cleaner lab harness, or a better route shape does not upgrade any of the three
 source notes into production retry authority here.
 
-That retained-source result is real progress, but it still only proves the
-lab harness for the supervised lane. It does not yet prove this branch can
-rerun the same boundary against a live local, Playground, or Docker
+That retained-source result is real progress, but it still only proves the lab
+harness for the supervised lane. It does not yet prove this branch can rerun
+the same boundary against a live local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` and preserve the rejected remote for audit and
 retry.
 
@@ -230,8 +230,9 @@ Primary critic finding:
   `REPRINT_PUSH_SOURCE_URL`, rejects stale authority before the first write,
   and preserves the rejected remote for audit and retry; until that exact
   boundary exists here, any "production-grade push support" claim on this
-  worktree is false reliability, even if the supervised reliable-executor lane
-  already has retained-source replay, executor, and route-shape progress.
+  worktree is false reliability, even though the supervised reliable-executor
+  lane now has retained-source replay, executor, boundary-verdict, and
+  journal/session progress.
 
 The next acceptable proof from the supervised lane is now narrower and exact:
 
