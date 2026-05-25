@@ -18,9 +18,10 @@ This note isolates what the current test surface proves and what it still does n
 - No test proves the actual remote/local topology with a live source and live push target.
 - No test measures a production push path with a defined runtime or memory threshold.
 - No required command composes those checks and fails closed when any one of them is still lab-backed, fixture-only, or benchmark-only.
+- No required command prints an explicit release verdict such as `speed unclaimed` when production throughput remains `not-claimed`.
 
 ## Release Blocker
 
-The tests are credible refusal evidence, but they are not yet release evidence.
+The tests are credible refusal evidence, but they are not yet release evidence. The repo can still go green without a mandatory release command that proves the live-source boundary and owns the speed verdict in the same run.
 
 The project remains blocked until one enforced release gate exists and the live-source path is exercised with the same storage, auth, journal, crash, and graph semantics that production depends on.
