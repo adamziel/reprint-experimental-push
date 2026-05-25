@@ -12,7 +12,7 @@ or comparison-only.
   and the exact preserved remote hash set that was rejected before mutation.
 - The claim does not treat a readable review artifact or source-note
   comparison as current proof unless the same live boundary was revalidated on
-  this branch.
+  this branch; otherwise the artifact stays historical context only.
 - The claim does not let a Reprint, ZS-Sync, or ForkPress note imply current
   reliability unless the exact upstream revision or worktree state is named
   and the same live boundary was rerun here with preserved-remote evidence.
@@ -64,7 +64,9 @@ or comparison-only.
   boundary, not a continuation of the first write. If the branch has not
   preserved the remote, recorded the rejection point for that later surface,
   and rebuilt retry scope from fresh live hashes, the earlier approval stays
-  audit-only and cannot authorize the new surface.
+  audit-only and cannot authorize the new surface. A matching route family,
+  package mount, fixture replay, or `finalMatchesLocal` result is only
+  compatibility evidence for that later surface.
 - The claim shows ambiguous conflict policy is resolved conservatively: the
   branch must preserve the remote, classify every touched surface as old,
   new, or blocked, and keep "manual resolution" from silently widening scope
