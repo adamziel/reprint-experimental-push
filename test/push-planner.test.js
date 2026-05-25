@@ -1832,6 +1832,49 @@ test('atomic apply preserves the approved recovery envelope for pre-mutation, po
   durableJournal.close();
 });
 
+test('atomic apply keeps only the documented recovery states across the durable failure boundaries and completed replay', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  for (const options of [
+    { failBeforeMutation: true },
+    { failAfterStaging: true },
+    { failAfterDependencyValidation: true },
+  ]) {
+    const snapshot = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, { durableJournal, ...options }));
+
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(JSON.stringify(remote), snapshot);
+    assert.equal(isAcceptableRecoveryState(error.details.recovery), true);
+    assert.equal(
+      ['old-remote', 'blocked-recovery'].includes(error.details.recovery.status),
+      true,
+    );
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id);
+  }
+
+  const completed = applyPlan(remote, plan, { durableJournal });
+  assert.equal(isAcceptableRecoveryState(completed.recoveryState), true);
+  assert.equal(completed.recoveryState.status, 'fully-updated-remote');
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal });
+
+  assert.equal(isAcceptableRecoveryState(replay.recoveryState), true);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  durableJournal.close();
+});
+
 test('replaying a completed plan stays inert and does not duplicate inserted resources', () => {
   const base = baseSite();
   const local = baseSite();
