@@ -244,6 +244,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const specialFileSupport = unsupportedSpecialFileResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!specialFileSupport.supported) {
+        addUnsupportedSpecialFileBlocker(plan, {
+          resource,
+          support: specialFileSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const graphIdentitySupport = wordpressGraphIdentitySupport({
         resource,
         localValue,
@@ -1586,6 +1606,37 @@ function addUnsupportedSerializedBlocksBlocker(plan, {
   });
 }
 
+function addUnsupportedSpecialFileBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-special-file-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-special-file-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Special file entry ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function boundEvidenceList(items, limit) {
   return items.slice(0, limit);
 }
@@ -1684,6 +1735,49 @@ function unsupportedSerializedBlocksSupport({ resource, baseValue, localValue, r
     className: 'unsupported-serialized-blocks-resource',
     reason: 'Serialized block references are not yet supported by the planner.',
   };
+}
+
+function unsupportedSpecialFileResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+  if (resource.type !== 'file') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT || typeof candidate !== 'object') {
+    return { supported: true };
+  }
+
+  if (!isUnsupportedSpecialFileValue(candidate)) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-special-file-resource',
+    reason: 'Special file entries are not yet supported by the planner.',
+  };
+}
+
+function isUnsupportedSpecialFileValue(value) {
+  const specialTypes = new Set([
+    'symlink',
+    'junction',
+    'reparse',
+    'reparse-point',
+    'submodule',
+    'gitlink',
+    'fifo',
+    'socket',
+    'device',
+    'hardlink',
+    'hard-link',
+  ]);
+
+  if (typeof value?.type === 'string' && specialTypes.has(value.type)) {
+    return true;
+  }
+
+  return Boolean(value?.target) || Boolean(value?.linkTarget) || Boolean(value?.inode);
 }
 
 function addFileTopologyConflicts(plan, resources, base, local, remote) {

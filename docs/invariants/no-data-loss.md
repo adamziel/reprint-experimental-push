@@ -23,6 +23,8 @@ What it must preserve:
 - Any live remote descendant that would be hidden by a local delete or type
   swap.
 - Any resource with ambiguous or unsupported ownership evidence.
+- Special file entries such as symlinks, junctions, and reparse-like objects
+  are unsupported and must stop rather than being treated as ordinary files.
 - Remote-only plugin removals, metadata, and files when an unrelated local
   delete still has a valid live remote precondition.
 
