@@ -1,24 +1,30 @@
 # No Data Loss Durable Journal Replay Boundary
 
-The durable apply path must classify every outcome into one of three states:
+The recovery boundary for `src/apply.js` is only acceptable when every path
+lands in one of these states:
 
 - `old-remote`
-  - Failure happened before any remote mutation escaped.
-  - The journal may contain `opened`, `staged`, or `dependencies-validated`.
-  - The remote artifact must remain absent.
-
 - `fully-updated-remote`
-  - The plan was already completed.
-  - Replaying the same completed journal must be inert.
-  - The remote artifact must remain absent.
+- `blocked-recovery` with journal and remote artifacts
 
-- `blocked-recovery`
-  - A partial remote mutation was observed or replay can no longer be trusted.
-  - Durable artifacts must include both the journal and the remote snapshot.
-  - This is the only acceptable state for a partial write.
+## Executable proof
 
-Release gate:
+The current proof is the planner test matrix:
 
-- A partial remote mutation without a recovery artifact is a blocker.
-- Retry must not duplicate inserts, resurrect stale local data, or treat partial writes as safe.
-- Replay of a completed plan must return `fully-updated-remote` without fresh mutation work.
+```bash
+node --test test/push-planner.test.js
+```
+
+That matrix pins four release-gate cases:
+
+1. failure before mutation
+1. failure after staging
+1. failure after dependency validation
+1. replaying a completed plan
+
+## Release rule
+
+A partial remote mutation without a recovery artifact is a blocker.
+
+Retry must not duplicate inserts or resurrect stale local data. A completed
+replay is only safe when it stays inert and reports `fully-updated-remote`.
