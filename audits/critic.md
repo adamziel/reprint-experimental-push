@@ -408,6 +408,15 @@ lab-only compatibility evidence. If the only available entry points remain
 `plan`, `apply`, and `test:playground:*`, the branch is still lab-only and the
 release gate fails closed.
 
+Primary verdict for this iteration: no branch-local proof exists yet for a
+named real-site preflight/release command. That missing command is the
+release blocker, and every "production-shaped" smoke or comparison note must
+stay downgraded until the branch can rerun the exact live boundary on an
+actual remote and keep the rejected remote inspectable for audit and retry.
+Reprint, ZS-Sync, and ForkPress remain source-note provenance only unless the
+branch-local rerun says exactly what each note proves here and what it does
+not prove here.
+
 Fail-closed wording rule:
 
 - compatibility evidence: route shape, package layout, fixture replay,
