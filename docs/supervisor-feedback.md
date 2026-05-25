@@ -9,7 +9,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 - Going well: the page, log, and feedback note still match.
 - Not going well: production proof is still missing, so the public status stays blocked.
-- Progress change: no new evidence landed; this pass only tightened the scan view.
+- Progress change: no new evidence landed; the scan view is terser and easier to audit.
 - Next nudge: keep each lane to one proof gap, one test, and one owner.
 
 | Lane | Current nudge |
