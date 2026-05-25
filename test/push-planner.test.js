@@ -17363,7 +17363,7 @@ test('the durable recovery boundary remains fail-closed until the release gate w
   assert.equal(Object.hasOwn(packageJson.scripts, 'verify:release'), true);
   assert.equal(
     packageJson.scripts['verify:release'],
-    'npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
+    'npm run test:playground:production-shaped-topology-proof && npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
     'release verification exists upstream, but it still does not prove durable journal storage, recovery inspection, or release-path replay wiring',
   );
   assert.equal(
