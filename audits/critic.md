@@ -3588,6 +3588,24 @@ Production release gate checklist:
   audit evidence only; the gate still needs reject-before-mutation proof and a
   fresh retry artifact rebuilt from live hashes.
 
+These are the specific failure scenarios that still need branch-local proof:
+
+- Live remote drift after dry-run but before the first write. Missing proof:
+  the actual apply path rejected stale authority before mutation, and the
+  preserved remote stayed auditable afterward.
+- Create-time identity remap, alias, or renumber. Missing proof: durable
+  identity evidence for the remap, or a hard block before mutation.
+- Plugin-owned state outside the allowlist, including custom tables,
+  generated files, cron rows, runtime registries, caches, serialized blobs,
+  and other hidden plugin side effects. Missing proof: live enumeration of
+  the full surface list, or explicit block at apply time.
+- Partial file, DB, or plugin side effects. Missing proof: old/new/blocked
+  classification for every touched surface, with retry rebuilt from fresh
+  live hashes rather than inherited approval.
+- Stale manual-review artifacts that remain readable after drift. Missing
+  proof: the artifact stayed audit-only, could not authorize retry, and was
+  replaced by a separately recorded fresh retry artifact.
+
 Production-grade push wording remains blocked until the same live boundary
 proves all of the following:
 
