@@ -84,6 +84,9 @@ This note summarizes the planner's no-overwrite contract.
   `already-in-sync` instead of being rewritten as mutations.
 - File-topology conflicts should name the related descendant or ancestor path
   and stop the unsafe delete or type swap without exposing file contents.
+- File-topology conflicts for a file type swap should stay bounded to the
+  descendant path and local change kind while unrelated matching edits and
+  remote-only plugin drift remain preserved.
 - Plugin-owned deletes should preserve unrelated matching edits and remote-only
   plugin drift instead of widening into unrelated overwrites.
 

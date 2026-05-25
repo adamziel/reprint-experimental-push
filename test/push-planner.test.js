@@ -6006,6 +6006,42 @@ test('stops a local file delete that would hide a remote-only descendant while k
   assertEveryMutationHasLiveRemotePrecondition(plan);
 });
 
+test('stops a file type swap that would hide a live remote descendant while preserving a matching edit and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/remote-only.txt'] = 'base descendant';
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Matching independent title', post_status: 'publish' };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = 'local replacement file';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Matching independent title', post_status: 'publish' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/uploads/gallery/remote-only.txt'] = 'remote-only descendant';
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Matching independent title', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:wp-content/uploads/gallery');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.conflicts, 2);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.reason, 'Local file deletion or type change would hide or remove a live remote descendant.');
+  assert.equal(conflict.relatedResource.key, 'file:wp-content/uploads/gallery/remote-only.txt');
+  assert.equal(conflict.relatedChange.remoteChange, 'update');
+  assert.equal(conflict.relatedChange.remote.state, 'present');
+  assert.equal(conflict.relatedChange.remote.contents, undefined);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/uploads/gallery/remote-only.txt'], 'remote-only descendant');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete, matching edit, and file type swap stay safe', () => {
   const base = baseSite();
   base.files['wp-content/uploads/photo.txt'] = {
