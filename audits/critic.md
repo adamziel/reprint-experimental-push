@@ -12,10 +12,10 @@ The missing production proof is one rerunnable live mutation boundary on one exa
 
 What must happen before production wording is defensible:
 
-- preserve the rejected remote after refusal and keep it inspectable for audit and retry;
+- preserve the rejected remote after refusal and keep it inspectable for audit and retry on the same rerunnable boundary;
 - re-derive authority from fresh live hashes at apply time on the same boundary;
 - prove WordPress auth/session expiry, refresh, and operator re-entry on the rejected source URL;
-- write through a lease-fenced durable journal on production-like storage;
+- write through a lease-fenced durable journal on production-like storage, not just report row counts;
 - preserve graph identity across create-time remap and late-discovered relationship-bearing records; and
 - classify late plugin-owned surfaces before the first write, not after a manual review artifact exists.
 
