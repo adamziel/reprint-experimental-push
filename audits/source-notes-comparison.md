@@ -66,3 +66,8 @@ Without that revalidation, the notes cannot backfill missing proof for:
 - plugin-owned allowlist coverage,
 - partial file/DB/plugin side-effect classification,
 - or remote-preserving retry behavior.
+
+A source-note comparison by itself is never enough to claim the live retry
+path is safe, auditable, or production-ready. If the claim cannot show the
+exact live request path, preserved remote state, and stale-authority rejection
+at the current write boundary, the comparison remains context only.
