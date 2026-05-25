@@ -7,9 +7,10 @@ Verdict: the design still cannot claim production-grade push support.
 Primary blocker: the branch still does not expose a single executable
 real-site preflight/release command that proves the live boundary on an actual
 remote and preserves the rejected remote, rejection point, and fresh retry
-scope in one auditable flow. Until that exists, any doc, PR, or review wording
-is still lab-backed or comparison-only, no matter how production-shaped the
-route or reviewer language looks.
+scope in one auditable flow. Until that exists, and until the branch can name
+the command that performs it, any doc, PR, or review wording is still
+lab-backed or comparison-only, no matter how production-shaped the route or
+reviewer language looks.
 
 What still has to change before any production-grade claim is credible:
 
