@@ -192,7 +192,7 @@ In the same way, a route-shaped smoke or package-mounted fixture can at most pro
 The release gate and the long audit should stay aligned on one point: a matching endpoint name, ingress shape, or packaged-plugin mount is compatibility evidence only unless the exact live mutation boundary was exercised against a drifted remote and stale authority failed closed before mutation.
 This means a source-note comparison cannot be promoted into live write-path safety unless the claim also names the exact boundary that was exercised and the exact upstream revision or worktree state that was reverified.
 
-Release-claim rule: if a claim does not name the live write boundary, the stale rejection, the preserved remote, the fresh retry scope, and whether the Reprint, ZS-Sync, or ForkPress comparison was reverified at the exact upstream revision/worktree state, it is not production wording. Route-shape smokes, packaged-plugin mounts, fixture replays, and `finalMatchesLocal` remain compatibility evidence only, even when they look current. A matching endpoint name or hash does not prove the production executor ran, the remote stayed preserved, or stale authority failed closed before mutation. A comparison note that was not reverified at the same live mutation boundary stays historical context even if the cited upstream revision is named correctly.
+Release-claim rule: if a claim does not name the live write boundary, the stale rejection, the preserved remote, the fresh retry scope, and whether the Reprint, ZS-Sync, or ForkPress comparison was reverified at the exact upstream revision/worktree state, it is not production wording. Route-shape smokes, packaged-plugin mounts, fixture replays, and `finalMatchesLocal` remain compatibility evidence only, even when they look current. A matching endpoint name or hash does not prove the production executor ran, the remote stayed preserved, or stale authority failed closed before mutation. A comparison note that was not reverified at the same live mutation boundary stays historical context even if the cited upstream revision is named correctly. A production claim must not blur those categories by implying that a lab-shaped route, a copied-lab mount, or a matching hash is the same thing as a live mutation proof.
 
 Claim rule: if a doc, PR description, review comment, or status note cites Reprint, ZS-Sync, or ForkPress, it must say whether the cited upstream behavior was reverified against the current commit or worktree state. If it was not reverified, the citation stays historical context only. If it cites a route-shape smoke, packaged-plugin mount, or `finalMatchesLocal`, it must also name the live write boundary that was exercised, the remote-drift case that failed closed, and the stale artifact that became audit-only.
 If a claim reuses those source notes without naming the exact upstream revision or worktree state that was checked, the claim is overbroad. "Same idea as upstream" is comparison language, not current proof, and it does not satisfy the release gate by itself.
@@ -261,6 +261,9 @@ False-reliability claims that also need to stay out of production wording:
 - "Recovery succeeded" is false whenever one store committed and the rest were
   merely classified; mixed file, DB, or plugin writes still need old/new/
   blocked evidence and a retry rebuilt from fresh live hashes.
+- "The route is production-safe" is false when the only proof is route shape,
+  a packaged-plugin mount, or `finalMatchesLocal`, because those only show
+  compatibility with the contract, not the live write boundary.
 
 Additional hard blocker for this lane: any proof that comes from a
 fixture-backed or copied-lab write path behind a production-shaped mount is
@@ -318,6 +321,10 @@ The strongest false-positive pattern to avoid is a lab route that returns the
 right endpoint shape and a live-looking hash while still using fixture-backed or
 copied-lab internals; that only proves the wrapper answered, not that the live
 mutation boundary was exercised or that remote drift was checked before write.
+The same trap applies to comparison language: a cited Reprint, ZS-Sync, or
+ForkPress note can be useful context, but it is still not current proof unless
+the exact upstream revision or worktree state was reverified at the same live
+mutation boundary.
 The same warning applies to plugin data traps that are easy to miss in review:
 plugin-owned options, custom tables, generated files, activation hooks, cron,
 and cache entries can all mutate outside the main post/page row plan. If any
