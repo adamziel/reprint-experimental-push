@@ -137,7 +137,7 @@ The table below is strict by design:
 ## Test Audit
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is as refusal evidence, not as release evidence. They demonstrate that the suite knows how to say "not yet"; they do not demonstrate that the production boundary is safe.
-That is not a wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push. No current test proves a release-safe runtime or memory ceiling on the live boundary.
+That is not a wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push. The green `npm test` result only proves the current model and fixture suite are internally consistent; it does not prove release readiness, no data loss, or live-path reliability.
 The implication is straightforward: the current tests are credible blockers, but they are not release approvers. A green run can still coexist with an unproven live-source push boundary, unmeasured throughput, and an absent enforced gate.
 
 The specific claims the tests do not yet prove are the ones the objective cares about most:
@@ -145,6 +145,7 @@ The specific claims the tests do not yet prove are the ones the objective cares 
 - No data loss on a live WordPress source site after pull-base reuse, retry, or replay.
 - Reliability across crash, duplicate request, stale claim, lease expiry, and mid-apply restart on the real boundary.
 - Speed on the production-shaped push path, with an actual measured threshold instead of a refusal-only benchmark model.
+- Enforced release approval from one checked-in command that fails closed when any proof bucket is still lab-backed, fixture-only, benchmark-only, or missing.
 
 Concretely, the suite currently proves:
 
