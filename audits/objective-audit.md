@@ -352,3 +352,16 @@ The hard test verdict is:
 - `test/recovery-journal.test.js` proves local-file journal ordering, redaction, restart classification, and corruption detection. It does not prove crash durability on production storage or recovery across a live mutation.
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the repository refuses to overclaim speed. They do not measure real throughput on the live push path, so they cannot support a positive performance claim.
 - `npm test` therefore proves refusal discipline, not release readiness. It is compatible with a release that still lacks live-source durability, topology, or throughput proof, so green regression results do not establish no data loss, reliability, or speed.
+
+## Weakest Current Claim
+
+The weakest claim is not "the suite needs more tests." It is "a green suite can still be mistaken for a release gate even though no checked-in command proves the live-source boundary."
+
+That claim is only defensible if the repository has one enforced command that:
+
+1. reaches the real live-source apply boundary in the same invocation
+2. rechecks apply-time state before mutation
+3. fails closed on missing auth/session, durable journal, leases/fencing, graph identity, plugin-driver, or topology proof
+4. emits a machine-checkable speed verdict, including `speed unclaimed` when live-path measurement is absent
+
+Right now none of `npm test`, `plan`, `apply`, or the optional Playground smokes does that. They remain support evidence only, so the release blocker is still the missing required gate, not a lack of additional lab assertions.
