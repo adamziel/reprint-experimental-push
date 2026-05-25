@@ -2934,6 +2934,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+    proposal: 'use a compressed remote index plus cached row-batch receipts to skip plugin-update commit after a pause',
+    rejectedBecause: 'planning evidence and cached row-batch receipts can trim replay, but they cannot prove the live dependency checks, the per-row compares, or the atomic-group commit barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
