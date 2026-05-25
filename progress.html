@@ -500,8 +500,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The current public anchor remains `npm run verify:release` from commit `3089aee2`, with retained-source proof for live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback with `rows: 17`; newer lane evidence in `6e89211e` and `e552c02a` still adds a live remote drift regression, `431/431` planner tests, and a recovery inspect replay regression, while `f9fcb123` keeps the blocker explicit as `auth/session lifecycle and durable journal semantics`.</p>
-        <time class="update-stamp" datetime="2026-05-25T11:26:11+02:00">Last updated: May 25, 2026, 11:26:11 CEST</time>
+        <p class="lead">The current public anchor remains `npm run verify:release` from commit `3089aee2`, with retained-source proof for live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback with `rows: 17`; newer lane evidence in `5de7ee40` adds a durable-journal executable boundary, `447/447` planner tests, and `981236d8` on the same release-gate path, while `f9fcb123` keeps the blocker explicit as `auth/session lifecycle and durable journal semantics`.</p>
+        <time class="update-stamp" datetime="2026-05-25T11:35:58+02:00">Last updated: May 25, 2026, 11:35:58 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
           <span class="pill">Trend: release-verify still anchors the runtime proof; newer lane evidence adds drift and recovery regressions, not production release proof</span>
@@ -509,11 +509,11 @@
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-112611">2026-05-25 11:26:11</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-113558">2026-05-25 11:35:58</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-112611">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-113558">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -580,7 +580,7 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-          <li><strong>Lab evidence</strong><span>89 Node tests pass in lab evidence; see the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs. Newer lane evidence in `6e89211e` and `e552c02a` sharpens the drift and recovery boundary with `431/431` planner tests and a recovery inspect replay regression, but remains lab-scoped.</span></li>
+          <li><strong>Lab evidence</strong><span>89 Node tests pass in lab evidence; see the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs. Newer lane evidence in `5de7ee40` and `981236d8` sharpens the durable-journal boundary with `447/447` planner tests and keeps the proof release-gated, but remains lab-scoped.</span></li>
           <li><strong>Top blocker</strong><span>Real WordPress executor/auth and durable journal semantics still block any production push claim.</span></li>
           <li><strong>Release gates</strong><span>Four pending gates stay explicit below: executor/auth, recovery journal, Docker/Playground, and plugin drivers.</span></li>
           <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps.</span></li>
@@ -640,7 +640,7 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Release Gate Checklist</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Lab proof</span><p>89 Node tests and local packaged-route runs show scoped credential rejection, cleanup of 2 expired signed artifacts, and 7 graph-safe mutations in lab-scoped evidence. The runtime anchor remains `npm run verify:release` from commit `3089aee2`, which passed with live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback with `rows: 17`; newer lane evidence in `6e89211e` adds a live remote drift regression with `431/431` planner tests, `e552c02a` adds a recovery inspect replay regression, and `f9fcb123` keeps the blocker explicit as `auth/session lifecycle and durable journal semantics`. This remains lab evidence, not production executor proof. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/progress-log.md#2026-05-25-public-status-audit-111457">latest log entry</a>.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>89 Node tests and local packaged-route runs show scoped credential rejection, cleanup of 2 expired signed artifacts, and 7 graph-safe mutations in lab-scoped evidence. The runtime anchor remains `npm run verify:release` from commit `3089aee2`, which passed with live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback with `rows: 17`; newer lane evidence in `5de7ee40` adds a durable-journal executable boundary, `447/447` planner tests, and `981236d8` on the same release-gate path, while `f9fcb123` keeps the blocker explicit as `auth/session lifecycle and durable journal semantics`. This remains lab evidence, not production executor proof. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/progress-log.md#2026-05-25-public-status-audit-113558">latest log entry</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production WordPress executor and auth, now with retained-source topology evidence in the production-shaped proof gate. Evidence: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>, <a href="scripts/playground/production-shaped-release-verify.mjs">release-verify runner</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Evidence: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 3</span><p>Pending: Docker/full Playground integration beyond fixture labs. Evidence: <a href="docs/playground-topology.md">playground topology</a>.</p></div>
