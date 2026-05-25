@@ -25,7 +25,7 @@ The production push protocol is a fixed ladder:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
-The push executor consumes the pull pipeline in the same order:
+The pull/export/import pipeline is the immutable source of push provenance:
 
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
@@ -45,11 +45,12 @@ The bridge is also easiest to review as a source-to-sink mapping:
 
 - exporter produces the immutable pull provenance
 - importer persists that provenance as `persisted_pull_base_package`
-- `push_preflight` is the first live binding to one remote identity and one
-  short-lived session
-- `push_snapshot_hashes` stays planning-only and may page large sites
-- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
-  lock
+- `push_preflight` binds that package to one live remote identity and one
+  short-lived push session
+- `push_snapshot_hashes` lists the live remote comparison surface for
+  planning only
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
 - `push_batch_apply` revalidates fresh live evidence before every batch and at
   the storage boundary
 - `push_journal` records durable evidence without authorizing mutation
@@ -103,6 +104,21 @@ The machine-readable proof bundle is layered around that same ladder:
   one-local, one-drift harness plus the liveness split
 - `push-production-topology-contract.json` proves the Docker and Playground
   harness shape
+
+The production topology proof is fixed to one remote source site, one imported
+local edit site, one later drift observation of the same remote identity, and
+one runner:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 
 ## Canonical Production Contract
 
