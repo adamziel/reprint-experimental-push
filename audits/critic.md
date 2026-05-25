@@ -9,6 +9,13 @@ It is a real improvement over the earlier route-shape-only claims, but it is
 still not branch-local retry authority and it does not close the live-boundary
 gap on this worktree.
 
+That evidence is useful because it now names executor/session/journal details
+instead of only route shape. It is not sufficient for production wording until
+the same live boundary is rerun here against a real local, Playground, or
+Docker `REPRINT_PUSH_SOURCE_URL`, with the rejected remote preserved, dry-run
+receipt shown, apply-time revalidation repeated, and journal/recovery state
+inspected on the same mutation.
+
 What improved in the supervised lane: the retained-source handoff now carries
 session shape, commit application, and journal row evidence instead of only
 route-shape claims. What remains unproven on this branch is the next required
@@ -29,6 +36,11 @@ The branch still lacks a rerunnable live boundary on a real local, Playground,
 or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote and
 shows apply-time revalidation plus journal/recovery inspection on the same
 mutation.
+
+That is the current blocker, and it is the one that matters for production
+language: without a rerunnable live boundary on this branch, every claim about
+push safety remains compatibility-only, even if the remote supervised lane has
+completed `verify:release`.
 
 The hidden-loss scenarios still missing proof on this branch are concrete:
 
@@ -75,6 +87,11 @@ That bar is not satisfied by source-note similarity alone:
   artifact can authorize a later row, file, remapped create target, or
   plugin-owned surface on this branch.
 
+Those comparisons stay provenance-only unless this branch also reruns the same
+live boundary with preserved-remote audit evidence. A newer upstream commit, a
+cleaner lab harness, or a better route shape does not upgrade any of the three
+source notes into production retry authority here.
+
 That retained-source result is real progress, but it still only proves the
 lab harness for the supervised lane. It does not yet prove this branch can
 rerun the same boundary against a live local, Playground, or Docker
@@ -101,6 +118,10 @@ do not reintroduce it on this branch. The remaining gap is not the presence of
 live retry proof with preserved-remote audit evidence and production
 WordPress auth/session lifecycle, durable journal semantics, graph identity,
 and plugin-driver coverage.
+
+If the branch-local scripts are being reviewed, treat them as compatibility
+evidence until one named real-site release command reruns the live boundary on
+this branch and proves the rejected remote stayed inspectable after rejection.
 
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
@@ -258,6 +279,19 @@ What must change before production-grade wording is defensible:
 
 Production-grade push support can only be claimed after the project has all
 of these on the same live boundary:
+
+- a named real-site release command that reruns unchanged against the same
+  live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- preserved-remote audit evidence that survives rejection and can be replayed
+  for audit and retry;
+- exact executor identity, auth/session lifecycle, and rejection point before
+  the first write;
+- dry-run receipt plus apply-time revalidation on the same live mutation;
+- journal/recovery inspection that proves retry scope from fresh live hashes;
+- explicit old/new/blocked classification for touched rows, files,
+  relationship-bearing records, and plugin-owned surfaces; and
+- plugin-driver coverage for late-discovered plugin-owned data traps outside
+  the allowlist.
 
 - production WordPress auth/session lifecycle proof, not just minted lab
   session shape;
