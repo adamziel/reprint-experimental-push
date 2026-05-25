@@ -230,31 +230,30 @@ Release-gate checklist:
 
 - name the exact live write boundary and the exact stale-drift case rerun on
   this worktree;
-- show the preserved remote stayed auditable after reject and the user can
-  still inspect and retry from fresh live evidence, not just read a preserved
-  note before apply;
+- show the preserved remote stayed auditable after reject, and show the retry
+  was rebuilt from fresh live hashes instead of inherited from the earlier
+  approval;
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface;
-- do not let a correct upstream citation upgrade route shape, package mount
-  shape, fixture replay, readable review output, or `finalMatchesLocal` into
-  production proof; the branch still needs the live rejection point and fresh
-  retry hashes;
+- fail closed if the only apparent proof is route shape, package mount shape,
+  fixture replay, readable review output, or `finalMatchesLocal`; those are
+  compatibility signals only, not live retry proof;
 - classify every touched surface as old, new, or blocked before retry starts,
   including any late-discovered plugin-owned table, file, registry entry,
   cache entry, generated asset, or serialized blob;
-- treat route shape, package mount shape, fixture replay, readable review
-  output, and `finalMatchesLocal` as compatibility evidence only unless the
-  branch also records the live rejection point and fresh retry hashes; and
 - require any Reprint, ZS-Sync, or ForkPress comparison to name the exact
   upstream revision or worktree state, the exact live boundary rerun here,
-  and the exact proof boundary it does and does not cover.
+  and the exact proof boundary it does and does not cover;
 - require any Reprint, ZS-Sync, or ForkPress comparison to say whether a
   later-discovered plugin-owned surface is in scope or explicitly excluded;
 - require any later-discovered plugin-owned surface to get its own preserve /
   reject / retry record on this branch, because the earlier audit trail cannot
   be widened into authority for a new table, file, registry entry, generated
-  asset, cache entry, or serialized blob;
+  asset, cache entry, or serialized blob; and
+- require any manual-resolution label to fail unless the remote is preserved
+  for audit, the stale artifact is rejected before mutation, and the fresh
+  retry scope is rebuilt from live hashes on this branch.
 
 Minimal production proof pack:
 
@@ -423,6 +422,16 @@ Concrete failure scenarios that still disqualify production wording:
   artifact for the same live boundary; readability alone is audit evidence,
   not retry authority, and it cannot be widened to a later row, file, or
   plugin-owned surface.
+- False reliability from source-note comparisons: a Reprint, ZS-Sync, or
+  ForkPress note is cited as if it proved this branch's live executor. The
+  missing proof is the branch-local rerun of the same live boundary, the
+  preserved remote, the stale rejection point, and a fresh retry scope built
+  from live hashes on this worktree.
+- False reliability from lab-shaped proof: route shape, package mount shape,
+  fixture replay, readable review output, or `finalMatchesLocal` is treated
+  as production safety. The missing proof is live rejection of stale
+  authority before mutation and a retry scope that was rebuilt from fresh
+  live evidence.
 
 Conservative comparison summary:
 
