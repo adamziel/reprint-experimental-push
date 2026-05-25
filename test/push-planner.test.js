@@ -164,6 +164,12 @@ function assertRecoveryStateArtifacts(recoveryState, expectedStatus) {
   assertFailureRecoveryState(recoveryState, expectedStatus);
 }
 
+function assertJournalTailTypes(records, expectedTypes, label) {
+  assert.ok(records.length >= expectedTypes.length, label);
+  const tail = records.slice(-expectedTypes.length).map((record) => record.type);
+  assert.deepEqual(tail, expectedTypes, label);
+}
+
 function assertRemoteUnchanged(remote, snapshot) {
   assert.equal(JSON.stringify(remote), snapshot);
 }
@@ -18960,6 +18966,13 @@ test('atomic apply keeps only the approved recovery states across the failure cu
     assert.equal(JSON.stringify(remote), remoteSnapshot, label);
     assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state', label);
     assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote', label);
+    if (label === 'before mutation') {
+      assertJournalTailTypes(persisted.records, ['journal-opened', 'recovery-state'], label);
+    } else if (label === 'after staging') {
+      assertJournalTailTypes(persisted.records, ['apply-staged', 'recovery-state'], label);
+    } else {
+      assertJournalTailTypes(persisted.records, ['dependencies-validated', 'recovery-state'], label);
+    }
   }
 
   const completedJournalPath = tempRecoveryJournalPath();
@@ -18993,6 +19006,7 @@ test('atomic apply keeps only the approved recovery states across the failure cu
     persistedReplay.records.filter((record) => record.type === 'journal-replayed').length,
     1,
   );
+  assertJournalTailTypes(persistedReplay.records, ['recovery-state', 'journal-replayed']);
   assert.equal(
     persistedReplay.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
     2,
