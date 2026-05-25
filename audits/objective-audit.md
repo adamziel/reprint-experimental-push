@@ -128,6 +128,16 @@ Current blocker summary:
 - No current test proves no data loss, reliability under crash/replay, or measured live-path speed on the real source boundary.
 - `speed unclaimed` remains the only defensible speed statement until the live path is measured by a required command.
 
+Proof ledger:
+
+| Bucket | Current state | Release meaning |
+| --- | --- | --- |
+| Executable proof | `node --test`, `npm test`, and the current helper suites all run, but they remain fixture-, model-, or lab-scoped | Useful regression evidence only |
+| Lab / fixture proof | Playground smokes and route/package helpers still self-identify as `labBacked: true` | Support evidence, not release proof |
+| Docs-only proof | The objective and blocker notes correctly describe the intended live-source release boundary | Explanatory only |
+| Missing proof | Live-source apply-time mutation, durable production journal, lease/fence enforcement, graph identity proof, plugin-data-driver proof, and measured live-path speed | These are still required before release |
+| Release blocker | No checked-in command fails closed on the missing live-source proof set | Release remains blocked |
+
 ## Test Audit
 
 The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. A green `npm test` run makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary. Their main value is negative proof: they show the repo can refuse bad states, not that it can complete the live push safely. They do not prove no data loss, reliability under crash/replay, or measured speed on the live path.
