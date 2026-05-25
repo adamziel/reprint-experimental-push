@@ -5958,6 +5958,7 @@ Missing-proof matrix for the current design:
 - late-discovered surfaces: missing proof is that a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface was treated as a new live boundary with its own preserve / reject / retry cycle; even if the route shape, package mount, or reviewer wording matches, the earlier preserved remote and readable artifact do not carry retry authority across that boundary.
 - proof reuse: missing proof is that the preserved remote, rejection point, and retry scope were rebuilt for the later boundary from live hashes on this branch instead of copied from the earlier boundary; if that later surface was not independently named old, new, or blocked before retry, the earlier artifact is still only compatibility evidence.
 - same-route-family trap: missing proof is that a later plugin-owned surface or remapped create target found inside the same route family was explicitly treated as a separate live boundary; route-family reuse only proves surface similarity, not that the later boundary inherited the earlier preserved remote, rejection point, or retry scope.
+- evidence classification: missing proof is an explicit label saying whether a manual-review artifact, source-note comparison, or smoke result is historical context, compatibility evidence, or live retry proof; if the wording does not name the class, it must fail closed and cannot support production wording.
 
 False-reliability trap to keep naming explicitly:
 
@@ -5972,6 +5973,7 @@ Final production-grade deltas still required on this branch:
 - split out any late-discovered plugin-owned surface as its own boundary when it appears after the first write, and forbid it from inheriting the earlier approval even if the route family, mount, or reviewer wording matches;
 - mark mixed file, DB, and plugin writes old/new/blocked across the full touched set before retry, so a partial commit cannot be recast as success after the surviving surfaces are visible;
 - annotate every Reprint, ZS-Sync, or ForkPress citation with the exact upstream commit or worktree state, what it proves here, and what it does not prove here, because the notes are historical design input only unless the same live boundary was rerun on this branch;
+- label every manual-review artifact and source-note comparison with its evidence class, because unlabeled wording can be mistaken for retry authority even when it is only historical context or compatibility evidence;
 - reject any wording that uses `manual resolution`, `comparison passed`, `finalMatchesLocal`, or route-shaped smokes as current proof unless the preserved remote stayed inspectable after rejection and the retry scope was rebuilt from live hashes; and
 - keep the release-gate language explicit that production-grade push support is blocked until the branch can show the live executor, preserved-remote auditability, stale-authority rejection, fresh retry scope, and per-surface classification for every touched boundary.
 
