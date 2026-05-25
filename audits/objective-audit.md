@@ -61,6 +61,7 @@ For this audit:
 ## Test Audit
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is as refusal evidence, not as release evidence. They demonstrate that the suite knows how to say "not yet"; they do not demonstrate that the production boundary is safe.
+That is not a small wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true` and the benchmark checks still stop at refusal rather than timing a real live-source push.
 
 That distinction matters for the objective claims:
 
@@ -197,4 +198,5 @@ Minimum acceptance rule for the gate:
 - They do not prove the live-source push path preserves every WordPress data shape, survives production crash/retry boundaries, or meets a measured throughput target on the real push path.
 - `test/push-planner.test.js` and `test/recovery-journal.test.js` still model the hardest cases in fixtures, but they stop short of proving the real source-site boundary, real storage durability, or a live lease/fencing regime.
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` only prove that unsupported throughput claims are refused; they do not time an end-to-end production push, establish a release threshold, or prove the live source topology is fast. That means they are appropriate as blocker tests, but insufficient as the evidence for a release-speed claim.
+- Together, those benchmark tests prove the repository is careful about overclaiming speed, but they still leave the objective's speed requirement entirely unproven because no required test measures the live source boundary.
 - So the suite is evidence that release remains blocked, not evidence that release is safe.
