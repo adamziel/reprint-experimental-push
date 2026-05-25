@@ -24,6 +24,9 @@ the live remote immediately before apply.
 - When a plan mixes a live-preconditioned deletion with matching independent
   edits or type swaps, the matching resources stay `already-in-sync` and the
   deletion remains the only automatic mutation.
+- When a plan mixes a live-preconditioned type swap with matching independent
+  deletions or edits, the matching resources stay `already-in-sync` and the
+  type swap remains the only automatic mutation.
 - Matching independent edits where local and remote changed a resource to the
   same hash, including deletions, file edits, and plugin context changes; these
   produce `already-in-sync` decisions, not mutations.
@@ -101,6 +104,10 @@ the resource key, the live remote hash observed during planning, and the
   the same way as other remote-only plugin context changes. Local edits to
   unrelated resources may still proceed if their own live remote preconditions
   are satisfied.
+- Matching independent deletions and edits stay in sync even when remote-only
+  plugin drift is present elsewhere in the plan; the plugin drift remains
+  `keep-remote` and does not relax the live precondition for the actual
+  mutation.
 - If local still touches a plugin's files or plugin-owned data after that plugin
   was removed remotely, the planner must stop rather than infer harmless drift.
 
