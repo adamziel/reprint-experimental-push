@@ -7410,7 +7410,10 @@ Lead finding for the current release-proof claim:
   Playground, or Docker `REPRINT_PUSH_SOURCE_URL` and prints the exact
   preserved-remote boundary on that live source together with production
   WordPress auth/session lifecycle, durable journal semantics, graph identity,
-  and plugin-driver coverage;
+  and plugin-driver coverage; the next acceptable proof must move from local
+  retained-source evidence to a live WordPress auth/session lifecycle
+  boundary, with durable journal semantics and explicit graph identity and
+  plugin-driver evidence in the same rerun;
 - the next proof must be a live-boundary rerun, not another wrapper, smoke, or
   comparison note; if the evidence does not show dry-run receipt, apply-time
   revalidation, journal/recovery inspection, and exact preserved-remote drift
