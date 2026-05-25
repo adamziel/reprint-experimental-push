@@ -11,10 +11,10 @@ linked implementation artifacts.
 - Trend: the visible page, this log, and the supervisor note still line up; no new evidence landed.
 - Supervision: the same-plan graph lane remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers remain unproven.
-- Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to the proof trail.
+- Visible page: [progress.html](../progress.html) keeps the blocked state compact and points to the proof trail.
 - Pending proof gates: production auth/session storage, durable journal ownership, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers.
 - Next nudge: keep production gates blocked until a worker proves production auth/session/journal internals and graph identity mapping.
-- Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. The published copy becomes live only after this lane merges to `main`.
+- Public page: [progress.html](../progress.html) carries the visible update date and points to the proof trail. The published copy becomes live only after this lane merges to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>
