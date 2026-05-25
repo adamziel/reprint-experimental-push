@@ -3820,6 +3820,11 @@ Source-note proof boundary, restated:
   branch unless the exact same live boundary was rerun here and the preserved
   remote, rejection point, and fresh retry scope were recorded from this
   worktree.
+- A comparison note that says "comparison passed" must still name the exact
+  upstream revision or worktree state, the exact live drift or retry case on
+  this branch, and what the upstream state does not prove here. If it does
+  not also show the preserved remote and the fresh retry artifact from this
+  worktree, the note is historical context only.
 - A correct upstream commit or worktree state is provenance, not current
   authority. If the branch did not re-run the same live drift, retry, or
   create-time identity case here, the comparison must stay historical. A
