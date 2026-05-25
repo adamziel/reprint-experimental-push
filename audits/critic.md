@@ -70,14 +70,14 @@ Manual resolution is not success unless the remote is preserved after rejection,
 
 ## Must-happen proof
 
-The next acceptable proof is not another wording pass. It is a rerunnable live mutation boundary that produces all of the following on one exact source URL:
+The next acceptable proof is one rerunnable live mutation boundary on one exact source URL, not another wording pass:
 
-- preserved rejected remote, still inspectable after refusal;
-- apply-time revalidation from fresh live hashes;
-- live WordPress auth/session lifecycle on the same request flow, including expiry and refresh behavior across the rejection/retry boundary;
-- durable journal storage with lease/fencing on production-like storage that remains inspectable after rejection;
-- graph identity under create-time remap and late-discovered relationship-bearing records; and
-- plugin-driver coverage for late plugin-owned surfaces outside the initial allowlist.
+- the rejected remote is preserved and still inspectable after refusal;
+- apply-time revalidation runs from fresh live hashes on the same boundary;
+- live WordPress auth/session lifecycle survives the same rejection/retry flow, including expiry and refresh;
+- durable journal storage uses lease/fencing on production-like storage and survives the handoff;
+- graph identity holds across create-time remap and late-discovered relationship-bearing records; and
+- plugin-driver coverage catches late plugin-owned surfaces outside the initial allowlist.
 
 Without that single boundary, manual resolution stays a label, not retry authority.
 
