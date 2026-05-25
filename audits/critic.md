@@ -11,6 +11,16 @@ move the proof onto a rerunnable live boundary with preserved-remote audit
 evidence. The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
+The next acceptable proof is one executable live rerun against a real local,
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that prints, in the same run,
+the exact command string, executor identity, auth/session boundary, preserved
+remote, rejection point before the first write, dry-run receipt, apply-time
+revalidation, journal/recovery inspection, graph identity, plugin-driver
+coverage, and old/new/blocked classification for every touched surface. Any
+comparison note, wrapper label, or retained-source success artifact stays
+historical context until that live rerun exists and the rejected remote
+remains inspectable afterward.
+
 Current critic focus: treat `3089aee2` and the completed `npm run verify:release`
 run as retained-source evidence only, then require the next proof to move onto
 production WordPress auth/session lifecycle plus durable journal semantics,
