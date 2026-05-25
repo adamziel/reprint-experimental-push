@@ -92,6 +92,17 @@ The machine-readable bridge is split across the fixtures:
   apply are separate remote calls and that apply revalidates live evidence
   before every batch and at the storage boundary.
 
+The compact production proof stack is:
+
+- `push-pull-to-topology-contract.json` for the immutable pull provenance
+  bridge into the one-remote, one-local topology
+- `push-deployment-topology-contract.json` for the smallest Docker and
+  Playground topology contract with the `8080` ingress rule
+- `push-remote-liveness-topology-contract.json` for the liveness split that
+  keeps dry-run and apply separate while apply revalidates fresh live hashes
+- `push-protocol-extension-contract.json` for the full production ladder
+  from preflight through inspect-first recovery
+
 The topology model is deliberately minimal:
 
 - `remote-base` is the source site that seeds the persisted pull base.

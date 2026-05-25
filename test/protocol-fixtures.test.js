@@ -115,6 +115,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
   const topologyMatrix = readJson('fixtures/protocol/push-topology-matrix.json');
   const deploymentTopologyContract = readJson('fixtures/protocol/push-deployment-topology-contract.json');
+  const pullToTopologyContract = readJson('fixtures/protocol/push-pull-to-topology-contract.json');
   const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
   const protocolExtensionContract = readJson('fixtures/protocol/push-protocol-extension-contract.json');
   const productionRevalidationContract = readJson(
@@ -259,6 +260,38 @@ test('push contract fixture binds the pull handoff to the production push sequen
   ]);
   assert.equal(topologyMatrix.test_topology.harness.docker.ingress, 8080);
   assert.equal(topologyMatrix.test_topology.harness.playground.proxy_policy, 'local-only');
+  assert.equal(deploymentTopologyContract.contract_id, 'push-deployment-topology-contract');
+  assert.equal(deploymentTopologyContract.topology.same_remote_identity, true);
+  assert.equal(
+    deploymentTopologyContract.deployment.docker.proof.includes(
+      'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+    true,
+  );
+  assert.equal(
+    deploymentTopologyContract.pull_to_push_mapping.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block without mutation',
+  );
+  assert.equal(
+    deploymentTopologyContract.required_invariants.includes(
+      'remote-base and remote-changed are the same remote identity observed at different times',
+    ),
+    true,
+  );
+  assert.equal(
+    pullToTopologyContract.contract_id,
+    'push-pull-to-topology-contract-one-remote-one-local',
+  );
+  assert.equal(pullToTopologyContract.topology.same_remote_identity, true);
+  assert.equal(
+    pullToTopologyContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.ok(
+    pullToTopologyContract.required_invariants.includes(
+      'pull exporter/importer establish the immutable base package before push',
+    ),
+  );
   assert.equal(contract.topology.docker.proof[0], 'one private network');
   assert.ok(
     contract.topology.docker.proof.includes(

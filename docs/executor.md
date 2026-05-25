@@ -92,6 +92,11 @@ shared topology. Use the deployment contract when you need the smallest
 topology-only proof, and the liveness-topology contract when you need the same
 one-remote, one-local, one-drift harness plus the dry-run/apply split.
 
+For the compact bridge between the pull pipeline and that topology, cite
+`push-pull-to-topology-contract.json`. For the smallest topology-only proof,
+cite `push-deployment-topology-contract.json`. For the strongest liveness
+boundary proof, cite `push-remote-liveness-topology-contract.json`.
+
 ## Stage Semantics
 
 The executor needs the same boundary discipline as the protocol:
