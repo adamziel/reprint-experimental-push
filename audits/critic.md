@@ -6,6 +6,8 @@ This design still cannot claim production-grade push support.
 
 The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the newer `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `165684f7` release-boundary verdict. That is concrete progress, but it is still lab evidence. This branch-local audit file is not the proof surface; only the supervised remote lane plus a rerunnable live boundary can count. The retained-source evidence still does not prove a live WordPress auth/session lifecycle, preserved-remote retention after rejection, lease/fenced durable journal storage on production-like storage, graph identity, or plugin-driver coverage on one rerunnable live mutation boundary with the rejected remote still inspectable after refusal. The next proof must be one live rerunnable boundary that preserves the rejected remote and revalidates the same source URL at apply time from fresh hashes.
 
+The presence of `verify:release` on the supervised remote lane is now accepted as real lab progress, so the remaining critique is narrower: command shape and retained-source verdicts are no longer the blocker. The blocker is that the same rerunnable live boundary has not yet demonstrated production WordPress auth/session lifecycle, preserved-remote retention after rejection, durable journal lease/fencing on production-like storage, graph identity under create-time remap, and plugin-driver coverage together.
+
 That makes the next proof requirement narrower, not looser: one rerunnable live boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence.
 
 The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
@@ -69,6 +71,8 @@ Before the project can claim production-grade push support, one rerunnable live 
 - retry scope rebuilt from fresh live evidence, not manual-resolution text, cached approvals, or previously rejected hashes.
 
 If any one of those proofs is only available through retained-source lab output, the release claim remains false.
+
+The branch-local audit file may document the critique, but it cannot stand in for the missing live boundary. A retained-source `verify:release` run, a minted session shape, or a release-boundary verdict is still not enough unless the rejected remote survives the refusal and can be re-audited on the same live source URL.
 
 The production claim also fails closed if any of these are only shown on a lab fixture, retained-source harness, or review artifact:
 
