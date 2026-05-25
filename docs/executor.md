@@ -47,6 +47,19 @@ The executor maps those stages to the pull pipeline directly:
 - `recovery-inspect` is the read-only recovery gate
 - `recovery-mutate` uses the same HMAC floor as apply
 
+The executor should treat the production contract as a strict route matrix,
+not a loose checklist:
+
+| Stage | Route | Authority |
+| --- | --- | --- |
+| `preflight` | `preflight` | Binds imported pull provenance to one live remote identity and a short-lived session. |
+| `snapshot-hashes` | `snapshot-hashes` | Planning-only hash listing. |
+| `dry-run` | `dry-run` | Eligibility receipt only. |
+| `apply` | `apply` | Separate remote mutation that revalidates before every batch and at the storage boundary. |
+| `journal` | `journal` | Read-only durability evidence. |
+| `recovery-inspect` | `recovery-inspect` | Read-only recovery classification. |
+| `recovery-mutate` | `recovery-mutate` | Mutating recovery only after inspect and auth-floor checks. |
+
 The executor test topology is the same in Docker and Playground:
 
 | Role | Identity | Purpose |
@@ -63,6 +76,15 @@ The topology rules are fixed:
 - Browser-visible inspection stays on the sandbox-provided `8080` ingress.
 - The local inspection proxy stays local-only.
 - Remote tunnels are disallowed.
+
+This is the only test topology the executor should rely on:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns the push protocol calls
+- Docker and Playground share the same logical route matrix
+- `8080` is only for browser-visible inspection through the local proxy
 
 The production test shape is intentionally one remote source site, one
 imported local edit site, and one later drift observation of the same remote

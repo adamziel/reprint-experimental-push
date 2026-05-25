@@ -37,6 +37,18 @@ The pull-to-push bridge is one-way:
 - `push_recover inspect` is read-only and must happen first
 - mutating recovery uses the same HMAC floor as apply
 
+The bridge also preserves the existing pull/export/import provenance chain:
+
+| Pull pipeline object | Push consumer | Result |
+| --- | --- | --- |
+| Exporter merge-base and coverage scan | `push_preflight` | First live bind after immutable provenance exists. |
+| Importer persisted base package | `push_snapshot_hashes` | Planning-only remote hash discovery. |
+| Immutable pull provenance | `push_plan_dry_run` | Eligibility receipt with no mutation authority. |
+| Persisted pull base package plus live drift evidence | `push_batch_apply` | Fresh live revalidation before every batch and again at the storage boundary. |
+| Durable pull provenance | `push_journal` | Read-only evidence for later recovery. |
+| Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before any mutating repair. |
+| Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only when inspect and auth-floor checks pass. |
+
 The same extension is exercised in one fixed topology:
 
 - one remote source site, `remote-base`
