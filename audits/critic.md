@@ -116,6 +116,20 @@ Any claim that relies on manual resolution, cached approval text, or a retained-
 
 If any one of those bullets is missing, the wording must stay in the lab/prototype bucket.
 
+## Exact next proof
+
+The next acceptable proof is one rerunnable live WordPress mutation on one exact source URL that:
+
+- rejects stale authority before the first write;
+- keeps the rejected remote preserved and inspectable;
+- revalidates from fresh live hashes at apply time;
+- survives auth/session expiry, refresh, and operator re-entry on the same boundary;
+- commits through a lease-fenced journal on production-like storage;
+- preserves graph identity across create-time remap and late-discovered relationship-bearing records; and
+- classifies late plugin-owned surfaces outside the initial allowlist on that same boundary.
+
+Until that boundary exists, `verify:release`, retained-source verdicts, and the current release-boundary head remain useful lab evidence only.
+
 ## Strongest blocker
 
 The strongest blocker is still one named, rerunnable live release boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that rejects stale authority before the first write, preserves the rejected remote for audit, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation.
