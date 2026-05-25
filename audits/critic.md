@@ -90,6 +90,9 @@ Source-note comparison policy:
   crash-consistency target. They do not prove production push support on this
   branch unless the same drifted remote, preserved remote, and fresh retry
   scope were rerun and recorded here.
+- Any Reprint, ZS-Sync, or ForkPress citation is historical context unless
+  the exact upstream revision or worktree state is named and this branch
+  reran the same live mutation boundary on this repo.
 - The exact upstream revisions used elsewhere in this audit are historical
   anchors only: Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress
   `55f9879`. They describe upstream source-note context, not current
@@ -238,6 +241,9 @@ Release gate for any production wording:
 - Show that any source-note comparison names the exact upstream revision or
   worktree state being cited; otherwise it stays historical context even when
   the feature family matches.
+- Show that the comparison also reran the same live mutation boundary on this
+  repo; otherwise a matching upstream revision or worktree state remains
+  provenance only.
 - Show that a matching upstream revision or worktree state is still not
   enough by itself: the branch must also rerun the exact same live drift or
   retry case on this repo's live write boundary, or the comparison remains
