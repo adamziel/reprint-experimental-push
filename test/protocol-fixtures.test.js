@@ -49,6 +49,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
   const topologyMatrix = readJson('fixtures/protocol/push-topology-matrix.json');
   const deploymentTopologyContract = readJson('fixtures/protocol/push-deployment-topology-contract.json');
+  const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
   const protocolExtensionContract = readJson('fixtures/protocol/push-protocol-extension-contract.json');
   const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
 
@@ -428,6 +429,101 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     protocolExtensionContract.topology.playground.proof.includes(
       'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
+  assert.equal(executorTopologyProof.proof_id, 'push-executor-topology-proof-one-remote-one-local');
+  assert.equal(
+    executorTopologyProof.purpose,
+    'compact proof that the executor keeps pull provenance, push staging, and browser ingress on one production-shaped topology',
+  );
+  assert.equal(
+    executorTopologyProof.pull_pipeline.persisted_base_package.base_manifest_id,
+    'pull-2026-05-24T00:00:00Z',
+  );
+  assert.equal(
+    executorTopologyProof.pull_pipeline.persisted_base_package.base_manifest_hash,
+    'sha256:pull-base-manifest',
+  );
+  assert.equal(
+    executorTopologyProof.pull_pipeline.persisted_base_package.base_coverage_hash,
+    'sha256:pull-base-coverage',
+  );
+  assert.equal(executorTopologyProof.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(
+    executorTopologyProof.pull_to_push_mapping.preflight,
+    'binds that persisted base package to the live remote identity and a short-lived session',
+  );
+  assert.equal(
+    executorTopologyProof.pull_to_push_mapping.snapshot_hashes,
+    'lists the live remote comparison set for planning only',
+  );
+  assert.equal(
+    executorTopologyProof.pull_to_push_mapping.dry_run,
+    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    executorTopologyProof.pull_to_push_mapping.apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    executorTopologyProof.pull_to_push_mapping.journal,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    executorTopologyProof.pull_to_push_mapping.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block without mutation',
+  );
+  assert.equal(
+    executorTopologyProof.pull_to_push_mapping.recovery,
+    'allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action',
+  );
+  assert.equal(
+    executorTopologyProof.push_pipeline.preflight,
+    'binds the persisted pull base to the live remote identity and a short-lived push session',
+  );
+  assert.equal(
+    executorTopologyProof.push_pipeline.snapshot_hashes,
+    'returns the live remote comparison set for planning only and never acts as write authority',
+  );
+  assert.equal(
+    executorTopologyProof.push_pipeline.dry_run,
+    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    executorTopologyProof.push_pipeline.apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    executorTopologyProof.push_pipeline.journal,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    executorTopologyProof.push_pipeline.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block without mutation',
+  );
+  assert.equal(
+    executorTopologyProof.push_pipeline.recovery,
+    'allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action',
+  );
+  assert.ok(executorTopologyProof.required_invariants.includes('dry-run and apply are separate remote operations'));
+  assert.ok(
+    executorTopologyProof.required_invariants.includes(
+      'remote snapshot hash listing is planning evidence, not write authority',
+    ),
+  );
+  assert.ok(
+    executorTopologyProof.required_invariants.includes(
+      'journal inspection is read-only and never authorizes mutation by itself',
+    ),
+  );
+  assert.ok(
+    executorTopologyProof.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
+    ),
+  );
+  assert.ok(
+    executorTopologyProof.required_invariants.includes(
+      'pull exporter/importer establish the immutable base package before any push stage runs',
     ),
   );
   assert.equal(protocolExtensionContract.lab_topology.remote_base.identity, 'remote-example');
