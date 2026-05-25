@@ -31,6 +31,30 @@ only shows a route-shaped smoke, packaged mount, fixture replay, readable
 manual-review artifact, or `finalMatchesLocal`, the comparison remains
 non-authoritative for production wording.
 
+Concrete failure scenarios that still disqualify production wording:
+
+- Live remote drift: dry-run succeeds, the remote changes before apply, and
+  the first write still lands because the stale approval artifact was treated
+  as retry authority. The missing proof is a live rejection point that
+  preserves the remote for audit and forces fresh hashes before retry.
+- Create-time identity remapping: a create target is renamed, aliased, or
+  renumbered between planning and apply, and the write lands on the wrong
+  row, file, or relationship-bearing record. The missing proof is a live
+  identity check that either blocks the remap or classifies the new target
+  before any mutation.
+- Plugin-owned state outside the allowlist: a hidden custom table, cron row,
+  runtime registry entry, generated file, serialized blob, cache entry, or
+  plugin-owned file appears after the first write. The missing proof is a
+  complete live inventory or a hard block on the newly discovered surface.
+- Partial file, DB, or plugin side effects: one part of the write commits and
+  another part fails or drifts, then the surviving partial state is later
+  relabeled as success. The missing proof is a durable old/new/blocked
+  classification for every touched surface before retry scope is rebuilt.
+- Stale manual-review artifacts: a readable review note, approval token, or
+  comparison result is reused after drift to justify a second boundary. The
+  missing proof is preserved remote evidence plus a fresh branch-local retry
+  artifact for the same live boundary.
+
 Conservative comparison summary:
 
 - Reprint proves staged transport rhythm, resumable delivery structure, and
@@ -137,6 +161,13 @@ Production-readiness language checklist:
 10. Treat any later-discovered plugin-owned surface as a new boundary unless
     the branch proves it was blocked or separately classified before retry;
     do not fold it into the first write's success story.
+11. Treat route shape, package mount shape, fixture replay, and
+    `finalMatchesLocal` as compatibility checks only; they do not prove the
+    live executor ran, the remote was preserved, or the retry scope was
+    rebuilt from fresh hashes.
+12. Treat Reprint, ZS-Sync, and ForkPress comparisons as historical context
+    unless the exact upstream revision or worktree state is named and this
+    branch reran the same live mutation boundary here.
 
 Source-note comparison policy:
 
