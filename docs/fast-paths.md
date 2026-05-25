@@ -839,6 +839,10 @@ under load:
   rejected because planning evidence and parallel chunk sends can reduce wait
   time, but they cannot prove the sender kept bounded queue order, complete
   chunk receipts, and journal evidence across a pause or crash.
+- compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure is
+  rejected because planning evidence and hash fan-out can reduce lookup time,
+  but they cannot prove bounded queue order, durable hash receipts, or the
+  recovery evidence needed after a pause or crash.
 - batched-receipt-journal-flush is rejected because journal batching can reduce
   fsync work, but it cannot replace the raw chunk, row, or group receipts
   needed to classify a crash, retry, or pause.
