@@ -10,6 +10,12 @@ The acceptable post-failure outcomes are limited to:
 Anything else is a release blocker, especially a partial remote mutation that
 does not leave inspectable recovery evidence.
 
+The contract intentionally separates model evidence from production recovery:
+JSON fixtures and in-memory replay checks prove the boundary shape, but the
+release criteria still require durable journal records, restart-readable
+artifacts, and the storage-level flush or fencing behavior needed to keep those
+artifacts trustworthy after a failure.
+
 ## Post-Failure Contract
 
 Every interrupted apply must classify into exactly one of these states:
