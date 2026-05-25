@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven in this checkout. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. Even if an external lane reports a successful `verify:release`, this checkout still needs retained in-repo evidence and a checked-in enforced entrypoint before the release gate can open.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven in this checkout. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. This checkout also does not expose a checked-in `verify:release` or `release` entrypoint, so even a successful helper run would not by itself become an enforced release verdict here.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
