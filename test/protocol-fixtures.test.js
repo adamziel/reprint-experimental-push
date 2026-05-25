@@ -113,11 +113,20 @@ test('push protocol fixture readme keeps the production ladder and topology brid
 test('production topology fixture keeps the pull bridge, dry-run/apply split, and topology proof aligned', () => {
   const topology = readJson('fixtures/protocol/push-production-topology-contract.json');
 
+  assert.equal(topology.contract_id, 'push-production-topology-contract-one-remote-one-local');
+  assert.ok(topology.purpose.includes('one remote source site, one imported local site, and one later drift observation'));
+  assert.equal(topology.pull_pipeline.persisted_pull_base_package.remote_site_id, 'remote-example');
   assert.equal(topology.pull_to_push_mapping.push_preflight, 'binds the persisted pull base package to one live remote identity and one short-lived push session');
   assert.equal(topology.pull_to_push_mapping.push_plan_dry_run, 'uploads the canonical dry-run plan and returns an eligibility receipt, not a lock');
   assert.ok(topology.pull_to_push_mapping.push_batch_apply.includes('separate from dry-run'));
   assert.ok(topology.pull_to_push_mapping['push_recover inspect'].includes('classifies finish, rollback, retry, or block'));
   assert.ok(topology.pull_to_push_mapping['push_recover auto|finish|rollback'].includes('same auth floor as the write path'));
+  assert.equal(topology.topology.same_remote_identity, true);
+  assert.equal(topology.topology.networking.ingress_port, 8080);
+  assert.equal(topology.topology.networking.proxy_policy, 'local-only');
+  assert.equal(topology.topology.networking.tunnels, 'disallowed');
+  assert.ok(topology.topology.docker.proof.includes('remote-base and remote-changed are the same remote identity at different times'));
+  assert.ok(topology.topology.playground.proof.includes('runner uses the same route names as Docker'));
   assert.ok(topology.topology.docker.proof.includes('dry-run and apply remain separate remote calls'));
   assert.ok(topology.topology.docker.proof.includes('apply revalidates fresh live evidence before every batch and at the storage boundary'));
   assert.ok(topology.topology.docker.proof.includes('journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch'));
