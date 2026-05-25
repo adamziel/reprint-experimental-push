@@ -22,8 +22,8 @@ Do not use production wording unless the branch has all of the following for the
 - any remapped create target discovered during retry is treated as a new boundary until it is separately preserved, rejected, and retried with fresh live hashes; and
 - proof for one live boundary does not transfer to a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface, even if the route family, package mount, fixture replay, or reviewer wording is the same; and
 - any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success; and
-- any claim that "manual resolution" succeeded without the preserved remote, the rejection point, and a fresh retry artifact rebuilt from live hashes for the same live boundary is false reliability, not success.
-- any claim that "manual resolution" succeeded is also false reliability if the first write committed but a later plugin-owned surface was discovered afterwards and never got its own preserve/reject/retry cycle.
+- any claim that "manual resolution" succeeded without the preserved remote, the rejection point, and a fresh retry artifact rebuilt from live hashes for the same live boundary is false reliability, not success;
+- any claim that "manual resolution" succeeded is also false reliability if the first write committed but a later plugin-owned surface was discovered afterwards and never got its own preserve/reject/retry cycle for that later boundary, even if the earlier readable artifact still looks valid;
 - proof for one live boundary is not transferable to a later boundary, even if
   the route family, package mount, fixture replay, or reviewer wording is the
   same; the later row, file, relationship-bearing record, remapped create
@@ -84,7 +84,7 @@ Anti-trap wording:
 - a lab-shaped route, packaged mount, fixture replay, or `finalMatchesLocal` result can still come from a copied or fixture-backed executor behind the same URL shape, so it is compatibility evidence only and never proof that the live write boundary was production-safe;
 - a readable review artifact can prove auditability, but it does not prove the remote was preserved, that stale authority was rejected before mutation, or that retry scope was rebuilt from fresh live hashes on this branch;
 - a source-note comparison to Reprint, ZS-Sync, or ForkPress is historical context only unless the exact upstream revision or worktree state is named and the same live boundary was rerun here; and
-- any later-discovered plugin-owned surface is a new boundary, not a continuation of the first write, until this branch shows its own preserve / reject / retry cycle.
+- any later-discovered plugin-owned surface is a new boundary, not a continuation of the first write, until this branch shows its own preserve / reject / retry cycle with its own preserved remote, rejection point, and fresh retry artifact.
 
 Production-readiness language checklist:
 
