@@ -28,18 +28,23 @@ applies to upstream citations: a matching Reprint, ZS-Sync, or ForkPress
 commit can justify the design direction, but without a branch-local live
 recheck it stays historical input only.
 
-The missing proof is still branch-local and live:
+The missing proof is still branch-local and live, and every one of these gaps
+has a concrete failure scenario:
 
 - a drifted remote has to fail closed on the actual mutation boundary, with
   the preserved remote auditable after reject and the stale approval unusable
-  for retry;
+  for retry; otherwise a post-dry-run remote change can be overwritten under a
+  still-readable approval artifact;
 - create-time identity remapping has to be either durably proven or hard-
   blocked before mutation, including alias, rename, and renumber cases;
+  otherwise a create can land on the wrong identity after a live remap;
 - plugin-owned state outside the allowlist has to be enumerated or blocked at
   apply time, including late-discovered cron rows, cache entries, runtime
   registries, generated assets, custom tables, and plugin-owned files; and
+  otherwise a plugin can mutate state the planner never named;
 - any partial file, DB, or plugin side effect has to be durably classified as
-  old, new, or blocked before retry can rebuild scope from fresh live hashes.
+  old, new, or blocked before retry can rebuild scope from fresh live hashes,
+  or a mixed-write can be relabeled as success after the fact.
 
 Before this branch can claim production-grade push support, the design must
 also prove all of the following on the live mutation boundary:
@@ -95,6 +100,11 @@ Release gate for any production wording:
 - Show that any plugin-owned surface discovered only after the first write
   is classified as blocked, not retroactively folded into a success claim or
   treated as a safe continuation without fresh live evidence.
+- Show that the comparison set is conservative: Reprint proves staged
+  transport rhythm, ZS-Sync proves bounded discovery, and ForkPress proves
+  reviewed-resolution vocabulary plus a crash-consistency target. None of
+  them proves this branch's live write path, preserved-remote retry, or
+  plugin-owned coverage without a same-boundary recheck here.
 - Show that late-discovered plugin-owned state does not widen the write scope
   silently through cached ownership, fallback behavior, or a second write that
   only appears harmless because the first write already committed.
@@ -252,7 +262,7 @@ Source-note comparison summary:
     pull pipeline.
   - Does not prove: production auth, live-write safety, remote-preserving
     retry, stale-authority rejection on this branch, or hidden plugin-owned
-    side effects.
+    side effects outside the bounded pull pipeline.
   - Missing branch proof: a live source mutation boundary that rejects stale
     authority before write, preserves the remote for audit, and rebuilds retry
     scope from fresh live hashes after drift.
@@ -260,7 +270,7 @@ Source-note comparison summary:
   - Proves: bounded discovery and scoped scanning.
   - Does not prove: create-time identity remap safety, remote-preserving
     retry, partial side-effect classification, late-discovered plugin-owned
-    surface blocking, or live alias/renumber handling.
+    surface blocking, live alias/renumber handling, or source-side mutation.
   - Missing branch proof: explicit create-time identity reservation or hard
     block before mutation, plus durable old/new/blocked classification for
     partial side effects on the live write path.
@@ -269,7 +279,7 @@ Source-note comparison summary:
   - Does not prove: that a readable stale manual-review artifact stays
     audit-only after drift, cannot become retry authority, or cannot widen
     into a different row, file, relationship-bearing record, or plugin-owned
-    surface.
+    surface on the live push path.
   - Missing branch proof: a stale review artifact that remains auditable but
     cannot authorize retry or widen scope, including anything discovered after
     the first write.
