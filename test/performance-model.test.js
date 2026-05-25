@@ -403,6 +403,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation').violates.includes('atomic-groups'));
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation').rejectedGate,
+    'group',
+  );
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation').violates.includes('atomic-groups'));
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-final-activation').rejectedGate,
     'group',
   );
