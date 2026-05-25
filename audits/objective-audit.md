@@ -11,7 +11,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/independent-auditor` -> `33b839f0`
-- `origin/lane/critic` -> `592c949e`
+- `origin/lane/critic` -> `c41435d5`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
@@ -33,7 +33,7 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
-- `origin/lane/critic` now refreshes the critic head snapshot at `6e5b73b3`.
+- `origin/lane/critic` now refreshes the critic head snapshot at `c41435d5`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at

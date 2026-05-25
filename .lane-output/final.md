@@ -1,23 +1,33 @@
-Updated the audit snapshot to the current remote heads and kept the release verdict closed.
+Rechecked the constrained release-candidate slice. The release verdict stays closed because the live proof surface did not materially change.
 
 Changed files:
-- [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Commands run:
+- `git for-each-ref --format='%(refname:short) %(objectname:short) %(subject)' refs/remotes/origin/lane | sort`
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git status --short --branch`
-- `git for-each-ref --format='%(refname:short) %(objectname:short) %(subject)' refs/remotes/origin/lane | sort`
-- `git ls-remote --heads origin lane/reliable-executor lane/no-data-loss-recovery lane/no-data-loss-invariants lane/fast-paths lane/feedback-supervisor lane/progress-publisher lane/critic lane/independent-auditor`
-- `git diff --stat -- audits/objective-audit.md .lane-output/final.md`
+
+Evidence checked:
+- `origin/lane/reliable-executor` -> `0c4fd10f`
+- `origin/lane/no-data-loss-invariants` -> `5b25867b`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
+- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/critic` -> `c41435d5`
+- `origin/lane/progress-publisher` -> `7695e1f9`
+- `origin/lane/independent-auditor` -> `33b839f0`
+
+Why no change was warranted:
+- The constrained release-candidate gap is still the same unsupported boundary proof gap.
+- No fresh remote head or audit evidence changed the verdict from closed to open.
 
 Push result:
-- Not pushed yet
+- No push this turn
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
-- Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Remote comparison: `ahead 1248, behind 198` relative to `origin/main`
+- Dirty tracked files: `.lane-output/final.md`, `audits/objective-audit.md`
+- Remote comparison: `ahead 1249, behind 198` relative to `origin/main`
 
 Next supervisor nudge:
-- Reopen the audit only after a lane produces executable production-backed proof or a dedicated failing gate for one unsupported boundary changes the release verdict.
+- Make the next gate fail intentionally for one unsupported boundary, starting with `menu/navigation`, `serialized block references`, `comments/users`, or `plugin-owned custom tables`.
