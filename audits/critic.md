@@ -7807,6 +7807,10 @@ Lead finding for the current release-proof claim:
   retained-source evidence to a live WordPress auth/session lifecycle
   boundary, with durable journal semantics and explicit graph identity and
   plugin-driver evidence in the same rerun;
+- any wrapper-shaped progress claim that names `verify:release` but does not
+  show the exact live boundary, preserved remote, apply-time revalidation, and
+  journal/recovery inspection is still lab-only evidence; without those facts,
+  the branch has not proved retry authority for production wording;
 - the next proof must be a live-boundary rerun, not another wrapper, smoke, or
   comparison note; if the evidence does not show dry-run receipt, apply-time
   revalidation, journal/recovery inspection, and exact preserved-remote drift
