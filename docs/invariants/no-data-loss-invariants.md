@@ -60,6 +60,9 @@ This note captures the planner boundary in plain language.
 - Mixed mutation plans must still prove each mutation against the live remote
   hash before apply, even when a matching independent edit and unrelated
   remote-only plugin drift are present.
+- A live-preconditioned file delete may coexist with matching independent
+  edits, file type swaps, and row edits, but the remote-only plugin drift must
+  still remain untouched and observable as `keep-remote`.
 
 ## Must Stop
 
