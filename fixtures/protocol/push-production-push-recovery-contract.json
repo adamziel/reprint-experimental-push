@@ -33,6 +33,7 @@
     "required_floor": "at least as strict as current Reprint HMAC usage",
     "preflight_binding": "mints one short-lived push session bound to one remote identity and one persisted pull base",
     "mutating_calls": "dry-run, apply, and mutating recovery require the push session, canonical push signature, and idempotency key",
+    "dry_run": "uses the same auth floor but only uploads an eligibility receipt",
     "inspect_requires": [
       "HMAC-authenticated request",
       "read-only recovery mode"

@@ -526,6 +526,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
     productionPushRecoveryContract.auth_and_session.preflight_binding,
     'mints one short-lived push session bound to one remote identity and one persisted pull base',
   );
+  assert.equal(
+    productionPushRecoveryContract.auth_and_session.dry_run,
+    'uses the same auth floor but only uploads an eligibility receipt',
+  );
   assert.deepEqual(productionPushRecoveryContract.auth_and_session.inspect_requires, [
     'HMAC-authenticated request',
     'read-only recovery mode',
