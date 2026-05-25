@@ -2433,6 +2433,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
   {
+    id: 'compressed-remote-index-and-batched-receipt-flush-skips-large-upload-publish-after-pause',
+    proposal: 'use a compressed remote index and batched receipt flushes to skip the guarded publish step for a large upload after a pause',
+    rejectedBecause: 'planning evidence and batched receipt flushes can reduce journal cost, but they cannot prove which chunk acknowledgements survived the pause or that the guarded publish barrier is still intact',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure',
     proposal: 'use a compressed remote index and batched row receipts to skip plugin-update backpressure during resume',
     rejectedBecause: 'planning evidence and receipt batching can reduce journal cost, but they cannot prove which row acknowledgements survived the pause or restore the atomic-group barrier',
