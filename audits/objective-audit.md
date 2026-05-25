@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is not command absence in the abstract; the upstream `verify:release` wrapper now exists, but this checkout still lacks a checked live-boundary verdict that proves the production apply path end to end. Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker.
+Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is no longer command absence in the abstract; the upstream `verify:release` wrapper exists, but this checkout still lacks a checked live-boundary verdict that proves the production apply path end to end. Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
