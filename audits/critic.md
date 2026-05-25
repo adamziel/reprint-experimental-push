@@ -89,9 +89,9 @@ comparative context, but they do not prove the live executor, the preserved
 remote, stale-drift rejection, create-time remap safety, or late-discovered
 plugin-owned surface handling on this branch. A note that only matches route
 shape, package layout, fixture replay, or reviewer wording is compatibility
-evidence only. A note only counts as current proof if the exact upstream
-state is named and the same live boundary was rerun here with fresh
-preserved-remote and retry evidence.
+evidence only. Even a named upstream state is still historical unless this
+branch reran the same live boundary and can show fresh preserved-remote,
+rejection-point, and retry evidence for that exact case.
 
 Production-readiness checklist:
 
