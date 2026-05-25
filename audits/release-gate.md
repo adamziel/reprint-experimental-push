@@ -17,8 +17,14 @@ or comparison-only.
   The audit trail must show the rejected artifact stayed auditable, but could
   not be widened into a new row, file, relationship-bearing record, or
   plugin-owned surface. A readable stale artifact is not a valid retry token.
+- The claim shows live remote drift between dry-run and apply failed closed
+  before the first write, not after the executor had already modified a row,
+  file, or plugin-owned surface.
 - The claim shows create-time identity remapping is either safely represented
   or hard-blocked before write.
+- The claim shows identity remapping or aliasing on create cannot silently
+  renumber, reassign, or copy a target record into a different remote
+  identity without a live remap proof.
 - The claim shows plugin-owned state outside the allowlist is either discovered
   or hard-blocked, including options, custom tables, generated files, activation
   hooks, cron, cache state, and other plugin side effects.
@@ -26,6 +32,9 @@ or comparison-only.
   because a fixture-owned option or table row matches the expected shape while
   the real plugin also owns custom tables, serialized counters, cron rows,
   generated assets, runtime registries, or external side effects.
+- The claim shows unknown plugin-owned state is not being widened into a
+  success case through fallback behavior, stale metadata, or a copied-lab
+  route that happens to hit the same URL shape.
 - The claim shows plugin-owned ownership changes are revalidated at apply time,
   not inherited from stale local metadata.
 - The claim shows a plugin data trap cannot pass as success when a fixture-owned
@@ -35,6 +44,9 @@ or comparison-only.
   allowlist.
 - The claim shows any partial file, DB, or plugin side effect is classified
   durably and that retry starts from fresh evidence rather than reused approval.
+- The claim shows partial file, DB, or plugin side effects do not leave an
+  implied success state just because one store committed; mixed writes need
+  old/new/blocked evidence for the whole path.
 - The claim shows the same live write path rejected stale authority before
   mutation, and that a route-shaped smoke or packaged-plugin mount only counts
   as compatibility evidence if it exercised that exact boundary.
@@ -68,6 +80,9 @@ or comparison-only.
   side-effect classification, or stale approval expiry unless the same live
   write boundary was reverified at the exact upstream revision or worktree
   state.
+- The claim does not let Reprint, ZS-Sync, or ForkPress notes imply current
+  upstream reliability unless the exact upstream revision or worktree state was
+  reverified and the live mutation boundary was exercised in this repo.
 - The claim does not treat matching route shape plus a green lab smoke as
   evidence of production safety if the underlying path never revalidated the
   live remote or the hidden plugin-owned surface at apply time.
@@ -76,6 +91,9 @@ or comparison-only.
   rejection forces the retry to rebuild scope from fresh live hashes before
   any write. "Manual resolution later" is still a failure state until the
   rejected snapshot cannot be reused as authority.
+- The claim does not treat a stale manual-review artifact as a reusable
+  decision token for a new row, file, relationship-bearing record, or
+  plugin-owned surface after remote drift.
 - The claim does not treat "manual resolution later" as a success state unless
   the preserved remote is still auditable, the stale artifact cannot authorize
   a retry, and the next attempt starts from fresh live evidence rather than the
