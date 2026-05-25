@@ -138,6 +138,16 @@ The strongest current runnable evidence still falls into four classes:
 
 The uncomfortable conclusion is that the current tests are good enough to block overclaiming, but not good enough to support the release statements the objective asks for. They prove the suite knows how to refuse unsafe claims. They do not prove the live push path is lossless, reliable, or fast enough on the real source boundary.
 
+## Test Audit Snapshot
+
+| Test surface | Current proof | Unproven release claim |
+| --- | --- | --- |
+| `test/push-planner.test.js` | Directionality, precondition checking, and stale-plan refusal | A live-source push boundary, no-data-loss release proof, and remote/local topology proof |
+| `test/recovery-journal.test.js` | Local journal sequencing, redaction, restart classification, and recovery inspection | Durable production storage, crash survival on live state, and live-boundary replay safety |
+| `test/performance-model.test.js` | Benchmark guardrails and refusal of unsupported throughput claims | Measured live-path throughput and any positive speed claim |
+| `test/guarded-executor-benchmark.test.js` | Tamper detection and refusal to upgrade unsupported benchmark claims | A release-grade performance verdict on the real push path |
+| `npm test` as a whole | The repository can reject unsafe claims in lab or fixture scope | A mandatory live-source verdict that can certify no data loss, reliability, or speed |
+
 ## Requirement Map
 
 Proof buckets used below:
