@@ -47,9 +47,16 @@ The ladder maps directly to the pull pipeline:
 - recovery starts with inspect and only mutates when journal evidence and
   fresh live hashes still prove the branch safe
 
-That bridge is one-way. Exporter/importer provenance is the immutable base
-that push consumes; push does not turn the base package back into a mutable
-snapshot cache.
+That bridge is one-way:
+
+- exporter/importer provenance is the immutable base that push consumes
+- push never turns the persisted pull base package back into a mutable
+  snapshot cache
+- preflight binds that persisted package to one live remote identity and one
+  short-lived push session
+- dry-run and apply remain separate remote operations
+- journal inspect is read-only evidence gathering
+- recovery starts with inspect before any mutating repair
 
 For the harness shape, keep the topology pair together:
 
@@ -93,8 +100,8 @@ The machine-readable bridge is split across the fixtures:
 - `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
   `push-remote-liveness-topology-contract.json` define the Docker and
   Playground test topology with one remote source, one imported local site,
-  one later drift observation of that same remote identity, and the
-  sandbox-provided `8080` ingress rule.
+  one later drift observation of that same remote identity, the
+  sandbox-provided `8080` ingress rule, and the local-only proxy policy.
 - `push-remote-liveness-topology-contract.json` also proves that dry-run and
   apply are separate remote calls and that apply revalidates fresh live
   evidence before every batch and at the storage boundary.
@@ -139,6 +146,17 @@ The topology model is deliberately minimal:
   apply, inspect the journal, or recover.
 - journal inspection remains read-only and recovery must begin with inspect
   before any mutating repair.
+
+Docker and Playground use the same topology labels and the same ingress
+policy:
+
+- `remote-base`, `local-edited`, `remote-changed`, and `runner` mean the same
+  thing in both harnesses
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- tunnels are disallowed
+- Docker uses one private network
+- Playground uses separate disposable blueprints
 
 ## Stage Semantics
 

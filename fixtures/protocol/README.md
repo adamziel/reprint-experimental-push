@@ -106,7 +106,7 @@ identity across `remote-base` and `remote-changed`:
   cite a single compact proof for both sequencing and harness shape.
 - `push-deployment-topology-contract.json` is the smallest Docker and
   Playground topology-only proof, with the sandbox-provided `8080` ingress
-  rule and the local-only proxy policy spelled out.
+  rule, the local-only proxy policy, and the no-tunnel rule spelled out.
 - `push-remote-liveness-topology-contract.json` is the smallest topology plus
   liveness proof that keeps dry-run and apply separate while apply
   revalidates fresh live evidence before every batch and at the storage

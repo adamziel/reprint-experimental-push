@@ -51,6 +51,18 @@ stage:
 - journal inspect is read-only
 - recovery starts with inspect before any mutating repair
 
+That handoff is intentionally one-way:
+
+- exporter/importer produce the immutable base package that push consumes
+- push never rewrites the persisted pull base package or treats it like a
+  mutable snapshot cache
+- preflight is the first live binding after importer persistence
+- dry-run and apply remain separate remote operations
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspection stays read-only
+- recovery starts with inspect before any mutating repair
+
 For reviewers, the shortest proof chain is:
 
 1. exporter discovers the merge base and coverage evidence
@@ -258,6 +270,12 @@ That topology keeps the executor proof stable:
 - both harnesses keep `remote-base` and `remote-changed` as two observations
   of the same remote identity, not two different sites
 - both harnesses require journal inspection before any mutating recovery
+
+Both harnesses also enforce the same ingress rule:
+
+- no remote tunnels
+- local-only proxying for browser-visible inspection
+- the only exposed port is sandbox-provided `8080`
 
 ## Canonical Proofs
 
