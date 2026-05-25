@@ -1,5 +1,23 @@
 # Critic Audit
 
+## 2026-05-25 Real-Site Release Command Gap
+
+Primary finding: this branch still does not expose a single named real-site
+preflight/release command that can be rerun against an actual remote and
+prove the live boundary end to end.
+
+Scenario: an operator sees a green `plan`, `apply`, or `test:playground:*`
+result and assumes production safety. Missing proof: there is still no branch-
+local executable that reruns the exact live boundary, preserves the rejected
+remote for audit, records the rejection point before the first write, and
+rebuilt retry scope from fresh live hashes in one auditable flow.
+
+That gap matters because any later-discovered plugin-owned surface, remapped
+create target, or partial file/DB/plugin side effect can still be hidden by a
+smoke or review artifact. Until the branch has a named real-site release
+command with preserved-remote evidence, route shape and review wording remain
+compatibility evidence only.
+
 ## 2026-05-25 Production Push Readiness Re-Audit
 
 Verdict: the design still cannot claim production-grade push support.
