@@ -5148,24 +5148,27 @@ Release-gate checklist for production-grade wording:
 
 - exact live boundary identified, with the drifted remote preserved for audit;
 - stale authority rejected before the first mutation, with the rejection point
-  recorded and reusable only as audit evidence;
-- create-time remap or alias cases either blocked or preserved with their own
-  live proof, not inferred from the earlier boundary;
+  recorded and reusable only as audit evidence for that same boundary;
+- create-time remap, alias, or renumber cases either blocked before write or
+  proven with live identity evidence, not inferred from the earlier boundary;
 - every plugin-owned surface outside the allowlist enumerated or explicitly
   blocked, including late-discovered tables, files, cron rows, registries,
   generated assets, caches, and serialized blobs;
 - every mixed file, database, and plugin side effect classified as old, new,
-  or blocked before retry;
+  or blocked before retry, so a partial commit cannot be relabeled as success;
 - manual-review artifacts kept audit-only unless rebuilt from fresh live
-  hashes on this branch;
+  hashes on this branch for the exact same boundary;
 - any cited Reprint, ZS-Sync, or ForkPress note pinned to the exact upstream
   revision or worktree state, annotated with what it proves here, what it
   does not prove here, and whether any later boundary is explicitly in scope
   or explicitly excluded;
 - any source-note comparison that only matches route family, package mount,
   or reviewer wording is rejected as compatibility evidence only, even if
-  the note is otherwise well formed; and
+  the note is otherwise well formed;
+- any later-discovered plugin-owned surface is treated as a new boundary
+  unless it gets its own preserve / reject / retry cycle on this branch; and
 - no route-shape smoke, package-mount match, `finalMatchesLocal`, or
-  "manual resolution" phrase used as proof without the live boundary above.
+  "manual resolution" phrase may be used as proof without the live boundary
+  above.
 If any box is unchecked, the branch must not claim production-grade push
 support.
