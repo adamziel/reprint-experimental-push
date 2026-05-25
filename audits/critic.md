@@ -5202,6 +5202,9 @@ Release-gate checklist for production-grade wording:
   revision or worktree state, annotated with what it proves here, what it
   does not prove here, and whether any later boundary is explicitly in scope
   or explicitly excluded;
+- a note with the same route family, mount layout, or reviewer vocabulary is
+  still compatibility-only unless this branch reran the same live boundary
+  with fresh hashes and preserved-remote evidence;
 - any source-note comparison that only matches route family, package mount,
   or reviewer wording is rejected as compatibility evidence only, even if
   the note is otherwise well formed;
@@ -5220,6 +5223,9 @@ Failure scenarios and missing proof:
   branch-local live rerun that fails closed before the first write, preserves
   the rejected remote for audit, and rebuilds retry scope from fresh live
   hashes on this worktree;
+- route-shape, package-layout, or fixture-backed proof that only reproduces
+  the same path shape: missing proof is the live executor state, live hashes,
+  and preserved remote for the exact boundary that actually drifted;
 - create-time identity remap, aliasing, or renumbering: missing proof is live
   identity evidence for the exact target that was written or an explicit hard
   block before write, plus proof that a remapped target discovered later does
