@@ -4,6 +4,16 @@ These fixtures are wire-contract examples for the production Reprint push
 extension. They intentionally show request and response shape, not full site
 exports or executable WordPress state.
 
+The checked command for this fixture set is:
+
+```sh
+node --test test/protocol-fixtures.test.js
+```
+
+That command is the release-facing proof for the production push handshake,
+live-source preflight, remote snapshot hash listing, dry-run receipt, apply-
+time revalidation, journal inspect, and inspect-first recovery boundary.
+
 The normal production sequence is:
 
 1. `push-preflight-request.json`
