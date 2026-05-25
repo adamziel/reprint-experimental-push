@@ -7,14 +7,17 @@ Finding:
 
 - the repo has provenance material for Reprint, ZS-Sync, and ForkPress, but it
   still lacks a single branch-local executable real-site preflight/release
-  command that proves the live boundary end to end on an actual remote;
+  command that proves the live boundary end to end on an actual remote. Until
+  that command exists, any production-grade push wording is false reliability
+  and must fail closed;
 - route-shaped smokes, fixture replays, and readable manual-resolution notes
   can support compatibility or audit claims, but they do not prove preserved
   remote retention, stale-drift rejection before the first write, or retry
   scope rebuilt from live hashes; and
 - a comparison note that names an upstream commit or worktree state is
   historical context only unless the same live boundary is rerun on this
-  branch and the preserved remote remains inspectable after rejection.
+  branch, the preserved remote remains inspectable after rejection, and the
+  fresh retry scope is rebuilt from live hashes on this worktree.
 
 Required changes before production-grade push support can be claimed:
 
