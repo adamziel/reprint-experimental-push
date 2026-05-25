@@ -6,6 +6,39 @@ that keeps pull provenance immutable, separates planning from mutation,
 revalidates the live remote identity at apply time, and keeps the dry-run and
 apply liveness split explicit.
 
+## Production Summary
+
+The production contract is the same in Docker and Playground:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns preflight, remote snapshot hash listing,
+  dry-run plan upload, batched apply, journal inspect, and inspect-first
+  recovery
+
+The push extension is a strict continuation of the pull exporter/importer
+pipeline:
+
+1. Exporter discovers the merge base and coverage evidence.
+2. Importer persists the base package as immutable provenance.
+3. `push_preflight` binds that persisted base package to one live remote
+   identity and one short-lived push session.
+4. `push_snapshot_hashes` lists remote hashes for planning only.
+5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+6. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+7. `push_journal` records durable evidence without authorizing mutation.
+8. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+9. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe with the same auth floor as the write path.
+
+The auth floor is at least as strict as current Reprint HMAC usage, and the
+remote liveness split is strict: dry-run and apply are separate remote
+operations, and apply must revalidate live evidence again before mutation.
+
 ## Push Ladder
 
 The production push protocol is a fixed ladder:

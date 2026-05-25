@@ -7,6 +7,34 @@ site, and one later drift observation of the same remote identity. The
 production harness keeps dry-run and apply separate, revalidates at apply
 time, and uses the same `8080`-visible topology in Docker and Playground.
 
+## Production Contract
+
+The executor owns these remote boundaries in order:
+
+1. `preflight`
+2. `snapshot-hashes`
+3. `dry-run`
+4. `apply`
+5. `journal`
+6. `recovery-inspect`
+7. `recovery-mutate`
+
+Each boundary is distinct:
+
+- `preflight` binds the persisted pull base package to one live remote
+  identity and one short-lived push session.
+- `snapshot-hashes` lists remote hashes for planning only and never becomes
+  write authority.
+- `dry-run` uploads the canonical plan and returns an eligibility receipt,
+  not a lock.
+- `apply` revalidates fresh live evidence before every batch and again at the
+  storage boundary.
+- `journal` is read-only evidence.
+- `recovery-inspect` reads the journal and fresh live hashes before any
+  mutating repair.
+- `recovery-mutate` only proceeds when inspect proves the branch safe and the
+  auth floor still holds.
+
 ## Test Topology
 
 Use the same logical harness in Docker and Playground:
@@ -26,6 +54,19 @@ later drift observation of the same remote identity, and one runner:
 - `remote-changed` is the same remote identity observed later after drift
 - `runner` is the only actor that may preflight, list hashes, dry-run,
   apply, inspect the journal, or recover
+
+The production mapping to the pull/export/import pipeline is direct:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the immutable pull base package
+- `preflight` is the first live bind after importer persistence
+- `snapshot-hashes` stays planning-only
+- `dry-run` is a receipt, not a lock
+- `apply` revalidates live evidence before every batch and at the storage
+  boundary
+- `journal` remains read-only
+- `recovery-inspect` happens before any mutating repair
+- `recovery-mutate` uses the same auth floor as the write path
 
 That is the fixed production test topology in both Docker and Playground:
 
