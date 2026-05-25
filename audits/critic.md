@@ -2342,7 +2342,10 @@ Production-readiness checklist:
   plugin-owned surface after drift.
 - Show explicit rejection of stale manual-review artifacts before write, and
   prove those artifacts stay audit-only rather than becoming retry authority
-  after the remote changes again.
+  after the remote changes again. The proof must name the preserved remote
+  snapshot, the stale rejection point, and the fresh retry scope in the same
+  claim block; otherwise the artifact is only inspection evidence, not retry
+  authority.
 - Show that route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` are only compatibility evidence unless the same live
   write boundary is reverified against a drifted remote in this repo and the
@@ -2376,6 +2379,9 @@ False reliability claims to avoid:
 - "Release gate passed" when the evidence set omits any blocker above but
   still emits a lab-shaped success marker. Production wording requires the
   exact rejection reason for every missing proof item.
+- "Readable artifact means retry authority" when the claim does not name the
+  preserved remote snapshot, the stale rejection point, and the fresh retry
+  scope together. Readability alone is inspection evidence, not authority.
 - "Comparison passed" when a Reprint, ZS-Sync, or ForkPress note is cited
   without the exact upstream revision or worktree state and the exact live
   mutation boundary that was reverified for this repo's claim.
