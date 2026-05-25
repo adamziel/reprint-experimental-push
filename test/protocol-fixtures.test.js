@@ -116,6 +116,12 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology.playground.remote_base, 'remote-base');
   assert.equal(contract.topology.playground.local_edited, 'local-edited');
   assert.equal(contract.topology.playground.remote_changed, 'remote-changed');
+  assert.equal(contract.topology_matrix.push_pipeline.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
+  assert.equal(contract.topology_matrix.push_pipeline.snapshot_hash_listing, 'returns the live remote comparison set for planning only');
+  assert.equal(contract.topology_matrix.push_pipeline.dry_run_plan_upload, 'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock');
+  assert.equal(contract.topology_matrix.push_pipeline.mutation_batch_apply, 'revalidates fresh live evidence before every batch and again at the storage boundary');
+  assert.equal(contract.topology_matrix.push_pipeline.journal_inspect, 'reads durable evidence without authorizing mutation');
+  assert.equal(contract.topology_matrix.push_pipeline.recovery, 'starts with inspect and allows mutating repair only when the journal and live hashes prove the action');
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
   assert.equal(
     contract.proofs.auth_session_journal,
@@ -126,6 +132,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.required_invariants[0], 'dry-run and apply are separate remote operations');
   assert.ok(
     contract.required_invariants.includes('remote snapshot hash listing is planning evidence, not write authority'),
+  );
+  assert.ok(
+    contract.required_invariants.includes('authentication must be at least as strict as current Reprint HMAC usage'),
   );
   assert.equal(mapping.mapping_id, 'push-pull-handoff-production-map');
   assert.equal(mapping.pull_exports.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');

@@ -192,6 +192,11 @@ The machine-readable companion for that handoff is
 It records the immutable pull package, the push bindings layered on top of it,
 and the restart-proof invariants that keep dry-run, apply, and recovery
 separate.
+The topology companion at
+[`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
+adds the explicit `push_pipeline` stage map so Docker and Playground tests can
+assert the same preflight, snapshot listing, dry-run, apply, journal, and
+recovery split without relying on prose only.
 
 Shared harness rules:
 

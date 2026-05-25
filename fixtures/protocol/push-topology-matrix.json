@@ -1,6 +1,14 @@
 {
   "topology_matrix_id": "push-topology-docker-playground-matrix",
   "purpose": "compact machine-readable proof for one remote source, one local edited site, and one live drift witness",
+  "push_pipeline": {
+    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "snapshot_hash_listing": "returns the live remote comparison set for planning only",
+    "dry_run_plan_upload": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
+    "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "journal_inspect": "reads durable evidence without authorizing mutation",
+    "recovery": "starts with inspect and allows mutating repair only when the journal and live hashes prove the action"
+  },
   "roles": {
     "remote_base": "one remote source site that seeds the persisted pull base",
     "local_edited": "one imported local site with user edits",

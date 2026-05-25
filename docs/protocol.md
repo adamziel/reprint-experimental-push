@@ -80,6 +80,13 @@ captures the same one-remote, one-local, one-drift-witness test shape for
 Docker and Playground. Both packaging modes must preserve the same proof
 boundary:
 
+The companion now includes an explicit `push_pipeline` block so tests can
+assert the production stage order directly: preflight binds the persisted
+pull base to the live remote identity, snapshot listing stays planning only,
+dry-run returns a receipt rather than a lock, apply revalidates before every
+batch and at the storage boundary, journal inspection stays read-only, and
+recovery must begin with inspect.
+
 - Docker uses one private network and browser-visible inspection through the
   sandbox-provided `8080` ingress with a local-only proxy.
 - Playground uses separate disposable blueprints, but the same remote identity
