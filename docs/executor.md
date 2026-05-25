@@ -162,6 +162,19 @@ demonstrates apply-time revalidation.
 Browser-visible inspection must use only the sandbox-provided `8080` ingress
 through a local-only proxy. Remote tunnels are disallowed.
 
+The topology matrix fixture is the shortest machine-readable version of the
+same proof:
+
+- Docker uses one private network and keeps `remote-base`, `local-edited`,
+  `remote-changed`, and `runner` distinct.
+- Playground uses separate disposable blueprints with the same remote identity
+  observed twice.
+- Both modes prove that dry-run and apply stay separate and that apply
+  revalidates live remote state before every batch and at the storage
+  boundary.
+- Both modes keep `push_journal` and `push_recover inspect` read-only until the
+  journal plus fresh live hashes prove a safe mutating recovery path.
+
 ## Restart Proof
 
 The executor proof is only complete when both packaging modes show the same

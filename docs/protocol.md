@@ -32,6 +32,23 @@ The proof is only valid when `remote-base` and `remote-changed` are the same
 remote identity observed at two different times, because that is what
 demonstrates apply-time revalidation instead of replaying dry-run evidence.
 
+Production liveness is split on purpose:
+
+- `push_plan_dry_run` is an eligibility receipt, not a reservation or lock.
+- `push_batch_apply` must re-read live remote evidence before every batch and
+  again at the storage boundary.
+- `push_journal` and `push_recover inspect` are read-only evidence readers.
+- mutating recovery only proceeds after the journal and fresh live hashes prove
+  the action.
+
+Authentication is at least as strict as the current Reprint HMAC floor:
+
+- read-only inspection keeps the existing HMAC family
+- dry-run, apply, and mutating recovery require the push session, canonical
+  push signature, and idempotency key on top of that floor
+- a remote that cannot prove the same identity and session lineage must reject
+  the request rather than weakening the read/write boundary
+
 The pull/export/import pipeline maps to push as a one-way provenance handoff:
 
 1. exporter scans the merge base and coverage evidence
