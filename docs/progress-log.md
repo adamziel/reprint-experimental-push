@@ -4,89 +4,16 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 12:39:28
+## 2026-05-25 - Public Status Audit 12:37:16
 
-<a id="2026-05-25-public-status-audit-123928"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 12:39:28 CEST`) and kept the runtime anchor on
-  `npm run verify:release` from commit `3089aee2`.
-- Added the newest boundary verdict from `889bd37a`:
-  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`; the first screen still keeps
-  `e269f0d3`, `63a3502f`, and `68664884` visible as retained-source lab
-  evidence. Release gates remain `0/4`.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-25 - Public Status Audit 12:38:23
-
-<a id="2026-05-25-public-status-audit-123823"></a>
+<a id="2026-05-25-public-status-audit-123716"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 12:38:23 CEST`) and kept the runtime anchor on
-  `npm run verify:release` from commit `3089aee2`.
-- Added the newest retained-source proof from `e269f0d3`: the first screen now
-  calls out `releaseProof.apply.sessionType` and `freshMutationWork`, while
-  `63a3502f` and `68664884` keep `authSessionType`, `applyCommitted`, and the
-  durable-journal readback visible. Release gates remain `0/4`.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-25 - Public Status Audit 12:37:27
-
-<a id="2026-05-25-public-status-audit-123727"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 12:37:27 CEST`) and kept the public anchor on
-  `npm run verify:release` from commit `3089aee2`.
-- Added the newest boundary verdict from `889bd37a`:
-  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`; the first screen still keeps
-  `5de7ee40`, `981236d8`, and `447/447` visible as durable-journal lab
-  evidence.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-25 - Public Status Audit 12:34:37
-
-<a id="2026-05-25-public-status-audit-123437"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 12:34:37 CEST`) and kept the public anchor on
+  (`2026-05-25 12:37:16 CEST`) and kept the public anchor on
   `npm run verify:release` from commit `3089aee2`.
 - Added `889bd37a`, which emits the exact production-boundary verdict
   `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. Release gates remain `0/4`
   because this proves the boundary is still missing, not production-ready.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-25 - Public Status Audit 12:29:41
-
-<a id="2026-05-25-public-status-audit-122941"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 12:29:41 CEST`) and kept the public anchor on
-  `npm run verify:release` from commit `3089aee2`.
-- The first screen keeps `5de7ee40`, `981236d8`, `63a3502f`, `68664884`, and
-  `e269f0d3` visible: durable-journal boundary, `447/447` planner tests, and
-  retained-source lab proof remain explicit while release gates stay `0/4`.
-- Evidence trail: [progress.html](../progress.html),
-  [objective audit](../audits/objective-audit.md),
-  [release-gate checklist](../progress.html#proof-gates).
-
-## 2026-05-25 - Public Status Audit 12:27:15
-
-<a id="2026-05-25-public-status-audit-122715"></a>
-
-- Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 12:27:15 CEST`) and kept the public anchor on
-  `npm run verify:release` from commit `3089aee2`.
-- The first screen now adds `5de7ee40` and `981236d8`: a durable-journal
-  executable boundary and `447/447` planner tests; the retained-source proof
-  in `63a3502f`, `68664884`, and `e269f0d3` stays lab-only.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
