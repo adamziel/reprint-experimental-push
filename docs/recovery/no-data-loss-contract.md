@@ -1,21 +1,47 @@
 # No Data Loss Recovery Contract
 
-This lane treats apply as safe only when failure lands in one of these states:
+This lane pins the recovery envelope for durable apply and replay.
+
+## Acceptable post-failure states
+
+An interrupted apply may only end in one of these states:
 
 - `old-remote`
 - `fully-updated-remote`
 - `blocked-recovery`
 
-The blocked state is acceptable only when it carries inspectable artifacts:
+Anything else is a contract violation.
 
-- the persisted journal
-- the remote snapshot or redacted remote evidence needed to classify drift
+## State rules
 
-Recovery boundaries are intentionally narrow:
+- `old-remote`
+  - The remote site must remain unchanged.
+  - The recovery state must keep the journal artifact.
+  - The recovery state must not expose a remote artifact.
 
-1. Before mutation, the remote must remain unchanged and the journal may only record pre-commit evidence.
-2. After staging and after dependency validation, a failure must still resolve to `old-remote` for retry.
-3. A completed plan may replay idempotently from the persisted completed journal.
-4. A stale completed replay must not silently succeed; it must become `blocked-recovery` with artifacts.
+- `fully-updated-remote`
+  - The remote site must already match the completed plan.
+  - The recovery state must keep the completed journal artifact.
+  - The recovery state must not expose a remote artifact.
 
-Release is blocked if any partial remote mutation lacks a recovery artifact or if retry can duplicate inserts or revive stale local data.
+- `blocked-recovery`
+  - The remote site may be partially updated or drifted.
+  - The recovery state must keep both journal and remote artifacts.
+  - Retry must not duplicate inserts or resurrect stale local data.
+
+## Replay contract
+
+- Replaying a completed journal against a matching remote must be inert.
+- Replaying a completed journal against a drifted remote must block with artifacts.
+- A completed replay must not rewrite the remote site.
+
+## Durable journal boundary checks
+
+The planner tests pin the current recovery boundaries at:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+- replay of a completed plan
+
+These boundaries are the minimum proof needed before a release can trust the durable recovery path.
