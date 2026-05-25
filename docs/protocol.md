@@ -66,6 +66,24 @@ The same handoff can be read as a pull-stage to push-stage map:
 | Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before any mutation. |
 | Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only after inspect and auth-floor checks pass. |
 
+That mapping preserves the pull pipeline boundaries instead of collapsing them
+into one mutable push session:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable handoff object push consumes
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` lists remote snapshot hashes for planning only
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe and the auth floor still holds
+
 The seven protocol surfaces are the ones the executor must treat as distinct
 remote boundaries:
 
@@ -217,7 +235,12 @@ The review order is fixed when you need the production proof bundle:
 The auth floor does not weaken the existing Reprint HMAC model:
 
 - preflight authenticates and mints, but never grants mutation authority
+- remote snapshot hash listing is planning-only and never write authority
 - dry-run is a receipt for a canonical plan, not a write lock
+- apply is a separate remote operation and revalidates fresh live evidence
+  before every batch and again at the storage boundary
+- journal inspect is read-only and never authorizes mutation
+- recovery inspect is read-only and happens before any mutating repair
 - apply uses the short-lived push session plus idempotency and revalidation
 - journal inspect is read-only
 - recovery is inspect-first and keeps the same auth floor as the write path

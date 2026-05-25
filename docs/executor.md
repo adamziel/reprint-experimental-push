@@ -113,6 +113,22 @@ stages:
 | Immutable provenance plus fresh live hashes | `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
 | Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe with the same auth floor as the write path. |
 
+That mapping keeps the pull pipeline separate from the push mutation path:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the immutable base package
+- `push_preflight` is the first live bind after that persistence
+- `push_snapshot_hashes` is planning-only remote hash listing
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
+  lock
+- `push_batch_apply` is a separate live mutation path and must revalidate
+  before every batch and again at the storage boundary
+- `push_journal` is durable evidence only
+- `push_recover inspect` is read-only and must happen before any mutating
+  repair
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe and the auth floor still holds
+
 Docker and Playground prove the same three-site story with different harness
 shapes:
 
@@ -177,7 +193,9 @@ The remote liveness split stays explicit across the whole executor:
 - dry-run and apply are separate remote operations
 - apply must revalidate the live remote before every batch and at the storage
   boundary
+- remote snapshot hash listing is planning evidence only
 - journal inspection is read-only and never authorizes mutation by itself
+- recovery inspect stays read-only and cannot authorize mutation
 - recovery must begin with inspect before any mutating repair
 - authentication must be at least as strict as current Reprint HMAC usage
 
