@@ -25,6 +25,9 @@ This note summarizes the planner's no-overwrite contract.
 - Matching independent deletes, edits, file type swaps, and restores may
   still be applied automatically when each emitted mutation has its own
   live remote precondition and remote-only plugin drift remains preserved.
+- Matching independent deletions can coexist with a live-preconditioned
+  delete and matching independent edits or file type swaps when each matching
+  resource independently reaches the live remote hash.
 - A live-preconditioned delete may coexist with matching independent edits
   and matching independent file type swaps when each matching resource also
   reaches the live remote hash.
