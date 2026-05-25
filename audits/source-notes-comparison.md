@@ -3,6 +3,10 @@
 This note is intentionally narrow: it records what the source notes support and
 what they do not support for production push wording.
 
+These notes are snapshots of previously observed upstream behavior, not
+current upstream proof, unless this branch reverified the exact cited revision
+or worktree at the same live mutation boundary.
+
 ## Reprint
 
 What it proves:
