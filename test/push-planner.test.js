@@ -5927,6 +5927,8 @@ test('durable no-data-loss recovery keeps every failure boundary in an acceptabl
     assert.equal(persisted.records[persisted.records.length - 1].state, expectedRecoveryState, label);
   }
 
+  const replayJournalPath = tempRecoveryJournalPath();
+  const replayDurableJournal = openRecoveryJournal(replayJournalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(baseSite(), plan);
   assertAcceptableRecoveryState(completed.recoveryState);
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
@@ -5935,7 +5937,11 @@ test('durable no-data-loss recovery keeps every failure boundary in an acceptabl
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replayBefore = JSON.stringify(replayRemote);
-  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: replayDurableJournal,
+  });
+  replayDurableJournal.close();
 
   assert.equal(JSON.stringify(replayRemote), replayBefore);
   assert.equal(replay.appliedMutations, 0);
@@ -5943,6 +5949,16 @@ test('durable no-data-loss recovery keeps every failure boundary in an acceptabl
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  const replayPersisted = readRecoveryJournal(replayJournalPath);
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'journal-replayed').length,
+    1,
+  );
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
 });
 
 test('recovery boundaries stay within the accepted no-data-loss states', () => {
