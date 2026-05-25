@@ -1651,7 +1651,7 @@ not route shape, package shape, or a plausible `finalMatchesLocal` result.
   the retry reused the old approval anyway. Missing proof: the artifact is
   audit-only after drift, cannot widen scope or authorize a new target, and
   the preserved remote can still be audited without reviving the stale
-  permission.
+  permission or treating the old approval as retry authority.
 - A comparison to Reprint, ZS-Sync, or ForkPress sounds current because the
   path or package shape matches, but the upstream revision was not reverified.
   Missing proof: the cited upstream state was rechecked at the same live
@@ -2179,8 +2179,9 @@ Production-readiness release gate for wording:
 - Show that any manual-review artifact cannot widen scope to a different row,
   file, relationship-bearing record, or plugin-owned surface after drift.
 - Show that any comparison note from Reprint, ZS-Sync, or ForkPress was
-  reverified at the same live mutation boundary, or treat it as historical
-  context only.
+  reverified at the same live mutation boundary, and name the exact upstream
+  commit or worktree state that was reverified; otherwise treat it as
+  historical context only.
 - Show the exact upstream revision or worktree that was reverified, or the
   comparison stays historical even if the route name, package shape, or
   fixture replay looks production-shaped.
