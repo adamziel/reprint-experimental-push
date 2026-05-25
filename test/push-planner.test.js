@@ -13251,3 +13251,72 @@ test('persisted partial-commit recovery remains blocked on inspection and does n
     true,
   );
 });
+
+test('durable claim loss before the first remote mutation stays blocked with artifacts and does not expose a partial remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: 'worker-a',
+  });
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: baseSite(),
+    claimId: 'worker-a',
+    staleThresholdMs: 1000,
+  });
+
+  const remote = baseSite();
+  const remoteSnapshot = JSON.stringify(remote);
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      mutateRemote: true,
+      beforeMutation({ mutationIndex }) {
+        assert.equal(mutationIndex, 1);
+        const competingWriter = openRecoveryJournal(journalPath, {
+          now: new Date(fixedNow.getTime() + 5000),
+          claimId: 'worker-b',
+        });
+        appendStaleClaimAdvanced(competingWriter, {
+          plan,
+          current: remote,
+          previousClaimId: 'worker-a',
+          claimId: 'worker-b',
+          staleThresholdMs: 1000,
+          previousClaimAgeMs: 5000,
+        });
+        competingWriter.close();
+      },
+    }),
+  );
+
+  durableJournal.close();
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_CLAIM_STALE');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(JSON.stringify(remote), remoteSnapshot);
+  assert.equal(remote.files['index.php'], '<?php echo "base";');
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+  assert.ok(error.details.recovery.artifacts.journal);
+  assert.ok(error.details.recovery.artifacts.remote);
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "base";');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+
+  const persisted = readRecoveryJournal(journalPath);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'stale-claim-advanced'),
+    true,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'mutation-observed'),
+    false,
+  );
+});
