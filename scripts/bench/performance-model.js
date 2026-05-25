@@ -1881,6 +1881,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-writeback-after-pause',
+    proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip plugin update writeback after a pause',
+    rejectedBecause: 'planning evidence and cached receipts can reduce replay work, but they cannot prove the live row compares, dependency checks, or the atomic-group barrier survived the interruption',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-finalize',
     proposal: 'treat a compressed remote index plus cached database batch receipts as enough proof to skip plugin update finalize',
     rejectedBecause: 'planning evidence and cached batch receipts can reduce replay work, but they cannot prove dependency checks, row preconditions, or the atomic-group finalize survived failure',
