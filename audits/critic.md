@@ -259,7 +259,9 @@ can claim production-grade push support:
   packaging shape is only compatibility evidence.
 - A manual-review artifact remains readable after drift, but the next apply can
   still widen the old approval to a new row, file, relationship, or
-  plugin-owned surface, which is a false-success mode until disproven.
+  plugin-owned surface, which is a false-success mode until disproven. The
+  missing proof is server-side rejection of that exact artifact as retry
+  authority after the remote hash set changes, while preserving it for audit.
 - A create path renumbers, aliases, or remaps identity on the live remote, but
   the proof does not show the reservation rule or hard failure that prevented
   reuse of the stale local identity mapping.
@@ -274,6 +276,8 @@ can claim production-grade push support:
 - A claim cites Reprint, ZS-Sync, or ForkPress without naming the exact
   upstream revision or worktree state that was reverified at the same live
   mutation boundary, so the comparison can only be read as historical context.
+  The missing proof is not just a citation, but a recheck at the exact live
+  write boundary being claimed.
 
 ## Release-Grade Rejection Cases
 
