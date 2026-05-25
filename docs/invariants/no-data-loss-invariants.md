@@ -8,6 +8,8 @@ It may apply automatically when:
 - the local resource differs from base, the remote resource still matches base,
   and the mutation keeps a live remote hash precondition
 - a local and remote change converge to the same ordinary resource content
+- a live-preconditioned delete is refused instead of guessed when the same file
+  also changed remotely
 - matching file deletions, file restores, row deletes, row restores, and file
   type swaps are preserved as already-in-sync instead of being re-written
 - matching file and row deletions that converge on the same hash are preserved
@@ -34,6 +36,8 @@ It must preserve:
 It must stop when:
 
 - a mutation would overwrite a live remote change without a live precondition
+- a same-file local delete conflict is discovered and the planner cannot prove
+  the remote state is safe to overwrite
 - a local delete, restore, or type swap would hide a live remote descendant
 - a local delete conflicts with a live remote same-file edit
 - a file or directory topology change would hide a live remote descendant

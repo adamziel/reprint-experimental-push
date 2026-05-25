@@ -6136,6 +6136,48 @@ test('stops a local file delete conflict while preserving unrelated remote-only 
   assertEveryMutationHasLiveRemotePrecondition(plan);
 });
 
+test('stops a local file delete conflict while preserving matching independent edit and type swap plus remote-only plugin removals', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery'] = 'base gallery bytes';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['index.php'] = '<?php echo "remote changed";';
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:index.php');
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.conflicts, 1);
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.reason, 'Local and remote both changed this resource after the pull base.');
+  assert.equal(conflict.change.local.state, 'absent');
+  assert.equal(conflict.change.remote.state, 'present');
+  assert.equal(conflict.change.remote.contents, undefined);
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+});
+
 test('stops a local file delete that would hide a remote-only descendant while keeping plugin drift and bounded evidence', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
