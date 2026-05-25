@@ -206,12 +206,18 @@ The proof stack is the canonical review order:
 6. `push-auth-session-fencing-contract.json`
 7. `push-auth-session-recovery-contract.json`
 8. `push-recovery-inspect-contract.json`
+9. `push-snapshot-hashes-page-contract.json`
+10. `push-dry-run-apply-revalidation-contract.json`
 
 The pull-to-push bridge is easiest to review through the fixtures:
 
 - `push-pull-mapping.json`, `push-protocol-extension-contract.json`, and
   `push-remote-liveness-contract.json` prove the pull provenance, stage order,
   dry-run/apply split, and recovery boundary.
+- `push-snapshot-hashes-page-contract.json` and
+  `push-dry-run-apply-revalidation-contract.json` prove the live remote hash
+  listing stays cursorable and planning-only, and that a stale dry-run receipt
+  never skips apply-time revalidation.
 - `push-deployment-topology-contract.json` and
   `push-executor-topology-proof.json` prove the Docker and Playground
   topology, the same remote identity observed before and after drift, and the

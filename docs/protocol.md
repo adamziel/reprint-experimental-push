@@ -123,10 +123,13 @@ The machine-readable proofs that back this contract are:
 
 - [`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json)
 - [`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json)
+- [`fixtures/protocol/push-snapshot-hashes-page-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-snapshot-hashes-page-contract.json)
+- [`fixtures/protocol/push-dry-run-apply-revalidation-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-dry-run-apply-revalidation-contract.json)
 - [`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json)
 
 Those fixtures keep the production proof compact: exporter/importer establish
 the immutable base package, preflight binds it to one live remote identity and
-one short-lived session, dry-run stays separate from apply, apply revalidates
-before every batch and at the storage boundary, journal inspect stays read-only,
-and recovery begins with inspect before any mutating repair.
+one short-lived session, snapshot listing can be paginated without becoming
+write authority, dry-run stays separate from apply, apply revalidates before
+every batch and at the storage boundary, journal inspect stays read-only, and
+recovery begins with inspect before any mutating repair.
