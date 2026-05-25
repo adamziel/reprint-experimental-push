@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The release gate stays closed for two precise reasons: this checkout still does not own a checked, in-tree production-boundary verdict for auth/session lifecycle and it still does not own a checked, in-tree verdict for durable journal semantics at the live apply boundary. The current upstream release verifier on `origin/lane/reliable-executor` (`3d8748b6`) now fails closed with `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` when the live source or secrets are missing, and its companion boundary proof names durable journal storage as a separate remaining requirement. The upstream verifier also reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback with `rows > 0`, but that evidence is upstream-only until this checkout has an equivalent enforced command or default entrypoint.
+The release gate stays closed for two precise reasons: this checkout still does not own a checked, in-tree production-boundary verdict for auth/session lifecycle and it still does not own a checked, in-tree verdict for durable journal semantics at the live apply boundary. The current upstream release verifier on `origin/lane/reliable-executor` (`91ef2b06`) fails closed with `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` when the live source or secrets are missing, and its companion boundary proof names durable journal storage as a separate remaining requirement. The upstream verifier also reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback with `rows: 17`, but that evidence is upstream-only until this checkout has an equivalent enforced command or default entrypoint.
 
 Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and real topology still need production-boundary proof too, but they are secondary to the missing auth/session plus durable journal verdict.
 
@@ -57,12 +57,12 @@ Evidence buckets:
 
 ## Current Command Surface
 
-Direct command-surface recheck on `origin/lane/reliable-executor` at `3d8748b6`:
+Direct command-surface recheck on `origin/lane/reliable-executor` at `91ef2b06`:
 
 - `package.json` now exposes `verify:release`, `test:playground:production-shaped-release-verify`, `test:playground:production-shaped-live-preflight`, `test:playground:production-shaped-missing-live-source`, and `test:playground:production-shaped-missing-secret`.
 - `verify:release` maps to `test:playground:production-shaped-release-verify`.
 - `scripts/playground/production-shaped-release-verify.mjs` fails closed when no live source or no secret is provided, and it emits the remaining boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` plus the durable-journal blocker `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
-- The same script reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback `rows > 0` when the release path succeeds.
+- The same script reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback `rows: 17` when the release path succeeds.
 - This checkout does not yet carry that checked verdict in-tree, so the release gate is still closed here.
 
 ## Release Gate Definition
