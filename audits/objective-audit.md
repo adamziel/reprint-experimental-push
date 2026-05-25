@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: there is still no checked-in, required live-source release command in this checkout. The repo has helper and lab scripts, but no enforced `verify`, `verify:release`, or `release` entrypoint that exports `REPRINT_PUSH_SOURCE_URL`, runs against a retained source endpoint, rechecks apply-time state, and records preserved-remote evidence in the same invocation. The claimed `test:playground:production-shaped-release-proof` surface is also absent here. The blocker is not "more tests"; it is the missing single command that must own the live-source verdict and fail closed when preserved-remote proof is absent.
+Current top blocker, rechecked on 2026-05-25: there is still no checked-in, required live-source release command in this checkout. `npm test -- --test-reporter=spec` is green at `89/89`, but the repo still only has helper and lab scripts, not an enforced `verify`, `verify:release`, or `release` entrypoint that exports `REPRINT_PUSH_SOURCE_URL`, runs against a retained source endpoint, rechecks apply-time state, and records preserved-remote evidence in the same invocation. The claimed `test:playground:production-shaped-release-proof` surface is also absent here. The blocker is not "more tests"; it is the missing single command that must own the live-source verdict and fail closed when preserved-remote proof is absent.
 
 Re-audit note for the current release focus: because the claimed live-source command does not exist in this checkout, none of the downstream release proofs can be credited at the live boundary yet. That means the still-missing proof set remains the same release-critical bundle:
 
@@ -259,7 +259,7 @@ Proof ledger:
 
 ## Test Audit
 
-The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. A green `npm test` run makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary. Their main value is negative proof: they show the repo can refuse bad states, not that it can complete the live push safely. They do not prove no data loss, reliability under crash/replay, or measured speed on the live path.
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. The current `npm test -- --test-reporter=spec` run is green at `89/89`, which makes the evidence sharper rather than safer: the suite still stops short of the live-source release boundary. Their main value is negative proof: they show the repo can refuse bad states, not that it can complete the live push safely. They do not prove no data loss, reliability under crash/replay, or measured speed on the live path.
 
 The current passing set is narrower than a shippability gate would require:
 
