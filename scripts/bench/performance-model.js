@@ -367,6 +367,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'remote-indexes',
+    reduces: ['planning-round-trips', 'idle-time'],
+    allowedShortcut: 'parallelize-independent-owner-index-scans-to-size-bounded-batches',
+    guardrails: [
+      'index-scan-stays-planning-only',
+      'batch-sizing-stays-within-per-site-concurrency-budgets',
+    ],
+    gateProofs: {
+      skip: 'independent owner scans may run in parallel to size later batches without rescanning unchanged planning data',
+      live: 'each later mutation still rechecks its own live resource precondition at the storage boundary',
+      group: 'the scans only size batches and never widen the atomic-group barrier for any owner',
+      recovery: 'the planning cursors and later durable receipts still classify pause or crash without guessing which owner advanced',
+    },
+    visibilityBoundary: 'planning-only-with-site-budgets',
+    failureEvidence: 'owner-partitioned planning cursor plus per-owner batch receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'database-row-batching',
     reduces: ['round-trips', 'rescan-work', 'batch-shape-recomputation'],
     allowedShortcut: 'reuse-planned-dependency-graph-to-presize-bounded-plugin-update-batches',
@@ -2017,6 +2037,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
     rejectedGate: 'group',
     violates: ['atomic-groups', 'visibility-boundary'],
+  },
+  {
+    id: 'compressed-remote-index-and-parallel-owner-index-scans-skips-live-write',
+    proposal: 'use a compressed remote index and parallel owner scans to skip the live write check during a plugin change',
+    rejectedBecause: 'parallel owner scans can size batches faster, but they cannot authorize a live write or replace the storage-boundary compare',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'compression', 'live-preconditions', 'planning-only'],
   },
   {
     id: 'parallelize-db-batch-visibility-across-groups',

@@ -55,6 +55,7 @@ the safe list even when they improve a throughput metric.
 | Remote indexes | Reuse a recorded planning cursor with a strong-hash listing to avoid rescanning unchanged resources during incremental planning. | The cursor is planning evidence only. It does not become an apply lock, and the live compare still guards mutation. |
 | Remote indexes | Reuse a planned dependency graph for dependency-heavy plugin updates so repeated planning avoids recomputing stable dependency shape before the live finalize step. | The dependency graph is planning evidence only. It cannot skip live per-row compares or the atomic-group commit barrier. |
 | Remote indexes | Parallelize independent owner-partition index scans within the per-site budget so large uploads and plugin changes can plan different owners at once without widening any live boundary. | The scans only produce planning evidence. Each later write still rechecks its own live precondition, and no atomic group becomes visible early. |
+| Remote indexes | Parallelize independent owner-partition index scans to size bounded batches within per-site concurrency budgets. | Batch sizing stays planning-only. The later write still rechecks each live precondition, and the atomic-group barrier does not move. |
 | Compression | Compress transport frames for JSON, SQL batches, manifests, and text files. Skip already-compressed file types and keep the canonical hash over the uncompressed resource value. | Content encoding is transport metadata. It must not change the hash used for conflict detection or compare-and-swap. |
 | Compression | Compress durable receipt logs after they have been recorded so large-upload and plugin-recovery evidence uses fewer bytes without changing receipt keys. | Receipt compression is storage-only. It does not replace the original durable receipt keys, the live precondition, or the commit boundary. |
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
@@ -73,6 +74,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A chunk upload can overlap or compress transit, but it cannot make staged bytes visible before the guarded finalize step.
 - A database batch can reuse statement shapes, but it cannot cross atomic-group boundaries or skip row preconditions.
 - A remote index can compress planning traffic, but it cannot become a lock or a live mutation authorization.
+- A compressed remote index plus parallel owner scans still cannot skip the live write check, because planning concurrency does not replace the storage-boundary compare.
 - Compression can reduce wire bytes and receipt-log size, but it cannot change the canonical hash or recover missing receipts.
 - Parallelism can overlap independent staging, but it cannot widen a commit barrier or merge group finalization.
 - Extra parallelism is only safe while it preserves the same preconditions, receipts, and atomic barrier.

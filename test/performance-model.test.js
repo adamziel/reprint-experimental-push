@@ -450,6 +450,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'planning-only-with-site-budgets',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'parallelize-independent-owner-index-scans-to-size-bounded-batches')?.visibilityBoundary,
+    'planning-only-with-site-budgets',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-transport-frames-with-canonical-uncompressed-digest')?.failureEvidence,
     'canonical digest plus encoded payload digest',
   );
@@ -756,6 +760,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('unbounded-parallel-plugin-install-finalize').violates.includes('backpressure'));
   assert.ok(rejectedById.get('unbounded-parallel-plugin-install-finalize').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('parallelize-atomic-group-commit').violates.includes('atomic-groups'));
+  assert.equal(rejectedById.get('compressed-remote-index-and-parallel-owner-index-scans-skips-live-write').rejectedGate, 'live');
   assert.ok(rejectedById.get('parallelize-db-batch-visibility-across-groups').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('parallelize-chunk-visibility-across-groups').violates.includes('atomic-groups'));
   assert.equal(
