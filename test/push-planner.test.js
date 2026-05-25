@@ -12023,7 +12023,7 @@ test('blocks local postmeta references to stale remote-created post identity', (
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
@@ -12135,7 +12135,7 @@ test('blocks local post-parent references to a missing live remote post identity
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
