@@ -43,6 +43,20 @@ The same pull-to-push bridge applies here:
 - inspect-first recovery is the only safe starting point for mutating
   recovery
 
+The executor should treat the mapped pull pipeline as immutable provenance:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that package to one live remote identity and one short-lived
+  push session
+- snapshot hash listing reads the live remote comparison surface only for
+  planning
+- dry-run uploads the canonical plan and returns a receipt
+- apply revalidates before every batch and again at the storage boundary
+- journal inspect reads durable evidence without authorizing mutation
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes still prove the branch safe
+
 ## Stage Semantics
 
 The executor needs the same boundary discipline as the protocol:
@@ -105,7 +119,7 @@ In other words:
 
 ## Topology
 
-The canonical topology is fixed across both harnesses:
+The executor uses the same production topology in Docker and Playground:
 
 | Role | Docker | Playground |
 | --- | --- | --- |
@@ -114,42 +128,18 @@ The canonical topology is fixed across both harnesses:
 | Drift witness | `remote-changed` | `remote-changed` |
 | Runner | `runner` | local test process |
 
-The practical boundary is unchanged across both environments:
+That topology keeps the executor proof stable:
 
 - `remote-base` seeds the persisted pull base package
-- `remote-changed` is the same remote identity observed later after drift
-- `local-edited` is the imported local site that produces the candidate plan
-- `runner` is the only actor that may preflight, list hashes, upload the dry
-  run plan, apply batches, inspect the journal, or start recovery
-- browser-visible inspection stays on the sandbox-provided `8080` ingress
-  through a local-only proxy
-- Docker and Playground both model the same one-remote, one-local, one-drift
-  production proof
-
-This topology is the production proof shape, not an arbitrary test fixture:
-
-- one remote source site seeds the persisted pull base package
-- one local edited site carries the imported user edits
-- one later observation of the same remote identity proves drift handling
-- one runner process is the only actor allowed to preflight, list hashes,
-  upload the dry-run plan, apply batches, inspect the journal, or start
-  recovery
-
-Docker uses one private network. Playground uses separate disposable
-blueprints. Both keep the same route names, the same protocol order, and the
-same liveness split between planning-only and apply-time evidence.
-
-For test topology, treat Docker and Playground as two harnesses for the same
-three-site proof:
-
-- `remote-base` is the remote source before drift and seeds the persisted
-  pull base package
 - `local-edited` is the imported local site with user edits
 - `remote-changed` is the same remote identity observed later after drift
-- `runner` is the only actor that may preflight, list hashes, upload the dry
-  run, apply batches, inspect the journal, or start recovery
-- browser-visible inspection always stays on the sandbox-provided `8080`
-  ingress through a local-only proxy
+- `runner` is the only actor that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or start recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- Docker uses one private network; Playground uses separate disposable
+  blueprints
+- both harnesses use the same route names and the same dry-run/apply split
 
 ## Canonical Proofs
 

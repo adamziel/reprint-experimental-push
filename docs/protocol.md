@@ -35,7 +35,6 @@ That ladder maps to distinct remote boundaries:
 
 - preflight is the first live binding after importer provenance exists
 - snapshot hash listing is planning evidence only
-- dry-run is an eligibility receipt, not a lock, and cannot become write authority
 - dry-run is an eligibility receipt, not a lock
 - batch apply revalidates before every batch and again at the storage boundary
 - journal inspect is read-only
@@ -86,6 +85,33 @@ Recovery is intentionally inspect-first:
 The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
 site, and one live remote identity that must be revalidated at apply time.
+
+## Topology
+
+The canonical production proof uses one remote source site, one imported local
+edit site, and one later observation of the same remote identity after drift.
+Both Docker and Playground keep the same stage names, the same route names,
+and the same browser-visible ingress rule:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| Remote source | `remote-base` | `remote-base` |
+| Local edited site | `local-edited` | `local-edited` |
+| Drift witness | `remote-changed` | `remote-changed` |
+| Runner | `runner` | local test process |
+
+The topology proof means:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits used to form the canonical
+  push plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may run preflight, snapshot listing,
+  dry-run upload, batched apply, journal inspect, or recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- Docker and Playground both model the same one-remote, one-local,
+  one-drift production proof
 
 ## Auth And Recovery
 
