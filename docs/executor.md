@@ -1666,6 +1666,23 @@ snapshot cache:
 - `push_recover inspect` reads the journal and live hashes before any
   mutating repair
 
+The production shape is fixed:
+
+- exporter/importer produce the immutable pull base package
+- `push_preflight` binds that package to one live remote identity and one
+  short-lived push session
+- `push_snapshot_hashes` only lists live hashes for planning
+- `push_plan_dry_run` uploads a canonical plan receipt and never becomes
+  write authority
+- `push_batch_apply` is a separate remote mutation and revalidates fresh
+  live evidence before every batch and again at the storage boundary
+- `push_journal` is read-only evidence
+- `push_recover inspect` is read-only and must happen before any mutating
+  repair
+- mutating recovery only proceeds when the journal row and fresh live hashes
+  still prove the branch safe
+- the auth floor is at least as strict as current Reprint HMAC usage
+
 Recovery stays inspect-first even when the journal is present:
 
 1. read the journal
@@ -1713,6 +1730,19 @@ Docker and Playground:
 
 Both harnesses keep browser-visible inspection on the sandbox-provided `8080`
 ingress through a local-only proxy, and remote tunnels remain disallowed.
+
+The proof target is the same one-remote, one-local, one-drift shape:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, remote snapshot hash listing, dry-run plan
+  upload, mutation batch apply, journal inspect, and inspect-first recovery
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 
 The same mapping is what the Docker and Playground proofs must exercise:
 
@@ -1790,6 +1820,14 @@ For review, the canonical executor chain is:
 7. `push_recover inspect` classifies recovery before any mutating repair.
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe.
+
+The canonical production contract stack is:
+
+1. `push-protocol-extension-contract.json`
+2. `push-production-topology-contract.json`
+3. `push-production-revalidation-contract.json`
+4. `push-production-journal-lease-recovery-inspect-contract.json`
+5. `push-production-executor-flow-contract.json`
 
 In runbook form, the executor keeps the same order and boundary discipline:
 

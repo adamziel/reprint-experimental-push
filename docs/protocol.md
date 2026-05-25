@@ -20,6 +20,19 @@ The production push extension is the same in Docker and Playground:
 | `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
 | `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe and the auth floor still holds. |
 
+The contract is intentionally production-shaped:
+
+- preflight is the first live binding after importer provenance exists
+- remote snapshot hash listing is planning-only evidence and never write authority
+- dry-run uploads the canonical plan and returns a receipt, not a lock
+- apply is a separate remote mutation and must revalidate fresh live evidence
+  before every batch and again at the storage boundary
+- journal inspect is read-only
+- recovery starts with inspect before any mutating repair
+- mutating recovery may proceed only when journal evidence and fresh live
+  hashes still prove the branch safe
+- authentication must be at least as strict as current Reprint HMAC usage
+
 That ladder maps directly onto the pull/export/import pipeline:
 
 | Pull pipeline object | Push consumer | Why the boundary stays separate |
@@ -41,6 +54,19 @@ The fixed test topology is also shared:
 - Docker uses one private network
 - Playground uses separate disposable blueprints
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
+
+The topology proof is intentionally minimal and stable:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits derived from that package
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, remote snapshot hash listing, dry-run plan upload,
+  mutation batch apply, journal inspect, and inspect-first recovery
+- Docker and Playground both keep the same route names and the same auth
+  floor
+- the only browser-visible ingress is sandbox-provided `8080` through a
+  local-only proxy
 - remote tunnels are disallowed
 
 ## Canonical Production Extension
@@ -73,6 +99,25 @@ The pull-to-push bridge is one-way:
 - `push_journal` is read-only evidence
 - `push_recover inspect` is read-only and must happen first
 - mutating recovery uses the same HMAC floor as apply and must not bypass inspect
+
+The production proof inventory is intentionally layered:
+
+1. `push-protocol-extension-contract.json` for the end-to-end ladder and pull bridge
+2. `push-production-topology-contract.json` for the one-remote, one-local, one-drift harness
+3. `push-production-revalidation-contract.json` for auth, session, journal, lease, and apply-time revalidation
+4. `push-production-journal-lease-recovery-inspect-contract.json` for journal rows, lease fencing, and inspect-first recovery
+5. `push-production-executor-flow-contract.json` for the shortest full flow proof
+
+Those fixtures should read as one chain:
+
+- exporter/importer establish immutable provenance
+- preflight binds that provenance to one live remote identity and one short-lived push session
+- remote hash listing stays planning-only
+- dry-run returns a receipt, not a lock
+- apply remains a separate mutation and revalidates before every batch and at the storage boundary
+- journal inspect is read-only
+- recovery must start with inspect and may mutate only when fresh live evidence and journal evidence still agree
+- the auth floor is at least as strict as current Reprint HMAC usage
 
 The bridge also preserves the existing pull/export/import provenance chain:
 
