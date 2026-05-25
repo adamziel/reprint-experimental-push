@@ -167,6 +167,17 @@ can claim production-grade push support:
 - A manual-review artifact remains readable after drift, but the next apply can
   still widen the old approval to a new row, file, relationship, or
   plugin-owned surface, which is a false-success mode until disproven.
+- A create path renumbers, aliases, or remaps identity on the live remote, but
+  the proof does not show the reservation rule or hard failure that prevented
+  reuse of the stale local identity mapping.
+- A plugin-owned surface outside the declared allowlist is discovered late, but
+  the proof does not show the exact rejection point that kept the unknown
+  option, custom table, generated file, activation hook, cron entry, or cache
+  side effect from becoming writable.
+- A partial file, DB, or plugin write succeeds on one boundary and fails on
+  another, but the proof does not show durable classification of the mixed
+  result or a retry path that starts from fresh live hashes instead of the old
+  approval.
 
 ## Release-Grade Rejection Cases
 
