@@ -11,6 +11,7 @@ Practical contract:
 - A failure before mutation, after staging, or after dependency validation must not leave a partial remote without a recovery artifact.
 - A completed replay must stay inert on retries and must not duplicate inserts or revive stale local data.
 - Any partial write without artifacts is a release blocker, not a safe retry target.
+- A completed replay must be persisted as replay-only evidence; it must not re-open a mutation path or resurrect stale local state on the next retry.
 
 This boundary is intentionally durable, not just JSON-shaped:
 
