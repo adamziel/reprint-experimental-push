@@ -271,6 +271,9 @@ Release-gate checklist:
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface;
+- show that a lab-shaped or fixture-backed route family still fails the gate
+  unless the branch also proves the live executor, preserved remote, stale
+  rejection point, and fresh retry scope on this worktree;
 - fail closed if the only apparent proof is route shape, package mount shape,
   fixture replay, readable review output, or `finalMatchesLocal`; those are
   compatibility signals only, not live retry proof;
