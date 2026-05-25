@@ -19,6 +19,11 @@ const FIXTURE_PLUGIN_OWNED_ROW_DEPENDENCIES = new Map([
     'reprint-push-atomic-dependent-fixture',
   ],
 ]);
+export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
+  'old-remote',
+  'fully-updated-remote',
+  'blocked-recovery',
+]);
 
 export class PushPlanError extends Error {
   constructor(code, message, details = {}) {

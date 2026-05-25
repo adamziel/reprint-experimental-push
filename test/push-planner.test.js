@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { applyPlan, PushPlanError } from '../src/apply.js';
+import { ACCEPTABLE_RECOVERY_STATES, applyPlan, PushPlanError } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
 import {
   appendRecoveryClaimOpened,
@@ -131,7 +131,7 @@ function assertEveryMutationHasLiveRemotePrecondition(plan) {
 function assertAcceptableRecoveryState(recoveryState) {
   assert.ok(recoveryState, 'missing recovery state');
   assert.ok(
-    ['old-remote', 'fully-updated-remote', 'blocked-recovery'].includes(recoveryState.status),
+    ACCEPTABLE_RECOVERY_STATES.includes(recoveryState.status),
     `unexpected recovery state ${recoveryState.status}`,
   );
   if (recoveryState.status === 'blocked-recovery') {
@@ -9263,6 +9263,82 @@ test('durable recovery stays within the accepted post-failure states and complet
   assert.equal(
     replayPersisted.records.filter((record) => record.type === 'journal-replayed').length,
     completedPersisted.records.filter((record) => record.type === 'journal-replayed').length + 1,
+  );
+});
+
+test('durable recovery contract keeps every boundary in the accepted states and replay stays journal-only', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+
+  const scenarios = [
+    ['before mutation', { failBeforeMutation: true, expectedJournalStatus: 'opened' }],
+    ['after staging', { failAfterStaging: true, expectedJournalStatus: 'staged' }],
+    ['after dependency validation', { failAfterDependencyValidation: true, expectedJournalStatus: 'dependencies-validated' }],
+  ];
+
+  for (const [label, options] of scenarios) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        ...options,
+        durableJournal,
+      }),
+    );
+    durableJournal.close();
+
+    const persisted = readRecoveryJournal(journalPath);
+
+    assert.ok(error instanceof PushPlanError, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+    assert.equal(error.details.recovery.artifacts.journal.status, options.expectedJournalStatus, label);
+    assert.equal(
+      persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'old-remote'),
+      true,
+      label,
+    );
+  }
+
+  const applyJournalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(applyJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const completedPersisted = readRecoveryJournal(applyJournalPath);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const replayPersisted = readRecoveryJournal(applyJournalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'journal-replayed').length,
+    completedPersisted.records.filter((record) => record.type === 'journal-replayed').length + 1,
+  );
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'apply-staged').length,
+    completedPersisted.records.filter((record) => record.type === 'apply-staged').length,
+  );
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'dependencies-validated').length,
+    completedPersisted.records.filter((record) => record.type === 'dependencies-validated').length,
   );
 });
 
