@@ -129,6 +129,27 @@ evidence only. Even a named upstream state is still historical unless this
 branch reran the same live boundary and can show fresh preserved-remote,
 rejection-point, and retry evidence for that exact case.
 
+Release-gate checklist for production-grade wording:
+
+- the exact live boundary is named, and the drift case is shown with live
+  hashes from this branch rather than inferred from route shape or fixture
+  replay;
+- the rejected remote stays inspectable after the first failed write, so the
+  user can audit the drift and retry safely from fresh live hashes;
+- the stale approval, readable review artifact, or manual-resolution note is
+  marked audit-only for the exact rejected boundary and cannot be reused as
+  retry authority for any later row, file, relationship-bearing record, or
+  remapped create target;
+- every touched surface is classified as old, new, or blocked before retry,
+  including file, DB, plugin, cron, registry, generated asset, cache, and
+  serialized state;
+- every plugin-owned surface outside the allowlist is either enumerated live
+  or hard-blocked at apply time, and any later-discovered surface is treated
+  as a separate boundary with its own preserve / reject / retry cycle; and
+- each Reprint, ZS-Sync, and ForkPress comparison explicitly says what the
+  source note proves, what it does not prove, and why it is historical
+  context rather than current push proof on this branch.
+
 Conservative comparison matrix:
 
 - Reprint `27c5f25` proves staged pull delivery, resumable transport, and
