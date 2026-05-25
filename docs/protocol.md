@@ -66,6 +66,14 @@ The pull pipeline is the provenance source for each push stage:
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating recovery branch
 
+The persisted pull base package is the concrete provenance object that push
+consumes:
+
+- `base_manifest_id` identifies the imported pull base package
+- `base_manifest_hash` pins the immutable manifest content
+- `base_coverage_hash` pins the coverage evidence that supported import
+- `remote_site_id` ties that package back to the source remote identity
+
 The write path is deliberately one-way:
 
 - pull discovers and persists the immutable base package
@@ -103,6 +111,17 @@ That bridge is one-way:
 - dry-run and apply remain separate remote operations
 - journal inspect is read-only evidence gathering
 - recovery starts with inspect before any mutating repair
+
+The Docker and Playground topology contract is intentionally one remote, one
+local, one drift witness:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns the protocol calls
+- both harnesses keep browser-visible inspection on the sandbox-provided
+  `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
 
 For the harness shape, keep the topology pair together:
 

@@ -153,6 +153,15 @@ The same pull-to-push bridge applies here:
 - inspect-first recovery is the only safe starting point for mutating
   recovery.
 
+The imported pull base package is the anchor point for the executor:
+
+| Imported field | Why it matters |
+| --- | --- |
+| `base_manifest_id` | Names the persisted pull package that preflight must bind. |
+| `base_manifest_hash` | Pins the immutable manifest content used for planning. |
+| `base_coverage_hash` | Pins the coverage evidence that justified the import. |
+| `remote_site_id` | Binds the package back to the source remote identity. |
+
 The pull pipeline is the provenance source for the executor ladder:
 
 - exporter scans the merge base and coverage evidence
@@ -179,6 +188,19 @@ That mapping is the executor contract, not just an implementation note:
 - `push_recover inspect` is read-only and must precede any mutating repair.
 - `push_recover auto|finish|rollback` may mutate only when inspect plus fresh
   live hashes prove the branch safe.
+
+The production test topology is fixed to the same three site roles in both
+Docker and Playground:
+
+| Role | Meaning |
+| --- | --- |
+| `remote-base` | Source site that seeds the persisted pull base package. |
+| `local-edited` | Imported local site that carries the candidate edits. |
+| `remote-changed` | Later observation of the same remote identity after drift. |
+| `runner` | Only actor that may preflight, list hashes, dry-run, apply, inspect, or recover. |
+
+Both harnesses keep browser-visible inspection on the sandbox-provided `8080`
+ingress through a local-only proxy, and remote tunnels remain disallowed.
 
 The same mapping is what the Docker and Playground proofs must exercise:
 
