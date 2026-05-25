@@ -23,6 +23,8 @@ It may apply automatically when:
   preserved as `keep-remote`
 - a supported plugin-owned delete has a live remote precondition and unrelated
   deletes, restores, edits, or file type swaps still converge safely
+- a mutation is refused instead of guessed when the planner cannot prove the
+  live remote state, resource ownership, or file topology is safe to change
 
 It must preserve:
 
@@ -33,6 +35,8 @@ It must preserve:
 - matching independent edits, deletes, restores, and file type swaps that land
   on the same hash on both sides
 - remote-only plugin drift while a plugin-owned delete is safely preconditioned
+- matching independent deletes, edits, restores, and file type swaps even when
+  a separate mutation is rejected for a live remote conflict
 - bounded conflict evidence that explains why a resource stopped without
   leaking raw payloads
 
