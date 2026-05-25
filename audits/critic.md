@@ -1150,6 +1150,35 @@ The source notes in `docs/source-notes.md` are comparison evidence only:
   a production push executor, production auth, or current upstream behavior at
   the mutation boundary.
 
+## False Reliability Traps
+
+These are the specific scenarios that can make the design look safer than it
+is if the audit is read too loosely. Each one needs direct repo-local proof,
+not route shape, package shape, or a plausible `finalMatchesLocal` result.
+
+- A live remote drifts after dry-run, but the claim only shows the same route
+  still responds with the expected path and hash. Missing proof: the stale
+  approval was rejected before the first write and the remote stayed auditable.
+- A create path renumbers, aliases, or remaps identity after pull, but the
+  claim treats the old mapping as stable. Missing proof: the remap was either
+  proven against a fresh live snapshot or the push failed closed before any
+  mutation.
+- A plugin owns options, custom tables, generated files, cron rows, cache,
+  activation hooks, or other side effects outside the allowlist, but the
+  claim treats the planner's coverage as exhaustive. Missing proof: the
+  surface was either discovered and validated or hard-blocked before write.
+- A push leaves mixed file, DB, or plugin side effects, but the claim reports
+  success because one store finished cleanly. Missing proof: the old/new/
+  blocked classification is durable and the next retry starts from fresh live
+  evidence.
+- A manual-review artifact is still readable, but the live hashes changed and
+  the retry reused the old approval anyway. Missing proof: the artifact is
+  audit-only after drift and cannot widen scope or authorize a new target.
+- A comparison to Reprint, ZS-Sync, or ForkPress sounds current because the
+  path or package shape matches, but the upstream revision was not reverified.
+  Missing proof: the cited upstream state was rechecked at the same live
+  mutation boundary and the branch reproduced the rejection behavior there.
+
 ## Production Claim Checklist
 
 Use this checklist before any doc, PR, branch status, review comment, or
