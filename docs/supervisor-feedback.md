@@ -1,17 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:28:10 CEST
+Last updated: 2026-05-25 09:29:02 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 09:28:10 CEST
+## 2026-05-25 09:29:02 CEST
 
 - Going well: the page, log, and latest audit note still agree on the blocked snapshot.
 - Not going well: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers still lack production-backed proof.
-- Progress change: none; this pass only refreshed the visible scan surface and kept the proof links current.
+- Progress change: none; this pass tightened the lane nudges so each gap has a concrete owner and next test.
 - Next nudge: keep one owner per proof gap and require one production-backed test before any readiness claim.
-- Audit note: [audits/supervisor-note-20260525-092810.md](../audits/supervisor-note-20260525-092810.md) captures this scan pass in one screen.
+- Audit note: [audits/supervisor-note-20260525-092902.md](../audits/supervisor-note-20260525-092902.md) captures this scan pass in one screen.
 
 ## 2026-05-25 09:26:20 CEST
 
