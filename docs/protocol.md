@@ -100,7 +100,7 @@ That bridge is one-way:
 The canonical production ladder bundle is `push-protocol-extension-contract.json`:
 
 - it binds the immutable pull base package to preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery
-- it keeps apply-time revalidation separate from the dry-run receipt
+- it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary
 - it carries the one-remote, one-local, one-drift topology in both Docker and Playground
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
 

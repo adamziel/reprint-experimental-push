@@ -63,7 +63,8 @@ identity across `remote-base` and `remote-changed`:
 - `push-protocol-extension-contract.json` is the top-level production ladder
   proof. Start here when you need the full preflight, snapshot hash listing,
   dry-run, batched apply, journal inspect, and inspect-first recovery story in
-  one object.
+  one object, with dry-run and apply kept separate while apply revalidates
+  fresh live evidence before every batch and at the storage boundary.
 - `push-production-revalidation-contract.json` is the compact proof that
   keeps preflight, planning-only snapshot hashes, dry-run eligibility,
   apply-time revalidation, journal evidence, and inspect-first recovery

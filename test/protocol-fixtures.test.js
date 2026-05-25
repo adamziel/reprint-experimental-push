@@ -8,6 +8,8 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const readJson = (relativePath) =>
   JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
 const protocolReadme = fs.readFileSync(path.join(repoRoot, 'fixtures/protocol/README.md'), 'utf8');
+const protocolDocs = fs.readFileSync(path.join(repoRoot, 'docs/protocol.md'), 'utf8');
+const executorDocs = fs.readFileSync(path.join(repoRoot, 'docs/executor.md'), 'utf8');
 
 test('push protocol fixture captures the production stage order and recovery rules', () => {
   const flow = readJson('fixtures/protocol/push-flow.json');
@@ -79,6 +81,39 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   assert.ok(
     protocolReadme.includes(
       'push-production-revalidation-contract.json` is the compact proof that',
+    ),
+  );
+});
+
+test('push protocol docs keep the production ladder, pull bridge, and topology contract aligned', () => {
+  assert.ok(
+    protocolDocs.includes(
+      'push_preflight` binds the persisted pull base package to one live remote',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'Apply-time revalidation is mandatory.',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'The Docker and Playground topology contract is intentionally one remote, one',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'The canonical production proof bundle is `push-protocol-extension-contract.json`',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'The pull-to-push bridge is one-way',
     ),
   );
 });
