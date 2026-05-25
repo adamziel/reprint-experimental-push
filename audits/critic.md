@@ -203,6 +203,15 @@ Any public-facing claim that the project has production-grade push support must
 explicitly satisfy all of the following. If any item is missing, the wording
 must stay lab-backed or comparison-only.
 
+The project also still needs direct proof for these five failure classes before
+any production-grade wording is defensible:
+
+- live remote drift between dry-run and apply,
+- create-time identity remapping,
+- plugin-owned state outside the allowlist,
+- partial file, DB, or plugin side effects, and
+- stale manual-review artifacts that outlive the snapshot they reviewed.
+
 - Name the exact live write path that was exercised, not just the route shape,
   packaged-plugin mount, fixture replay, or `finalMatchesLocal`.
 - Name the stale remote-drift case that was rejected before mutation.
