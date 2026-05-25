@@ -14,7 +14,8 @@ the rejected remote inspectable for audit and retry.
 This is still the current answer to the loop focus: there is no branch-local
 command that has been run against a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` and recorded the first executor/auth/preserved-
-remote boundary.
+remote boundary. Until that boundary exists, comparison notes, route-shape
+smokes, and manual-review artifacts stay audit context only.
 
 Scenario: an operator sees a green smoke, a polished review note, or a
 production-sounding script name and assumes push support is ready. Missing
