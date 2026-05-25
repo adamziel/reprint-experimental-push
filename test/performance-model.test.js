@@ -565,6 +565,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'transport-only',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-chunk-transit-frames-and-reuse-plan-scoped-receipts-within-budgets')?.failureEvidence,
+    'compressed chunk frame plus plan-scoped receipt ledger and guarded publish record',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys')?.visibilityBoundary,
     'recovery-evidence-only',
   );
@@ -1210,6 +1214,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').rejectedGate, 'recovery');
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').violates.includes('durable-progress'));
   assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-chunk-send-backpressure').rejectedGate,
     'recovery',

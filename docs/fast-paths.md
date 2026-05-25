@@ -1102,6 +1102,9 @@ The model exposes three contract lists that tests should keep current:
   canonical hashes with transport encoding, or lose durable progress evidence.
   Each rejection names the broken gate so precondition bypasses and atomic group
   splits stay visible in benchmark review.
+- Safe chunk-upload speedups can compress transit frames and reuse plan-scoped
+  receipts, but only when the receipts remain durable and the final publish
+  still performs the live compare.
 - The workload list includes a large upload, a dependency-heavy plugin install,
   and a dependency-heavy plugin update so the model covers both first-time
   installs and subsequent coupled changes. Those workloads must expose chunk
@@ -1139,6 +1142,9 @@ Rejected fast paths stay rejected even when they look fast on paper:
   receipts exist or the remote index was compressed.
 - Unbounded database parallelism cannot skip atomic group barriers just because
   the plugin update planner already has a dependency graph.
+- A compressed remote index plus cached chunk receipts cannot skip large-upload
+  backpressure, because the receipts do not prove the queue stayed bounded or
+  that durable acknowledgements survived a pause or crash.
 - Backpressure cannot drop receipts or summarize evidence so recovery loses the
   ability to classify the remote state.
 - A drained queue cannot prove that the remote acknowledged every staged chunk

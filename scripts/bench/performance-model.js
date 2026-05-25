@@ -247,6 +247,27 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'chunk-upload',
+    reduces: ['idle-time', 'planning-round-trips', 'duplicate-body-transfer'],
+    allowedShortcut: 'compress-chunk-transit-frames-and-reuse-plan-scoped-receipts-within-budgets',
+    guardrails: [
+      'chunk-body-encoding-is-transport-only',
+      'chunk-receipts-stay-plan-scoped-and-durable',
+      'parallelism-stays-within-byte-and-journal-budgets',
+    ],
+    gateProofs: {
+      skip: 'compressed chunk frames and plan-scoped receipts can reduce resend work and planning churn without skipping any acknowledged chunk',
+      live: 'the final file publish still compares the live remote resource hash against the expected file precondition',
+      group: 'compression and receipt reuse stay inside the same file boundary and never widen the atomic-group barrier',
+      recovery: 'compressed frames remain transport state while durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'transport-only',
+    failureEvidence: 'compressed chunk frame plus plan-scoped receipt ledger and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'database-row-batching',
     reduces: ['round-trips', 'statement-setup-cost'],
     allowedShortcut: 'reuse-statement-shapes-for-bounded-primary-key-batches',
@@ -2076,6 +2097,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and cached receipts can trim replay work, but they cannot prove the sender still has the live per-chunk compare, bounded queue order, and durable acknowledgement needed to classify a partial failure',
     rejectedGate: 'live',
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure',
+    proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip backpressure for a large upload',
+    rejectedBecause: 'planning evidence and cached chunk receipts can reduce lookup work, but they cannot prove the queue stayed bounded or that the durable receipts survived a pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'backpressure', 'durable-progress'],
   },
   {
     id: 'compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-publish',
