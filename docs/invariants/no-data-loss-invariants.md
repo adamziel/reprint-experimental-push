@@ -7,6 +7,8 @@ This note summarizes the planner's no-overwrite contract.
 - Local changes when the live remote resource still matches the pull base.
 - Matching independent edits, including creates, updates, deletes, and file
   type swaps that end on the same hash.
+- Every automatic mutation must still carry a live remote precondition bound to
+  the mutation id, resource key, and the hash observed during planning.
 - A live-preconditioned mutation may share a plan with matching independent
   resources as long as each emitted mutation keeps its own live remote
   precondition.
@@ -20,6 +22,8 @@ This note summarizes the planner's no-overwrite contract.
 
 - Any remote-only change the local side does not touch.
 - Remote descendants that would be hidden by a local delete or file type swap.
+- Bounded conflict and blocker evidence: enough to audit the stop reason,
+  never raw file bodies, row contents, plugin payloads, or other secret values.
 - A local file type swap that would hide a live remote descendant must stop
   as a `file-topology-conflict`, even when unrelated remote-only plugin drift
   is present.
@@ -48,5 +52,7 @@ This note summarizes the planner's no-overwrite contract.
 - Local delete or file type swap when it would hide a live remote descendant.
 - Plugin-owned or plugin-context mutations when the required live remote plugin
   context drifted and the local side did not independently match it.
+- Unsupported plugin-owned resources when the planner cannot establish a
+  matching driver policy or ownership proof for the live resource.
 - Any mutation that lacks a live remote precondition bound to the mutation id,
   resource key, and remote hash observed during planning.
