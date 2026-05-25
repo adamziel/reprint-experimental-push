@@ -6455,9 +6455,15 @@ test('durable no-data-loss recovery keeps the accepted failure states and comple
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(replay.site.files['index.php'], completed.site.files['index.php']);
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, completed.site.db.wp_posts['ID:2'].post_title);
   assert.equal(
     persisted.records.filter((record) => record.type === 'journal-replayed').length,
     1,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
   );
 });
 
