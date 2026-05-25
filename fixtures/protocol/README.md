@@ -91,6 +91,12 @@ For the canonical production ladder and topology handoff, cite:
 7. `push-production-journal-lease-recovery-inspect-contract.json`
 8. `push-production-executor-flow-contract.json`
 
+When you need the exact one-remote, one-local topology proof, start with:
+
+1. `push-production-topology-contract.json`
+2. `push-production-route-matrix-contract.json`
+3. `push-production-executor-flow-contract.json`
+
 The seven protocol surfaces are the ones the executor must treat as distinct
 remote boundaries:
 
@@ -101,6 +107,14 @@ remote boundaries:
 - journal inspect
 - recovery inspect
 - recovery mutate
+
+The `journal` and `recovery-inspect` stages are intentionally separate:
+
+- `push_journal` records durable evidence without authorizing mutation.
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair.
+- `push_recover auto|finish|rollback` may mutate only after inspect proves
+  the branch safe and the auth floor still holds.
 
 The runtime sequence is fixed and non-overlapping:
 

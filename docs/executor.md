@@ -57,6 +57,13 @@ boundary:
 8. `recovery-inspect` must happen before any mutating repair
 9. `recovery-mutate` uses the same HMAC floor as apply and must not bypass inspect
 
+The remote liveness contract stays strict:
+
+- dry-run and apply are separate remote operations
+- apply revalidates the live remote before every batch and again at the storage boundary
+- journal inspect is read-only and never authorizes mutation
+- recovery inspect is read-only and must happen before any mutating repair
+
 ## Canonical Executor Contract
 
 The executor should treat the production push extension as a fixed ladder:
@@ -106,6 +113,23 @@ The shared route matrix is the same in Docker and Playground:
 - `journal` maps to read-only durability evidence.
 - `recovery-inspect` maps to read-only classification of finish, rollback, retry, or block.
 - `recovery-mutate` maps to the mutating recovery branch that still respects inspect and the HMAC floor.
+
+The executor test topology is intentionally one remote source and one local
+edit site with a later drift witness of the same remote identity:
+
+| Role | Identity | Purpose |
+| --- | --- | --- |
+| Remote source | `remote-base` | Seeds the persisted pull base package. |
+| Local edit site | `local-edited` | Carries the imported local edits. |
+| Drift witness | `remote-changed` | Reuses the same remote identity after drift. |
+| Runner | `runner` | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
+
+Docker and Playground use the same logical topology and the same route names:
+
+- Docker uses one private network.
+- Playground uses separate disposable blueprints.
+- Browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy.
+- Remote tunnels are disallowed.
 
 The executor maps those stages to the pull pipeline directly:
 

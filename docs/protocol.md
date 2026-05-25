@@ -161,6 +161,27 @@ The same extension is exercised in one fixed topology:
   through a local-only proxy
 - remote tunnels are disallowed
 
+The execution proof is intentionally split between three distinct remote
+boundaries:
+
+- `push_preflight` binds the persisted pull base package to one live remote
+  identity and one short-lived push session.
+- `push_snapshot_hashes` lists remote hashes for planning only and never
+  gains write authority.
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock.
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary.
+- `push_journal` records durable evidence without authorizing mutation.
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair.
+- `push_recover auto|finish|rollback` may mutate only after inspect proves the
+  branch safe and the auth floor still holds.
+
+That split keeps remote liveness strict: dry-run and apply are separate remote
+operations, and apply must revalidate the live remote before every batch and
+again at the storage boundary.
+
 ## Production Summary
 
 The production contract is the same in Docker and Playground:
