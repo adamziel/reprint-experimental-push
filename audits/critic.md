@@ -56,6 +56,29 @@ plugin-owned surface handling on this branch. A note only counts as current
 proof if the exact upstream state is named and the same live boundary was
 rerun here with fresh preserved-remote and retry evidence.
 
+Production-grade comparison gate:
+
+- Reprint `27c5f25` only proves staged pull delivery, resumable transport, and
+  protocol framing in the observed upstream commit. It does not prove a live
+  push boundary, stale remote-drift rejection, preserved-remote auditability,
+  create-time identity remapping, or late-discovered plugin-owned surface
+  handling on this branch.
+- ZS-Sync `d9334a0` only proves bounded scanning, cursoring, and resource
+  discovery in the observed upstream commit. It does not prove source-side
+  mutation safety, live-drift handling, partial-write recovery, create-time
+  remap safety, or plugin-owned surface enumeration on this branch.
+- ForkPress `55f9879` only proves merge-audit vocabulary, reviewed-resolution
+  framing, and crash-consistency intent in the observed upstream worktree. It
+  does not prove that a manual-review artifact stays audit-only after drift,
+  cannot become retry authority for a different row/file/relationship-bearing
+  record/remapped create target/plugin-owned surface, or preserve the remote
+  while rebuilding retry scope from live hashes on this branch.
+- Before any production-grade push wording, the branch must show the exact live
+  boundary rerun here, the preserved remote after reject, the stale rejection
+  point, and the fresh retry scope rebuilt from live hashes; if any one of
+  those proof points is missing, the upstream comparison is historical context
+  only.
+
 Must change before any production-grade push claim:
 
 - prove the live mutation boundary rejects stale authority before the first
