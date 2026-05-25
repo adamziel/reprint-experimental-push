@@ -432,6 +432,13 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-backpressure-after-pause')?.violates.includes('backpressure'),
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-publish-after-pause-and-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-publish-after-pause-and-backpressure')?.violates.includes('atomic-file-publish'),
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause')?.violates.includes('durable-progress'),
   );
@@ -1036,6 +1043,7 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
   const workloadKinds = fixture.fixture.workloads.map((workload) => workload.kind);
   const rejectedAreas = new Set(fixture.rejectedFastPaths.map((fastPath) => fastPath.violates).flat());
 
+  assert.equal(fixture.fixture.purpose, 'large-upload-and-plugin-apply-safety-evidence');
   assert.deepEqual(workloadKinds.sort(), ['large-upload', 'plugin-install', 'plugin-update', 'release-bundle']);
   assert.ok(fixture.fixture.totals.uploadBytes >= 1024 * MIB);
   assert.ok(fixture.fixture.totals.dbRows >= 10_000);
