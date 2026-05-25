@@ -497,6 +497,28 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-barrier')?.violates.includes('parallelism-limits'),
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-recovery')?.rejectedGate,
+    'group',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-recovery')?.violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-recovery')?.violates.includes('compression'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-recovery')?.violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-recovery')?.violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-recovery')?.violates.includes('backpressure'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-recovery')?.violates.includes('durable-progress'),
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause')?.violates.includes('remote-index-planning-only'),
   );
