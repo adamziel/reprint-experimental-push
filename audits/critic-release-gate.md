@@ -19,6 +19,13 @@ Do not use production wording unless the branch has all of the following for the
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified old, new, or blocked before retry starts, so mixed file/DB/plugin side effects cannot be relabeled as success; and
 - any later-discovered plugin-owned surface or remapped create target is a new live boundary unless it was already enumerated before write and separately preserved, rejected, and retried.
 
+Evidence classes:
+
+- compatibility evidence includes route shape, package-mount shape, fixture replay, `finalMatchesLocal`, and production-sounding script names; none of those prove live retry authority by themselves;
+- historical context includes Reprint, ZS-Sync, and ForkPress notes unless the branch reran the same live boundary here and preserved the rejected remote for audit;
+- live retry proof requires the actual real-site command, the exact rejection point before the first write, preserved-remote auditability after rejection, and old/new/blocked classification for every touched surface before retry starts; and
+- if a claim cannot name its evidence class, it must fail closed instead of borrowing authority from a smoke, review artifact, or source note.
+
 - the exact stale-drift case is named;
 - the remote that drifted is preserved and still inspectable after rejection, and that preserved remote stays audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
