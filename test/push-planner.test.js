@@ -12015,3 +12015,51 @@ test('durable mid-apply failures stay blocked with recovery artifacts and never 
     true,
   );
 });
+
+test('persisted partial-commit recovery remains blocked on inspection and does not collapse into old-remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.details.recovery.status, 'blocked-recovery');
+
+  const persisted = readRecoveryJournal(journalPath);
+  const inspection = inspectRecoveryJournal({
+    journal: persisted,
+    plan,
+    current: remote,
+  });
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.ok(inspection.journal);
+  assert.ok(inspection.claim);
+  assert.equal(
+    inspection.targets.some((target) => target.state === 'old'),
+    true,
+  );
+  assert.equal(
+    inspection.targets.some((target) => target.state === 'new'),
+    true,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    true,
+  );
+});
