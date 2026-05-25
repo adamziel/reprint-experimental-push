@@ -1,17 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:46:09 CEST
+Last updated: 2026-05-25 09:46:48 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 09:46:09 CEST
+## 2026-05-25 09:46:48 CEST
 
-- Going well: the blocked snapshot still reads cleanly and the checked gate remains explicit.
-- Not going well: no real live URL/topology proof landed, so the release state is unchanged.
-- Progress change: none; this is a supervisor decision update, not a release-state change.
+- Going well: the newest decision stays compact and the checked gate remains explicit.
+- Not going well: the real live URL/topology proof is still missing, so the release state is unchanged.
+- Progress change: the evidence pointer moved to a newer audit note, but there is still no release-state change.
 - Next nudge: integration owns the next real-site release command; reliable-executor is drifting if it keeps the gate as a stub, and the status can move only when a retained real-endpoint run closes the live-source proof gap.
-- Note: [progress.html](../progress.html) and [docs/progress-log.md](progress-log.md) stay unchanged until there is new evidence; this lane-local page updates on GitHub Pages only after merge to `main`.
+- Note: [progress.html](../progress.html) and [docs/progress-log.md](progress-log.md) stay lane-local until merge to `main`; the deployed copy updates only after that merge.
 
 ## 2026-05-25 09:43:49 CEST
 
