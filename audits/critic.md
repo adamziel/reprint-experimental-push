@@ -3520,8 +3520,9 @@ Production release gate checklist:
   live boundary; otherwise it is historical context only and cannot become
   retry authority.
 - Any source-note comparison that only matches route shape, package layout,
-  or `finalMatchesLocal` is still compatibility evidence only until it names
-  the exact live mutation boundary and the preserved remote after reject.
+  or `finalMatchesLocal` is still compatibility evidence only until this
+  branch reruns the exact live mutation boundary, records the preserved
+  remote after reject, and shows the same drift case on this worktree.
 - Any claim that relies on route shape, packaged-plugin mount, fixture
   replay, or `finalMatchesLocal` must say explicitly that those are
   compatibility checks, not production proof.
