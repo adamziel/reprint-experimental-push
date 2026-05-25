@@ -7402,3 +7402,74 @@ test('durable pre-commit failures keep boundary-specific journal evidence and co
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
 });
+
+test('durable recovery accepts only old remote, fully updated remote, or blocked recovery with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const failureScenarios = [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote'],
+    ['after staging', { failAfterStaging: true }, 'old-remote'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote'],
+  ];
+
+  for (const [label, options, expectedStatus] of failureScenarios) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        ...options,
+        durableJournal,
+      }),
+    );
+    durableJournal.close();
+
+    assert.ok(error instanceof PushPlanError, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, expectedStatus);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(remote.files['index.php'], base.files['index.php'], label);
+    assert.equal(remote.db.wp_posts['ID:2'], undefined, label);
+  }
+
+  const blockedJournalPath = tempRecoveryJournalPath();
+  const blockedDurableJournal = openRecoveryJournal(blockedJournalPath, { truncate: true, now: fixedNow });
+  const blockedRemote = baseSite();
+  const blockedError = captureError(() =>
+    applyPlan(blockedRemote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+      durableJournal: blockedDurableJournal,
+    }),
+  );
+  blockedDurableJournal.close();
+
+  assert.ok(blockedError instanceof PushPlanError);
+  assertAcceptableRecoveryState(blockedError.details.recovery);
+  assertRecoveryStateArtifacts(blockedError.details.recovery, 'blocked-recovery');
+  assert.ok(blockedError.details.recovery.artifacts.remote);
+  assert.equal(blockedError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(blockedError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: completedDurableJournal,
+  });
+  completedDurableJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+});
