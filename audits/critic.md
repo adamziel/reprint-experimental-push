@@ -6390,6 +6390,11 @@ Release-gate wording also needs to stay explicit about what is not proof:
   inspectable after rejection, the stale artifact was rejected before the
   first write, the fresh retry scope was rebuilt from live hashes, and every
   touched surface was classified old, new, or blocked.
+- a later-discovered plugin-owned surface or remapped create target does not
+  inherit retry authority just because it lives in the same route family,
+  package mount, or reviewer note as the earlier boundary; the earlier
+  artifact stays audit-only until the later boundary separately preserves the
+  remote, rejects stale authority, and rebuilds retry scope from live hashes.
 
 Comparison release gate:
 
