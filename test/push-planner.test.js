@@ -12218,6 +12218,70 @@ test('blocks a file type swap that would hide a live remote descendant while pre
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
 
+test('rejects a forged ready plugin-owned delete when the live remote precondition is stripped at the release boundary', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.meta = pluginOwnedResourcePolicy(
+    {
+      ...allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      allowDelete: true,
+    },
+  );
+  base.plugins.forms.description = 'shared forms drift';
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* shared forms drift */';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+
+  const local = baseSite();
+  local.meta = pluginOwnedResourcePolicy(
+    {
+      ...allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      allowDelete: true,
+    },
+  );
+  local.plugins.forms.description = 'shared forms drift';
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* shared forms drift */';
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+
+  const remote = baseSite();
+  remote.meta = pluginOwnedResourcePolicy(
+    {
+      ...allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      allowDelete: true,
+    },
+  );
+  remote.plugins.forms.description = 'shared forms drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* shared forms drift */';
+  remote.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+  remote.plugins.seo = { version: '1.0.0', active: true };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin drift */';
+
+  const ready = planFor(base, local, remote);
+  const deleteMutationId = mutationFor(ready, resourceKey).id;
+  const forged = tamperReadyPlan(ready, (plan) => {
+    plan.preconditions = plan.preconditions.filter((entry) => entry.mutationId !== deleteMutationId);
+  });
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(remote.plugins.forms.description, 'shared forms drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* shared forms drift */');
+  assert.equal(remote.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks a file type swap that would hide a live remote descendant while preserving matching independent delete, edit, and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = 'base gallery file';
