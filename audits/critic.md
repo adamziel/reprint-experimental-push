@@ -3484,22 +3484,28 @@ Source-note proof boundary, restated:
 Conservative comparison matrix:
 
 - Reprint `27c5f25` proves resumable pull flow, protocol framing, and bounded
-  exporter shape. It does not prove this branch's live push executor, stale
-  rejection before mutation, preserved-remote auditability, or late
-  plugin-owned surface handling. Missing repo proof: a branch-local rerun of
-  the same stale-remote mutation boundary with the preserved remote recorded
-  after reject.
+  exporter shape.
+  - It does not prove this branch's live push executor, stale rejection before
+    mutation, preserved-remote auditability, or late plugin-owned surface
+    handling.
+  - Missing repo proof: a branch-local rerun of the same stale-remote mutation
+    boundary with the preserved remote recorded after reject and the stale
+    approval made unusable for retry.
 - ZS-Sync `d9334a0` proves continuous scanning, cursoring, and bounded
-  resource selection. It does not prove source-side mutation safety, create-
-  time identity remapping, or plugin-owned surface coverage on this branch.
-  Missing repo proof: a same-boundary live write rerun that shows the remote
-  was preserved and the stale attempt was rejected before mutation.
+  resource selection.
+  - It does not prove source-side mutation safety, create-time identity
+    remapping, or plugin-owned surface coverage on this branch.
+  - Missing repo proof: a same-boundary live write rerun that shows the remote
+    was preserved, the stale attempt was rejected before mutation, and the
+    retry scope was rebuilt from fresh live hashes.
 - ForkPress `55f9879` proves merge auditability, reviewed resolution, plugin-
-  validator boundaries, and crash-consistency goals. It does not prove this
-  branch's live write path preserved the remote, blocked late-discovered
-  plugin-owned state, or separated audit-only artifacts from retry authority.
-  Missing repo proof: the same drifted-remote case rerun here with fresh live
-  hashes, explicit late-surface classification, and a fresh retry scope.
+  validator boundaries, and crash-consistency goals.
+  - It does not prove this branch's live write path preserved the remote,
+    blocked late-discovered plugin-owned state, or separated audit-only
+    artifacts from retry authority.
+  - Missing repo proof: the same drifted-remote case rerun here with fresh live
+    hashes, explicit late-surface classification, and a fresh retry scope that
+    cannot inherit the stale note.
 
 Production release gate checklist:
 
@@ -3526,6 +3532,10 @@ Production release gate checklist:
   write touches a late-discovered plugin-owned surface; if the proof does not
   show that surface was blocked or durably classified before retry, then the
   earlier artifact cannot authorize the new boundary.
+- Any source-note comparison that reuses a readable review artifact for a
+  later write must keep the stale note audit-only unless the branch shows the
+  exact live boundary, preserved remote, rejection point, and fresh retry
+  scope for that later surface on this worktree.
 - Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
   revision or worktree state and show branch-local revalidation of the same
   live boundary; otherwise it is historical context only and cannot become
