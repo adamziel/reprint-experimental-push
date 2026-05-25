@@ -13,7 +13,8 @@ the live boundary.
 The older critique that no `verify:release` command exists is retired; the
 remaining issue is that the command still does not prove preserved-remote
 safety, apply-time revalidation, or production auth/session lifecycle on a
-real-site boundary.
+real-site boundary. A wrapper, comparison note, or polished smoke name never
+replaces that proof.
 
 ## 2026-05-25 Current Verdict
 
@@ -198,6 +199,13 @@ Before the project can claim production-grade push support, it still needs:
   owned surface or remapped create target; and
 - production auth/session lifecycle proof on the same live boundary, not just
   route-shape or wrapper-shape evidence.
+
+Production wording is still blocked if the evidence only shows route shape,
+wrapper shape, source-note comparison, or manual-review phrasing. The missing
+proof must be the same live boundary rerun, with exact executor identity,
+auth/session capture, dry-run receipt, apply-time revalidation, journal/
+recovery inspect, preserved-remote drift, and per-surface conflict policy on
+the actual remote.
 
 Use [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md)
 as the exact checklist for any future production wording. If a claim cannot
