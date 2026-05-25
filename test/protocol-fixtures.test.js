@@ -4511,3 +4511,29 @@ test('push fixture index keeps the production proof bundle grouped around the ne
   assert.ok(readme.includes('pull/export/import pipeline maps to the push ladder in the same order the executor runs it'));
   assert.ok(readme.includes('pull-to-push bridge proofs'));
 });
+
+test('verify:release stays pinned to the checked release entrypoint and exact live-source gate', () => {
+  const proof = spawnSync('npm', ['run', 'verify:release'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+    },
+    encoding: 'utf8',
+    shell: false,
+  });
+
+  assert.equal(proof.status, 0);
+  assert.match(proof.stdout, /"ok": true/);
+  assert.match(proof.stdout, /"releaseProof": \{/);
+  assert.match(proof.stdout, /"dryRun": \{/);
+  assert.match(proof.stdout, /"apply": \{/);
+  assert.match(proof.stdout, /"recoveryInspect": \{/);
+  assert.match(proof.stdout, /"dbJournal": \{/);
+  assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
+});
