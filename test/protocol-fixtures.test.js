@@ -401,6 +401,11 @@ test('push production contracts pin the ladder, pull bridge, and one-remote-one-
   );
 
   assert.equal(extensionContract.contract_id, 'push-protocol-extension-production-contract');
+  assert.ok(
+    extensionContract.purpose.includes(
+      'preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery',
+    ),
+  );
   assert.equal(
     extensionContract.production_boundary.remote_snapshot_hash_listing,
     'planning evidence only and never write authority',
@@ -418,12 +423,36 @@ test('push production contracts pin the ladder, pull bridge, and one-remote-one-
     'binds the persisted pull base package to one live remote identity and one short-lived push session',
   );
   assert.equal(
+    extensionContract.pull_to_push_mapping.push_snapshot_hashes,
+    'performs the remote snapshot hash listing for planning only and never becomes write authority',
+  );
+  assert.equal(
+    extensionContract.pull_to_push_mapping.push_plan_dry_run,
+    'uploads the canonical dry-run plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    extensionContract.pull_to_push_mapping.push_journal,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    extensionContract.pull_to_push_mapping['push_recover inspect'],
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(
     extensionContract.topology.remote_base,
     'remote-base',
   );
   assert.equal(extensionContract.topology.local_edited, 'local-edited');
   assert.equal(extensionContract.topology.remote_changed, 'remote-changed');
   assert.equal(extensionContract.topology.runner, 'runner');
+  assert.equal(extensionContract.topology.networking.ingress_port, 8080);
+  assert.equal(extensionContract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(extensionContract.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    extensionContract.topology.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
   assert.ok(
     extensionContract.required_invariants.includes(
       'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
@@ -501,6 +530,11 @@ test('push production contracts pin the ladder, pull bridge, and one-remote-one-
   assert.ok(
     productionTopologyContract.topology.playground.proof.includes(
       'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.ok(
+    productionTopologyContract.required_invariants.includes(
+      'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
     ),
   );
   assert.ok(
