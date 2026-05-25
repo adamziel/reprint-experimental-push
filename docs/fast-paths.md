@@ -113,6 +113,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed upload queue still cannot skip missing chunk receipts during a large-upload resume, because queue compression cannot prove which acknowledgements survived a crash or restore the guarded publish boundary.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove chunk resume is complete, because compressed pressure relief does not replace missing chunk acknowledgements.
 - Compressed chunk receipts plus a cached file hash still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
+- A compressed manifest hash plus cached chunk receipts still cannot skip the guarded publish step for a large upload, because manifest compression and cached receipts cannot prove the live compare or guarded publish barrier survived failure.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove a dependency-heavy plugin update finished, because dependency checks, row receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a cached file digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
 - A fresh remote index plus a compressed manifest hash still cannot prove a large upload finished, because the live compare, every chunk receipt, and the guarded publish record still need to survive failure.
