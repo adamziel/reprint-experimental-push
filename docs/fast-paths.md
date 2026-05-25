@@ -524,6 +524,10 @@ under load:
   evidence and compressed receipts can reduce recovery work, but they still
   cannot prove the live compare, guarded publish, or every chunk acknowledgement
   survived failure.
+- remote-index plus paused-queue cached file hash is rejected because planning
+  evidence, backpressure, and cached hashes can reduce recovery work, but they
+  still cannot prove the live compare, chunk acknowledgements, or guarded
+  publish barrier survived failure.
 - compressed file-hash cache is rejected because hash compression can shrink
   recovery state, but it still cannot prove which chunk acknowledgements
   survived a crash or restore the guarded publish barrier.
