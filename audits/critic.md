@@ -388,6 +388,12 @@ Claims that must still be rejected as false reliability:
   stale manual-review output; the missing proof is that the artifact stayed
   audit-only, could not authorize retry, and could not widen into another
   row, file, relationship-bearing record, or plugin-owned surface.
+- "The late plugin surface was handled" when the proof only shows the first
+  write succeeded and a later surface was noticed afterward. The missing
+  proof is that the preserved remote stayed auditable, the late surface was
+  hard-blocked or durably classified before any retry, and the retry scope was
+  rebuilt from fresh live hashes rather than inheriting the stale review
+  artifact.
 - "The plugin surface was covered" when only one row or one plugin sample was
   checked; the missing proof is a complete live inventory of plugin-owned
   surfaces or a hard block for unknown surfaces, including late-discovered
@@ -3070,7 +3076,8 @@ False reliability claims to avoid:
   stale review note is not retry authority for any late-discovered
   plugin-owned surface, including a cache entry, cron row, runtime registry,
   generated file, custom table, or other hidden side effect that was not
-  classified on the first pass.
+  classified on the first pass, and it is not a production-safe success
+  label unless the remote remained auditable after reject.
 - "Manual resolution later" is also not a safe label when the proof only
   shows the stale note could still be opened, copied, or matched against a
   route-shaped replay. The missing proof is the live reject-before-write
