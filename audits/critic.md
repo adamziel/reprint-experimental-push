@@ -46,15 +46,17 @@ evidence that can be rerun and audited from this branch.
 
 This worktree still has no branch-local named real-site release command that
 can be rerun unchanged on the same live boundary with preserved-remote
-retention and fresh live-hash revalidation. Until that exact boundary
-exists here, production-grade push wording is false reliability, even if the
-supervised lane has stronger retained-source evidence and an explicit boundary
-verdict.
+retention and fresh live-hash revalidation. That is a branch-local gap, not a
+project-wide absence: the supervised lane already has `verify:release` and
+retained-source evidence, but this checkout does not yet expose the same
+rerunnable live boundary. Until that exact boundary exists here,
+production-grade push wording is false reliability, even if the supervised
+lane has stronger retained-source evidence and an explicit boundary verdict.
 
 The next acceptable proof must be one rerunnable live command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
 
-- the exact command string;
+- the exact command string on this worktree;
 - executor identity and live auth/session boundary before the first write;
 - preserved remote still inspectable after rejection;
 - exact rejection point before the first write;
