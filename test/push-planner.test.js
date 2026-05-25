@@ -18411,6 +18411,47 @@ test('acceptable recovery states are limited to old remote, fully updated remote
   );
 });
 
+test('blocked recovery must keep both journal and remote artifacts while non-blocked states stay artifact-bounded', () => {
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: { status: 'completed' },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        remote: baseSite(),
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: { status: 'completed' },
+        remote: baseSite(),
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'fully-updated-remote',
+      artifacts: {
+        journal: { status: 'completed' },
+        remote: baseSite(),
+      },
+    }),
+    false,
+  );
+});
+
 test('failure before mutation keeps the old remote and leaves inspectable journal artifacts', () => {
   const base = baseSite();
   const local = baseSite();
