@@ -359,6 +359,11 @@ has a concrete failure scenario:
   and cannot authorize that later boundary unless this branch separately
   preserved the remote, rejected the stale authority, and rebuilt retry scope
   from fresh live hashes on that new surface;
+- a readable comparison note or review artifact must not be reused as retry
+  authority for a later plugin-owned surface that appears after the first
+  write; the later hidden table, file, registry entry, generated asset,
+  cache entry, or serialized blob is a new boundary and needs its own
+  preserved remote, rejection point, and fresh retry scope on this branch;
 - a later-discovered plugin-owned surface must not be treated as a harmless
   continuation of the same success path after the first write; if it appears
   after the first mutation, the branch needs a separate rejection or
@@ -398,6 +403,11 @@ Two comparison traps still need to be called out explicitly:
   remains historical context even when the feature family matches. If the note
   also omits the preserved remote, the stale rejection point, or the fresh
   retry scope on this branch, it cannot be promoted into current proof.
+- A readable source-note comparison does not become retry authority for a
+  later plugin-owned surface just because it names the right upstream family;
+  if that later surface was discovered only after the first write, the branch
+  must record a separate preserved remote, rejection point, and fresh retry
+  scope for that new boundary.
 
 Before this branch can claim production-grade push support, the design must
 also prove all of the following on the live mutation boundary:
