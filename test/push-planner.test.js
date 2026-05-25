@@ -4067,3 +4067,29 @@ test('durable no-data-loss recovery keeps pre-mutation failures old and complete
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
+
+test('acceptable recovery outcomes are old remote, fully updated remote, or blocked with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const oldRemoteError = captureError(() =>
+    applyPlan(baseSite(), plan, { failAfterStaging: true }),
+  );
+  assertAcceptableRecoveryState(oldRemoteError.details.recovery);
+  assertRecoveryStateArtifacts(oldRemoteError.details.recovery, 'old-remote');
+
+  const completed = applyPlan(baseSite(), plan);
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const blockedError = captureError(() => applyPlan(driftedRemote, plan, { journal: completed.journal }));
+  assertAcceptableRecoveryState(blockedError.details.recovery);
+  assert.equal(blockedError.details.recovery.status, 'blocked-recovery');
+  assert.ok(blockedError.details.recovery.artifacts.journal);
+  assert.ok(blockedError.details.recovery.artifacts.remote);
+});
