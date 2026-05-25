@@ -66,6 +66,16 @@ test('push protocol fixture readme keeps the production ladder and topology brid
       'browser-visible inspection stays on the sandbox-provided `8080` ingress',
     ),
   );
+  assert.ok(
+    protocolReadme.includes(
+      'push-protocol-extension-contract.json` is the top-level production ladder',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
+      'push-remote-liveness-topology-contract.json` is the smallest topology plus',
+    ),
+  );
 });
 
 test('push remote liveness topology fixture keeps planning, apply, and recovery separate', () => {

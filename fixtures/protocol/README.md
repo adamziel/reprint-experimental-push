@@ -54,6 +54,7 @@ The normal sequence is:
 46. `push-production-push-recovery-contract.json`
 47. `push-production-recovery-inspect-contract.json`
 48. `push-production-recovery-drift-contract.json`
+49. `push-protocol-extension-contract.json`
 
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
@@ -72,6 +73,10 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-recovery-inspect-contract.json` is the compact proof that
   recovery inspect stays read-only while the journal row, lease fence, auth
   floor, and `8080` topology still match the write path.
+- `push-protocol-extension-contract.json` is the top-level production ladder
+  proof that explicitly pins preflight, remote snapshot hash listing,
+  dry-run plan upload, batched apply, journal inspect, and inspect-first
+  recovery to the same immutable pull provenance.
 - `push-production-recovery-drift-contract.json` is the compact proof that
   recovery inspect stays read-only after live drift while the persisted pull
   base, journal row, auth floor, and one-remote, one-local topology still
@@ -101,6 +106,10 @@ identity across `remote-base` and `remote-changed`:
 - `push-deployment-topology-contract.json` is the smallest Docker and
   Playground topology-only proof, with the sandbox-provided `8080` ingress
   rule and the local-only proxy policy spelled out.
+- `push-remote-liveness-topology-contract.json` is the smallest topology plus
+  liveness proof that keeps dry-run and apply separate while apply
+  revalidates fresh live evidence before every batch and at the storage
+  boundary.
 - `push-production-push-recovery-contract.json` is the canonical
   end-to-end production bundle for the pull provenance, push ladder, and
   one-remote, one-local topology story, including the same remote identity

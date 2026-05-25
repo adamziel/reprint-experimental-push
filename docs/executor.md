@@ -87,6 +87,8 @@ In runbook form, the executor keeps the same order and boundary discipline:
 - dry-run uploads the canonical plan and returns a receipt, not a lock
 - apply is a separate remote call that revalidates fresh live evidence before
   every batch and again at the storage boundary
+- apply-time revalidation is the boundary that keeps the dry-run receipt from
+  becoming remote write authority
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when the journal plus fresh
   live hashes prove the branch safe

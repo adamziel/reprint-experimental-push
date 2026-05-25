@@ -55,8 +55,8 @@ For the harness shape, keep the topology pair together:
 
 - `push-deployment-topology-contract.json` is the smallest topology-only proof
   for one remote source site, one imported local edited site, and one later
-  drift observation of the same remote identity, with the sandbox-only ingress
-  policy spelled out
+  drift observation of the same remote identity, with the sandbox-only
+  `8080` ingress policy spelled out
 - `push-remote-liveness-topology-contract.json` adds the dry-run/apply
   liveness split to the same one-remote, one-local, one-drift harness
 
@@ -96,8 +96,8 @@ The machine-readable bridge is split across the fixtures:
   one later drift observation of that same remote identity, and the
   sandbox-provided `8080` ingress rule.
 - `push-remote-liveness-topology-contract.json` also proves that dry-run and
-  apply are separate remote calls and that apply revalidates live evidence
-  before every batch and at the storage boundary.
+  apply are separate remote calls and that apply revalidates fresh live
+  evidence before every batch and at the storage boundary.
 
 The compact production proof stack is:
 
@@ -107,8 +107,8 @@ The compact production proof stack is:
   Playground topology contract with the `8080` ingress rule
 - `push-remote-liveness-topology-contract.json` for the liveness split that
   keeps dry-run and apply separate while apply revalidates fresh live hashes
-- `push-protocol-extension-contract.json` for the full production ladder
-  from preflight through inspect-first recovery
+- `push-protocol-extension-contract.json` for the full production ladder from
+  preflight through inspect-first recovery
 
 The pull-to-push bridge is one-way:
 
@@ -143,7 +143,8 @@ The topology model is deliberately minimal:
 Each stage has one job and one boundary:
 
 - `push_preflight` proves the imported provenance and the current remote
-  target are the same logical site before planning begins.
+  target are the same logical site before planning begins. It is the first
+  live binding after importer persistence.
 - `push_snapshot_hashes` reads the live remote comparison surface for
   planning only. It may page through large sites, but it never becomes write
   authority, never extends the session on its own, and never authorizes dry-
