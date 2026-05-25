@@ -23,6 +23,7 @@ The missing proof is structural:
 4. no test here measures live-path throughput or converts the current `not-claimed` speed stance into an enforced release decision
 5. no test here can be treated as release proof unless it runs through the same live-source boundary that the objective names, which means the current passing suite still leaves no-data-loss, reliability, and speed as unproven claims
 6. no current test or smoke converts `productionThroughput: 'not-claimed'` into an enforced release verdict; that missing verdict is itself part of the blocker, not an incidental omission
+7. the repo may now have helper coverage for production-shaped routes and authenticated flows, but helper coverage does not prove the production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, or preserved-remote drift at apply time
 
 ## Practical Conclusion
 
