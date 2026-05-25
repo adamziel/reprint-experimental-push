@@ -41,19 +41,31 @@ or comparison-only.
 - The claim shows live remote drift between dry-run and apply failed closed
   before the first write, not after the executor had already modified a row,
   file, or plugin-owned surface.
+- The claim shows live remote drift was revalidated at the apply boundary with
+  a preserved remote, not inferred from a green fixture replay, route-shape
+  smoke, or `finalMatchesLocal` result.
 - The claim shows create-time identity remapping is either safely represented
   or hard-blocked before write.
 - The claim shows identity remapping or aliasing on create cannot silently
   renumber, reassign, or copy a target record into a different remote
   identity without a live remap proof.
+- The claim shows create-time identity remapping either blocks before write or
+  records the remap with live identity evidence; a fixture that keeps the same
+  ID does not prove the live remote cannot renumber, alias, or reassign.
 - The claim shows plugin-owned state outside the allowlist is either discovered
   or hard-blocked, including options, custom tables, generated files, activation
   hooks, cron, cache state, runtime registries, serialized blobs, and other
   plugin side effects.
+- The claim shows plugin-owned state outside the allowlist is either enumerated
+  live or blocked, including hidden custom tables, generated files, cron rows,
+  runtime registries, serialized blobs, and other plugin-owned side effects.
 - The claim shows plugin data traps are not being mistaken for success just
   because a fixture-owned option or table row matches the expected shape while
   the real plugin also owns custom tables, serialized counters, cron rows,
   generated assets, runtime registries, or external side effects.
+- The claim shows plugin data traps cannot pass as success because one fixture
+  row or option matched while the real plugin also owns other state outside
+  the allowlist.
 - The claim names the exact plugin-owned surface exercised and shows the
   apply-time revalidation result for that surface, or it says the surface was
   blocked. A matching fixture row by itself is not evidence that the broader
@@ -72,6 +84,9 @@ or comparison-only.
   allowlist.
 - The claim shows any partial file, DB, or plugin side effect is classified
   durably and that retry starts from fresh evidence rather than reused approval.
+- The claim shows any partial file, DB, or plugin side effect is durably
+  classified and that retry starts from fresh evidence rather than inherited
+  approval.
 - The claim shows partial file, DB, or plugin side effects do not leave an
   implied success state just because one store committed; mixed writes need
   old/new/blocked evidence for the whole path.
@@ -230,6 +245,10 @@ Release go/no-go scenarios:
 - A successful manual-review claim must also name the exact rejection point and
   the exact fresh-live retry scope, not just the fact that the artifact stayed
   readable.
+- A manual-resolution claim must also preserve the remote, reject the stale
+  artifact before mutation, and record a distinct fresh retry artifact from
+  current live hashes; if any of those are missing, the claim is not
+  production-grade.
 - Reprint, ZS-Sync, or ForkPress comparisons are historical context only
   unless the exact upstream revision or worktree state and the exact live
   write boundary were reverified.
