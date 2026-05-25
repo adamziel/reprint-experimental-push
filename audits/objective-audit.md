@@ -57,9 +57,9 @@ Evidence buckets:
 
 ## Current Command Surface
 
-Direct command-surface recheck on `origin/lane/reliable-executor` at `3b6e5db`:
+Direct command-surface recheck on `origin/lane/reliable-executor` at `3b6e5dbd12512d37f6c73b696de2018f026178f6`:
 
-- `origin/lane/reliable-executor` at `3b6e5db` exposes `verify:release`, `test:playground:production-shaped-release-verify`, `test:playground:production-shaped-live-preflight`, `test:playground:production-shaped-missing-live-source`, and `test:playground:production-shaped-missing-secret`.
+- `origin/lane/reliable-executor` at `3b6e5dbd12512d37f6c73b696de2018f026178f6` exposes `verify:release`, `test:playground:production-shaped-release-verify`, `test:playground:production-shaped-live-preflight`, `test:playground:production-shaped-missing-live-source`, and `test:playground:production-shaped-missing-secret`.
 - `verify:release` maps to `test:playground:production-shaped-release-verify` on that upstream tip, so the upstream release gate is not hypothetical.
 - `scripts/playground/production-shaped-release-verify.mjs` fails closed when no live source or no secret is provided, and it emits the remaining boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` plus the durable-journal blocker `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
 - The same script reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback `rows: 17` when the release path succeeds.
