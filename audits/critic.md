@@ -4,6 +4,29 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+Release-gate checklist for production-readiness wording:
+
+- Name the exact live write path and the exact stale-remote drift case it
+  survived; route shape, package layout, and `finalMatchesLocal` stay
+  compatibility evidence only.
+- Show that the stale approval was rejected before mutation, remained
+  readable for audit, and could not be reused as authority for any other
+  row, file, relationship-bearing record, or plugin-owned surface.
+- Show that the retry rebuilt scope from fresh live hashes after drift,
+  instead of inheriting the old decision or a stale manual-review artifact.
+- Show the create-time identity decision explicitly: either a durable remap
+  proof or a hard block before write.
+- Show the complete plugin-owned surface list for the claim, including any
+  late-discovered custom table, generated file, cron row, cache entry,
+  activation hook, or runtime registry, and hard-block anything outside it.
+- Show durable classification for partial file, DB, or plugin side effects,
+  including what was written, what was blocked, and what remains safe to
+  retry.
+- If Reprint, ZS-Sync, or ForkPress are cited, name the exact upstream
+  revision or worktree state and say whether it was reverified at the same
+  live mutation boundary; otherwise the comparison is historical context
+  only.
+
 The protocol is stronger than a generic sync sketch: it has dry-run/apply
 separation, live-remote revalidation, idempotency keys, a recovery vocabulary,
 and hash-only evidence for several lab slices. That is still not enough to
