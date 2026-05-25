@@ -14,14 +14,21 @@ The upstream anchors recorded in `docs/source-notes.md` are `27c5f25`
 for Reprint, `d9334a0` for ZS-Sync, and `55f9879` for ForkPress. Those
 anchors are provenance only, not retry authority.
 
+The practical rule is simple: each note can explain why the design looks the
+way it does, but none of them prove the live WordPress auth/session boundary,
+the preserved remote, or the fresh retry scope on this branch. Production-
+grade wording still needs a branch-local rerun that names the exact command,
+the exact live `REPRINT_PUSH_SOURCE_URL`, and the exact boundary that was
+rejected before the first write.
+
 ## Reprint
 
 - Proves: staged transport, resumability vocabulary, and chunked delivery
   framing.
 - Does not prove here: live push safety, preserved-remote retention after
   rejection, stale-authority rejection before the first write, create-time
-  identity remap safety, plugin-owned surface coverage, or retry authority on
-  this branch.
+  identity remap safety, plugin-owned surface coverage, retry authority, or
+  any branch-local live rerun on this worktree.
 - Missing repo proof: a rerunnable live boundary on a real local,
   Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected
   remote, shows apply-time revalidation, and classifies every touched surface
@@ -32,7 +39,8 @@ anchors are provenance only, not retry authority.
 - Proves: bounded discovery, cursoring, and batched resource selection.
 - Does not prove here: source-mutation safety, plugin-owned allowlist
   coverage, stale-authority rejection, durable journal semantics, graph
-  identity, or late-discovered surface handling on this branch.
+  identity, late-discovered surface handling, or any live retry authority on
+  this branch.
 - Missing repo proof: the same live boundary rerun here with preserved-
   remote evidence, dry-run receipt, journal/recovery inspection, and plugin-
   driver coverage on the live write boundary.
@@ -43,7 +51,8 @@ anchors are provenance only, not retry authority.
   intent.
 - Does not prove here: retry authority, preserved-remote auditability after
   rejection, auth/session lifecycle on the write boundary, remapped create
-  target handling, or plugin-owned surface retries on this branch.
+  target handling, plugin-owned surface retries, or any branch-local live
+  rerun on this worktree.
 - Missing repo proof: one real-site release command on this branch that proves
   the rejected remote stayed inspectable, the first write was blocked until
   stale authority was rejected, and later-discovered plugin-owned surfaces
