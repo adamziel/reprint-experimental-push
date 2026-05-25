@@ -4,6 +4,42 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 01:29:00
+
+<a id="2026-05-26-public-status-audit-012900"></a>
+
+- Refreshed [progress.html](../progress.html) after the adjacent lanes narrowed
+  their next executable gaps. `reliable-executor` now has bounded fetches in the
+  live release-verify path, but the proof still needs a concrete response body
+  or stderr from the snapshot/auth route before the verdict can move.
+- `no-data-loss-recovery` now pins the production durability boundary to the
+  exact missing dependency: fenced journal ownership plus restart-readable
+  artifacts, or an explicit closeout at the current local-storage proof limit.
+- The public release posture remains `0/4`; this update only sharpens the
+  blocker text so the page stays conservative without hiding the latest proof
+  gaps.
+
+# 2026-05-26 - Public Status Audit 01:27:20
+
+<a id="2026-05-26-public-status-audit-012720"></a>
+
+- Refreshed [progress.html](../progress.html) after the no-data-loss-invariants
+  integration head advanced to `e717f61c`. The first screen stays
+  conservative: evidence progressed, release gates remain `0/4`, and
+  production WordPress auth/session lifecycle plus durable journal storage with
+  lease/fencing remain pending.
+- `0c4fd10f` remains the newest reliable-executor head, but it is not release
+  proof by itself. `c99b19d0` remains the newest release-surface proof,
+  `b725b2d3` remains the explicit production auth/session boundary, and
+  `b9aebe71` and `47b675c0` still cover supporting no-data-loss and recovery
+  evidence. `592c949e`, `9be664b2`, `33b839f0`, `f386dfa6`, `24c58564`,
+  `5b25867b`, `7695e1f9`, and `e717f61c` now mark the latest critique,
+  fast-path, audit refresh, supervision, same-plan, no-data-loss-invariants,
+  public progress, and no-data-loss-invariants integration evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-26 - Public Status Audit 01:21:51
 
 <a id="2026-05-26-public-status-audit-012151"></a>
