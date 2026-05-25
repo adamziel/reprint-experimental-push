@@ -3,6 +3,45 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
+const liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
+const applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
+
+if (liveSourceUrl && username && applicationPassword) {
+  const livePreflightResult = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: liveSourceUrl,
+      REPRINT_PUSH_USERNAME: username,
+      REPRINT_PUSH_APPLICATION_PASSWORD: applicationPassword,
+      NODE_NO_WARNINGS: '1',
+    },
+  });
+
+  assert.equal(livePreflightResult.status, 0, 'live preflight smoke must pass when live source and auth are present');
+  process.stdout.write(livePreflightResult.stdout || '');
+  process.stderr.write(livePreflightResult.stderr || '');
+  process.exitCode = 0;
+  process.stdout.write('\n');
+  process.stdout.write(
+    JSON.stringify(
+      {
+        livePreflight: {
+          status: livePreflightResult.status,
+          code: 'LIVE_PREFLIGHT_OK',
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  process.exit(0);
+}
+
 const protocolResult = spawnSync(process.execPath, ['--test', 'test/protocol-fixtures.test.js'], {
   cwd: process.cwd(),
   encoding: 'utf8',

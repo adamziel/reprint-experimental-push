@@ -178,6 +178,10 @@ It pairs the protocol fixture test with the explicit missing-secret smoke so
 the executable boundary proves both the production ladder and the fast-fail
 auth gate in one checked entry point.
 
+When a live source URL and production-shaped credentials are present, that
+same wrapper switches to `npm run test:playground:production-shaped-live-preflight`
+and exercises the real preflight handshake instead of only the gate checks.
+
 That same checked wrapper also proves the explicit live-source gate:
 
 - `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` when the live source URL is missing

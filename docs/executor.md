@@ -97,6 +97,10 @@ The release-facing wrapper that a supervisor should run is:
 npm run test:playground:production-shaped-proof
 ```
 
+If `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LAB_AUTH_ADMIN_USER`, and
+`REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD` are set, the same wrapper runs the
+real production-shaped preflight probe instead of only the missing-input gates.
+
 If the real push secret is missing, the harness must fail fast with
 `REPRINT_PUSH_SECRET_REQUIRED` before preflight, dry-run, or apply can run.
 

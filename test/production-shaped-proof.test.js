@@ -33,6 +33,44 @@ test('production-shaped proof wrapper emits the checked proof summary and exact 
   assert.ok(proof.stdout.includes('missingLiveSource'));
 });
 
+test('production-shaped live preflight smoke fails fast when the live source or auth inputs are missing', () => {
+  const missingSource = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_USERNAME: 'reprint_push_admin',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'reprint-push-admin-app-password',
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(missingSource.status, 1);
+  assert.equal(
+    missingSource.stderr.trim(),
+    'REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.',
+  );
+
+  const missingAuth = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(missingAuth.status, 1);
+  assert.equal(
+    missingAuth.stderr.trim(),
+    'REPRINT_PUSH_SECRET_REQUIRED: production push credentials are missing; provide REPRINT_PUSH_LAB_AUTH_ADMIN_USER and REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD before running preflight, dry-run, or apply.',
+  );
+});
+
 test('production-shaped topology proof wrapper emits the fixed one-remote one-local one-drift harness', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-topology-proof.mjs'], {
     cwd: repoRoot,
