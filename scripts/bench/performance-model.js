@@ -2628,6 +2628,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
+    proposal: 'use a compressed remote index plus a cached package hash to skip plugin-install activation after a pause and backpressure event',
+    rejectedBecause: 'planning evidence and cached package hashes can reduce duplicate inspection, but they cannot prove the activation checks, staged metadata writes, backpressure state, or atomic-group barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
