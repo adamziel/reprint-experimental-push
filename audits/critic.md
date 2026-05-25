@@ -227,13 +227,13 @@ the rejected remote and revalidates apply-time behavior from fresh live hashes
 on production WordPress auth/session state.
 
 The Reprint, ZS-Sync, and ForkPress notes remain provenance only unless this
-branch reran the same live boundary here. The observed anchors in
-`docs/source-notes.md` are `27c5f25`, `d9334a0`, and `55f9879`; matching
-route family, package layout, reviewer wording, or retained-source lab
-behavior is not enough to promote those notes from design input to retry
-authority, and none of them prove production WordPress auth/session
-lifecycle, durable journal lease/fencing, graph identity, or plugin-driver
-coverage on this branch.
+branch reran the same live boundary here and preserved the rejected remote for
+audit. The observed anchors in `docs/source-notes.md` are `27c5f25`,
+`d9334a0`, and `55f9879`; matching route family, package layout, reviewer
+wording, or retained-source lab behavior is not enough to promote those notes
+from design input to retry authority, and none of them prove production
+WordPress auth/session lifecycle, durable journal lease/fencing, graph
+identity, or plugin-driver coverage on this branch.
 
 ## Release Gate Checklist
 
