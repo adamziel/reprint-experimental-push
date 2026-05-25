@@ -27,6 +27,28 @@ Release-gate checklist for production-readiness wording:
   live mutation boundary; otherwise the comparison is historical context
   only.
 
+Blocked production claims:
+
+- "production-grade push" is blocked until the live mutation executor, not a
+  lab route or copied fixture mount, has failed closed on a drifted remote and
+  preserved the remote for audit.
+- "safe manual resolution" is blocked unless the stale review artifact is
+  audit-only after drift, cannot authorize retry, and cannot be widened to a
+  different row, file, relationship-bearing record, or plugin-owned surface.
+- "plugin-safe push" is blocked until the full plugin-owned surface list is
+  either enumerated live at apply time or hard-blocked, including late
+  discoveries such as options, custom tables, generated files, hooks, cron
+  rows, caches, runtime registries, and serialized blobs.
+- "safe create handling" is blocked until the create-time identity decision
+  is explicit and durable, including rename, alias, or renumber cases on the
+  live remote.
+- "recoverable partial write" is blocked until every touched store is
+  classified old, new, or blocked and the retry rebuilds scope from fresh live
+  evidence instead of inheriting the old approval.
+- "current upstream proof" is blocked for any Reprint, ZS-Sync, or ForkPress
+  comparison unless the exact cited upstream revision or worktree state was
+  reverified at the same live mutation boundary.
+
 The protocol is stronger than a generic sync sketch: it has dry-run/apply
 separation, live-remote revalidation, idempotency keys, a recovery vocabulary,
 and hash-only evidence for several lab slices. That is still not enough to
