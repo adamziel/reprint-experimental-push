@@ -99,6 +99,10 @@ Source-note comparison policy:
 - Any note that names the right family but omits the exact upstream revision
   or worktree state remains provenance only, even if it matches route shape,
   package mount shape, or a readable review artifact.
+- Even when the exact upstream revision is named, a source note is still not
+  current proof unless this branch reran the same live mutation boundary and
+  separately proved any late-discovered plugin-owned surface was blocked or
+  classified before retry. Provenance plus family match is not enough.
 
 One weak claim still worth tightening explicitly: a production-shaped route,
 package mount, or fixture can still be a copied-lab executor behind the same
@@ -226,6 +230,10 @@ Release gate for any production wording:
   enough by itself: the branch must also rerun the exact same live drift or
   retry case on this repo's live write boundary, or the comparison remains
   provenance only.
+- Show that the exact upstream revision or worktree state does not become
+  current proof unless the branch also names the late-discovered
+  plugin-owned surface, the preserved remote, and the rejection point for
+  that later boundary on this repo.
 - Show that an inspectable manual-review artifact or source-note comparison
   still does not prove production safety when the route shape, package mount,
   or `finalMatchesLocal` output matches; unless this branch reran the same
