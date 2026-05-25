@@ -15,6 +15,9 @@ What it does not prove:
 
 - It does not prove a live source mutation boundary for push.
 - It does not prove stale remote drift rejection at apply time.
+- It does not prove a stale approval stays auditable while being unusable as
+  authority after drift, or that it cannot be widened to unrelated rows,
+  files, or plugin-owned surfaces on retry.
 - It does not prove identity remapping on create, plugin-owned allowlist
   coverage, or partial file/DB/plugin side-effect classification.
 - It does not prove plugin data traps are safe just because a fixture-owned
