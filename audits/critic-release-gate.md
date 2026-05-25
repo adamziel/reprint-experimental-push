@@ -12,7 +12,7 @@ Do not use production wording unless the branch has all of the following for the
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified as old, new, or blocked before retry starts;
 - any late-discovered plugin-owned surface is separately blocked or classified, not folded into the earlier success story;
 - any partial file, DB, or plugin side effect is durably classified before retry so a mixed write cannot be relabeled as success; and
-- any manual-resolution note, route-shaped smoke, fixture replay, or `finalMatchesLocal` result is treated as compatibility evidence only unless it is paired with the preserved remote, the rejection point, the stale-artifact rejection, and the fresh retry artifact for that same boundary;
+- any manual-resolution note, route-shaped smoke, fixture replay, or `finalMatchesLocal` result is treated as compatibility evidence only unless it is paired with the preserved remote, the rejection point, the stale-artifact rejection, the fresh retry artifact, and the same live boundary on this worktree;
 - any source-note comparison to Reprint, ZS-Sync, or ForkPress is treated as historical context only unless it names the exact upstream revision or worktree state and the same live boundary; and
 - any source-note comparison is treated as historical context only unless the exact upstream revision or worktree state is named, the same live boundary was rerun on this branch, and the note explicitly says what it does not prove here; and
 - any source-note comparison that merely matches the same route family, package layout, or reviewer wording is still historical context only and cannot be treated as live proof; and
@@ -24,6 +24,22 @@ Do not use production wording unless the branch has all of the following for the
   same; the later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface still needs its own preserved remote,
   rejection point, and fresh retry artifact.
+
+False success to reject:
+
+- "manual resolution later" is not success if the readable artifact is still
+  being reused as authority after drift, or if the later boundary never got
+  its own preserve/reject/retry cycle on this worktree;
+- "comparison passed" is not success if the source note lacks the exact
+  upstream revision or worktree state, the same live boundary, and an explicit
+  statement of what it does not prove here;
+- "production-grade push support" is not success if the only proof is route
+  shape, package mount shape, fixture replay, a readable review artifact, or
+  `finalMatchesLocal`, because none of those prove stale authority was rejected
+  before mutation; and
+- "plugin-safe" is not success if any late-discovered plugin-owned surface was
+  folded into the first approval instead of being separately enumerated or
+  blocked with its own preserved remote and retry scope.
 
 Source-note comparisons are historical context unless the exact upstream revision or worktree state is named and this branch reran the same live boundary against the same drift case. A named Reprint, ZS-Sync, or ForkPress note can justify historical transport, discovery, or review vocabulary, but it does not prove the live executor, the preserved remote, or retry safety on this branch.
 
