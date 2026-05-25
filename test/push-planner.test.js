@@ -2939,6 +2939,43 @@ test('preserves remote-only plugin removals while matching independent delete, e
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('preserves remote-only plugin removals while a live-preconditioned delete, matching edit, and type swap stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const fileDelete = mutationFor(plan, 'file:index.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(fileDelete.action, 'delete');
+  assert.equal(fileDelete.changeKind, 'delete');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Shared independent title');
+  assert.equal(result.site.files['wp-content/uploads/gallery'], 'shared replacement file');
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('keeps a live-preconditioned delete, matching edit, and type swap safe while preserving remote-only plugin drift', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
