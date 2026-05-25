@@ -32,7 +32,7 @@ The objective implies these minimum release requirements:
 | Auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver | Optional smokes and benchmark fixtures cover pieces of the matrix | No single required command composes all of them at release time | Disconnected coverage cannot be promoted to a release gate |
 | Real remote/local topology | Some smokes exercise lab routes and local aliases | No checked-in required gate proves a real remote/local topology instead of a lab-backed route | Lab topology can satisfy tests while the live source remains unproven |
 | Speed claim or explicit refusal | Benchmark tests refuse unsupported throughput claims | No measured live-path speed result and no enforced `speed unclaimed` release command | Refusal-only evidence blocks overclaiming but does not release the speed claim |
-| Required release entrypoint | None | No `verify`, `release`, or `verify:release` script in `package.json` and no checked-in workflow here | Green optional runs can bypass the release decision entirely |
+| Required release entrypoint | None | No `verify`, `release`, or `verify:release` script in `package.json` and no checked-in workflow here | Green optional runs can bypass the release decision entirely, so the repo still has no mandatory place where the live-source verdict, `speed unclaimed` refusal, or measured throughput result must appear |
 
 ## Proof Boundary
 
@@ -99,6 +99,8 @@ The user-facing claims fail for the same reason: the suite stops at guarded mode
 - `Fast`: the benchmark suite is intentionally refusal-first. It can reject unsupported throughput claims, but it does not report a measured live-path throughput result or a release threshold for production speed. Until that changes, release-facing copy should not imply positive throughput.
 
 The weakest claim remains speed, and it is currently weaker than the rest of the release story because the repo has no measured live-path number, no release threshold, and no enforced gate that fails closed on the missing measurement. That means even a perfect lab auth/journal story would still leave the production speed claim blocked. The audit should treat any future throughput language as release-blocked until it is tied to the live-source boundary, an explicit threshold, and a required command that fails when `productionThroughput` is still `not-claimed`. If the project intends to keep speed unclaimed, the audit should say that plainly rather than letting the absence of a number read like a deferred approval. The important distinction is that `speed unclaimed` is a release decision, while `speed not measured` would still be incomplete.
+
+That also means the release gate must be opinionated enough to reject a green run that never reaches the live-source verdict. A command that only replays fixture checks or optional smokes and then exits zero is not a release decision, even if it accurately refuses to claim throughput. The required gate has to surface one of two outcomes in the same run: a measured live-path throughput result, or an explicit `speed unclaimed` verdict that is part of the release decision itself.
 
 The actionable rule is simple: add one default release command, wire it into CI, and make it print either a measured live-path throughput result or a deliberate `speed unclaimed` verdict. Anything softer than that still leaves the release language ambiguous, because optional smokes and refusal-only benchmarks can prove the project is cautious without proving the live push path is ready.
 
