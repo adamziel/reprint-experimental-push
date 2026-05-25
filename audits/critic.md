@@ -415,8 +415,9 @@ production-grade push support:
   exact live object class.
 - A production claim must fail closed on plugin-owned state outside the
   declared allowlist, including plugin tables, options, generated files,
-  activation side effects, cron, and cache state, unless a semantic driver
-  proves the mutation surface exactly.
+  activation side effects, cron, and cache state, plus any custom-table or
+  file ownership the plugin can rewrite, unless a semantic driver proves the
+  mutation surface exactly.
 - A production claim must fail closed on any stale manual-review artifact that
   can still be read for audit but no longer matches the live snapshot, plan
   hash, or retry scope.
@@ -432,7 +433,8 @@ production-grade push support:
 - A stale manual-review artifact must be shown rejected against the live
   remote before any retry or production wording can be claimed; a lab-shaped
   route, packaged-plugin mount, or `finalMatchesLocal` smoke cannot stand in
-  for that rejection.
+  for that rejection, and the retry must start from a fresh snapshot plus a
+  fresh plan.
 - A partial recovery replay must fail closed if it tries to reuse the old
   approval record, even when the replay is otherwise able to classify the
   target as old, new, or blocked.
@@ -472,7 +474,8 @@ production-grade push support:
   cache, activation, and generated surface in scope must be explicitly
   enumerated or hard-blocked, and remote ownership drift must be revalidated
   before write. Unknown plugin-owned state outside the manifest is a hard
-  block, not a candidate for manual resolution.
+  block, not a candidate for manual resolution, and stale approval cannot be
+  reused to touch a different plugin-owned surface on retry.
 - Partial-side-effect safety: a failure that leaves mixed file, DB, or plugin
   effects must produce durable artifacts that classify the target as old,
   fully updated, or blocked recovery without pretending the push succeeded.
