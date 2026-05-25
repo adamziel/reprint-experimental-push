@@ -20,11 +20,14 @@ route, package mount, fixture replay, or `finalMatchesLocal` result can still
 come from a copied executor behind the same URL family; that is compatibility
 evidence, not proof that the live write path rejected stale authority before
 mutation, preserved the remote for audit, or rebuilt retry scope from fresh
-live hashes. The same limit applies to any readable manual-review artifact
-and any Reprint, ZS-Sync, or ForkPress citation: unless this branch reran the
-same live mutation boundary against the same drift case and recorded the
-preserved remote, rejection point, and fresh retry scope, the artifact or
-citation remains historical only.
+live hashes. In particular, a lab route shape that returns the right hashes
+or route family does not prove the live executor ran, does not prove the
+remote drift was rejected before the first write, and does not prove retry
+authority was rebuilt from fresh live evidence. The same limit applies to any
+readable manual-review artifact and any Reprint, ZS-Sync, or ForkPress
+citation: unless this branch reran the same live mutation boundary against
+the same drift case and recorded the preserved remote, rejection point, and
+fresh retry scope, the artifact or citation remains historical only.
 That warning also covers route-shaped smokes that happen to return live-looking
 hashes or inspectable review output: a matching surface can still mask a stale
 remote, a remapped create target, or a late plugin-owned surface that only
