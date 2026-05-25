@@ -6,6 +6,9 @@ This lane treats durable recovery as valid only when an interrupted apply lands 
 1. `fully-updated-remote`
 1. `blocked-recovery` with artifacts
 
+These are the only acceptable post-failure states for the atomic apply boundary.
+Anything else is a recovery blocker, even if the local attempt log looks complete.
+
 The atomic apply boundaries that must stay on the `old-remote` side are:
 
 - failure before mutation
@@ -16,21 +19,21 @@ Completed-plan replay is only valid when it returns `fully-updated-remote` and s
 If the replayed remote has drifted since completion, recovery must become `blocked-recovery`
 with journal and remote artifacts instead of silently reapplying the plan.
 
-The named failure boundaries in this lane are expected to stay in `old-remote`:
+The named failure boundaries in this lane are pre-commit boundaries:
 
 - failure before mutation
 - failure after staging
 - failure after dependency validation
 
-Those checkpoints are all pre-commit boundaries. Even if the journal has
-recorded staging or dependency validation, the remote itself must still be
-classifiable as unchanged.
+Those checkpoints must still classify as `old-remote` even if the journal has
+already recorded staging or dependency validation. The remote itself must stay
+unchanged, or the recovery must stop as blocked.
 
-Completed-plan replay is only acceptable when it returns `fully-updated-remote` and stays inert.
-If the replayed remote has drifted since completion, the result must be `blocked-recovery`
-with journal and remote artifacts, not a silent retry.
-That replay contract includes the no-duplication rule for inserts and the
-no-resurrection rule for stale local data.
+Completed-plan replay is only acceptable when it returns `fully-updated-remote`
+and stays inert. If the replayed remote has drifted since completion, the
+result must be `blocked-recovery` with journal and remote artifacts, not a
+silent retry. That replay contract includes the no-duplication rule for
+inserts and the no-resurrection rule for stale local data.
 
 Durable recovery must make those states inspectable after restart:
 
@@ -96,6 +99,13 @@ The artifact pair must make inspection possible:
 Any failure path must end in one of the three states above.
 
 If the remote is not fully old or fully updated, the recovery result must be blocked and inspectable.
+
+## Production caution
+
+The JSON-lab recovery model is useful because it proves the state contract, but
+it is not the same as a production durable journal. Production still needs
+durable writes, sync/fence guarantees, and restart-readable artifacts before a
+partial remote mutation can be treated as safely recoverable.
 
 ## Production note
 
