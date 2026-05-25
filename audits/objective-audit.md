@@ -255,6 +255,17 @@ The reason is not that the repo lacks useful tests. It has them. The reason is t
 
 Until one checked-in gate fails closed on `labBacked: true`, fixture-only, benchmark-only, or missing live-source evidence, the project can still produce green runs without proving no data loss, reliability, or speed on the real release path.
 
+## Release Gate Acceptance Criteria
+
+The missing release gate is only real proof if it does all of the following:
+
+1. Runs from one required checked-in command, not from operator memory or script composition.
+2. Fails on any `labBacked: true`, fixture-only, benchmark-only, or missing-live-source result.
+3. Covers auth/session, durable journal, lease/fencing, graph identity, plugin-data-driver, real topology, crash-boundary, and benchmark evidence in one decision.
+4. Is wired into CI or another default automation path so `npm test` and `npm run test:playground` remain evidence collectors only, not release approvers.
+
+If any one of those items is absent, the objective is still blocked even if every opt-in smoke passes.
+
 ## Explicit Requirements From The Objective
 
 The objective is to push local changes back to the original WordPress source site after a pull, while that source may still be live and may have changed. The pull base is one-way and the push back to the source is one-way. The priorities are no data loss, reliable, and fast.
