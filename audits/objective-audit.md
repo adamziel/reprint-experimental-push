@@ -13,6 +13,7 @@ Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, 
 The last 12 hours did not change the release gate. Fresh remote fetch evidence shows `origin/lane/reliable-executor=abf848b02a441b9c56d4a8e9fc8cf8c6e8673b57` and `origin/lane/independent-auditor=f9a81f4c8aa5f496607b38fdc45e61aa57b5c656`. The reliable-executor head `abf848b0` sharpens the contract text around the checked commands and pull-to-push bridge topology, but it still does not provide a checked in-tree live-boundary verdict; the independent-auditor head is this audit refresh only.
 
 Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The exact proof that would move one gate is a checked command from this checkout that, in one run, emits apply-time auth/session validation, durable journal readback, recovery evidence, live-source topology proof, preserved-remote drift evidence, and the same live-boundary verdict surface as the remote lane. The closest current proof is still remote-only `abf848b0`; it is the exact evidence that would need to be mirrored in-tree.
+Next owner for the missing proof: `reliable-executor`, because the blocker is now the absence of an in-tree checked release command, not the absence of a command surface or lab smoke.
 
 ## Explicit Requirements
 
