@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 04:30:08 CEST.
+- Last update: 2026-05-25 04:30:48 CEST.
 - Status: lab evidence still holds; production proof remains blocked.
 - Trend: the visible page and this log still line up, and the newest note is easier to scan.
 - Supervision: the feedback-supervisor lane remains active.

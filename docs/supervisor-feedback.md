@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 04:30:08 CEST
+Last updated: 2026-05-25 04:30:48 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 04:30:08 CEST - Supervisor Snapshot
+## 2026-05-25 04:30:48 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and feedback note still line up.
 - Not going well: production proof is still missing, so the public status remains blocked.
-- Progress change: no new evidence; the scan view now keeps the newest note short and the older history collapsed.
+- Progress change: the scan view is shorter and the older history stays collapsed.
 - Next nudge: give each lane one proof gap, one test, and one owner, then land that proof before widening scope.
 
 | Lane | Current nudge |
@@ -26,12 +26,11 @@ Note: this lane's page update becomes live only after merge to `main`.
 <details>
 <summary>Older supervisor snapshots</summary>
 
-Older entries repeated the same gaps. The durable archive remains in git
-history. The active takeaway is unchanged:
+Older entries repeated the same gaps. The durable archive remains in git history.
 
 - Going well: the page, log, and feedback note still line up.
 - Not going well: the same production gaps are still unproven.
-- Progress change: no evidence delta landed, but the active lane nudges stay narrowed to one proof gap and one test each.
+- Progress change: no evidence delta landed; the active lane nudges stay narrowed to one proof gap and one test each.
 - Next nudge: keep each lane to one proof gap, one test, and one owner.
 
 | Lane | Current nudge |
