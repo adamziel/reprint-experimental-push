@@ -1589,6 +1589,28 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize').rejectedGate,
     'group',
   );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks').violates.includes('durable-progress'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks').rejectedGate,
+    'live',
+  );
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-update-finalize').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-update-finalize').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-update-finalize').violates.includes('plugin-preconditions'));
