@@ -21,6 +21,8 @@ That means:
 - ZS-Sync notes can justify discovery and cursoring shape, but not source-mutation safety; and
 - ForkPress notes can justify review vocabulary and durability intent, but not retry authority for this branch.
 
+Even when the upstream state is named precisely, the comparison still does not prove this branch preserved the remote, rejected stale authority before mutation, or rebuilt retry scope from fresh live hashes. At best it proves that the cited note is a valid historical reference point for the same family of ideas.
+
 If any production claim depends only on route shape, package mount shape, fixture replay, readable review output, or `finalMatchesLocal`, the claim must fail closed.
 
 Concrete failure modes that still block the claim:
@@ -29,3 +31,5 @@ Concrete failure modes that still block the claim:
 - create-time identity remapping, aliasing, or renumbering;
 - plugin-owned state outside the allowlist, including hidden tables, cron rows, runtime registries, generated files, serialized blobs, caches, and plugin-owned files; and
 - stale manual-review artifacts that remain readable after drift and could be reused against a different boundary.
+
+Release wording must also avoid implying that a readable review artifact or comparison note is equivalent to a live retry gate. Those artifacts are audit evidence only until the branch shows the preserved remote, rejection point, and fresh retry scope for the same boundary on this worktree.
