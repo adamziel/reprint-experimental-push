@@ -4609,7 +4609,8 @@ test('completed replay on an existing durable journal keeps replay evidence appe
     artifactRefs: {},
   });
 
-  const replay = applyPlan(completed.site, plan, {
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, {
     journal: completed.journal,
     durableJournal,
   });
@@ -18383,8 +18384,9 @@ test('completed replay remains fully updated and refuses to resurrect stale loca
   const completed = applyPlan(baseSite(), plan, { durableJournal });
   durableJournal.close();
 
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
-  const replay = applyPlan(completed.site, plan, {
+  const replay = applyPlan(replayRemote, plan, {
     durableJournal: replayJournal,
     journal: completed.journal,
   });
@@ -18699,11 +18701,15 @@ test('replaying a completed plan stays fully updated and does not resurrect stal
   replayJournal.close();
 
   const persisted = readRecoveryJournal(journalPath);
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: completed.site });
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.appliedMutations, 0);
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.deepEqual(inspection.counts, { old: 0, new: 2, blockedUnknown: 0 });
+  assert.equal(inspection.journal.records.some((record) => record.type === 'journal-replayed'), true);
   assert.equal(persisted.records.filter((record) => record.type === 'journal-replayed').length, 1);
   assert.equal(
     persisted.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
