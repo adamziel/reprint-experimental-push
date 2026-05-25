@@ -7359,6 +7359,11 @@ Lead finding for the current release-proof claim:
   preserved-remote boundary on that live source together with production
   WordPress auth/session lifecycle, durable journal semantics, graph identity,
   and plugin-driver coverage;
+- the next proof must be a live-boundary rerun, not another wrapper, smoke, or
+  comparison note; if the evidence does not show dry-run receipt, apply-time
+  revalidation, journal/recovery inspection, and exact preserved-remote drift
+  on the same live source, then it is still lab-only and cannot be promoted to
+  production wording;
 - if the branch cannot print the exact executor identity, the exact live
   source URL, the rejected remote that remained inspectable after rejection,
   and the exact rejection point before the first write in the same run, then
