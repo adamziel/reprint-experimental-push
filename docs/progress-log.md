@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 05:22:52 CEST.
+- Last update: 2026-05-25 05:23:41 CEST.
 - Status: lab evidence still holds; production proof is still missing.
 - Trend: the visible page and this log still line up, and the public page stays scan-first without repeating the whole gate list.
 - Supervision: the feedback-supervisor lane remains active.
@@ -18,7 +18,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Supervisor Follow-up
 
-- Last update: 2026-05-25 05:22:52 CEST.
+- Last update: 2026-05-25 05:23:41 CEST.
 - Status: still blocked; no production evidence delta landed in this pass.
 - Trend: the surfaces are cleaner, but the proof gaps are unchanged.
 - Supervision: keep the next pass narrow and evidence-driven.
