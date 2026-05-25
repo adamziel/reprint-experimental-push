@@ -4,16 +4,17 @@
 
 The branch still cannot claim production-grade push support until one exact,
 rerunnable real-site command proves the same live boundary on a real local,
-Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. `package.json` exposes only
-`plan`, `apply`, and `test:playground:*` entry points, so the current surface
-is still compatibility or preflight evidence unless it also shows preserved
-remote auditability after rejection, apply-time revalidation on the same live
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. `package.json` now exposes
+multiple production-shaped smoke scripts, but it still does not expose a
+named real-site release command, so the current surface is still
+compatibility or preflight evidence unless it also shows preserved remote
+auditability after rejection, apply-time revalidation on the same live
 boundary, dry-run receipt, journal/recovery inspection, production auth/
 session lifecycle, graph identity, and plugin-driver plus plugin-owned
 surface classification in one rerun.
 
-This remains the primary blocker even if the branch has a polished release-
-shaped wrapper. Scenario: a reviewer upgrades a live preflight or lab-shaped
+This remains the primary blocker even if the branch has polished production-
+shaped wrappers. Scenario: a reviewer upgrades a live preflight or lab-shaped
 script into production proof. Missing proof: the branch has still not shown a
 single real-site command that can be rerun unchanged and that emits the exact
 executor identity, exact live source URL, preserved remote after rejection,
