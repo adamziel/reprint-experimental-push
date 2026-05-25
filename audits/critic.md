@@ -22,6 +22,11 @@ or fixture looked production-shaped, it is still compatibility evidence only.
 That phrasing cannot become production proof unless the same live boundary on
 this branch also shows the preserved remote, the stale rejection point, and a
 fresh retry scope rebuilt from live hashes.
+Human review cannot widen a boundary by itself: a readable approval note,
+manual-resolution comment, or comparison summary stays audit-only unless it
+also proves the exact rejected boundary, the preserved remote that remained
+inspectable after rejection, and the fresh retry scope for that same live
+boundary on this worktree.
 
 Concrete failure scenarios that still block production wording:
 
@@ -149,6 +154,9 @@ Release gate for the remaining gap:
   live boundary with preserved-remote evidence, stale-authority rejection
   before the first write, a retry scope rebuilt from live hashes, and
   old/new/blocked classification for every touched surface;
+- any manual-resolution note stays audit-only if it cannot name the rejected
+  boundary, prove the preserved remote stayed inspectable after rejection, and
+  show a fresh retry scope rebuilt from live hashes for that same boundary;
 - any late-discovered plugin-owned surface is a new live boundary, not an
   inherited success case, unless it was explicitly enumerated before write or
   separately blocked with its own preserve / reject / retry cycle; and
