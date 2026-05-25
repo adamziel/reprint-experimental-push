@@ -1,7 +1,7 @@
 Refreshed the critic audit snapshot for the current remote heads and kept the verdict unchanged.
 
 Evidence checked:
-- `origin/lane/critic` matches `HEAD` at `e02a31ac`.
+- `origin/lane/critic` matches `HEAD` at `a9744175`.
 - `origin/lane/reliable-executor` is at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` is at `5b25867b`.
 - `origin/lane/no-data-loss-recovery` is at `47b675c0`.
@@ -13,7 +13,6 @@ Evidence checked:
 - `audits/critic.md` continues to block production-grade push claims on auth/session lifecycle, durable journal ownership, preserved-remote retry, exact replay equivalence, plugin data traps, and graph identity safety.
 
 Changed files:
-- [`/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/audits/critic.md)
 - [`/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/.lane-output/final.md)
 
 Commands run:
@@ -30,12 +29,11 @@ Commands run:
 - `git status --short --branch`
 
 Push result:
-- No push yet
+- No push needed; this pass only refreshed the lane evidence snapshot
 
 Worktree status:
-- One tracked update in `audits/critic.md`
 - One tracked update in `.lane-output/final.md`
-- Branch remains `ahead 1538, behind 198` relative to `origin/main`
+- Branch remains `ahead 1539, behind 198` relative to `origin/main`
 
 Next supervisor nudge:
 - Re-poll `reliable-executor` only when it lands a concrete new proof delta that changes the production-readiness verdict, especially a bounded startup/harness fix or a completed live-protocol release proof.
