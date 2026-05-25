@@ -7,14 +7,14 @@ linked implementation artifacts.
 Newest public summary stays concise by design; details belong in the linked
 evidence trail below.
 
-## 2026-05-25 - Public Status Audit 06:58:19
+## 2026-05-25 - Public Status Audit 06:58:52
 
-<a id="2026-05-25-public-status-audit-065819"></a>
+<a id="2026-05-25-public-status-audit-065852"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 06:58:19 CEST`) and kept the visible last-updated stamp current.
-- Tightened the first screen again so the pending-gates wording is shorter and
-  the gate map is linked directly from the header for faster review.
+  (`2026-05-25 06:58:52 CEST`) and kept the visible last-updated stamp current.
+- Tightened the first screen so the pending-gates wording is explicit about the
+  four buckets versus five proof items, which avoids a misleading glance count.
 - No new production proof was added; real WordPress executor/auth, durable
   recovery journaling, Docker/Playground integration, graph identity, and
   plugin drivers remain pending until proven.
