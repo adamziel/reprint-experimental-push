@@ -78,14 +78,14 @@ The tests do the right kind of negative work, but they are not positive release 
 Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
-- This checkout exposes helper and Playground scripts, but the current worktree does not carry the upstream `verify:release` command surface yet. That is an enforcement gap in this lane, but it is not the root release blocker.
+- This checkout exposes helper and Playground scripts, but it does not carry the upstream `verify:release` command surface in-tree. That is an enforcement gap in this lane, not the root release blocker.
 - The upstream release verifier now exists in the reliable-executor branch, and its contract explicitly names the remaining first production boundary as auth/session lifecycle plus durable journal semantics.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
 - The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, but it remains regression-only evidence rather than a live-boundary release verdict.
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone, even if a release wrapper exists upstream.
 
 Minimum properties of that gate:
 
@@ -95,8 +95,8 @@ Minimum properties of that gate:
 4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
 5. it must be the command CI or another default entrypoint actually invokes
 
-Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle and durable journal semantics. Graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift are still only lab-backed, but they are secondary until the auth/session-plus-journal boundary is proven. The missing release gate is worth fixing, but it is not the decisive blocker; it is enforcement debt around a still-unproven live boundary.
+Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle and durable journal semantics. Graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift are still only lab-backed, but they are secondary until the auth/session-plus-journal boundary is proven. The missing in-tree release gate is worth fixing, but it is not the decisive blocker; it is enforcement debt around a still-unproven live boundary.
 
 ## Conclusion
 
-The repository has good refusal, journaling, and benchmark-model evidence. It does not yet have live-boundary proof that production auth/session lifecycle and durable journal semantics hold at apply time, and graph identity, plugin-driver coverage, plus preserved-remote drift are still only lab-backed. There is also no checked release gate in this checkout that owns the live-source verdict. The actionable blocker is the live-boundary proof gap, and it keeps the release gate closed.
+The repository has good refusal, journaling, and benchmark-model evidence. It does not yet have live-boundary proof that production auth/session lifecycle and durable journal semantics hold at apply time, and graph identity, plugin-driver coverage, plus preserved-remote drift are still only lab-backed. There is also no in-tree checked release gate that owns the live-source verdict. The actionable blocker is the live-boundary proof gap, and it keeps the release gate closed.
