@@ -47,6 +47,7 @@ test('push protocol fixture captures the production stage order and recovery rul
 test('push contract fixture binds the pull handoff to the production push sequence', () => {
   const contract = readJson('fixtures/protocol/push-contract.json');
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
+  const topologyMatrix = readJson('fixtures/protocol/push-topology-matrix.json');
 
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
@@ -119,17 +120,34 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology.playground.remote_base, 'remote-base');
   assert.equal(contract.topology.playground.local_edited, 'local-edited');
   assert.equal(contract.topology.playground.remote_changed, 'remote-changed');
-  assert.equal(contract.topology_matrix.push_pipeline.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
-  assert.equal(contract.topology_matrix.push_pipeline.snapshot_hash_listing, 'returns the live remote comparison set for planning only');
-  assert.equal(contract.topology_matrix.push_pipeline.dry_run_plan_upload, 'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock');
-  assert.equal(contract.topology_matrix.push_pipeline.mutation_batch_apply, 'revalidates fresh live evidence before every batch and again at the storage boundary');
-  assert.equal(contract.topology_matrix.push_pipeline.journal_inspect, 'reads durable evidence without authorizing mutation');
-  assert.equal(contract.topology_matrix.push_pipeline.recovery, 'starts with inspect and allows mutating repair only when the journal and live hashes prove the action');
-  assert.equal(contract.topology_matrix.remote_snapshot_hash_listing, 'cursorable live hash evidence used for planning only and never treated as write authority');
-  assert.equal(contract.topology_matrix.roles.remote_base, 'the one remote source site that seeds the persisted pull base');
-  assert.equal(contract.topology_matrix.roles.local_edited, 'the one imported local site with user edits');
-  assert.equal(contract.topology_matrix.roles.remote_changed, 'the same remote site observed later after independent drift');
-  assert.equal(contract.topology_matrix.roles.runner, 'the only process allowed to compare, upload, inspect, and recover');
+  assert.equal(topologyMatrix.push_pipeline.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
+  assert.equal(topologyMatrix.push_pipeline.snapshot_hash_listing, 'returns the live remote comparison set for planning only');
+  assert.equal(topologyMatrix.push_pipeline.dry_run_plan_upload, 'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock');
+  assert.equal(topologyMatrix.push_pipeline.mutation_batch_apply, 'revalidates fresh live evidence before every batch and again at the storage boundary');
+  assert.equal(topologyMatrix.push_pipeline.journal_inspect, 'reads durable evidence without authorizing mutation');
+  assert.equal(topologyMatrix.push_pipeline.recovery, 'starts with inspect and allows mutating repair only when the journal and live hashes prove the action');
+  assert.equal(topologyMatrix.remote_snapshot_hash_listing, 'cursorable live hash evidence used for planning only and never treated as write authority');
+  assert.equal(topologyMatrix.pull_to_push_mapping.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(
+    topologyMatrix.pull_to_push_mapping.importer,
+    'persists the base package as immutable provenance',
+  );
+  assert.equal(
+    topologyMatrix.pull_to_push_mapping.preflight,
+    'binds that persisted base package to the live remote identity and a short-lived session',
+  );
+  assert.equal(
+    topologyMatrix.pull_to_push_mapping.recovery,
+    'starts with inspect and only mutates when the journal plus fresh live hashes prove the action',
+  );
+  assert.equal(
+    topologyMatrix.recovery_inspect.authorization,
+    'read-only evidence reader that never authorizes mutation by itself',
+  );
+  assert.equal(topologyMatrix.roles.remote_base, 'one remote source site that seeds the persisted pull base');
+  assert.equal(topologyMatrix.roles.local_edited, 'one imported local site with user edits');
+  assert.equal(topologyMatrix.roles.remote_changed, 'the same remote site observed later after independent drift');
+  assert.equal(topologyMatrix.roles.runner, 'the only process allowed to preflight, plan, upload, inspect, revalidate, and recover');
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
   assert.equal(
     contract.proofs.auth_session_journal,

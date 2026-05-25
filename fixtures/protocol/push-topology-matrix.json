@@ -9,6 +9,16 @@
     "journal_inspect": "reads durable evidence without authorizing mutation",
     "recovery": "starts with inspect and allows mutating repair only when the journal and live hashes prove the action"
   },
+  "pull_to_push_mapping": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "preflight": "binds that persisted base package to the live remote identity and a short-lived session",
+    "snapshot_hash_listing": "collects live comparison evidence for planning only",
+    "dry_run_plan_upload": "uploads the canonical plan as eligibility evidence only",
+    "mutation_batch_apply": "revalidates live evidence before every batch and at the storage boundary",
+    "journal_inspect": "reads durable evidence before any recovery choice",
+    "recovery": "starts with inspect and only mutates when the journal plus fresh live hashes prove the action"
+  },
   "apply_revalidation": {
     "before_each_batch": "fresh live hashes",
     "at_storage_boundary": "fresh live hashes plus storage-guard proof",
@@ -25,7 +35,8 @@
       "read journal",
       "inspect live hashes",
       "classify finish|rollback|retry|block"
-    ]
+    ],
+    "authorization": "read-only evidence reader that never authorizes mutation by itself"
   },
   "remote_snapshot_hash_listing": "cursorable live hash evidence used for planning only and never treated as write authority",
   "roles": {
