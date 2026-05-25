@@ -184,6 +184,22 @@ That topology is the minimum production-shaped harness:
   `push-deployment-topology-contract.json` plus
   `push-remote-liveness-topology-contract.json`
 
+Use this as the standard one-remote, one-local production proof shape:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` is the imported local edit site
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor allowed to call preflight, snapshot listing,
+  dry-run, apply, journal inspect, and recovery
+- Docker keeps the proof inside one private network
+- Playground keeps the proof inside separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+- cite `push-deployment-topology-contract.json` for topology-only review
+- cite `push-remote-liveness-topology-contract.json` when the dry-run/apply
+  separation and apply-time revalidation are part of the proof
+
 That handoff is intentionally one-way:
 
 - exporter/importer produce the immutable base package that push consumes

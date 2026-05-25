@@ -229,6 +229,22 @@ The same topology should be exercised in both harnesses:
 - both harnesses keep recovery inspect-first and read-only until the branch is
   proven safe
 
+The topology proof is the same in both harnesses:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor allowed to preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or run recovery
+- Docker and Playground both keep browser-visible inspection on the
+  sandbox-provided `8080` ingress through a local-only proxy
+- remote tunnels are disallowed in both harnesses
+- `push-deployment-topology-contract.json` proves the topology-only shape
+- `push-remote-liveness-topology-contract.json` proves the topology plus the
+  dry-run/apply liveness split and apply-time revalidation
+- `push-protocol-extension-contract.json` is the umbrella proof that binds the
+  topology to the production ladder
+
 For review, the canonical one-remote, one-local test topology is:
 
 - `remote-base` seeds the persisted pull base package
