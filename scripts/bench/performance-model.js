@@ -327,6 +327,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['round-trips', 'rescan-work', 'batch-shape-recomputation'],
+    allowedShortcut: 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches',
+    guardrails: [
+      'remote-index-remains-planning-only',
+      'batch-bounds-still-honor-row-preconditions',
+    ],
+    gateProofs: {
+      skip: 'a plugin install can reuse the remote index cursor and dependency graph to avoid rescanning unchanged resources when sizing row batches',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary',
+      group: 'the batch shape only narrows planning work inside the same atomic group and never widens visibility across owners',
+      recovery: 'the index cursor, dependency graph, and batch receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'index cursor, dependency graph, and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
