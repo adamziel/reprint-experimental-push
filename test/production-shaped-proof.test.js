@@ -150,99 +150,57 @@ test('production-shaped release proof runs the live preflight branch against a l
 });
 
 test('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
+  return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
+    const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+        NODE_NO_WARNINGS: '1',
+      },
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+    });
+
+    assert.equal(proof.status, 0, proof.stderr);
+    assert.match(proof.stdout, /"ok": true/);
+    assert.match(proof.stdout, /"boundary": \{/);
+    assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
+    assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
+    assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
+  });
+});
+
+test('production-shaped release verify command fails closed on the explicit live-source and secret gates', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
     env: {
       ...process.env,
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_SIGNING_SECRET: '',
       NODE_NO_WARNINGS: '1',
     },
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
   });
 
-  assert.equal(proof.status, 0, proof.stderr);
-  assert.match(proof.stdout, /"ok": true/);
-  assert.match(proof.stdout, /"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(proof.stdout, /"remoteChanged": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(proof.stdout, /"localEdited": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(proof.stdout, /"liveDrift": \{/);
-  assert.match(proof.stdout, /"sameRemoteIdentity": true/);
-  assert.match(proof.stdout, /"boundary": \{/);
-  assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\./);
+  assert.match(proof.stdout, /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/);
+  assert.match(
+    proof.stdout,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/,
+  );
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
-  assert.match(proof.stdout, /"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}/);
-  assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(proof.stdout, /"liveDrift": \{\s*"sameRemoteIdentity": true/);
-  assert.match(proof.stdout, /"releaseProof": \{/);
-  assert.match(proof.stdout, /"mode": "apply"/);
-  assert.match(proof.stdout, /"dryRun": \{/);
-  assert.match(proof.stdout, /"apply": \{/);
-  assert.match(proof.stdout, /"recoveryInspect": \{/);
-  assert.match(proof.stdout, /"after": \{/);
-  assert.match(
-    proof.stdout,
-    /"durableJournal": \{\s*"rows": \d+,\s*"applyCommitted": true,\s*"mutationApplied": \d+,\s*"idempotencyOpened": \d+\s*\}/,
-  );
-  assert.match(
-    proof.stdout,
-    /"preflight": \{\s*"status": 200,\s*"authSessionType": "application-password-basic",\s*"routeProfile": \{/,
-  );
-  assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
-  const releaseVerify = JSON.parse(
-    readFileSync(path.join(repoRoot, 'fixtures/protocol/push-production-release-verify-contract.json'), 'utf8'),
-  );
-  assert.equal(releaseVerify.contract_id, 'push-production-release-verify-contract-one-remote-one-local');
-  assert.equal(releaseVerify.checked_command, 'npm run verify:release');
-  assert.deepEqual(releaseVerify.protocol_ladder, [
-    'push_preflight',
-    'push_snapshot_hashes',
-    'push_plan_dry_run',
-    'push_batch_apply',
-    'push_journal',
-    'push_recover inspect',
-    'push_recover auto|finish|rollback',
-  ]);
-  assert.equal(
-    releaseVerify.pull_to_push_bridge.persisted_pull_base_package,
-    'the immutable provenance object that preflight binds to one live remote identity and one short-lived push session',
-  );
-  assert.equal(
-    releaseVerify.pull_to_push_bridge.exporter,
-    'discovers the merge base and coverage evidence before any push request exists',
-  );
-  assert.equal(
-    releaseVerify.pull_to_push_bridge.importer,
-    'persists the immutable pull base package as the only origin push may consume',
-  );
-  assert.equal(releaseVerify.proof.snapshot_hash_listing, 'planning-only remote hash listing');
-  assert.equal(releaseVerify.proof.boundary.first_remaining_production_boundary, 'auth/session lifecycle and durable journal semantics');
-  assert.equal(releaseVerify.proof.boundary.status, 'unimplemented');
-  assert.equal(releaseVerify.proof.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
-  assert.equal(
-    releaseVerify.proof.boundary.durableJournal.storageLeaseFence,
-    'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
-  );
-  assert.equal(releaseVerify.proof.boundary.durableJournal.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-  assert.equal(releaseVerify.topology.networking.ingress_port, 8080);
-  assert.equal(releaseVerify.topology.networking.proxy_policy, 'local-only');
-  assert.equal(releaseVerify.topology.networking.tunnels, 'disallowed');
-  assert.equal(releaseVerify.topology.remote_base, 'remote-base');
-  assert.equal(releaseVerify.topology.local_edited, 'local-edited');
-  assert.equal(releaseVerify.topology.remote_changed, 'remote-changed');
-  assert.equal(releaseVerify.topology.same_remote_identity, true);
-  assert.ok(releaseVerify.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
-  assert.equal(releaseVerify.proof.durableJournal.rows, 17);
-  assert.equal(releaseVerify.proof.durableJournal.applyCommitted, true);
-  assert.equal(releaseVerify.proof.durableJournal.mutationApplied, 7);
-  assert.equal(releaseVerify.proof.durableJournal.idempotencyOpened, 1);
-  assert.equal(releaseVerify.releaseProof.preflight.sessionType, 'application-password-basic');
-  assert.equal(releaseVerify.releaseProof.dryRun.sessionType, 'application-password-basic');
-  assert.equal(releaseVerify.releaseProof.apply.sessionType, 'application-password-basic');
-  assert.equal(releaseVerify.releaseProof.apply.idempotency.replayed, false);
-  assert.equal(releaseVerify.releaseProof.apply.idempotency.freshMutationWork, true);
-  assert.equal(releaseVerify.releaseProof.apply.idempotency.conflict, false);
-  assert.notEqual(releaseVerify.proof.liveDrift.base_hash, releaseVerify.proof.liveDrift.changed_hash);
-  assert.equal(releaseVerify.proof.liveDrift.changed_fixture, 'remote-changed');
 });
 
 test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {

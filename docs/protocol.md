@@ -204,6 +204,10 @@ The supervisor-facing release entrypoint is `npm run verify:release`.
 It is the same checked command as the live-source verify path, so the release
 proof remains a single executable surface even when the command is invoked
 through the shorter alias.
+When the live source or real push secret is missing, that supervisor command
+now fails closed with the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
+`REPRINT_PUSH_SECRET_REQUIRED` gate before any preflight, dry-run, or apply
+attempt.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.

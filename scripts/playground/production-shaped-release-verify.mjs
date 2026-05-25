@@ -56,7 +56,7 @@ if (!liveSourceUrl) {
     ),
   );
   process.stdout.write('\n');
-  process.exit(0);
+  process.exit(1);
 }
 
 if (!username || !applicationPassword) {
@@ -96,7 +96,7 @@ if (!username || !applicationPassword) {
     ),
   );
   process.stdout.write('\n');
-  process.exit(0);
+  process.exit(1);
 }
 
 const remoteServer = await startPlaygroundServer(
