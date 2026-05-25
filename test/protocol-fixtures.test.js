@@ -160,6 +160,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const recoveryBlocked = readJson('fixtures/protocol/push-recovery-blocked-response.json');
   const inspectContract = readJson('fixtures/protocol/push-recovery-inspect-contract.json');
   const snapshotPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
+  const dryRunApplyContract = readJson('fixtures/protocol/push-dry-run-apply-revalidation-contract.json');
 
   assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightRequest.remote_site_id, 'remote-example');
@@ -266,6 +267,18 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
       'partial listings remain planning evidence, not write authority',
     ),
   );
+  assert.equal(dryRunApplyContract.contract_id, 'push-dry-run-apply-revalidation-contract-one-remote-one-local');
+  assert.equal(dryRunApplyContract.pull_handoff.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(dryRunApplyContract.pull_handoff.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
+  assert.equal(dryRunApplyContract.plan_bindings.snapshot_id, 'snap_01j00000000000000000000000');
+  assert.equal(dryRunApplyContract.apply_revalidation.before_each_batch, 'fresh live hashes');
+  assert.ok(dryRunApplyContract.apply_revalidation.rejected_if.includes('the remote changed after the dry-run receipt'));
+  assert.equal(dryRunApplyContract.journal_and_recovery.inspect_mode, 'inspect');
+  assert.equal(dryRunApplyContract.journal_and_recovery.inspect_is_read_only, true);
+  assert.equal(dryRunApplyContract.topology.browser_ingress_port, 8080);
+  assert.equal(dryRunApplyContract.topology.proxy_policy, 'local-only');
+  assert.equal(dryRunApplyContract.topology.tunnels, 'disallowed');
+  assert.ok(dryRunApplyContract.required_invariants.includes('the dry-run receipt never becomes a lock'));
 });
 
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {

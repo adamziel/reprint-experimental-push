@@ -34,6 +34,7 @@ The normal sequence is:
 26. `push-topology-matrix.json`
 27. `push-recovery-inspect-contract.json`
 28. `push-snapshot-hashes-page-contract.json`
+29. `push-dry-run-apply-revalidation-contract.json`
 
 Failure and recovery examples:
 
@@ -100,6 +101,10 @@ Failure and recovery examples:
 - `push-snapshot-hashes-page-contract.json` gives the compact cursoring proof
   for large remote sites and keeps partial snapshot listings clearly in the
   planning-only lane.
+- `push-dry-run-apply-revalidation-contract.json` gives the compact proof that
+  snapshot planning, dry-run eligibility, apply-time revalidation, and
+  storage-boundary guards stay separate even when the remote drifts between
+  dry-run and apply.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

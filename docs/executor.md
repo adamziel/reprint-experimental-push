@@ -232,6 +232,11 @@ Its `push_guards` fields mirror the executor rules: preflight binds the
 persisted base, snapshot listing is planning-only, dry-run is a receipt, apply
 revalidates before each batch and at the storage boundary, and inspect-first
 recovery is mandatory before any mutating repair.
+The narrowest proof for the dry-run/apply boundary is
+[`fixtures/protocol/push-dry-run-apply-revalidation-contract.json`](../fixtures/protocol/push-dry-run-apply-revalidation-contract.json).
+It records the pull handoff, the planning bindings, the apply-time
+revalidation rules, and the one-remote/one-local topology in a form tests can
+assert directly.
 The compact recovery companion at
 [`fixtures/protocol/push-recovery-inspect-contract.json`](../fixtures/protocol/push-recovery-inspect-contract.json)
 adds the session, journal row, live-drift evidence, and read-only inspect
