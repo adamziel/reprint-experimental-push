@@ -154,6 +154,7 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'That order is the production proof stack:',
+      'dry-run and apply remain separate remote operations even when the same',
     ),
   );
   assert.ok(

@@ -92,6 +92,7 @@ That order is the production proof stack:
 - pull bridge contract for immutable provenance handoff
 - remote liveness topology contract for dry-run/apply separation with live drift
 - production topology contract for the one-remote, one-local, one-drift harness proof
+
 The bridge is reviewed in a fixed order:
 
 1. exporter/importer create the immutable pull base package.
