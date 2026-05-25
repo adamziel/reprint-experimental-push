@@ -10,7 +10,7 @@ Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, 
 
 ## 12h Delta
 
-The last 12 hours did not change the release gate. Current remote heads are `origin/lane/reliable-executor=abf848b0` and `origin/lane/independent-auditor=8b96e04b`. The reliable-executor head `abf848b0` sharpens the contract text around the checked commands and pull-to-push bridge topology, but it still does not provide a checked in-tree live-boundary verdict; the independent-auditor head only refreshed this audit boundary text.
+The last 12 hours did not change the release gate. Fresh remote fetch evidence shows `origin/lane/reliable-executor=abf848b02a441b9c56d4a8e9fc8cf8c6e8673b57` and `origin/lane/independent-auditor=05785c241b67ce69d43f1e8a2308d0b6798281c1`. The reliable-executor head `abf848b0` sharpens the contract text around the checked commands and pull-to-push bridge topology, but it still does not provide a checked in-tree live-boundary verdict; the independent-auditor head remains this audit refresh only.
 
 Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The exact proof that would move one gate is a checked command from this checkout that, in one run, emits apply-time auth/session validation, durable journal readback, recovery evidence, live-source topology proof, preserved-remote drift evidence, and the same live-boundary verdict surface as the remote lane. The closest current proof is still remote-only `abf848b0`; it is the exact evidence that would need to be mirrored in-tree.
 
@@ -64,7 +64,7 @@ Evidence buckets:
 
 ## Current Command Surface
 
-Direct command-surface recheck on `origin/lane/reliable-executor` at `abf848b0`:
+Direct command-surface recheck on `origin/lane/reliable-executor` at `abf848b02a441b9c56d4a8e9fc8cf8c6e8673b57`:
 
 - `origin/lane/reliable-executor` at `abf848b0` exposes `verify:release`, `test:playground:production-shaped-release-verify`, `test:playground:production-shaped-live-preflight`, `test:playground:production-shaped-missing-live-source`, and `test:playground:production-shaped-missing-secret`.
 - The contract fixture at `abf848b0` now explicitly names `npm run verify:release` and `npm run test:recovery:file-journal` as checked commands, and it clarifies that the pull-to-push bridge only reads the remote comparison surface for planning and records durable evidence without authorizing mutation.
