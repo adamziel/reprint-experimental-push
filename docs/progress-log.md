@@ -13,7 +13,7 @@ linked implementation artifacts.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
 - Next nudge: `integration` owns the next real-site release command and must return retained live source/auth/recovery output; `invariants` and `recovery` should align to that same command, and `reliable-executor` should keep the gate bound to a real URL/topology.
-- Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages only after merge to `main`, so the deployed copy will lag until then.
+- Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages after merge to `main`.
 - Audit note: [audits/supervisor-note-20260525-103309.md](../audits/supervisor-note-20260525-103309.md) captures the newest decision refresh; the release state still does not move.
 
 ## 2026-05-25 - Supervisor Follow-up
@@ -26,7 +26,7 @@ linked implementation artifacts.
 - Visible page: [progress.html](../progress.html) remains scan-first and keeps the detailed trail in linked docs.
 - Pending proof gates: one gap at a time, starting with auth/session or crash-safe journal evidence.
 - Next nudge: do not expand scope until one lane can show a concrete production-backed check.
-- Public page: [progress.html](../progress.html) still reaches GitHub Pages only after merge to `main`; the deployed copy lags until then.
+- Public page: [progress.html](../progress.html) still reaches GitHub Pages after merge to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>
