@@ -2634,6 +2634,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
   {
+    id: 'compressed-remote-index-and-cached-source-identity-skips-live-revalidation-after-pause',
+    proposal: 'use a compressed remote index plus cached source identity to skip live revalidation after a pause',
+    rejectedBecause: 'planning evidence and cached source identity can reduce lookup work, but they cannot prove the live remote resource still matches, which chunk acknowledgements survived the pause, or that the guarded publish barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'backpressure', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers',
     proposal: 'use a compressed remote index to justify unbounded database row parallelism across plugin groups once batching begins',
     rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded row parallelism can still erase the group-owned commit order and backpressure evidence needed to recover a partial failure',

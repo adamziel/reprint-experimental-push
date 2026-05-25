@@ -271,6 +271,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'live',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-source-identity-skips-live-revalidation-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-resume-after-pause')?.rejectedGate,
     'recovery',
   );
@@ -409,6 +413,15 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-live-compare-before-publish')?.violates.includes('atomic-file-publish'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-source-identity-skips-live-revalidation-after-pause')?.violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-source-identity-skips-live-revalidation-after-pause')?.violates.includes('live-preconditions'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-source-identity-skips-live-revalidation-after-pause')?.violates.includes('atomic-file-publish'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause')?.rejectedGate,
