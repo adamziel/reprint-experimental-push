@@ -61,6 +61,15 @@ The normal sequence is:
 53. `push-production-executor-flow-contract.json`
 54. `push-protocol-extension-topology-contract.json`
 
+For production review, the shortest path is:
+
+1. `push-protocol-extension-contract.json`
+2. `push-production-topology-contract.json`
+3. `push-production-auth-session-journal-recovery-inspect-contract.json`
+4. `push-production-revalidation-contract.json`
+5. `push-production-recovery-inspect-contract.json`
+6. `push-production-executor-flow-contract.json`
+
 The seven protocol surfaces are the ones the executor must treat as distinct
 remote boundaries:
 
