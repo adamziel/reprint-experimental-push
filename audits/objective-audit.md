@@ -10,7 +10,7 @@ Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, 
 
 ## 12h Delta
 
-The last 12 hours did not change the release gate. Fresh remote fetch evidence now shows `origin/lane/reliable-executor=4baf67ab3aaf99400401387b96af6f7ba0de3b06` and `origin/lane/independent-auditor=878f21002379b4d4a9f39d6228ad6c82457b5ffd`, so the only local movement here is this audit refresh. The reliable-executor head `4baf67ab` tightened the boundary language and preserved the same open production gate, but it still does not prove the production boundary.
+The last 12 hours did not change the release gate. Fresh remote fetch evidence now shows `origin/lane/reliable-executor=4baf67ab3aaf99400401387b96af6f7ba0de3b06` and `origin/lane/independent-auditor=878f21002379b4d4a9f39d6228ad6c82457b5ffd`, so the only local movement here is this audit refresh. The reliable-executor head `4baf67ab` sharpened the release wording and preserved the same open production boundary, but it still does not prove the production boundary.
 
 Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The exact proof that would move one gate is a checked command from this checkout that, in one run, emits apply-time auth/session validation, durable journal readback, recovery evidence, live-source topology proof, preserved-remote drift evidence, and an explicit machine-checkable verdict that the remaining production boundary has cleared. The next owner for the missing proof remains `reliable-executor`; no other lane has replaced that boundary with an in-tree checked verdict.
 
