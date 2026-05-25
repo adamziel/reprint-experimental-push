@@ -126,6 +126,8 @@ For the compact bridge between the pull pipeline and that topology, cite
 `push-pull-to-topology-contract.json`. For the smallest topology-only proof,
 cite `push-deployment-topology-contract.json`. For the strongest liveness
 boundary proof, cite `push-remote-liveness-topology-contract.json`.
+For the shortest stage-by-stage production proof, cite
+`push-production-ladder-contract.json`.
 
 The topology story is intentionally small:
 
@@ -260,6 +262,10 @@ The canonical proof stack for that executor story is the same one named in
 - `push-journal-inspect-contract.json` for the read-only journal boundary
 - `push-remote-liveness-topology-contract.json` for the compact liveness plus
   one-remote, one-local, one-drift harness proof
+- `push-production-ladder-contract.json` for the shortest stage-by-stage
+  production proof that still keeps the pull base, dry-run receipt,
+  apply-time revalidation, journal inspection, and inspect-first recovery
+  explicit
 - `push-topology-matrix.json` for the canonical Docker/Playground stage
   matrix proving one remote source, one local edited site, and one drift
   witness

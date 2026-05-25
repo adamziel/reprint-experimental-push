@@ -80,6 +80,10 @@ The machine-readable bridge is split across the fixtures:
   `push-production-push-recovery-contract.json` bind the auth floor, minted
   push session, journal rows, lease fencing, and inspect-first recovery into
   one production-shaped proof.
+- `push-production-ladder-contract.json` captures the same one-remote,
+  one-local ladder in a shorter stage-by-stage proof with the pull base,
+  session minting, dry-run receipt, apply-time revalidation, journal
+  inspection, and inspect-first recovery all pinned together.
 - `push-recovery-boundary-contract.json` captures the compact inspect-first
   recovery boundary with the auth floor and Docker/Playground topology in one
   place.
@@ -115,6 +119,14 @@ The pull-to-push bridge is one-way:
   storage boundary
 - journal inspect stays read-only
 - recovery starts with inspect before any mutating repair
+
+That bridge also defines the recovery floor:
+
+- journal inspection is read-only evidence gathering, not a mutation gate
+- inspect must happen before any mutating recovery branch
+- finish, rollback, retry, and block are the only recovery classifications
+- mutating recovery must still satisfy the same auth floor as the write path
+- stale dry-run evidence never becomes recovery authority
 
 The topology model is deliberately minimal:
 

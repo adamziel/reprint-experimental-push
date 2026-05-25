@@ -149,6 +149,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
   );
   const recoveryBoundaryContract = readJson('fixtures/protocol/push-recovery-boundary-contract.json');
+  const productionLadderContract = readJson('fixtures/protocol/push-production-ladder-contract.json');
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(contract.pull_pipeline.importer, 'persists the base package as immutable provenance');
@@ -217,6 +218,29 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(
     contract.production_shape.dry_run_plan_upload,
     'a canonical plan upload that yields a receipt but never a lock',
+  );
+  assert.equal(productionLadderContract.contract_id, 'push-production-ladder-one-remote-one-local');
+  assert.equal(
+    productionLadderContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.equal(
+    productionLadderContract.pull_to_push_mapping.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(
+    productionLadderContract.remote_liveness.apply,
+    'revalidates the live remote before every batch and again at the storage boundary',
+  );
+  assert.ok(
+    productionLadderContract.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
+    ),
+  );
+  assert.ok(
+    productionLadderContract.required_invariants.includes(
+      'authentication must be at least as strict as current Reprint HMAC usage',
+    ),
   );
   assert.equal(
     contract.production_shape.preflight_session_binding,
