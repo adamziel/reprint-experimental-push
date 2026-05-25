@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 10:45:06 CEST.
+- Last update: 2026-05-25 10:46:48 CEST.
 - Status: blocked; the visible page, log, and latest audit note still agree.
-- Trend: no release-state change; `integration` still owns the next real-site command and the gate stays explicit.
+- Trend: no release-state change; `integration` still owns the next real-site release command and the gate stays explicit.
 - Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
