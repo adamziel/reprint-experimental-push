@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `bd9ef3e8` on `origin/lane/reliable-executor`. The latest explicit
+remote head `3b6e5dbd` on `origin/lane/reliable-executor`. The latest explicit
 verdict on that lane is `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the
 lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
