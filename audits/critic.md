@@ -1796,7 +1796,9 @@ Before any production-grade push claim, the project needs all of these:
     production support. A stale review artifact only counts as audit evidence
     if the retry rebuilt scope from fresh live hashes and the artifact could
     not be reused against a different row, file, relationship-bearing record,
-    create-time alias, or plugin-owned surface.
+    create-time alias, or plugin-owned surface. If the artifact can still be
+    used as authority after drift, the design is not production-grade, even if
+    the route shape or lab smoke still looks valid.
 
 Addendum: each of these conditions must be independently testable in the
 release suite. A passing route-shape smoke is not sufficient if any one of the
@@ -1823,7 +1825,9 @@ Treat any comparison citation as frozen evidence until the cited upstream
 state is reverified at the same live mutation boundary; a matching route shape
 or package layout does not upgrade the citation into proof, and a stale manual
 review artifact does not become current authority just because the upstream
-note sounds conservative.
+note sounds conservative. The same applies to `finalMatchesLocal`: it can
+confirm a lab route answer, but it cannot prove the live executor, preserved
+remote, or stale-authority rejection needed for production wording.
 
 The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
