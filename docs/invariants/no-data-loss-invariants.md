@@ -22,6 +22,9 @@ This note captures the planner boundary in plain language.
 - Live-preconditioned file deletes and file type swaps may coexist in the same
   plan with matching independent edits when each mutation keeps its own live
   remote hash check and unrelated remote-only plugin drift stays `keep-remote`.
+- Live-preconditioned file deletes and file type swaps may still coexist when
+  the remote side removed an unrelated plugin entirely and a matching
+  independent edit stays `already-in-sync`.
 - A file type swap that would hide a live remote descendant must still stop
   even when the remote side removed an unrelated plugin; the unrelated plugin
   removal stays `keep-remote` and the file-topology evidence stays bounded.
