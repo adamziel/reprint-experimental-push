@@ -2650,6 +2650,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    proposal: 'use a compressed remote index plus batched receipt flushes to skip the release-bundle commit barrier after a pause',
+    rejectedBecause: 'planning evidence and batched receipt flushing can reduce fsync work, but they cannot prove the dependent plugin files, row batches, or atomic-group commit survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
     proposal: 'use a compressed remote index plus compressed database batches to skip the release-bundle commit barrier',
     rejectedBecause: 'planning evidence and batch compression can reduce fsync cost, but they cannot prove the dependent plugin files, database row batches, and atomic-group commit survived failure',

@@ -1106,6 +1106,13 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
       fastPath.violates.includes('row-preconditions')
     ),
   );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause' &&
+      fastPath.rejectedGate === 'recovery' &&
+      fastPath.violates.includes('atomic-groups')
+    ),
+  );
   for (const area of [
     'file-hashing',
     'chunk-upload',
