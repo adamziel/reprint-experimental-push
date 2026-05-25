@@ -5985,3 +5985,25 @@ Release gate for this branch:
 - no production-grade push claim unless the evidence is live-boundary proof,
   not route shape, package mount, fixture replay, readable review output, or
   `finalMatchesLocal`.
+
+Production-grade proof still missing on this branch:
+
+- live remote drift is not closed until the rejected remote stays inspectable
+  after rejection and the retry scope is rebuilt from fresh live hashes;
+- create-time identity remap is not closed until apply-time identity evidence
+  exists or the remap is blocked before mutation, because matching route
+  shape can still hide aliasing or renumbering;
+- plugin-owned state outside the allowlist is not closed until every owned
+  surface is enumerated or blocked before write, including hidden tables,
+  cron rows, runtime registries, generated files, caches, serialized blobs,
+  and any late-discovered surface that becomes a new boundary;
+- partial file, DB, or plugin side effects are not closed until every touched
+  surface is classified old, new, or blocked before retry, so mixed outcomes
+  cannot be relabeled as success;
+- stale manual-review artifacts are not closed until the artifact stays
+  audit-only after drift, cannot be reused as retry authority for a different
+  boundary, and the branch reruns the same live boundary with preserved-
+  remote evidence and fresh live hashes; and
+- Reprint, ZS-Sync, and ForkPress comparisons are not closed until each one
+  names the exact upstream state, the exact live boundary, what the note
+  proves here, and what it does not prove here.
