@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `423c8a4e`, with earlier retained-source evidence at `91ef2b06`
+remote head `84fc4b8d`, with earlier retained-source evidence at `91ef2b06`
 still useful as history, not as release proof. The latest explicit verdict on
 that lane is
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the lane's completed
