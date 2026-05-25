@@ -11236,3 +11236,69 @@ test('durable completed replay with stale local data stays inert and keeps the c
     false,
   );
 });
+
+test('durable recovery keeps append-only retries and completed replays idempotent across the full cycle', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const firstWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: firstWriter,
+      failBeforeMutation: true,
+    }),
+  );
+
+  firstWriter.close();
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.details.recovery.status, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'opened');
+  assert.equal(JSON.stringify(remote), before);
+
+  const retryWriter = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retry = applyPlan(remote, plan, {
+    durableJournal: retryWriter,
+    journal: failure.details.recovery.artifacts.journal,
+  });
+  retryWriter.close();
+
+  assert.equal(retry.appliedMutations, plan.mutations.length);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(retry.site.files['index.php'], '<?php echo "local";');
+  assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+
+  const completedRemote = JSON.parse(JSON.stringify(retry.site));
+  const completedSnapshot = JSON.stringify(completedRemote);
+  const replayWriter = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(completedRemote, plan, {
+    durableJournal: replayWriter,
+    journal: retry.journal,
+  });
+  replayWriter.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  const targetRecords = persisted.records.filter((record) => record.type === 'target-planned');
+
+  assert.equal(JSON.stringify(completedRemote), completedSnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(targetRecords.length, plan.mutations.length);
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-retry-opened').length >= 1,
+    true,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
+});
