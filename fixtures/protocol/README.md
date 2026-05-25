@@ -74,6 +74,10 @@ identity across `remote-base` and `remote-changed`:
 - `push-deployment-topology-contract.json` is the smaller topology-only proof
   for Docker and Playground when you only need the one-remote, one-local
   harness shape.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is
+  the compact production proof that keeps auth, session minting, journal rows,
+  lease fencing, and inspect-first recovery aligned on the same remote
+  identity and local edit site.
 - `push-production-revalidation-contract.json` is the compact proof that
   keeps preflight, planning-only snapshot hashes, dry-run eligibility,
   apply-time revalidation, journal evidence, and inspect-first recovery
@@ -227,10 +231,6 @@ The top-level ladder is intentionally staged:
 4. batched apply with apply-time revalidation
 5. journal inspect
 6. inspect-first recovery
-- `push-production-auth-session-journal-recovery-inspect-contract.json` is
-  the compact proof that binds the auth floor, minted push session, journal
-  row, lease fence, and read-only recovery inspect into one production-shaped
-  object.
 - `push-production-topology-contract.json` is the compact one-remote,
   one-local, one-drift proof that keeps the pull provenance, push ladder, and
   Docker/Playground topology aligned in one object.
@@ -238,9 +238,6 @@ The top-level ladder is intentionally staged:
   `push-production-recovery-inspect-contract.json` are the paired production
   proofs for auth, session minting, journal rows, lease fencing, and
   inspect-first recovery on the same remote identity.
-- `push-production-auth-session-journal-recovery-inspect-contract.json` is
-  the compact proof that binds auth, session minting, journal rows, lease
-  fencing, and read-only inspect into one production-shaped object.
 - `push-production-pull-bridge-contract.json` is the compact proof that
   ties exporter/importer provenance directly to the full push ladder,
   including preflight, planning-only hash listing, dry-run eligibility,

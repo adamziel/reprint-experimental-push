@@ -24,7 +24,8 @@ That topology stays aligned with the pull-to-push bridge:
 - `push_recover inspect` reads the journal, fresh live hashes, and the
   recovery fence before any mutating repair
 
-The pull pipeline is the immutable provenance source:
+The pull pipeline is the immutable provenance source and the executor
+consumes it in order:
 
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
@@ -36,6 +37,20 @@ The pull pipeline is the immutable provenance source:
 - `push_journal` records durable evidence without authorizing mutation
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating repair
+
+The one-remote, one-local, one-drift harness is fixed in both Docker and
+Playground:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor allowed to preflight, list hashes, dry-run,
+  apply, inspect the journal, or recover
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 
 The concrete lab roles are:
 

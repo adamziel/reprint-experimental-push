@@ -90,6 +90,21 @@ The same pull-to-push bridge is exercised in Docker and Playground:
 - `push_recover auto|finish|rollback` may mutate only after inspect proves
   the branch safe with the same auth floor as the write path
 
+The test topology is fixed across both Docker and Playground:
+
+- `remote-base` is the source site at pull time and seeds the persisted pull
+  base package
+- `local-edited` is the imported local edit site that carries the candidate
+  changes
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or recover
+- Docker uses one private network for those four roles
+- Playground uses separate disposable blueprints with the same role split
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 Put differently, the exporter/importer handoff stays authoritative for the
 base package, and push only consumes that immutable package in the order
 above:
