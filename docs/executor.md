@@ -37,8 +37,8 @@ The same pull-to-push bridge applies here:
   push session
 - remote snapshot hash listing stays planning-only
 - dry-run uploads a canonical plan receipt and never becomes a lock
-- batched apply revalidates fresh live evidence before every batch and at the
-  storage boundary
+- batched apply revalidates fresh live evidence before every batch and again
+  at the storage boundary
 - journal inspection stays read-only
 - inspect-first recovery is the only safe starting point for mutating
   recovery
@@ -50,8 +50,8 @@ The executor needs the same boundary discipline as the protocol:
 - preflight is the first live binding after importer provenance exists
 - remote snapshot hash listing is planning evidence only
 - dry-run uploads the canonical plan and returns a receipt, not a lock
-- apply revalidates fresh live evidence before every batch and at the storage
-  boundary
+- apply revalidates fresh live evidence before every batch and again at the
+  storage boundary
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when inspect proves the branch
   safe with fresh live evidence

@@ -13,7 +13,7 @@ the persisted pull base package, the edited local site, and the live remote
 site. The persisted pull base package is immutable provenance from the pull
 pipeline, not a mutable snapshot cache.
 
-The production ladder is fixed:
+The production ladder is fixed and each stage keeps its own boundary:
 
 1. `push_preflight` binds the persisted pull base package to one live remote
    identity, one requested scope, and one short-lived push session.
@@ -36,7 +36,7 @@ That ladder maps to distinct remote boundaries:
 - preflight is the first live binding after importer provenance exists
 - snapshot hash listing is planning evidence only
 - dry-run is an eligibility receipt, not a lock
-- batch apply revalidates before every batch and at the storage boundary
+- batch apply revalidates before every batch and again at the storage boundary
 - journal inspect is read-only
 - recovery starts with inspect and only mutates when journal evidence and
   fresh live hashes still prove the branch safe
@@ -83,6 +83,35 @@ The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
 site, and one live remote identity that must be revalidated at apply time.
 
+## Auth And Recovery
+
+Push auth must be at least as strict as current Reprint HMAC usage. The write
+path may use stronger session material, but it may not weaken that floor.
+
+The auth floor applies consistently:
+
+- preflight mints a short-lived push session bound to the persisted pull base
+  package and the live remote identity
+- dry-run uses that session only to upload the canonical plan receipt
+- apply must revalidate the live remote before every batch and again at the
+  storage boundary
+- journal inspection stays read-only
+- mutating recovery must satisfy the same auth floor, plus journal evidence
+  and fresh live hashes
+
+Recovery is inspect-first:
+
+- `inspect` is the only safe starting point because it can prove whether the
+  journaled target still matches fresh live hashes
+- `finish` is only safe when the journal row is complete and the live site can
+  still prove the staged target
+- `rollback` is only safe when the journal row can prove that backing out will
+  restore the imported base package without trampling a newer remote change
+- `retry` is only valid when the claim is open but still fenced and the live
+  evidence is not contradictory
+- `block` is the outcome when the journal or live evidence cannot prove a
+  safe mutating recovery path
+
 ## Pull To Push Mapping
 
 Push consumes immutable provenance from the existing pull pipeline. The
@@ -107,8 +136,8 @@ The pull-to-push bridge is intentionally one-way:
 - snapshot hash listing reads the live remote comparison surface for planning
   only
 - dry-run uploads the canonical plan as a receipt, not a lock
-- apply revalidates fresh live evidence before every batch and at the storage
-  boundary
+- apply revalidates fresh live evidence before every batch and again at the
+  storage boundary
 - journal inspect stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes still prove the action safe
