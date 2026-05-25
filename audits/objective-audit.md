@@ -33,6 +33,7 @@ The weakest claim is the production release verdict itself.
 - `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
 - The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added.
+- Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
 - The next concrete release step should be a mandatory `verify:release` or `release` command that composes the existing guardrail tests, prints either a measured live-path threshold or `speed unclaimed`, and exits non-zero until that verdict is produced.
 
 ## Release Summary
@@ -45,7 +46,7 @@ The weakest claim is the production release verdict itself.
 | Missing release proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict or enforced `speed unclaimed` refusal emitted by a mandatory release command. |
 | Release blocker | There is no mandatory `verify`, `verify:release`, or `release` command that can fail closed when any of those proofs are absent. |
 
-Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict.
+Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict. The blocker is structural: no required command owns the live-source verdict.
 
 ## Evidence At A Glance
 
