@@ -169,6 +169,17 @@ read-only. They do not authorize mutation by themselves; they only explain
 which mutating recovery path, if any, is safe after fresh live hashes are
 checked again.
 
+Recovery also keeps the durable journal boundary explicit:
+
+- the journal row records the claim owner, claim generation, lease expiry, and
+  storage guard for the interrupted batch
+- `push_recover inspect` must read that journal row before any finish,
+  rollback, or auto step
+- fresh live hashes must still match the journaled target before a mutating
+  recovery path can proceed
+- if the journal row and live hashes disagree, inspect returns `blocked`
+  rather than trying to repair state blindly
+
 ## Pull Handoff
 
 The pull/export/import pipeline maps to push as a one-way provenance handoff:

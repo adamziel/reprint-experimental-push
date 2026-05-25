@@ -622,14 +622,27 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(authSessionJournalProof.required_invariants.includes('inspect is read-only and must come before any mutating recovery mode'));
   assert.equal(authSessionRecoveryContract.contract_id, 'push-auth-session-recovery-contract-one-remote-one-local');
   assert.equal(authSessionRecoveryContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.deepEqual(authSessionRecoveryContract.auth.push_requires, [
+    'push session',
+    'canonical push signature',
+    'idempotency key',
+  ]);
   assert.deepEqual(authSessionRecoveryContract.auth.inspect_requires, [
     'HMAC-authenticated request',
     'read-only recovery mode',
   ]);
   assert.equal(authSessionRecoveryContract.session.identity_hash, 'sha256:remote-identity');
+  assert.equal(authSessionRecoveryContract.session.expires_at, '2026-05-24T00:10:00Z');
+  assert.equal(authSessionRecoveryContract.journal_row.claim_generation, 4);
+  assert.equal(authSessionRecoveryContract.journal_row.lease_expires_at, '2026-05-24T00:00:09Z');
   assert.equal(authSessionRecoveryContract.journal_row.storage_guard, 'filesystem-compare-rename');
   assert.equal(authSessionRecoveryContract.recovery.inspect_mode, 'inspect');
   assert.equal(authSessionRecoveryContract.recovery.mutates, false);
+  assert.ok(
+    authSessionRecoveryContract.recovery.blocked_when.includes(
+      'fresh live hashes do not match the journaled target',
+    ),
+  );
   assert.ok(
     authSessionRecoveryContract.recovery.blocked_when.includes(
       'the claim lease has expired and the worker is fenced',
