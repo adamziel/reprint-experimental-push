@@ -22,7 +22,7 @@ Latest supervision evidence narrows the remaining gap, but does not close it:
 `origin/lane/independent-auditor` is at `33b839f0`,
 `origin/lane/feedback-supervisor` is at `f386dfa6`,
 `origin/lane/progress-publisher` is at `7695e1f9`,
-and `origin/lane/same-plan-wordpress-graph-create` is at `d1994422`,
+and `origin/lane/same-plan-wordpress-graph-create` is at `24c58564`,
 while the critic branch now matches `HEAD` at `f8591f9d` and is ahead of
 `origin/lane/critic` at `4e487df4`.
 These moves refresh the audit snapshot but do not change the underlying
