@@ -455,7 +455,6 @@
         order: -1;
       }
 
-      .summary,
       .latest-evidence-panel,
       .evidence-map-panel,
       .lane .note {
@@ -474,23 +473,19 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">89 Node tests still pass. Supervised lanes are active, but production push remains blocked. Latest lane evidence is 04:39:21 CEST, so the trend stays flat and conservative. Production auth/session binding, durable journal storage, graph identity, plugin drivers, live Docker/Playground topology, recovery boundaries, and release-gate proof are still unproven.</p>
-        <time class="update-stamp" datetime="2026-05-25T04:39:43+02:00">Last updated: May 25, 2026, 04:39:43 CEST</time>
+        <p class="lead">89 Node tests pass in local lab checks. The public status stays flat until production executor, recovery, and Docker/Playground proof is added.</p>
+        <time class="update-stamp" datetime="2026-05-25T04:43:04+02:00">Last updated: May 25, 2026, 04:43:04 CEST</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">89 Node tests passing</span>
-          <span class="pill">Swarm active in supervised lanes</span>
-          <span class="pill">Production gates still blocked</span>
-          <span class="pill">Trend flat until production proof lands</span>
-          <span class="pill">Latest lane evidence is 04:39:21 CEST</span>
-          <span class="pill">Auth and session binding missing</span>
-          <span class="pill">Durable journal storage unproven</span>
-          <span class="pill">Graph identity and plugin drivers pending</span>
+          <span class="pill">Status: lab proof only; production gates remain unverified</span>
+          <span class="pill">Top blocker: production executor/auth and durable recovery journal</span>
+          <span class="pill">Release gates proven: 0/5</span>
+          <span class="pill">Still pending: Docker/Playground, graph identity, plugin drivers</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <a class="log-link" href="docs/supervisor-feedback.md">Open supervisor feedback</a>
-        <p>Scan view only. Detailed evidence lives in the linked docs.</p>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-044304">Open newest audit: 2026-05-25 04:43:04</a>
+        <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
+        <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="docs/approach-scorecard.md">scorecard</a>, <a href="docs/executor.md">executor</a>, <a href="docs/recovery/apply-journal.md">recovery</a>, <a href="docs/playground-topology.md">playground</a>, <a href="docs/protocol.md">protocol</a>, <a href="docs/supervisor-feedback.md">feedback</a>.</p>
       </div>
     </header>
 
@@ -501,15 +496,15 @@
       </div>
       <div class="metric">
         <strong>Flat</strong>
-        <span>production readiness trend</span>
+        <span>trend stays flat until production proof lands</span>
       </div>
       <div class="metric">
-        <strong>7</strong>
-        <span>explicit pending proof gates</span>
+        <strong>0/5</strong>
+        <span>release gates proven by evidence so far</span>
       </div>
       <div class="metric">
-        <strong>0</strong>
-        <span>production gates proven</span>
+        <strong>5</strong>
+        <span>open proof areas listed in the release-gate checklist below</span>
       </div>
     </section>
 
@@ -517,7 +512,7 @@
       <section class="section" aria-labelledby="lanes">
         <div class="section-head">
           <h2 id="lanes">Work Lanes</h2>
-          <span>Evidence, not optimism</span>
+          <span>Current status, blockers, and release-gate checklist</span>
         </div>
 
         <div class="lane">
@@ -529,13 +524,13 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">29%</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries 29 percent"><div class="fill green" style="width:29%"></div></div>
-          <p class="note">Replay and failure-state coverage is sharper in the model only. Gap: production journal durability and recovery boundaries.</p>
+          <p class="note">Replay and failure-state coverage is sharper in the model only. Gap: production journal durability.</p>
         </div>
 
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">42%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 42 percent"><div class="fill amber" style="width:42%"></div></div>
-          <p class="note">Protocol/executor docs name the production push flow, but the proof is still local-lab scoped. Gap: production auth, sessions, journal durability, and leases.</p>
+          <p class="note">Protocol/executor docs name the production push flow, but the proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
         </div>
 
         <div class="lane">
@@ -555,10 +550,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>89 Node tests pass, and the newest supervised evidence still adds recovery, protocol, critic, and audit detail.</span></li>
-            <li><strong>Not going well</strong><span>Production auth/session binding, durable journal storage, graph identity, Docker/Playground integration, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>The swarm is active, but the production gate set has not moved.</span></li>
-            <li><strong>Next nudge</strong><span>Keep the release gate blocked until production auth, journals, graph identity, topology, and release evidence land.</span></li>
+            <li><strong>What is proven</strong><span>89 Node tests pass, and the linked executor, recovery, playground, protocol, and feedback evidence stays current.</span></li>
+            <li><strong>Top risk</strong><span>Production executor/auth and durable journaling still block any push-safety claim.</span></li>
+            <li><strong>Release gates</strong><span>WordPress executor/auth, recovery journal, Docker/Playground, graph identity, and plugin drivers remain unverified.</span></li>
+            <li><strong>Audit note</strong><span>The newest dated entry is linked above, and the detailed evidence sits below.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -566,12 +561,12 @@
         <section class="panel latest-evidence-panel" aria-labelledby="latest-evidence">
           <h2 id="latest-evidence">Latest Evidence</h2>
           <ul class="link-list">
+            <li><a href="docs/approach-scorecard.md">Approach scorecard</a></li>
             <li><a href="scripts/playground/production-plugin-package-smoke.mjs">Packaged plugin smoke</a></li>
             <li><a href="scripts/playground/production-shaped-route-smoke.mjs">Production-shaped route smoke</a></li>
             <li><a href="plugins/reprint-push/reprint-push.php">Plugin wrapper</a></li>
             <li><a href="scripts/bench/guarded-executor-benchmark.js">Guarded benchmark</a></li>
             <li><a href="docs/scenario-matrix.md">Scenario matrix</a></li>
-            <li><a href="docs/approach-scorecard.md">Approach scorecard</a></li>
             <li><a href="docs/protocol.md">Protocol sketch</a></li>
             <li><a href="docs/playground-topology.md">Playground topology</a></li>
             <li><a href="audits/objective-audit.md">Objective audit</a></li>
@@ -584,13 +579,13 @@
         </section>
 
         <section class="panel" aria-labelledby="proof-gates">
-          <h2 id="proof-gates">Pending Proof Gates</h2>
+          <h2 id="proof-gates">Release Gate Checklist</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Lab proof</span><p>Packaged route requires scoped credentials, rejects unprovisioned and unscoped credentials, cleans expired signed artifacts, and applies graph-safe mutations in local lab runs.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Production credential lifecycle, auth/session binding, and authorization.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Durable journal with crash, lease, fencing, and recovery boundary tests.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Live Docker/Playground topology beyond fixture labs.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>WordPress graph identity mapping, general plugin drivers, and rollback.</p></div>
+            <div class="proof-item"><span class="status">Lab proof</span><p>89 Node tests and local packaged-route runs show scoped credential rejection, cleanup of 2 expired signed artifacts, and 7 graph-safe mutations in lab-scoped evidence.</p></div>
+            <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production executor plus auth proof. Evidence: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>.</p></div>
+            <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Evidence: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
+            <div class="proof-item"><span class="status">Gate 3</span><p>Pending: Docker/full Playground integration beyond fixture labs. Evidence: <a href="docs/playground-topology.md">playground topology</a>.</p></div>
+            <div class="proof-item"><span class="status">Gate 4</span><p>Pending: WordPress graph identity mapping plus general plugin drivers. Evidence: <a href="docs/protocol.md">protocol sketch</a>, <a href="docs/supervisor-feedback.md">feedback log</a>.</p></div>
           </div>
         </section>
 
@@ -598,11 +593,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth, durable storage, and graph safety remain pending.</p>
+              <p>Lab snapshots prove guarded plans and fixture apply/refusal paths. Production mutation/auth, durable storage, Docker integration, graph identity, and plugin-driver proof remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, and WordPress graph identity are still pending.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production mutation, durable storage, Docker integration, WordPress graph identity, and plugin drivers are still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>
