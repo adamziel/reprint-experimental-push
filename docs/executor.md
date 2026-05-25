@@ -13,7 +13,8 @@ The executor has one production shape:
 
 - it starts from a persisted pull base package
 - it binds that package to one live remote identity in `push_preflight`
-- it treats `push_snapshot_hashes` as planning evidence only
+- it treats `push_snapshot_hashes` as the remote snapshot hash listing for
+  planning only
 - it uploads a canonical dry-run plan as eligibility evidence only
 - it applies in batches with live revalidation before every batch and at the
   storage boundary
@@ -24,9 +25,10 @@ The production ladder is fixed and the executor follows it exactly:
 
 1. `push_preflight` binds the persisted pull base to one live remote identity
    and one short-lived push session.
-2. `push_snapshot_hashes` lists live remote hashes for planning only.
-3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
-   receipt, not a lock.
+2. `push_snapshot_hashes` performs the remote snapshot hash listing for
+   planning only.
+3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
+   eligibility receipt, not a lock.
 4. `push_batch_apply` revalidates fresh live evidence before every batch and
    at the storage boundary.
 5. `push_journal` reads durable evidence without authorizing mutation.
@@ -155,8 +157,8 @@ The executor topology proof is intentionally narrow:
 - one remote source site seeds the persisted pull base
 - one local edited site produces the candidate plan
 - one later observation of the same remote identity proves drift
-- one runner process owns preflight, snapshot listing, dry-run, apply,
-  journal inspect, and recovery
+- one runner process owns preflight, remote snapshot hash listing, dry-run
+  plan upload, batch apply, journal inspect, and recovery
 - the Docker and Playground proofs keep the same route names and the same
   `8080`-only browser ingress rule
 

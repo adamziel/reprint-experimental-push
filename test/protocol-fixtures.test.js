@@ -191,11 +191,11 @@ test('push contract fixture binds the pull handoff to the production push sequen
   ]);
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_snapshot_hashes,
-    'collects live comparison evidence for planning only and never becomes write authority',
+    'performs the remote snapshot hash listing for planning only and never becomes write authority',
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_plan_dry_run,
-    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+    'uploads the canonical dry-run plan as eligibility evidence and returns a receipt, not a lock',
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_batch_apply,
@@ -323,11 +323,11 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_snapshot_hashes,
-    'collects live comparison evidence for planning only and never becomes write authority',
+    'performs the remote snapshot hash listing for planning only and never becomes write authority',
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_plan_dry_run,
-    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+    'uploads the canonical dry-run plan as eligibility evidence and returns a receipt, not a lock',
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_batch_apply,
@@ -356,7 +356,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.topology.same_remote_identity, true);
   assert.ok(
     protocolExtensionContract.topology.proof.includes(
-      'runner owns preflight, remote snapshot hash listing, dry-run upload, apply, journal inspect, and recovery',
+      'runner owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and recovery',
     ),
   );
   assert.ok(

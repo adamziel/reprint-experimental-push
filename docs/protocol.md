@@ -14,12 +14,14 @@ The production ladder is fixed and ordered:
 
 1. `push_preflight` binds the persisted pull base package to one live remote
    identity and one short-lived push session.
-2. `push_snapshot_hashes` lists live remote hashes for planning only.
-3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
-   receipt, not a lock.
-4. `push_batch_apply` is the first write stage and must revalidate fresh live
-   evidence before every batch and again at the storage boundary.
-5. `push_journal` is read-only durable evidence.
+2. `push_snapshot_hashes` performs the remote snapshot hash listing for
+   planning only.
+3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
+   eligibility receipt, not a lock.
+4. `push_batch_apply` is the first mutation batch apply stage and must
+   revalidate fresh live evidence before every batch and again at the storage
+   boundary.
+5. `push_journal` is read-only durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair.
 7. `push_recover auto|finish|rollback` may mutate only after inspect proves the
@@ -32,7 +34,7 @@ Push consumes immutable provenance from the existing pull pipeline:
 | Pull artifact or stage | Push consumer | Boundary rule |
 | --- | --- | --- |
 | Exporter merge-base scan | `push_preflight` | Bind the imported base package to one live remote identity and one short-lived session. |
-| Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live hash listing. |
+| Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live snapshot hash listing. |
 | Coverage evidence | `push_plan_dry_run` | Upload the canonical plan, but do not reserve a lock. |
 | Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
 | Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
@@ -43,12 +45,12 @@ The boundary rules are one-way:
 - exporter/importer establish immutable provenance
 - preflight binds that provenance to one live remote identity and one
   short-lived push session
-- snapshot hashes remain planning evidence only
+- remote snapshot hash listing remains planning evidence only
 - dry-run uploads a canonical plan and returns an eligibility receipt, not a
   lock
-- apply is the first write stage and must revalidate fresh live evidence before
-  every batch and at the storage boundary
-- journal inspection stays read-only
+- batch apply is the first write stage and must revalidate fresh live evidence
+  before every batch and at the storage boundary
+- journal inspect stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes prove the action
 
@@ -56,7 +58,8 @@ The boundary rules are one-way:
 
 The live remote is trusted in two separate steps:
 
-- snapshot hashes are planning evidence only and never authorize mutation
+- remote snapshot hash listing is planning evidence only and never authorizes
+  mutation
 - apply-time revalidation is the first write-side liveness check and must run
   again before every batch and at the storage boundary
 
@@ -66,7 +69,7 @@ That split is the production liveness rule:
 - dry-run is an eligibility receipt, not a lock
 - apply must revalidate fresh live evidence before every batch and at the
   storage boundary
-- journal inspection is read-only
+- journal inspect is read-only
 - recovery begins with inspect before any mutating repair
 
 ## Topology
