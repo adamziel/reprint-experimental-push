@@ -936,6 +936,65 @@ test('blocks a directory delete that would hide a live remote descendant while p
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('keeps remote-only plugin removals while a live-preconditioned file delete, matching independent delete, edit, and type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/photo.txt'] = {
+    type: 'file',
+    path: 'wp-content/uploads/photo.txt',
+    name: 'photo.txt',
+    contents: 'base photo bytes',
+  };
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base independent title', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.db.wp_posts['ID:1'];
+  local.files['wp-content/uploads/photo.txt'] = {
+    type: 'image',
+    path: 'wp-content/uploads/photo.txt',
+    name: 'photo.txt',
+    mimeType: 'image/png',
+  };
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base independent title', post_status: 'publish' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/photo.txt'] = {
+    type: 'file',
+    path: 'wp-content/uploads/photo.txt',
+    name: 'photo.txt',
+    contents: 'base photo bytes',
+  };
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base independent title', post_status: 'publish' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const rowDeleteMutation = mutationFor(plan, 'row:["wp_posts","ID:1"]');
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/photo.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 3);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(rowDeleteMutation.action, 'delete');
+  assert.equal(rowDeleteMutation.changeKind, 'delete');
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
+  assert.equal(result.site.files['wp-content/uploads/photo.txt'].type, 'image');
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Base independent title');
+  assert.equal(result.site.plugins.forms, undefined);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('recognizes matching independent edits as already in sync', () => {
   const base = baseSite();
   const local = baseSite();
