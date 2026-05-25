@@ -8055,7 +8055,7 @@ test('partial commit and completed replay both keep recovery artifacts instead o
   const partialError = captureError(() =>
     applyPlan(partialRemote, plan, {
       mutateRemote: true,
-      failDuringCommitAtMutation: 1,
+      failDuringCommitAtMutation: 2,
     }),
   );
 
@@ -8065,7 +8065,10 @@ test('partial commit and completed replay both keep recovery artifacts instead o
   assert.ok(partialError.details.recovery.artifacts.journal, 'partial commit must keep journal artifacts');
   assert.ok(partialError.details.recovery.artifacts.remote, 'partial commit must keep remote artifacts');
   assert.equal(partialError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
-  assert.equal(partialError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(
+    partialError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+  );
 
   const completed = applyPlan(baseSite(), plan);
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
@@ -8911,4 +8914,39 @@ test('no-data-loss recovery boundaries remain old remote, fully updated remote, 
     'Inserted locally',
     'stale completed replay must not resurrect stale local rows',
   );
+});
+
+test('mid-apply partial writes stay blocked with artifacts and completed replay stays idempotent', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+
+  const partialRemote = baseSite();
+  const partialError = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  assert.ok(partialError instanceof PushPlanError);
+  assert.equal(partialError.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assertAcceptableRecoveryState(partialError.details.recovery);
+  assertRecoveryStateArtifacts(partialError.details.recovery, 'blocked-recovery');
+  assert.ok(partialError.details.recovery.artifacts.remote, 'mid-apply failure must keep remote artifacts');
+  assert.ok(partialError.details.recovery.artifacts.journal, 'mid-apply failure must keep journal artifacts');
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
