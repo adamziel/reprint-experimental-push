@@ -10,7 +10,10 @@ including `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence. The
 remote lane also exposes `verify:release` in `package.json`, so any remaining
 absence of that command on this checkout is a branch-local merge gap, not a
-project-wide absence.
+project-wide absence. That still does not prove a live production boundary,
+because the retained-source run does not show preserved-remote retention across
+rejection, live auth/session lifecycle on WordPress, or apply-time revalidation
+against a fresh real-site source.
 
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker
@@ -41,6 +44,10 @@ local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
 - old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface before retry starts.
 
+Until that live boundary exists, `verify:release` is only a retained-source
+lab harness, not evidence that production WordPress push can safely preserve,
+inspect, and retry a rejected remote.
+
 ## What improved in the supervised lane
 
 The evidence improved, but only in the lab-harness sense:
@@ -54,7 +61,8 @@ The evidence improved, but only in the lab-harness sense:
 
 That is real progress, but it still does not prove retry authority on this
 branch. A retained-source replay is not the same as a live rerun that preserves
-the rejected remote and revalidates apply-time behavior from fresh live hashes.
+the rejected remote and revalidates apply-time behavior from fresh live hashes
+on production WordPress auth/session state.
 
 ## What must change before production-grade wording is defensible
 
