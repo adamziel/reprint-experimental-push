@@ -10173,6 +10173,78 @@ test('blocks plugin-owned rows with missing driver metadata while preserving rem
   assert.equal(blockerJson.includes('local-advanced'), false);
 });
 
+test('blocks plugin-owned deletes with missing driver metadata while preserving matching independent delete, restore, and remote-only plugin drift', () => {
+  const ownedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const restoredResourceKey = 'row:["wp_options","option_name:blogname"]';
+  const deletedResourceKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base', token: 'plugin-owned-secret' },
+    __pluginOwner: 'forms',
+  };
+  base.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Base Site',
+  };
+  base.db.wp_posts['ID:1'] = { ID: 1, post_title: 'Base post', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Shared Site',
+  };
+  delete local.db.wp_posts['ID:1'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey: ownedResourceKey,
+      pluginOwner: 'forms',
+    }),
+  };
+
+  const remote = baseSite();
+  remote.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base', token: 'plugin-owned-secret' },
+    __pluginOwner: 'forms',
+  };
+  remote.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Shared Site',
+  };
+  delete remote.db.wp_posts['ID:1'];
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === ownedResourceKey);
+  const restoreDecision = decisionFor(plan, restoredResourceKey);
+  const deleteDecision = decisionFor(plan, deletedResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, ownedResourceKey), undefined);
+  assert.equal(blocker.class, 'missing-plugin-driver');
+  assert.equal(blocker.reason, 'Plugin-owned resource row:["wp_options","option_name:forms_settings"] is missing explicit driver metadata for plugin forms.');
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'update');
+  assert.equal(restoreDecision.change.remoteChange, 'update');
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(deleteDecision.change.localChange, 'delete');
+  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('plugin-owned-secret'), false);
+  assert.equal(planJson.includes('Base post'), false);
+  assert.equal(planJson.includes('Shared Site'), false);
+  assert.equal(plan.preconditions.length, 0);
+  assert.equal(plan.mutations.length, 0);
+});
+
 test('blocks plugin-owned deletes with missing driver metadata while preserving matching independent deletes, type swaps, and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
