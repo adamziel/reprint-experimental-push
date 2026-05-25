@@ -54,6 +54,55 @@ let username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRI
 let applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
 const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT || '';
 
+if (liveSourceUrl && (!username || !applicationPassword)) {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: liveSourceUrl,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+          authSession: {
+            required: 'production-auth-session',
+            observed: 'missing-production-credentials',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+        },
+        protocolExtension,
+        preflight: {
+          status: 0,
+          authSessionType: 'missing-production-credentials',
+          routeProfile: 'production-shaped',
+          session: {
+            id: '',
+            type: 'missing-production-credentials',
+          },
+        },
+        releaseProof: {
+          ok: false,
+          status: 1,
+          code: 'REPRINT_PUSH_SECRET_REQUIRED',
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  process.exit(1);
+}
+
 if (!username || !applicationPassword) {
   username = credentials.username;
   applicationPassword = credentials.password;
@@ -530,6 +579,58 @@ try {
             mutationApplied: proof.dbJournal.mutationApplied,
             idempotencyOpened: proof.dbJournal.idempotencyOpened,
             },
+          },
+          null,
+          2,
+        ),
+      );
+      process.stdout.write('\n');
+    } catch (error) {
+      const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
+      process.stdout.write(
+        JSON.stringify(
+          {
+            ok: false,
+            topology: {
+              sourceUrl: liveSourceUrl,
+              remoteBase: remoteServer.baseUrl,
+              remoteChanged: remoteChangedServer.baseUrl,
+              localEdited: localServer.baseUrl,
+            },
+            drift: labDriftAfterSnapshot
+              ? {
+                  mode: labDriftAfterSnapshot,
+                  sameRemoteIdentity: true,
+                  changedHash: snapshotHash(remoteChangedSnapshot),
+                }
+              : {
+                  sameRemoteIdentity: true,
+                },
+            boundary: {
+              firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+              status: 'unimplemented',
+              verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+              durableJournal: {
+                storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+                verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+              },
+            },
+            protocolExtension,
+            preflight: {
+              status: 0,
+              authSessionType: 'unreachable-live-source',
+              routeProfile: 'production-shaped',
+              session: {
+                id: '',
+                type: 'unreachable-live-source',
+              },
+            },
+            releaseProof: {
+              ok: false,
+              status: 412,
+              code: 'PRECONDITION_FAILED',
+            },
+            error: error instanceof Error ? error.message : String(error),
           },
           null,
           2,

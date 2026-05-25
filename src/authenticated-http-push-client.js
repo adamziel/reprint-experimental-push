@@ -345,10 +345,12 @@ async function requestJsonRawOnce(baseUrl, method, pathname, rawBody = undefined
       'content-type': 'application/json',
       ...headers,
     });
+  const timeoutSignal = AbortSignal.timeout(10_000);
   const response = await fetch(new URL(pathname, baseUrl), {
     method,
     headers: requestHeaders,
     body: rawBody,
+    signal: timeoutSignal,
   });
   const text = await response.text();
   let json;
