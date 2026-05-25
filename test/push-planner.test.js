@@ -16339,6 +16339,47 @@ test('mid-apply durable failures stay blocked with artifacts and do not duplicat
   assert.equal(Object.keys(partialRemote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('durable journal write failure after the first mutation blocks recovery and preserves inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const remote = baseSite();
+  const remoteBefore = JSON.stringify(remote);
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: failingDurableJournal('mutation-observed'),
+      mutateRemote: true,
+    }),
+  );
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.code, 'JOURNAL_WRITE_FAILED');
+  assertFailureRecoveryState(failure.details.recovery, 'blocked-recovery');
+  assert.ok(failure.details.recovery.artifacts.remote);
+  assert.ok(failure.details.recovery.artifacts.journal);
+  assert.notEqual(JSON.stringify(remote), remoteBefore, 'failure should leave behind the partial live mutation');
+
+  const firstMutation = plan.mutations[0];
+  if (firstMutation.resource.type === 'file') {
+    assert.equal(failure.details.recovery.artifacts.remote.files[firstMutation.resource.path], '<?php echo "local";');
+    assert.equal(remote.files[firstMutation.resource.path], '<?php echo "local";');
+  } else if (firstMutation.resource.type === 'row' && firstMutation.resource.table === 'wp_posts') {
+    assert.equal(
+      failure.details.recovery.artifacts.remote.db.wp_posts[firstMutation.resource.id].post_title,
+      'Inserted locally',
+    );
+    assert.equal(remote.db.wp_posts[firstMutation.resource.id].post_title, 'Inserted locally');
+  }
+  assert.equal(
+    Object.keys(failure.details.recovery.artifacts.remote.db.wp_posts).filter((key) => key === 'ID:2').length,
+    1,
+  );
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'blocked');
+});
+
 test('completed recovery replay stays inert on repeated retries and preserves the fully updated remote', () => {
   const base = baseSite();
   const local = baseSite();
