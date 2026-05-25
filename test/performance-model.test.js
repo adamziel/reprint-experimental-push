@@ -312,6 +312,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-summary-skips-plugin-update-finalize')?.violates.includes('atomic-groups'),
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-row-preconditions')?.rejectedGate,
+    'live',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-row-preconditions')?.violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-row-preconditions')?.violates.includes('atomic-groups'),
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause')?.rejectedGate,
     'recovery',
   );
