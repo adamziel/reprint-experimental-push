@@ -4,7 +4,7 @@ These fixtures are wire-contract examples for the production Reprint push
 extension. They intentionally show request and response shape, not full site
 exports or executable WordPress state.
 
-The normal sequence is:
+The normal production sequence is:
 
 1. `push-preflight-request.json`
 2. `push-preflight-response.json`
@@ -61,6 +61,15 @@ The normal sequence is:
 53. `push-production-executor-flow-contract.json`
 54. `push-protocol-extension-topology-contract.json`
 
+That sequence is intentionally split into three production phases:
+
+- preflight, remote snapshot hash listing, and dry-run establish eligibility
+  only
+- apply is a separate remote operation and must revalidate before every batch
+  and again at the storage boundary
+- journal inspect and recovery stay read-only until inspect proves the branch
+  safe
+
 For production review, the shortest path is:
 
 1. `push-protocol-extension-contract.json`
@@ -90,6 +99,16 @@ remote boundaries:
 - journal inspect
 - recovery inspect
 - recovery mutate
+
+The production topology proof is one remote source site, one imported local
+edit site, one later drift observation of the same remote identity, and one
+runner:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
 
 The production topology proof is the same in Docker and Playground:
 

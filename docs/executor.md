@@ -27,8 +27,8 @@ Those boundaries are not interchangeable:
   write authority.
 - `dry-run` uploads the canonical plan and returns an eligibility receipt,
   not a lock.
-- `apply` revalidates fresh live evidence before every batch and again at the
-  storage boundary.
+- `apply` is a separate remote operation and revalidates fresh live evidence
+  before every batch and again at the storage boundary.
 - `journal` is read-only evidence.
 - `recovery-inspect` reads the journal and fresh live hashes before any
   mutating repair.
@@ -63,6 +63,16 @@ The topology rules are fixed:
 - Browser-visible inspection stays on the sandbox-provided `8080` ingress.
 - The local inspection proxy stays local-only.
 - Remote tunnels are disallowed.
+
+The production test shape is intentionally one remote source site, one
+imported local edit site, and one later drift observation of the same remote
+identity:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
 
 ## Production Contract
 
