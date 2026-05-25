@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 13:18:27
+## 2026-05-25 - Public Status Audit 13:19:38
 
-<a id="2026-05-25-public-status-audit-131827"></a>
+<a id="2026-05-25-public-status-audit-131938"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 13:18:27 CEST`) and kept the runtime anchor on
+  (`2026-05-25 13:19:38 CEST`) and kept the runtime anchor on
   `npm run verify:release` from commit `3089aee2`.
 - The first screen now adds `3d8748b6`, which adds the fail-closed
   `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` gate; `471440b9` still proves
