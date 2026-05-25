@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked-in command yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is not the existence of helper smokes; it is the absence of a checked-in release gate that owns the live-source verdict, so the release gate must stay closed.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is not helper availability; it is the lack of live-boundary evidence for the remaining production claims, so the release gate must stay closed.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -48,11 +48,11 @@ Evidence buckets used below:
 | --- | --- | --- | --- |
 | One-way pull base then one-way push to live source | Planner and helper tests show directional intent in fixture scope | A required command that reaches the live source and performs the push back to the retained endpoint | No live-source apply verdict |
 | Apply-time revalidation | Benchmark model encodes `apply-revalidates-live-resource-hash`; lab smokes exercise revalidation logic | A required run that revalidates the real source immediately before mutation | Preflight-only evidence is not enough |
-| No data loss | [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) and [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) prove ordering, restart classification, and redaction in local files | End-to-end mutation on production storage across all touched WordPress data shapes | No mandatory durability verdict |
-| Reliability | Fixture refusal, journal guardrails, and lab smokes prove negative cases | One enforced release gate that composes auth/session, durable journal, leases/fencing, graph identity, and plugin-driver checks | No single fail-closed release command |
+| No data loss | [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) and [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) prove ordering, restart classification, and redaction in local files | End-to-end mutation on production storage across all touched WordPress data shapes | No mandatory durability verdict on the live boundary |
+| Reliability | Fixture refusal, journal guardrails, and lab smokes prove negative cases | One enforced release gate that composes auth/session, durable journal, leases/fencing, graph identity, and plugin-driver checks | No live-boundary release verdict for the remaining production claims |
 | Speed | [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) and [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) keep `productionThroughput` unclaimed | A measured live-path throughput result or an enforced `speed unclaimed` verdict from a required release gate | No live-path measurement |
-| Production auth/session lifecycle | Lab-shaped authenticated push smokes exist | Live-boundary auth/session lifecycle in the required release command | Release path still lab-backed |
-| Durable journal semantics | File-journal and recovery tests prove local journal integrity | Live-source journal durability that survives the apply boundary | Journal proof is split across helpers |
+| Production auth/session lifecycle | Lab-shaped authenticated push smokes exist | Live-boundary auth/session lifecycle in the required release command | Release path still lacks production auth proof |
+| Durable journal semantics | File-journal and recovery tests prove local journal integrity | Live-source journal durability that survives the apply boundary | Journal proof is split across helpers and fixtures |
 | Graph identity mapping | Guarded benchmark encodes graph identity expectations | Production push-path graph identity proof on the retained source endpoint | Identity is still modeled, not shipped |
 | Plugin-driver coverage | Plugin install and package smokes exist | End-to-end plugin-driver behavior in the required release gate | Plugin proof is still helper-scoped |
 | CI/default enforcement | None | A checked-in workflow or default entrypoint that runs the gate | Green default runs can still bypass release proof |
@@ -73,14 +73,14 @@ The tests do the right kind of negative work, but they are not positive release 
 Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
-- There is no checked-in `verify`, `verify:release`, or `release` script in this checkout.
+- This checkout does not expose a checked-in `verify`, `verify:release`, or `release` script.
 - There is no checked-in `test:playground:production-shaped-release-proof` entry here.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
 - The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation.
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone.
 
 Minimum properties of that gate:
 
