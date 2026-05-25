@@ -241,9 +241,10 @@ and the restart-proof invariants that keep dry-run, apply, and recovery
 separate.
 The topology companion at
 [`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
-adds the explicit `push_pipeline` stage map so Docker and Playground tests can
-assert the same preflight, snapshot listing, dry-run, apply, journal, and
-recovery split without relying on prose only.
+adds the explicit `push_pipeline` stage map plus apply-revalidation and
+inspect-first recovery evidence so Docker and Playground tests can assert the
+same preflight, snapshot listing, dry-run, apply, journal, and recovery split
+without relying on prose only.
 
 Shared harness rules:
 

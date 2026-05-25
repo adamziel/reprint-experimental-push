@@ -9,12 +9,30 @@
     "journal_inspect": "reads durable evidence without authorizing mutation",
     "recovery": "starts with inspect and allows mutating repair only when the journal and live hashes prove the action"
   },
+  "apply_revalidation": {
+    "before_each_batch": "fresh live hashes",
+    "at_storage_boundary": "fresh live hashes plus storage-guard proof",
+    "rejected_if": [
+      "the snapshot listing is stale",
+      "the remote changed after the dry-run receipt",
+      "the journal cannot prove a safe finish, rollback, or block"
+    ]
+  },
+  "recovery_inspect": {
+    "mode": "inspect",
+    "mutates": false,
+    "requires": [
+      "read journal",
+      "inspect live hashes",
+      "classify finish|rollback|retry|block"
+    ]
+  },
   "remote_snapshot_hash_listing": "cursorable live hash evidence used for planning only and never treated as write authority",
   "roles": {
     "remote_base": "one remote source site that seeds the persisted pull base",
     "local_edited": "one imported local site with user edits",
     "remote_changed": "the same remote site observed later after independent drift",
-    "runner": "the only process allowed to preflight, plan, upload, inspect, and recover"
+    "runner": "the only process allowed to preflight, plan, upload, inspect, revalidate, and recover"
   },
   "pull_pipeline": {
     "exporter": "scans the merge base and coverage evidence",
@@ -55,6 +73,7 @@
     "dry-run is a receipt, not a lock",
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "journal inspection is read-only and never authorizes mutation by itself",
-    "recovery must begin with inspect before any mutating repair"
+    "recovery must begin with inspect before any mutating repair",
+    "mutating recovery must still be fenced by fresh live hashes and journal evidence"
   ]
 }

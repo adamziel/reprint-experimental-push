@@ -456,6 +456,16 @@ test('push topology matrix fixture captures the minimal docker and playground pr
   assert.equal(matrix.pull_pipeline.importer, 'persists the base package as immutable provenance');
   assert.equal(matrix.pull_pipeline.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(matrix.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(matrix.apply_revalidation.before_each_batch, 'fresh live hashes');
+  assert.equal(matrix.apply_revalidation.at_storage_boundary, 'fresh live hashes plus storage-guard proof');
+  assert.ok(matrix.apply_revalidation.rejected_if.includes('the remote changed after the dry-run receipt'));
+  assert.equal(matrix.recovery_inspect.mode, 'inspect');
+  assert.equal(matrix.recovery_inspect.mutates, false);
+  assert.deepEqual(matrix.recovery_inspect.requires, [
+    'read journal',
+    'inspect live hashes',
+    'classify finish|rollback|retry|block',
+  ]);
   assert.equal(matrix.networking.ingress_port, 8080);
   assert.equal(matrix.networking.proxy_policy, 'local-only');
   assert.equal(matrix.networking.tunnels, 'disallowed');
@@ -475,6 +485,11 @@ test('push topology matrix fixture captures the minimal docker and playground pr
   assert.ok(
     matrix.required_invariants.includes(
       'apply must revalidate the live remote before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    matrix.required_invariants.includes(
+      'mutating recovery must still be fenced by fresh live hashes and journal evidence',
     ),
   );
 });
