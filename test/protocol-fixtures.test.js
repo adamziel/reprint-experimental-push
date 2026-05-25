@@ -345,6 +345,38 @@ test('umbrella production contract keeps the pull bridge, apply revalidation, re
   ]);
 });
 
+test('top-level extension contract pins the production ladder and topology split', () => {
+  const extension = readJson('fixtures/protocol/push-protocol-extension-contract.json');
+
+  assert.equal(extension.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(extension.session.remote_site_id, 'remote-example');
+  assert.deepEqual(extension.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(extension.production_boundary.preflight, 'first live binding after importer provenance exists');
+  assert.equal(extension.production_boundary.remote_snapshot_hash_listing, 'planning evidence only and never write authority');
+  assert.equal(extension.production_boundary.dry_run_plan_upload, 'uploads the canonical plan as an eligibility receipt, not a lock');
+  assert.ok(extension.production_boundary.mutation_batch_apply.includes('separate from dry-run'));
+  assert.equal(extension.production_boundary.journal_inspect, 'reads durable evidence without authorizing mutation');
+  assert.ok(extension.production_boundary.recovery_mutation.includes('fresh live hashes'));
+  assert.equal(extension.topology.same_remote_identity, true);
+  assert.equal(extension.topology.networking.ingress_port, 8080);
+  assert.equal(extension.topology.networking.proxy_policy, 'local-only');
+  assert.equal(extension.topology.networking.tunnels, 'disallowed');
+  assert.ok(extension.topology.proof.includes('remote-base and remote-changed are the same remote identity observed at different times'));
+  assert.ok(extension.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.ok(extension.required_invariants.includes('pull exporter/importer establish the immutable base package before push'));
+  assert.ok(extension.required_invariants.includes('dry-run and apply are separate remote operations'));
+  assert.ok(extension.required_invariants.includes('recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair'));
+  assert.ok(extension.required_invariants.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+});
+
 test('production recovery drift contract keeps inspect-first recovery aligned after live drift', () => {
   const recoveryDrift = readJson('fixtures/protocol/push-production-recovery-drift-contract.json');
 
