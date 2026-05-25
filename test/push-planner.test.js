@@ -5352,6 +5352,27 @@ test('blocks plugin-owned option updates when the owning plugin was removed remo
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks unsupported plugin-owned option updates while preserving unrelated remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+});
+
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
   const base = baseSite();

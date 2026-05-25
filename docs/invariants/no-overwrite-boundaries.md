@@ -103,6 +103,9 @@ mutation id, the resource key, the remote hash observed during planning, and
   needs preserving.
 - Plugin-context or plugin-owned data mutations when the relevant live remote
   plugin context drifted and the local side did not independently match it.
+- Unsupported plugin-owned mutations still stop when remote-only plugin drift
+  is present; the blocker remains bounded and the unrelated plugin drift stays
+  `keep-remote`.
 - Plugin-file or plugin-owned-data mutations when the live remote plugin was
   removed and the local side still touches that plugin.
 - Any mutation that lacks a live remote precondition bound to the mutation id,

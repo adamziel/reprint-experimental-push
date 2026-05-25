@@ -26,6 +26,9 @@ This is the short operational version of the planner invariant policy.
 - Plugin-context and plugin-owned data mutations only when their required live
   remote plugin context still matches the pull base or the local side
   independently matches the live remote context.
+- Unsupported plugin-owned resources must stop even when unrelated remote-only
+  plugin drift is present; the blocker stays scoped to the owned resource and
+  the remote drift remains preserved.
 
 ## Must Preserve
 
