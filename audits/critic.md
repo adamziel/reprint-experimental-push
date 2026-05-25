@@ -28,7 +28,7 @@ The project still lacks production proof for these concrete failure modes:
 - create-time remap can silently break graph identity for relationship-bearing records or later-discovered records;
 - plugin-owned tables, options, cron rows, caches, generated files, serialized blobs, or runtime registries can appear after the first write and escape the initial allowlist.
 
-The upstream source notes remain provenance only until the same live boundary is rerun here:
+The upstream source notes remain provenance only until the same live boundary is rerun here and the rejected remote is still preserved after refusal:
 
 - Reprint can justify staged transport and resumability vocabulary, but not preserved-remote retention, auth/session re-entry, or apply-time revalidation on the same live boundary;
 - ZS-Sync can justify bounded discovery and cursoring vocabulary, but not create-time remap safety, graph identity, or plugin-owned surface coverage on the same live boundary; and
