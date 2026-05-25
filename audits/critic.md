@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `84fc4b8d`, with earlier retained-source evidence at `91ef2b06`
+remote head `bd9ef3e8`, with earlier retained-source evidence at `91ef2b06`
 still useful as history, not as release proof. The latest explicit verdict on
 that lane is
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the lane's completed
@@ -184,8 +184,8 @@ of preserved-remote safety.
 The remote reliable-executor head now gives better lab evidence, not release
 proof:
 
-- `91ef2b06` aligns the release-gate assertions and confirms the retained-
-  source verifier path is being tightened, but it still stays inside the
+- `bd9ef3e8` keeps the release boundary explicit and confirms the retained-
+  source verifier path is still being tightened, but it still stays inside the
   supervised lane's lab harness.
 - The evidence still does not show a production WordPress auth/session
   lifecycle on a real source boundary.
