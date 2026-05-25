@@ -37,7 +37,11 @@ The objective implies these minimum release requirements:
 
 ## Test Audit
 
-The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own.
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own. In particular, they do not prove the three release claims the objective cares about most:
+
+- `No data loss`: no current test mutates the live source and then proves the same writes survived the release boundary without loss, duplication, or reordering.
+- `Reliable`: no current test composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks into one enforced release decision against real storage.
+- `Fast`: no current test reports a measured live-path throughput result or a release threshold; the best available speed evidence is still refusal-only.
 
 | Test surface | What it really proves | What it does not prove | Release reading |
 | --- | --- | --- | --- |
@@ -176,7 +180,7 @@ The user-facing claims fail for the same reason: the suite stops at guarded mode
 
 The weakest claim remains speed, and it is currently weaker than the rest of the release story because the repo has no measured live-path number, no release threshold, and no enforced gate that fails closed on the missing measurement. That means even a perfect lab auth/journal story would still leave the production speed claim blocked. The audit should treat any future throughput language as release-blocked until it is tied to the live-source boundary, an explicit threshold, and a required command that fails when `productionThroughput` is still `not-claimed`. If the project intends to keep speed unclaimed, the audit should say that plainly rather than letting the absence of a number read like a deferred approval. The important distinction is that `speed unclaimed` is a release decision, while `speed not measured` would still be incomplete, and the current scripts do not yet contain a mandatory release entrypoint that can make that decision. Silent omission is not an acceptable middle state.
 
-The current test suite proves negative claims better than positive release claims. It proves that unsupported throughput can be refused, but it does not prove a production throughput floor or a live-path SLO. That means the safest release-language reading is not "fast enough is likely", but "fastness is intentionally unclaimed until the required gate exists". Any softer reading would overstate what the tests actually cover.
+The current test suite proves negative claims better than positive release claims. It proves that unsupported throughput can be refused, but it does not prove a production throughput floor or a live-path SLO. That means the safest release-language reading is not "fast enough is likely", but "fastness is intentionally unclaimed until the required gate exists". Any softer reading would overstate what the tests actually cover, and any claim of no data loss or reliability would be equally overstated because the suite never reaches the live-source boundary that would be needed to prove them.
 
 That also means the release gate must be opinionated enough to reject a green run that never reaches the live-source verdict. A command that only replays fixture checks or optional smokes and then exits zero is not a release decision, even if it accurately refuses to claim throughput. The required gate has to surface one of two outcomes in the same run: a measured live-path throughput result, or an explicit `speed unclaimed` verdict that is part of the release decision itself.
 
