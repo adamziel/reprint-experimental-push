@@ -15,7 +15,7 @@ linked implementation artifacts.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
 - Next nudge: integration owns the next real-site release command and must return retained live source/auth/recovery output; invariants/recovery should align to that same command, and reliable-executor should keep the gate bound to a real URL/topology.
 - Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages only after merge to `main`; the deployed copy lags until then.
-- Audit note: [audits/supervisor-note-20260525-101613.md](../audits/supervisor-note-20260525-101613.md) captures the newest decision pass; the release state still does not move.
+- Audit note: [audits/supervisor-note-20260525-101855.md](../audits/supervisor-note-20260525-101855.md) captures the newest decision pass; the release state still does not move.
 
 ## 2026-05-25 - Supervisor Follow-up
 
