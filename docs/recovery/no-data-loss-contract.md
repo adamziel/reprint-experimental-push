@@ -1,33 +1,32 @@
 # No Data Loss Recovery Contract
 
-This lane treats recovery as a strict three-state contract:
+This lane treats apply as a three-state outcome:
 
-- `old-remote` for failures before any remote mutation is committed
-- `fully-updated-remote` for completed plans and safe replays
-- `blocked-recovery` when the remote may be partially updated and recovery artifacts are required
+1. `old-remote`
+   - No remote mutation is visible.
+   - Recovery evidence may exist, but the remote contents still match the pre-apply state.
 
-## Required behavior
+2. `fully-updated-remote`
+   - Every planned mutation is visible on the remote.
+   - Replay must stay inert and must not duplicate inserts or resurrect stale local data.
 
-- A failure before mutation, after staging, or after dependency validation must leave the remote unchanged.
-- A completed replay must not apply fresh mutations again.
-- A stale completed replay must block instead of pretending the remote is safe.
-- Any partial remote mutation must carry recovery artifacts. A partial mutation without artifacts is a release blocker.
+3. `blocked-recovery`
+   - The remote cannot be classified safely.
+   - Recovery must carry artifacts that explain the state, especially the journal and any observed remote snapshot.
 
-## Artifact expectations
+Acceptable failure outcomes are limited to these states. A partial remote mutation without recovery artifacts is a release blocker.
 
-- `old-remote` must include the journal artifact and must not include a remote artifact.
-- `fully-updated-remote` must include the journal artifact and must not include a remote artifact.
-- `blocked-recovery` must include both journal and remote artifacts.
+## Durable journal expectations
 
-## Durable journal note
+The durable journal is the on-disk recovery evidence, not just an in-memory test fixture.
+It should preserve enough information to answer:
 
-The durable journal is the operational evidence trail. JSON test fixtures are useful for model coverage, but production recovery needs durable writes, claim fencing, and inspectable artifacts that survive process failure.
+- which plan was being applied,
+- what boundary was last crossed,
+- whether the remote is still old, fully updated, or blocked,
+- and what artifact path should be used for recovery inspection.
 
-Production recovery needs more than in-memory or lab JSON state:
+If a failure happens before mutation, after staging, or after dependency validation, the recovery state must still classify as `old-remote` and preserve journal artifacts.
 
-- DB rows or files must be written durably, not just modeled in test fixtures.
-- Journal and recovery writes need explicit flush or fsync semantics where the storage layer requires them.
-- Plugin activation or ownership claims need fencing so stale workers cannot write after a newer claim wins.
-- Recovery inspect must be able to classify the final state from persisted artifacts alone.
+If a completed plan is replayed, the recovery state must classify as `fully-updated-remote` and remain inert.
 
-The contract stays the same: if a partial mutation cannot produce inspectable recovery artifacts, it is a blocker.
