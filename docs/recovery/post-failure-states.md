@@ -7,7 +7,8 @@ failure:
 - `fully-updated-remote`
 - `blocked-recovery`
 
-These are the only acceptable post-failure states for this lane.
+These are the only acceptable post-failure states for this lane. A retry must
+never duplicate inserts or resurrect stale local data.
 
 ## Required artifacts
 
@@ -23,7 +24,8 @@ The following boundaries must remain `old-remote`:
 - failure after staging
 - failure after dependency validation
 
-Completed-plan replay must remain `fully-updated-remote`.
+Completed-plan replay must remain `fully-updated-remote`, and stale replay must
+block if the current remote no longer matches the completed journal envelope.
 
 Any partial remote mutation without recovery artifacts is a blocker, not a
 safe retry target.
