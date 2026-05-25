@@ -82,7 +82,7 @@ For this audit:
 ## Test Audit
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is as refusal evidence, not as release evidence. They demonstrate that the suite knows how to say "not yet"; they do not demonstrate that the production boundary is safe.
-That is not a small wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push. No current test proves a release-safe runtime or memory ceiling on the live boundary.
+That is not a wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push. No current test proves a release-safe runtime or memory ceiling on the live boundary.
 The implication is straightforward: the current tests are credible blockers, but they are not release approvers. A green run can still coexist with an unproven live-source push boundary, unmeasured throughput, and an absent enforced gate.
 
 That distinction matters for the objective claims:
@@ -93,9 +93,11 @@ That distinction matters for the objective claims:
 
 - `npm test` proves the model and selected fixture logic are internally consistent. It does not prove live source mutation, production storage, or a live WordPress graph, so it cannot support the no-data-loss claim by itself.
 - `npm run test:playground` proves a bundled lab path through plan/apply/push protocol. It does not invoke the stronger auth, journal, storage, recovery, plugin, graph, or benchmark gates, so it cannot support the reliability claim by itself.
+- `npm run test:playground` also proves only the default chained lab path. It is not a release command, and it does not fail closed on `labBacked: true`, fixture-only, or benchmark-only claims.
 - `test/recovery-journal.test.js` proves restart classification, monotonic sequencing, and raw-value redaction in a file-backed journal model. It does not prove durable production storage, lease/fencing behavior, or crash recovery on the live source boundary.
 - `npm run test:playground:authenticated-http-push`, `npm run test:playground:authenticated-cli-push`, `npm run test:playground:production-shaped-push`, and `npm run test:playground:production-plugin-package` are the closest release-shaped smokes, but they are still route-shape and packaging evidence. The code still marks the authenticated route profile as `labBacked: true`, so these checks remain explicit lab proof rather than live production proof.
 - The stronger scripts in `package.json` are all opt-in and still separate: auth, production-shaped route/package, db journal, storage guards, process-kill, missing-finalization, stale-claim, recovery, forms table, and file-journal checks can each pass independently while the release bar remains unmet.
+- The suite has no single must-pass command that composes the whole safety matrix. That means no test currently proves that a default green path is the same path a release would use.
 - `test/push-planner.test.js` and `test/recovery-journal.test.js` prove planner invariants, redaction, sequence monotonicity, and restart classifications in fixtures. They do not prove a live WordPress source site survives a failed push, a restart, or a duplicated request without data loss.
 - `test/playground-snapshot-lib.test.js` proves the PHP helper rejects unsupported fixture resources and table names. That is useful input validation, not release evidence for production plugin data drivers or live graph identity.
 - `test/performance-model.test.js` proves the benchmark model keeps proof obligations attached to the proposed fast paths, large-upload and plugin-install shapes, atomic-group staging, and guardrails. `test/guarded-executor-benchmark.test.js` proves the refusal path on tampered evidence and blocked production throughput claims. Together they prove refusal discipline and model shape, not speed. They do not measure a production push path, set an actual runtime or memory threshold, or prove that the live source topology is fast.
@@ -106,6 +108,18 @@ That distinction matters for the objective claims:
 - `test/guarded-executor-benchmark.test.js` in particular proves that `productionThroughput` stays `not-claimed` and that the benchmark gate throws when a claim is forced. That is valuable negative proof, but it is still not a measured production benchmark.
 - The authenticated push smokes are still labeled `labBacked: true`, so even a green run there is a lab pass, not release proof.
 - All of the optional smokes can pass at once and still leave the objective blocked, because none of them is mandatory, none of them is the single enforced decision point the release bar needs, and there is no checked-in CI workflow to force a default release path.
+- The tests are honest about their limits, but honesty is not sufficiency. They are currently proving "safe to explore" rather than "safe to release."
+
+## Actionable Gap
+
+The weakest current claim is still the release gate itself. The repo needs one required executable entrypoint that:
+
+1. Runs the release-relevant auth, journal, lease/fencing, graph identity, plugin-driver, topology, crash-boundary, and benchmark checks together.
+2. Fails closed when any proof bucket is only `labBacked: true`, fixture-only, benchmark-only, or missing live-source evidence.
+3. Prints the last failing proof bucket so the operator can see which claim is still unproven.
+4. Is wired into CI or another default enforced path so a green casual run cannot bypass it.
+
+Until that exists, the strongest tests in this checkout remain useful audits of behavior, but they do not establish release readiness.
 - The current test surface is therefore honest about risk, but honesty is not enough: it proves that the suite can refuse unsafe claims, not that the live release path is safe. The separate [`audits/release-evidence-gap.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-evidence-gap.md) note captures the same split in a shorter form.
 - In practical terms, the suite currently proves "we refuse to overclaim" much better than it proves "we can safely release."
 - Green output from the current suite can still coexist with an unproven live push path, so a passing test run is not evidence that the objective has been met.
