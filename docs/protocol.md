@@ -192,6 +192,17 @@ edit site, and one later drift observation of the same remote identity:
   through a local-only proxy
 - remote tunnels are disallowed
 
+Docker and Playground prove the same three-site story with different harness
+shapes:
+
+- Docker uses one private network and the runner talks to the three sites by
+  route name
+- Playground uses separate disposable blueprints for the same three site
+  identities
+- both harnesses keep browser-visible inspection on the sandbox-provided
+  `8080` ingress through a local-only proxy
+- remote tunnels are disallowed in both harnesses
+
 The production proof bundle is intentionally layered around that contract:
 
 - `push-protocol-extension-contract.json` is the umbrella ladder proof
@@ -212,7 +223,7 @@ The production proof bundle is intentionally layered around that contract:
 - `push-remote-liveness-topology-contract.json` proves the one-remote,
   one-local, one-drift harness plus the liveness split
 - `push-production-topology-contract.json` proves the Docker and Playground
-  harness shape
+  harness shape for the same one-remote, one-local, one-drift topology
 - `push-topology-matrix.json` is the compact machine-readable topology map
   for the same one-remote, one-local, one-drift harness and shared route
   names

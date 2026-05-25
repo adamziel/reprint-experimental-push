@@ -24,6 +24,17 @@ The topology rules are fixed:
 - The local inspection proxy stays local-only.
 - Remote tunnels are disallowed.
 
+Docker and Playground prove the same three-site story with different harness
+shapes:
+
+- Docker uses one private network and the runner talks to the three sites by
+  route name.
+- Playground uses separate disposable blueprints for the same three site
+  identities.
+- Both harnesses keep browser-visible inspection on the sandbox-provided
+  `8080` ingress through a local-only proxy.
+- Remote tunnels are disallowed in both harnesses.
+
 That topology is the same one-remote, one-local, one-drift proof in both
 environments:
 
