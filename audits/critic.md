@@ -6278,6 +6278,14 @@ The design still has not closed the following production-grade gaps:
   stale-rejection, and fresh-retry evidence; route shape, package layout,
   reviewer wording, and fixture replay stay compatibility evidence only even
   when the note is precise; and
+- a route-shaped smoke or production-shaped URL still does not prove the live
+  executor if the boundary was not rerun here with preserved-remote evidence
+  and a fresh live-hash retry scope; the same URL can still hide a copied or
+  fixture-backed executor, so route similarity is compatibility evidence only;
+- any lab-shaped smoke, copied executor output, or `finalMatchesLocal` result
+  is still not boundary proof unless it also shows the rejected remote stayed
+  inspectable after rejection and the same live boundary was retried from
+  fresh live hashes on this branch; and
 - a precise upstream commit still does not become current proof if the later
   live boundary is different from the one the note described; the branch must
   rerun the same live drift case here, not merely cite the same upstream hash;
