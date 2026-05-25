@@ -1974,6 +1974,10 @@ not route shape, package shape, or a plausible `finalMatchesLocal` result.
   path or package shape matches, but the upstream revision was not reverified.
   Missing proof: the cited upstream state was rechecked at the same live
   mutation boundary and the branch reproduced the rejection behavior there.
+- A comparison names the exact upstream commit or worktree state, but this
+  branch never reran the same live drift case here. Missing proof: branch-
+  local live-boundary revalidation on the same stale-remote scenario, with the
+  remote preserved for audit and the stale approval rejected before mutation.
 
 ## Production Claim Checklist
 
@@ -2866,6 +2870,9 @@ specific failure cases that still need explicit proof are:
 - Reprint, ZS-Sync, or ForkPress source notes, because historical comparison
   does not prove the exact live boundary on this branch unless the cited
   upstream revision or worktree state was rechecked there.
+- A comparison note that names the upstream state but not the branch-local
+  live retry is still historical context, not current proof, even if the route
+  shape and hash values look production-shaped.
 
 Minimum proof artifacts before any production-grade push wording:
 

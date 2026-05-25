@@ -133,6 +133,11 @@ and stale-authority rejection at the current write boundary, the comparison
 remains context only. If the claim cannot also name the exact upstream
 revision or worktree state that was reverified, it still cannot be promoted
 from context to proof.
+Even when the exact upstream revision or worktree state is named, the note
+still stays historical unless this branch re-ran the same live drift case at
+the same live mutation boundary and preserved the remote for audit. Matching
+feature names, route shape, or package layout do not upgrade the note into
+current proof.
 It also cannot be used to claim production safety for a manual-resolution
 flow unless the remote was preserved for audit, the stale approval was
 rejected before mutation, and the retry rebuilt scope from fresh live hashes
