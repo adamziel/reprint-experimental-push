@@ -1277,6 +1277,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - Cached row receipts cannot skip plugin-update finalize, because the live row
   compares, dependency checks, and atomic-group finalize still need durable
   proof.
+- A compressed remote index plus a cached file hash cannot skip a release-
+  bundle commit after a pause, because planning evidence and cached hashes do
+  not prove the chunk receipts, row receipts, backpressure state, or
+  atomic-group commit barrier survived failure.
 
 The common failure mode across these rejections is the same: the shortcut
 removes either a live precondition check, a durable receipt, or the atomic

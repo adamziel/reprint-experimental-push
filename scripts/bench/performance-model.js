@@ -2740,6 +2740,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+    proposal: 'use a compressed remote index plus a cached file hash to skip release-bundle commit after a pause',
+    rejectedBecause: 'planning evidence and cached hashes can trim duplicate scanning, but they cannot prove the chunk acknowledgements, row receipts, backpressure state, or atomic-group commit barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'row-preconditions', 'backpressure', 'atomic-groups', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
