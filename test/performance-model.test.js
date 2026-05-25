@@ -2570,6 +2570,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-chunk-upload-after-pause').violates.includes('atomic-file-publish'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause').violates.includes('file-hashing'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause').violates.includes('live-preconditions'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-digests-skips-large-upload-chunk-upload-after-pause').rejectedGate,
     'recovery',
   );
