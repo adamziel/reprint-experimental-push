@@ -77,6 +77,20 @@ This keeps the exporter/importer pipeline authoritative for the base package
 while making push a separate production write path that can only consume that
 persisted provenance.
 
+In runbook form, the executor keeps the same order and boundary discipline:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight is the first live binding after that persistence boundary
+- snapshot hash listing is planning-only evidence and may page, but never
+  becomes write authority
+- dry-run uploads the canonical plan and returns a receipt, not a lock
+- apply is a separate remote call that revalidates fresh live evidence before
+  every batch and again at the storage boundary
+- journal inspection stays read-only
+- recovery starts with inspect and only mutates when the journal plus fresh
+  live hashes prove the branch safe
+
 The production test topology is the same in Docker and Playground:
 
 - one remote source site (`remote-base`)
