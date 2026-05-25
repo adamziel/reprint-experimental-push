@@ -24,7 +24,7 @@ The production ladder is fixed and each stage keeps its own boundary:
 4. `push_batch_apply` is the first mutation stage and must revalidate fresh
    live evidence before every batch and again at the storage boundary. Dry-run
    and apply are separate remote operations, and apply must not trust the
-   dry-run receipt as a lock.
+   dry-run receipt as a lock or as a liveness lease.
 5. `push_journal` is read-only durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair.
@@ -52,7 +52,8 @@ Each stage has one job and one boundary:
   site before planning begins.
 - `push_snapshot_hashes` lists the live remote comparison surface for
   planning only. It may page through large sites, but it never becomes write
-  authority and never extends the session on its own.
+  authority, never extends the session on its own, and never authorizes dry-
+  run or apply by itself.
 - `push_plan_dry_run` uploads the canonical plan and returns a receipt that
   proves eligibility only. A dry-run receipt is not a lock, not a lease, and
   not authorization to mutate remote state.
@@ -122,7 +123,8 @@ The canonical machine-readable bundle for that proof is
 `push-production-push-recovery-contract.json`. Use it when a review needs the
 full pull provenance, push ladder, and topology story in one place. In that
 bundle, `remote-base` and `remote-changed` are two observations of the same
-remote identity, not two different sites.
+remote identity, not two different sites, and `local-edited` is the imported
+clone that carries the local edits used to build the canonical plan.
 
 ## Auth And Recovery
 
@@ -176,7 +178,7 @@ identity across the staged proof:
 - preflight binds that persisted package to one live remote identity, one
   requested scope, and one short-lived push session
 - snapshot hash listing reads the live remote comparison surface for planning
-  only
+  only and can page through large sites without becoming write authority
 - dry-run uploads the canonical plan as a receipt, not a lock
 - apply revalidates fresh live evidence before every batch and again at the
   storage boundary, and it is a separate remote operation from dry-run

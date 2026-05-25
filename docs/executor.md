@@ -20,7 +20,7 @@ The executor follows the same ordered stages defined in the protocol:
 3. `push_plan_dry_run` uploads the canonical plan as a receipt, not a lock.
 4. `push_batch_apply` revalidates fresh live evidence before every batch and
    at the storage boundary. Apply must not reuse the dry-run receipt as
-   authority.
+   authority or as a session substitute.
 5. `push_journal` stays read-only.
 6. `push_recover inspect` classifies finish, rollback, retry, or block before
    any mutating recovery.
@@ -36,7 +36,8 @@ The same pull-to-push bridge applies here:
 - exporter/importer provenance produces the immutable pull base package
 - preflight binds that package to one live remote identity and one short-lived
   push session
-- remote snapshot hash listing stays planning-only
+- remote snapshot hash listing stays planning-only and may page through the
+  live remote comparison surface without upgrading into write authority
 - dry-run uploads a canonical plan receipt and never becomes a lock
 - batched apply revalidates fresh live evidence before every batch and again
   at the storage boundary, and is a separate remote operation from dry-run
@@ -65,7 +66,8 @@ keep the same remote identity across planning, apply, and recovery:
 The executor needs the same boundary discipline as the protocol:
 
 - preflight is the first live binding after importer provenance exists
-- remote snapshot hash listing is planning evidence only
+- remote snapshot hash listing is planning evidence only and never a write
+  precondition by itself
 - dry-run uploads the canonical plan and returns a receipt, not a lock
 - apply revalidates fresh live evidence before every batch and again at the
   storage boundary, and does not reuse the dry-run receipt as a lock
@@ -143,6 +145,8 @@ That topology keeps the executor proof stable:
 - Docker uses one private network; Playground uses separate disposable
   blueprints
 - both harnesses use the same route names and the same dry-run/apply split
+- both harnesses keep `remote-base` and `remote-changed` as two observations
+  of the same remote identity, not two different sites
 
 ## Canonical Proofs
 
@@ -191,6 +195,9 @@ The canonical proof stack for that executor story is the same one named in
   inspect proves the branch safe
 - `push-deployment-topology-contract.json` for the exact one-remote,
   one-local, one-drift Docker and Playground harness shape
+- `push-protocol-extension-contract.json` for the ordered stage contract that
+  includes preflight, remote snapshot hash listing, dry-run receipt, batched
+  apply, journal inspect, and inspect-first recovery
 - `push-recovery-boundary-contract.json` for the compact inspect-first
   recovery boundary proof with the auth floor and topology in one object
 
