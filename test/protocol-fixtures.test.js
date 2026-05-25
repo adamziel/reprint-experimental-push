@@ -271,6 +271,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const productionAuthSessionJournalRecoveryInspectContract = readJson(
     'fixtures/protocol/push-production-auth-session-journal-recovery-inspect-contract.json',
   );
+  const productionPullBridgeContract = readJson(
+    'fixtures/protocol/push-production-pull-bridge-contract.json',
+  );
   const sessionJournalProofCompact = readJson('fixtures/protocol/push-session-journal-proof.json');
   const journalInspectContract = readJson('fixtures/protocol/push-journal-inspect-contract.json');
   const dryRunApplyRevalidationContract = readJson(
@@ -912,6 +915,43 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     productionAuthSessionJournalRecoveryInspectContract.required_invariants.includes(
       'fresh live hashes must still be checked before finish, rollback, or auto',
+    ),
+  );
+  assert.equal(
+    productionPullBridgeContract.contract_id,
+    'push-production-pull-bridge-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionPullBridgeContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.deepEqual(productionPullBridgeContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    productionPullBridgeContract.pull_to_push_mapping.push_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    productionPullBridgeContract.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(
+    productionPullBridgeContract.journal_and_recovery.recovery_inspect,
+    'classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(productionPullBridgeContract.topology.networking.ingress_port, 8080);
+  assert.equal(productionPullBridgeContract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(productionPullBridgeContract.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    productionPullBridgeContract.required_invariants.includes(
+      'dry-run and apply are separate remote operations',
     ),
   );
   assert.equal(

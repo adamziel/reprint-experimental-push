@@ -56,6 +56,7 @@ The normal sequence is:
 48. `push-production-recovery-drift-contract.json`
 49. `push-production-topology-contract.json`
 50. `push-production-auth-session-journal-recovery-inspect-contract.json`
+51. `push-production-pull-bridge-contract.json`
 
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
@@ -138,6 +139,10 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-auth-session-journal-recovery-inspect-contract.json` is
   the compact proof that binds auth, session minting, journal rows, lease
   fencing, and read-only inspect into one production-shaped object.
+- `push-production-pull-bridge-contract.json` is the compact proof that
+  ties exporter/importer provenance directly to the full push ladder,
+  including preflight, planning-only hash listing, dry-run eligibility,
+  batched apply, journal inspect, and inspect-first recovery.
 - `push-production-topology-contract.json` is the compact proof that keeps
   the immutable pull provenance, the production push ladder, and the
   one-remote, one-local, one-drift topology aligned in one object.
