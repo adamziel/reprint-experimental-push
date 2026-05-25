@@ -50,7 +50,9 @@ site, and one live remote identity that must be revalidated at apply time.
 
 ## Pull To Push Mapping
 
-Push consumes immutable provenance from the existing pull pipeline:
+Push consumes immutable provenance from the existing pull pipeline. The
+exporter/importer path remains the source of truth, and push only reads the
+persisted base package that importer saved:
 
 | Pull artifact or stage | Push consumer | Boundary rule |
 | --- | --- | --- |
@@ -200,6 +202,29 @@ harnesses:
   fresh live evidence before every batch and at the storage boundary
 - journal inspect is read-only, and recovery begins with inspect before any
   mutating repair
+
+## Production Proof
+
+The production proof is the smallest usable statement of the executor
+protocol:
+
+- exporter/importer create the immutable pull base package
+- preflight binds that package to one live remote identity and one short-lived
+  push session
+- snapshot hash listing is planning-only and never write authority
+- dry-run uploads the canonical plan as a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect is read-only and does not widen authority
+- recovery begins with inspect and only mutates when the journal plus fresh
+  live hashes still prove the branch safe
+
+That proof is what the fixtures below pin down, so the docs and tests stay
+aligned:
+
+- [`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json)
+- [`fixtures/protocol/push-pull-to-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-to-topology-contract.json)
+- [`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
 
 ## Auth And Recovery
 

@@ -72,6 +72,12 @@ That matrix is the concrete proof the executor should cite when it needs to
 show one remote source site, one local edited site, and one later drift
 observation without introducing a second remote authority.
 
+For Docker, the runner is the production executor process on a private
+network. For Playground, the same route names and proof shape are exercised by
+the local test process against separate disposable blueprints, with browser
+inspection still routed through the sandbox-provided `8080` ingress and a
+local-only proxy.
+
 The executor follows the same boundary order as the protocol:
 
 - preflight is the first live binding from immutable pull provenance to one
@@ -83,6 +89,20 @@ The executor follows the same boundary order as the protocol:
 - journal inspect stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes prove the repair safe
+
+That boundary order maps directly to the pull pipeline:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that package to the live remote identity and requested
+  scope
+- snapshot hash listing reads the live comparison set for planning only
+- dry-run uploads the canonical plan as a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect reads durable evidence without authorizing mutation
+- recovery starts with inspect and only mutates when fresh live hashes and
+  journal evidence still prove the branch safe
 
 ## Executor Contract
 
