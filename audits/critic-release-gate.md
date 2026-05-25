@@ -86,5 +86,6 @@ Production-readiness language checklist:
 - show the exact live boundary was rerun here, not just a matching route shape or package mount;
 - classify every touched surface as old, new, or blocked before retry starts;
 - enumerate or block every plugin-owned surface outside the allowlist, including late-discovered tables, files, cron rows, runtime registries, serialized blobs, caches, and generated assets;
+- reject any claim that the same route shape, reviewer wording, or fixture replay proves a later boundary; each later-discovered plugin-owned surface still needs its own preserve / reject / retry cycle;
 - treat route shape, package mount shape, fixture replay, readable review output, and `finalMatchesLocal` as compatibility evidence only; and
 - name the exact upstream revision or worktree state for any Reprint, ZS-Sync, or ForkPress comparison, plus what that note proves here and what it does not prove.

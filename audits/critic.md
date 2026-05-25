@@ -4913,7 +4913,9 @@ boundary-specific, not wording-specific:
   owned surface. If a later plugin-owned table, file, registry entry,
   generated asset, cache entry, serialized blob, or cron row appears after
   the first write, the earlier artifact stays audit-only and cannot cover the
-  new surface without its own preserve / reject / retry cycle; and
+  new surface without its own preserve / reject / retry cycle, even when the
+  route shape, reviewer wording, or fixture replay matches the first boundary;
+  and
 - Reprint, ZS-Sync, and ForkPress notes still need to be treated as source-note
   provenance only unless the exact upstream state is named and this branch
   reran the same live boundary with preserved-remote evidence.
@@ -4949,4 +4951,5 @@ worktree:
   reject / retry cycle if that surface is writable; and
 - the exact upstream revision or worktree state for any Reprint, ZS-Sync, or
   ForkPress comparison, plus an explicit statement of what that note proves
-  here and what it does not prove.
+  here and what it does not prove, including whether it says anything about a
+  later boundary or only the original one.
