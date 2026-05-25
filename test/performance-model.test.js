@@ -228,6 +228,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-live-compare-before-publish')?.rejectedGate,
+    'live',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-digest-skips-large-upload-publish')?.rejectedGate,
     'recovery',
   );
@@ -245,6 +249,15 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-window-sizing')?.violates.includes('file-hashing'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-live-compare-before-publish')?.violates.includes('file-hashing'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-live-compare-before-publish')?.violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-live-compare-before-publish')?.violates.includes('atomic-file-publish'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause')?.rejectedGate,
