@@ -14,6 +14,16 @@ This lane accepts only three post-failure states:
 - Replaying a completed plan stays `fully-updated-remote` and must be inert.
 - Any partial remote mutation must surface `blocked-recovery` with inspectable artifacts.
 
+The failure envelope is intentionally narrow:
+
+- old remote means the remote is still classifiable as the pre-apply state
+  and the journal explains where the apply stopped.
+- fully updated remote means replay is read-only and produces no duplicate
+  inserts, stale-data resurrection, or fresh mutation work.
+- blocked recovery means the remote cannot be trusted as safely old or safely
+  complete, so the journal must carry enough remote evidence to inspect the
+  partial state after restart.
+
 ## Release blocker
 
 A partial remote mutation without a recovery artifact is not acceptable.
@@ -26,5 +36,12 @@ Retry must not:
 
 ## Durable evidence
 
-JSON lab evidence is useful for modeling, but production recovery needs durable journal records that survive the failure boundary and can be inspected after restart.
+JSON lab evidence is useful for modeling, but production recovery needs durable
+journal records that survive the failure boundary and can be inspected after
+restart. The journal is the artifact boundary, not the final proof by itself:
 
+- pre-mutation, post-staging, and post-validation failures must leave a durable
+  `old-remote` record
+- replay of a completed plan must leave a durable `fully-updated-remote`
+  record without reopening mutation work
+- blocked recovery must preserve both journal and remote artifacts
