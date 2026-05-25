@@ -6684,6 +6684,11 @@ these requirements before any wording is promoted.
 Do not let the branch claim production-grade push support until all of these
 are true on this worktree:
 
+- the branch has a single executable preflight/release command that can be
+  run against a real remote on this branch, and its output proves the exact
+  live boundary, preserved remote, stale rejection point, and fresh retry
+  scope end to end; protocol prose, route-shaped smokes, and lab fixtures are
+  not enough on their own;
 - the exact stale-drift case has been rerun here, with the rejected remote
   still inspectable after rejection and the rejection point named before the
   first write;
