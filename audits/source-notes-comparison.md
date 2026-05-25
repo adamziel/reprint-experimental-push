@@ -258,6 +258,16 @@ Release-barrier summary:
 - Reprint, ZS-Sync, and ForkPress notes never become current proof just
   because their feature names match the current design; the cited upstream
   state must be reverified at the same live mutation boundary.
+
+Release gate for this comparison note:
+
+- name the exact upstream commit hash or worktree state for each cited note;
+- name the exact live mutation boundary exercised on this branch;
+- state what the cited upstream state does not prove here, especially for
+  remote drift, create-time remap, plugin-owned allowlists, partial side
+  effects, and stale manual-review artifacts; and
+- reject any claim that only has route shape, package shape, or
+  `finalMatchesLocal` evidence.
 - A late-discovered plugin-owned surface is a separate boundary; a source note
   for the first write cannot authorize it unless this branch preserved the
   remote, classified the later surface, and rebuilt retry scope from fresh

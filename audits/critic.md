@@ -5125,3 +5125,25 @@ Minimum evidence still missing for production wording:
   the same live boundary was rerun on this branch.
 Any production-grade push claim that lacks one of those proofs must be treated
 as incomplete, not "close enough for manual resolution."
+
+Release-gate checklist for production-grade wording:
+
+- exact live boundary identified, with the drifted remote preserved for audit;
+- stale authority rejected before the first mutation, with the rejection point
+  recorded and reusable only as audit evidence;
+- create-time remap or alias cases either blocked or preserved with their own
+  live proof, not inferred from the earlier boundary;
+- every plugin-owned surface outside the allowlist enumerated or explicitly
+  blocked, including late-discovered tables, files, cron rows, registries,
+  generated assets, caches, and serialized blobs;
+- every mixed file, database, and plugin side effect classified as old, new,
+  or blocked before retry;
+- manual-review artifacts kept audit-only unless rebuilt from fresh live
+  hashes on this branch;
+- any cited Reprint, ZS-Sync, or ForkPress note pinned to the exact upstream
+  revision or worktree state and annotated with what it does not prove here;
+  and
+- no route-shape smoke, package-mount match, `finalMatchesLocal`, or
+  "manual resolution" phrase used as proof without the live boundary above.
+If any box is unchecked, the branch must not claim production-grade push
+support.
