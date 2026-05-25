@@ -142,6 +142,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'fixtures/protocol/push-auth-session-journal-recovery-inspect-contract.json',
   );
   const journalInspectContract = readJson('fixtures/protocol/push-journal-inspect-contract.json');
+  const dryRunApplyRevalidationContract = readJson(
+    'fixtures/protocol/push-dry-run-apply-revalidation-contract.json',
+  );
   const remoteLivenessTopologyContract = readJson(
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
   );
@@ -292,6 +295,33 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'pull exporter/importer establish the immutable base package before push',
     ),
   );
+  assert.equal(preflightContract.live_binding.remote_site_id, 'remote-example');
+  assert.equal(preflightContract.live_binding.push_session, 'psh_01j00000000000000000000000');
+  assert.ok(
+    preflightContract.required_invariants.includes(
+      'preflight does not authorize dry-run, apply, or recovery on its own',
+    ),
+  );
+  assert.equal(
+    dryRunApplyRevalidationContract.pull_handoff.dry_run,
+    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    dryRunApplyRevalidationContract.apply_revalidation.before_each_batch,
+    'fresh live hashes',
+  );
+  assert.ok(
+    dryRunApplyRevalidationContract.required_invariants.includes(
+      'dry-run and apply are separate remote operations',
+    ),
+  );
+  assert.equal(journalInspectContract.inspection.mode, 'inspect');
+  assert.equal(journalInspectContract.inspection.mutates, false);
+  assert.ok(
+    journalInspectContract.required_invariants.includes(
+      'journal inspect is a separate boundary from recovery mutate',
+    ),
+  );
   assert.equal(contract.topology.docker.proof[0], 'one private network');
   assert.ok(
     contract.topology.docker.proof.includes(
@@ -363,6 +393,30 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology.playground.local_edited, 'local-edited');
   assert.equal(contract.topology.playground.remote_changed, 'remote-changed');
   assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
+  assert.equal(
+    protocolExtensionContract.production_boundary.preflight,
+    'first live binding after importer provenance exists',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.remote_snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.dry_run_plan_upload,
+    'uploads the canonical plan as an eligibility receipt, not a lock',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.mutation_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.journal_inspect,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
   assert.deepEqual(protocolExtensionContract.push_sequence, [
     'push_preflight',
     'push_snapshot_hashes',
@@ -395,6 +449,16 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.push_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
   assert.equal(protocolExtensionContract.topology.same_remote_identity, true);
   assert.equal(protocolExtensionContract.topology.remote_base, 'remote-base');
+  assert.ok(
+    protocolExtensionContract.required_invariants.includes(
+      'remote snapshot hash listing may page large sites but never becomes write authority',
+    ),
+  );
+  assert.ok(
+    protocolExtensionContract.required_invariants.includes(
+      'recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair',
+    ),
+  );
   assert.equal(productionRevalidationContract.contract_id, 'push-production-revalidation-contract-one-remote-one-local');
   assert.equal(
     productionRevalidationContract.push_phases.snapshot_hash_listing,

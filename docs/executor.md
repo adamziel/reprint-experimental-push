@@ -57,6 +57,20 @@ The same pull-to-push bridge applies here:
 - inspect-first recovery is the only safe starting point for mutating
   recovery.
 
+That mapping is the executor contract, not just an implementation note:
+
+- `push_preflight` is the first live binding after importer provenance exists.
+- `push_snapshot_hashes` is planning-only evidence and may page large sites,
+  but it never becomes write authority.
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt that cannot be reused as a lock.
+- `push_batch_apply` must revalidate before every batch and again at the
+  storage boundary, so drift between dry-run and apply is observable.
+- `push_journal` is durable evidence only and never authorizes mutation.
+- `push_recover inspect` is read-only and must precede any mutating repair.
+- `push_recover auto|finish|rollback` may mutate only when inspect plus fresh
+  live hashes prove the branch safe.
+
 This keeps the exporter/importer pipeline authoritative for the base package
 while making push a separate production write path that can only consume that
 persisted provenance.
