@@ -262,6 +262,8 @@ What still blocks production-grade wording:
 - a completed runtime pass must be replayable as a command with preserved
   remote and apply-time revalidation evidence, not merely described in review
   prose or inferred from a successful lab harness; and
+- leases and fencing must be proven on the same live boundary, not assumed
+  from a lab journal row count or a preserved-source handoff;
 - "manual resolution", "comparison passed", and "production-ready" remain
   false reliability unless the preserved remote stayed inspectable after
   rejection and the retry scope was rebuilt from live hashes on this branch.
@@ -314,7 +316,8 @@ of these on the same live boundary:
 - exact executor identity, auth/session lifecycle, and rejection point before
   the first write;
 - dry-run receipt plus apply-time revalidation on the same live mutation;
-- journal/recovery inspection that proves retry scope from fresh live hashes;
+- journal/recovery inspection that proves retry scope from fresh live hashes
+  and lease/fencing behavior under retry;
 - explicit old/new/blocked classification for touched rows, files,
   relationship-bearing records, and plugin-owned surfaces; and
 - plugin-driver coverage for late-discovered plugin-owned data traps outside
