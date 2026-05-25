@@ -4832,6 +4832,38 @@ test('stops a local file delete conflict while preserving unrelated remote-only 
   assertEveryMutationHasLiveRemotePrecondition(plan);
 });
 
+test('stops a local file delete that would hide a remote-only descendant while keeping plugin drift and bounded evidence', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery'];
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/uploads/gallery/remote-only.txt'] = 'remote-only descendant';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:wp-content/uploads/gallery');
+  const planJson = JSON.stringify(plan);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.conflicts, 1);
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.reason, 'Local file deletion or type change would hide or remove a live remote descendant.');
+  assert.equal(conflict.relatedResource.key, 'file:wp-content/uploads/gallery/remote-only.txt');
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.equal(conflict.relatedChange.remote.state, 'present');
+  assert.equal(conflict.relatedChange.remote.contents, undefined);
+  assert.equal(planJson.includes('remote-only descendant'), false);
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete, matching edit, and file type swap stay safe', () => {
   const base = baseSite();
   base.files['wp-content/uploads/photo.txt'] = {

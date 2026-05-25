@@ -21,14 +21,16 @@ This note summarizes the planner's no-overwrite contract.
   payloads, or other secret values.
 - Independent resources that already match the remote hash should stay
   `already-in-sync` instead of being rewritten as mutations.
+- File-topology conflicts should name the related descendant or ancestor path
+  and stop the unsafe delete or type swap without exposing file contents.
 
 ## Must Stop
 
 - Same-resource local and remote changes that diverge to different hashes.
 - Local delete or file type swap when the live remote resource drifted and the
   local side did not independently reach the live remote hash.
+- Local delete or file type swap when it would hide a live remote descendant.
 - Plugin-owned or plugin-context mutations when the required live remote plugin
   context drifted and the local side did not independently match it.
 - Any mutation that lacks a live remote precondition bound to the mutation id,
   resource key, and remote hash observed during planning.
-

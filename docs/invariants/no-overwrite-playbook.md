@@ -57,12 +57,15 @@ This is the short operational version of the planner invariant policy.
 - Preserve matched independent resources in `already-in-sync` state rather than
   converting them into mutations when a separate live-preconditioned delete is
   present.
+- File-topology conflict evidence should identify the related descendant or
+  ancestor path and stop the unsafe mutation without exposing file contents.
 
 ## Must Stop
 
 - Same-resource local/remote changes that diverge to different hashes.
 - Local delete or file type swap when the live remote resource drifted and the
   local side did not independently reach the live remote hash.
+- Local delete or file type swap when it would hide a live remote descendant.
 - Plugin-owned deletions when the owner context is stale and the local side did
   not independently match the live remote context.
 - Plugin-context or plugin-owned data mutations when the relevant live remote
