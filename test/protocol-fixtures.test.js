@@ -4617,3 +4617,34 @@ test('verify:release fails closed at the explicit missing-secret gate when a sou
     /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_SECRET_REQUIRED"\s*\}/,
   );
 });
+
+test('verify:release fails closed at apply-time revalidation when the retained remote drifts after snapshot', () => {
+  const proof = spawnSync('npm', ['run', 'verify:release'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_USERNAME: 'reprint_push_admin',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'reprint-push-admin-app-password',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: 'reprint_push_admin',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: 'reprint-push-admin-app-password',
+      REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
+    },
+    encoding: 'utf8',
+    shell: false,
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"drift": \{\s*"mode": "post-title",\s*"sameRemoteIdentity": true,\s*"changedHash": "[a-f0-9]{64}"\s*\}/);
+  assert.match(
+    proof.stdout,
+    /"releaseProof": \{\s*"ok": false,\s*"status": 412,\s*"code": "PRECONDITION_FAILED"\s*\}/,
+  );
+  assert.match(
+    proof.stdout,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}\s*\}/,
+  );
+});
