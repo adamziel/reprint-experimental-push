@@ -4758,3 +4758,52 @@ does prove here, and say exactly what it does not prove here. If that note is
 being used to imply live write safety, remote preservation, stale-drift
 rejection, or retry authority on this branch, the proof is missing and the
 claim must fail closed.
+
+## Production Gate Summary
+
+The branch is still not production-grade because the remaining proof gaps are
+boundary-specific, not wording-specific:
+
+- live remote drift still needs a live rerun that fails closed before the first
+  write and leaves the remote inspectable after reject;
+- create-time identity remapping still needs live identity evidence or a hard
+  block, because a fixture that preserves the same ID does not prove the live
+  target cannot renumber or alias;
+- plugin-owned state outside the allowlist still needs live enumeration or an
+  apply-time block, including hidden tables, cron rows, runtime registries,
+  generated files, caches, serialized blobs, and plugin-owned files that only
+  appear after the first write;
+- partial file, DB, and plugin side effects still need old/new/blocked
+  classification before retry, so a mixed write cannot be relabeled as
+  success;
+- stale manual-review artifacts still need an explicit preserve/reject/retry
+  cycle for each later-discovered boundary, because a readable artifact is
+  audit evidence only until the branch proves it cannot authorize a different
+  row, file, relationship-bearing record, remapped create target, or plugin-
+  owned surface; and
+- Reprint, ZS-Sync, and ForkPress notes still need to be treated as source-note
+  provenance only unless the exact upstream state is named and this branch
+  reran the same live boundary with preserved-remote evidence.
+
+The local source-note anchors in `docs/source-notes.md` are the observed
+historical references `27c5f25` for Reprint, `d9334a0` for ZS-Sync, and
+`55f9879` for ForkPress. Those anchors can justify transport, discovery, and
+review vocabulary, but they do not prove live push safety, preserved-remote
+retention, or retry authority on this branch. Matching the same route family,
+package layout, or reviewer wording remains compatibility evidence only.
+
+Before the project can claim production-grade push support, the audit must be
+able to name all of the following for the exact same live boundary on this
+worktree:
+
+- the drifted remote that was preserved for audit;
+- the stale rejection point that made the earlier approval unusable as retry
+  authority;
+- the fresh retry artifact rebuilt from live hashes on this branch;
+- the old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface;
+- the separate classification or block for any late-discovered plugin-owned
+  surface that appeared only after the first write; and
+- the exact upstream revision or worktree state for any Reprint, ZS-Sync, or
+  ForkPress comparison, plus an explicit statement of what that note proves
+  here and what it does not prove.
