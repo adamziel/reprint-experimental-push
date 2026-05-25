@@ -474,13 +474,13 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Verified signal: 89 Node tests pass. The open gate is production auth plus durable journaling. Remaining proof stays lab-only and the trend is flat.</p>
-        <time class="update-stamp" datetime="2026-05-25T02:00:34+02:00">Last updated: May 25, 2026, 02:00:34 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T02:01:09+02:00">Last updated: May 25, 2026, 02:01:09 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Current gate: production auth + durable journaling</span>
           <span class="pill">89 Node tests passing</span>
           <span class="pill">Trend flat; evidence stays lab-scoped</span>
           <span class="pill">Release gates proven: 0/4</span>
-          <span class="pill">Unproven gates: executor, recovery journal, Docker/Playground, graph identity, plugin drivers</span>
+          <span class="pill">Pending gates: executor, recovery journal, Docker/Playground, graph identity, plugin drivers</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
@@ -583,7 +583,7 @@
           <h2 id="proof-gates">Release Gates</h2>
           <div class="proof-list">
             <div class="proof-item"><span class="status">Lab proof</span><p>89 Node tests and local packaged-route runs show scoped credential rejection, cleanup of 2 expired signed artifacts, and 7 graph-safe mutations in lab-only evidence.</p></div>
-            <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production executor and authorization. Evidence trail: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>.</p></div>
+            <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production executor plus auth. Evidence trail: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Evidence trail: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 3</span><p>Pending: Docker/full Playground integration beyond fixture labs. Evidence trail: <a href="docs/playground-topology.md">playground topology</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 4</span><p>Pending: WordPress graph identity mapping and general plugin drivers. Evidence trail: <a href="docs/protocol.md">protocol sketch</a>, <a href="docs/supervisor-feedback.md">feedback log</a>.</p></div>

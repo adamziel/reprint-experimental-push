@@ -4,6 +4,25 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Refresh 02:01:09
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:01:09 CEST`) and kept the visible last-updated stamp in the
+  header.
+- Tightened the release-gate checklist so Gate 1 reads as production executor
+  plus auth, and the first screen keeps the current gate, flat trend, and
+  pending proof items on one concise view.
+- Public status stays conservative: 89 Node tests pass, production auth plus
+  durable journaling remain the gate, and executor, recovery journal,
+  Docker/Playground, graph identity, and plugin-driver proof remain
+  unverified.
+- Evidence trail: [progress.html](../progress.html),
+  [docs/progress-log.md](progress-log.md), [docs/executor.md](executor.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md),
+  [docs/protocol.md](protocol.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Public Status Refresh 02:00:34
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
