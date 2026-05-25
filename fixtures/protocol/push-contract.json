@@ -89,7 +89,8 @@
       "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
       "journal_inspect": "reads durable evidence without authorizing mutation",
       "recovery": "starts with inspect and allows mutating repair only when the journal and live hashes prove the action"
-    }
+    },
+    "remote_snapshot_hash_listing": "cursorable live hash evidence used for planning only and never treated as write authority"
   },
   "proofs": {
     "auth": "push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery",

@@ -125,6 +125,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology_matrix.push_pipeline.mutation_batch_apply, 'revalidates fresh live evidence before every batch and again at the storage boundary');
   assert.equal(contract.topology_matrix.push_pipeline.journal_inspect, 'reads durable evidence without authorizing mutation');
   assert.equal(contract.topology_matrix.push_pipeline.recovery, 'starts with inspect and allows mutating repair only when the journal and live hashes prove the action');
+  assert.equal(contract.topology_matrix.remote_snapshot_hash_listing, 'cursorable live hash evidence used for planning only and never treated as write authority');
   assert.equal(contract.topology_matrix.roles.remote_base, 'the one remote source site that seeds the persisted pull base');
   assert.equal(contract.topology_matrix.roles.local_edited, 'the one imported local site with user edits');
   assert.equal(contract.topology_matrix.roles.remote_changed, 'the same remote site observed later after independent drift');
