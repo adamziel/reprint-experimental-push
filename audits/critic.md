@@ -4949,6 +4949,10 @@ That rule also applies to any later-discovered plugin-owned boundary: a note
 that only covered the original row, file, or relation cannot silently widen to
 cover a new table, registry entry, generated asset, cache entry, serialized
 blob, or cron side effect without its own preserve / reject / retry evidence.
+Named upstream state is necessary provenance, not sufficient proof: even the
+exact Reprint `27c5f25`, ZS-Sync `d9334a0`, or ForkPress `55f9879` anchor
+still remains historical context until this branch reruns the same live
+boundary and preserves the drifted remote for audit.
 
 ## Production Gate Summary
 
