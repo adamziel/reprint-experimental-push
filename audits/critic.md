@@ -4,6 +4,11 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+Important boundary: a lab-shaped route family, packaged mount, fixture replay,
+or `finalMatchesLocal` result can still be compatible without proving the
+live executor, preserved remote, or fresh retry scope. Route shape alone is
+never production proof here, even if the surface looks production-shaped.
+
 Must change before any production-grade push claim:
 
 - prove the live mutation boundary rejects stale authority before the first
