@@ -19,6 +19,11 @@ The remaining production traps are still unproven in this branch:
 - live remote drift can still be detected too late unless the apply boundary
   shows the preserved remote, the rejection point, and the unusable stale
   approval separately;
+- false reliability claims can still leak in through lab-shaped language:
+  a production-shaped route, package mount, fixture replay, readable review
+  artifact, or `finalMatchesLocal` result is only compatibility evidence
+  unless the branch re-ran the same live write boundary against a drifted
+  remote and recorded the stale rejection before mutation;
 - create-time identity remapping can still alias or renumber a target unless
   the branch proves the live remap path or hard-blocks it before write;
 - plugin-owned state can still hide outside the allowlist through cron rows,
@@ -38,6 +43,9 @@ Release gate for any production wording:
   proof or a hard block before write.
 - Show the full plugin-owned surface for the claim, including anything found
   late, and hard-block unknown or unvalidated surfaces.
+- Show that a claim does not upgrade route shape, package mount, fixture
+  replay, or a readable review artifact into production safety unless the
+  branch-local live drift rerun and stale rejection are recorded here.
 - Show that any plugin-owned surface discovered only after the first write
   is classified as blocked, not retroactively folded into a success claim or
   treated as a safe continuation without fresh live evidence.
@@ -135,6 +143,11 @@ Must-fix blockers before any production wording:
   second write against a late-discovered plugin-owned surface; the proof has
   to show that the late surface was blocked or separately classified before
   any retry continued.
+- A readable stale manual-review artifact must not be described as "manual
+  resolution" success if the remote was already drifted or the late surface
+  was still unclassified; that wording hides a mixed-write loss mode unless
+  the remote was preserved, the late surface was blocked, and the retry scope
+  was rebuilt from fresh live hashes.
 - A late-discovered plugin-owned surface must not be described as a successful
   "manual resolution" when the remote was already drifted, because that hides
   a mixed-write failure mode; the proof must preserve the remote for audit,
