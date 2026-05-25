@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 12:12:41 CEST
+Last updated: 2026-05-25 12:15:57 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 12:12:41 CEST
+## 2026-05-25 12:15:57 CEST
 
 - Going well: `reliable-executor` still has the clearest lab proof, and the linked page/log stay compact.
 - Not going well: the production gate is still closed because the real-endpoint boundary, durable journal semantics, graph identity, and plugin-driver proof remain unproven outside the lab.
@@ -17,7 +17,8 @@ changed, what is helping, what is not helping, and the next nudge.
 <details>
 <summary>Earlier same-state refreshes</summary>
 
-- 2026-05-25 12:10:39 CEST: same blocker, same nudge, no release-state change.
+  - 2026-05-25 12:15:57 CEST: same blocker, same nudge, no release-state change; the page/log now point at the newest audit note.
+  - 2026-05-25 12:10:39 CEST: same blocker, same nudge, no release-state change.
 - 2026-05-25 12:08:36 CEST: same blocker, same nudge, no release-state change.
 - 2026-05-25 12:06:39 CEST: same blocker, same nudge, no release-state change.
 - 2026-05-25 12:05:52 CEST: same blocker, same nudge, no release-state change.
