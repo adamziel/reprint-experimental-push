@@ -6270,8 +6270,27 @@ Release-gate wording also needs to stay explicit about what is not proof:
 - a source-note comparison is historical context unless it names the exact
   upstream revision or worktree state, says what the note proves here, says
   what it does not prove here, and is rerun against the same live boundary on
-  this branch; and
+  this branch; the observed anchors in `docs/source-notes.md`
+  (`27c5f25`, `d9334a0`, `55f9879`) are provenance only, not retry
+  authority; and
 - "manual resolution" is not success unless the preserved remote stayed
   inspectable after rejection, the stale artifact was rejected before the
   first write, the fresh retry scope was rebuilt from live hashes, and every
   touched surface was classified old, new, or blocked.
+
+Comparison release gate:
+
+- Reprint comparisons must be limited to staged pull, resumability, and
+  transport vocabulary; they do not prove live push safety, preserved-remote
+  retention, or stale-drift rejection on this branch.
+- ZS-Sync comparisons must be limited to bounded scanning and resource
+  discovery vocabulary; they do not prove source mutation safety, plugin
+  ownership enumeration, or late-discovered surface handling on this branch.
+- ForkPress comparisons must be limited to audit and crash-consistency
+  vocabulary; they do not prove that a readable review artifact can become
+  retry authority for a later row, file, remapped create target, or
+  plugin-owned surface on this branch.
+- any comparison to Reprint, ZS-Sync, or ForkPress that omits the exact
+  upstream state, the exact live boundary, and the note's scope of proof must
+  fail closed, even if the route family, package layout, or reviewer wording
+  matches the production path.
