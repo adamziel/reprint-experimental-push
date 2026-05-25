@@ -44,9 +44,10 @@ logic, but it is still only refusal logic: it does not measure a production-
 shaped runtime or memory ceiling, and it cannot substitute for a required
 release command. `npm test` and `npm run test:playground` remain green even
 when the strongest checks are skipped, so the repo can look healthy while the
-objective remains unproven. The current test story is therefore strongest as a
-blocker generator, not as release-grade proof of no data loss, reliability, or
-speed.
+objective remains unproven. The immediate action is to turn the strongest
+checks into one required `verify:release`-style gate; until that exists, the
+current test story is stronger as a blocker generator than as release-grade
+proof of no data loss, reliability, or speed.
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
