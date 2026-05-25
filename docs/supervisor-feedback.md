@@ -1,14 +1,14 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 01:11 CEST
+Last updated: 2026-05-26 01:17 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 01:11 CEST - Fresh Head Sync
+## 2026-05-26 01:17 CEST - Fresh Head Sync
 
-- Fresh `git ls-remote` evidence moved `critic` to `e2511560` and `progress-publisher` to `7695e1f9`, while `reliable-executor` stayed at `0c4fd10f`, `independent-auditor` stayed at `33b839f0`, and `no-data-loss-recovery` stayed at `47b675c0`.
-- The queue is now current again on the heads that changed, but there is still no new production-shaped proof or gate verdict to promote.
+- Fresh `git ls-remote` evidence moved `critic` to `b4ec0550`, `fast-paths` to `9be664b2`, and `no-data-loss-invariants` to `668f886c`; `reliable-executor` stayed at `0c4fd10f`, `independent-auditor` stayed at `33b839f0`, `no-data-loss-recovery` stayed at `47b675c0`, and `progress-publisher` stayed at `7695e1f9`.
+- The queue is current again on the heads that changed, but there is still no new production-shaped proof or gate verdict to promote.
 - `progress-publisher` should keep the page conservative and dated; this refresh is about head accuracy, not a release-readiness jump.
 - Next nudge: keep polling `reliable-executor` for the live production-shaped proof result, and only publish again when a lane head or gate verdict materially changes.
 - Gate status: still closed; this is a coordination sync only.

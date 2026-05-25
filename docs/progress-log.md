@@ -12,6 +12,14 @@ linked implementation artifacts.
 - The unchanged heads still matter for context: `reliable-executor` remains at `0c4fd10f`, `independent-auditor` remains at `33b839f0`, `no-data-loss-recovery` remains at `47b675c0`, and `no-data-loss-invariants` remains at `fa0ce3ea`. This is a coordination correction only, not a release-gate change.
 - Evidence trail: [progress.html](../progress.html), [release-gate checklist](../progress.html#proof-gates), [supervisor feedback](supervisor-feedback.md).
 
+## 2026-05-26 - Public Status Audit 01:17:00
+
+<a id="2026-05-26-public-status-audit-011700"></a>
+
+- Refreshed [progress.html](../progress.html) after a fresh remote-head sync: `critic` moved to `b4ec0550`, `fast-paths` moved to `9be664b2`, and `no-data-loss-invariants` moved to `668f886c`. The first screen still stays conservative: release gates remain `0/4`, and production WordPress auth/session lifecycle plus durable journal storage with lease/fencing remain pending.
+- The other tracked heads stayed current: `reliable-executor` remains at `0c4fd10f`, `independent-auditor` remains at `33b839f0`, `no-data-loss-recovery` remains at `47b675c0`, `progress-publisher` remains at `7695e1f9`, and `same-plan-wordpress-graph-create` remains at `24c58564`. This is a coordination correction only, not a release-gate change.
+- Evidence trail: [progress.html](../progress.html), [release-gate checklist](../progress.html#proof-gates), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Public Status Audit 01:06:00
 
 <a id="2026-05-26-public-status-audit-010600"></a>
