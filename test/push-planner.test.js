@@ -1839,6 +1839,44 @@ test('durable retry after an old-remote failure reopens append-only without dupl
   assert.equal(persisted.integrity.status, 'ok');
 });
 
+test('durable stale completed replay blocks recovery and preserves inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const before = JSON.stringify(driftedRemote);
+
+  const error = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assert.equal(JSON.stringify(driftedRemote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal, 'blocked replay must keep journal artifacts');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked replay must keep remote artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.ok(persisted.records.some((record) => record.type === 'recovery-state'));
+});
+
 test('durable mid-apply failure blocks recovery and keeps the partial remote inspectable', () => {
   const base = baseSite();
   const local = baseSite();
