@@ -1050,6 +1050,43 @@ test('keeps remote-only plugin changes while a matching independent restore and 
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
+test('keeps remote-only plugin changes while a matching independent row restore and an unrelated deletion stay safe', () => {
+  const base = baseSite();
+  delete base.db.wp_posts['ID:2'];
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared restored row', post_status: 'publish' };
+  const remote = baseSite();
+  delete remote.db.wp_posts['ID:2'];
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared restored row', post_status: 'publish' };
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const restoreDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'create');
+  assert.equal(restoreDecision.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Shared restored row');
+  assert.equal(result.site.plugins.forms.version, '1.1.0');
+  assert.equal(result.site.plugins.forms.active, false);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete, matching restore, edit, and type swap stay safe', () => {
   const base = baseSite();
   delete base.files['index.php'];
