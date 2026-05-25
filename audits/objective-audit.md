@@ -66,6 +66,14 @@ The current tests are useful, but they are not proof of no data loss, reliabilit
 | [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) | Explicit refusal of unsupported throughput claims and tamper detection for benchmark evidence | No positive speed claim, no production-shaped timing result, no live-path benchmark threshold, no real live-source throughput measurement, no proof that a production release is fast enough | Blocker evidence only |
 | `npm run test:playground:*` optional smokes | Lab/fixture route shape, auth/session scaffolding, storage guard behavior, stale-claim classification, and journal smoke paths | No real remote/local topology, no production storage path, no enforced release gate, and no release decision because the smokes remain optional | Lab evidence only |
 
+## Claim Audit
+
+The user-facing claims fail for the same reason: the suite stops at guarded models and lab flows.
+
+- `No data loss`: the recovery tests prove monotonic journals, redaction, and restart classification on fixture-backed storage, but they do not prove a live-source apply can survive a crash, retry, or duplicate replay without loss.
+- `Reliable`: the tests prove refusal behavior, restart states, and local journal integrity, but they do not prove the one-way pull base plus one-way push back to live source is durable under the production storage semantics named by the objective.
+- `Fast`: the benchmark suite is intentionally refusal-first. It can reject unsupported throughput claims, but it does not report a measured live-path throughput result or a release threshold for production speed.
+
 ## Release Blockers
 
 The objective stays blocked for five concrete reasons:
@@ -74,7 +82,7 @@ The objective stays blocked for five concrete reasons:
 2. The strongest authenticated push route still self-identifies as `labBacked: true` in [`src/authenticated-http-push-client.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/src/authenticated-http-push-client.js#L63-L73), and the route surface echoes that same label in [`scripts/playground/push-remote-rest-plugin.php`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/scripts/playground/push-remote-rest-plugin.php#L2702-L2713), so the best visible push evidence is still lab-scoped and cannot be treated as a production release proof.
 3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path, publish a live-path threshold, or establish a production release speed claim. A refusal-only benchmark is anti-claim evidence, not speed proof.
 4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary, and they do not exercise a real remote-to-local-to-remote release path or no-loss behavior under the production storage semantics named by the objective.
-5. There is no checked-in CI workflow in this checkout and no `verify`/`release`/`verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), so there is no visible enforced entrypoint that could make the release gate mandatory or close the loop from proof to deployable gate.
+5. There is no checked-in CI workflow in this checkout and no `verify`/`release`/`verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), so there is no visible enforced entrypoint that could make the required release gate mandatory or close the loop from proof to deployable gate.
 6. The benchmark suite is intentionally refusal-first: `report.throughput.productionThroughput` stays `not-claimed`, and the speed claim tests only prove the gate refuses unsupported production throughput until the missing measurements exist.
 7. The tests that look strongest are still proving preconditions and refusal behavior, not end-to-end mutation safety under a crash boundary. That is useful, but it is not release evidence.
 8. The current benchmark surfaces are explicitly refusal-oriented; they are acceptable as anti-claim evidence, but they still do not establish a live-path speed claim.
