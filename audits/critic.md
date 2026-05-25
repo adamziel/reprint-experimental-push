@@ -258,6 +258,10 @@ Non-negotiable release gate:
 - no production-grade push claim is allowed unless later-discovered plugin-
   owned surfaces are treated as separate live boundaries with their own
   preserve / reject / retry cycle;
+- no production-grade push claim is allowed if the only new evidence is a
+  readable manual-resolution note that names a successful retry but does not
+  show the exact rejected boundary, the preserved remote, and the fresh live-
+  hash retry scope for the later boundary that actually changed;
 - no production-grade push claim is allowed unless stale manual-review
   artifacts stay audit-only after drift and cannot widen to a different row,
   file, relationship-bearing record, remapped create target, or plugin-owned
