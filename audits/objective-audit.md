@@ -12,10 +12,10 @@ The objective implies these minimum release requirements:
 
 1. Start from a one-way pull base, then perform a one-way push back to the live source. The objective is directional, not a bidirectional sync.
 2. Recheck the live source at apply time before mutating it. A stale preflight is not enough.
-3. Preserve every WordPress data shape the push can touch, including rows, files, plugin-owned data, serialized payloads, and graph identity.
+3. Preserve every WordPress data shape the push can touch, including rows, files, plugin-owned data, serialized payloads, and graph identity, at the live-source boundary.
 4. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary.
 5. Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes.
-6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or any storage abstraction that can satisfy the tests without touching live source storage.
+6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or any storage abstraction that can satisfy the tests without touching live source storage or a real apply-time mutation.
 7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one. Refusal-only benchmarks are not a speed claim, and release language must not drift into implied speed confidence without live-path measurement. If speed stays unclaimed, that should be a deliberate release decision, not an accidental omission. The release command should fail closed unless it can print that refusal explicitly, and `speed unclaimed` should be treated as an enforced verdict rather than a placeholder.
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
 9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
