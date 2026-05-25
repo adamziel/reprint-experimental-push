@@ -10771,6 +10771,11 @@ test('a partial durable commit stays blocked on retry and does not duplicate sta
   );
   durableJournal.close();
   const persistedAfterRetry = readRecoveryJournal(journalPath);
+  const retryInspection = inspectRecoveryJournal({
+    journal: persistedAfterRetry,
+    plan,
+    current: retryRemote,
+  });
 
   assert.equal(JSON.stringify(retryRemote), retrySnapshot);
   assert.ok(retryError instanceof PushPlanError);
@@ -10793,6 +10798,7 @@ test('a partial durable commit stays blocked on retry and does not duplicate sta
     persistedAfterRetry.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
     true,
   );
+  assert.equal(retryInspection.status, 'blocked-recovery');
 });
 
 test('durable no-data-loss recovery boundaries stay limited to old remote, fully updated remote, or blocked recovery with artifacts', () => {
