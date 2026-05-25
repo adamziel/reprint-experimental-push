@@ -1,31 +1,22 @@
-Performance model hang diagnosis
+Date: 2026-05-25
 
-Narrowed command:
-```bash
-timeout 20s node --test --test-name-pattern='guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js
-```
+Focused command:
+`timeout 15s node --test --test-name-pattern='production throughput stays blocked until measured storage receipts exist' test/performance-model.test.js`
 
-Result:
-- The command printed only `TAP version 13` and then timed out with exit code `124`.
+Observed result:
+The focused test passed in about 0.5s.
 
-Comparison commands that completed:
-- `timeout 20s node --test --test-name-pattern='benchmark model covers large uploads and plugin installs' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='safety contract covers required speedup areas and terminal states' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='fast-path proofs and rejections carry the expected gate metadata' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='fast-path fixture isolates the release-safety benchmark shape' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='file hashing and compression decisions preserve canonical hashes' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='chunk uploads stay staged until a guarded publish step' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='database batching is bounded and keeps per-row preconditions' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='failure boundaries carry the receipts and commit records needed for recovery' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='plugin install remains invisible until the atomic group commit' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='plugin update keeps staged work behind the same recovery barriers' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='parallelism limits and backpressure budgets are explicit' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='rejected fast paths cover precondition bypasses and atomic group splits' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='safe fast paths retain all gate proofs and stay non-rejectable' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='failure injection boundaries include every durable transition in the benchmark shape' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='production throughput stays blocked until measured storage receipts exist' test/performance-model.test.js`
-- `timeout 20s node --test --test-name-pattern='guarded executor report keeps the large-upload and plugin-install evidence visible' test/performance-model.test.js`
+Full-file command:
+`timeout 60s node --test test/performance-model.test.js`
 
-Assessment:
-- The full-file timeout appears pre-existing rather than introduced by the rejected fast-path coverage in this lane.
-- The isolated hang is in the `guardedLarge` benchmark path, not in the earlier fast-path model tests.
+Observed result:
+The full file completed successfully in about 10.2s with 17 passing tests.
+
+Diagnosis:
+The earlier `TAP version 13` stall is no longer reproducible in this run. The guarded-executor path now completes under the test runner, so the prior timeout looks bounded or already resolved rather than a live hang in this lane.
+
+Lane assessment:
+The timeout is currently not reproducible. `node --test test/performance-model.test.js` can now complete.
+
+Status:
+Keep the note as the record of the earlier timeout, but do not add new fast-path cases until the supervisor redirects.
