@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and the newer `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, with remote head `d6285b18` tightening the release-proof boundary instead of pretending the command surface is absent. That is real progress, but it is still lab evidence. The project still lacks one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Wording alone does not close that gap, and manual resolution is not success unless the rejected remote stays inspectable and retryable.
+The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, and the newer `2bdf01a8` proof-contract clarification. That is real progress, but it is still lab evidence. The project still lacks one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Wording alone does not close that gap, and manual resolution is not success unless the rejected remote stays inspectable and retryable.
 
 ## What still blocks the claim
 
@@ -19,7 +19,8 @@ The supervised reliable-executor lane now has material retained-source evidence:
 9. There is still no production proof that the journal can survive a real lease/fencing handoff on durable storage while the same boundary remains rerunnable after rejection.
 10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation.
 11. There is still no single rerunnable live release boundary that ties preserved-remote retention, apply-time revalidation, WordPress auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage to the same source URL, so retry authority remains unproven outside the lab harness.
-12. No retained-source verdict should be treated as production-grade if it does not survive a rerunnable live mutation on the same source URL with the rejected remote still inspectable.
+12. The remote proof contract is clearer now, but it still does not supply the live WordPress session lifecycle, durable storage/fencing, or plugin-driver boundary needed for a production claim.
+13. No retained-source verdict should be treated as production-grade if it does not survive a rerunnable live mutation on the same source URL with the rejected remote still inspectable.
 
 ## Hidden-loss scenarios
 
