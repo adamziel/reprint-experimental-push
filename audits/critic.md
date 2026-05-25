@@ -35,6 +35,11 @@ here, states what it does not prove here, and reruns the same live boundary on
 this worktree with a preserved remote that stayed inspectable after rejection.
 Route-family, package-mount, or reviewer-wording similarity does not promote a
 historical note to retry authority.
+An authenticated HTTP or CLI smoke does not upgrade that provenance either:
+if it only proves login success or request authorization, it still does not
+show the live auth/session lifecycle on the write boundary, and it still does
+not prove that late-discovered plugin-owned surfaces or remapped create
+targets got their own preserve / reject / retry cycle.
 The comparison rule is equally strict: any Reprint, ZS-Sync, or ForkPress
 note is provenance only unless it names the exact upstream commit or worktree
 state, says what it proves here, says what it does not prove here, and is
