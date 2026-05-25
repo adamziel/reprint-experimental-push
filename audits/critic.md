@@ -13,14 +13,23 @@ remaining absence of that command on this checkout is only a branch-local
 merge gap, not a project-wide absence or a reason to re-open the retired
 "no verify:release exists" critique.
 
+Exact evidence that improved in the supervised lane: the retained-source run
+now names executor/session/journal details and the boundary verdict is explicit
+instead of route-shape-only. Exact next proof still required here: one rerun of
+the same live boundary on a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
+apply time, and proves production WordPress auth/session lifecycle, durable
+journal semantics, graph identity, plugin-driver coverage, and leases/fencing
+on that same boundary.
+
 Single strongest blocker: this worktree still has no rerunnable live release
 command that proves the first executor/auth/preserved-remote boundary on a
 real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. Until that exact
 boundary exists here, production-grade push wording stays false reliability.
-The next acceptable proof must move beyond retained-source lab evidence to a
-real rerun that shows production WordPress auth/session lifecycle, durable
-journal semantics, graph identity, plugin-driver coverage, leases/fencing, and
-preserved-remote drift handling on the same live boundary.
+The next acceptable proof must be a single rerun of that live boundary, with
+preserved remote, apply-time revalidation, journal/recovery inspection, and
+explicit old/new/blocked classification for every touched row, file,
+relationship-bearing record, and plugin-owned surface.
 
 What improved in the supervised lane is narrow but real: the retained-source
 handoff now names executor/session/journal details instead of only route
