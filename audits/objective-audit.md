@@ -84,7 +84,7 @@ Current blocker summary:
 
 ## Test Audit
 
-The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. A green `npm test` run makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary.
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. A green `npm test` run makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary. Their main value is negative proof: they show the repo can refuse bad states, not that it can complete the live push safely.
 
 | Test surface | What it really proves | What it does not prove |
 | --- | --- | --- |
@@ -108,7 +108,7 @@ Concrete read:
 | Item | Current reading |
 | --- | --- |
 | Strongest executable proof | `node --test` plus the fixture and model suites can prove refusal behavior, classification, and local integrity checks. None of them reach the live-source boundary, and none of them can emit a mandatory release verdict. They do not prove no data loss, reliable crash recovery, or measured live-path speed. |
-| Strongest lab proof | Playground and authenticated smokes can exercise route shape, auth/session scaffolding, journaling, and stale-claim rejection, but they still self-identify as `labBacked: true`. |
+| Strongest lab proof | Playground and authenticated smokes can exercise route shape, auth/session scaffolding, journaling, and stale-claim rejection, but they still self-identify as `labBacked: true`, so they are explicitly not release proof. |
 | Strongest docs-only proof | The audit and blocker notes correctly describe the intended one-way pull base plus one-way push flow. |
 | Missing release proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict or enforced `speed unclaimed` refusal emitted by a mandatory release command. |
 | Release blocker | There is no mandatory `verify`, `verify:release`, or `release` command that can fail closed when any of those proofs are absent, and no checked-in workflow entrypoint closes that gap. |
