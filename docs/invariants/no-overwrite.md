@@ -28,6 +28,9 @@ the live remote immediately before apply.
   independent edit and a matching file type swap, the matching resources stay
   `already-in-sync` and unrelated remote-only plugin drift still stays
   `keep-remote`.
+- The same mixed deletion/edit/type-swap boundary still holds if the remote
+  side removed that plugin entirely; the unrelated deletion remains the only
+  mutation and the removed plugin stays preserved as `keep-remote` evidence.
 - When a plan mixes a live-preconditioned type swap with matching independent
   deletions or edits, the matching resources stay `already-in-sync` and the
   type swap remains the only automatic mutation.

@@ -42,6 +42,9 @@ This note is the short form of the planner policy in
   independent edit and file type swap, and the same plan may also preserve
   unrelated remote-only plugin removals or metadata changes without creating
   extra mutations.
+- The same mixed delete/edit/type-swap boundary still holds when the remote
+  side has removed the plugin entirely; the planner keeps that plugin removal
+  preserved and does not widen the unrelated deletion precondition.
 - The planner can still stop on a plugin-owned mutation while preserving
   unrelated matching independent edits, deletions, and file type swaps as
   `already-in-sync`, and remote-only plugin drift remains `keep-remote`.
