@@ -686,6 +686,19 @@ validators, and the final durable commit record.
   state into a summary that cannot identify the affected resources after a
   crash.
 
+## Verification Note
+
+The current benchmark model does not reproduce the earlier full-file test hang
+in this workspace. The bounded checks below completed successfully on
+2026-05-25:
+
+- `timeout 20s node --test test/performance-model.test.js`
+- `timeout 20s node --test --test-name-pattern='benchmark model covers large uploads and plugin installs' test/performance-model.test.js`
+- `timeout 20s node --input-type=module -e "import('./scripts/bench/performance-model.js')"`
+
+Observed runtimes were approximately 115 ms, 114 ms, and an immediate
+successful module import, respectively.
+
 The reject list is not just theoretical. It blocks the tempting shortcuts that
 break the no-data-loss contract:
 
