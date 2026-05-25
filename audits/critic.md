@@ -10,6 +10,9 @@ rejection before the first write, fresh retry scope rebuilt from live hashes,
 and old/new/blocked classification for every touched surface. Lab-shaped
 route matches, package-mount matches, fixture replay, readable manual-review
 artifacts, and `finalMatchesLocal` stay compatibility evidence only.
+Even a precise upstream commit or a matching route family is still only
+historical design context unless this branch reran the same live boundary and
+kept the rejected remote inspectable for audit/retry.
 
 Production-readiness gate, in one place:
 
@@ -139,6 +142,10 @@ What must change before any production-grade push claim:
 - any readable manual-review artifact must stay audit-only after drift and
   cannot become retry authority for a different row, file, relationship-
   bearing record, remapped create target, or plugin-owned surface; and
+- source-note comparisons can justify historical design choices, but they do
+  not prove the live boundary on this branch unless the exact upstream state,
+  the exact stale-drift case, and the same live mutation boundary were
+  reverified here with preserved-remote evidence and a fresh retry scope;
 - any Reprint, ZS-Sync, or ForkPress note must be treated as historical
   context unless this branch names the exact upstream state from
   `docs/source-notes.md` (`27c5f25`, `d9334a0`, or `55f9879`), reruns the
@@ -185,6 +192,9 @@ Release-gate checklist before any production-grade push wording:
 - the exact live boundary on this branch is named, and the exact stale-drift
   case being rejected is named with the preserved remote still inspectable
   after rejection;
+- route shape, package mount shape, readable review output, and
+  `finalMatchesLocal` are labeled explicitly as compatibility evidence only,
+  because a copied or fixture-backed executor can still serve the same shape;
 - the first write is blocked or retried only after fresh live hashes rebuild
   the retry scope for that same boundary;
 - any create-time identity remap, alias, or renumbering has either live
