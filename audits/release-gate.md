@@ -21,6 +21,10 @@ or comparison-only.
   "Manual resolution later" is not a success state until the remote-preserving
   reject, the audit-only artifact, and the fresh-scope retry are all visible on
   the same live write boundary.
+- The claim shows manual resolution never becomes current authority just
+  because the artifact is readable, the route looks production-shaped, or the
+  package mount is live; the remote must stay preserved, and the retry must
+  rebuild from fresh live evidence.
 - The claim shows live remote drift between dry-run and apply failed closed
   before the first write, not after the executor had already modified a row,
   file, or plugin-owned surface.
@@ -76,6 +80,10 @@ or comparison-only.
 - The claim includes the rejection reason for any unknown plugin-owned state
   and shows the blocked scope stayed auditable without becoming writable through
   fallback behavior.
+- The claim names the hidden plugin-owned surfaces it considered, including
+  runtime registries, generated assets, external side effects, and any late
+  custom-table or serialized-blob discovery; if those surfaces were not
+  enumerated live, they must be blocked.
 - Any comparison to Reprint, ZS-Sync, or ForkPress must name the exact
   upstream commit or worktree state and say whether that exact state was
   re-verified.
@@ -151,6 +159,9 @@ or comparison-only.
 - The claim does not treat a stale manual-review artifact as a reusable
   decision token for a new row, file, relationship-bearing record, or
   plugin-owned surface after remote drift.
+- The claim does not treat a stale manual-review artifact as current authority
+  merely because it stayed readable, matched the route shape, or was attached
+  to a packaged-plugin smoke.
 - The claim does not treat "manual resolution later" as a success state unless
   the preserved remote is still auditable, the stale artifact cannot authorize
   a retry, the next attempt starts from fresh live evidence rather than the
@@ -158,6 +169,9 @@ or comparison-only.
   revalidated.
 - The claim does not let a stale approval be widened to a different row, file,
   relationship-bearing record, or plugin-owned surface on retry.
+- The claim does not let a source-note comparison become current proof unless
+  the same live write boundary was reverified on this branch at the cited
+  upstream state; otherwise it stays historical context only.
 - The claim does not treat a production claim as valid if the proof set omits
   the create-time remap decision, the plugin-owned allowlist decision, or the
   partial side-effect classification for the exercised write path.

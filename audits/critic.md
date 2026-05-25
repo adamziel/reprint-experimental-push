@@ -2502,10 +2502,15 @@ these explicit proofs:
    than reusing stale approval.
 5. A stale manual-review artifact remains audit-only after drift and cannot
    widen into a different row, file, relationship-bearing record, or
-   plugin-owned surface.
+   plugin-owned surface, even if the artifact is still readable or attached
+   to a production-shaped route.
 6. Any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
    commit or worktree state and is reverified at the same live mutation
    boundary; otherwise it is historical context only.
+7. A source-note comparison never becomes current proof from route shape,
+   package shape, or `finalMatchesLocal`; it must also name the exact live
+   write boundary and the stale-remote case that was reverified on this
+   branch.
 
 Source-note comparison summary:
 
