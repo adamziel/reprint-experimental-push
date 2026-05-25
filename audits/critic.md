@@ -9,7 +9,9 @@ or `finalMatchesLocal` result can still be compatible without proving the
 live executor, preserved remote, or fresh retry scope. Route shape alone is
 never production proof here, even if the surface looks production-shaped or
 the same path returns live-looking output from a copied or fixture-backed
-executor.
+executor. A production claim must show the exact live boundary, the exact
+stale drift case, and the exact fresh retry artifact on this branch; without
+those three pieces, the wording is only compatibility or design context.
 
 Anti-trap clarification: a readable manual-review artifact can help audit the
 history of a boundary, but it is not retry authority unless the branch also
@@ -54,6 +56,17 @@ Must change before any production-grade push claim:
   smoke as current retry authority unless the preserved remote, rejection
   point, and fresh retry scope are all recorded on this branch for the exact
   same boundary.
+- reject any wording that says "manual resolution" succeeded when the remote
+  was not preserved for audit, the stale approval was not rejected before
+  mutation, or the fresh retry scope was not rebuilt from live hashes for the
+  same boundary;
+- reject any wording that treats a later plugin-owned table, file, registry
+  entry, generated asset, cache entry, or serialized blob as covered by the
+  earlier boundary unless that later surface has its own preserve / reject /
+  retry evidence on this branch; and
+- reject any wording that promotes a Reprint, ZS-Sync, or ForkPress note to
+  current proof unless the exact upstream revision or worktree state is named
+  and the same live boundary was rerun here with preserved-remote evidence.
 
 Operational release gate:
 
