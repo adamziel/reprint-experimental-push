@@ -50,7 +50,7 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 | [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) | Integrity checks and the current `productionThroughput: 'not-claimed'` stance, plus explicit refusal to upgrade that into a production throughput claim | Any positive speed claim, a measured threshold, or a required release verdict | The benchmark currently blocks overclaiming, but it does not supply the missing release verdict or a live-path throughput measurement. |
 | `npm run test:playground:*` helpers | Auth/session scaffolding, route shape, journal sequencing, stale-claim rejection, and production-shaped plugin packaging in sandboxed Playground instances | Real live-source mutation, production storage durability, or real remote/local topology | A Playground helper can be convincing and still fail to prove the release path, even when it reports `labBacked: true`. |
 
-The sharpest test verdict is negative: the current tests are good at proving what the repo must refuse, but they do not prove the live-source path succeeds under the release boundary. That means the suite is suitable as guardrail evidence and regression evidence only until a mandatory release command exists. If someone cites `node --test` alone as a production release argument, that would overstate the evidence, because the suite does not prove no data loss, reliable crash recovery, or measured speed on the live path.
+The sharpest test verdict is negative: the current tests are good at proving what the repo must refuse, but they do not prove the live-source path succeeds under the release boundary. That means the suite is suitable as guardrail evidence and regression evidence only until a mandatory release command exists. If someone cites `node --test` alone as a production release argument, that would overstate the evidence, because the suite does not prove no data loss, reliable crash recovery, or measured speed on the live path. Indirect proof is not enough here: fixture, lab, refusal, and docs evidence can narrow the risk surface, but they do not close the live-source release claim.
 
 One more uncomfortable point: the repository already has enough evidence to describe the gap, but not enough to close it. `audits/release-proof-matrix.md` is a valid summary of blockers; it is not an executable substitute for the missing command surface.
 
@@ -75,6 +75,7 @@ The repo needs one checked-in command that is impossible to confuse with optiona
 3. recheck apply-time state before mutation
 4. fail closed if auth/session, journal, lease/fencing, graph identity, plugin-data-driver, or topology proof is still lab-backed
 5. emit a machine-checkable verdict for throughput, either a measured threshold or `speed unclaimed`
+6. make the release decision depend on the live-source result, not on fixture or Playground success alone
 
 Without that command, every passing test remains support evidence only.
 
@@ -88,6 +89,7 @@ The weakest claim is any implication that the current suite can certify the live
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
 - The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added.
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
+- The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness.
 
 Actionably: the next release gate must be a checked-in command that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims." Any future claim of no data loss, reliability, or speed must point at that gate, not at `node --test` or the lab smokes.
 
