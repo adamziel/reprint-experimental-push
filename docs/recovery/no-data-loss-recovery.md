@@ -27,6 +27,8 @@ Durable artifact contract:
 - Recovery journals need to survive process death before the remote mutation boundary is crossed.
 - A successful replay should leave inspectable journal evidence, but it should not need a remote artifact because the remote itself is already fully updated.
 - A blocked recovery must keep both journal and remote artifacts so operators can inspect the partial state and retry safely.
+- The durable journal is the recovery source of truth; in-memory snapshots are only lab evidence.
+- A completed replay must stay read-only when the remote still matches the completed journal, and it must become blocked when the remote drifts.
 - Production durability means more than a JSON fixture:
   - journal rows or files must be restart-readable
   - journal appends need flush or `fsync`-equivalent persistence

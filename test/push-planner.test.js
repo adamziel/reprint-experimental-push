@@ -1321,6 +1321,39 @@ test('keeps the durable replay contract intact when failure happens after depend
   assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote');
 });
 
+test('keeps the durable old-remote contract intact when failure happens before mutation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failBeforeMutation: true,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assertRemoteUnchanged(remote, before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(persisted.records[0].type, 'journal-opened');
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote');
+});
+
 test('durable recovery journals keep the old remote contract across the interruption boundaries', () => {
   const scenarios = [
     {
