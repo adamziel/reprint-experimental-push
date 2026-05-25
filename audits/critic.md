@@ -6684,7 +6684,9 @@ Must-happen-before-production-grade wording:
   upstream revision or worktree state, say what the note proves here, say
   what it does not prove here, and still rerun the same live boundary on
   this branch; route family, package mount, reviewer wording, and fixture
-  replay are not current proof.
+  replay are not current proof, and those notes still do not prove
+  preserved-remote safety, production auth/session lifecycle, recovery-
+  journal durability, graph identity, or plugin-driver coverage.
 
 Conservative comparison summary:
 
