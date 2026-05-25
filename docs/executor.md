@@ -38,6 +38,19 @@ The executor follows the same ordered stages defined in the protocol:
 7. `push_recover auto|finish|rollback` mutates only when inspect proves the
    branch safe and the auth floor still holds.
 
+The pull/export/import handoff remains the provenance source for every push
+stage:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight is the first live binding after importer persistence
+- snapshot hash listing is planning evidence only
+- dry-run uploads the canonical plan and returns a receipt, not a lock
+- apply is a separate remote call that revalidates before every batch and at
+  the storage boundary
+- journal inspect is read-only
+- recovery starts with inspect before any mutating repair
+
 That means the executor is not a general remote write loop. It is the
 production write path for one imported base package, one edited local site,
 and one live remote identity that must be revalidated at apply time.
@@ -102,6 +115,14 @@ The production test topology is the same in Docker and Playground:
 - one runner process that owns all push protocol calls
 - browser-visible inspection only through the sandbox-provided `8080` ingress
   and a local-only proxy
+
+The topology roles stay fixed:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run upload, apply, journal
+  inspect, and recovery
 
 The minimal site split is always the same:
 

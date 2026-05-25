@@ -110,6 +110,9 @@ identity across `remote-base` and `remote-changed`:
   liveness proof that keeps dry-run and apply separate while apply
   revalidates fresh live evidence before every batch and at the storage
   boundary.
+- `push-executor-topology-proof.json` is the shortest one-remote, one-local,
+  one-drift topology proof that keeps the route names and `8080` ingress
+  aligned in Docker and Playground.
 - `push-production-push-recovery-contract.json` is the canonical
   end-to-end production bundle for the pull provenance, push ladder, and
   one-remote, one-local topology story, including the same remote identity
