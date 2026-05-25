@@ -49,7 +49,7 @@ The repo still needs one enforced release gate that closes the gap between lab e
 5. a real remote/local topology, not a fixture-only or Playground-only alias
 6. either a measured live-path throughput result or an explicit refusal to claim throughput
 
-Until that gate exists and is wired into a default entrypoint, the project can only claim lab proof, not production release readiness. Any green result from optional smokes, fixture tests, or benchmark refusal paths is still insufficient on its own.
+Until that gate exists and is wired into a default entrypoint such as `npm run verify:release` or `npm run release`, the project can only claim lab proof, not production release readiness. A green run that comes only from optional smokes, fixture tests, or benchmark refusal paths is still insufficient on its own because it can bypass the live-source release decision entirely.
 
 ## Evidence Table
 
