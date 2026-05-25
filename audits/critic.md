@@ -263,14 +263,14 @@ remote for audit.
 That means the next acceptable proof must move off retained-source lab
 evidence and into a production WordPress auth/session lifecycle, with durable
 journal semantics plus explicit graph-identity, plugin-driver, and plugin-
-owned surface coverage on the live boundary. The current blocker is that no
-available command yet proves preserved-remote safety, apply-time
-revalidation, production auth/session lifecycle, graph identity,
-plugin-driver coverage, or plugin-owned surface classification on a
-real-site boundary. A wrapper, comparison note, or polished smoke name never
-replaces that proof, and a source-note comparison is only historical context
-unless it names the exact upstream state, the exact live rerun on this
-branch, and the specific proof gap it still leaves open.
+owned surface coverage on the live boundary. No available command yet proves
+preserved-remote safety, apply-time revalidation, production auth/session
+lifecycle, graph identity, plugin-driver coverage, or plugin-owned surface
+classification on a real-site boundary. A wrapper, comparison note, or
+polished smoke name never replaces that proof, and a source-note comparison
+is only historical context unless it names the exact upstream state, the
+exact live rerun on this branch, and the specific proof gap it still leaves
+open.
 The retained-source `npm run verify:release` run can support the design
 history, but it does not become retry authority until the branch reruns the
 same live boundary here and preserves the rejected remote for audit.
