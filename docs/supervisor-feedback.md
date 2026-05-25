@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 04:21:53 CEST
+Last updated: 2026-05-25 04:22:41 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 04:21:53 CEST - Supervisor Snapshot
+## 2026-05-25 04:22:41 CEST - Supervisor Snapshot
 
-- Going well: the page, log, and feedback note still line up, and proof links stay first on the public page.
+- Going well: the page, log, and feedback note still line up, and proof links stay first.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity mapping, integration, and plugin drivers.
-- Progress change: no evidence delta; the scan view is compact and older history stays collapsed.
+- Progress change: no evidence delta; the visible surface is less repetitive now.
 - Next nudge: keep each lane to one proof gap, one test, and one owner.
 
 | Lane | Current nudge |
@@ -30,11 +30,8 @@ Older entries repeated the same gaps. The durable archive remains in git
 history. The active takeaway is unchanged:
 
 - Going well: the page, log, and feedback note still line up.
-- Not going well: production proof is still missing for auth/session, journal
-  durability, leases/fencing, graph identity mapping, integration, and plugin
-  drivers.
-- Progress change: no evidence delta landed, but the active lane nudges are now
-  narrowed to one proof gap and one test each.
+- Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity mapping, integration, and plugin drivers.
+- Progress change: no evidence delta landed, but the active lane nudges are now narrowed to one proof gap and one test each.
 - Next nudge: keep each lane to one proof gap, one test, and one owner.
 
 | Lane | Current nudge |
