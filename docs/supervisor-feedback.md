@@ -5,6 +5,15 @@ Last updated: 2026-05-25 10:06:57 CEST
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-25 10:07:49 CEST
+
+- Going well: the visible scan stays compact, and the proof trail still points to linked evidence instead of repeating long audit text.
+- Not going well: `reliable-executor` still is not bound to a real live URL/topology, and `integration` still has not returned the real-site release command output.
+- Progress change: none; this is a decision update, not a release-state change.
+- Next nudge: `integration` owns the next real-site release command and must return retained live source/auth/recovery output; `reliable-executor` is the drifting lane until the gate binds to a real endpoint, and `invariants`/`recovery` should align to that same command.
+- Evidence needed: one retained real-endpoint run plus preserved auth/session and recovery output that shows the live-source gate is runnable on the real topology.
+- Note: `progress.html` stays lane-local until merge to `main`; the deployed GitHub Pages copy updates only after merge.
+
 ## 2026-05-25 10:06:57 CEST
 
 - Going well: the scan surfaces still agree and the blocked snapshot remains compact.
