@@ -19,7 +19,7 @@ can justify the design direction, but they do not become current proof unless
 this branch reverified the cited upstream state at the exact live write
 boundary being claimed.
 
-The next production-proof gap is not general reliability jargon. It is four
+The next production-proof gap is not general reliability jargon. It is five
 specific missing proofs:
 
 - live remote drift must be rejected on the exact write path, with the stale
@@ -33,6 +33,24 @@ specific missing proofs:
 - partial file, DB, or plugin side effects must be durably classified so a
   retry cannot widen the old approval or turn recovery evidence into current
   authority.
+
+The missing evidence for each one is concrete:
+
+- For live drift, the audit needs the actual stale hash set and the exact
+  rejection point on the live write boundary, not just a route-shaped smoke
+  or a matching endpoint name.
+- For stale review artifacts, the audit needs proof that the artifact stays
+  readable for inspection but cannot authorize a retry, widen to a different
+  row or file, or be reused against a plugin-owned surface.
+- For create-time identity remapping, the audit needs either a safe remap
+  proof or a hard block before mutation when the live remote can rename,
+  alias, or reassign the target.
+- For plugin-owned state, the audit needs explicit coverage or a hard block
+  for options, custom tables, generated files, activation hooks, cron rows,
+  cache entries, and runtime registries that are not in the allowlist.
+- For partial side effects, the audit needs old/new/blocked classification for
+  every touched store, plus a retry that starts from fresh live evidence
+  instead of inheriting the old approval.
 
 Changes that must happen before any production-grade push claim:
 
@@ -250,6 +268,9 @@ can claim production-grade push support:
   another, but the proof does not show durable classification of the mixed
   result or a retry path that starts from fresh live hashes instead of the old
   approval.
+- A claim cites Reprint, ZS-Sync, or ForkPress without naming the exact
+  upstream revision or worktree state that was reverified at the same live
+  mutation boundary, so the comparison can only be read as historical context.
 
 ## Release-Grade Rejection Cases
 
