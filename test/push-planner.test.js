@@ -5276,6 +5276,60 @@ test('durable completed replay stays inert across repeated replays and never res
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
 
+test('durable recovery contract keeps pre-commit failures old and completed replay inert on the persisted journal', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options, expectedJournalState] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const snapshot = JSON.stringify(remote);
+
+    const error = captureError(() => applyPlan(remote, plan, { ...options, durableJournal }));
+    durableJournal.close();
+
+    const persisted = readRecoveryJournal(journalPath);
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalState, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state', label);
+    assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote', label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
+});
+
 test('acceptable recovery outcomes are old remote, fully updated remote, or blocked with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
