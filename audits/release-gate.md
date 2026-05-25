@@ -46,6 +46,11 @@ or comparison-only.
   different row, a file, a relationship-bearing record, or a plugin-owned
   surface. If the artifact can be reused as retry authority for anything the
   original approval did not explicitly cover, the claim is not production-safe.
+- The claim shows any late-discovered plugin-owned surface is a separate live
+  boundary, not a continuation of the first write. If the branch has not
+  preserved the remote, recorded the rejection point for that later surface,
+  and rebuilt retry scope from fresh live hashes, the earlier approval stays
+  audit-only and cannot authorize the new surface.
 - The claim shows manual resolution never becomes current authority just
   because the artifact is readable, the route looks production-shaped, or the
   package mount is live; the remote must stay preserved, and the retry must
