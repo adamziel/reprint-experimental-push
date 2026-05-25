@@ -11,6 +11,12 @@ identity, plugin-driver coverage, and leases/fencing on a real-site rerun.
 Treat that evidence as a supervised lab harness result, not as proof that a
 production remote stayed preserved, auditable, and safe to retry on this
 worktree.
+Most recent improvement: the retained-source harness now names session shape,
+apply commitment, and journal rows instead of only route shape, but the next
+proof still has to move to a rerunnable live command on a real local,
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL` with preserved-remote audit
+evidence, dry-run receipt, apply-time revalidation, and journal/recovery
+inspection on the same boundary.
 The retired critique is the one that said no `verify:release` command exists;
 do not reintroduce it on this branch. The current blocker on this audit branch
 is the missing rerunnable live boundary with preserved-remote audit evidence
