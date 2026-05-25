@@ -1347,5 +1347,8 @@ group barrier that keeps coupled work visible together.
   value or replace raw receipts with summaries.
 - Parallelism limits are rejected whenever they are widened past the atomic
   group boundary or used to merge finalization for unrelated groups.
+- Parallel chunk sends are rejected when they try to skip large-upload
+  backpressure after a pause, because queue fan-out cannot prove which chunk
+  acknowledgements survived or preserve journal order for recovery.
 - Backpressure is rejected whenever it drops receipts, treats an empty queue as
   completion, or lets a drained buffer bypass the guarded publish barrier.

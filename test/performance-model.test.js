@@ -299,6 +299,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'live',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause')?.violates.includes('backpressure'),
+    'parallel chunk sends still cannot bypass large-upload backpressure after a pause',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause')?.violates.includes('chunk-receipts'),
+    'parallel chunk sends still need durable chunk receipts after a pause',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-batch-parallelism-after-pause')?.rejectedGate,
     'recovery',
   );

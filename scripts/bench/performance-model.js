@@ -2865,6 +2865,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+    proposal: 'use a compressed remote index plus parallel chunk sends to skip large-upload backpressure after a pause',
+    rejectedBecause: 'planning evidence and extra fan-out cannot prove which chunk acknowledgements survived the pause, which chunks remain queued, or that journal order stayed recoverable',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
     proposal: 'use a compressed remote index plus cached row receipts to skip plugin-update finalize after a pause',
     rejectedBecause: 'planning evidence and cached row receipts can trim replay, but they cannot prove the live row compares, dependency checks, or atomic-group finalize survived failure',
