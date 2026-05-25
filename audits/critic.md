@@ -24,6 +24,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - If create-time remapping rewires identity, the mutation must either preserve graph identity or hard-block. There is no production proof of that behavior.
 - If a plugin-owned option, table, cron row, cache entry, generated file, or activation side effect appears late, the push must classify it before any write lands and before any stale approval or cached retry can be reused. There is no coverage proof for that trap on a rerunnable live boundary.
 - If a retry reuses stale manual-resolution text, it must not authorize a new mutation. The design does not yet show an auditable artifact that binds the approval to fresh live hashes and the preserved remote, so the retry path can still misrepresent a rejected remote as resolved.
+- If a retry boundary can be rerun but does not re-derive authority from the fresh live remote state at apply time, then the boundary is still a lab replay, not production retry authority.
 - If the remote is rejected but not preserved, the workflow cannot support safe audit or safe retry, so "manual resolution" remains a label, not proof.
 
 ## Source-note comparison
@@ -32,6 +33,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - ZS-Sync source notes contribute discovery and batching lineage, but not source-mutation safety, create-time remap safety, or plugin-owned surface coverage on this branch.
 - ForkPress source notes contribute audit and crash-consistency vocabulary, but not a live WordPress boundary with preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
 - The three families are useful as lineage context only: Reprint helps with staged delivery vocabulary, ZS-Sync with scanning/batching vocabulary, and ForkPress with recovery/audit vocabulary; none of them prove the branch preserved the rejected remote, rebuilt retry scope from live hashes, or covered plugin-owned surfaces on a rerunnable live boundary.
+- In other words: Reprint is delivery lineage, ZS-Sync is discovery lineage, ForkPress is recovery lineage, and this branch still needs a live push boundary to prove authority, fencing, and retry safety.
 - Any comparison to those notes must name the exact upstream revision or worktree state, say what the note proves here, and say what it does not prove here. If it only supports historical vocabulary, it stays provenance only and cannot be used as production proof by analogy.
 
 ## Changes required before production wording is defensible
@@ -46,6 +48,8 @@ Before the project can claim production-grade push support, one rerunnable live 
 - graph identity across create-time remaps and late-discovered relationship-bearing records;
 - plugin-driver coverage for late-discovered plugin-owned surfaces outside the initial allowlist; and
 - retry scope rebuilt from fresh live evidence, not manual-resolution text, cached approvals, or previously rejected hashes.
+
+If any one of those proofs is only available through retained-source lab output, the release claim remains false.
 
 The production claim also fails closed if any of these are only shown on a lab fixture, retained-source harness, or review artifact:
 
