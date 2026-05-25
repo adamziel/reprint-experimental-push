@@ -6574,3 +6574,20 @@ Comparison release gate:
   evidence, stale rejection before the first write, and a fresh retry scope
   rebuilt from live hashes; route-family or reviewer-wording similarity does
   not promote it to live retry proof.
+
+Concrete production-grade blockers to keep naming:
+
+- live remote drift after dry-run: missing proof is the exact rejection point
+  before the first write, the preserved remote that stayed inspectable after
+  rejection, and a retry scope rebuilt from fresh live hashes on this branch;
+- create-time identity remapping, aliasing, or renumbering: missing proof is
+  live identity evidence for the remapped target at apply time, or a hard
+  block before write; route family, package mount, and fixture shape are not
+  proof;
+- plugin-owned data traps outside the allowlist: missing proof is live
+  enumeration or explicit blocking of every hidden table, cron row, runtime
+  registry, generated file, cache entry, serialized blob, and plugin-owned
+  file, including surfaces discovered only after the first write; and
+- partial file, DB, or plugin side effects: missing proof is old/new/blocked
+  classification for the whole touched set before retry, so a mixed write
+  cannot be relabeled as success after only the committed subset.
