@@ -1393,7 +1393,7 @@ test('atomic apply keeps the documented recovery states across failure boundarie
 
     assert.ok(error instanceof PushPlanError, label);
     assert.equal(JSON.stringify(remote), before, label);
-    assertAcceptableRecoveryState(error.details.recovery);
+    assertAcceptableRecoveryState(error.details.recovery, label);
     assertRecoveryStateArtifacts(error.details.recovery, expectedStatus);
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
@@ -1471,6 +1471,7 @@ test('durable atomic apply only lands in old remote, fully updated remote, or bl
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.journal.entries.length, plan.mutations.length);
 
   durableJournal.close();
 });

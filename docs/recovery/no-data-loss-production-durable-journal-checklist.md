@@ -13,11 +13,16 @@ durable artifacts that survive process restart.
 
 ## Production durability expectations
 
-- Journal rows or files must be append-only and restart-readable.
-- Writes must be flushed or fsynced according to the storage backend.
+- Journal rows or files must be append-only, restart-readable, and durable
+  enough to survive process exit.
+- Writes must be flushed, fsynced, or committed according to the storage
+  backend before a partial apply can be treated as recoverable.
 - One writer must own the journal advance through fencing, lease, or ownership
-  controls.
-- Recovery inspection must be able to explain the remote state after restart.
+  controls so a stale writer cannot race recovery.
+- Recovery inspection must be able to classify the remote as `old-remote`,
+  `fully-updated-remote`, or `blocked-recovery` after restart.
+- The blocked state must preserve both the journal artifact and the remote
+  artifact so an operator can explain the partial write.
 
 ## Release blocker
 
