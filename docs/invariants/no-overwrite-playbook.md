@@ -9,6 +9,8 @@ This is the short operational version of the planner invariant policy.
   remote ancestor or descendant.
 - Matching independent edits, including matching deletions, file edits, and
   file type swaps.
+- Matching independent edits may coexist with a live-preconditioned deletion
+  while remote-only plugin drift remains preserved in the same plan.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Plugin-context and plugin-owned data mutations only when their required live
@@ -33,4 +35,3 @@ This is the short operational version of the planner invariant policy.
   plugin context drifted and the local side did not independently match it.
 - Any mutation that lacks a live remote precondition bound to the mutation id,
   resource key, and remote hash observed during planning.
-
