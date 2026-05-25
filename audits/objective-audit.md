@@ -118,6 +118,15 @@ The current tests are strongest where they reject unsafe claims, and weakest whe
 That is not a wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push. No current test proves a release-safe runtime or memory ceiling on the live boundary.
 The implication is straightforward: the current tests are credible blockers, but they are not release approvers. A green run can still coexist with an unproven live-source push boundary, unmeasured throughput, and an absent enforced gate.
 
+Concretely, the suite currently proves:
+
+- `npm test` can validate planner and journal invariants in isolated Node tests.
+- `npm run test:playground` can chain a few lab route checks.
+- `test/recovery-journal.test.js` can prove file-backed restart classification and redaction.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` can refuse unsupported speed claims.
+
+Those are useful proofs, but none of them reaches the release boundary. They do not prove that the live source keeps every affected WordPress shape intact, that storage writes are durable on the real transport path, or that a default green command is the same command a release would trust.
+
 That distinction matters for the objective claims:
 
 - No-data-loss is not proven unless the test reaches the live source boundary and verifies that every affected WordPress shape survives a failed or retried push.
@@ -184,6 +193,7 @@ What they do not prove:
 - They do not prove recovery after a real process death or duplicated request against a live source site.
 - They do not prove speed for the live boundary because no required benchmark runs there, and no enforced gate requires that proof.
 - They do not prove that any single green command is sufficient for release, because the evidence is still split across optional commands.
+- They do not prove a production speed claim because the benchmark checks are model-level or refusal-only; no live push path benchmark is enforced here.
 
 That is why the suite remains a proof of refusal and local safety modeling, not a proof of release readiness.
 The uncomfortable but useful reading is that the suite is more trustworthy as a blocker than as an approver.
