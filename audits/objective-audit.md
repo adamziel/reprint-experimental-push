@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is no longer "there is no release command"; it is "there is no checked live-boundary verdict in this checkout that proves the production boundary." Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker. Upstream `verify:release`-style output does not change that until this checkout owns the same enforced verdict or an equivalent local gate.
+Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is no longer "there is no release command"; it is "there is no checked live-boundary verdict in this checkout that proves the production boundary." Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker. Upstream `verify:release`-style output is relevant evidence, but it does not move the gate here until this checkout owns the same enforced verdict or an equivalent local gate.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
