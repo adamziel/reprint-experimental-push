@@ -71,7 +71,7 @@ For this audit:
 ## Test Audit
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is as refusal evidence, not as release evidence. They demonstrate that the suite knows how to say "not yet"; they do not demonstrate that the production boundary is safe.
-That is not a small wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push.
+That is not a small wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push. No current test proves a release-safe runtime or memory ceiling on the live boundary.
 The implication is straightforward: the current tests are credible blockers, but they are not release approvers. A green run can still coexist with an unproven live-source push boundary, unmeasured throughput, and an absent enforced gate.
 
 That distinction matters for the objective claims:
