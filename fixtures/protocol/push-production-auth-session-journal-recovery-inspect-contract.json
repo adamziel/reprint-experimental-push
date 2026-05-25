@@ -41,6 +41,11 @@
     "expires_at": "2026-05-24T00:10:00Z",
     "scope": "one live remote identity and one persisted pull base package"
   },
+  "revalidation": {
+    "dry_run": "eligible receipt only and never a lock",
+    "apply": "fresh live hashes must be rechecked before every batch and again at the storage boundary",
+    "recovery": "inspect-first recovery must re-read the journal and fresh live hashes before any mutating repair"
+  },
   "journal_row": {
     "journal_cursor": "journal:dry_01j00000000000000000000000:1",
     "claim_owner": "worker-17",
@@ -101,6 +106,7 @@
     "mutating push requests must carry a push session, idempotency key, and canonical push signature",
     "claim generation and lease expiry fence stale workers before mutation",
     "inspect is read-only and must come before any mutating recovery mode",
+    "apply must revalidate fresh live hashes before every batch and at the storage boundary",
     "fresh live hashes must still be checked before finish, rollback, or auto",
     "dry-run and apply are separate remote operations",
     "journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable",

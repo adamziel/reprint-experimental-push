@@ -137,7 +137,8 @@ The same production proof stack is reviewed in this order:
 5. `push-production-revalidation-contract.json` for the dry-run/apply liveness
    split.
 6. `push-production-auth-session-journal-recovery-inspect-contract.json` for
-   the auth/session/journal/lease/recovery-inspect floor.
+   the auth/session/journal/lease/recovery-inspect floor plus the apply-time
+   revalidation boundary.
 7. `push-production-journal-lease-recovery-inspect-contract.json` for the
    narrow journal and lease fence proof.
 8. `push-production-executor-flow-contract.json` for the full end-to-end flow
@@ -172,6 +173,12 @@ The remote liveness split stays explicit across the whole executor:
 - journal inspection is read-only and never authorizes mutation by itself
 - recovery must begin with inspect before any mutating repair
 - authentication must be at least as strict as current Reprint HMAC usage
+
+The compact auth/session proof to cite is
+`push-production-auth-session-journal-recovery-inspect-contract.json`, which
+now bundles the short-lived session, durable journal rows, lease fence,
+apply-time revalidation boundary, and read-only recovery inspect in one
+review object.
 
 ## Canonical Proof Set
 

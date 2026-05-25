@@ -25,6 +25,20 @@ The production push protocol is a fixed ladder:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
+The production ladder is easiest to review when the proof set stays paired
+with the executor topology:
+
+- `push-production-topology-contract.json` proves the one-remote, one-local,
+  one-drift Docker and Playground harness.
+- `push-production-pull-bridge-contract.json` proves the immutable
+  exporter/importer handoff into push.
+- `push-production-auth-session-journal-recovery-inspect-contract.json`
+  proves the auth floor, short-lived push session, journal rows, lease fence,
+  apply-time revalidation, and inspect-first recovery branch on the same
+  remote identity.
+- `push-production-executor-flow-contract.json` proves the full preflight
+  through inspect-first recovery flow in one compact object.
+
 The extension is the composition of those stages, not a shortcut around them:
 
 - exporter/importer create the immutable pull base package
@@ -102,7 +116,8 @@ executor, and fixture suite stay aligned:
 4. `push-production-revalidation-contract.json` is the dry-run/apply liveness
    split.
 5. `push-production-auth-session-journal-recovery-inspect-contract.json` is
-   the auth/session/journal/recovery-inspect floor.
+   the auth/session/journal/recovery-inspect floor plus the apply-time
+   revalidation boundary.
 6. `push-production-recovery-inspect-contract.json` is the inspect-first
    recovery branch.
 7. `push-production-executor-flow-contract.json` is the compact end-to-end

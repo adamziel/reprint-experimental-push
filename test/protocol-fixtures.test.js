@@ -343,6 +343,10 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
     'push_recover auto|finish|rollback',
   ]);
   assert.equal(authSession.session.scope, 'one live remote identity and one persisted pull base package');
+  assert.equal(
+    authSession.revalidation.apply,
+    'fresh live hashes must be rechecked before every batch and again at the storage boundary',
+  );
   assert.equal(authSession.recovery_inspect.authorization, 'read-only evidence reader that never authorizes mutation by itself');
   assert.deepEqual(authSession.recovery_inspect.classifies, ['finish', 'rollback', 'retry', 'block']);
   assert.ok(authSession.journal_row.storage_guard.includes('filesystem-compare-rename'));
