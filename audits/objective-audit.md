@@ -22,7 +22,7 @@ The objective implies these minimum release requirements:
 10. Make the release command print an explicit verdict for throughput. If the repo cannot measure live-path speed, the command must surface `speed unclaimed` and fail closed on any attempt to imply a production speed claim. The output must be unambiguous enough that CI or a reviewer can tell whether the release decided speed or merely skipped it, and the command must be mandatory rather than optional.
 11. Keep optional smokes available for local evidence collection, but do not let them stand in for release proof.
 
-Release gate rule: one mandatory command must reach the live-source boundary and print a machine-checkable verdict in the same run. That verdict must be either a measured live-path threshold or an explicit `speed unclaimed` decision. Any green path that does not emit that verdict remains blocker evidence, not release proof.
+Release gate rule: one mandatory command must reach the live-source boundary and print a machine-checkable verdict in the same run. That verdict must be either a measured live-path threshold or an explicit `speed unclaimed` decision. Any green path that does not emit that verdict remains blocker evidence, not release proof. If the command does not exist, the repo does not have a release gate.
 
 Current command surface confirms the gap: `package.json` exposes `test`, `plan`, `apply`, and optional `test:playground:*` helpers, but no required `verify`, `release`, or `verify:release` entrypoint that can force the live-source verdict. In other words, the repo can still go green without making the release decision.
 
@@ -49,7 +49,7 @@ Proof buckets used below:
 
 ## Test Audit
 
-The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own. In particular, they do not prove the three release claims the objective cares about most, and they do not replace the missing mandatory release command that would have to turn those claims into a single verdict:
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own. In particular, they do not prove the three release claims the objective cares about most, and they do not replace the missing mandatory release command that would have to turn those claims into a single verdict. A passing `node --test` run is regression evidence only:
 
 - `No data loss`: the planner and recovery suites prove classification behavior, restart envelopes, and redaction, but they do not mutate live source storage and then re-read the same production boundary to prove writes survived without loss, duplication, or reordering.
 - `Reliable`: no current test composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks into one enforced release decision against real storage. The current passes are distributed across helper paths, not concentrated in a required gate.
