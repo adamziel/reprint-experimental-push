@@ -1,5 +1,45 @@
 # Critic Audit
 
+## 2026-05-25 Production Wording Still Fails Without a Real-Site Release Command
+
+The branch still cannot claim production-grade push support because `package.json`
+exposes only lab and Playground entry points. There is no branch-local, named
+real-site preflight or release command that can be rerun unchanged against a live
+local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` and preserve the rejected
+remote for audit.
+
+Scenario: someone upgrades a green Playground run or a polished script name into
+"production-ready push". Missing proof: the repo still lacks a live release
+command that prints the exact executor/auth boundary before the first write, the
+preserved remote that remained inspectable after rejection, the exact rejection
+point, the apply-time revalidation result, and the journal/recovery inspection
+used to rebuild retry scope. Without those facts from one rerun, the claim is
+compatibility evidence only.
+
+Scenario: a reviewer treats a source-note comparison as current retry authority.
+Missing proof: Reprint, ZS-Sync, and ForkPress notes are still historical input
+unless this branch reran the same live boundary and the note says what it proves
+here and what it does not prove here. Shape similarity does not establish live
+push safety, preserved-remote auditability, create-time identity remap handling,
+or plugin-owned surface classification on this branch.
+
+The next exact proof reliable-executor must produce is one rerunnable command,
+invoked against a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`,
+that records all of the following in the same run:
+
+- the exact command string;
+- the executor identity and auth/session boundary before the first write;
+- the preserved remote that stayed inspectable after rejection;
+- the exact rejection point before the first write;
+- the apply-time revalidation result on the live boundary;
+- the journal/recovery inspection used to define retry scope; and
+- the classification of any plugin-owned surface, including late-discovered
+  ones and remapped create targets.
+
+Until that rerun exists, production wording must fail closed. Route shape,
+fixture replay, manual review notes, and source-note comparisons remain
+compatibility evidence only.
+
 ## 2026-05-25 Commit `25c4ef54` Is Live Preflight Only, Not Production Proof
 
 Commit `25c4ef54` adds `npm run
