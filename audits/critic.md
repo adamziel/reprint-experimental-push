@@ -294,6 +294,10 @@ Release-claim hard stop:
 - if the rejected remote is not still inspectable for audit and retry, the
   claim fails, even when a readable note says "manual resolution" or
   "comparison passed";
+- if "manual resolution" is being used to mean "trust the note and move on",
+  the claim fails unless the preserved remote is still available to inspect,
+  the exact rejection point is recorded before first write, and the same live
+  boundary can be rerun from fresh hashes;
 - if any touched file, DB row, relationship-bearing record, or plugin-owned
   surface is missing old/new/blocked classification before retry starts, the
   claim fails;
