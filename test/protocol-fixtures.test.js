@@ -251,6 +251,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(protocolExtensionContract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(protocolExtensionContract.pull_pipeline.importer, 'persists the base package as immutable provenance');
+  assert.equal(
+    protocolExtensionContract.bridge_rule,
+    'the importer-owned base package is immutable provenance for planning, apply, journal, and recovery',
+  );
   assert.deepEqual(protocolExtensionContract.push_sequence, [
     'push_preflight',
     'push_snapshot_hashes',
@@ -261,7 +265,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'push_recover auto|finish|rollback',
   ]);
   assert.equal(
-    protocolExtensionContract.pull_pipeline.bridge_rule,
+    protocolExtensionContract.bridge_rule,
     'the importer-owned base package is immutable provenance for planning, apply, journal, and recovery',
   );
   assert.ok(
@@ -335,6 +339,16 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     protocolExtensionContract.topology.playground.proof.includes(
       'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
+  assert.equal(protocolExtensionContract.lab_topology.remote_base.identity, 'remote-example');
+  assert.equal(protocolExtensionContract.lab_topology.local_edited.identity, 'local-dev-site');
+  assert.equal(protocolExtensionContract.lab_topology.remote_changed.identity, 'remote-example');
+  assert.equal(protocolExtensionContract.lab_topology.remote_identity, 'remote-example');
+  assert.equal(protocolExtensionContract.lab_topology.live_drift.between[0], 'remote_base');
+  assert.ok(
+    protocolExtensionContract.lab_topology.live_drift.proof.includes(
+      'dry-run and apply remain separate remote calls',
     ),
   );
   assert.ok(

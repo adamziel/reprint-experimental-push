@@ -5,6 +5,17 @@
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance"
   },
+  "pull_to_push_mapping": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "remote_snapshot_hash_listing": "collects live comparison evidence for planning only and never becomes write authority",
+    "dry_run_plan_upload": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
+    "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "journal_inspect": "reads durable evidence without authorizing mutation",
+    "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair",
+    "recovery": "mutates only when the journal plus fresh live hashes prove the action"
+  },
   "push_sequence": [
     "push_preflight",
     "push_snapshot_hashes",
@@ -33,12 +44,7 @@
     "recovery": "inspect-first and mutates only when journal evidence plus fresh live hashes prove the action",
     "auth_floor": "at least as strict as current Reprint HMAC usage"
   },
-  "pull_pipeline": {
-    "exporter": "scans the merge base and coverage evidence",
-    "importer": "persists the base package as immutable provenance",
-    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
-    "bridge_rule": "the importer-owned base package is immutable provenance for planning, apply, journal, and recovery"
-  },
+  "bridge_rule": "the importer-owned base package is immutable provenance for planning, apply, journal, and recovery",
   "topology": {
     "remote_base": "remote-base",
     "local_edited": "local-edited",
@@ -79,6 +85,34 @@
       ]
     }
   },
+  "lab_topology": {
+    "remote_base": {
+      "role": "remote source site",
+      "identity": "remote-example",
+      "produces": "persisted pull base package"
+    },
+    "local_edited": {
+      "role": "imported local site",
+      "identity": "local-dev-site",
+      "has_user_edits": true
+    },
+    "remote_changed": {
+      "role": "same remote source site later in time",
+      "identity": "remote-example",
+      "drift_witness": true
+    },
+    "remote_identity": "remote-example",
+    "local_identity": "local-dev-site",
+    "live_drift": {
+      "between": ["remote_base", "remote_changed"],
+      "proof": [
+        "remote-base and remote-changed are the same remote identity observed at different times",
+        "dry-run and apply remain separate remote calls",
+        "apply revalidates fresh live evidence before every batch and again at the storage boundary",
+        "recovery inspect happens before any mutating repair"
+      ]
+    }
+  },
   "required_invariants": [
     "dry-run and apply are separate remote operations",
     "remote snapshot hash listing is planning evidence, not write authority",
@@ -87,6 +121,7 @@
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
     "authentication must be at least as strict as current Reprint HMAC usage",
-    "pull exporter/importer establish the immutable base package before push"
+    "pull exporter/importer establish the immutable base package before push",
+    "one remote source site, one imported local site, and one drift witness are enough to prove the production topology"
   ]
 }

@@ -113,6 +113,10 @@ compare, upload, inspect, and recover. That is the compact end-to-end proof
 that dry-run and apply are separate remote operations, apply revalidates live
 evidence, and recovery starts with inspect. Browser-visible inspection must
 stay on the sandbox-provided `8080` ingress through a local-only proxy.
+The same proof shape is captured in
+[`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json)
+where `remote-example` and `local-dev-site` act as the concrete lab sites for
+the remote-base, local-edited, and remote-changed roles.
 
 The production test topology can be written as a short matrix:
 
@@ -280,6 +284,9 @@ The compact proof objects in `fixtures/protocol/` mirror that ladder:
 - `push-deployment-topology-contract.json` is the smallest Docker/Playground
   proof for one remote source, one local edited site, one drift witness, and
   one runner.
+- `push-topology-matrix.json` is the detailed machine-readable matrix for the
+  Docker and Playground topology, including the live drift witness and the
+  `8080` ingress constraint.
 
 The importer must preserve enough lineage for that boundary to remain
 provable later:

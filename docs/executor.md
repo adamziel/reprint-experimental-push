@@ -76,7 +76,10 @@ For focused production proofs, the compact machine-readable contract is
 It ties the pull exporter/importer handoff to preflight, remote hash listing,
 dry-run upload, batched apply, journal inspection, inspect-first recovery, and
 the one-remote, one-local, one-drift topology used in both Docker and
-Playground.
+Playground. The same object also carries the concrete lab identities
+(`remote-example`, `local-dev-site`) so the executor can point test code at a
+stable remote-base/local-edited/remote-changed shape without inventing a new
+fixture format.
 
 Use that contract when a test needs the whole production ladder in one proof;
 use `push-deployment-topology-contract.json` when the test only needs the
@@ -113,6 +116,12 @@ That mapping is one-way:
 - apply is the first write stage and must revalidate fresh live evidence before every batch and at the storage boundary
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh live hashes prove the action
+
+The machine-readable bridge and deployment topology live in:
+
+- [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
+- [`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json)
+- [`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
 
 That sequence is the runtime form of the pull pipeline handoff:
 
