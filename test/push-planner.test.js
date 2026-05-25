@@ -3815,6 +3815,42 @@ test('replaying a completed plan returns the fully updated remote without reappl
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
 });
 
+test('completed replay remains fully updated and does not duplicate inserts when retried through the durable journal', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const retryRemote = JSON.parse(JSON.stringify(completed.site));
+  const retry = applyPlan(retryRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(retry.appliedMutations, 0);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(retry.recoveryState.artifacts.remote, undefined);
+  assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(retry.site.files['index.php'], '<?php echo "local";');
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    1,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
+});
+
 test('recovery boundaries only allow old remote, fully updated remote, or blocked recovery with artifacts', () => {
   const base = baseSite();
   const local = baseSite();

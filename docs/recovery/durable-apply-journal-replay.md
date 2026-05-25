@@ -6,6 +6,12 @@ This lane treats atomic apply as safe only when the observable outcome is one of
 - `fully-updated-remote`
 - `blocked-recovery`
 
+Those are the only acceptable post-failure states for the model:
+
+- `old-remote` means nothing was committed to the remote yet.
+- `fully-updated-remote` means the plan already finished and replay is a no-op.
+- `blocked-recovery` means the remote may be partially applied, but the recovery artifacts are present and inspectable.
+
 The durable journal must explain which of those states applies after each boundary:
 
 - failure before mutation stays `old-remote`
