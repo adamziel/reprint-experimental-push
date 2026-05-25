@@ -1417,6 +1417,38 @@ test('atomic apply keeps the documented recovery states across failure boundarie
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('completed replay remains inert for a matching remote and blocks drift with inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const driftError = captureError(() => applyPlan(driftedRemote, plan, { journal: completed.journal }));
+
+  assert.ok(driftError instanceof PushPlanError);
+  assert.equal(driftError.code, 'RECOVERY_BLOCKED');
+  assertRecoveryStateArtifacts(driftError.details.recovery, 'blocked-recovery');
+  assert.ok(driftError.details.recovery.artifacts.journal, 'stale replay must keep journal artifacts');
+  assert.ok(driftError.details.recovery.artifacts.remote, 'stale replay must keep remote artifacts');
+});
+
 test('atomic apply only allows old remote, fully updated remote, or blocked recovery with artifacts across failure boundaries', () => {
   const base = baseSite();
   const local = baseSite();
