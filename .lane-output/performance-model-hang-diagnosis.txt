@@ -1,0 +1,18 @@
+Diagnostic date: 2026-05-25
+
+Narrowed commands run:
+- `timeout 15s node --test --test-name-pattern 'benchmark model covers large uploads and plugin installs' test/performance-model.test.js`
+- `timeout 15s node --test --test-name-pattern 'safety contract covers required speedup areas and terminal states' test/performance-model.test.js`
+- `timeout 15s node --test --test-name-pattern 'fast-path proofs and rejections carry the expected gate metadata' test/performance-model.test.js`
+- `timeout 15s node --test --test-name-pattern 'benchmark model covers large uploads and plugin installs|safety contract covers required speedup areas and terminal states' test/performance-model.test.js`
+- `timeout 15s node --test --test-name-pattern 'benchmark model covers large uploads and plugin installs|fast-path proofs and rejections carry the expected gate metadata' test/performance-model.test.js`
+- `timeout 15s node --test --test-name-pattern 'safety contract covers required speedup areas and terminal states|fast-path proofs and rejections carry the expected gate metadata' test/performance-model.test.js`
+
+Results:
+- Each single-test run passed.
+- Each pairwise run passed.
+- `timeout 60s node --test test/performance-model.test.js` still times out after printing only `TAP version 13` (exit 124).
+
+Conclusion:
+- The full-file timeout appears pre-existing rather than introduced by the lane's newest rejected shortcut coverage.
+- No lane-owned fast-path additions were reverted in this iteration.
