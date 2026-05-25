@@ -23,6 +23,7 @@ The weakest claim is the production release verdict itself.
 - The suite can still go green without proving live-source mutation, crash survival, or throughput on the real path.
 - `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
+- The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added.
 
 ## Release Summary
 
@@ -237,6 +238,14 @@ The strongest current runnable evidence still falls into the following classes:
 ## Test Audit
 
 The current tests are useful, but they are not proof of no data loss, reliability, or speed at the production boundary. They mostly prove that the lab harness is internally consistent and that unsafe claims are refused. That is necessary guardrail coverage, not release evidence. The suite still stops short of proving the live-source loop, so every positive interpretation must stay limited to lab scope. In particular, `node --test` passing is still compatible with a release that would lose data, fail under a crash, or miss a throughput threshold on the live boundary, because the suite never forces that boundary or a production storage backend. Passing tests here are best read as "the release should not be trusted yet", not as "the release is safe".
+
+The practical audit conclusion is stricter than "tests are incomplete":
+
+- no current test proves the one-way pull base plus one-way push back to the live source in the same run
+- no current test proves durability, replay safety, or crash recovery on the real source of truth
+- no current test proves the auth/session, journal, lease/fence, graph identity, and plugin-data-driver requirements as a single release gate
+- no current test can convert `productionThroughput: 'not-claimed'` into a measured live-path speed claim
+- no current test can replace the missing mandatory release command, so passing tests remain support evidence rather than release proof
 
 The strongest remaining claim the suite can make is narrower: it can show that unsupported production claims are rejected. It cannot show that a production claim is true. For the claim audit, that means no data loss remains unproven, reliability remains unproven, and speed is still explicitly unclaimed.
 
