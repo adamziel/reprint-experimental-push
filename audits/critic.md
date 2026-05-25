@@ -247,7 +247,9 @@ remote and records the preserved remote, rejection point, and retry scope in a
 single executable flow. Until such a command exists and is audited end to end,
 the design cannot claim that the protocol docs, smoke tests, or manual-review
 notes are production release support rather than lab-only compatibility
-evidence.
+evidence. If the only available entry points remain `plan`, `apply`, and
+`test:playground:*`, the branch is still lab-only and the release gate fails
+closed.
 
 Fail-closed wording rule:
 
