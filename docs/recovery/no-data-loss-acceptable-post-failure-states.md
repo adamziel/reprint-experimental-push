@@ -1,7 +1,8 @@
 # No Data Loss Acceptable Post-Failure States
 
 The atomic apply lane only considers three outcomes safe after a failure or
-replay boundary:
+replay boundary, whether the evidence comes from the lab model or from a
+durable journal:
 
 - `old-remote`
 - `fully-updated-remote`
