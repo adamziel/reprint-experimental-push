@@ -61,6 +61,14 @@ left untouched, so the remote cannot be safely audited or retried. Any
 production-grade claim that omits the policy for old/new/blocked surfaces must
 fail closed.
 
+Source-note comparisons need the same rigor. Scenario: a reviewer cites Reprint,
+ZS-Sync, or ForkPress and treats the note as retry authority because the route
+family or wording looks similar. Missing proof: the exact upstream revision or
+worktree state, the exact live boundary rerun on this branch, and an explicit
+statement of what the note proves here and what it does not prove here. Without
+those facts, the comparison remains historical context only and cannot support
+production wording.
+
 ## 2026-05-25 Commit `25c4ef54` Is Live Preflight Only, Not Production Proof
 
 Commit `25c4ef54` adds `npm run
