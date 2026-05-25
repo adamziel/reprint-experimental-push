@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 08:59:21 CEST
+Last updated: 2026-05-25 09:01:33 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 09:01:33 CEST
+
+- Going well: the page, log, and latest audit note still agree on the blocked snapshot.
+- Not going well: no proof gap closed, so the blocker is unchanged.
+- Progress change: this pass only tightened the visible supervisor surfaces and refreshed the linked evidence pointer.
+- Next nudge: keep one lane per proof gap, one owner, and one production-backed test.
+- Audit note: [audits/supervisor-note-20260525-090133.md](../audits/supervisor-note-20260525-090133.md) captures this scan pass in one screen.
 
 ## 2026-05-25 08:59:21 CEST
 
