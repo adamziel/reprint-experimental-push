@@ -13,6 +13,10 @@ This note is the short form of the planner policy in
 - Matching independent edits may appear alongside a live-preconditioned
   deletion in the same plan; the matching resources still stay
   `already-in-sync` and do not weaken the deletion precondition.
+- The same rule holds when the plan also includes a matching independent edit
+  or file type swap plus unrelated remote-only plugin drift: the safe
+  resources stay `already-in-sync`, the plugin drift stays `keep-remote`, and
+  the delete still needs its own live remote precondition.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Remote-only plugin drift stays preserved when the local plan also contains
