@@ -8139,6 +8139,51 @@ test('apply boundary failures stay in old-remote and completed replay stays full
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('apply recovery contract keeps failure boundaries old-remote and completed replays inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true }],
+    ['after staging', { failAfterStaging: true }],
+    ['after dependency validation', { failAfterDependencyValidation: true }],
+  ]) {
+    const remote = baseSite();
+    const snapshot = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    replay.site.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+    'completed replay must preserve inserted rows',
+  );
+  assert.equal(
+    Object.values(replay.site.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length,
+    1,
+    'completed replay must not duplicate inserts',
+  );
+});
+
 test('completed plan replay records a durable replay boundary without mutating the remote', () => {
   const base = baseSite();
   const local = baseSite();
