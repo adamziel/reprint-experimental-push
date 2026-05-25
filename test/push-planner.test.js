@@ -14080,6 +14080,45 @@ test('completed replay stays inert across repeated retries and does not resurrec
   assert.equal(Object.keys(secondReplay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('completed replay keeps the durable journal replay-only and does not emit mutation observations on retry', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const beforeReplay = readRecoveryJournal(completedJournalPath);
+  const beforeReplayMutationObservations = beforeReplay.records.filter(
+    (record) => record.type === 'mutation-observed',
+  ).length;
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  const persisted = readRecoveryJournal(completedJournalPath);
+  const eventTypes = persisted.records.map((record) => record.type);
+  const afterReplayMutationObservations = persisted.records.filter(
+    (record) => record.type === 'mutation-observed',
+  ).length;
+
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.ok(eventTypes.includes('journal-completed'));
+  assert.ok(eventTypes.includes('journal-replayed'));
+  assert.equal(eventTypes.filter((type) => type === 'journal-replayed').length, 1);
+  assert.equal(afterReplayMutationObservations, beforeReplayMutationObservations);
+});
+
 test('no-data-loss blocked partial recovery keeps inspectable artifacts and stays blocked on retry', () => {
   const base = baseSite();
   const local = baseSite();
