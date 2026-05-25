@@ -5933,7 +5933,7 @@ test('durable recovery boundaries stay in old remote or fully updated remote wit
     durableJournal.close();
 
     assert.ok(error instanceof PushPlanError, label);
-    assert.equal(JSON.stringify(remote), remoteSnapshot, label);
+    assert.equal(JSON.stringify(remote), JSON.stringify(baseSite()), label);
     assertAcceptableRecoveryState(error.details.recovery);
     assert.equal(error.details.recovery.status, expectedStatus, label);
     assert.ok(error.details.recovery.artifacts.journal, label);
@@ -11919,6 +11919,7 @@ test('durable recovery keeps pre-commit failures in old-remote with journal arti
     const journalPath = tempRecoveryJournalPath();
     const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
     const remote = baseSite();
+    const remoteSnapshot = JSON.stringify(remote);
 
     const error = captureError(() =>
       applyPlan(remote, plan, {
@@ -12143,7 +12144,6 @@ test('durable recovery boundary matrix keeps pre-commit failures old-remote and 
   local.files['index.php'] = '<?php echo "local";';
   local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
   const plan = planFor(base, local, baseSite());
-  const beforeSnapshot = JSON.stringify(baseSite());
 
   for (const [label, options, expectedJournalStatus] of [
     ['failure before mutation', { failBeforeMutation: true }, 'opened'],
@@ -12153,6 +12153,7 @@ test('durable recovery boundary matrix keeps pre-commit failures old-remote and 
     const journalPath = tempRecoveryJournalPath();
     const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
     const remote = baseSite();
+    const remoteSnapshot = JSON.stringify(remote);
 
     const error = captureError(() =>
       applyPlan(remote, plan, {
@@ -12164,11 +12165,29 @@ test('durable recovery boundary matrix keeps pre-commit failures old-remote and 
     durableJournal.close();
 
     assert.ok(error instanceof PushPlanError, label);
-    assert.equal(JSON.stringify(remote), beforeSnapshot, label);
+    assert.equal(JSON.stringify(remote), remoteSnapshot, label);
     assertAcceptableRecoveryState(error.details.recovery);
     assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+
+    const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+    const retrySnapshot = JSON.stringify(remote);
+    const retry = applyPlan(remote, plan, {
+      durableJournal: retryJournal,
+      journal: error.details.recovery.artifacts.journal,
+    });
+    retryJournal.close();
+
+    assert.equal(JSON.stringify(remote), retrySnapshot, label);
+    assert.equal(retry.appliedMutations, plan.mutations.length, label);
+    assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally', label);
+    assert.equal(Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1, label);
+    assert.equal(retry.site.files['index.php'], '<?php echo "local";', label);
+    assertAcceptableRecoveryState(retry.recoveryState);
+    assertRecoveryStateArtifacts(retry.recoveryState, 'fully-updated-remote');
+    assert.equal(retry.recoveryState.artifacts.remote, undefined, label);
+    assert.equal(retry.recoveryState.artifacts.journal.status, 'completed', label);
   }
 
   const completedJournalPath = tempRecoveryJournalPath();
