@@ -26,9 +26,9 @@ The objective implies these minimum release requirements:
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
 | Executable proof | `npm test` passes the Node test suite; the strongest assertions cover planner refusal, recovery-journal replay shape, benchmark-model guardrails, and guarded-benchmark refusal behavior | No executable test touches the live-source mutation boundary or proves no-loss on a production mutation path | Yes |
-| Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, plugin packaging, and other local failure modes | These checks still run against local or fixture-backed storage, so they cannot prove the real remote/local topology or live-source release boundary | Yes |
+| Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, plugin packaging, and other local failure modes | These checks still run against local or fixture-backed storage, and the authenticated push path still reports `labBacked: true`, so they cannot prove the real remote/local topology or live-source release boundary | Yes |
 | Docs-only proof | `docs/`, `progress.html`, and the audit notes describe the intended release flow and safety matrix | Prose does not enforce the matrix or prove the live path | Yes |
-| Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json); no checked-in `.github/workflows/*`; no measured live-path benchmark threshold; no required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and speed proof | The repo still lacks the single mandatory decision point that could make the live-source claim releasable | Yes |
+| Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json); no checked-in `.github/workflows/*`; no required command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and a measured live-path speed check | The repo still lacks the single mandatory decision point that could make the live-source claim releasable | Yes |
 | Release blockers | `labBacked: true`, fixture-only scope, benchmark-only evidence, missing live-source proof, and missing enforced gate | None of these are acceptable as release proof | Yes |
 
 ## Test Audit
@@ -47,13 +47,12 @@ The current tests are useful, but they are not proof of no data loss, reliabilit
 
 The objective stays blocked for five concrete reasons:
 
-1. There is no single required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, real remote/local topology, crash boundary, recovery, and benchmark checks.
+1. There is no single required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, real remote/local topology, crash boundary, recovery, and a measured live-path speed check.
 2. The strongest authenticated push route still self-identifies as `labBacked: true`, so the best visible push evidence is still lab-scoped.
 3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path or establish a release threshold.
-4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary.
+4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary, and they do not exercise a real remote-to-local-to-remote release path.
 5. There is no checked-in CI workflow in this checkout, so there is no visible enforced entrypoint that could make the release gate mandatory.
 
 ## Audit Rule
 
 Treat fixture tests, refusal tests, route-shape smokes, benchmark models, and `labBacked: true` labels as useful but insufficient. They do not count as release proof unless they exercise the same live-source boundary named by the objective.
-
