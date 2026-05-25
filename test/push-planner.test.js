@@ -10350,6 +10350,10 @@ test('durable recovery boundary states stay limited to old remote, fully updated
     replayPersisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
     false,
   );
+  assert.equal(
+    replayPersisted.records.some((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote'),
+    true,
+  );
 });
 
 test('no-data-loss recovery contract stays pinned across pre-mutation, post-staging, post-validation, and completed replay boundaries', () => {
