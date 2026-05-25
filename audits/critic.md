@@ -1,10 +1,10 @@
 # Critic Audit
 
-## 2026-05-25 Production Push Readiness Re-Audit
+## 2026-05-26 24-Hour Readiness Critique
 
 Verdict: the design still cannot claim production-grade push support.
 
-The latest lab evidence is real. The reliable lane now adds a missing-secret production-shaped gate, a timeout wrapper around the HTTP client, a stricter failure fixture for the production release verifier, and a replay-idempotency check that requires `replayed: true` and `freshMutationWork: false` on a second `/apply`. That is useful, but it still only proves bounded lab behavior. It does not prove a production auth/session lifecycle, durable production journal ownership with lease/fencing/replay wiring, or full replay output equivalence strong enough to trust as a release gate. Until those exist, wording about production-ready push is stronger than the evidence.
+The current evidence is still narrow and lab-shaped. The recent reliable-lane work improves the boundary checks, but it only proves replay idempotency and failure handling inside the release verifier. It does not yet prove a live production auth/session lifecycle, durable journal ownership with lease/fencing, preserved-remote retry, or exact replay equivalence on the real push path. For the next 24 hours, the claim must stay cut to a constrained release-candidate slice, not broad production support.
 
 ## What The Source Notes Actually Support
 
@@ -12,33 +12,16 @@ The latest lab evidence is real. The reliable lane now adds a missing-secret pro
 - ZS-Sync contributes scanner composition and bounded resource enumeration.
 - ForkPress contributes the production bar: three-way merge records, reviewed conflict resolution, plugin-specific validators, and crash consistency with old/new/blocked recovery artifacts.
 
-The push design should borrow those pieces, but it still needs its own mutation-grade proof. Transport shape and scanner coverage are not enough.
-
-Latest supervision evidence narrows the remaining gap, but does not close it:
-`origin/lane/reliable-executor` is at `0c4fd10f`,
-`origin/lane/no-data-loss-invariants` is at `5b25867b`,
-`origin/lane/no-data-loss-recovery` is at `47b675c0`,
-`origin/lane/fast-paths` is at `9be664b2`,
-`origin/lane/independent-auditor` is at `33b839f0`,
-`origin/lane/feedback-supervisor` is at `f386dfa6`,
-`origin/lane/progress-publisher` is at `7695e1f9`,
-and `origin/lane/same-plan-wordpress-graph-create` is at `24c58564`,
-while the critic branch now matches `HEAD` at `598729f1` and is aligned with
-`origin/lane/critic`.
-These moves refresh the audit snapshot but do not change the underlying
-verdict: production auth/session lifecycle, durable journal ownership with
-lease/fencing/replay wiring, and exact replay output equivalence are still not
-proven on a real WordPress source site. The recovery lane also remains a risk
-rather than settled evidence.
+The lane snapshots have moved, but the blocker set has not materially changed. The only safe critic update is a tighter verdict, not another head list.
 
 ## Blocking Gaps
 
 | Risk | Scenario | Missing proof | Why this blocks production |
 | --- | --- | --- | --- |
 | Hidden data loss across graph writes | A push edits `wp_postmeta.post_id`, `post_parent`, `_thumbnail_id`, menu links, attachment references, or serialized block payloads while the target identity changed on the remote after pull. | The current proof only blocks a narrow stale-reference case and explicitly says same-plan identity creation and general rewrite remain unsupported. There is no identity map, rewrite proof, or end-to-end referential integrity test for the affected WordPress graph surfaces. | Without automatic rewrite or a hard block for every graph-mutating class, a push can preserve row hashes while breaking relationships or resurrecting the wrong object. |
-| Auth/session release boundary is still lab-shaped | A real production request needs cookie, nonce, or Application Password state to survive issuance, scoping, rotation, revocation, replay rejection, and cleanup across retries and crashes. | The recent release-boundary evidence proves only the checked boundary wording and lab behavior. There is still no production auth/session lifecycle with durable retention, replay-safe cleanup, or revocation on the real push path. | Without a real lifecycle, a release gate can accept a request that cannot be audited, replayed safely, or rejected after credential state changes. |
+| Auth/session release boundary is still lab-shaped | A real production request needs cookie, nonce, or Application Password state to survive issuance, scoping, rotation, revocation, replay rejection, and cleanup across retries and crashes. | The release verifier proves only the checked boundary wording and lab behavior. There is still no production auth/session lifecycle with durable retention, replay-safe cleanup, or revocation on the real push path. | Without a real lifecycle, a release gate can accept a request that cannot be audited, replayed safely, or rejected after credential state changes. |
 | Replay output is not proven exact | A replayed release response returns `200` and `replayed=true` but differs from the original completed apply in body fields that callers or auditors depend on. | The release verifier now proves replay idempotency at the mutation boundary, but it still does not prove exact replay equivalence, canonical response stability, or field-level identity with the original apply response. | A release gate that only checks broad success can bless a replay that is semantically different from the original apply. |
-| Durable journal ownership is not yet production-proven | Two workers or a retry race to own the same push journal after a timeout, crash, or network loss, and the old worker resumes late. | The current notes still stop at boundary vocabulary. They do not show durable journal storage with lease/fencing tokens, replay wiring, or a production claim model that survives stale-worker resumption. | A journal without ownership and fencing can let a stale worker publish or replay writes after a newer claim has advanced. |
+| Durable journal ownership is not yet production-proven | Two workers or a retry race to own the same push journal after a timeout, crash, or network loss, and the old worker resumes late. | The notes still stop at boundary vocabulary. They do not show durable journal storage with lease/fencing tokens, replay wiring, or a production claim model that survives stale-worker resumption. | A journal without ownership and fencing can let a stale worker publish or replay writes after a newer claim has advanced. |
 | Preserved-remote retry is not proven | A retry after partial apply reuses stale local evidence and overwrites the remote instead of resuming from an auditable preserved remote snapshot. | There is no end-to-end proof that the remote state is retained, reloaded, and compared before retry, or that replay is fenced so a retry cannot silently choose a newer or older remote than the one first observed. | Retry safety is part of production durability; without preserved remote evidence, a second attempt can become a blind overwrite. |
 | Manual resolution can become stale overwrite permission | An operator selects "take local" after reviewing a conflict, then retries after the remote changed again or after a previous attempt left a mixed state. | No reviewed-resolution artifact binds the approval to the exact base/local/remote hashes, reviewer identity, and a fresh live snapshot on retry. The docs say manual resolution is only acceptable if the remote is preserved for audit and retry starts from fresh evidence, but the design does not yet show that artifact or enforcement path. | A stale manual decision is equivalent to granting overwrite permission on new remote data. |
 | Plugin data traps remain under-modeled | A plugin stores state in a custom table, generated file, cron row, cache entry, activation hook, or serialized option not covered by the allowlist. | The current plan relies on fixture allowlists and a small set of driver checks. It does not define plugin-owned resource graphs, versioned semantics, rollback expectations, or a conservative fallback for unknown plugin state. | Production push needs to know what each plugin owns, or it must refuse the push. Guessing is unsafe because plugin state often spans tables, files, and runtime side effects. |
@@ -59,40 +42,34 @@ rather than settled evidence.
 
 These are the missing proofs that must land before the project can claim production-grade push support:
 
-1. Ship a real production push endpoint whose implementation does not route to
-   Playground or lab internals.
-2. Separate lab credentials from production push credentials and prove a real
-   production auth/session lifecycle: issuance, scoping, rotation, revocation,
-   replay rejection, retention, and retry-safe cleanup on the live push path.
-3. Build durable production journal ownership with lease/fencing and replay
-   wiring, then prove stale-worker resumption cannot write after a newer claim.
-4. Prove preserved-remote retry from a real remote snapshot so a retry cannot
-   silently become a stale overwrite or resume from the wrong remote state.
-5. Introduce a complete production coverage manifest and make unknown plugin,
-   custom-table, generated-file, cache, and multisite resources hard blocks.
-6. Define plugin-owned resource contracts for tables, files, options, cron,
-   cache, and activation hooks, with rollback or block behavior for unknown
-   ownership.
-7. Add graph identity mapping or broaden the hard block policy so every
-   relationship-bearing WordPress row class that can silently rewire identity
-   is either rewritten safely or rejected.
-8. Add reviewed conflict-resolution artifacts that preserve base/local/remote
-   evidence, reviewer identity, chosen action, and fresh revalidation data.
-9. Extend storage-boundary checks to production write primitives, including
-   inserts, deletes, schema changes, file publish/unlink, plugin activation
-   side effects, and any write path that can expose mixed old/new state.
-10. Add tombstone and resurrection policy for delete/restore cases so a retry
-    cannot silently revive intentionally deleted remote content.
-11. Publish production audit/redaction schemas and a release gate that runs the
-    full safety-critical suite before the project can use production-grade
-    wording.
+1. Ship a real production push endpoint whose implementation does not route to Playground or lab internals.
+2. Separate lab credentials from production push credentials and prove a real production auth/session lifecycle: issuance, scoping, rotation, revocation, replay rejection, retention, and retry-safe cleanup on the live push path.
+3. Build durable production journal ownership with lease/fencing and replay wiring, then prove stale-worker resumption cannot write after a newer claim.
+4. Prove preserved-remote retry from a real remote snapshot so a retry cannot silently become a stale overwrite or resume from the wrong remote state.
+5. Introduce a complete production coverage manifest and make unknown plugin, custom-table, generated-file, cache, and multisite resources hard blocks.
+6. Define plugin-owned resource contracts for tables, files, options, cron, cache, and activation hooks, with rollback or block behavior for unknown ownership.
+7. Add graph identity mapping or broaden the hard block policy so every relationship-bearing WordPress row class that can silently rewire identity is either rewritten safely or rejected.
+8. Add reviewed conflict-resolution artifacts that preserve base/local/remote evidence, reviewer identity, chosen action, and fresh revalidation data.
+9. Extend storage-boundary checks to production write primitives, including inserts, deletes, schema changes, file publish/unlink, plugin activation side effects, and any write path that can expose mixed old/new state.
+10. Add tombstone and resurrection policy for delete/restore cases so a retry cannot silently revive intentionally deleted remote content.
+11. Publish production audit/redaction schemas and a release gate that runs the full safety-critical suite before the project can use production-grade wording.
+
+## 24-Hour Readiness
+
+Three blockers can still move in this window:
+
+1. Reliable executor: finish the live release proof or prove the packaged route is still lab-backed.
+2. No-data-loss recovery: turn the active storage smoke into a preserved-remote retry or name the missing lease/fencing primitive.
+3. No-data-loss invariants: hard-block one unsupported boundary such as menu/navigation, serialized block references, comments/users, or plugin-owned custom tables.
+
+One claim must be cut:
+
+- Do not call the push path production-grade until exact replay equivalence and durable journal ownership are proven on the real push path.
+
+The next exact failure target should be:
+
+- [`test/production-shaped-proof.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/critic/test/production-shaped-proof.test.js): keep or add a failing assertion that the release command is rejected unless the packaged route is not lab-backed, the replay response is canonical, and unsupported graph/plugin/storage surfaces are blocked.
 
 ## Current Bottom Line
 
-The project has credible lab evidence for staged transport, stale-claim
-handling, replay idempotency, and some guarded writes. It still does not prove
-production auth/session lifecycle, durable journal ownership with
-lease/fencing/replay, preserved-remote retry, full graph identity safety, or
-general plugin driver coverage. The current lane heads have moved, but the
-honest claim remains unchanged: fixture-scoped and lab-backed push evidence,
-blocked for production.
+The project has credible lab evidence for staged transport, stale-claim handling, replay idempotency, and some guarded writes. It still does not prove production auth/session lifecycle, durable journal ownership with lease/fencing/replay, preserved-remote retry, exact replay equivalence, or full graph identity safety. The honest claim remains unchanged: fixture-scoped and lab-backed push evidence, blocked for production.
