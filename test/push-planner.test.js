@@ -8043,6 +8043,39 @@ test('durable no-data-loss recovery keeps the only acceptable post-failure state
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
   }
 
+  const beforeMutationJournalPath = tempRecoveryJournalPath();
+  const beforeMutationDurableJournal = openRecoveryJournal(beforeMutationJournalPath, {
+    truncate: true,
+    now: fixedNow,
+  });
+  const beforeMutationRemote = baseSite();
+  const beforeMutationSnapshot = JSON.stringify(beforeMutationRemote);
+  const beforeMutationError = captureError(() =>
+    applyPlan(beforeMutationRemote, plan, {
+      failBeforeMutation: true,
+      durableJournal: beforeMutationDurableJournal,
+    }),
+  );
+  beforeMutationDurableJournal.close();
+  const beforeMutationPersisted = readRecoveryJournal(beforeMutationJournalPath);
+
+  assert.ok(beforeMutationError instanceof PushPlanError, 'before mutation durable failure');
+  assert.equal(beforeMutationError.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assert.equal(JSON.stringify(beforeMutationRemote), beforeMutationSnapshot, 'before mutation durable failure');
+  assertAcceptableRecoveryState(beforeMutationError.details.recovery);
+  assertRecoveryStateArtifacts(beforeMutationError.details.recovery, 'old-remote');
+  assert.equal(beforeMutationError.details.recovery.artifacts.remote, undefined, 'before mutation durable failure');
+  assert.equal(beforeMutationError.details.recovery.artifacts.journal.planId, plan.id, 'before mutation durable failure');
+  assert.equal(beforeMutationError.details.recovery.artifacts.journal.status, 'opened', 'before mutation durable failure');
+  assert.equal(beforeMutationPersisted.records[0].type, 'journal-opened');
+  assert.equal(beforeMutationPersisted.records[beforeMutationPersisted.records.length - 1].type, 'recovery-state');
+  assert.equal(beforeMutationPersisted.records[beforeMutationPersisted.records.length - 1].state, 'old-remote');
+  assert.equal(
+    beforeMutationPersisted.records.some((record) => record.type === 'mutation-observed'),
+    false,
+    'before mutation durable failure',
+  );
+
   const replayJournalPath = tempRecoveryJournalPath();
   const replayDurableJournal = openRecoveryJournal(replayJournalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(baseSite(), plan);
