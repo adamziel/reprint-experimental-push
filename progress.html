@@ -508,7 +508,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until the production boundary proof gap closes. The linked docs hold the proof trail; this page stays scan-first.</p>
-        <time class="update-stamp" datetime="2026-05-25T15:19:41+02:00">Last updated: May 25, 2026, 15:19:41 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T15:21:34+02:00">Last updated: May 25, 2026, 15:21:34 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production-boundary evidence</span>
           <span class="pill">Lane-local only until merge to main</span>
@@ -518,6 +518,7 @@
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/supervisor-feedback.md">Open supervisor feedback</a>
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
+        <a class="log-link" href="audits/supervisor-note-20260525-152134.md">Open latest audit note</a>
         <a class="log-link" href="audits/objective-audit.md">Open objective audit</a>
         <p>Scan view only. Details stay in linked docs; this lane-local copy becomes live on GitHub Pages after merge to <code>main</code>.</p>
       </div>
@@ -526,7 +527,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong>Blocked</strong>
-        <span>Reliable-executor added file-journal lease/fence smoke evidence, but the production gate remains closed.</span>
+        <span>Reliable-executor still has the strongest lab release-harness proof, but the production gate remains closed.</span>
       </div>
       <div class="metric">
         <strong>Live copy</strong>
@@ -549,21 +550,22 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>Reliable-executor added <code>95164c8a</code>, keeping the lab release path fail-closed while adding file-journal lease/fence smoke evidence.</span></li>
-          <li><strong>Not going well</strong><span>Production auth/session lifecycle and durable journal storage with lease/fencing are still unproven, so the shipping gate remains closed.</span></li>
-          <li><strong>Progress delta</strong><span>The harness is stronger, but this is still lab/release-surface evidence rather than a production boundary proof.</span></li>
-          <li><strong>Next nudge</strong><span>Reliable-executor owns the next production-boundary proof; progress-publisher should keep the page terse and dated; critic and auditor should reject wording-only gate claims.</span></li>
+          <li><strong>Going well</strong><span>Reliable-executor still has the strongest lab release-harness proof, and <code>95164c8a</code> added file-journal lease/fence smoke evidence.</span></li>
+          <li><strong>Not going well</strong><span>The production gate is still closed because auth/session lifecycle and durable journal storage with lease/fencing remain unproven.</span></li>
+          <li><strong>Progress delta</strong><span>No new material evidence landed, so the visible status should stay unchanged.</span></li>
+          <li><strong>Next nudge</strong><span>Reliable-executor is the lane drifting from the production-boundary proof; it owns the next real-site release command, progress-publisher stays quiet until material evidence changes, and critic and auditor should reject wording-only gate claims.</span></li>
         </ul>
+        <p class="note">For the terse evidence trail, open <a href="audits/supervisor-note-20260525-152134.md">the latest audit note</a>.</p>
         <details class="lane-nudges">
           <summary>Lane nudges</summary>
           <ul class="compact-list" aria-label="Lane nudges">
             <li><strong>No data loss invariants</strong><span>Owner: lane. Gap: keep graph identity aligned with the same production-boundary run.</span></li>
             <li><strong>No data loss recovery</strong><span>Owner: lane. Gap: durable journal storage, lease, and fence behavior across a crash boundary.</span></li>
-            <li><strong>Reliable executor</strong><span>Owner: lane. Gap: own the next production-boundary proof and keep it tied to a real endpoint.</span></li>
+            <li><strong>Reliable executor</strong><span>Owner: lane. Gap: own the next real-site release command and keep it tied to a retained real endpoint.</span></li>
             <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims.</span></li>
             <li><strong>Independent auditor</strong><span>Owner: lane. Gap: re-audit the next production-backed slice.</span></li>
             <li><strong>Critic</strong><span>Owner: lane. Gap: challenge the weakest proof link.</span></li>
-            <li><strong>Progress publisher</strong><span>Owner: lane. Gap: keep the page dated, concise, and linked to evidence; the deployed copy updates after merge to <code>main</code>.</span></li>
+            <li><strong>Progress publisher</strong><span>Owner: lane. Gap: keep the page dated, concise, and linked to evidence; stay quiet until material evidence changes, and the deployed copy updates after merge to <code>main</code>.</span></li>
             <li><strong>Live watcher</strong><span>Owner: lane. Gap: confirm what moved since the last publish.</span></li>
           </ul>
         </details>

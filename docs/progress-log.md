@@ -6,13 +6,13 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 15:19:41 CEST.
+- Last update: 2026-05-25 15:21:34 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: `95164c8a` added file-journal lease/fence smoke to the lab release path, but the shipping gate is still closed.
+- Trend: `95164c8a` remains the latest lab release-surface evidence, but the shipping gate is still closed.
 - Scope: 8 fast/low lanes plus the live watcher remain active.
 - Blocker: production auth/session lifecycle and durable journal storage with lease/fencing remain unproven.
-- Next nudge: `reliable-executor` owns the next production-boundary proof; `progress-publisher` should keep the page terse and dated; `critic` and `auditor` should reject wording-only gate claims.
-- Evidence: [progress.html](../progress.html) shows the visible update date and links out to the detailed evidence; [docs/supervisor-feedback.md](supervisor-feedback.md) holds the newest decision.
+- Next nudge: `reliable-executor` owns the next production-boundary proof; `progress-publisher` stays quiet until material evidence changes; `critic` and `auditor` should reject wording-only gate claims.
+- Evidence: [progress.html](../progress.html) shows the visible update date and links out to the detailed evidence; [docs/supervisor-feedback.md](supervisor-feedback.md) holds the newest decision; [audits/supervisor-note-20260525-152134.md](../audits/supervisor-note-20260525-152134.md) is the terse audit note for this snapshot.
 
 ## 2026-05-25 - Supervisor Follow-up
 
