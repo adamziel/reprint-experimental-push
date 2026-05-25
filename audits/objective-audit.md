@@ -9,10 +9,10 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `29bfcd55`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `ff1915fb`
+- `origin/lane/fast-paths` -> `acbab7fd`
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `c036004c`
-- `origin/lane/progress-publisher` -> `43a230f8`
+- `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `70925d88`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f0b2fcde`
@@ -31,11 +31,11 @@ but it did not change the release conclusion:
   invariant proof at `29bfcd55`.
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
-- `origin/lane/fast-paths` now adds refreshed fast-path evidence at `ff1915fb`.
+- `origin/lane/fast-paths` now tightens gate proof coverage at `acbab7fd`.
 - `origin/lane/critic` now tightens the audit around the recovery conflict
   evidence at `c036004c`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
-  at `43a230f8`.
+  at `7695e1f9`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a silent smoke
   blocker at `70925d88`, so the same-plan path still stops short of release-
   grade proof.
