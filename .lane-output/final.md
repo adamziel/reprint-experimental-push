@@ -1,9 +1,12 @@
-Rechecked the constrained release-candidate slice. The release verdict stays closed because the live proof surface did not materially change.
+Rechecked the constrained release-candidate slice. The release verdict stays closed because the current remote heads still do not provide executable proof for the unsupported boundaries, and the repo still lacks an enforced `verify`/`verify:release`/`release` command.
 
-Changed files:
+- [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
 
 Commands run:
+- `rg -n "menu/navigation|serialized block references|comments/users|plugin-owned custom tables|unsupported boundary|release gate|fail closed" test audits src docs -S`
+- `sed -n '1,260p' test/push-planner.test.js`
+- `sed -n '1,220p' package.json`
 - `git for-each-ref --format='%(refname:short) %(objectname:short) %(subject)' refs/remotes/origin/lane | sort`
 - `sed -n '1,260p' audits/objective-audit.md`
 - `git status --short --branch`
@@ -15,11 +18,15 @@ Evidence checked:
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/critic` -> `c41435d5`
 - `origin/lane/progress-publisher` -> `7695e1f9`
+- `origin/lane/feedback-supervisor` -> `f386dfa6`
 - `origin/lane/independent-auditor` -> `33b839f0`
+- `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `e717f61c`
 
 Why no change was warranted:
 - The constrained release-candidate gap is still the same unsupported boundary proof gap.
-- No fresh remote head or audit evidence changed the verdict from closed to open.
+- No executable proof appeared for `menu/navigation`, `serialized block references`, `comments/users`, or `plugin-owned custom tables`.
+- The fresh remote heads remain lane evidence refreshes, not release-grade proof.
+- The repo script surface still lacks an enforced release gate command, so there is no executable verifier to promote yet.
 
 Push result:
 - No push this turn
@@ -30,4 +37,8 @@ Worktree status:
 - Remote comparison: `ahead 1249, behind 198` relative to `origin/main`
 
 Next supervisor nudge:
-- Make the next gate fail intentionally for one unsupported boundary, starting with `menu/navigation`, `serialized block references`, `comments/users`, or `plugin-owned custom tables`.
+- Make the next gate fail intentionally for one unsupported boundary, starting with `menu/navigation`, `serialized block references`, `comments/users`, or `plugin-owned custom tables`; keep the release verdict closed until that failing proof exists.
+
+Current pass note:
+- No new evidence changed since the last audit snapshot.
+- Keep the next pass focused on a single failing unsupported boundary, not another status refresh.

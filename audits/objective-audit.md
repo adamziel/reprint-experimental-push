@@ -15,7 +15,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7923bb55`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f386dfa6`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c79122c0`
 - `origin/main` -> `4b7b47a6`
 
@@ -39,7 +39,7 @@ but it did not change the release conclusion:
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
   `33b839f0`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `a37a7261`.
+  refreshes the supervisor evidence snapshot at `f386dfa6`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
   records the latest progress handoff at `284ebde9`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a stale term
@@ -101,7 +101,7 @@ The release requirements implied by that objective are:
 | R10 honest dry-run | Protocol smokes require receipts, reject missing/tampered receipts, bind receipts to plan/preconditions, and reject stale remote state. Authenticated lab routes bind receipts to auth/session/request data. | No production UI/operator warning tests. No proof for remote changes between production chunks or between individual production writes beyond fixture hooks. | Yes for production UX and source mutation |
 | R11 durable recovery | Model recovery tests classify old/updated/blocked states. JSONL journal tests append with monotonic sequences and `fsync` calls, and now block missing target records plus corrupt/truncated journals. Playground recovery, DB journal, process-kill, missing-commit finalization, stale-claim, and production-shaped route recovery-inspect smokes add useful fixture evidence. | No production DB-table journal, no storage-level crash matrix, no target write `fsync` proof, no exactly-once production writes, no production leases/fencing/claim expiry, no rollback, and no automatic repair policy. | Yes |
 | R12 idempotent resumability | DB journal smokes require `X-Reprint-Push-Idempotency-Key`, reject same-key/different-body requests, replay committed or rejected results, claim one concurrent same-key executor, finalize missing commits, and handle one all-old stale-claim retry path. Production-shaped route smoke also proves same-key replay and same-key/different-body conflict under `/wp-json/reprint/v1`. | No chunk cursor, production retry contract, production duplicate first-apply test, shared-DB multi-worker proof, stale-plan invalidation across chunks, or production stale-claim lease/fencing/expiry behavior. | Yes |
-| R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, attachment graph handling, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no taxonomy/menu/user/meta coverage, no serialized block-reference proof, no comments/users proof, no arbitrary plugin tables, no multisite, and no object cache/runtime side effects. | Yes |
+| R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, attachment graph handling, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. `test/push-planner.test.js` also proves unsupported plugin-owned resources stay blocked unless an explicit fixture driver policy is present. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no taxonomy/menu/user/meta coverage, no serialized block-reference proof, no comments/users proof, no arbitrary plugin tables, no multisite, and no object cache/runtime side effects. The existing planner and smoke coverage refuses unsupported plugin-owned data, but it does not prove the boundary for `menu/navigation`, serialized block references, or comments/users on a live source site. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
 | R15 speed | `test/performance-model.test.js` proves a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, remote indexes as planning-only, and backpressure triggers. | No runtime benchmark, no transfer implementation proof, no memory ceiling, no latency/throughput target, no large-site run, and no proof that the model is wired into the executor. | Yes for any speed claim |
 | R16 release suite | `npm test` passed 89 tests during this audit. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol and excludes auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes unless invoked separately. | Yes |
@@ -145,7 +145,8 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 6. Reliability assertions often count events rather than prove every hash transition.
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
-9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables.
+9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables. The current proof in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/test/push-planner.test.js) is refusal-backed for plugin-owned resources, not live-boundary proof for those graph surfaces.
+10. The repository script surface still lacks a checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/package.json), so there is still no enforced live-source gate that could own the verdict even if the missing proof appeared.
 10. Speed has no measured evidence.
 
 ## Required Release Gates
