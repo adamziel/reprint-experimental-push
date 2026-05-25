@@ -1,40 +1,53 @@
 # No Data Loss Recovery Contract
 
-This lane treats recovery as a durable state machine, not just an in-memory
-return value.
+This lane treats recovery as a durability contract, not just an in-memory
+classification.
 
-Acceptable post-failure states are limited to:
+## Acceptable post-failure states
 
-- `old-remote`: the remote must remain untouched, and the journal must carry
-  recovery artifacts that explain why apply did not proceed.
-- `fully-updated-remote`: the remote already matches every planned mutation,
-  and replay must remain inert while recording a completed recovery artifact.
-- `blocked-recovery`: the remote may be partially mutated, but only when the
-  durable journal preserves enough artifacts to explain and inspect the
-  partial state.
+After an interrupted or failed apply, the remote must end up in one of these
+states:
 
-Rules:
+1. `old-remote`
+   - No target mutation has been durably published.
+   - The recovery journal may exist and may show an `opened`, `staged`, or
+     `dependencies-validated` state.
+   - A retry may reuse the durable journal to complete the original plan.
 
-1. A failure before mutation, after staging, or after dependency validation
-   must never silently become a successful apply.
-2. A replay of a completed plan must not duplicate inserts or resurrect stale
-   local data.
-3. Any partial remote mutation without a durable recovery artifact is a
-   release blocker.
-4. Recovery inspection should prefer proof from the durable journal over any
-   transient in-memory state.
+2. `fully-updated-remote`
+   - Every planned mutation is already present on the remote.
+   - The replay path must be inert and must not duplicate inserts or resurrect
+     stale local data.
+   - The durable journal should resolve to `completed`.
 
-The durable journal is the source of truth for crash recovery. JSON fixtures
-and lab-only evidence can describe the model, but production recovery must be
-backed by append-only journal records, persisted files, and explicit recovery
-state artifacts.
+3. `blocked-recovery`
+   - The remote cannot be proven to be purely old or purely updated.
+   - The recovery artifact set must include the journal and the observed remote
+     state that explains the block.
+   - Any partial remote mutation without a durable recovery artifact is a release
+     blocker.
 
-In practice that means:
+## Retry rule
 
-- A failed apply is only acceptable when the remote is still `old-remote`, the
-  remote is `fully-updated-remote`, or the durable journal can explain the
-  partial state with `blocked-recovery` artifacts.
-- A partial remote mutation without a durable recovery artifact is not
-  recoverable enough for release.
-- Replay must be idempotent over the durable journal, so completed plans stay
-  inert even when local input still contains stale or duplicate data.
+Retries are only safe when the durable journal proves one of the two replayable
+states above.
+
+- If the journal is replayable and the remote still matches the recorded
+  before/after envelope, the apply path can finish the plan without fresh
+  mutation work.
+- If the remote has drifted outside that envelope, the result must stay
+  `blocked-recovery`.
+- A retry must never treat partial writes without artifacts as safe.
+
+## Boundary coverage
+
+The regression tests in `test/push-planner.test.js` currently pin:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+- replay of a completed plan
+- blocked partial recovery and stale replay inspection
+
+Keep extending the model from the next untested recovery boundary rather than
+loosening the contract.
