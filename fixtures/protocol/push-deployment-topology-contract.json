@@ -1,6 +1,6 @@
 {
   "contract_id": "push-deployment-topology-contract",
-  "purpose": "production-shaped topology proof for one remote source, one local edited site, one drift witness, and one runner",
+  "purpose": "production-shaped topology proof for one remote source, one local edited site, one drift witness, and one runner in Docker and Playground",
   "topology": {
     "remote_base": "remote-base",
     "local_edited": "local-edited",
@@ -15,7 +15,8 @@
       "dry-run and apply remain separate remote operations",
       "apply revalidates fresh live evidence before every batch and at the storage boundary",
       "journal inspect stays read-only",
-      "recovery starts with inspect before any mutating repair"
+      "recovery starts with inspect before any mutating repair",
+      "runner owns preflight, remote snapshot hash listing, dry-run upload, apply, journal inspect, and recovery"
     ]
   },
   "deployment": {

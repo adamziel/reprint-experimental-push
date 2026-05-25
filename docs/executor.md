@@ -202,6 +202,9 @@ The machine-readable topology proof lives in
 [`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).
 Use it when a test needs to assert the one-remote, one-local, one-drift
 shape without pulling in the larger auth or recovery fixtures.
+It is the narrow companion to the broader protocol contract, so the same
+remote-base, local-edited, and remote-changed roles appear in both the Docker
+and Playground proofs.
 
 Docker and Playground use the same role split and the same route names. The
 only difference is where the runner lives:

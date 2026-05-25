@@ -247,7 +247,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
   assert.equal(
     protocolExtensionContract.purpose,
-    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery',
+    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping',
   );
   assert.equal(protocolExtensionContract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(protocolExtensionContract.pull_pipeline.importer, 'persists the base package as immutable provenance');
@@ -287,15 +287,23 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'binds the persisted pull base to the live remote identity and a short-lived push session',
   );
   assert.equal(
-    protocolExtensionContract.pull_to_push_mapping.remote_snapshot_hash_listing,
+    protocolExtensionContract.pull_to_push_mapping.push_snapshot_hashes,
     'collects live comparison evidence for planning only and never becomes write authority',
   );
   assert.equal(
-    protocolExtensionContract.pull_to_push_mapping.dry_run_plan_upload,
+    protocolExtensionContract.pull_to_push_mapping.push_plan_dry_run,
     'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
   );
   assert.equal(
-    protocolExtensionContract.pull_to_push_mapping.recovery_inspect,
+    protocolExtensionContract.pull_to_push_mapping.push_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.push_journal,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping['push_recover inspect'],
     'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
   );
   assert.equal(
