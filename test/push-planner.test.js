@@ -12022,7 +12022,8 @@ test('durable recovery keeps the documented failure states and completed replay 
   ];
 
   for (const [label, options, expectedJournalStatus] of failureScenarios) {
-    const durableJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
     const remote = baseSite();
     const failure = captureError(() =>
       applyPlan(remote, plan, {
@@ -12038,6 +12039,18 @@ test('durable recovery keeps the documented failure states and completed replay 
     assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
     assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
     assert.equal(JSON.stringify(remote), JSON.stringify(baseSite()), label);
+
+    const persisted = readRecoveryJournal(journalPath);
+    assert.equal(
+      persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'old-remote'),
+      true,
+      label,
+    );
+    assert.equal(
+      persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+      false,
+      label,
+    );
   }
 
   const completedJournalPath = tempRecoveryJournalPath();
@@ -12061,6 +12074,12 @@ test('durable recovery keeps the documented failure states and completed replay 
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.journal.entries.length, plan.mutations.length);
+  assert.equal(
+    readRecoveryJournal(completedJournalPath).records.some(
+      (record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote',
+    ),
+    true,
+  );
 });
 
 test('durable recovery boundary matrix keeps pre-commit failures old-remote and completed replay inert', () => {
