@@ -43,6 +43,11 @@ Branch-local release gate, stated narrowly:
 - the supervised reliable-executor lane's completed `npm run verify:release`
   run remains retained-source lab evidence, not this worktree's live retry
   authority;
+- the remote lane's `authSessionType`, minted session shape, `applyCommitted`,
+  and `durableJournal.rows: 17` results are still lab-harness evidence unless
+  this branch reruns the same live boundary with preserved-remote audit
+  evidence, apply-time revalidation, and journal/recovery inspection on a
+  real local, Playground, or Docker source;
 - production-grade wording is blocked until one executable live rerun shows
   the executor identity, auth/session boundary, preserved remote, exact
   rejection point, dry-run receipt, apply-time revalidation, journal/recovery
@@ -126,7 +131,8 @@ What must change before production-grade wording is defensible:
   note proves here, state what it does not prove here, and are backed by a
   rerun of the same live boundary on this worktree; a newer upstream head or
   a completed lab harness run still does not become production retry authority
-  on this branch by itself.
+  on this branch by itself, and the cited note must not be treated as proof of
+  preserved-remote safety or live auth/session lifecycle.
 
 Comparison with the source notes stays conservative:
 
