@@ -206,6 +206,8 @@ must stay lab-backed or comparison-only.
 - Name every plugin-owned surface that was proven safe or explicitly blocked,
   including options, custom tables, generated files, activation hooks, cron,
   cache state, and other plugin side effects.
+- Name how plugin-owned ownership changes are revalidated at apply time, or
+  show that the surface is hard-blocked before any mutation.
 - Name the partial file, DB, or plugin side effect class that was classified
   durably and how the next retry was forced to start from fresh evidence.
 - Name the exact upstream Reprint, ZS-Sync, or ForkPress revision or worktree
@@ -213,6 +215,8 @@ must stay lab-backed or comparison-only.
   only.
 - State whether the stale manual-review artifact stays readable for audit but
   cannot authorize a widened retry after remote drift.
+- Name the exact stale snapshot or live hash set that invalidated the old
+  approval and the replay-safe boundary that prevented reuse.
 - Avoid phrases like "production-safe," "production-ready," or "supports
   production push" unless the proof above is attached to the current claim.
 

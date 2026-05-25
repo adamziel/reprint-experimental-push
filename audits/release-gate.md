@@ -10,6 +10,9 @@ support.
 - A lab-shaped route that only matches ingress, endpoint name, or package
   layout is compatibility evidence only; it does not prove the production
   executor ran, the remote was preserved, or stale authority failed closed.
+- A green lab smoke is never enough unless the same request path was re-run
+  against a live remote after drift and the stale attempt failed before any
+  mutation.
 - The claim says whether any comparison to Reprint, ZS-Sync, or ForkPress
   was re-verified against the current upstream commit or worktree state.
 - If that upstream comparison was not re-verified, the claim must label it as
@@ -27,6 +30,8 @@ support.
 - The claim shows plugin-owned state outside the allowlist is either
   discovered or hard-blocked, including options, custom tables, generated
   files, activation hooks, cron, cache state, and other plugin side effects.
+- The claim shows plugin-owned ownership changes are revalidated at apply
+  time, not inherited from stale local metadata.
 - The claim shows any partial file, DB, or plugin side effect is classified
   durably and that retry starts from fresh evidence rather than reused
   approval.
@@ -34,6 +39,8 @@ support.
   cannot authorize a widened retry after the live snapshot changes.
 - The claim includes the exact live hashes, the rejected stale approval, the
   retry scope, and the proof that the remote was preserved for audit.
+- The claim includes the exact stale snapshot or hash set that invalidated
+  the old approval and the exact replay-safe boundary that prevented reuse.
 - The claim includes the exact live snapshot or hash set that invalidated the
   old approval, not just a route-shaped smoke result or a package mount that
   happened to look current.
