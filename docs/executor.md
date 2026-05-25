@@ -76,6 +76,16 @@ The executor is therefore not a general remote write loop:
 - journal inspection never authorizes mutation by itself
 - push auth must be at least as strict as current Reprint HMAC usage
 
+The recovery fence is the journal-side guard that inspect must re-read before
+any mutating branch:
+
+- journal rows carry the claim owner, claim generation, lease expiry, and the
+  recovery fence for the current remote identity
+- inspect is read-only and must confirm fresh live hashes before finish,
+  rollback, or auto can mutate anything
+- if the fence and fresh live hashes do not line up, recovery blocks instead
+  of weakening the auth floor
+
 The pull-to-push bridge is also fixed and one-way:
 
 - exporter discovers the merge base and coverage evidence

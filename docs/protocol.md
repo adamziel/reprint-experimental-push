@@ -173,6 +173,16 @@ The auth floor is never relaxed for push:
 - stronger session material is allowed only when it does not weaken the write
   path or the inspect-first recovery path
 
+The recovery fence is the durable journal-side guard that keeps stale work out
+of mutation:
+
+- journal rows carry the claim owner, claim generation, lease expiry, and the
+  recovery fence that inspect must re-read before any mutating repair
+- inspect is read-only and must confirm fresh live hashes before finish,
+  rollback, or auto can mutate anything
+- if the fence and fresh live hashes do not line up, the branch blocks rather
+  than downgrading the auth floor
+
 The pull/export/import pipeline is the only source of immutable push
 provenance, and push consumes that provenance as immutable input:
 
