@@ -22,14 +22,17 @@ Concrete failure scenarios that still block production wording:
 - plugin-owned state outside the allowlist, including hidden tables, cron
   rows, runtime registries, generated files, caches, and serialized blobs:
   missing proof is live enumeration or an apply-time block for every owned
-  surface, including ones discovered only after the first write;
+  surface, including ones discovered only after the first write; a post-write
+  discovery cannot be widened back into the earlier approval;
 - partial file, DB, or plugin side effects: missing proof is old/new/blocked
   classification for every touched surface before retry, so a mixed write
   cannot be relabeled as success after the committed part;
 - stale manual-review artifacts after drift: missing proof is that the
   artifact stayed audit-only, could not become retry authority for a later
   row/file/relationship-bearing record/remapped target/plugin surface, and
-  was replaced by a fresh retry scope rebuilt from live hashes; and
+  was replaced by a fresh retry scope rebuilt from live hashes; and once a
+  later plugin-owned data trap appears, it is a new boundary unless it is
+  separately enumerated or blocked before write;
 - Reprint, ZS-Sync, or ForkPress comparisons: missing proof is the exact
   upstream state plus a rerun of the same live boundary on this branch, not
   route shape, package layout, reviewer wording, or fixture replay.

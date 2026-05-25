@@ -27,6 +27,7 @@ Do not use production wording unless the branch has all of the following for the
 - any claim that a readable artifact, route-shaped smoke, or comparison note is enough after drift must fail closed unless the remote stayed preserved, the stale approval was rejected before the first write, and the fresh retry scope was rebuilt from live hashes for the same boundary; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
 - any remapped create target discovered during retry is treated as a new boundary until it is separately preserved, rejected, and retried with fresh live hashes; and
+- any plugin-owned data trap outside the allowlist, including hidden options, serialized blobs, generated files, caches, cron rows, or runtime registries, is treated as a live boundary only if it is enumerated before write; otherwise it is blocked, because a post-write discovery cannot be widened back into the earlier approval; and
 - any surviving partial file, DB, or plugin side effect from the earlier boundary stays audit-only until the next retry scope is rebuilt from fresh live hashes; and
 - any claim that a historical Reprint, ZS-Sync, or ForkPress note proves a later live boundary must fail closed unless the note names the exact upstream state, says what it proves here, says what it does not prove here, and the same live boundary was rerun on this branch; and
 - proof for one live boundary does not transfer to a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface, even if the route family, package mount, fixture replay, or reviewer wording is the same; and
@@ -52,6 +53,10 @@ False success to reject:
 - "manual resolution later" is also not success if a remapped create target or
   late-discovered plugin-owned surface was silently folded into the first
   approval instead of getting its own preserve/reject/retry cycle;
+- "manual resolution later" is also not success if a plugin-owned data trap was
+  only discovered after the first write and then backfilled into the earlier
+  approval, because the later surface needs its own preserve/reject/retry
+  cycle or an explicit block;
 - "same route family" is not success if the later boundary was not rerun here
   with the preserved remote, stale rejection point, and fresh live-hash retry
   scope;
@@ -65,6 +70,9 @@ False success to reject:
 - "plugin-safe" is not success if any late-discovered plugin-owned surface was
   folded into the first approval instead of being separately enumerated or
   blocked with its own preserved remote and retry scope.
+- "plugin-safe" is not success if a plugin-owned data trap only became visible
+  after the first write and was then treated as covered by the earlier
+  approval, because post-write discovery cannot widen the earlier boundary.
 - "source-note proof" is not success if the note only matches the same route
   family, package layout, or reviewer wording; shape similarity is not live
   proof of preserved-remote safety, stale-artifact rejection, or retry
