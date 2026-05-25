@@ -8469,3 +8469,46 @@ test('durable pre-commit fence failures stay blocked and do not expose a partial
     'pre-commit fence failure must not emit a recovery-state record',
   );
 });
+
+test('the only acceptable recovery outcomes are old remote, blocked recovery, and fully updated replay', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+
+  const beforeMutationError = captureError(() =>
+    applyPlan(baseSite(), plan, { failBeforeMutation: true }),
+  );
+  assert.ok(beforeMutationError instanceof PushPlanError);
+  assertAcceptableRecoveryState(beforeMutationError.details.recovery);
+  assertRecoveryStateArtifacts(beforeMutationError.details.recovery, 'old-remote');
+  assert.equal(beforeMutationError.details.recovery.artifacts.remote, undefined);
+
+  const partialError = captureError(() =>
+    applyPlan(baseSite(), plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+  assert.ok(partialError instanceof PushPlanError);
+  assertAcceptableRecoveryState(partialError.details.recovery);
+  assertRecoveryStateArtifacts(partialError.details.recovery, 'blocked-recovery');
+  assert.ok(partialError.details.recovery.artifacts.remote);
+  assert.ok(partialError.details.recovery.artifacts.journal);
+
+  const completed = applyPlan(baseSite(), plan);
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+});

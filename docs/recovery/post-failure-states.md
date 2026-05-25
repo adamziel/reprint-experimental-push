@@ -1,45 +1,19 @@
-# Post-Failure Recovery States
+# Recovery Post-Failure States
 
-`src/apply.js` only accepts three recovery outcomes after an atomic apply
-failure:
+`applyPlan()` only has three acceptable post-failure outcomes:
 
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery`
+- `old-remote`: no remote mutation is allowed to land, and the journal must
+  carry the plan metadata needed for recovery inspection.
+- `fully-updated-remote`: every planned mutation already exists, replay is
+  inert, and the recovery state only needs the completed journal artifact.
+- `blocked-recovery`: a partial mutation or drifted state was observed, and the
+  recovery state must retain both journal and remote artifacts so the operator
+  can inspect the boundary instead of guessing.
 
-These are the only acceptable post-failure states for this lane. A retry must
-never duplicate inserts or resurrect stale local data.
+The recovery model is intentionally stricter than a "best effort rollback"
+claim. A partial remote mutation without artifacts is a blocker, not a safe
+completion.
 
-The recovery boundary is intentionally narrow:
-
-- pre-commit failures stay `old-remote`
-- completed-plan replay stays `fully-updated-remote`
-- any partial or drifted replay becomes `blocked-recovery` with artifacts
-
-## Required artifacts
-
-- `old-remote`: the journal must explain why no remote mutation is committed.
-- `fully-updated-remote`: the replay journal must prove the completed plan stays inert.
-- `blocked-recovery`: the recovery result must include both journal and remote artifacts.
-
-## Failure boundaries
-
-The following boundaries must remain `old-remote`:
-
-- failure before mutation
-- failure after staging
-- failure after dependency validation
-
-Completed-plan replay must remain `fully-updated-remote`, and stale replay must
-block if the current remote no longer matches the completed journal envelope.
-
-`blocked-recovery` is only acceptable when the journal and remote artifacts are
-both preserved for inspection. That is what distinguishes a safe retry from a
-release blocker.
-
-Any partial remote mutation without recovery artifacts is a blocker, not a
-safe retry target.
-
-Durable journal failures do not widen the contract: they must still resolve to
-one of the same three states, with the same artifact requirements, so retrying
-never becomes a license to duplicate inserts or revive stale local data.
+Durable journal evidence is the production requirement. Lab JSON evidence can
+help prove the model, but it is not a substitute for a persisted journal,
+fsync-backed writes, fencing, or restartable inspection.
