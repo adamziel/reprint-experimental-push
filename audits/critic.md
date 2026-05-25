@@ -20,9 +20,10 @@ The next command reliable-executor must produce is a named real-site
 preflight/release invocation that can be rerun on demand and that prints, in
 one run, the live `REPRINT_PUSH_SOURCE_URL`, the executor identity, the
 preserved remote that remained auditable after rejection, the exact
-rejection point before the first write, and the journal/recovery inspection
-needed to audit retry scope. Until that exact command exists and is rerun on
-a real remote, commit `2b00b189` stays a compatibility wrapper only.
+rejection point before the first write, the journal/recovery inspection
+needed to audit retry scope, and the first live executor/auth/preserved-
+remote boundary. Until that exact command exists and is rerun on a real
+remote, commit `2b00b189` stays a compatibility wrapper only.
 
 ## 2026-05-25 Real-Site Command Still Missing
 
@@ -84,6 +85,8 @@ plugin-owned surface classification remain claims, not release proof.
 What still has to be shown before production wording is credible:
 
 - the exact real-site command name, not just a Playground or lab smoke;
+- the exact command string must be rerunnable without prose changes, and it
+  must name the live `REPRINT_PUSH_SOURCE_URL` it was run against;
 - the exact live boundary and exact stale-drift case that was rerun here;
 - the exact rejection point before the first write;
 - preserved-remote evidence that stays inspectable after rejection;
@@ -103,6 +106,19 @@ What still has to be shown before production wording is credible:
 - a conflict-policy statement that says whether the next action is block,
   preserve, retry, or manual review, while still preserving the remote for
   audit and retry.
+
+Minimum evidence for the next release-shaped proof:
+
+- one branch-local command string that can be rerun unchanged;
+- one live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` used by
+  that command;
+- one preserved remote that stays inspectable after rejection;
+- one exact rejection point before the first write;
+- one apply-time revalidation result that shows the live boundary was checked
+  again before mutation;
+- one journal/recovery inspection that explains retry scope; and
+- one auth/session boundary record that proves the command was not just a
+  wrapper around lab state.
 
 If those items are absent, then route shape, package layout, reviewer wording,
 fixture replay, and `finalMatchesLocal` remain compatibility evidence only.
