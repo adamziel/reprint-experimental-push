@@ -43,7 +43,7 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 
 - `No data loss`: no current test mutates the live source and then proves the same writes survived the release boundary without loss, duplication, or reordering.
 - `Reliable`: no current test composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks into one enforced release decision against real storage.
-- `Fast`: no current test reports a measured live-path throughput result or a release threshold; the best available speed evidence is still refusal-only, so any release command must surface `speed unclaimed` explicitly instead of omitting the claim.
+- `Fast`: no current test reports a measured live-path throughput result or a release threshold; the best available speed evidence is still refusal-only, so any release command must surface `speed unclaimed` explicitly instead of omitting the claim. A green refusal-only benchmark is not a release verdict.
 
 | Test surface | What it really proves | What it does not prove | Release reading |
 | --- | --- | --- | --- |
@@ -94,7 +94,7 @@ The test surfaces themselves are not stronger than that evidence boundary. [`aud
 | Missing proof | No required `verify` / `release` / `verify:release` script, no checked-in CI workflow, no measured live-path throughput, no live-source mutation proof | The objective requires a mandatory, production-bound release decision | Blocks release |
 | Release blockers | `speed unclaimed` remains unproven by a required command, live-source boundary not exercised, safety matrix not composed in one entrypoint | Any green optional run can still bypass the real release decision | Hard blocker |
 
-Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path. A passing lab suite here is still compatible with a release that would lose writes, fail under a crash, or have no measured throughput at all.
+Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path. A passing lab suite here is still compatible with a release that would lose writes, fail under a crash, or have no measured throughput at all. Until a required release command reaches the live source, a green test run remains regression evidence only.
 
 For a narrower test-by-test breakdown, see [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md).
 
