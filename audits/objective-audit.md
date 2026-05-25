@@ -47,14 +47,14 @@ Current proof must be judged against the live-source release boundary, not again
 
 The strongest current runnable evidence still falls into four classes:
 
-- executable proof: none that reaches the live-source boundary; the strongest tests are [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js), [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js), [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js), and [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js), but all remain fixture-, model-, or refusal-backed
-- lab / fixture proof: `npm test` and the fixture-backed or file-backed smokes
+- executable proof: none that reaches the live-source boundary; the strongest tests are [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js), [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js), [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js), and [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js), but every one of them remains fixture-, model-, or refusal-backed rather than live-source-backed
+- lab / fixture proof: `npm test` plus the optional file-backed and Playground smokes
 - docs-only proof: prose in `README.md`, `progress.html`, and the supervisor/audit notes
-- missing proof: live-source apply-time mutation, durable crash survival on production storage, measured live-path throughput, and a required release gate
+- missing proof: live-source apply-time mutation, durable crash survival on production storage, measured live-path throughput, and a required release gate that can fail closed when those proofs are absent
 
 The test surfaces themselves are not stronger than that evidence boundary. [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md) records the same limit from the test side: the suite proves guardrails and refusals, not no data loss, reliability, or speed at the live-source boundary.
 
-Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path.
+Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path. A passing lab suite here is still compatible with a release that would lose writes, fail under a crash, or have no measured throughput at all.
 
 For a narrower test-by-test breakdown, see [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md).
 
@@ -103,7 +103,7 @@ So the test suite currently proves three things and only three things at the rel
 2. lab and fixture states can be classified consistently, and
 3. the audit can detect missing proof.
 
-It does not prove no data loss, reliability, or speed on the real release path, and it does not substitute for a required release command that must fail closed on missing live-source evidence.
+It does not prove no data loss, reliability, or speed on the real release path, and it does not substitute for a required release command that must fail closed on missing live-source evidence. Put differently: `node --test` can pass while the production release is still blocked.
 
 Release inference rule: if a test only shows fixture integrity, redaction, refusal, or lab replay, it can support a blocker note, but it cannot support `no data loss`, `reliable`, or `fast` at the live-source boundary.
 
