@@ -414,6 +414,46 @@ test('bounds file delete conflict evidence while preserving unrelated remote-onl
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('stops a local file deletion conflict while preserving matching independent edits and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  remote.files['index.php'] = '<?php echo "Remote secret file update";';
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const conflictJson = JSON.stringify(conflict);
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.preconditions.length, 0);
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.resourceKey, 'file:index.php');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(conflictJson.includes('Remote secret file update'), false);
+  assert.equal(conflictJson.includes('shared about'), false);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['index.php'], '<?php echo "Remote secret file update";');
+  assert.equal(remote.files['about.php'], '<?php echo "shared about";');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('stops a local file deletion when the remote turned the same file into a directory', () => {
   const base = baseSite();
   const local = baseSite();
