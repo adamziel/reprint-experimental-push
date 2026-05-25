@@ -211,7 +211,8 @@ The failure scenarios that still need explicit proof are:
   the reject.
 - A create request maps to a different live identity than the local plan
   expected; the missing proof is either a safe remap with preserved identity
-  audit or a hard block before mutation.
+  audit, a separately recorded retry artifact, or a hard block before
+  mutation.
 - A plugin owns data outside the allowlist, such as options, custom tables,
   generated files, activation hooks, cron rows, cache entries, runtime
   registries, or serialized blobs hidden behind a single row; the missing
@@ -244,6 +245,9 @@ Release-gate addendum for the next production claim:
   point before mutation, and that the old artifact cannot authorize a retry
   against a different row, file, relationship-bearing record, or plugin-owned
   surface.
+- Any retry claim must show a newly recorded retry artifact tied to the
+  preserved remote, not a reused review note or stale approval, and must
+  prove that the retry rebuilt scope from fresh live evidence after drift.
 - Any create-time identity claim must show either a durable remap proof or a
   hard block before write on the live remote; a fixture mount, route shape, or
   `finalMatchesLocal` result is not enough.
