@@ -66,6 +66,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Compressing buffered evidence can save memory, but it cannot stand in for a receipt or commit record.
 - A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
 - A compressed receipt log can reduce storage, but it still cannot stand in for the original receipt keys or the guarded recovery record.
+- A compressed receipt summary can reduce journal bytes, but it still cannot replace the raw receipt keys needed to classify a crash, retry, or pause.
 - A batched journal flush can reduce fsync overhead, but it still cannot replace the raw chunk, row, or group receipts needed for recovery.
 - A fresh remote index plus a cached plugin package hash still cannot skip dependency checks, metadata writes, or the atomic-group barrier.
 - A compressed package cache still cannot skip plugin dependency checks or the atomic-group barrier, because package identity and transport compression do not prove group commit completion.
