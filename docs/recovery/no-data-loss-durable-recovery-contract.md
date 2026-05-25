@@ -12,6 +12,7 @@ This lane accepts only three post-failure states:
 - Failure after staging stays `old-remote`.
 - Failure after dependency validation stays `old-remote`.
 - Replaying a completed plan stays `fully-updated-remote` and must be inert.
+- A completed replay must not reopen mutation work, duplicate inserts, or surface stale local data as new remote state.
 - Any partial remote mutation must surface `blocked-recovery` with inspectable artifacts.
 
 The failure envelope is intentionally narrow:
