@@ -4,12 +4,6 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-# Progress Log
-
-This log records evidence present in this repository. Percentages must remain
-conservative until they are backed by executable tests, integration runs, or
-linked implementation artifacts.
-
 ## 2026-05-25 - Public Status Audit 13:42:27
 
 <a id="2026-05-25-public-status-audit-134227"></a>
