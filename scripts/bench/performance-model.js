@@ -1928,6 +1928,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-hash-backpressure',
+    proposal: 'use a compressed remote index plus cached file hashes to skip backpressure pauses during large-upload chunk hashing',
+    rejectedBecause: 'planning evidence and cached hashes can trim duplicate hashing, but they cannot prove the sender still has the bounded queue order and journal evidence needed to recover after pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-backpressure',
     proposal: 'use a compressed remote index plus cached manifest hashes to skip backpressure pauses during large-upload resume',
     rejectedBecause: 'planning evidence and cached manifest hashes can trim lookup work, but they cannot prove the bounded queue order and durable chunk acknowledgements needed to recover after pause or crash',
