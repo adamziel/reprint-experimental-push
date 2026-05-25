@@ -9,9 +9,9 @@ Evidence checked:
 - `git rev-parse --short HEAD`
 
 What changed:
-- `origin/lane/critic` is now recorded at `a1c9714b`.
+- `origin/lane/critic` is now recorded at `275da94b`.
+- `origin/lane/progress-publisher` is now recorded at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` is now recorded at `53d4083d`.
-- `origin/lane/progress-publisher` is still recorded at `7695e1f9`.
 - `origin/lane/same-plan-wordpress-graph-create` is still recorded at `24c58564`.
 - The audit verdict remains unchanged: the repository is still not releasable as a production WordPress push path.
 - The current remote state still does not prove the missing production-backed auth/session lifecycle, durable journal ownership/lease/fencing/replay path, or production-safe live source mutation boundary.
@@ -26,7 +26,7 @@ Push result:
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
 - Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Relative to `origin/main`: `ahead 1227, behind 198`
+- Relative to `origin/main`: `ahead 1230, behind 198`
 
 Next supervisor nudge:
 - Re-poll `origin/lane/reliable-executor` only when it advances past `0c4fd10f` with new executable production-backed proof; otherwise keep the audit verdict and release gates closed.
