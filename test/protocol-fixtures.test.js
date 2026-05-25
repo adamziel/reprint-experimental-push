@@ -185,6 +185,34 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
   ]);
 });
 
+test('remote snapshot listing fixture keeps planning-only hash discovery separate from write authority', () => {
+  const snapshotListing = readJson('fixtures/protocol/push-remote-snapshot-listing-contract.json');
+
+  assert.equal(
+    snapshotListing.contract_id,
+    'push-remote-snapshot-listing-contract-one-remote-one-local',
+  );
+  assert.equal(
+    snapshotListing.purpose,
+    'proves the live remote hash listing is planning-only, cursorable for larger scopes, and never becomes write authority',
+  );
+  assert.equal(snapshotListing.snapshot_listing.pageable, true);
+  assert.ok(snapshotListing.snapshot_listing.evidence.includes('returns live remote comparison evidence for planning only'));
+  assert.ok(snapshotListing.snapshot_listing.evidence.includes('may page through large sites'));
+  assert.ok(snapshotListing.snapshot_listing.evidence.includes('never upgrades into write authority'));
+  assert.ok(snapshotListing.snapshot_listing.evidence.includes('dry-run receipts must not promote a snapshot cursor into a lock'));
+  assert.ok(snapshotListing.snapshot_listing.evidence.includes('apply must revalidate fresh live evidence before every batch and at the storage boundary'));
+  assert.equal(snapshotListing.auth_floor.required, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(snapshotListing.auth_floor.read_only_call, 'snapshot hash listing');
+  assert.deepEqual(snapshotListing.required_invariants, [
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'snapshot hash listing is cursorable for large sites',
+    'dry-run is a receipt, not a lock',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+  ]);
+});
+
 test('push protocol docs keep the production ladder, pull bridge, and topology contract aligned', () => {
   assert.ok(
     protocolDocs.includes(
