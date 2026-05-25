@@ -19,7 +19,9 @@ the branch now carries explicit release-boundary wording, a missing-secret gate,
 a timeout-protected release verifier, and a replay-idempotency proof, yet
 production auth/session lifecycle, durable journal ownership with
 lease/fencing/replay wiring, and exact replay output equivalence are still not
-proven on a real WordPress source site.
+proven on a real WordPress source site. The recovery lane also remains dirty
+with an unresolved `UU progress.html` conflict, so the recovery story is still
+an active risk rather than settled evidence.
 
 ## Blocking Gaps
 
@@ -79,4 +81,4 @@ These are the missing proofs that must land before the project can claim product
 
 ## Current Bottom Line
 
-The project has credible lab evidence for staged transport, stale-claim handling, replay idempotency, and some guarded writes. It still does not prove production auth/session lifecycle, durable journal ownership with lease/fencing/replay, preserved-remote retry, full graph identity safety, or general plugin driver coverage. Until those are demonstrated in production-backed code, the honest claim remains: fixture-scoped and lab-backed push evidence, blocked for production.
+The project has credible lab evidence for staged transport, stale-claim handling, replay idempotency, and some guarded writes. It still does not prove production auth/session lifecycle, durable journal ownership with lease/fencing/replay, preserved-remote retry, full graph identity safety, or general plugin driver coverage. The recovery lane conflict is also still active evidence, so the honest claim remains: fixture-scoped and lab-backed push evidence, blocked for production.
