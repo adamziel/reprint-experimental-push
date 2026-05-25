@@ -16,8 +16,16 @@
     "push_snapshot_hashes": "lists the live remote comparison set for planning only",
     "push_plan_dry_run": "uploads the canonical plan as eligibility evidence and returns a receipt without mutating target resources",
     "push_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
-    "push_journal": "reads durable claim, lease, and fencing evidence without granting write authority",
+    "push_journal": "reads durable claim, lease, fencing, and idempotency evidence without granting write authority",
     "push_recover": "starts with inspect and only mutates when journal evidence plus fresh live hashes prove the action"
+  },
+  "push_sequence": {
+    "preflight": "bind the persisted pull base to the live remote identity and mint a short-lived push session",
+    "snapshot_hash_listing": "collect the live remote comparison set for planning only",
+    "dry_run_plan_upload": "upload the canonical plan as eligibility evidence and receive a receipt, not a lock",
+    "mutation_batch_apply": "revalidate live remote evidence before every batch and at the storage boundary",
+    "journal_inspect": "read durable evidence without authorizing mutation",
+    "recovery_inspect": "inspect first, then allow mutating repair only when fresh live hashes prove the action"
   },
   "restart_proof": {
     "persisted_evidence": [
@@ -29,11 +37,15 @@
       "snapshot_id",
       "coverage_hash",
       "dry_run_id",
-      "journal_cursor"
+      "journal_cursor",
+      "journal_row",
+      "live_hash_page"
     ],
     "invariants": [
       "dry-run and apply are separate remote operations",
       "remote snapshot hash listing is planning evidence, not write authority",
+      "dry-run is a receipt, not a lock",
+      "apply must revalidate the live remote before every batch and at the storage boundary",
       "journal inspection is read-only and never authorizes mutation by itself",
       "recovery must begin with inspect before any mutating repair"
     ]

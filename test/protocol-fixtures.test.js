@@ -148,8 +148,28 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(mapping.pull_exports.persisted_base_package.remote_site_id, 'remote-example');
   assert.equal(mapping.push_bindings.push_snapshot_hashes, 'lists the live remote comparison set for planning only');
   assert.equal(
+    mapping.push_sequence.snapshot_hash_listing,
+    'collect the live remote comparison set for planning only',
+  );
+  assert.equal(
+    mapping.push_sequence.dry_run_plan_upload,
+    'upload the canonical plan as eligibility evidence and receive a receipt, not a lock',
+  );
+  assert.equal(
+    mapping.push_sequence.mutation_batch_apply,
+    'revalidate live remote evidence before every batch and at the storage boundary',
+  );
+  assert.equal(
     mapping.restart_proof.persisted_evidence.includes('journal_cursor'),
     true,
+  );
+  assert.equal(mapping.restart_proof.persisted_evidence.includes('journal_row'), true);
+  assert.equal(mapping.restart_proof.persisted_evidence.includes('live_hash_page'), true);
+  assert.ok(mapping.restart_proof.invariants.includes('dry-run is a receipt, not a lock'));
+  assert.ok(
+    mapping.restart_proof.invariants.includes(
+      'apply must revalidate the live remote before every batch and at the storage boundary',
+    ),
   );
   assert.ok(mapping.restart_proof.invariants.includes('recovery must begin with inspect before any mutating repair'));
 });
