@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked-in command yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is that the current evidence still stops short of live-source release proof, so the release gate must stay closed.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked-in command yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is not the existence of helper smokes; it is the absence of a checked-in release gate that owns the live-source verdict, so the release gate must stay closed.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -86,7 +86,7 @@ Minimum properties of that gate:
 
 1. it must run on the real release boundary, not just on fixtures or Playground storage
 2. it must revalidate apply-time live state before mutation
-3. it must fail closed if auth/session, journal, leases/fencing, graph identity, plugin-driver, or topology proof is still lab-backed
+3. it must fail closed if auth/session, journal durability, leases/fencing, graph identity, plugin-driver, or topology proof is still lab-backed
 4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
 5. it must be the command CI or another default entrypoint actually invokes
 
