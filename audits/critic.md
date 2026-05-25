@@ -254,6 +254,12 @@ only until this branch reruns the same live boundary and states what each note
 proves here and what it does not prove here. Until then, they are useful for
 design lineage, not for release claims.
 
+The missing repo proof is not another provenance note. It is a rerunnable live
+push boundary on this branch with preserved-remote retention, production
+WordPress auth/session lifecycle, apply-time revalidation, durable journal
+semantics outside Playground, graph identity, and plugin-driver coverage for
+late-discovered plugin-owned surfaces on the same mutation.
+
 ## Release-gate checklist
 
 Before any production wording, the project must show:
