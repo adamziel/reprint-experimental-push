@@ -135,6 +135,9 @@ identity across `remote-base` and `remote-changed`:
   recovery into one production-shaped contract, and is the canonical bridge
   when a review needs the auth floor, session mint, journal row, and recovery
   inspect proof together.
+- `push-session-journal-proof.json` is the restart-proof tuple for the minted
+  push session, the fenced journal row, and inspect-first recovery when a
+  review needs the same production claim chain in its smallest form.
 - `push-auth-session-journal-recovery-inspect-contract.json` and
   `push-recovery-inspect-contract.json` are the compact inspect-first gates
   that keep read-only recovery classification explicit before any mutation.

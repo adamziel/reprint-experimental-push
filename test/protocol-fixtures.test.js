@@ -223,6 +223,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const authSessionJournalRecoveryInspectContract = readJson(
     'fixtures/protocol/push-auth-session-journal-recovery-inspect-contract.json',
   );
+  const sessionJournalProofCompact = readJson('fixtures/protocol/push-session-journal-proof.json');
   const journalInspectContract = readJson('fixtures/protocol/push-journal-inspect-contract.json');
   const dryRunApplyRevalidationContract = readJson(
     'fixtures/protocol/push-dry-run-apply-revalidation-contract.json',
@@ -601,6 +602,18 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     productionRevalidationContract.required_invariants.includes(
       'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
+  assert.equal(sessionJournalProofCompact.proof_id, 'push-session-journal-proof-one-remote-one-local');
+  assert.equal(sessionJournalProofCompact.session.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(sessionJournalProofCompact.session.remote_site_id, 'remote-example');
+  assert.equal(sessionJournalProofCompact.journal_fencing.claim_generation, 4);
+  assert.equal(sessionJournalProofCompact.journal_fencing.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(sessionJournalProofCompact.recovery.inspect_mode, 'inspect');
+  assert.equal(sessionJournalProofCompact.recovery.mutates, false);
+  assert.ok(
+    sessionJournalProofCompact.required_invariants.includes(
+      'journal inspection is read-only and inspect must come before mutating recovery',
     ),
   );
   assert.equal(
