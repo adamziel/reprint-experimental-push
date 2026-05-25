@@ -2,10 +2,11 @@
 
 ## 2026-05-25 Production Wording Still Fails Without a Real-Site Release Command
 
-The branch still cannot claim production-grade push support because `package.json`
-now exposes a live preflight wrapper, but not a branch-local, named real-site
-release command that can be rerun unchanged against a live local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL` and preserve the rejected remote for audit.
+The branch still cannot claim production-grade push support because `npm run
+verify:release` may strengthen the release topology, but it does not yet prove a
+branch-local, named real-site release command that can be rerun unchanged against
+a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` and preserve the
+rejected remote for audit.
 
 Scenario: someone upgrades a green Playground run or a polished script name into
 "production-ready push". Missing proof: the repo still lacks a live release
@@ -13,7 +14,8 @@ command that prints the exact executor/auth boundary before the first write, the
 preserved remote that remained inspectable after rejection, the exact rejection
 point, the apply-time revalidation result, and the journal/recovery inspection
 used to rebuild retry scope. Without those facts from one rerun, the claim is
-compatibility evidence only.
+compatibility evidence only, even if `verify:release` now proves more of the
+release topology than the older smoke wrappers did.
 
 Scenario: a reviewer treats a source-note comparison as current retry authority.
 Missing proof: Reprint, ZS-Sync, and ForkPress notes are still historical input
