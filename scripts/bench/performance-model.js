@@ -2515,6 +2515,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['atomic-groups', 'visibility-boundary'],
   },
   {
+    id: 'unbounded-db-parallelism-skips-plugin-install-atomic-group-commit',
+    proposal: 'let plugin-install row batches run without per-table or per-group limits and finalize them as one faster combined commit',
+    rejectedBecause: 'unbounded parallelism can reduce queue time, but it cannot prove which group owns each row batch or preserve the atomic-group barrier after failure',
+    rejectedGate: 'group',
+    violates: ['parallelism-limits', 'atomic-groups', 'row-preconditions', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-parallel-owner-index-scans-skips-live-write',
     proposal: 'use a compressed remote index and parallel owner scans to skip the live write check during a plugin change',
     rejectedBecause: 'parallel owner scans can size batches faster, but they cannot authorize a live write or replace the storage-boundary compare',

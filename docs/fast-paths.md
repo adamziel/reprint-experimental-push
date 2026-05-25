@@ -1267,6 +1267,7 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - Compression cannot make encoded bytes the canonical resource value.
 - Parallelism cannot bypass the atomic group commit barrier.
 - Parallelism cannot finalize large uploads or plugin installs from multiple atomic groups at once, because the combined drain hides which group owns the partial failure and which receipts still need replay.
+- Unbounded database parallelism cannot skip the plugin-install atomic-group commit, because queue speed does not prove which group owns each row batch or preserve the visibility barrier after failure.
 - Parallelism limits still matter even when chunk hashing or row batching is
   already guarded by receipts; unbounded fanout can still outrun the journal
   and make a retry ambiguous after a pause.
