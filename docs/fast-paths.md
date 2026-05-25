@@ -69,6 +69,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed receipt log can reduce storage, but it still cannot stand in for the original receipt keys or the guarded recovery record.
 - A compressed durable receipt log still cannot authorize apply after a crash, because receipt compression does not prove the live compare or the atomic-group barrier survived failure.
 - A compressed receipt summary can reduce journal bytes, but it still cannot replace the raw receipt keys needed to classify a crash, retry, or pause.
+- Batched receipt flushes can reduce fsync overhead, but they still cannot prove plugin-update activation or any other atomic-group commit survived failure.
 - A compressed remote index plus a cached file hash still cannot skip the guarded publish step for a large upload, because planning evidence and cached hashes do not prove chunk receipts or the live compare survived failure.
 - A compressed remote index plus a cached chunk ledger still cannot skip the guarded publish step for a large upload, because planning evidence and cached ledgers do not prove which chunk acknowledgements survived failure or that the live compare still holds.
 - A batched journal flush can reduce fsync overhead, but it still cannot replace the raw chunk, row, or group receipts needed for recovery.
