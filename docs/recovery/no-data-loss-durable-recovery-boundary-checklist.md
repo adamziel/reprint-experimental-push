@@ -14,6 +14,7 @@ Boundary checklist:
 - replay of a completed plan with a matching journal must return `fully-updated-remote`
 - replay of a completed plan with remote drift must return `blocked-recovery` with journal and remote artifacts
 - retry after a blocked replay must remain blocked until the remote matches the journaled after state
+- replay of a completed plan must not duplicate inserts or resurrect stale local file content
 - any partial remote mutation without a durable recovery artifact is a release blocker
 
 Test fixture scope:
@@ -28,4 +29,3 @@ Production scope:
 - flush or fsync semantics are required
 - claim fencing or lease ownership is required so only one writer advances recovery state
 - recovery inspection data must be restart-readable without replay
-
