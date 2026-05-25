@@ -17354,3 +17354,13 @@ test('durable recovery inspect blocks live drift after a completed replay and ke
     'ok',
   );
 });
+
+test('the durable recovery boundary remains fail-closed until a release-gate command exists', () => {
+  const packageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+  assert.equal(Object.hasOwn(packageJson.scripts, 'verify:release'), false);
+  assert.equal(
+    packageJson.scripts['verify:release'],
+    undefined,
+    'release-gate proof cannot be wired in this repo until verify:release exists',
+  );
+});
