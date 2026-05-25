@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Reconciliation 02:46:18
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:46:18 CEST`) and kept the visible last-updated stamp current.
+- Reconciled the first-screen gate count so the public summary now says
+  `0/5`, matching the five named open proof areas instead of implying a
+  smaller checklist.
+- Public status remains conservative: 89 Node tests pass, production auth
+  plus durable journaling is still the gate, and the WordPress executor/auth,
+  recovery journal, Docker/Playground integration, graph identity, and plugin
+  drivers remain pending.
+- Evidence trail: [progress.html](../progress.html), [docs/executor.md](executor.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
+  [docs/supervisor-feedback.md](supervisor-feedback.md), and this log.
+
 ## 2026-05-25 - Public Status Refresh 02:45:34
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
