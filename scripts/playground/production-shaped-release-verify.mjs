@@ -15,6 +15,7 @@ const credentials = {
   password: 'reprint-push-admin-app-password',
 };
 const requireProductionDurableJournal = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL === '1';
+const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
 
 const protocolExtension = {
   stages: [
@@ -56,6 +57,165 @@ const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT 
 if (!username || !applicationPassword) {
   username = credentials.username;
   applicationPassword = credentials.password;
+}
+
+if (requireProductionAuthSession) {
+  if (!liveSourceUrl) {
+    process.stdout.write(
+      JSON.stringify(
+        {
+          ok: false,
+          topology: {
+            sourceUrl: liveSourceUrl,
+            remoteBase: null,
+            remoteChanged: null,
+            localEdited: null,
+          },
+          boundary: {
+            firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+            status: 'unimplemented',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            durableJournal: {
+              storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+              verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+            },
+            authSession: {
+              required: 'production-auth-session',
+              observed: 'missing-live-source',
+              verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            },
+          },
+          protocolExtension,
+          preflight: {
+            status: 0,
+            authSessionType: 'missing-live-source',
+            routeProfile: 'production-shaped',
+            session: {
+              id: '',
+              type: 'missing-live-source',
+            },
+          },
+          releaseProof: {
+            ok: false,
+            status: 409,
+            code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    process.stdout.write('\n');
+    process.exit(1);
+  }
+
+  const client = authenticatedHttpClient({
+    sourceUrl: liveSourceUrl,
+    credential: credentials,
+    routeProfile: 'production-shaped',
+  });
+  let preflight;
+  try {
+    preflight = await client.signedGet('/preflight');
+  } catch (error) {
+    process.stdout.write(
+      JSON.stringify(
+        {
+          ok: false,
+          topology: {
+            sourceUrl: liveSourceUrl,
+            remoteBase: null,
+            remoteChanged: null,
+            localEdited: null,
+          },
+          boundary: {
+            firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+            status: 'unimplemented',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            durableJournal: {
+              storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+              verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+            },
+            authSession: {
+              required: 'production-auth-session',
+              observed: 'unreachable-live-source',
+              verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            },
+            liveSource: {
+              url: liveSourceUrl,
+              verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+              error: error instanceof Error ? error.message : String(error),
+            },
+          },
+          protocolExtension,
+          preflight: {
+            status: 0,
+            authSessionType: 'unreachable-live-source',
+            routeProfile: 'production-shaped',
+            session: {
+              id: '',
+              type: 'unreachable-live-source',
+            },
+          },
+          releaseProof: {
+            ok: false,
+            status: 409,
+            code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    process.stdout.write('\n');
+    process.exit(1);
+  }
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: liveSourceUrl,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+          authSession: {
+            required: 'production-auth-session',
+            observed: preflight.body.auth.session.type,
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+        },
+        protocolExtension,
+        preflight: {
+          status: preflight.status,
+          authSessionType: preflight.body.auth.session.type,
+          routeProfile: preflight.body.routeProfile,
+          session: {
+            id: preflight.body.session.id,
+            type: preflight.body.session.type,
+          },
+        },
+        releaseProof: {
+          ok: false,
+          status: 409,
+          code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  process.exit(1);
 }
 
 const remoteServer = await startPlaygroundServer(
@@ -156,6 +316,61 @@ try {
         process.stdout.write('\n');
         process.exit(1);
       }
+
+      if (requireProductionAuthSession && preflight.body.auth.session.type !== 'production-auth-session') {
+        process.stdout.write(
+          JSON.stringify(
+            {
+              ok: false,
+              topology: {
+                sourceUrl: liveSourceUrl,
+                remoteBase: remoteServer.baseUrl,
+                remoteChanged: remoteChangedServer.baseUrl,
+                localEdited: localServer.baseUrl,
+              },
+              boundary: {
+                firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+                status: 'unimplemented',
+                verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+                durableJournal: {
+                  storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+                  verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                },
+                authSession: {
+                  required: 'production-auth-session',
+                  observed: preflight.body.auth.session.type,
+                  verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+                },
+              },
+              protocolExtension,
+              preflight: {
+                status: preflight.status,
+                authSessionType: preflight.body.auth.session.type,
+                routeProfile: preflight.body.routeProfile,
+                session: {
+                  id: preflight.body.session.id,
+                  type: preflight.body.session.type,
+                },
+              },
+              releaseProof: {
+                ok: false,
+                status: 409,
+                code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+              },
+              dryRun: proof.dryRun,
+              apply: proof.apply,
+              recoveryInspect: proof.recoveryInspect,
+              after: proof.after,
+              dbJournal: proof.dbJournal,
+            },
+            null,
+            2,
+          ),
+        );
+        process.stdout.write('\n');
+        process.exit(1);
+      }
+
       assert.equal(proof.ok, true, JSON.stringify(proof, null, 2));
       assert.equal(proof.preflight.status, 200);
       assert.equal(preflight.body.auth.session.type, 'application-password-basic');

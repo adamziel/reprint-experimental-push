@@ -120,14 +120,34 @@ test('production-shaped release verify command fails closed when production dura
   });
 
   assert.equal(proof.status, 1, proof.stderr);
+  assert.equal(proof.stdout.includes('PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED'), true);
+});
+
+test('production-shaped release verify command fails closed when production auth/session lifecycle is explicitly required', () => {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:1',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:1',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /"ok": false/);
   assert.match(
     proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}\s*\}/,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\},\s*"authSession": \{\s*"required": "production-auth-session",\s*"observed": "unreachable-live-source",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\},\s*"liveSource": \{\s*"url": "http:\/\/127\.0\.0\.1:1",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"error": "fetch failed"\s*\}\s*\}/,
   );
   assert.match(
     proof.stdout,
-    /"releaseProof": \{\s*"ok": false,\s*"status": 501,\s*"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}/,
+    /"releaseProof": \{\s*"ok": false,\s*"status": 409,\s*"code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/,
   );
 });
 
