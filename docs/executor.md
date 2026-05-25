@@ -133,6 +133,11 @@ one local edited site, with the same remote identity observed twice:
 - `runner` is the only actor that may preflight, plan, upload, inspect, and
   recover.
 
+The machine-readable topology proof lives in
+[`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).
+Use it when a test needs to assert the one-remote, one-local, one-drift
+shape without pulling in the larger auth or recovery fixtures.
+
 Docker and Playground use the same role split and the same route names. The
 only difference is where the runner lives:
 

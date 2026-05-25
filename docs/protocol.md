@@ -80,10 +80,6 @@ already establishes:
 - push journal and push recover inspect durable evidence first, then permit
   mutating recovery only when fresh live hashes prove the action
 
-In other words, the pull/export/import pipeline produces immutable provenance,
-and the push executor consumes that provenance without ever rewriting it to
-make stale evidence look current.
-
 The mapping is intentionally one-way:
 
 | Pull artifact or stage | Push consumer | Boundary rule |
