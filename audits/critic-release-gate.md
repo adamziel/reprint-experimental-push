@@ -34,10 +34,12 @@ Do not use production wording unless the branch has all of the following for the
   rejection point before the first write, and the journal/recovery inspection
   needed to audit retry scope;
 - commit `bd9ef3e8` and a completed `npm run verify:release` run are
-  retained-source evidence on this baseline, but they still do not satisfy
-  production proof until the same branch shows live WordPress auth/session
-  lifecycle, durable journal semantics, graph identity, and plugin-driver
-  coverage on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+  retained-source evidence on this baseline, including `authSessionType`,
+  minted session shape, `applyCommitted`, and `durableJournal.rows: 17`, but
+  they still do not satisfy production proof until the same branch shows live
+  WordPress auth/session lifecycle, durable journal semantics, graph identity,
+  and plugin-driver coverage on a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`;
 - the supervised reliable-executor lane at remote head `bd9ef3e8` is stronger
   retained-source lab evidence than the baseline, but it still does not prove
   production-grade push support on this branch unless the same live boundary is

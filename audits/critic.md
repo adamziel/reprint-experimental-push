@@ -258,10 +258,12 @@ all of the following to be explicit and exercised:
 - a replayable live command and receipt trail that lets a reviewer audit the
   exact rejection, retry scope, and preserved remote without manual resolution.
 
-The reliable-executor lane's retained-source `verify:release` run is still
-useful lab evidence, but it is not production proof for this branch until the
-same live boundary is rerun here and the preserved remote remains auditable
-and retryable.
+The supervised reliable-executor lane's completed retained-source
+`verify:release` run is now material evidence, including the explicit
+`authSessionType`, minted session shape, `applyCommitted`, and
+`durableJournal.rows: 17` details. That is useful lab progress, but it still
+is not production proof for this branch until the same live boundary is rerun
+here and the preserved remote remains auditable and retryable.
 
 ## Current verdict
 
@@ -333,8 +335,9 @@ Before any production wording, the project must show:
   name the exact upstream state or the exact live boundary on this worktree;
 - the supervised reliable-executor lane's retained-source `verify:release`
   result is treated as project evidence only, not as proof that this branch has
-  its own rerunnable live boundary, preserved-remote retry audit, or production
-  WordPress auth/session lifecycle;
+  its own rerunnable live boundary, preserved-remote retry audit, production
+  WordPress auth/session lifecycle, graph identity, plugin-driver coverage, or
+  durable journal semantics outside Playground;
 - a claim treats the remote lane's retained-source `verify:release` rows or
   minted session shape as proof of production auth/session lifecycle, durable
   journal correctness, or preserved-remote retry safety;
