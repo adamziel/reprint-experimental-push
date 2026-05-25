@@ -131,6 +131,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(mapping.pull_exports.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(mapping.pull_exports.persisted_base_package.remote_site_id, 'remote-example');
   assert.equal(mapping.push_bindings.push_snapshot_hashes, 'lists the live remote comparison set for planning only');
+  assert.equal(
+    mapping.restart_proof.persisted_evidence.includes('journal_cursor'),
+    true,
+  );
   assert.ok(mapping.restart_proof.invariants.includes('recovery must begin with inspect before any mutating repair'));
 });
 
