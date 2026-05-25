@@ -500,8 +500,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. Newer release evidence in `3d8748b6` adds the fail-closed `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` gate and keeps `REPRINT_PUSH_SECRET_REQUIRED` visible in `471440b9`, while `889bd37a` still emits `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
-        <time class="update-stamp" datetime="2026-05-25T13:02:47+02:00">Last updated: May 25, 2026, 13:02:47 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. Newer release evidence in `3d8748b6` adds the fail-closed `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` gate, `471440b9` still proves `REPRINT_PUSH_SECRET_REQUIRED` fails closed, and `889bd37a` keeps `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
+        <time class="update-stamp" datetime="2026-05-25T13:04:01+02:00">Last updated: May 25, 2026, 13:04:01 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
           <span class="pill">Trend: `3d8748b6` adds the fail-closed live-source gate while `889bd37a` still marks the production boundary as missing, not ready</span>
@@ -509,11 +509,11 @@
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-130247">2026-05-25 13:02:47</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-130401">2026-05-25 13:04:01</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-130247">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-130401">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
