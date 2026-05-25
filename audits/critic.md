@@ -695,6 +695,16 @@ Release gate for production wording:
   allowlist completeness, because those checks can still miss hidden
   plugin-owned tables, files, cron rows, runtime registries, generated
   assets, caches, or serialized blobs that appear only after the first write.
+- A production-grade push claim must fail if a readable manual-review
+  artifact is reused after drift to authorize a different row, file,
+  relationship-bearing record, remapped create target, or later plugin-owned
+  surface; the artifact may remain auditable, but it cannot become retry
+  authority for a new boundary without its own preserved remote, rejection
+  point, and fresh retry artifact on this branch.
+- A production-grade push claim must fail if a later plugin-owned surface is
+  treated as covered by the earlier approval just because it shares the same
+  route family, package mount, or reviewer wording; that later surface is a
+  new boundary and needs its own preserve / reject / retry proof.
 
 Source-note comparison policy:
 
