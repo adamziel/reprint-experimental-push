@@ -25,6 +25,11 @@ or comparison-only.
   "Manual resolution later" is not a success state until the remote-preserving
   reject, the audit-only artifact, and the fresh-scope retry are all visible on
   the same live write boundary.
+- The claim shows a stale review artifact never becomes current authority for
+  any other live object after drift, including a remapped create target, a
+  different row, a file, a relationship-bearing record, or a plugin-owned
+  surface. If the artifact can be reused as retry authority for anything the
+  original approval did not explicitly cover, the claim is not production-safe.
 - The claim shows manual resolution never becomes current authority just
   because the artifact is readable, the route looks production-shaped, or the
   package mount is live; the remote must stay preserved, and the retry must
