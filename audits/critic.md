@@ -28,6 +28,21 @@ only shows a route-shaped smoke, packaged mount, fixture replay, readable
 manual-review artifact, or `finalMatchesLocal`, the comparison remains
 non-authoritative for production wording.
 
+Conservative comparison summary:
+
+- Reprint proves staged transport rhythm, resumable delivery structure, and
+  protocol framing. It does not prove live source mutation safety, remote
+  preservation after drift, create-time remap handling, plugin-owned surface
+  coverage, or partial-write classification on this branch.
+- ZS-Sync proves bounded discovery, cursoring, and resource listing. It does
+  not prove write permission, late plugin-owned surface detection, identity
+  remapping safety, or any retry authority on a live mutation boundary.
+- ForkPress proves reviewed-resolution vocabulary, crash-consistency intent,
+  and plugin-aware merge modeling. It does not prove that a readable manual
+  review artifact stays audit-only after drift, that stale approval cannot be
+  reused for a later boundary, or that this branch preserved the remote while
+  rebuilding retry scope from fresh live hashes.
+
 Most important unresolved trap:
 
 If the first write succeeds on a narrower surface and a later live snapshot
