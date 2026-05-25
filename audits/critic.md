@@ -196,6 +196,11 @@ Before the project can claim production-grade push support, it still needs:
 - production auth/session lifecycle proof on the same live boundary, not just
   route-shape or wrapper-shape evidence.
 
+Use [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md)
+as the exact checklist for any future production wording. If a claim cannot
+meet that checklist on a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL`, it remains compatibility evidence only.
+
 ## 2026-05-25 Commit `08edc2e4` Still Needs Live-Rerun Proof
 
 Commit `08edc2e4` may now prove release topology, but topology is not
