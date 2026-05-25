@@ -14836,6 +14836,49 @@ test('durable journal write failure before mutation stays old-remote and preserv
   assert.equal(JSON.stringify(remote), snapshot);
 });
 
+test('durable journal write failures at staging and dependency validation stay old-remote and replay safely', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, failType, expectedJournalStatus] of [
+    ['apply-staged', 'apply-staged', 'staged'],
+    ['dependencies-validated', 'dependencies-validated', 'dependencies-validated'],
+  ]) {
+    const remote = baseSite();
+    const snapshot = JSON.stringify(remote);
+    const durableJournal = failingDurableJournal(failType);
+
+    const failure = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+      }),
+    );
+
+    assert.ok(failure instanceof PushPlanError, label);
+    assertFailureRecoveryState(failure.details.recovery, 'old-remote');
+    assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+
+    const retryJournal = failingDurableJournal('journal-replayed');
+    const replay = applyPlan(baseSite(), plan, {
+      durableJournal: retryJournal,
+      journal: failure.details.recovery.artifacts.journal,
+    });
+
+    assert.equal(replay.appliedMutations, plan.mutations.length, label);
+    assertAcceptableRecoveryState(replay.recoveryState);
+    assert.equal(replay.recoveryState.status, 'fully-updated-remote', label);
+    assert.equal(replay.recoveryState.artifacts.remote, undefined, label);
+    assert.equal(replay.recoveryState.artifacts.journal.status, 'completed', label);
+    assert.equal(replay.site.files['index.php'], '<?php echo "local";', label);
+    assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally', label);
+  }
+});
+
 test('no-data-loss recovery boundaries allow only old-remote, fully-updated-remote, or blocked-recovery with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
