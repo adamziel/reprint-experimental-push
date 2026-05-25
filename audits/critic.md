@@ -313,11 +313,13 @@ False reliability failure mode to reject:
   branch look current without proving the preserved remote, the exact stale-
   drift boundary, or the live retry scope rebuilt from fresh hashes; that
   wording must still fail closed unless it names the exact rejected boundary
-  and the exact remote that remained inspectable after rejection;
+  and the exact remote that remained inspectable after rejection on this
+  branch;
 - "comparison passed" is only production wording if it also says which exact
   upstream state was compared, which exact live boundary was rerun on this
-  branch, and which preserved remote stayed auditable after drift; otherwise
-  it is historical context, not retry authority; and
+  branch, which preserved remote stayed auditable after drift, and which
+  fresh live hashes rebuilt the retry scope; otherwise it is historical
+  context, not retry authority; and
 - a later-discovered plugin-owned surface, remapped create target, or
   relationship-bearing record cannot inherit authority from an earlier
   readable note just because the route family or package layout is unchanged.
