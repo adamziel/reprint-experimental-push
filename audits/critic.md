@@ -422,7 +422,8 @@ Before any production wording, the project must show:
 - preserved remote still inspectable after rejection;
 - dry-run receipt plus apply-time revalidation on the same mutation;
 - journal/recovery inspection showing retry scope rebuilt from fresh live
-  hashes;
+  hashes, with durable journal lease/fencing behavior proven outside
+  Playground;
 - graph identity coverage for create-time remaps and late-discovered surfaces;
 - plugin-driver coverage for hidden plugin-owned data traps outside the
   allowlist; and
@@ -446,7 +447,8 @@ Before any production wording, the project must show:
   durable journal semantics outside Playground;
 - a claim treats the remote lane's retained-source `verify:release` rows or
   minted session shape as proof of production auth/session lifecycle, durable
-  journal correctness, or preserved-remote retry safety;
+  journal correctness, lease/fencing safety, or preserved-remote retry
+  safety;
 - a create-time identity remap points at a different row, file, or
   relationship-bearing record than the planner originally approved;
 - a plugin-owned option, custom table, registry entry, or generated file falls
