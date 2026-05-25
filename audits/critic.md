@@ -51,7 +51,9 @@ available command yet proves preserved-remote safety, apply-time
 revalidation, production auth/session lifecycle, graph identity,
 plugin-driver coverage, or plugin-owned surface classification on a
 real-site boundary. A wrapper, comparison note, or polished smoke name never
-replaces that proof.
+replaces that proof, and a source-note comparison is only historical context
+unless it names the exact upstream state, the exact live rerun on this
+branch, and the specific proof gap it still leaves open.
 The retained-source `npm run verify:release` run can support the design
 history, but it does not become retry authority until the branch reruns the
 same live boundary here and preserves the rejected remote for audit.
@@ -67,7 +69,11 @@ Do not let any wording imply that route shape, fixture replay, or a green
 Playground preflight proves production readiness. Production wording only
 becomes defensible after one rerun shows the preserved remote, the exact
 rejection point, fresh live hashes, old/new/blocked classification, and the
-live WordPress auth/session boundary on the same command.
+live WordPress auth/session boundary on the same command. "Manual resolution"
+is not success unless the preserved remote stayed inspectable after rejection,
+the retry scope was rebuilt from live hashes, and any later-discovered
+plugin-owned surface or remapped create target got its own preserve / reject /
+retry cycle.
 Any Reprint, ZS-Sync, or ForkPress note is only provenance until this branch
 names the exact upstream commit or worktree state, states what the note proves
 here, states what it does not prove here, and reruns the same live boundary on
