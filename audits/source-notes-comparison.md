@@ -4,10 +4,11 @@ This note is intentionally narrow: it records what the source notes support and
 what they do not support for production push wording.
 
 These notes are snapshots of previously observed upstream behavior, not
-current upstream proof, unless this branch reverified the exact cited revision
-or worktree at the same live mutation boundary. If either the exact upstream
-state or the exact live boundary is missing, the note is historical context
-only.
+current upstream proof. They only become current proof if this branch
+reverified the exact cited revision or worktree at the same live mutation
+boundary. If either the exact upstream state or the exact live boundary is
+missing, the note is historical context only and cannot be used to claim that
+the live executor, retry path, or manual-review flow is safe.
 
 ## Reprint
 
@@ -24,6 +25,8 @@ What it does not prove:
 - It does not prove a stale approval stays auditable while being unusable as
   authority after drift, or that it cannot be widened to unrelated rows,
   files, or plugin-owned surfaces on retry.
+- It does not prove a stale manual-review artifact stays audit-visible but
+  unusable as retry authority after drift.
 - It does not prove identity remapping on create, plugin-owned allowlist
   coverage, or partial file/DB/plugin side-effect classification.
 - It does not prove plugin data traps are safe just because a fixture-owned
@@ -68,6 +71,9 @@ What it does not prove:
   sufficient for production push support.
 - It does not prove plugin-owned state outside the allowlist is blocked when
   the same data path is hidden behind a valid-looking lab route.
+- It does not prove that unknown plugin-owned state discovered after drift can
+  be widened into success by stale local metadata, cached ownership, or a
+  copied-lab mount.
 - It does not prove a create-time remap, alias, or renumber event is safe just
   because the route looks production-shaped or the package mount matches.
 - It does not prove the exact current upstream state unless the cited upstream
@@ -150,3 +156,6 @@ Release-barrier summary:
   unusable as retry authority after drift.
 - A live-looking hash from a fixture-backed or copied-lab path never proves
   the live executor ran.
+- Reprint, ZS-Sync, and ForkPress notes never become current proof just
+  because their feature names match the current design; the cited upstream
+  state must be reverified at the same live mutation boundary.
