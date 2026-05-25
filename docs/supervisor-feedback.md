@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 08:50:27 CEST
+Last updated: 2026-05-25 08:51:12 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -23,7 +23,14 @@ changed, what is helping, what is not helping, and the next nudge.
 
 Note: this lane-local page becomes live only after merge to `main`; GitHub Pages lags until then.
 
-Audit note: [audits/supervisor-note-20260525-084643.md](../audits/supervisor-note-20260525-084643.md) captures the latest alignment pass in one screen.
+Audit note: [audits/supervisor-note-20260525-085112.md](../audits/supervisor-note-20260525-085112.md) captures the latest alignment pass in one screen.
+
+## 2026-05-25 08:51:12 CEST
+
+- Going well: the visible page still stays scan-first and the proof trail remains linked.
+- Not going well: the same proof gaps remain open, so the blocked assessment does not move.
+- Progress change: no evidence delta; only the supervisor surfaces were tightened.
+- Next nudge: keep each lane pinned to one missing proof item, one owner, and one production-backed test.
 
 <details>
 <summary>Earlier entries</summary>
