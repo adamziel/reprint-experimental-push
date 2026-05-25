@@ -4,6 +4,27 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 14:39:15
+
+<a id="2026-05-25-public-status-audit-143915"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:39:15 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and surfaced the newest
+  lab evidence: `35731b11` still anchors the checked release path, `ee43e194`
+  binds the verifier to the supplied source URL, and `ee25a9b5` documents the
+  accepted recovery boundary.
+- `35731b11` still shows `releaseProof.mode: "apply"` plus preflight, dry-run,
+  apply, recovery inspect, and durable journal readback evidence with
+  `rows: 17`; `4096f3ac` keeps the checked drift-rejection proof visible,
+  `fa491fa6` keeps the recovery envelope tests green, and `d6285b18` still
+  exposes the live remote snapshot hash listing. Gates remain `0/4`, and
+  production WordPress auth/session lifecycle plus durable journal storage
+  with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 14:35:47
 
 <a id="2026-05-25-public-status-audit-143547"></a>
