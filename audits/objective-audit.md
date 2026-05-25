@@ -4,21 +4,21 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Fresh remote heads at audit time:
+Fresh remote heads at audit time, checked on May 25, 2026:
 
-- `origin/lane/reliable-executor` -> `b725b2d3`
+- `origin/lane/reliable-executor` -> `9e656a03`
 - `origin/lane/no-data-loss-invariants` -> `b9aebe71`
 - `origin/lane/no-data-loss-recovery` -> `134d0401`
-- `origin/lane/critic` -> `1e545163`
-- `origin/lane/independent-auditor` -> `781888d9`
-- `origin/lane/progress-publisher` -> `11aca375`
+- `origin/lane/fast-paths` -> `d782246a`
+- `origin/lane/independent-auditor` -> `33b839f0`
+- `origin/lane/critic` -> `884baf1e`
+- `origin/lane/progress-publisher` -> `7695e1f9`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `6fc3da13`
 - `origin/main` -> `4b7b47a6`
 
-The last 12 hours changed evidence: the lane heads moved, and the new remote
-state adds release-boundary and no-data-loss material. The release gates still
-stay `0/4` because there is still no production-backed auth/session lifecycle
-or durable journal ownership/lease/fencing/replay path proving a real source
-site mutation boundary.
+The current remote state still adds no production-backed auth/session
+lifecycle or durable journal ownership/lease/fencing/replay path proving a
+real source-site mutation boundary. The release gates still stay `0/4`.
 
 ### Gate Movement Trigger
 
