@@ -2653,4 +2653,6 @@ Production-readiness release gate checklist:
    live mutation boundary for this repo's claim.
 8. Fail closed if the wording only cites route shape, packaged-plugin mount,
    fixture replay, or `finalMatchesLocal` without the live boundary proof
-   above.
+   above. A readable manual-review artifact is not enough unless the claim
+   also shows the preserved remote, the stale rejection point, and the fresh
+   retry scope on the same live write path.
