@@ -5,10 +5,10 @@ This note is a compact checklist for any wording that might claim production-gra
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
 
 - the exact stale-drift case is named;
-- the remote that drifted is preserved and still inspectable after rejection, and that preserved remote is audit evidence only until a fresh retry scope is rebuilt from live hashes;
+- the remote that drifted is preserved and still inspectable after rejection, and that preserved remote stays audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
 - any stale manual-review artifact remains audit-only after drift and cannot be reused against a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
-- any manual-resolution note remains audit-only after drift unless the same live boundary on this worktree preserved the remote, rejected stale authority before the first write, and rebuilt retry scope from live hashes so the user can safely audit and retry; a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface still needs its own preserve / reject / retry cycle and cannot inherit that note;
+- any manual-resolution note remains audit-only after drift unless the same live boundary on this worktree preserved an inspectable remote, rejected stale authority before the first write, and rebuilt retry scope from live hashes so the user can safely audit and retry; a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface still needs its own preserve / reject / retry cycle and cannot inherit that note;
 - any stale manual-review artifact cannot become retry authority for a later-discovered plugin-owned surface that appears only after the first write, even if the later surface looks like the earlier one;
 - any stale manual-review artifact cannot become retry authority for a remapped create target or later-discovered plugin-owned surface that appears only after the first write, even if the later boundary reuses the same route family, package mount, or reviewer wording;
 - any stale manual-review artifact cannot be widened to a later boundary just because the route family, package mount, or reviewer wording stayed the same;
