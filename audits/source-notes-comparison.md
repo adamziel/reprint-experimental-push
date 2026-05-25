@@ -16,13 +16,16 @@ boundary for the same claim. If either the exact upstream state or the exact
 live boundary is missing, the note is historical context only and cannot be
 used to claim that the live executor, retry path, or manual-review flow is
 safe. A route-shaped smoke, package mount, live-looking hash, or matching
-`finalMatchesLocal` result does not fill that gap, and neither does a later
+`finalMatchesLocal` result does not fill that gap. Neither does a later
 manual-resolution label unless the preserved remote stayed auditable, the
-stale rejection point is recorded, and the fresh retry scope was rebuilt from
-live hashes on this branch for that same boundary.
+stale rejection point is recorded, the fresh retry scope was rebuilt from
+live hashes on this branch for that same boundary, and any later-discovered
+plugin-owned surface got its own preserve / reject / retry cycle instead of
+being folded into the earlier approval.
 That also means a stale manual-review artifact stays audit evidence only
 unless the remote was preserved for audit, the stale approval was rejected
-before mutation, and the retry rebuilt scope from fresh live hashes.
+before mutation, the retry rebuilt scope from fresh live hashes, and any
+later-discovered plugin-owned surface was handled as a separate boundary.
 Reprint, ZS-Sync, and ForkPress each fail for a different missing proof:
 Reprint does not prove preserved-remote push safety on this branch, ZS-Sync
 does not prove plugin-owned surface coverage or identity-remap safety, and
@@ -53,7 +56,8 @@ What it does not prove:
   authority after drift, or that it cannot be widened to unrelated rows,
   files, or plugin-owned surfaces on retry.
 - It does not prove a stale manual-review artifact stays audit-visible but
-  unusable as retry authority after drift.
+  unusable as retry authority after drift, or that a later-discovered
+  plugin-owned surface cannot inherit that artifact by shape alone.
 - It does not prove a create-time identity remap or alias event is safe
   without a fresh live decision at the same write boundary.
 - It does not prove identity remapping on create, plugin-owned allowlist
@@ -92,7 +96,9 @@ What it does not prove:
 - It does not prove plugin semantic ownership, create-time remap handling, or
   the durable classification of partial side effects.
 - It does not prove unknown plugin-owned state is discovered consistently
-  enough to block unsafe writes before mutation.
+  enough to block unsafe writes before mutation, or that a post-write
+  discovery is treated as a new boundary instead of backfilled into the
+  earlier approval.
 
 ## ForkPress
 
@@ -105,7 +111,8 @@ What it proves:
 - The note can justify review vocabulary only, not a production executor or
   a safe manual-resolution lifecycle.
 - It does not prove that a readable review artifact from a lab-shaped route
-  can authorize retry on the live boundary without preserved-remote evidence.
+  can authorize retry on the live boundary without preserved-remote
+  evidence, stale-rejection evidence, and a fresh live-hash retry scope.
 - It does not prove plugin data traps are safe just because the same review
   vocabulary, route family, or package mount appears in a note; hidden plugin
   state discovered after the first write still needs its own preserve / reject
@@ -128,7 +135,7 @@ What it does not prove:
 - It does not prove plugin-owned surfaces hidden behind the same route family
   are safe to enumerate by fixture shape alone, including late-discovered
   tables, cron rows, runtime registries, serialized blobs, caches, and plugin
-  files.
+  files; those surfaces need their own live boundary proof or block.
 - It does not prove a remapped create target stays covered when the live write
   boundary moves to a different row, file, or relationship-bearing record.
 
