@@ -901,6 +901,10 @@ under load:
   is rejected because planning compression and batch compression can reduce
   replay work, but they cannot prove the dependency checks, live row compares,
   or the atomic-group finalize survived failure.
+- compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-
+  after-pause is rejected because planning evidence and cached row receipts
+  can reduce replay work, but they cannot prove the live row compares,
+  dependency checks, or the atomic-group finalize survived a pause.
 - compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize
   is rejected because planning evidence and a cached dependency graph can
   reduce lookup work, but they cannot prove the live row compares, member
