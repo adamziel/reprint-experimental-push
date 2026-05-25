@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 07:30:29 CEST
+Last updated: 2026-05-25 07:32:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 07:30:29 CEST - Supervisor Snapshot
+## 2026-05-25 07:32:24 CEST - Supervisor Snapshot
 
 - Going well: page, log, and audit note still agree on the blocked state.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no production delta; linked docs still carry the proof trail.
+- Progress change: no production delta; the visible surfaces stayed short and linked.
 - Next nudge: keep each lane to one proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
@@ -23,11 +23,12 @@ changed, what is helping, what is not helping, and the next nudge.
 
 Note: this lane-local page update becomes live only after merge to `main`; GitHub Pages lags until then.
 
-Audit note: [audits/supervisor-note-20260525-073029.md](../audits/supervisor-note-20260525-073029.md) captures the latest alignment pass in one screen.
+Audit note: [audits/supervisor-note-20260525-073224.md](../audits/supervisor-note-20260525-073224.md) captures the latest alignment pass in one screen.
 
 <details>
-<summary>2026-05-25 07:29:32 CEST and earlier</summary>
+<summary>2026-05-25 07:30:29 CEST and earlier</summary>
 
+- 2026-05-25 07:32:24 CEST: refreshed the snapshot without changing the blocked assessment and kept the page/log/audit links aligned.
 - 2026-05-25 07:29:32 CEST: removed the duplicate lane-nudges block from the public page and kept the blocked state intact.
 - 2026-05-25 07:27:38 CEST: tightened the public page to reduce repeated history and keep the visible status compact.
 - 2026-05-25 07:26:48 CEST: refreshed the snapshot to keep the visible status current without overstating progress.
