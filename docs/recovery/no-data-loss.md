@@ -28,3 +28,13 @@ The durable journal is the source of truth for crash recovery. JSON fixtures
 and lab-only evidence can describe the model, but production recovery must be
 backed by append-only journal records, persisted files, and explicit recovery
 state artifacts.
+
+In practice that means:
+
+- A failed apply is only acceptable when the remote is still `old-remote`, the
+  remote is `fully-updated-remote`, or the durable journal can explain the
+  partial state with `blocked-recovery` artifacts.
+- A partial remote mutation without a durable recovery artifact is not
+  recoverable enough for release.
+- Replay must be idempotent over the durable journal, so completed plans stay
+  inert even when local input still contains stale or duplicate data.
