@@ -2069,3 +2069,24 @@ present in the proof:
 - "Recovery succeeded" when one store committed and the rest were only
   classified, because mixed file, DB, or plugin writes still need durable
   old/new/blocked evidence and a retry that starts from fresh live evidence.
+
+Production-readiness checklist:
+
+- Show a live remote drift case that fails closed before the first write.
+- Show a create-time remap, alias, or renumber case that is either reserved
+  durably or blocked before mutation.
+- Show the full plugin-owned surface manifest for the exercised claim, and
+  hard-block every unknown or out-of-allowlist surface.
+- Show durable handling for mixed file, DB, or plugin side effects, including
+  audit evidence for what was written, what was blocked, and what can be
+  retried safely.
+- Show a preserved remote snapshot that can be audited later without letting
+  the stale approval become current retry authority.
+- Show that route-shape smokes, packaged-plugin mounts, fixture replay, and
+  `finalMatchesLocal` are only compatibility evidence unless the same live
+  write boundary is reverified in this repo.
+- Show that any Reprint, ZS-Sync, or ForkPress comparison was reverified at
+  the cited upstream revision or worktree, at the same live mutation
+  boundary; otherwise the note remains historical context only.
+- Show a release gate that fails closed when any of the above is missing and
+  that records the exact rejection reason for audit and retry.
