@@ -210,6 +210,7 @@ The machine-readable proofs that back this contract are:
 - [`fixtures/protocol/push-dry-run-apply-revalidation-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-dry-run-apply-revalidation-contract.json)
 - [`fixtures/protocol/push-remote-liveness-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-remote-liveness-contract.json)
 - [`fixtures/protocol/push-auth-session-fencing-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-fencing-contract.json)
+- [`fixtures/protocol/push-session-journal-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-session-journal-proof.json)
 - [`fixtures/protocol/push-auth-session-recovery-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-recovery-contract.json)
 - [`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json)
 - [`fixtures/protocol/push-recovery-revalidation-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-revalidation-contract.json)
@@ -220,7 +221,10 @@ the immutable base package, preflight binds it to one live remote identity and
 one short-lived session, snapshot listing can be paginated without becoming
 write authority, dry-run stays separate from apply, apply revalidates before
 every batch and at the storage boundary, journal inspect stays read-only, and
-recovery begins with inspect before any mutating repair. The recovery
+recovery begins with inspect before any mutating repair. The session-journal
+proof keeps the minted push session, journal claim, lease fence, and
+inspect-first recovery tuple together so a restarted apply can be classified
+without promoting stale evidence into write authority. The recovery
 revalidation contract keeps the same fresh-live-hash rule visible on the
 mutating recovery branch so inspect never turns into write authority by
 itself.

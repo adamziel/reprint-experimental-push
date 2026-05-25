@@ -210,6 +210,9 @@ inspect fence can be asserted independently or together:
 - `push-auth-session-fencing-contract.json` keeps the same auth/session proof
   in a compact form when a test wants one fixture that ties the journal row,
   lease fence, and inspect-first recovery boundary together.
+- `push-session-journal-proof.json` keeps the restart-proof tuple that binds
+  the minted push session to the journal claim, lease fence, and
+  inspect-first recovery path.
 - `push-auth-session-recovery-contract.json` keeps the stronger auth floor and
   the recovery fence together when a test wants to prove the claim is still
   fenced at recovery time.

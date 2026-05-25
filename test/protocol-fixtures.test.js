@@ -933,8 +933,18 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   );
   assert.ok(authSessionRecoveryContract.required_invariants.includes('fresh live hashes must still be checked before finish, rollback, or auto'));
   assert.equal(sessionJournalProof.live_evidence.same_remote_identity, true);
+  assert.equal(sessionJournalProof.session.push_session, 'psh_01j00000000000000000000000');
+  assert.equal(sessionJournalProof.session.remote_site_id, 'remote-example');
+  assert.equal(sessionJournalProof.session.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(sessionJournalProof.journal_fencing.claim_owner, 'worker-17');
+  assert.equal(sessionJournalProof.journal_fencing.claim_generation, 4);
+  assert.equal(sessionJournalProof.journal_fencing.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.ok(sessionJournalProof.journal_fencing.required_proof.includes('claim generation fences older workers'));
+  assert.ok(sessionJournalProof.journal_fencing.required_proof.includes('lease expiry stops stale apply replay'));
   assert.equal(sessionJournalProof.apply_revalidation.before_each_batch, 'fresh live hashes');
+  assert.equal(sessionJournalProof.apply_revalidation.at_storage_boundary, 'fresh live hashes');
+  assert.ok(sessionJournalProof.recovery.blocked_when.includes('fresh live hashes do not match the journaled target'));
+  assert.ok(sessionJournalProof.required_invariants.includes('journal inspection is read-only and inspect must come before mutating recovery'));
   assert.equal(recoveryPath.inspect.mutates, false);
   assert.deepEqual(recoveryPath.classification, { old: 2, new: 3, blocked: 1, open: 0 });
   assert.ok(recoveryPath.blocked_cases.includes('the claim lease has expired and the worker is fenced'));

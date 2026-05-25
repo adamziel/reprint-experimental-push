@@ -160,6 +160,7 @@ The canonical proof stack for that scope is:
 | [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json) | The stage-level Docker/Playground proof with liveness, recovery, and apply revalidation rules. |
 | [`fixtures/protocol/push-remote-liveness-contract.json`](../fixtures/protocol/push-remote-liveness-contract.json) | The dry-run/apply split and apply-time revalidation rule for the live remote. |
 | [`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json) | The push-session boundary, journal-row fence, and read-only recovery inspect rule. |
+| [`fixtures/protocol/push-session-journal-proof.json`](../fixtures/protocol/push-session-journal-proof.json) | The restart-proof tuple that keeps the minted push session, journal claim, lease fence, and inspect-first recovery together. |
 | [`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json) | The same fence when recovery needs to prove finish, rollback, or block before mutating. |
 | [`fixtures/protocol/push-recovery-inspect-contract.json`](../fixtures/protocol/push-recovery-inspect-contract.json) | Inspect reads the journal row and fresh live hashes before classifying finish, rollback, retry, or block. |
 | [`fixtures/protocol/push-recovery-revalidation-contract.json`](../fixtures/protocol/push-recovery-revalidation-contract.json) | Mutating recovery still requires fresh live hashes plus journal evidence after inspect proves the branch is safe. |
@@ -324,9 +325,10 @@ The pull-to-push bridge is easiest to review through the fixtures:
   same route names in both harnesses, and the sandbox-provided `8080` ingress
   rule.
 - `push-auth-session-fencing-contract.json`,
+  `push-session-journal-proof.json`,
   `push-auth-session-recovery-contract.json`, and
   `push-recovery-inspect-contract.json` prove the session fence, journal row
-  fence, and inspect-first recovery boundary.
+  fence, lease expiry, and inspect-first recovery boundary.
 - `push-recovery-revalidation-contract.json` shows the same drift case still
   requires fresh live hashes plus journal evidence before mutating repair.
 
