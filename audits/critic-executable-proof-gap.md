@@ -22,6 +22,10 @@ Supporting failures:
   can support compatibility or audit claims, but they do not prove preserved
   remote retention, stale-drift rejection before the first write, or retry
   scope rebuilt from live hashes;
+- stale manual-review artifacts and older comparison notes stay audit evidence
+  only unless the same live boundary was rerun here and the artifact names the
+  preserved remote, rejection point, and fresh retry scope for that exact
+  boundary;
 - a comparison note that names an upstream commit or worktree state is
   historical context only unless the same live boundary is rerun on this
   branch, the preserved remote remains inspectable after rejection, and the
