@@ -76,6 +76,11 @@ Source-note comparison rule:
   become current retry authority until this branch shows the preserved
   remote, the rejection point, and the fresh retry scope for the exact same
   live boundary;
+- the observed source-note anchors in `docs/source-notes.md` are `27c5f25`
+  for Reprint, `d9334a0` for ZS-Sync, and `55f9879` for ForkPress; those
+  commits support transport, discovery, and review vocabulary respectively,
+  but they still do not prove live write safety, stale-drift rejection, or
+  retry authority on this branch;
 - route-shape smokes, package mounts, fixture replays, readable review
   artifacts, and `finalMatchesLocal` remain compatibility evidence only even
   when they look production-shaped; and
@@ -167,6 +172,9 @@ Additional proof gaps that still need to be closed:
 - prove any Reprint, ZS-Sync, or ForkPress note is treated as historical
   context unless the exact upstream revision or worktree state is named and
   the same live boundary is rerun here with preserved-remote evidence;
+- prove the exact Reprint, ZS-Sync, and ForkPress source-note anchors from
+  `docs/source-notes.md` are only being used as historical comparison
+  evidence, not as current proof for this branch's live write boundary;
 - prove plugin-owned state outside the allowlist is discovered live or
   rejected live, including hidden tables, generated files, cron rows, runtime
   registries, serialized blobs, cache entries, and activation-sensitive
