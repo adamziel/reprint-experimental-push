@@ -1412,7 +1412,10 @@ Before any production-grade push claim, the project needs all of these:
     packaged-plugin smoke only qualifies as release-gate evidence if the
     corresponding claim also shows the same path rejecting stale authority
     after a live remote drift, preserving the remote for audit, and forcing a
-    fresh retry from current hashes.
+    fresh retry from current hashes. The gate must classify partial file, DB,
+    or plugin side effects durably; "manual resolution later" is not success if
+    the old approval can still be widened to unrelated rows, files, or
+    plugin-owned surfaces.
 
 Addendum: each of these conditions must be independently testable in the
 release suite. A passing route-shape smoke is not sufficient if any one of the
@@ -1475,6 +1478,10 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
 - Status comments, branch notes, and release notes must not cite source-note
   comparisons or live-looking hashes as substitutes for current production
   proof.
+- A production claim must also show the create-time identity decision,
+  plugin-owned allowlist decision, and partial side-effect classification for
+  the exercised write path; omitting any of those leaves a data-loss hole even
+  if the route shape and `finalMatchesLocal` look correct.
 
 ### Non-Negotiable Proofs
 

@@ -37,16 +37,28 @@ support.
 - The claim shows the stale manual-review artifact remains readable for audit
   but is unusable for apply after drift, and the next retry starts from fresh
   live hashes rather than inherited approval.
+- Readability alone is not success for a stale manual-review artifact; the
+  claim must show the artifact cannot authorize a new apply after remote
+  drift, even if the old review record is still available for audit.
 - The claim shows create-time identity remapping is either safely represented
   or hard-blocked before write.
+- A create path cannot be called production-safe if it can renumber, alias, or
+  reassign the target identity without a live remap proof or a pre-write hard
+  block.
 - The claim shows plugin-owned state outside the allowlist is either
   discovered or hard-blocked, including options, custom tables, generated
   files, activation hooks, cron, cache state, and other plugin side effects.
+- Unknown plugin-owned state is not a manual-resolution success condition; if
+  the allowlist is incomplete, the path must block and keep the rejected scope
+  auditable instead of assuming a later operator fix.
 - The claim shows plugin-owned ownership changes are revalidated at apply
   time, not inherited from stale local metadata.
 - The claim shows any partial file, DB, or plugin side effect is classified
   durably and that retry starts from fresh evidence rather than reused
   approval.
+- A partial file, DB, or plugin side effect cannot be treated as a clean
+  success unless the remaining remote state is preserved for audit and the
+  next attempt rebuilds scope from fresh live hashes.
 - The claim shows the same live write path rejected stale authority before
   mutation; a route-shaped smoke or packaged-plugin mount is only relevant
   if it exercised that exact boundary against the drifted remote.
@@ -59,6 +71,13 @@ support.
 - The claim includes the exact live snapshot or hash set that invalidated the
   old approval, not just a route-shaped smoke result or a package mount that
   happened to look current.
+- The claim includes the failure classification for any partial file, DB, or
+  plugin side effect and shows recovery cannot silently widen the old approval
+  to unrelated rows, files, relationship-bearing records, or plugin-owned
+  surfaces.
+- The claim includes the rejection reason for any unknown plugin-owned state
+  and shows the blocked scope stayed auditable without becoming writable
+  through fallback behavior.
 - The claim identifies the exact reverified upstream revision or worktree for
   any Reprint, ZS-Sync, or ForkPress comparison; otherwise the comparison is
   context only.
@@ -74,6 +93,9 @@ support.
 - The claim does not treat a stale review artifact as current authority even
   if it is still readable, because readability alone does not preserve the
   remote or prove the write path failed closed.
+- The claim does not treat a production claim as valid if the proof set omits
+  the create-time remap decision, the plugin-owned allowlist decision, or the
+  partial side-effect classification for the exercised write path.
 
 If any item is missing, the wording must stay explicitly lab-backed or
 comparison-only.
