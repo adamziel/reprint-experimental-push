@@ -10,10 +10,10 @@ The repo still lacks one required command that proves the one-way pull base plus
 
 | Item | Current reading |
 | --- | --- |
-| Strongest executable proof | `node --test` plus the fixture and model suites can prove refusal behavior, classification, and local integrity checks. None of them reach the live-source boundary. |
+| Strongest executable proof | `node --test` plus the fixture and model suites can prove refusal behavior, classification, and local integrity checks. None of them reach the live-source boundary, and none of them can emit a mandatory release verdict. |
 | Strongest lab proof | Playground and authenticated smokes can exercise route shape, auth/session scaffolding, journaling, and stale-claim rejection, but they still self-identify as `labBacked: true`. |
 | Strongest docs-only proof | The audit and blocker notes correctly describe the intended one-way pull base plus one-way push flow. |
-| Missing release proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict. |
+| Missing release proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict or enforced `speed unclaimed` refusal. |
 | Release blocker | There is no mandatory `verify`, `verify:release`, or `release` command that can fail closed when any of those proofs are absent. |
 
 Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict.
