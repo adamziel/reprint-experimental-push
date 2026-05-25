@@ -69,6 +69,13 @@ Evidence classes:
 - live retry proof requires the actual real-site command, the exact rejection point before the first write, preserved-remote auditability after rejection, and old/new/blocked classification for every touched surface before retry starts; and
 - if a claim cannot name its evidence class, it must fail closed instead of borrowing authority from a smoke, review artifact, or source note.
 
+Source-note comparisons remain provenance only:
+
+- Reprint, ZS-Sync, and ForkPress notes can justify transport, discovery, or review vocabulary, but they do not prove this branch preserved the rejected remote, rejected stale authority before the first write, or rebuilt retry scope from live hashes on the same live boundary;
+- a comparison note must state the exact upstream revision or worktree state, what it proves here, and what it does not prove here, or it is ambiguous and cannot authorize production wording;
+- if the only evidence is route shape, package-mount shape, fixture replay, `finalMatchesLocal`, a readable review artifact, or a retained-source `verify:release` run, the claim is compatibility evidence only and must not be worded as production-grade push support; and
+- a later-discovered plugin-owned surface or remapped create target never inherits retry authority from a source note or earlier approval unless that later boundary itself was separately preserved, rejected, and retried on this branch.
+
 - the exact stale-drift case is named;
 - the remote that drifted is preserved and still inspectable after rejection, and that preserved remote stays audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
