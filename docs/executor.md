@@ -120,6 +120,27 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it preserves the one-way mapping from immutable pull provenance to mutable push execution
 - it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`, which are the compact one-remote, one-local, one-drift harness proofs for Docker and Playground
 
+The executor can be implemented as a strict request ladder:
+
+1. `push_preflight` mints the short-lived push session after the importer has persisted the immutable pull base package.
+2. `push_snapshot_hashes` lists remote hashes for planning only and never becomes write authority.
+3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an eligibility receipt, not a lock.
+4. `push_batch_apply` mutates in batches and must revalidate fresh live evidence before every batch and at the storage boundary.
+5. `push_journal` records durable evidence and stays read-only.
+6. `push_recover inspect` reads the journal and fresh live hashes before any mutating repair.
+7. `push_recover auto|finish|rollback` may mutate only after inspect proves the branch safe with the same auth floor as the write path.
+
+That ladder maps directly to the production harness:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edit site
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, hash listing, dry-run upload, apply, journal inspect, and recovery
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
+
 The review path is intentionally layered:
 
 - `push-production-pull-bridge-contract.json` is the immutable exporter/importer-to-push bridge.

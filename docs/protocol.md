@@ -458,6 +458,24 @@ For review and implementation work, the canonical production push chain is:
 8. `push_recover auto|finish|rollback` may mutate only when inspect proves
    the branch safe with the same auth floor as the write path.
 
+The wire contract is intentionally split into request classes so the executor
+can keep liveness boundaries narrow:
+
+| Request class | Example stage | Mutates | Reuses prior authority |
+| --- | --- | --- | --- |
+| Preflight binding | `push_preflight` | No | No |
+| Remote hash listing | `push_snapshot_hashes` | No | No |
+| Dry-run upload | `push_plan_dry_run` | No | No |
+| Batched apply | `push_batch_apply` | Yes | No; it revalidates fresh live evidence before each batch and at the storage boundary |
+| Journal inspect | `push_journal` | No | No |
+| Recovery inspect | `push_recover inspect` | No | No |
+| Recovery mutate | `push_recover auto|finish|rollback` | Yes | No; it must pass inspect first and keep the same auth floor as the write path |
+
+Recovery is therefore a two-step loop:
+
+1. Inspect the journal and fresh live hashes.
+2. Mutate only if the journal, fence, and live evidence still agree.
+
 The reviewable bridge is the same chain rendered as fixture evidence:
 
 - `push-protocol-extension-contract.json` ties the pull pipeline, the push
