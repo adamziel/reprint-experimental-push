@@ -132,7 +132,7 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     ),
   );
   assert.equal(
-    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-publish')?.rejectedGate,
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'cached-manifest-hash-skips-large-upload-publish')?.rejectedGate,
     'recovery',
   );
 });
@@ -293,6 +293,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-receipt-summary-replaces-recovery-log').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-receipt-summary-replaces-recovery-log').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('compressed-receipt-summary-replaces-recovery-log').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('cached-manifest-hash-skips-large-upload-publish').violates.includes('file-hashing'));
+  assert.ok(rejectedById.get('cached-manifest-hash-skips-large-upload-publish').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('cached-manifest-hash-skips-large-upload-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('chunk-receipts'));

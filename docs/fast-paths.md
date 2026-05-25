@@ -144,6 +144,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A matching manifest or archive hash still cannot stand in for missing chunk receipts or the guarded publish finalize record.
 - A fresh remote index plus a drained compressed queue still cannot prove apply is complete or that the live precondition survived failure.
 - A compressed remote index plus a cached manifest hash still cannot skip the guarded publish step for a large upload, because the live compare and every chunk acknowledgement still need durable proof.
+- A cached manifest hash still cannot skip the guarded publish step for a large upload, because duplicate lookup and hashing do not prove the live compare, chunk acknowledgements, or publish barrier survived failure.
 - File hashing cannot treat the previous digest alone as authority, because the local fingerprint only skips duplicate rehash work and the live remote compare still guards apply.
 - A local fingerprint plus a cached digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
 - Chunk upload cannot treat a visible staging object as completion, because the finalize step still needs durable receipts and a guarded publish boundary.

@@ -1110,6 +1110,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'file-hashing', 'live-preconditions', 'chunk-receipts'],
   },
   {
+    id: 'cached-manifest-hash-skips-large-upload-publish',
+    proposal: 'treat a cached manifest hash as enough proof to skip the guarded publish step for a large upload',
+    rejectedBecause: 'a cached manifest hash can avoid duplicate lookup and hashing, but it cannot prove the live compare, chunk acknowledgements, or publish barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'fingerprint-and-compressed-upload-queue-completes-large-upload',
     proposal: 'treat a local fingerprint plus a compressed upload queue as proof that a large upload already finished',
     rejectedBecause: 'a fingerprint can skip duplicate hashing and compression can reduce queue pressure, but neither can prove chunk acknowledgements or the guarded publish survived failure',
