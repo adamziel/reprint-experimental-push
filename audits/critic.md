@@ -17,6 +17,14 @@ command that has been run against a real local, Playground, or Docker
 remote boundary. Until that boundary exists, comparison notes, route-shape
 smokes, and manual-review artifacts stay audit context only.
 
+Scenario: someone points to `test:playground:authenticated-http-push`,
+`test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`,
+or `test:playground:production-plugin-package` and treats the name as release
+proof. Missing proof: none of those scripts is a branch-local real-site
+entry point, and none of them has shown the live executor/auth/preserved-
+remote boundary on an actual remote here. Without that rerun, the scripts are
+smoke coverage only, even if they are useful for compatibility checks.
+
 Scenario: an operator sees a green smoke, a polished review note, or a
 production-sounding script name and assumes push support is ready. Missing
 proof: there is still no branch-local command that can be rerun against a real
