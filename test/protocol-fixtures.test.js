@@ -55,6 +55,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const authSessionJournalRecoveryContract = readJson(
     'fixtures/protocol/push-auth-session-journal-recovery-contract.json',
   );
+  const remoteLivenessTopologyContract = readJson(
+    'fixtures/protocol/push-remote-liveness-topology-contract.json',
+  );
 
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
@@ -232,6 +235,45 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.lab_topology.remote_base.identity, 'remote-example');
   assert.equal(protocolExtensionContract.lab_topology.local_edited.identity, 'local-dev-site');
   assert.equal(protocolExtensionContract.lab_topology.remote_changed.identity, 'remote-example');
+  assert.equal(remoteLivenessTopologyContract.contract_id, 'push-remote-liveness-topology-contract');
+  assert.deepEqual(remoteLivenessTopologyContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    remoteLivenessTopologyContract.push_guards.remote_snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    remoteLivenessTopologyContract.push_guards.apply_revalidation,
+    'refreshes fresh live evidence before every batch and at the storage boundary',
+  );
+  assert.equal(remoteLivenessTopologyContract.topology.networking.ingress_port, 8080);
+  assert.equal(remoteLivenessTopologyContract.topology.networking.proxy_policy, 'local-only');
+  assert.ok(
+    remoteLivenessTopologyContract.topology.docker.proof.includes(
+      'dry-run and apply remain separate remote calls',
+    ),
+  );
+  assert.ok(
+    remoteLivenessTopologyContract.topology.playground.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.equal(
+    remoteLivenessTopologyContract.pull_to_push_mapping.push_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.ok(
+    remoteLivenessTopologyContract.required_invariants.includes(
+      'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+    ),
+  );
   assert.equal(preflightContract.contract_id, 'push-preflight-contract-one-remote-one-local');
   assert.equal(preflightContract.pull_provenance.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightContract.pull_provenance.remote_site_id, 'remote-example');

@@ -159,6 +159,8 @@ The canonical proof stack for that executor story is the same one named in
   session, journal-row, lease-fence, and inspect-first recovery proof
 - `push-executor-topology-proof.json` for the shortest Docker/Playground
   executor proof
+- `push-remote-liveness-topology-contract.json` for the compact liveness plus
+  one-remote, one-local, one-drift harness proof
 - `push-topology-matrix.json` for the stage-level Docker/Playground matrix
 - `push-preflight-contract.json` for the first live binding between imported
   provenance, scope, and session

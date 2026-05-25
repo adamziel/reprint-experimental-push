@@ -45,6 +45,7 @@ The normal sequence is:
 37. `push-protocol-extension-contract.json`
 38. `push-pull-to-topology-contract.json`
 39. `push-preflight-contract.json`
+40. `push-remote-liveness-topology-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -60,6 +61,9 @@ The production proof bundle is intentionally layered:
 - `push-remote-liveness-contract.json`, `push-dry-run-apply-revalidation-contract.json`,
   and `push-recovery-revalidation-contract.json` keep the liveness split and
   inspect-first recovery rules explicit.
+- `push-remote-liveness-topology-contract.json` combines that liveness split
+  with the one-remote, one-local, one-drift test topology so a review can
+  cite a single compact proof for both sequencing and harness shape.
 - `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
   listing clearly in the planning-only lane.
