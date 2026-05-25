@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 03:21:09
+
+<a id="2026-05-25-public-status-audit-032109"></a>
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 03:21:09 CEST`) and kept the visible last-updated stamp current.
+- Tightened the first-screen lead so it points at the gate checklist instead of
+  repeating the 0/5 status twice.
+- Public status stays conservative: 89 Node tests pass, release gates remain
+  at 0/5, and WordPress executor/auth, recovery journal, Docker/Playground
+  integration, graph identity, and plugin drivers remain unproven.
+- Evidence trail: [progress.html](../progress.html),
+  [docs/progress-log.md](progress-log.md), [docs/approach-scorecard.md](approach-scorecard.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
+  [docs/supervisor-feedback.md](supervisor-feedback.md), and this log entry.
+
 ## 2026-05-25 - Public Status Audit 03:20:41
 
 <a id="2026-05-25-public-status-audit-032041"></a>
