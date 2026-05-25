@@ -62,6 +62,12 @@ For this audit:
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is as refusal evidence, not as release evidence. They demonstrate that the suite knows how to say "not yet"; they do not demonstrate that the production boundary is safe.
 
+That distinction matters for the objective claims:
+
+- No-data-loss is not proven unless the test reaches the live source boundary and verifies that every affected WordPress shape survives a failed or retried push.
+- Reliability is not proven unless the suite exercises real crash, retry, stale-claim, and lease/fencing behavior on the real storage and transport path.
+- Speed is not proven unless the suite measures the production-shaped push path against a stated threshold and memory ceiling; refusal-only benchmark tests do not count as performance proof.
+
 - `npm test` proves the model and selected fixture logic are internally consistent. It does not prove live source mutation, production storage, or a live WordPress graph, so it cannot support the no-data-loss claim by itself.
 - `npm run test:playground` proves a bundled lab path through plan/apply/push protocol. It does not invoke the stronger auth, journal, storage, recovery, plugin, graph, or benchmark gates, so it cannot support the reliability claim by itself.
 - `npm run test:playground:authenticated-http-push`, `npm run test:playground:authenticated-cli-push`, `npm run test:playground:production-shaped-push`, and `npm run test:playground:production-plugin-package` are the closest release-shaped smokes, but they are still route-shape and packaging evidence. The code still marks the authenticated route profile as `labBacked: true`, so these checks remain explicit lab proof rather than live production proof.
@@ -72,6 +78,7 @@ The current tests are strongest where they reject unsafe claims, and weakest whe
 - All of the optional smokes can pass at once and still leave the objective blocked, because none of them is mandatory, none of them is the single enforced decision point the release bar needs, and there is no checked-in CI workflow to force a default release path.
 - The current test surface is therefore honest about risk, but honesty is not enough: it proves that the suite can refuse unsafe claims, not that the live release path is safe.
 - In practical terms, the suite currently proves "we refuse to overclaim" much better than it proves "we can safely release."
+- Green output from the current suite can still coexist with an unproven live push path, so a passing test run is not evidence that the objective has been met.
 
 The uncomfortable conclusion is that the suite proves guardrails, not release safety. If the release claim depends on no data loss, reliability, or speed, the current tests are still missing the only evidence that would make those claims credible:
 
