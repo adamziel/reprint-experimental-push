@@ -123,6 +123,12 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(
     report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
   );
+  assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
+  assert.equal(report.results.partialFailure.remoteUnchanged, false);
+  assert.equal(report.results.preCommitFailure.inspectionStatus, 'old-remote');
+  assert.equal(report.results.partialFailure.inspectionStatus, 'blocked-recovery');
+  assert.ok(Array.isArray(report.results.preCommitFailure.journalRecordTypes));
+  assert.ok(report.results.preCommitFailure.journalRecordTypes.length > 0);
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-durable-chunk-receipts'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-live-remote-preconditions'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-partial-commit-recovery-evidence'));

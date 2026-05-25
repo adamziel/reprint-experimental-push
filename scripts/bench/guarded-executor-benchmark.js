@@ -639,16 +639,8 @@ function buildReport({
     results: {
       appliedMutations: applyResult.appliedMutations,
       successJournalPath: successPersisted.filePath,
-      preCommitFailure: {
-        errorCode: preCommitFailure.errorCode,
-        recoveryStatus: preCommitFailure.recoveryStatus,
-        journalPath: preCommitFailure.journalPath,
-      },
-      partialFailure: {
-        errorCode: partialFailure.errorCode,
-        recoveryStatus: partialFailure.recoveryStatus,
-        journalPath: partialFailure.journalPath,
-      },
+      preCommitFailure: failureProbeDetails(preCommitFailure),
+      partialFailure: failureProbeDetails(partialFailure),
     },
     claims: {
       labGuardedExecutorEvidence: true,
@@ -746,6 +738,20 @@ function durableJournalHasNoRawValues(journal) {
   } catch {
     return false;
   }
+}
+
+function failureProbeDetails(probe) {
+  return {
+    errorCode: probe.errorCode,
+    recoveryStatus: probe.recoveryStatus,
+    journalPath: probe.journalPath,
+    journalIntegrity: probe.journalIntegrity,
+    inspectionStatus: probe.inspectionStatus,
+    remoteUnchanged: probe.remoteUnchanged,
+    groupNewTargets: probe.groupNewTargets,
+    journalRecordTypes: probe.journalRecordTypes,
+    elapsedMs: probe.elapsedMs,
+  };
 }
 
 function mibPerSecond(bytes, ms) {
