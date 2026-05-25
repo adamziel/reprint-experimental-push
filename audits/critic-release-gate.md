@@ -38,6 +38,11 @@ Do not use production wording unless the branch has all of the following for the
   production proof until the same branch shows live WordPress auth/session
   lifecycle, durable journal semantics, graph identity, and plugin-driver
   coverage on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- the supervised reliable-executor lane at remote head `68664884` is stronger
+  retained-source lab evidence than the baseline, but it still does not prove
+  production-grade push support on this branch unless the same live boundary is
+  rerun here against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
+  with preserved-remote auditability;
 - `REPRINT_PUSH_SOURCE_URL` is supplied from a real local, Playground, or Docker source and is used by a live preflight/release command, not just a setup placeholder;
 - the claimed `npm run test:playground:production-shaped-release-proof` command is not a proof command at all if it is absent from `package.json`; if it exists only as a discussion label or wrapper around other playground scripts, it remains compatibility evidence only;
 - a completed `npm run verify:release` run is still local lab evidence unless the same branch also proves the live WordPress auth/session lifecycle, durable journal semantics, preserved-remote auditability, and apply-time revalidation on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;

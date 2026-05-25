@@ -8181,6 +8181,11 @@ Lead finding for the current release-proof claim:
   retained-source evidence to a live WordPress auth/session lifecycle
   boundary, with durable journal semantics and explicit graph identity and
   plugin-driver evidence in the same rerun;
+- the supervised reliable-executor lane's remote head `68664884` is stronger
+  retained-source lab evidence than this baseline, but it still stops short of
+  branch-local live retry proof until this worktree reruns the same live
+  boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
+  and preserves the rejected remote for audit;
 - if that rerun cannot name the exact command string, exact live source URL,
   executor identity, preserved remote, rejection point, dry-run receipt,
   apply-time revalidation, journal/recovery inspection, and old/new/blocked
