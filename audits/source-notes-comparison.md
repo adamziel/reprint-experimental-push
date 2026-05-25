@@ -91,6 +91,10 @@ lab route, fixture replay, or package mount is the real production executor.
 If the claim cannot show the exact live request path, preserved remote state,
 and stale-authority rejection at the current write boundary, the comparison
 remains context only.
+That rule also applies to manual resolution: if the remote was not preserved,
+the stale artifact was not rejected before mutation, and the next retry did
+not start from fresh live hashes, the comparison stays historical context and
+does not become retry authority.
 Manual-review artifacts, route-shape smokes, and `finalMatchesLocal` results
 stay in the same bucket: useful for lab review, but not retry authority and
 not proof that the cited upstream note maps to current production behavior.

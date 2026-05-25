@@ -40,6 +40,8 @@ or comparison-only.
 - The claim shows unknown plugin-owned state is not being widened into a
   success case through fallback behavior, stale metadata, or a copied-lab
   route that happens to hit the same URL shape.
+- The claim shows plugin-owned allowlist gaps fail closed at apply time even
+  when the route looks valid and a local fixture row would otherwise pass.
 - The claim shows plugin-owned ownership changes are revalidated at apply time,
   not inherited from stale local metadata.
 - The claim shows a plugin data trap cannot pass as success when a fixture-owned
@@ -85,6 +87,9 @@ or comparison-only.
   `finalMatchesLocal` result stand in for live remote drift rejection, stale
   approval expiry, create-time remap handling, plugin-owned allowlist
   coverage, or partial side-effect classification.
+- The claim does not treat a plugin-owned fixture row or option as proof that
+  broader plugin-owned surfaces were safe if custom tables, generated files,
+  cron, caches, or runtime registries were not revalidated live.
 - The claim does not let source-note comparisons backfill missing live proof
   for drift rejection, create-time remap, plugin ownership, partial
   side-effect classification, or stale approval expiry unless the same live
