@@ -7479,6 +7479,9 @@ test('durable pre-commit failures keep boundary-specific journal evidence and co
   assert.ok(replay.recoveryState.artifacts.journal);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(Object.values(replay.site.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length, 1);
 });
 
 test('durable recovery accepts only old remote, fully updated remote, or blocked recovery with artifacts', () => {
@@ -7518,6 +7521,7 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
   const blockedJournalPath = tempRecoveryJournalPath();
   const blockedDurableJournal = openRecoveryJournal(blockedJournalPath, { truncate: true, now: fixedNow });
   const blockedRemote = baseSite();
+  const blockedRemoteBefore = JSON.stringify(blockedRemote);
   const blockedError = captureError(() =>
     applyPlan(blockedRemote, plan, {
       mutateRemote: true,
@@ -7531,8 +7535,11 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
   assertAcceptableRecoveryState(blockedError.details.recovery);
   assertRecoveryStateArtifacts(blockedError.details.recovery, 'blocked-recovery');
   assert.ok(blockedError.details.recovery.artifacts.remote);
+  assert.notEqual(JSON.stringify(blockedRemote), blockedRemoteBefore);
   assert.equal(blockedError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
   assert.equal(blockedError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(blockedRemote.files['index.php'], '<?php echo "local";');
+  assert.equal(blockedRemote.db.wp_posts['ID:2'], undefined);
 
   const completedJournalPath = tempRecoveryJournalPath();
   const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
