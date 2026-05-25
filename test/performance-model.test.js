@@ -524,6 +524,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks').violates.includes('atomic-groups'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-dependency-checks').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-dependency-checks').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-dependency-checks').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-dependency-checks').violates.includes('atomic-groups'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update-dependency-checks').rejectedGate,
     'group',
   );

@@ -744,6 +744,10 @@ under load:
   is rejected because planning evidence and cached batch receipts can reduce
   replay work, but they cannot prove dependency checks, row preconditions, or
   the atomic-group finalize survived failure.
+- compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-dependency-checks
+  is rejected because planning evidence and cached chunk receipts can trim
+  replay work, but they cannot prove dependency checks, metadata writes, or
+  the atomic-group barrier survived failure.
 - compressed-remote-index-and-cached-file-hash-skips-plugin-update-dependency-checks
   is rejected because planning evidence and cached file hashes can trim lookup
   and rehash work, but they cannot prove dependency checks, live row compares,
