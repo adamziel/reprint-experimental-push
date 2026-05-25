@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is not helper availability or the presence of release-shaped wrappers; it is the lack of live-boundary evidence for the remaining production claims, so the release gate must stay closed.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is the lack of live-boundary evidence for those remaining production claims, not helper availability or release-shaped wrappers. The release gate must stay closed until that evidence exists in a checked-in, enforced entrypoint.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -28,7 +28,7 @@ The objective implies these minimum release requirements:
 2. Revalidate the live source at apply time before mutating it. A stale preflight is not enough.
 3. Preserve all touched WordPress data shapes end to end, including rows, files, plugin-owned data, serialized payloads, and graph identity.
 4. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes.
-5. Prove production auth/session lifecycle, durable journal semantics, leases/fencing, graph identity, and plugin-driver behavior at the release boundary, not only in helper scripts or optional smokes.
+5. Prove production auth/session lifecycle, durable journal semantics, leases/fencing, graph identity, and plugin-driver behavior at the release boundary, not only in helper scripts or optional smokes. If any of these remain helper-scoped, the release claim is blocked.
 6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or storage abstraction that can satisfy tests without touching live source storage.
 7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one.
 8. Expose one required release command that fails closed when any safety gate is still lab-backed, fixture-only, benchmark-only, or missing live-source proof. Optional helpers are not enough.
