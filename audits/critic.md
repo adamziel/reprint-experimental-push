@@ -6398,10 +6398,11 @@ The design still has not closed the following production-grade gaps:
 - there is still no single executable real-site preflight/release command on
   this branch; `plan`, `apply`, and the `test:playground:*` smoke scripts are
   compatibility and lab-verification entry points only, so they cannot by
-  themselves prove the live boundary, preserved remote, stale rejection point,
-  or fresh retry scope on an actual remote; until that command exists and can
-  be rerun against a real remote with preserved-remote evidence, every
-  production-grade push claim must fail closed;
+  themselves prove the live executor boundary, the auth boundary, the
+  preserved remote, the stale rejection point, or the fresh retry scope on an
+  actual remote; until that command exists, names the live executor and auth
+  path, and can be rerun against a real remote with preserved-remote
+  evidence, every production-grade push claim must fail closed;
 - conflict policy is still ambiguous when the remote drifts between dry-run
   and apply; missing proof is a branch-local rejection point before the first
   write, plus an auditable preserved remote that the user can inspect and
@@ -6496,10 +6497,11 @@ The design still has not closed the following production-grade gaps:
 Release gate for this branch:
 
 - before any production-grade push claim, verify that the exact live boundary
-  is named, the stale-drift case is named, the preserved remote stayed
-  inspectable after rejection, the rejection point happened before the first
-  write, the fresh retry scope was rebuilt from live hashes, and every
-  touched surface is classified old, new, or blocked;
+  is named, the stale-drift case is named, the live executor and auth path
+  are named, the preserved remote stayed inspectable after rejection, the
+  rejection point happened before the first write, the fresh retry scope was
+  rebuilt from live hashes, and every touched surface is classified old,
+  new, or blocked;
 - no production-grade push claim unless the exact drift case is named and the
   remote stayed inspectable after rejection for audit/retry;
 - no production-grade push claim unless the stale approval or review artifact
@@ -6538,6 +6540,10 @@ Production-grade proof still missing on this branch:
 
 - live remote drift is not closed until the rejected remote stays inspectable
   after rejection and the retry scope is rebuilt from fresh live hashes;
+- the first real-site command is not closed until the claim can name the live
+  executor and auth boundary that produced it, because a copied executor or
+  fallback auth path behind the same route shape is still compatibility
+  evidence only;
 - a production-shaped `/wp-json/reprint/v1/push/*` smoke is not closed
   until it also proves the rejected remote stayed inspectable after stale
   drift and that any later-discovered plugin-owned surface was enumerated or
