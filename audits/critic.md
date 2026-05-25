@@ -17,6 +17,15 @@ Worker-action checklist:
 - prove graph identity across create-time remap and late-discovered relationship-bearing records; and
 - prove plugin-driver coverage for late plugin-owned surfaces that appear outside the initial allowlist.
 
+Production-grade push support still needs all of the following on one rerunnable boundary:
+
+- a live WordPress auth/session lifecycle on the rejected source URL, including expiry, refresh, and operator re-entry after rejection;
+- a durable journal with lease/fencing semantics on production-like storage, not just a row-count assertion;
+- preserved-remote retention after refusal, with the rejected remote still inspectable for audit and retry;
+- apply-time revalidation from fresh live hashes on the same boundary;
+- graph identity across create-time remap and late-discovered relationship-bearing records; and
+- plugin-driver coverage for late plugin-owned surfaces outside the initial allowlist.
+
 The missing production proof is one rerunnable live mutation boundary on one exact source URL. That boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that exists, the retained-source proofs remain useful but non-production evidence.
 
 What must happen before production wording is defensible:
