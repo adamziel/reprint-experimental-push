@@ -18,21 +18,21 @@ late-discovered plugin-owned surfaces. Production-grade wording is still false
 if it relies on lab-session shape, retained-source journal rows, or route
 compatibility as a stand-in for live WordPress auth/session durability.
 
-Source-note comparison, kept conservative:
+Source-note comparison, kept conservative and non-authoritative unless this branch reran the same live boundary:
 
 - Reprint proves the intended push surface, compare-and-swap framing, and
   replayable protocol shape, but the current evidence still stops at lab or
   retained-source boundaries rather than a live production WordPress
-  auth/session lifecycle with preserved-remote recovery.
+  auth/session lifecycle with preserved-remote recovery on this branch.
 - ZS-Sync proves scanner and batching value, but not source mutation safety on
   its own; it does not close the atomicity, identity remap, or plugin-owned
   surface traps that this project must prove before push can be called
-  production-grade.
+  production-grade here.
 - ForkPress contributes the strongest audit and crash-recovery story, but the
   source notes still do not supply proof for this branch's required live
   WordPress boundary, durable storage and lease/fencing semantics outside the
   lab harness, or plugin-driver coverage for late-discovered plugin-owned
-  surfaces.
+  surfaces on a rerunnable live mutation.
 
 The latest remote evidence is strong enough to retire stale "no
 `verify:release` exists" critiques on this audit branch. It is not strong
@@ -66,16 +66,7 @@ retained-source evidence for those shapes, but that evidence is not enough to
 claim production-grade push support here unless the same live boundary is
 runnable on this branch and the rejected remote remains auditable and
 retryable. If the only available proof is a retained-source or fixture replay,
-the claim must stay at "lab progress" rather than "production-ready." On this
-audit branch specifically, the gap is the absence of an independently rerun
-live boundary on this branch; do not generalize that branch-local gap into a
-claim that the supervised lane lacks the command. The next acceptable proof is
-not another replay of the retained-source lane; it must be a live WordPress
-auth/session boundary with preserved-remote retention, apply-time
-revalidation, journal/recovery inspection, lease/fencing proof outside
-Playground, graph identity proof, plugin-driver coverage, and exact
-preserved-remote retry evidence that can be rerun and audited from this
-branch.
+the claim must stay at "lab progress" rather than "production-ready."
 
 ## What must change before production-grade wording is defensible
 
