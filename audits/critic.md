@@ -12,7 +12,9 @@ The current blocker on this audit branch is the missing rerunnable live
 boundary with preserved-remote audit evidence on a real local, Playground, or
 Docker `REPRINT_PUSH_SOURCE_URL`; the absence of a branch-local real-site
 release command is secondary to that missing live proof, not a substitute for
-it.
+it. Keep the supervised lane and this branch separate: retained-source lab
+evidence can support design review, but it cannot stand in for this
+worktree's own live retry proof.
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
@@ -32,6 +34,18 @@ remote audit evidence on a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL`.
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
+
+Production-grade wording on this branch is defensible only after the same live
+boundary shows all of the following:
+
+- the exact executable command string and exact live `REPRINT_PUSH_SOURCE_URL`;
+- the executor identity and live auth/session boundary before the first write;
+- the preserved remote that stayed inspectable after rejection;
+- the exact rejection point before the first write;
+- dry-run receipt, apply-time revalidation, and journal/recovery inspection;
+- graph identity and plugin-driver coverage on the live boundary; and
+- old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts.
 
 Primary critic finding:
 
