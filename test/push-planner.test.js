@@ -9039,6 +9039,51 @@ test('recovery failure boundaries stay on old remote and completed replay stays 
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('durable recovery after dependency validation keeps the old remote state and a later replay stays inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() => applyPlan(remote, plan, {
+    durableJournal,
+    failAfterDependencyValidation: true,
+  }));
+  const persistedAfterFailure = readRecoveryJournal(journalPath);
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+  const persistedAfterReplay = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assert.equal(JSON.stringify(remote), before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(error.details.recovery.artifacts.journal.status, 'dependencies-validated');
+  assert.equal(persistedAfterFailure.records[persistedAfterFailure.records.length - 1].state, 'old-remote');
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'journal-replayed').length,
+    persistedAfterFailure.records.filter((record) => record.type === 'journal-replayed').length + 1,
+  );
+});
+
 test('mid-apply partial writes stay blocked with artifacts and completed replay stays idempotent', () => {
   const base = baseSite();
   const local = baseSite();
