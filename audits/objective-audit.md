@@ -14,6 +14,11 @@ The last 12 hours did not change the release gate. Fresh remote fetch evidence s
 
 Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The exact proof that would move one gate is a checked command from this checkout that, in one run, emits apply-time auth/session validation, durable journal readback, recovery evidence, live-source topology proof, preserved-remote drift evidence, and an explicit machine-checkable verdict that the remaining production boundary has cleared. The next owner for the missing proof remains `reliable-executor`; no other lane has replaced that boundary with an in-tree checked verdict.
 
+What would move one gate next:
+
+- A checked `verify:release`-class command in this checkout that proves the live source endpoint, apply-time auth/session validation, durable journal readback, recovery inspect, and preserved-remote drift in one run.
+- A machine-checkable verdict from that same run that closes at least one remaining production boundary instead of only restating the open ones.
+
 ## Explicit Requirements
 
 The objective implies these minimum release requirements:
