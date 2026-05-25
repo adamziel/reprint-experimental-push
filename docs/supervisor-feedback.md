@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 10:46:48 CEST
+Last updated: 2026-05-25 10:47:32 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 10:46:48 CEST
+## 2026-05-25 10:47:32 CEST
 
 - Going well: the page, log, and latest audit note still agree on the blocked snapshot.
 - Not going well: `integration` still has not returned the real-site release command, so the retained run evidence is still missing.

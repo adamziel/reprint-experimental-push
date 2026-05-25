@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 10:46:48 CEST.
+- Last update: 2026-05-25 10:47:32 CEST.
 - Status: blocked; the visible page, log, and latest audit note still agree.
 - Trend: no release-state change; `integration` still owns the next real-site release command and the gate stays explicit.
 - Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
