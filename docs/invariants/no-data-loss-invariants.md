@@ -26,6 +26,8 @@ This note captures the planner boundary in plain language.
   independent create while unrelated remote-only plugin metadata and files
   remain `keep-remote`.
 - A live-preconditioned file delete may still coexist with a matching
+  independent restore while remote-only plugin removals remain `keep-remote`.
+- A live-preconditioned file delete may still coexist with a matching
   independent file type swap and matching independent row delete while
   unrelated remote-only plugin metadata and files remain `keep-remote`.
 - A live-preconditioned file delete may still coexist with a matching
@@ -114,3 +116,5 @@ This note captures the planner boundary in plain language.
 - Plugin-owned deletions when the owner context is stale or missing.
 - Any mutation that lacks a live remote precondition bound to the mutation id,
   resource key, and remote hash observed during planning.
+- Any apply path that would need to guess whether a local delete, restore, or
+  file type swap can overwrite a live remote change.
