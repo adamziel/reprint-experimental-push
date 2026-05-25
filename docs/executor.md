@@ -88,6 +88,9 @@ The canonical proof stack for that executor story is the same one named in
 
 - `push-protocol-extension-contract.json` for the full production ladder
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge
+- `push-deployment-topology-contract.json` for the smallest topology-only
+  contract that still proves the same remote identity twice, the imported
+  local site, and the sandbox-provided `8080` ingress rule
 - `push-journal-inspect-contract.json` for the read-only journal boundary
 - `push-auth-session-journal-recovery-contract.json` for the compact auth,
   session, journal-row, lease-fence, and inspect-first recovery proof
@@ -101,6 +104,8 @@ The canonical proof stack for that executor story is the same one named in
 - `push-recovery-inspect-contract.json` for the read-only recovery classifier
 - `push-recovery-revalidation-contract.json` for mutating recovery after
   inspect proves the branch safe
+- `push-deployment-topology-contract.json` for the exact one-remote,
+  one-local, one-drift Docker and Playground harness shape
 
 These are the same proof points the protocol contract uses:
 

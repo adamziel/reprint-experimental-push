@@ -80,6 +80,8 @@ The executor proof is intentionally split across three levels:
   preflight through inspect-first recovery.
 - `push_pull_to_topology_contract` shows how exporter/importer provenance
   becomes push planning input without rewriting the persisted base package.
+- `push_deployment_topology_contract` shows the one-remote, one-local, one-
+  drift-witness production shape in both Docker and Playground.
 - `push_journal_inspect_contract` isolates the read-only journal boundary from
   mutating recovery and keeps the claim, lease, and live-hash evidence
   separate.
@@ -135,5 +137,8 @@ Use these fixtures as the canonical proof bundle:
   aligned in one object.
 - `push-executor-topology-proof.json` is the shortest executor-shaped proof
   for Docker and Playground ingress behavior.
+- `push-deployment-topology-contract.json` is the smallest topology-only
+  contract that still proves the remote identity split, the local edit site,
+  the drift witness, and the sandbox-provided `8080` ingress rule.
 - `push-topology-matrix.json` is the machine-readable one-remote,
   one-local, one-drift matrix.
