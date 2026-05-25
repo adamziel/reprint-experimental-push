@@ -8043,10 +8043,16 @@ test('durable no-data-loss recovery keeps the only acceptable post-failure state
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
   }
 
+  const replayJournalPath = tempRecoveryJournalPath();
+  const replayDurableJournal = openRecoveryJournal(replayJournalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(baseSite(), plan);
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
-  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: replayDurableJournal,
+  });
+  replayDurableJournal.close();
 
   assert.equal(JSON.stringify(replayRemote), replaySnapshot);
   assert.equal(replay.appliedMutations, 0);
@@ -8058,5 +8064,15 @@ test('durable no-data-loss recovery keeps the only acceptable post-failure state
   assert.equal(
     Object.values(replay.site.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length,
     1,
+  );
+
+  const persisted = readRecoveryJournal(replayJournalPath);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'journal-replayed' && record.state === 'fully-updated-remote'),
+    true,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'mutation-observed'),
+    false,
   );
 });
