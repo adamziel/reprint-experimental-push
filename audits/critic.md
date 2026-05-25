@@ -1,10 +1,10 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane
-through remote head `68664884`, with `63a3502f` as the earlier retained-source
-proof point. That lane's `npm run verify:release` result is material
-retained-source lab evidence, but it is still not live retry authority unless
-the same branch also proves the live production WordPress auth/session
+through remote head `9975dfc9`, with `68664884` and `63a3502f` as earlier
+retained-source proof points. That lane's `npm run verify:release` result is
+material retained-source lab evidence, but it is still not live retry authority
+unless the same branch also proves the live production WordPress auth/session
 boundary, durable journal semantics, graph identity, plugin-driver coverage,
 and leases/fencing on a real-site rerun. The retired critique is the one that
 said no `verify:release` command exists; do not reintroduce it on this branch.
