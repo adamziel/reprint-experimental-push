@@ -45,6 +45,29 @@ test('push protocol fixture captures the production stage order and recovery rul
   ]);
 });
 
+test('push protocol fixture readme keeps the production ladder and topology bridge aligned', () => {
+  assert.ok(
+    protocolReadme.includes(
+      'The production proof bundle is intentionally layered and keeps the same remote',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
+      'The canonical topology proof is always one remote source, one imported local',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
+      'The pull handoff is equally explicit:',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
+      'browser-visible inspection stays on the sandbox-provided `8080` ingress',
+    ),
+  );
+});
+
 test('push remote liveness topology fixture keeps planning, apply, and recovery separate', () => {
   const contract = readJson('fixtures/protocol/push-remote-liveness-topology-contract.json');
 
