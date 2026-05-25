@@ -36,16 +36,16 @@ For this audit:
 
 ## Evidence Table
 
-| Requirement | Current proof | Missing proof | Release blocker |
-| --- | --- | --- | --- |
-| One-way pull base, one-way push to live source | Planner and fixture smokes reject unsafe overwrites and preserve remote-only changes. | A live-source push boundary that mutates the actual source site after a pull-base snapshot. | Yes: the only direct push proof is still lab-backed. |
-| Preserve all affected WordPress data shapes | Model and fixture tests cover selected rows, files, plugin-owned records, and graph-safe conflicts. | Exhaustive live-source coverage for arbitrary DB rows, files, plugin-owned data, graph identity, and same-plan rewrites. | Yes: indirect coverage is not enough. |
-| Survive crash/retry/replay/duplicate/stale-claim/lease-expiry cases | Process-kill, stale-claim, idempotency, and replay smokes exist. | Production-backed journal durability, lease/fencing behavior, and crash recovery on the real storage and transport path. | Yes: recovery is still fixture-scoped. |
-| Enforce auth/session/lease/fencing/journal/graph identity/plugin-driver checks | Authenticated local Playground routes, DB journal slices, and graph assertions exist in lab scope. | A required production release gate that enforces all of them together. | Yes: no enforced gate exists. |
-| Prove real remote/local topology | Playground blueprints, local HTTP route smokes, and authenticated lab routes approximate the topology. | Evidence from the actual remote/local production topology with a live source and live push target. | Yes: topology proof remains lab-only. |
-| Publish or refuse a speed claim | Benchmark refusal tests block unsupported throughput claims, and the model tracks the proof obligations that a claim would need. | A measured runtime or memory result from the production-shaped push path, with stated thresholds and a repeatable measurement contract. | Yes: speed is still refusal-only, not measured production proof. |
-| Expose one required release command | Optional npm scripts and opt-in smokes exist: `npm test`, `npm run test:playground`, and the extra scenario commands in `package.json`. | A mandatory `verify:release`-style entrypoint that fails closed instead of letting operators assemble only the easy checks. | Yes: there is no required gate. |
-| Wire the release command into CI or an equivalent enforced entrypoint | `npm test` and `npm run test:playground` prove local invariants and lab flows. | A single checked-in release path that includes auth/session, durable journal, lease/fencing, graph identity, plugin-driver, real topology, crash-boundary, recovery, and benchmark checks. | Yes: the strongest checks are still opt-in and there is no workflow file to enforce a default run. |
+| Requirement | Executable proof | Lab/fixture proof | Docs-only proof | Missing proof | Release blocker |
+| --- | --- | --- | --- | --- | --- |
+| One-way pull base, one-way push to live source | Planner and fixture smokes reject unsafe overwrites and preserve remote-only changes. | Local Playground push flows and protocol fixtures approximate the live boundary. | `README.md`, `docs/protocol.md`, and `docs/playground-topology.md` describe the intended flow. | A live-source push boundary that mutates the actual source site after a pull-base snapshot. | Yes: the only direct push proof is still lab-backed. |
+| Preserve all affected WordPress data shapes | Model and fixture tests cover selected rows, files, plugin-owned records, and graph-safe conflicts. | File and DB fixture checks exercise some data shapes and redaction paths. | `docs/recovery/acceptable-states.md` and `docs/invariants/no-overwrite.md` describe the desired data shapes. | Exhaustive live-source coverage for arbitrary DB rows, files, plugin-owned data, graph identity, and same-plan rewrites. | Yes: indirect coverage is not enough. |
+| Survive crash/retry/replay/duplicate/stale-claim/lease-expiry cases | Process-kill, stale-claim, idempotency, and replay smokes exist. | Recovery and journal tests model restart states and append semantics. | `docs/recovery/apply-journal.md` describes the intended recovery contract. | Production-backed journal durability, lease/fencing behavior, and crash recovery on the real storage and transport path. | Yes: recovery is still fixture-scoped. |
+| Enforce auth/session/lease/fencing/journal/graph identity/plugin-driver checks | Authenticated local Playground routes, DB journal slices, and graph assertions exist in lab scope. | Script-level smokes and benchmark model checks refuse some unsafe shortcuts. | `docs/executor.md`, `docs/protocol.md`, and `fixtures/protocol/*` describe the checks. | A required production release gate that enforces all of them together. | Yes: no enforced gate exists. |
+| Prove real remote/local topology | Playground blueprints, local HTTP route smokes, and authenticated lab routes approximate the topology. | Local ingress on port 8080 and the lab server topology are exercised. | `docs/playground-topology.md` documents the intended topology. | Evidence from the actual remote/local production topology with a live source and live push target. | Yes: topology proof remains lab-only. |
+| Publish or refuse a speed claim | Benchmark refusal tests block unsupported throughput claims, and the model tracks the proof obligations that a claim would need. | The benchmark model encodes gating, backpressure, and refusal states. | `docs/fast-paths.md` and `docs/approach-scorecard.md` discuss intended speedups. | A measured runtime or memory result from the production-shaped push path, with stated thresholds and a repeatable measurement contract. | Yes: speed is still refusal-only, not measured production proof. |
+| Expose one required release command | Optional npm scripts and opt-in smokes exist: `npm test`, `npm run test:playground`, and the extra scenario commands in `package.json`. | There are many safety-oriented checks, but they remain individually optional. | Script names and comments imply a desired release sequence. | A mandatory `verify:release`-style entrypoint that fails closed instead of letting operators assemble only the easy checks. | Yes: there is no required gate. |
+| Wire the release command into CI or an equivalent enforced entrypoint | `npm test` and `npm run test:playground` prove local invariants and lab flows. | No checked-in workflow file or equivalent default release target is present in this checkout. | `package.json` and the absence of `.github` are the only visible automation clues. | A single checked-in release path that includes auth/session, durable journal, lease/fencing, graph identity, plugin-driver, real topology, crash-boundary, recovery, and benchmark checks. | Yes: the strongest checks are still opt-in and there is no workflow file to enforce a default run. |
 
 ## Test Audit
 
@@ -59,6 +59,14 @@ The current tests are strongest where they reject unsafe claims, and weakest whe
 - `test/recovery-journal.test.js` proves file-backed JSONL append/restart behavior, monotonic sequences, no raw journal values, and restart classification. It does not prove production storage durability, cross-process lease handling, a live remote/local crash boundary, or any production WordPress mutation path, so it is proof of a journal model rather than proof of the live storage path.
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the benchmark model keeps proof obligations attached to the proposed fast paths and that unsupported throughput claims are blocked. They do not measure a production push path, establish a real runtime/memory threshold, or prove that the live source topology is fast, so they support refusal of unsupported speed claims rather than a release-speed claim.
 - All of the optional smokes can pass at once and still leave the objective blocked, because none of them is mandatory and none of them is the single enforced decision point the release bar needs.
+
+The uncomfortable conclusion is that the suite proves guardrails, not release safety. If the release claim depends on no data loss, reliability, or speed, the current tests are still missing the only evidence that would make those claims credible:
+
+- a live-source push that mutates the real target after a pull-base snapshot;
+- a durable production journal on the real storage path;
+- a real lease/fencing boundary that prevents concurrent or stale writers;
+- a measured end-to-end benchmark on the production-shaped push path with a stated threshold;
+- one enforced gate that fails closed when any of the above is still fixture-only or refusal-only.
 
 ## Test Claim Audit
 
@@ -119,6 +127,16 @@ The objective is to push local changes back to the original WordPress source sit
 | Reliability | The repo proves some journal, replay, stale-claim, and process-kill states are classified and blocked in local Playground fixtures. | It does not prove restart safety, leases, fencing, rollback, or exactly-once behavior on a live source site across all mutation types. | Missing production-backed kill matrix plus durable journal evidence. |
 | Speed | The repo proves benchmark guards and model checks exist, and the benchmark harness fails closed on unsupported throughput claims. `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` only assert refusal and model invariants, not a timed production push. | It does not define a reproducible measurement contract, nor does it measure throughput or memory on a production-shaped executor or on a production-backed push path, so it cannot support a release claim that the path is fast. | Missing measured end-to-end benchmark on the real push path with a release threshold. |
 | Release gate | `package.json` exposes only `test`, `test:playground`, and separate opt-in smokes; there is no checked-in workflow file to force a default release path. | It does not have one required command that chains auth/session, durable journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and performance checks and fails closed when any one is still lab-backed, fixture-scoped, or benchmark-only. | Missing enforced release gate, so all other claims remain bypassable. |
+
+## Release Priority
+
+The weakest current claim is the release gate, and that weakness propagates to every other claim. Until the repository has one mandatory command that composes the safety matrix, the suite can still produce green results without proving production readiness.
+
+Highest-value next fix:
+
+1. Add a mandatory `verify:release` entrypoint that rejects any `labBacked: true` or fixture-only proof.
+2. Make that command the checked-in CI default.
+3. Require the live-source, journal, lease/fencing, graph identity, plugin-driver, and benchmark checks to run in one enforced sequence.
 
 ## Release Gate Gap
 
