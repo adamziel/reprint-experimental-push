@@ -51,6 +51,8 @@ the outcome, the push is unsafe.
 - The recovery journal may contain opened or staged evidence, but no committed
   mutation evidence.
 - Retrying must not invent inserts or stale local data.
+- This is the only acceptable state for failures before mutation, after
+  staging, and after dependency validation.
 
 `fully-updated-remote`
 
@@ -59,6 +61,8 @@ the outcome, the push is unsafe.
 - Replaying the same completed plan must remain read-only and must not append
   fresh mutation evidence.
 - Stale local state must not be resurrected during replay.
+- A completed replay that already matches the remote should stay in this state
+  even if the retry is repeated.
 
 `blocked-recovery`
 
@@ -68,6 +72,8 @@ the outcome, the push is unsafe.
 - The blocked state must retain remote and journal artifacts.
 - A blocked recovery is the only acceptable answer when the remote changed and
   the journal cannot prove a safe replay or rollback.
+- Any partial remote mutation without inspectable recovery artifacts is a
+  release blocker, not an acceptable recovery state.
 
 ## Release Blocker
 
