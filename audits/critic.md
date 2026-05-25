@@ -118,6 +118,27 @@ evidence only. Even a named upstream state is still historical unless this
 branch reran the same live boundary and can show fresh preserved-remote,
 rejection-point, and retry evidence for that exact case.
 
+Conservative comparison matrix:
+
+- Reprint `27c5f25` proves staged pull delivery, resumable transport, and
+  protocol framing in the observed upstream commit. It does not prove a live
+  push executor, stale remote-drift rejection, preserved-remote auditability,
+  create-time identity remap safety, or later-discovered plugin-owned surface
+  handling on this branch.
+- ZS-Sync `d9334a0` proves bounded scanning, cursoring, and resource
+  discovery in the observed upstream commit. It does not prove source-side
+  mutation safety, live-drift rejection, partial-write recovery, create-time
+  remap safety, or plugin-owned surface enumeration on this branch.
+- ForkPress `55f9879` proves merge-audit vocabulary, reviewed-resolution
+  framing, and crash-consistency intent in the observed upstream worktree. It
+  does not prove that a readable manual-review artifact can authorize a later
+  row, file, relationship-bearing record, remapped create target, or plugin-
+  owned surface on this branch.
+- The missing repo proof for all three is the same live mutation boundary on
+  this worktree, rerun against the exact drift case, with preserved-remote
+  evidence, stale rejection before the first write, fresh retry scope rebuilt
+  from live hashes, and per-surface old/new/blocked classification.
+
 Production-readiness checklist:
 
 - name the exact stale-drift case and the exact live boundary being rerun;
