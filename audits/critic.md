@@ -3191,7 +3191,8 @@ Source-note comparison summary:
   that the remote is preserved for audit on reject.
 - None of the three become current proof unless this branch also shows the
   exact live mutation boundary, the preserved remote, the stale rejection
-  point, and the fresh retry scope on the same path.
+  point, the fresh retry scope, and the branch-local recheck of the same
+  drifted-remote case on the same path.
 
 Production-readiness release gate checklist:
 
@@ -3214,7 +3215,8 @@ Production-readiness release gate checklist:
 7. Treat Reprint, ZS-Sync, and ForkPress notes as historical context unless
    the exact upstream commit or worktree state was reverified at the same
    live mutation boundary for this repo's claim and the branch-local retry
-   or drift case was rerun here.
+   or drift case was rerun here. A matching feature name, route family, or
+   package layout never upgrades the note into current proof.
 8. Fail closed if the wording only cites route shape, packaged-plugin mount,
    fixture replay, or `finalMatchesLocal` without the live boundary proof
    above. A readable manual-review artifact is not enough unless the claim
@@ -3262,7 +3264,9 @@ specific failure cases that still need explicit proof are:
   upstream revision or worktree state was rechecked there.
 - A comparison note that names the upstream state but not the branch-local
   live retry is still historical context, not current proof, even if the route
-  shape and hash values look production-shaped.
+  shape and hash values look production-shaped. The missing proof is the
+  branch-local same-boundary rerun, not a more confident interpretation of
+  the note.
 
 Minimum proof artifacts before any production-grade push wording:
 
