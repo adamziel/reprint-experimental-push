@@ -20,6 +20,7 @@ Do not use production wording unless the branch has all of the following for the
 - any source-note comparison that only matches route family, package mount, or reviewer wording is compatibility evidence only, even if the note is otherwise well formed;
 - any source-note comparison that merely matches the same route family, package layout, reviewer wording, or production-shaped route name is still historical context only and cannot be treated as live proof of retry authority, preserved-remote safety, stale-authority rejection, or live write coverage; and
 - any claim of "production-grade push support" is rejected unless the same live boundary shows preserved-remote evidence, stale-authority rejection, fresh retry scope rebuilt from live hashes, and per-surface old/new/blocked classification; and
+- any claim that a readable artifact, route-shaped smoke, or comparison note is enough after drift must fail closed unless the remote stayed preserved, the stale approval was rejected before the first write, and the fresh retry scope was rebuilt from live hashes for the same boundary; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
 - any remapped create target discovered during retry is treated as a new boundary until it is separately preserved, rejected, and retried with fresh live hashes; and
 - any claim that a historical Reprint, ZS-Sync, or ForkPress note proves a later live boundary must fail closed unless the note names the exact upstream state, says what it proves here, says what it does not prove here, and the same live boundary was rerun on this branch; and
@@ -41,6 +42,9 @@ False success to reject:
 - "manual resolution later" is also not success if a remapped create target or
   late-discovered plugin-owned surface was silently folded into the first
   approval instead of getting its own preserve/reject/retry cycle;
+- "same route family" is not success if the later boundary was not rerun here
+  with the preserved remote, stale rejection point, and fresh live-hash retry
+  scope;
 - "comparison passed" is not success if the source note lacks the exact
   upstream revision or worktree state, the same live boundary, and an explicit
   statement of what it does not prove here;

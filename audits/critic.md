@@ -83,6 +83,10 @@ Production-grade comparison gate:
   cannot become retry authority for a different row/file/relationship-bearing
   record/remapped create target/plugin-owned surface, or preserve the remote
   while rebuilding retry scope from live hashes on this branch.
+- If a later claim only matches the same route family, package mount, or
+  reviewer wording, treat it as compatibility evidence only. A matching shape
+  can still hide a copied executor, fixture-backed replay, or stale approval
+  being reused after drift.
 - Before any production-grade push wording, the branch must show the exact live
   boundary rerun here, the preserved remote after reject, the stale rejection
   point, and the fresh retry scope rebuilt from live hashes; if any one of
@@ -154,6 +158,15 @@ Must change before any production-grade push claim:
 - reject any wording that promotes a Reprint, ZS-Sync, or ForkPress note to
   current proof unless the exact upstream revision or worktree state is named
   and the same live boundary was rerun here with preserved-remote evidence.
+- reject any wording that says "manual resolution later" succeeded when the
+  remote was not preserved, the stale approval was not rejected before the
+  first write, or the fresh retry scope was not rebuilt from live hashes for
+  the same live boundary; a readable artifact after drift is audit evidence,
+  not retry authority.
+- reject any wording that widens one boundary to a later-discovered plugin-
+  owned surface, remapped create target, file, row, or relationship-bearing
+  record just because the later surface shares the same URL family or review
+  text; the later surface needs its own preserve / reject / retry cycle.
 
 Operational release gate:
 
