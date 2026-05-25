@@ -3580,6 +3580,9 @@ Production release gate checklist:
   still show a separate classification or rejection point for that surface
   plus preserved-remote evidence; a clean first write does not prove the
   later boundary.
+- If a manual-review artifact is still readable after drift, readability is
+  audit evidence only; the gate still needs reject-before-mutation proof and a
+  fresh retry artifact rebuilt from live hashes.
 
 Production-grade push wording remains blocked until the same live boundary
 proves all of the following:
