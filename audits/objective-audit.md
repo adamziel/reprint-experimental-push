@@ -145,6 +145,8 @@ Evidence buckets used below:
 - `Missing proof` means the repo has no current evidence for the requirement at the release boundary.
 - `Release blocker` states why the requirement still prevents a production claim.
 
+Direct command-surface check: `package.json` still has no `verify`, `verify:release`, or `release` script, so the repo still lacks a checked-in real-site push preflight command that could own the release verdict.
+
 The current [`audits/release-proof-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-proof-matrix.md) is aligned with this table. It is support material, not release proof.
 The point of this table is separation, not synthesis: executable proof, lab / fixture proof, and docs-only proof all stay in their own buckets until one required command reaches the live-source boundary.
 
