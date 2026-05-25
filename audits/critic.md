@@ -4741,10 +4741,12 @@ Minimum proof still missing for any production-grade claim:
 If the branch cannot show that the stale manual-review artifact is unusable as
 current retry authority, the claim is still false even when the route, mount,
 fixture, or `finalMatchesLocal` output looks production-shaped. A later
-plugin-owned row, file, registry entry, cache record, or generated asset is a
-new boundary until this branch records its own preserve / reject / retry
-cycle; the earlier review note stays audit-only and cannot be widened to cover
-that surface.
+plugin-owned row, file, registry entry, cache record, serialized blob,
+generated asset, or cron side effect is a new boundary until this branch
+records its own preserve / reject / retry cycle; the earlier review note stays
+audit-only and cannot be widened to cover that surface, and the preserved
+remote from the first boundary does not satisfy the proof obligation for the
+later one.
 
 Conservative comparison rule: a Reprint, ZS-Sync, or ForkPress citation must
 name the exact upstream revision or worktree state, say exactly what the note
