@@ -1320,6 +1320,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-publish',
+    proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip the guarded publish step for a large upload',
+    rejectedBecause: 'planning evidence and cached hashes can reduce lookup and hashing work, but they cannot prove chunk receipts, the live compare, or the guarded publish survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
