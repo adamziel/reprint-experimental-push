@@ -4850,7 +4850,7 @@ test('blocks local plugin metadata changes when remote plugin files changed', ()
   const blocker = plan.blockers[0];
   const blockerJson = JSON.stringify(blocker);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(mutationFor(plan, 'plugin:forms'), undefined);
@@ -4876,7 +4876,7 @@ test('blocks local plugin file changes when remote plugin metadata changed', () 
   const blocker = plan.blockers[0];
   const blockerJson = JSON.stringify(blocker);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
   assert.equal(mutationFor(plan, 'file:wp-content/plugins/forms/forms.php'), undefined);
@@ -4959,7 +4959,7 @@ test('blocks plugin-owned data when owner plugin files changed only on remote', 
   const blocker = plan.blockers[0];
   const blockerJson = JSON.stringify(blocker);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
   assert.equal(blocker.class, 'stale-plugin-owner-context');
@@ -13245,4 +13245,48 @@ test('blocks a plugin-owned delete while preserving matching independent edit, f
   assert.equal(plan.mutations.length, 0);
   assert.equal(plan.preconditions.length, 0);
   assert.equal(plan.blockers.length, 1);
+});
+
+test('blocks a file type swap that would hide a live remote descendant while preserving matching independent delete, edit, and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
+  base.db.wp_posts['ID:5'] = { ID: 5, post_title: 'Base matched title', post_status: 'publish' };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_posts['ID:5'] = { ID: 5, post_title: 'Shared matched title', post_status: 'publish' };
+  delete local.files['index.php'];
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/uploads/gallery/keep.txt'] = 'remote descendant';
+  remote.db.wp_posts['ID:5'] = { ID: 5, post_title: 'Shared matched title', post_status: 'publish' };
+  delete remote.files['index.php'];
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const typeSwapConflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:wp-content/uploads/gallery');
+  const matchingDeleteDecision = decisionFor(plan, 'file:index.php');
+  const matchingEditDecision = decisionFor(plan, 'row:["wp_posts","ID:5"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(typeSwapConflict.class, 'file-topology-conflict');
+  assert.equal(typeSwapConflict.relatedChange.localChange, 'delete');
+  assert.equal(typeSwapConflict.relatedChange.remoteChange, 'update');
+  assert.equal(matchingDeleteDecision.decision, 'already-in-sync');
+  assert.equal(matchingDeleteDecision.change.localChange, 'delete');
+  assert.equal(matchingDeleteDecision.change.remoteChange, 'delete');
+  assert.equal(matchingEditDecision.decision, 'already-in-sync');
+  assert.equal(matchingEditDecision.change.localChange, 'update');
+  assert.equal(matchingEditDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(plan.mutations.length, 0);
+  assert.equal(plan.preconditions.length, 0);
 });
