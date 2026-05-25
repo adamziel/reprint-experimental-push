@@ -232,6 +232,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'live',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-resume-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-receipt-flush-skips-large-upload-publish-after-pause')?.rejectedGate,
     'recovery',
   );

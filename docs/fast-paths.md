@@ -1195,6 +1195,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   large-upload resume-and-publish boundary after a pause, because the hash does
   not prove which chunk acknowledgements survived or that the guarded publish
   barrier still applies.
+- A compressed remote index plus a cached file fingerprint cannot skip
+  large-upload resume after a pause, because the fingerprint does not prove
+  which chunk acknowledgements survived or restore the guarded publish
+  barrier.
 - Backpressure cannot drop receipts or summarize evidence so recovery loses the
   ability to classify the remote state.
 - A drained queue cannot prove that the remote acknowledged every staged chunk
