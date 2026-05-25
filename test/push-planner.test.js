@@ -20768,6 +20768,60 @@ test('keeps same-remote graph identity at the live release boundary while a read
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin drift at the live release boundary while a ready delete plan preserves a matching independent file type swap and refuses late drift on re-apply', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/banner'] = 'base banner bytes';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/banner'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/banner'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/banner');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(completed.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(completed.site.files['wp-content/uploads/banner'].type, 'directory');
+  assert.equal(completed.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(completed.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.plugins.forms.description = 'late remote drift';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.plugins.forms.description, 'late remote drift');
+});
+
 test('refuses a forged ready delete at the live release boundary while remote-only plugin drift stays untouched', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
