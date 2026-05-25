@@ -8144,6 +8144,49 @@ identity plus plugin-driver coverage in the same rerun.
 The canonical production-readiness checklist for this branch lives in
 [`audits/critic-production-checklist.md`](./critic-production-checklist.md).
 
+Production-grade push support still requires all of the following on one live
+boundary:
+
+- a named real-site release command that reruns unchanged against a live local,
+  Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- live WordPress auth/session lifecycle evidence before the first write;
+- a preserved remote that stayed inspectable after rejection and can be safely
+  audited and retried;
+- the exact rejection point before the first write, with dry-run receipt and
+  apply-time revalidation on the same boundary;
+- journal/recovery inspection that defines retry scope instead of implying it;
+- graph identity plus plugin-driver coverage in the same rerun;
+- old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts;
+- explicit handling of hidden plugin-owned data traps outside the allowlist,
+  including cron rows, runtime registries, generated files, caches, serialized
+  blobs, and plugin-owned files; and
+- a separate preserve / reject / retry cycle for any later-discovered
+  plugin-owned surface or remapped create target.
+
+If any item is missing, the branch has compatibility evidence only and must
+not claim production-grade push support.
+
+Source-note comparisons remain provenance only unless this branch reran the
+same live boundary:
+
+- Reprint `27c5f25` supports staged transport, resumability vocabulary, and
+  chunked delivery framing, but it does not prove stale remote drift rejection,
+  preserved-remote auditability, create-time remap safety, or late plugin-
+  surface classification on this branch.
+- ZS-Sync `d9334a0` supports bounded discovery, cursoring, and batched
+  resource selection, but it does not prove source mutation safety, retry
+  authority, or recovery from partial side effects on this branch.
+- ForkPress `55f9879` supports merge-audit vocabulary and crash-consistency
+  intent, but it does not prove that a readable review artifact can authorize a
+  later row, file, remapped create target, or plugin-owned surface on this
+  branch.
+
+Each comparison must still say what it proves here, what it does not prove
+here, and the exact upstream revision or worktree state used. Route shape,
+package layout, reviewer wording, and fixture replay are compatibility
+evidence only.
+
 False-reliability trap to reject:
 
 - a stale manual-review artifact, source-note comparison, or live preflight
