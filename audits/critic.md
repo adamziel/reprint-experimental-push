@@ -3218,6 +3218,24 @@ point, preserved remote, and fresh retry scope. The missing proof is a
 durable classification or block for the late surface before the retry starts,
 not a broader success label for the earlier boundary.
 
+Production-grade wording must therefore prove, not imply:
+
+- live drift was checked on the actual apply boundary, not on a lab route or
+  fixture-shaped smoke;
+- the preserved remote stayed auditable after reject, while the stale review
+  artifact stayed audit-only and could not authorize a new row, file, or
+  plugin-owned surface;
+- any create-time rename, alias, or renumber was either durably represented
+  with live identity evidence or hard-blocked before mutation;
+- any plugin-owned surface outside the allowlist was either enumerated live or
+  blocked at apply time, including late-discovered custom tables, generated
+  files, cron rows, runtime registries, serialized blobs, and plugin files;
+- any partial file, DB, or plugin side effect was classified old, new, or
+  blocked before retry started; and
+- any Reprint, ZS-Sync, or ForkPress comparison named the exact upstream
+  revision or worktree state and was reverified at this repo's live mutation
+  boundary, not just cited as historical precedent.
+
 Source-note proof boundary, restated:
 
 - Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress `55f9879` are
