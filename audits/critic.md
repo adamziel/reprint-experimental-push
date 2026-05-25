@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, and the newer `2bdf01a8` proof-contract clarification. That is real progress, but it is still lab evidence. The project still lacks one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Wording alone does not close that gap, and manual resolution is not success unless the rejected remote stays inspectable and retryable.
+The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, and the newer `2bdf01a8` proof-contract clarification. That is real progress, but it is still lab evidence. The missing proof is still one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation.
 
 ## What still blocks the claim
 
@@ -38,10 +38,8 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - Reprint source notes contribute staged transport and resumable-delivery lineage, but not live mutation safety, preserved-remote retry, or WordPress auth/session lifecycle proof on this branch.
 - ZS-Sync source notes contribute discovery and batching lineage, but not source-mutation safety, create-time remap safety, or plugin-owned surface coverage on this branch.
 - ForkPress source notes contribute audit and crash-consistency vocabulary, but not a live WordPress boundary with preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
-- The three families are useful as lineage context only: Reprint helps with staged delivery vocabulary, ZS-Sync with scanning/batching vocabulary, and ForkPress with recovery/audit vocabulary; none of them prove the branch preserved the rejected remote, rebuilt retry scope from live hashes, or covered plugin-owned surfaces on a rerunnable live boundary.
-- In other words: Reprint is delivery lineage, ZS-Sync is discovery lineage, ForkPress is recovery lineage, and this branch still needs a live push boundary to prove authority, fencing, retry safety, and graph identity.
-- The comparison also does not prove live auth/session lifecycle; that remains missing from the production claim even if the lineage vocabulary is correct.
-- Any comparison to those notes must name the exact upstream revision or worktree state, say what the note proves here, and say what it does not prove here. If it only supports historical vocabulary, it stays provenance only and cannot be used as production proof by analogy.
+- The observed anchors in `docs/source-notes.md` are `27c5f25`, `d9334a0`, and `55f9879`; they are historical context only unless this branch reran the same live boundary with preserved-remote evidence, stale-authority rejection before the first write, and fresh live hashes.
+- If a comparison does not name the exact upstream state, say what it proves here, and say what it does not prove here, it stays provenance only and cannot be used as production proof by analogy.
 
 ## Changes required before production wording is defensible
 
@@ -67,6 +65,19 @@ The production claim also fails closed if any of these are only shown on a lab f
 - preserved-remote wording without the rejected remote still being inspectable after rejection.
 
 Manual resolution is not success unless the remote is preserved after rejection, the retry is auditable against fresh live hashes, and the exact boundary can be replayed safely.
+
+## Must-happen proof
+
+The next acceptable proof is not another wording pass. It is a rerunnable live mutation boundary that produces all of the following on one exact source URL:
+
+- preserved rejected remote, still inspectable after refusal;
+- apply-time revalidation from fresh live hashes;
+- live WordPress auth/session lifecycle on the same request flow;
+- durable journal storage with lease/fencing on production-like storage;
+- graph identity under create-time remap and late-discovered relationship-bearing records; and
+- plugin-driver coverage for late plugin-owned surfaces outside the initial allowlist.
+
+Without that single boundary, manual resolution stays a label, not retry authority.
 
 ## Release gate checklist
 
