@@ -82,3 +82,6 @@ remains context only.
 Manual-review artifacts, route-shape smokes, and `finalMatchesLocal` results
 stay in the same bucket: useful for lab review, but not retry authority and
 not proof that the cited upstream note maps to current production behavior.
+That also covers any live-looking hash emitted by a fixture-backed or
+copied-lab path behind a production-shaped mount: the hash may confirm the
+route answered, but it still does not prove the live mutation executor ran.

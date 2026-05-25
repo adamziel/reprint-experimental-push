@@ -85,3 +85,8 @@ or comparison-only.
 
 If any item is missing, the wording must stay explicitly lab-backed or
 comparison-only.
+
+Extra blocker for this lane: a route, mount, or hash coming from a
+fixture-backed or copied-lab path still does not count as production proof.
+If the path behind the mount was not the live mutation executor, the claim
+must stay lab-backed even when the response looks current.

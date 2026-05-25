@@ -114,6 +114,12 @@ them out of production wording until the live write path is proven:
   not prove that the remote was preserved, the write failed closed, or the
   retry rebuilt scope from fresh evidence.
 
+Additional hard blocker for this lane: any proof that comes from a
+fixture-backed or copied-lab write path behind a production-shaped mount is
+compatibility evidence only, even if it returns live-looking hashes. That
+scenario still has to name the live mutation boundary, the stale rejection,
+and the preserved remote before it can support production wording.
+
 Release-grade wording has a hard checklist too. If any item is missing, the
 claim must stay lab-backed or comparison-only:
 
