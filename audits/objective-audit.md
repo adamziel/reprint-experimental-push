@@ -340,15 +340,13 @@ bundled lab chain is `npm run test:playground`, and the stronger auth,
 journal, storage, recovery, plugin, and benchmark checks are only available
 as separate opt-ins. There is no `npm run release`, `npm run verify`, or
 `npm run verify:release`, and no checked-in CI workflow that chains those
-checks into one required release path, so a green run can still omit the exact
-proof the objective needs. This is a release blocker, not a documentation gap:
-until one required command exists, the project can keep producing passing lab
-runs without proving production safety at the live remote/local boundary. The
-strongest route smokes still report `labBacked: true`, which is a direct
-signal that route-shaped success is not production proof. The benchmark suite
-is in the same category: it can refuse unsupported throughput claims, but it
-does not prove a production speed claim until that refusal gate is replaced or
-supplemented by a measured end-to-end release command.
+checks into one required release path. A green run can therefore omit the
+exact proof the objective needs, even though the strongest route smokes still
+report `labBacked: true` and the benchmark suite only refuses unsupported
+throughput claims. This is a release blocker, not a documentation gap: until
+one required command exists, the project can keep producing passing lab runs
+without proving production safety at the live remote/local boundary or a
+measured speed claim on the real push path.
 
 - `npm test` is the default automated suite, but it only covers the model and
   selected fixture logic.
@@ -438,6 +436,9 @@ They do not yet prove the release claim:
   every DB/file/plugin boundary without silent loss or duplication
 - no current benchmark proves throughput or memory on the real push path, so
   speed remains a blocked claim rather than a measured release fact
+- no current release command exists to fail the build when a stronger check is
+  omitted, so the strongest evidence can still be skipped while the default
+  suite stays green
 - no single release command in `package.json` runs the whole safety matrix in
   one required path, so the strongest evidence can still be skipped while the
   default suite stays green
