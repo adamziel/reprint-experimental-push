@@ -1717,3 +1717,14 @@ still only comparison context or compatibility evidence. A route-shaped smoke
 or package mount can look production-shaped without proving the production
 executor, the remote-preserving retry path, or the audit-only status of the
 rejected approval after drift.
+
+This is the production cutoff, not a suggestion. Before any production-grade
+push wording is allowed, the repo must show or block all of the following in
+the same evidence set: live remote drift rejection before mutation, create-
+time remap or alias handling, plugin-owned state outside the allowlist,
+partial file/DB/plugin side effects, and stale manual-review artifacts that
+remain readable for audit but unusable as retry authority. A route-shape
+smoke, fixture replay, or `finalMatchesLocal` result cannot backfill those
+gaps, and a comparison to Reprint, ZS-Sync, or ForkPress is historical only
+unless the cited upstream revision or worktree was reverified at the same live
+write boundary.
