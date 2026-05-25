@@ -309,6 +309,21 @@ fresh retry scope rebuilt from live hashes on this worktree:
   audit, because preservation alone does not prove the remote stayed valid
   for retry or that the same boundary was rerun from fresh live hashes.
 
+Claim substitution rule:
+
+- do not substitute route shape, package mount shape, fixture replay,
+  readable review output, or `finalMatchesLocal` for live retry proof;
+- do not substitute a cited Reprint, ZS-Sync, or ForkPress note for current
+  proof unless the exact upstream state and the branch-local live rerun are
+  both named, and the same boundary is shown to preserve the remote, reject
+  stale authority, and rebuild retry scope from fresh live hashes;
+- do not substitute a readable manual-review artifact for retry authority
+  when a later row, file, relationship-bearing record, remapped create
+  target, or plugin-owned surface appears after drift; and
+- do not substitute a preserved remote for success unless the branch also
+  shows the stale rejection point and the fresh retry artifact for that exact
+  boundary on this worktree.
+
 Release-gate checklist:
 
 - name the exact live write boundary and the exact stale-drift case rerun on
