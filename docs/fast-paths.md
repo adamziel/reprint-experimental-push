@@ -43,8 +43,8 @@ Current executable gate:
 - `timeout 40s node scripts/bench/guarded-executor-benchmark.js --profile=ci`
 - Current result: `productionThroughput.status === "blocked"`
 - Latest measured lab throughput:
-  - `labStagedMiBPerSecond: 28.84`
-  - `labApplyMutationsPerSecond: 36.82`
+  - `labStagedMiBPerSecond: 59.42`
+  - `labApplyMutationsPerSecond: 58.61`
 - Current blockers:
   - `production-atomic-group-commit-not-measured`
   - `production-storage-receipts-not-measured`
