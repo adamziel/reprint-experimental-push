@@ -84,6 +84,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     ),
   );
   assert.ok(
+    protocolReadme.replace(/\s+/g, ' ').includes(
+      'push-production-auth-session-journal-recovery-inspect-contract.json` is the proof to cite when you need the minimum production evidence for auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect on the same remote identity.',
+    ),
+  );
+  assert.ok(
     protocolReadme.includes(
       'push-production-pull-bridge-contract.json` pairs with',
     ),
@@ -161,6 +166,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     protocolDocs.includes(
+      'The compact auth/session proof is `push-production-auth-session-journal-recovery-inspect-contract.json`',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
       'push-protocol-extension-contract.json` is the most complete production',
     ),
   );
@@ -203,6 +213,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'The production topology is fixed to one remote source, one imported local',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'push-production-auth-session-journal-recovery-inspect-contract.json` is the compact proof for the auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect',
     ),
   );
   assert.ok(
@@ -273,6 +288,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'The production test topology is therefore one remote source, one imported',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'push-production-auth-session-journal-recovery-inspect-contract.json` for the auth/session/journal/recovery proof',
     ),
   );
 });

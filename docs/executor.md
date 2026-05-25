@@ -180,6 +180,7 @@ The review path is intentionally layered:
 
 - `push-production-pull-bridge-contract.json` is the immutable exporter/importer-to-push bridge.
 - `push-production-revalidation-contract.json` is the compact production proof for preflight, snapshot listing, dry-run eligibility, apply-time revalidation, journal evidence, and inspect-first recovery.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is the compact proof for the auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect.
 - `push-production-topology-contract.json` is the production harness proof for one remote source, one imported local edit site, and one later drift observation of the same remote identity.
 - `push-remote-liveness-topology-contract.json` is the smallest proof for the dry-run/apply separation plus live revalidation boundary.
 
@@ -193,8 +194,9 @@ For quick navigation, use this proof order:
 
 1. `push-protocol-extension-contract.json` for the full executor ladder.
 2. `push-production-pull-bridge-contract.json` for the exporter/importer to push bridge.
-3. `push-remote-liveness-topology-contract.json` for the liveness split on the one-remote, one-local topology.
-4. `push-production-topology-contract.json` for the compact production topology bundle.
+3. `push-production-auth-session-journal-recovery-inspect-contract.json` for the auth/session/journal/recovery proof.
+4. `push-remote-liveness-topology-contract.json` for the liveness split on the one-remote, one-local topology.
+5. `push-production-topology-contract.json` for the compact production topology bundle.
 
 That order is the production proof stack:
 

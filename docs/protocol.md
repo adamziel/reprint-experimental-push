@@ -133,6 +133,13 @@ The test topology is fixed across both Docker and Playground:
   through a local-only proxy
 - remote tunnels are disallowed
 
+The compact auth/session proof is `push-production-auth-session-journal-recovery-inspect-contract.json`:
+
+- it binds the persisted pull base package to one short-lived push session and the same remote identity
+- it keeps the auth floor at least as strict as current Reprint HMAC usage
+- it records claim generation, lease expiry, and the storage fence in the journal row
+- it keeps recovery inspect read-only and classification-only before any mutating repair
+
 Put differently, the exporter/importer handoff stays authoritative for the
 base package, and push only consumes that immutable package in the order
 above:
@@ -252,6 +259,7 @@ The production proof is also split into smaller reviewable fixtures:
 
 - `push-production-pull-bridge-contract.json` proves the exporter/importer handoff becomes immutable push provenance.
 - `push-production-revalidation-contract.json` proves preflight, planning-only snapshot hashes, dry-run eligibility, apply-time revalidation, durable journal evidence, and inspect-first recovery stay on separate liveness boundaries.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` proves the auth floor, push-session minting, journal rows, lease fencing, and read-only recovery inspect stay aligned with the write path.
 - `push-production-topology-contract.json` proves the one-remote, one-local, one-drift harness shape in both Docker and Playground.
 - `push-remote-liveness-topology-contract.json` proves dry-run and apply stay separate while apply revalidates fresh live evidence before every batch and at the storage boundary.
 - `push-deployment-topology-contract.json` proves the sandbox-provided `8080` ingress, local-only proxying, and no-tunnel rule for the topology harness.
