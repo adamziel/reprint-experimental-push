@@ -7,16 +7,16 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `5b25867b`
+- `origin/lane/no-data-loss-invariants` -> `e717f61c`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/independent-auditor` -> `33b839f0`
+- `origin/lane/independent-auditor` -> `90a36a09`
 - `origin/lane/critic` -> `c41435d5`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `12183774`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f386dfa6`
-- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `c79122c0`
+- `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `f3f015ed`
 - `origin/main` -> `4b7b47a6`
 
 The current remote state still adds no production-backed auth/session
@@ -29,7 +29,7 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now retries the release-proof port handling
   at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` now tightens graph identity blocker
-  assertions at `5b25867b`.
+  assertions at `e717f61c`.
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
@@ -37,11 +37,11 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `33b839f0`.
+  `90a36a09`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `f386dfa6`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
-  records the latest progress handoff at `284ebde9`.
+  records the latest progress handoff at `f3f015ed`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `12183774`, including revision posts, menu/navigation posts, and
   serialized blocks. That is a better fail-closed proof, but it still stops
