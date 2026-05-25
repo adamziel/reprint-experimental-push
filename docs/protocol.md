@@ -201,13 +201,14 @@ the exact live preflight result plus the release-proof status, the later
 remote-drift witness, and the live protocol evidence.
 
 The supervisor-facing release entrypoint is `npm run verify:release`.
-It is the same checked command as the live-source verify path, and it also
-chains the file-journal restart smoke so the release proof keeps the
-durable-journal storage/lease/fence boundary visible. This lane treats that
-command as the checked boundary proof: it must either print the live
-preflight evidence or fail closed with the exact
-`REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or `REPRINT_PUSH_SECRET_REQUIRED` gate
-before any preflight, dry-run, or apply attempt.
+It first runs the one-remote, one-local topology proof, then the same
+live-source verify path, and finally the file-journal restart smoke so the
+release proof keeps the topology and durable-journal storage/lease/fence
+boundaries visible. This lane treats that command as the checked boundary
+proof: it must either print the live preflight evidence or fail closed with
+the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
+`REPRINT_PUSH_SECRET_REQUIRED` gate before any preflight, dry-run, or apply
+attempt.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.

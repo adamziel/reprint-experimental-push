@@ -4565,7 +4565,7 @@ test('verify:release stays pinned to the checked release entrypoint and exact li
   assert.match(proof.stdout, /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/);
   assert.equal(
     packageJson.scripts['verify:release'],
-    'npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
+    'npm run test:playground:production-shaped-topology-proof && npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
   );
 });
 

@@ -135,12 +135,13 @@ injects production-shaped auth, and prints the live preflight branch plus the
 dry-run, apply, journal, and recovery inspect evidence in the release proof.
 
 The supervisor-facing shortcut is `npm run verify:release`.
-It resolves to the same retained-source proof and then runs the file-journal
-restart smoke, so the checked command and the release alias stay aligned with
-the durable-journal storage boundary as well. In this lane, that alias is the
-checked supervisor command for the production boundary: it must either reach
-the live Playground preflight path or fail closed at the explicit live-source
-or secret gate before any dry-run or apply mutation begins.
+It first runs the one-remote, one-local topology proof, then the retained-
+source proof, and finally the file-journal restart smoke, so the checked
+command and the release alias stay aligned with the topology, live preflight,
+and durable-journal storage boundaries as well. In this lane, that alias is
+the checked supervisor command for the production boundary: it must either
+reach the live Playground preflight path or fail closed at the explicit
+live-source or secret gate before any dry-run or apply mutation begins.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.
