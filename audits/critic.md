@@ -6733,6 +6733,12 @@ these requirements before any wording is promoted.
 Do not let the branch claim production-grade push support until all of these
 are true on this worktree:
 
+- the branch names one real-site preflight/release command that can be rerun
+  against an actual remote and whose output alone proves the rejected remote
+  stayed inspectable, the rejection point happened before the first write,
+  and the retry scope was rebuilt from live hashes; if the proof still comes
+  only from `plan`, `apply`, `test:playground:*`, route-smoke output, or
+  source-note comparison, the claim is still lab-only;
 - the branch has a single executable preflight/release command that can be
   run against a real remote on this branch, and its output proves the exact
   live boundary, preserved remote, stale rejection point, and fresh retry
