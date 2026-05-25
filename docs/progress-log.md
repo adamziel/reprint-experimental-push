@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 04:01:57
+
+<a id="2026-05-25-public-status-audit-040157"></a>
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 04:01:57 CEST`) and kept the visible last-updated stamp current.
+- Tightened the top summary so it stays concise: lab proof is still the only
+  proven status, and production auth, recovery, Docker/Playground, graph
+  identity, and plugin-driver proof remain pending.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [docs/approach-scorecard.md](approach-scorecard.md), [docs/executor.md](executor.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Public Status Audit 04:01:19
 
 <a id="2026-05-25-public-status-audit-040119"></a>
