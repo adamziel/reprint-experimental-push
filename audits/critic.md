@@ -6071,7 +6071,9 @@ The design still has not closed the following production-grade gaps:
 - partial file, DB, or plugin side effects remain unreconciled if the audit
   does not classify each touched surface as old, new, or blocked before
   retry; missing proof is per-surface classification that survives mixed
-  outcomes, not a final success label applied to the committed subset;
+  outcomes, not a final success label applied to the committed subset, and
+  not a later "success" label on the subset that happened to write while the
+  failed surfaces stayed unclassified;
 - stale manual-review artifacts are still a false-reliability risk if they can
   be reused after drift to authorize a later row, file, relationship-bearing
   record, remapped create target, or plugin-owned surface; missing proof is
@@ -6105,8 +6107,9 @@ The design still has not closed the following production-grade gaps:
     not prove source-mutation safety, create-time remap handling, or
     plugin-owned surface coverage here; and
   - ForkPress notes can justify review or durability vocabulary, but they do
-    not prove retry authority, preserved-remote auditability, or
-    old/new/blocked classification on this branch; and
+    not prove retry authority, preserved-remote auditability, old/new/blocked
+    classification, or authority over a later boundary that was discovered
+    after the note was written; and
 - any "production-ready" or "manual resolution" wording is false reliability
   unless it names the exact drift case, the preserved remote, the rejection
   point before the first write, the fresh live-hash retry scope, and the
