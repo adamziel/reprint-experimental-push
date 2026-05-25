@@ -83,4 +83,4 @@ The repository has strong local regression, refusal, and journaling evidence. It
 
 ## 12h Delta
 
-The last 12 hours changed command-surface evidence, not the gate: `origin/lane/reliable-executor` still exposes `verify:release` at `5822745b`, and the boundary verdict at `889bd37a` remains `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. That means the next owner has not changed. The exact proof that would move one gate is a checked in-tree live-boundary run that clears production auth/session lifecycle and durable journal semantics at apply time.
+The last 12 hours changed command-surface and topology evidence, not the gate: `origin/lane/reliable-executor` still exposes `verify:release` at `5822745b`, and the boundary verdict at `889bd37a` remains `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. Release gates stay `0/4` because the added proof is still upstream-only and still stops at the production auth/session and durable-journal boundary. The next owner does not change. The exact proof that would move one gate is a checked in-tree live-boundary run that clears production auth/session lifecycle and durable journal semantics at apply time.
