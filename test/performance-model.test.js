@@ -1129,6 +1129,10 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
   assert.ok(fixture.fixture.totals.dbRows >= 10_000);
   assert.ok(fixture.recoveryFixture.totals.uploadBytes >= 1024 * MIB);
   assert.ok(fixture.recoveryFixture.totals.dbRows >= 10_000);
+  assert.ok(fixture.fixture.totals.filePublishes >= 4);
+  assert.ok(fixture.fixture.totals.atomicGroupCommits >= 3);
+  assert.ok(fixture.recoveryFixture.totals.filePublishes >= 2);
+  assert.ok(fixture.recoveryFixture.totals.atomicGroupCommits >= 1);
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'remote-index-probe')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'compression-decision')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')));
@@ -1170,6 +1174,14 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
       fastPath.id === 'compressed-remote-index-and-batched-db-receipts-skips-plugin-install-row-preconditions-after-pause' &&
       fastPath.rejectedGate === 'group' &&
       fastPath.violates.includes('row-preconditions') &&
+      fastPath.violates.includes('atomic-groups')
+    ),
+  );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure' &&
+      fastPath.rejectedGate === 'group' &&
+      fastPath.violates.includes('backpressure') &&
       fastPath.violates.includes('atomic-groups')
     ),
   );
