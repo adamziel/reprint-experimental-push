@@ -8,7 +8,9 @@ Evidence checked:
 - `git diff -- audits/objective-audit.md`
 
 What changed:
-- `origin/lane/fast-paths` is now recorded at `b54f1b34`.
+- `origin/lane/independent-auditor` is now recorded at `22658d94`.
+- `origin/lane/critic` is now recorded at `4e487df4`.
+- `origin/lane/same-plan-wordpress-graph-create` is now recorded at `d1994422`.
 - The audit verdict remains unchanged: the repository is still not releasable as a production WordPress push path.
 - The current remote state still does not prove the missing production-backed auth/session lifecycle, durable journal ownership/lease/fencing/replay path, or production-safe live source mutation boundary.
 
