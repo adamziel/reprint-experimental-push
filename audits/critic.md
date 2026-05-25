@@ -42,6 +42,10 @@ What must change before any production-grade push claim:
 - the branch must show a live write boundary that rejects stale remote drift
   before the first mutation, preserves the remote for audit, and rebuilds a
   fresh retry scope from live hashes on this branch;
+- any "manual resolution" outcome must name the exact rejected boundary and
+  keep the preserved remote inspectable for audit/retry; if the artifact does
+  not prove the same live boundary was retried from fresh live hashes, it is
+  only a note, not success;
 - the exact drift case, stale artifact, and fresh live hash set must be named
   in the evidence; a generic "manual resolution" label does not prove the same
   boundary was retried;
@@ -61,6 +65,10 @@ What must change before any production-grade push claim:
   generated asset, cache entry, or serialized blob, that surface becomes a new
   boundary with its own preserve / reject / retry cycle; the earlier artifact
   cannot be widened into retry authority for it;
+- a later-discovered plugin-owned surface is never retroactively covered by an
+  earlier manual-resolution artifact, even if the route family, package mount,
+  or reviewer wording matches; it needs its own live proof or hard block on
+  this branch;
 - any readable manual-review artifact must stay audit-only after drift and
   cannot become retry authority for a different row, file, relationship-
   bearing record, remapped create target, or plugin-owned surface; and
