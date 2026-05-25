@@ -279,6 +279,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause')?.rejectedGate,
     'live',
   );
@@ -1111,6 +1115,14 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
       fastPath.id === 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause' &&
       fastPath.rejectedGate === 'recovery' &&
       fastPath.violates.includes('atomic-groups')
+    ),
+  );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause' &&
+      fastPath.rejectedGate === 'group' &&
+      fastPath.violates.includes('chunk-receipts') &&
+      fastPath.violates.includes('row-preconditions')
     ),
   );
   for (const area of [
