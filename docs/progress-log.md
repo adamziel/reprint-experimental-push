@@ -555,7 +555,7 @@ linked implementation artifacts.
 - The feedback supervisor lane pushed
   `origin/lane/feedback-supervisor` with a refreshed dated status entry,
   concise blocked-by-evidence language, and audit links.
-- The main progress page now folds that feedback into the CLI push update:
+- The main progress page keeps the same linked evidence trail:
   reliable executor moved up in the lab, while production endpoint/auth/journal
   claims remain blocked.
 
