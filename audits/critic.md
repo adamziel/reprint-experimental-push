@@ -6644,3 +6644,22 @@ Release gate for production-grade wording:
 
 Use `audits/critic-release-gate.md` as the compact preflight checklist for
 these requirements before any wording is promoted.
+
+Do not let the branch claim production-grade push support until all of these
+are true on this worktree:
+
+- the exact stale-drift case has been rerun here, with the rejected remote
+  still inspectable after rejection and the rejection point named before the
+  first write;
+- create-time identity remap, aliasing, or renumbering is either proven with
+  live apply-time identity evidence or hard-blocked before mutation;
+- every plugin-owned surface outside the allowlist has been enumerated or
+  blocked before write, including late-discovered tables, cron rows, runtime
+  registries, generated files, caches, serialized blobs, and plugin-owned
+  files;
+- every touched row, file, relationship-bearing record, and plugin-owned
+  surface has been classified old, new, or blocked before retry starts, so a
+  partial file, DB, or plugin side effect cannot be relabeled as success; and
+- each Reprint, ZS-Sync, and ForkPress citation names the exact upstream
+  state, says what it proves here, says what it does not prove here, and is
+  backed by a branch-local rerun of the same live boundary.
