@@ -20,7 +20,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 
 - If drift appears after dry-run and before apply, the remote must remain preserved and inspectable. There is no live proof of that rejection path here.
 - If create-time remapping rewires identity, the mutation must either preserve graph identity or hard-block. There is no production proof of that behavior.
-- If a plugin-owned option, table, cron row, cache entry, generated file, or activation side effect appears late, the push must classify it before any write lands. There is no coverage proof for that trap.
+- If a plugin-owned option, table, cron row, cache entry, generated file, or activation side effect appears late, the push must classify it before any write lands and before any stale approval or cached retry can be reused. There is no coverage proof for that trap.
 - If a retry reuses stale manual-resolution text, it must not authorize a new mutation. The design does not yet show an auditable artifact that binds the approval to fresh live hashes and the preserved remote.
 
 ## Source-note comparison
@@ -51,7 +51,7 @@ The production claim also fails closed if any of these are only shown on a lab f
 - plugin-driver behavior without a rerunnable boundary on a real source URL; or
 - preserved-remote wording without the rejected remote still being inspectable after rejection.
 
-Manual resolution is not success unless the remote is preserved, the retry is auditable, and the exact boundary can be replayed safely.
+Manual resolution is not success unless the remote is preserved after rejection, the retry is auditable against fresh live hashes, and the exact boundary can be replayed safely.
 
 ## Strongest blocker
 
