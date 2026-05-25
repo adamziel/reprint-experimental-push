@@ -688,6 +688,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['queue-drain-time', 'wire-bytes', 'planning-round-trips'],
+    allowedShortcut: 'compress-planning-evidence-and-pause-producers-within-budgets',
+    guardrails: [
+      'compression-stays-transport-only',
+      'pause-does-not-authorize-apply-or-finalize',
+    ],
+    gateProofs: {
+      skip: 'compressed planning evidence can reduce queue-drain traffic, but it only shortens duplicate planning and never replaces the durable receipt set',
+      live: 'the eventual file publish or row apply still rechecks the live precondition at the storage boundary',
+      group: 'pressure pauses producers without moving any atomic-group or file-publish barrier',
+      recovery: 'compressed planning evidence remains advisory while durable receipts and journal records classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'none-pause-only',
+    failureEvidence: 'compressed planning cursor plus durable receipts and journal records',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'storage-footprint-for-recovery-evidence'],
     allowedShortcut: 'compress-durable-receipt-logs-with-stable-receipt-keys',
@@ -1310,6 +1330,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and parallel batches can overlap lookup work, but they cannot prove the paused row receipts, idempotency keys, or atomic-group commit record survived failure',
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+    proposal: 'treat a compressed remote index plus parallel row batches as enough proof to skip the plugin-update commit barrier',
+    rejectedBecause: 'planning evidence and extra fan-out can overlap row work, but they cannot prove the live compares, staged metadata writes, or atomic-group barrier survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'row-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
     id: 'index-and-compressed-row-batch-skips-live-compare',
@@ -2527,7 +2554,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     proposal: 'use a compressed remote index plus parallel chunk sends to skip backpressure pauses during a large upload',
     rejectedBecause: 'planning evidence and parallel chunk sends can reduce wait time, but they cannot prove the sender kept bounded queue order, complete chunk receipts, and journal evidence across a pause or crash',
     rejectedGate: 'recovery',
-    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'durable-progress'],
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
     id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure',

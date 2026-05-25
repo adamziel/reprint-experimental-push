@@ -65,6 +65,7 @@ the safe list even when they improve a throughput metric.
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Parallelism limits | Run mixed release-bundle work, including large uploads and dependency-heavy plugin changes, within the same bounded per-site budgets so shared planning does not widen the recovery boundary. | The mixed bundle still needs its own receipts, live preconditions, and atomic-group barrier. Parallelism may overlap staging, but it cannot claim visibility early. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
+| Backpressure | Compress planning evidence and then pause producers within the same bounded queue and journal budget. | Compression may shrink the planning trail, but it cannot authorize apply or finalize, and durable receipts still decide recovery. |
 | Backpressure | Batch durable chunk, row, or group receipt flushes within a bounded journal lag so fsync work amortizes without changing the raw receipt set. | Batching may delay flushes, but it cannot drop raw receipts, cross an atomic-group boundary, or claim completion before durable evidence exists. |
 
 Concrete failure modes stay rejected even when the throughput gain looks tempting:
@@ -80,11 +81,13 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A database batch can reuse statement shapes, but it cannot cross atomic-group boundaries or skip row preconditions.
 - A remote index can compress planning traffic, but it cannot become a lock or a live mutation authorization.
 - A compressed remote index plus parallel owner scans still cannot skip the live write check, because planning concurrency does not replace the storage-boundary compare.
+- A compressed remote index plus parallel row batches still cannot skip the plugin-update commit barrier, because extra fan-out does not prove the live compares or atomic-group record survived failure.
 - Compression can reduce wire bytes and receipt-log size, but it cannot change the canonical hash or recover missing receipts.
 - Parallelism can overlap independent staging, but it cannot widen a commit barrier or merge group finalization.
 - Extra parallelism is only safe while it preserves the same preconditions, receipts, and atomic barrier.
 - Backpressure must pause producers; it cannot claim success by draining evidence into memory.
 - A backpressure pause cannot mean completion, because the paused work still needs chunk receipts, row receipts, and the atomic-group commit record to survive failure.
+- A compressed planning trail cannot mean completion, because it still cannot authorize apply or cross an atomic-group barrier.
 - Compressing buffered evidence can save memory, but it cannot stand in for a receipt or commit record.
 - A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
 - A compressed receipt log can reduce storage, but it still cannot stand in for the original receipt keys or the guarded recovery record.

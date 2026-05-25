@@ -2783,6 +2783,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause').violates.includes('atomic-groups'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit').violates.includes('parallelism-limits'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit').violates.includes('atomic-groups'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate,
     'recovery',
   );
@@ -2982,6 +2992,12 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'remote-index-probe')));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'compression-decision')));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')));
+  assert.ok(
+    model.schedules.some((schedule) => schedule.kind === 'large-upload' && schedule.actions.some((action) => action.type === 'compression-decision' && action.transportEncoding === 'zstd')),
+  );
+  assert.ok(
+    model.schedules.some((schedule) => schedule.kind === 'plugin-update' && schedule.actions.some((action) => action.type === 'db-row-batch' && action.idempotencyKey)),
+  );
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'durable-receipt-flush')));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'group-staging-finalize')));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'atomic-group-commit')));
