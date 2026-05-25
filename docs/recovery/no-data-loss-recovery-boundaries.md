@@ -1,42 +1,22 @@
 # No Data Loss Recovery Boundaries
 
-This note captures the recovery contract used by the no-data-loss lane.
-It is intentionally narrower than the broader invariants docs so reviewers can
-check the failure boundaries and the durable-journal expectation quickly.
-
-## Acceptable post-failure states
-
-Every interrupted apply must land in exactly one of these states:
+The atomic apply flow accepts only three post-failure outcomes:
 
 - `old-remote`
 - `fully-updated-remote`
-- `blocked-recovery` with artifacts
+- `blocked-recovery`
 
-A partial remote mutation without inspectable recovery artifacts is a release
-blocker.
+The boundary matters more than the failure label:
 
-## Failure boundaries
+- Failure before mutation must leave the remote untouched and may only produce `old-remote`.
+- Failure after staging or after dependency validation still must not mutate the remote and may only produce `old-remote` with inspectable journal artifacts.
+- A completed replay must stay inert and may only produce `fully-updated-remote`.
+- Any partial remote mutation without durable recovery artifacts is a release blocker.
 
-The recovery model must stay stable across these boundaries:
+Durable recovery artifacts are required for recovery inspection. JSON or lab-only evidence is useful for tests, but it is not a substitute for a persisted journal that can be reopened after a crash or retry.
 
-- failure before mutation
-- failure after staging
-- failure after dependency validation
-- replay of a completed plan
+Retry rules:
 
-The first three boundaries must leave the remote on the old side of the apply
-and preserve the recovery journal. A completed-plan replay must be inert and
-must not duplicate inserts or resurrect stale local data.
-
-## Durable journal requirement
-
-The JSON fixtures in tests are proof artifacts only. Production recovery still
-needs durable storage behavior:
-
-- append-only journal writes that survive process exit
-- fsync or equivalent flush semantics
-- writer fencing or lease ownership
-- inspectable recovery metadata after restart
-
-If the journal cannot explain a visible remote mutation, recovery stays
-blocked until the artifact set is complete.
+- Retrying an `old-remote` recovery must not duplicate inserts or resurrect stale local data.
+- Retrying a completed replay must remain inert.
+- If the current remote no longer matches the journal envelope, inspection must stay `blocked-recovery` with both journal and remote artifacts preserved.
