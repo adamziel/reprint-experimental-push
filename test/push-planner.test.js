@@ -25871,3 +25871,36 @@ test('keeps same-remote graph identity at the live release boundary while a read
   assert.equal(driftedError.code, 'PRECONDITION_FAILED');
   assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* late plugin drift */');
 });
+test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent file delete, a matching file type swap, a matching independent edit, and remote-only plugin removals after apply revalidation', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/cover'] = 'base file bytes';
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const matchingEdit = mutationFor(plan, 'row:["wp_posts","ID:1"]');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(matchingEdit.action, 'put');
+  assert.equal(matchingEdit.changeKind, 'update');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'unchanged');
+
+  const completed = applyPlan(remote, plan);
+  assert.equal(completed.site.plugins.forms, undefined);
+  assert.equal(completed.site.files['wp-content/plugins/forms/forms.php'], undefined);
+});
