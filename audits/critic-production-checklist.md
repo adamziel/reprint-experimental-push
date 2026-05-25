@@ -8,6 +8,9 @@ this branch.
   inspectable after rejection.
 - A named real-site release command exists and can be rerun unchanged against
   that same live boundary.
+- The proof includes the exact command string, exact live
+  `REPRINT_PUSH_SOURCE_URL`, executor identity, and the rejection point before
+  the first write.
 - Stale authority is rejected before the first write.
 - Dry-run receipt and apply-time revalidation are shown on the same live
   boundary.
@@ -20,6 +23,8 @@ this branch.
   blocked surfaces, including hidden tables, cron rows, runtime registries,
   generated files, caches, serialized blobs, and plugin-owned files that are
   outside the allowlist.
+- The proof does not rely on a supervised retained-source `verify:release`
+  run, `finalMatchesLocal`, or a route-shaped smoke as production evidence.
 - If the repo still lacks a named real-site release command that can be
   rerun unchanged against a live local, Playground, or Docker
   `REPRINT_PUSH_SOURCE_URL`, then every `plan`, `apply`, `test`, and
@@ -39,6 +44,9 @@ this branch.
 - Any later-discovered plugin-owned surface, remapped create target, or mixed
   file/DB/plugin side effect is treated as a separate live boundary unless it
   already had its own preserve / reject / retry cycle before the first write.
+- "Manual resolution" is only audit evidence when the preserved remote stayed
+  inspectable after rejection and the retry scope was rebuilt from fresh live
+  hashes on this branch.
 - Each Reprint, ZS-Sync, and ForkPress comparison names the exact upstream
   revision or worktree state, states what it proves here, states what it does
   not prove here, and is backed by a branch-local rerun of the same live

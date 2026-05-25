@@ -8,6 +8,9 @@ proof point. That lane's completed `npm run verify:release` result, including
 is still not live retry authority unless the same branch also proves the live
 production WordPress auth/session boundary, durable journal semantics, graph
 identity, plugin-driver coverage, and leases/fencing on a real-site rerun.
+Treat that evidence as a supervised lab harness result, not as proof that a
+production remote stayed preserved, auditable, and safe to retry on this
+worktree.
 The retired critique is the one that said no `verify:release` command exists;
 do not reintroduce it on this branch. The current blocker on this audit branch
 is the missing rerunnable live boundary with preserved-remote audit evidence
@@ -137,6 +140,20 @@ What must change before production-grade wording is defensible:
   on this branch by itself, and the cited note must not be treated as proof of
   preserved-remote safety, live auth/session lifecycle, graph identity, or
   plugin-driver coverage.
+
+Production-grade wording is still invalid if any of the following are true:
+
+- the only preserved-source evidence comes from the supervised reliable-executor
+  lane, because that does not prove this worktree can rerun the same live
+  boundary and preserve the rejected remote for audit;
+- the claim relies on a route-shaped smoke, copied mount, fixture replay,
+  `finalMatchesLocal`, or readable review artifact without the live boundary;
+- a plugin-owned data trap is discovered after the first write and then
+  backfilled into the earlier approval instead of getting its own preserve /
+  reject / retry cycle; or
+- "manual resolution" is used as a success label without preserved-remote
+  evidence, stale-authority rejection before the first write, and fresh retry
+  scope rebuilt from live hashes on this branch.
 
 Comparison with the source notes stays conservative:
 
