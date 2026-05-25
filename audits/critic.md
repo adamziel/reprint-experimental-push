@@ -418,6 +418,24 @@ Release-go/no-go scenarios:
 Release wording must stay blocked if the only support is a route-shaped lab
 fixture, copied package mount, or hash match:
 
+- A lab-shaped `/wp-json/reprint/v1/push/*` route does not prove the live
+  executor ran, and it does not prove the remote was preserved for audit
+  after a stale reject.
+- A readable manual-review artifact does not become current authority just
+  because it is inspectable; the proof must show the stale artifact was
+  rejected before mutation, stayed audit-only, and could not be reused
+  against a different row, file, relationship-bearing record, plugin-owned
+  surface, or hidden side effect.
+- A plugin-owned fixture row or option does not prove the broader
+  plugin-owned graph is safe if custom tables, generated files, cron rows,
+  caches, runtime registries, serialized blobs, activation hooks, or other
+  late-discovered surfaces were not enumerated live and either revalidated or
+  hard-blocked.
+- A comparison to Reprint, ZS-Sync, or ForkPress is still historical context
+  unless the exact upstream revision or worktree state, the exact live write
+  boundary, and the exact branch-local drift or retry case are all named and
+  reverified here.
+
 - A fixture that reproduces the path shape, package layout, or endpoint name
   does not prove the live mutation executor was exercised.
 - A copied-lab mount that returns the expected hash does not prove the remote
