@@ -14161,6 +14161,58 @@ test('blocks a file delete that would hide a live remote descendant while preser
   assert.equal(plan.preconditions.length, 0);
 });
 
+test('blocks a file type swap that would hide a live remote descendant while preserving a matching independent delete, edit, restore, and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
+  base.db.wp_posts['ID:7'] = { ID: 7, post_title: 'Base matched title 7', post_status: 'publish' };
+  base.db.wp_posts['ID:8'] = { ID: 8, post_title: 'Base matched title 8', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.files['about.php'];
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_posts['ID:7'] = { ID: 7, post_title: 'Shared matched title 7', post_status: 'publish' };
+  local.db.wp_posts['ID:8'] = { ID: 8, post_title: 'Shared matched title 8', post_status: 'publish' };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "base about";';
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/uploads/gallery/keep.txt'] = 'remote descendant';
+  remote.db.wp_posts['ID:7'] = { ID: 7, post_title: 'Shared matched title 7', post_status: 'publish' };
+  remote.db.wp_posts['ID:8'] = { ID: 8, post_title: 'Shared matched title 8', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const typeSwapConflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:wp-content/uploads/gallery');
+  const matchingDelete = mutationFor(plan, 'file:about.php');
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:7"]');
+  const matchingRestore = decisionFor(plan, 'row:["wp_posts","ID:8"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 1);
+  assert.ok(matchingDelete);
+  assert.equal(matchingDelete.action, 'delete');
+  assert.equal(matchingDelete.changeKind, 'delete');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(typeSwapConflict.class, 'file-topology-conflict');
+  assert.equal(typeSwapConflict.relatedChange.localChange, 'delete');
+  assert.equal(typeSwapConflict.relatedChange.remoteChange, 'update');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(plan.mutations.length, 1);
+  assert.equal(plan.preconditions.length, 1);
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent edit, and matching independent type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
