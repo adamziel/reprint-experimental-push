@@ -9,8 +9,10 @@ reverified the exact cited revision or worktree and the exact live mutation
 boundary for the same claim. If either the exact upstream state or the exact
 live boundary is missing, the note is historical context only and cannot be
 used to claim that the live executor, retry path, or manual-review flow is
-safe. A route-shaped smoke, package mount, or live-looking hash does not fill
-that gap.
+safe. A route-shaped smoke, package mount, live-looking hash, or matching
+`finalMatchesLocal` result does not fill that gap, and neither does a later
+manual-resolution label unless the preserved remote stayed auditable and the
+fresh retry scope was rebuilt from live hashes on this branch.
 That also means a stale manual-review artifact stays audit evidence only
 unless the remote was preserved for audit, the stale approval was rejected
 before mutation, and the retry rebuilt scope from fresh live hashes.
@@ -123,7 +125,8 @@ Without that revalidation, the notes cannot backfill missing proof for:
 Production-grade wording also needs the source-note comparison itself to say
 whether the cited Reprint, ZS-Sync, or ForkPress state was reverified at the
 same live write boundary. If it was not, the note remains design context,
-never current proof.
+never current proof, even if the upstream feature vocabulary or route family
+looks identical.
 
 A source-note comparison by itself is never enough to claim the live retry
 path is safe, auditable, or production-ready. It cannot be used to prove a
