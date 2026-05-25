@@ -46,6 +46,7 @@ the safe list even when they improve a throughput metric.
 | Remote indexes | Compress index responses and cache the planning cursor so repeated scans move fewer bytes without changing planning semantics. | Compression stays transport-only, and a compressed index response still cannot authorize apply or widen the atomic-group barrier. |
 | Remote indexes | Reuse a recorded planning cursor with a strong-hash listing to avoid rescanning unchanged resources during incremental planning. | The cursor is planning evidence only. It does not become an apply lock, and the live compare still guards mutation. |
 | Compression | Compress transport frames for JSON, SQL batches, manifests, and text files. Skip already-compressed file types and keep the canonical hash over the uncompressed resource value. | Content encoding is transport metadata. It must not change the hash used for conflict detection or compare-and-swap. |
+| Compression | Compress durable receipt logs after they have been recorded so large-upload and plugin-recovery evidence uses fewer bytes without changing receipt keys. | Receipt compression is storage-only. It does not replace the original durable receipt keys, the live precondition, or the commit boundary. |
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
 
@@ -62,6 +63,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A backpressure pause cannot mean completion, because the paused work still needs chunk receipts, row receipts, and the atomic-group commit record to survive failure.
 - Compressing buffered evidence can save memory, but it cannot stand in for a receipt or commit record.
 - A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
+- A compressed receipt log can reduce storage, but it still cannot stand in for the original receipt keys or the guarded recovery record.
 - A fresh remote index plus a cached plugin package hash still cannot skip dependency checks, metadata writes, or the atomic-group barrier.
 - A compressed package cache still cannot skip plugin dependency checks or the atomic-group barrier, because package identity and transport compression do not prove group commit completion.
 - A compressed row batch still cannot replace the atomic-group commit barrier, because the coupled files, rows, metadata, and activation state must become visible together.

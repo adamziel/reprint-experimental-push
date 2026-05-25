@@ -306,6 +306,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     splitsAtomicGroup: false,
     publishesStagedDataEarly: false,
   },
+  {
+    area: 'compression',
+    reduces: ['wire-bytes', 'storage-footprint-for-recovery-evidence'],
+    allowedShortcut: 'compress-durable-receipt-logs-with-stable-receipt-keys',
+    guardrails: [
+      'compressed-receipts-still-preserve-raw-receipt-keys',
+      'compression-does-not-replace-durable-progress',
+    ],
+    gateProofs: {
+      skip: 'receipt payloads can be compressed after they are durably recorded, so recovery keeps the same key and classification data while using fewer bytes',
+      live: 'compressed receipt logs never authorize a write; the original live precondition still guards the storage boundary',
+      group: 'receipt compression does not split or widen the atomic-group barrier',
+      recovery: 'stable receipt keys and journal records still classify the exact chunk, row, or group state after a crash or pause',
+    },
+    visibilityBoundary: 'recovery-evidence-only',
+    failureEvidence: 'compressed receipt log plus original durable receipt key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
 ]);
 
 export const FAILURE_INJECTION_BOUNDARIES = Object.freeze([
@@ -573,6 +593,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'a compressed summary can save space, but it can also erase the per-chunk or per-row evidence needed to classify partial failure after a crash or lost response',
     rejectedGate: 'recovery',
     violates: ['compression', 'chunk-receipts', 'durable-progress', 'row-preconditions'],
+  },
+  {
+    id: 'compressed-receipt-summary-replaces-recovery-log',
+    proposal: 'treat a compressed receipt summary as the only recovery record for uploads or plugin changes',
+    rejectedBecause: 'a compressed summary can reduce storage, but it cannot preserve the original receipt keys or classify a partial failure unambiguously',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'chunk-receipts', 'row-preconditions', 'durable-progress'],
   },
   {
     id: 'queue-empty-means-complete',
