@@ -259,10 +259,19 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(authSessionJournalProof.required_invariants.includes('inspect is read-only and must come before any mutating recovery mode'));
   assert.equal(authSessionRecoveryContract.contract_id, 'push-auth-session-recovery-contract-one-remote-one-local');
   assert.equal(authSessionRecoveryContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.deepEqual(authSessionRecoveryContract.auth.inspect_requires, [
+    'HMAC-authenticated request',
+    'read-only recovery mode',
+  ]);
   assert.equal(authSessionRecoveryContract.session.identity_hash, 'sha256:remote-identity');
   assert.equal(authSessionRecoveryContract.journal_row.storage_guard, 'filesystem-compare-rename');
   assert.equal(authSessionRecoveryContract.recovery.inspect_mode, 'inspect');
   assert.equal(authSessionRecoveryContract.recovery.mutates, false);
+  assert.ok(
+    authSessionRecoveryContract.recovery.blocked_when.includes(
+      'the claim lease has expired and the worker is fenced',
+    ),
+  );
   assert.ok(authSessionRecoveryContract.required_invariants.includes('fresh live hashes must still be checked before finish, rollback, or auto'));
   assert.equal(sessionJournalProof.live_evidence.same_remote_identity, true);
   assert.equal(sessionJournalProof.journal_fencing.claim_owner, 'worker-17');

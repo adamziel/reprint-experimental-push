@@ -648,6 +648,11 @@ The recovery proof still follows the same order on replay: inspect the journal
 first, inspect live hashes second, and only then decide whether the safe next
 step is finish, rollback, retry, or block. That keeps journal rows and live
 state aligned instead of letting old proof turn into permission.
+The compact auth-and-session recovery proof at
+[`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json)
+captures that same inspect-first boundary in a machine-readable form: it binds
+the push HMAC floor, the minted session, the fenced journal row, and the
+blocked-or-safe recovery decision into one recovery proof.
 
 The executor must also respect the pull-to-push provenance boundary:
 

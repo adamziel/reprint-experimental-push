@@ -120,6 +120,10 @@ The compact inspect-first recovery companion at
 [`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json)
 ties the minted session, journal row, live drift evidence, and blocked-or-safe
 recovery decision into one proof object.
+The stricter auth-and-session companion at
+[`fixtures/protocol/push-auth-session-recovery-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-recovery-contract.json)
+adds the push HMAC floor, the minted session, claim generation, lease expiry,
+and inspect-first recovery fencing into one recovery proof.
 The cursoring companion at
 [`fixtures/protocol/push-snapshot-hashes-page-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-snapshot-hashes-page-contract.json)
 keeps the live snapshot listing in the planning-only lane even when the remote
