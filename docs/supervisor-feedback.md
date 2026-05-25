@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 08:44:41 CEST
+Last updated: 2026-05-25 08:45:30 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 08:44:41 CEST
+## 2026-05-25 08:45:30 CEST
 
 - Going well: page, log, and audit note still agree on the blocked state.
-- Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no evidence delta; the public summary stays terse and the history remains collapsed.
+- Not going well: proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
+- Progress change: no evidence delta; the newest note stays short and the older history stays collapsed.
 - Next nudge: keep one lane per proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
@@ -23,12 +23,12 @@ changed, what is helping, what is not helping, and the next nudge.
 
 Note: this lane-local page becomes live only after merge to `main`; GitHub Pages lags until then.
 
-Audit note: [audits/supervisor-note-20260525-084441.md](../audits/supervisor-note-20260525-084441.md) captures the latest alignment pass in one screen.
+Audit note: [audits/supervisor-note-20260525-084530.md](../audits/supervisor-note-20260525-084530.md) captures the latest alignment pass in one screen.
 
 <details>
 <summary>Earlier entries</summary>
 
-  - 2026-05-25 08:44:41 CEST: refreshed the snapshot without changing the blocked assessment; the page, log, and audit note still align.
+  - 2026-05-25 08:45:30 CEST: refreshed the snapshot without changing the blocked assessment; the page, log, and audit note still align.
   - 2026-05-25 08:31:43 CEST: kept the blocked assessment aligned and trimmed the visible wording without changing the evidence state.
   - 2026-05-25 08:10:41 CEST: kept the blocked assessment aligned and trimmed the visible wording without changing the evidence state.
   - 2026-05-25 07:47:52 CEST: kept the blocked assessment aligned and pointed the scan view at the newer audit note.
