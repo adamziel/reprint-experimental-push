@@ -617,6 +617,11 @@ function durableJournalInspectSurface(writer) {
       inspected
       && typeof inspected === 'object'
       && Array.isArray(inspected.records),
+    ) && inspected.records.every((record) =>
+      record
+      && typeof record === 'object'
+      && Number.isInteger(record.sequence)
+      && typeof record.type === 'string',
     );
   } catch (error) {
     return false;
