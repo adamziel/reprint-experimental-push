@@ -1,11 +1,11 @@
-No material evidence delta landed since the last handoff, so the critic audit remains unchanged after a fresh fetch.
+No material evidence delta changed the critic verdict, but one lane head moved after a fresh fetch, so the critic audit surface is refreshed below.
 
 Evidence checked:
 - `origin/lane/critic` matches `HEAD` at `d781f3d2`.
 - `origin/lane/reliable-executor` is at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` is at `668f886c`.
 - `origin/lane/no-data-loss-recovery` is at `47b675c0`.
-- `origin/lane/fast-paths` is at `b54f1b34`.
+- `origin/lane/fast-paths` is at `9be664b2`.
 - `origin/lane/independent-auditor` is at `33b839f0`.
 - `origin/lane/feedback-supervisor` is at `f386dfa6`.
 - `origin/lane/progress-publisher` is at `7695e1f9`.
