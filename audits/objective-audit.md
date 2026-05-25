@@ -41,7 +41,7 @@ The weakest current requirement is the enforced release gate itself. The repo ha
 
 The test suite is still an audit harness, not a release harness.
 
-- It proves local invariants and refusal logic.
+- It proves local invariants and refusal logic. `npm test` currently passes 89 tests, but that count is still just internal consistency evidence.
 - It does not prove no data loss on the live source boundary.
 - It does not prove real-world reliability against crash, retry, duplicate request, lease expiry, or mid-apply restart on production storage.
 - It does not prove speed because the benchmark code refuses unsupported claims instead of timing the live push path.
@@ -204,6 +204,7 @@ That distinction matters for the objective claims:
 - `npm run test:playground:authenticated-http-push`, `npm run test:playground:authenticated-cli-push`, `npm run test:playground:production-shaped-push`, and `npm run test:playground:production-plugin-package` are the closest release-shaped smokes, but they are still route-shape and packaging evidence. The code still marks the authenticated route profile as `labBacked: true`, so these checks remain explicit lab proof rather than live production proof.
 - The stronger scripts in `package.json` are all opt-in and still separate: auth, production-shaped route/package, db journal, storage guards, process-kill, missing-finalization, stale-claim, recovery, forms table, and file-journal checks can each pass independently while the release bar remains unmet.
 - The suite has no single must-pass command that composes the whole safety matrix. That means no test currently proves that a default green path is the same path a release would use.
+- The repository also has no checked-in workflow file to force that matrix in default automation, so even a fully green local run would still be bypassable by command choice.
 - `test/push-planner.test.js` and `test/recovery-journal.test.js` prove planner invariants, redaction, sequence monotonicity, and restart classifications in fixtures. They do not prove a live WordPress source site survives a failed push, a restart, or a duplicated request without data loss.
 - `test/playground-snapshot-lib.test.js` proves the PHP helper rejects unsupported fixture resources and table names. That is useful input validation, not release evidence for production plugin data drivers or live graph identity.
 - `test/performance-model.test.js` proves the benchmark model keeps proof obligations attached to the proposed fast paths, large-upload and plugin-install shapes, atomic-group staging, and guardrails. `test/guarded-executor-benchmark.test.js` proves the refusal path on tampered evidence and blocked production throughput claims. Together they prove refusal discipline and model shape, not speed. They do not measure a production push path, set an actual runtime or memory threshold, or prove that the live source topology is fast.
