@@ -111,6 +111,11 @@ Any hidden-loss mode that is not proven there remains a blocker:
 - later-discovered plugin-owned surfaces, remapped create targets, and mixed
   file/DB/plugin side effects must get their own preserve / reject / retry
   cycle unless they were already enumerated before the first write; and
+- stale manual-review artifacts must not authorize a later mutation if the
+  remote has drifted, the session was reminted, or a plugin-owned surface was
+  discovered after the note was written; the reviewer must be able to inspect
+  the preserved remote and rerun the same live boundary, not trust the old
+  approval text;
 - partial file, DB, and plugin side effects must never be reported as success
   without a preserved-remote receipt that lets a reviewer audit and retry the
   exact rejected boundary.
@@ -171,6 +176,9 @@ Before any production wording, the project must show:
 - a plugin-owned option, custom table, registry entry, or generated file falls
   outside the allowlist but still shares the same route shape as a covered
   fixture; and
+- a stale audit note, review comment, or handoff text is reused after remote
+  drift, reminted auth, or a newly discovered plugin-owned surface, even if it
+  sounded authoritative for the earlier boundary; and
 - a lab or retained-source `verify:release` run is promoted to production
   evidence without the live WordPress auth/session boundary, preserved remote,
   apply-time revalidation, and journal durability on a real local, Playground,
