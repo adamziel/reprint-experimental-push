@@ -205,6 +205,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed row batch still cannot skip live row compares, because planning evidence and batch compression cannot replace the live compare-and-swap predicate on each row.
 - A fresh remote index plus a cached file digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
 - A compressed remote index plus a cached file hash still cannot skip the guarded chunk-publish step, because duplicate hashing does not prove the live chunk compare or the surviving acknowledgements.
+- A compressed remote index plus a cached file hash still cannot skip the remaining chunk upload work, because cached hashing does not prove each chunk was uploaded, acknowledged, or preserved through the guarded publish boundary.
 - A compressed remote index plus a cached file hash still cannot skip plugin-install writeback, because cached hashes do not prove the metadata writes, row compares, or atomic-group barrier survived failure.
 - A fresh remote index plus a compressed manifest hash still cannot prove a large upload finished, because the live compare, every chunk receipt, and the guarded publish record still need to survive failure.
 - A matching archive hash still cannot replace missing chunk receipts during large-upload resume, because the hash does not prove which acknowledgements survived a crash or lost response.
