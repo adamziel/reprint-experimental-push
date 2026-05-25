@@ -4298,7 +4298,12 @@ Release gate additions needed before production-grade push support:
    surface. Readability alone is not proof that the remote was preserved or
    that retry scope was rebuilt. The proof must show the rejection point, the
    preserved remote, and the fresh retry artifact for the same boundary.
-6. Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
+6. Any route-shape smoke, packaged-plugin mount, fixture replay, readable
+   review artifact, or `finalMatchesLocal` result must be described as
+   compatibility evidence only. If the claim implies durability, retry
+   authority, or production safety, it must also show the live rejection
+   point, preserved remote, and fresh retry artifact from this branch.
+7. Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
    revision or worktree state, say what that note proves here, and say what it
    does not prove. A named note can justify transport shape, discovery shape,
    or review vocabulary, but not live mutation safety on this branch. If the
@@ -4306,7 +4311,7 @@ Release gate additions needed before production-grade push support:
    branch reruns the same live boundary and records the preserved remote.
    Matching the note's route family, package layout, or reviewer wording does
    not convert upstream provenance into current retry authority.
-7. The release gate must fail closed and record the exact rejection reason
+8. The release gate must fail closed and record the exact rejection reason
    whenever any of the above proofs is missing; route shape, package mount,
    fixture replay, readable review artifacts, source-note comparison, and
    `finalMatchesLocal` are compatibility evidence only. They do not prove the
