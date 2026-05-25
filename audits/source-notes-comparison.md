@@ -133,6 +133,11 @@ and stale-authority rejection at the current write boundary, the comparison
 remains context only. If the claim cannot also name the exact upstream
 revision or worktree state that was reverified, it still cannot be promoted
 from context to proof.
+That prohibition also covers "manual resolution" wording: a readable stale
+artifact, a matching route family, or a copied-lab mount does not become
+retry authority unless the preserved remote is auditable, the stale artifact
+was rejected before mutation, and a fresh retry artifact was recorded from
+current live hashes on this branch.
 Even when the exact upstream revision or worktree state is named, the note
 still stays historical unless this branch re-ran the same live drift case at
 the same live mutation boundary and preserved the remote for audit. Matching
