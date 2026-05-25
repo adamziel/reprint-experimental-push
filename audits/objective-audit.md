@@ -5,6 +5,7 @@
 The project is **not releasable as a production WordPress push path**.
 
 Fresh recheck on 2026-05-25: `package.json` still has no `verify`, `verify:release`, or `release` script, and this checkout still has no `.github` tree or workflow entrypoint. That means the repo still lacks a mandatory command that can fail closed at the live-source boundary, export `REPRINT_PUSH_SOURCE_URL`, and record preserved-remote evidence in the same required invocation. The missing artifact is concrete: there is still no checked-in command surface that can own a live-source preflight verdict.
+Fresh recheck on 2026-05-25: there is still no checked-in command that supplies a retained local, Playground, or Docker source endpoint by default and then proves preserved-remote behavior from that same endpoint. The current helper surface can be run, but it does not yet supply the live-source input and verdict together, so the repository still lacks a true release gate rather than just a wrapper around one.
 Fresh recheck on 2026-05-25: `node --test` still passes at `89/89`, but that result remains regression evidence only because there is still no checked-in live-source release gate.
 Fresh repo-wide recheck on 2026-05-25: there is still no command or workflow surface in this checkout that upgrades the existing regression, fixture, or lab smokes into a required live-source preflight. The missing artifact is still the same one: a checked-in command that reaches the live-source boundary, exports `REPRINT_PUSH_SOURCE_URL`, and fails closed when preserved-remote evidence is absent.
 Current audit focus recheck: there is still no checked-in invocation that proves preserved-remote evidence against a retained local, Playground, or Docker source endpoint in the same run. The command-surface absence is the blocker, not the test count: until a checked-in `verify:release` or equivalent gate exists, this remains the top release blocker.
@@ -168,6 +169,7 @@ Direct filesystem check on 2026-05-25: this checkout has no `.github` tree or wo
 Current recheck summary on 2026-05-25: the checked-in command surface still ends at `test`, `plan`, `apply`, `test:recovery:file-journal`, and `test:playground:*`, and the release automation tree is still absent.
 Current release-gate absence checklist:
 
+- no checked-in command that both supplies a retained source endpoint and proves preserved-remote behavior in the same invocation
 - no checked-in `verify` wrapper that exports `REPRINT_PUSH_SOURCE_URL`
 - no checked-in `verify:release` command that runs against a retained local, Playground, or Docker source endpoint
 - no checked-in command that records preserved-remote evidence in the same invocation
