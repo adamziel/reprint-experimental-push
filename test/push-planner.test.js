@@ -10282,6 +10282,14 @@ test('stale completed replay on a durable journal blocks recovery instead of dup
     persistedBeforeReplay.records.filter((record) => record.type === 'journal-replayed').length,
   );
   assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'target-planned').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'target-planned').length,
+  );
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'mutation-observed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'mutation-observed').length,
+  );
+  assert.equal(
     persistedAfterReplay.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
     true,
   );
