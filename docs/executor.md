@@ -64,6 +64,29 @@ The remote liveness contract stays strict:
 - journal inspect is read-only and never authorizes mutation
 - recovery inspect is read-only and must happen before any mutating repair
 
+## Canonical Proof Set
+
+The executor should cite the same proof chain as the protocol document:
+
+1. `push-protocol-extension-contract.json`
+2. `push-production-topology-contract.json`
+3. `push-production-pull-bridge-contract.json`
+4. `push-production-revalidation-contract.json`
+5. `push-production-auth-session-journal-recovery-inspect-contract.json`
+6. `push-production-journal-lease-recovery-inspect-contract.json`
+7. `push-production-executor-flow-contract.json`
+8. `push-production-route-matrix-contract.json`
+
+That set keeps the executor review path short without hiding any boundary:
+
+- the exporter/importer bridge stays the only source of immutable push provenance
+- preflight is the first live bind after importer persistence
+- snapshot listing is planning-only
+- dry-run stays separate from apply
+- apply revalidates fresh live evidence before every batch and at the storage boundary
+- journal and recovery inspect remain read-only
+- mutating recovery still requires the HMAC floor, the live hashes, and the inspect result
+
 ## Canonical Executor Contract
 
 The executor should treat the production push extension as a fixed ladder:

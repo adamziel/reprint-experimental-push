@@ -182,6 +182,30 @@ That split keeps remote liveness strict: dry-run and apply are separate remote
 operations, and apply must revalidate the live remote before every batch and
 again at the storage boundary.
 
+## Canonical Proof Set
+
+Use this order when reviewing the production push extension end to end:
+
+1. `push-protocol-extension-contract.json` for the full ladder, pull bridge, auth floor, and one-remote/one-local/one-drift topology.
+2. `push-production-topology-contract.json` for the production harness and the Docker/Playground topology proof.
+3. `push-production-pull-bridge-contract.json` for the immutable exporter/importer handoff into push.
+4. `push-production-revalidation-contract.json` for preflight, planning-only remote hashes, dry-run eligibility, apply-time revalidation, journal evidence, and inspect-first recovery.
+5. `push-production-auth-session-journal-recovery-inspect-contract.json` for auth, short-lived session minting, journal rows, lease fencing, and read-only recovery inspect on the same remote identity.
+6. `push-production-journal-lease-recovery-inspect-contract.json` for the narrow journal/lease/recovery proof after dry-run and apply have split.
+7. `push-production-executor-flow-contract.json` for the shortest compact end-to-end flow object.
+8. `push-production-route-matrix-contract.json` for the shared route names, ingress, and proxy policy in Docker and Playground.
+
+The ladder and the proof set stay aligned:
+
+- exporter/importer establish immutable provenance before push starts
+- preflight is the first live bind after importer persistence
+- remote snapshot hash listing stays planning-only
+- dry-run returns an eligibility receipt, not a lock
+- apply is a separate remote mutation and revalidates live evidence before every batch and at the storage boundary
+- journal inspect is read-only
+- recovery starts with inspect and mutates only when fresh live evidence and the HMAC floor still hold
+- Docker and Playground use the same route semantics, the same auth floor, and the same 8080-visible inspection rule
+
 ## Production Summary
 
 The production contract is the same in Docker and Playground:
