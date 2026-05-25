@@ -81,9 +81,11 @@ The objective stays blocked for five concrete reasons:
 9. The lab route coverage is still self-described as `labBacked: true` on the strongest push paths, so even the authenticated success cases remain local proof, not production release proof.
 10. No test or smoke in this checkout demonstrates the one-way pull base plus one-way push back to live source under the production storage semantics named by the objective.
 
+The weakest claim is speed, but only because it is the easiest one to describe and the hardest one to prove here. The repository currently has refusal-only throughput evidence, not a measured live-path result, so any claim that the production path is fast enough remains unsupported.
+
 ## Actionable Next Step
 
-Add a required release entrypoint that fails closed unless it can prove, in one run, the live-source boundary, durable recovery artifacts, and a real topology with an explicit speed result or an explicit refusal to make one.
+Add a required release entrypoint that fails closed unless it can prove, in one run, the live-source boundary, durable recovery artifacts, leases/fencing, graph identity, plugin data-driver coverage, and a real topology with either a measured live-path throughput result or an explicit refusal to claim throughput.
 
 ## Audit Rule
 
