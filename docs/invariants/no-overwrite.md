@@ -184,6 +184,10 @@ the resource key, the live remote hash observed during planning, and the
   require overwriting, removing, or hiding a live remote ancestor or descendant.
   The conflicting file mutation and its precondition must be suppressed rather
   than left as an apply candidate.
+- File topology conflicts remain blocked even when other resources are already
+  `already-in-sync` and unrelated remote-only plugin drift is preserved. The
+  planner must still stop on the hidden file mutation and keep the evidence
+  bounded.
 - Safe preservation of unrelated remote-only plugin drift does not authorize a
   stale plugin-context mutation. If the local plan touches the same plugin's
   files or plugin-owned data, the planner must stop instead of assuming the
