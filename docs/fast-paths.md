@@ -245,6 +245,9 @@ The benchmark shape must stay realistic:
 - A dependency-heavy plugin-update workload exercises the same barrier with
   nontrivial dependency evidence, staged rows, and a second atomic-group
   commit path.
+- The executable guarded-executor benchmark also includes a `guardedLarge`
+  profile so the same receipts and recovery checks are exercised at a much
+  larger upload and row volume.
 - Each of those workloads keeps recovery evidence visible in the model: chunk
   receipts for uploads, batch receipts for rows, and group-finalize records
   for coupled plugin changes.
@@ -291,6 +294,9 @@ The rejected examples are not abstract lint. They are concrete failure modes:
 - Chunk uploads cannot become visible across atomic groups as soon as receipts
   arrive, because the owning group barrier still has to keep the upload set
   classifiable after crash or retry.
+- The large-profile guarded-executor benchmark still cannot claim production
+  throughput, because production storage receipts, row-batch execution, and
+  atomic-group commit behavior are not measured there.
 - Backpressure cannot drop receipts or journals because the missing evidence is
   what makes failure classification unambiguous.
 - Backpressure cannot be skipped just because the queue is compressed, because

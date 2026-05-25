@@ -695,3 +695,21 @@ test('guarded executor report keeps the large-upload and plugin-install evidence
   assert.equal(report.executorCapabilities.productionAtomicCommit, 'not-measured');
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
+
+test('guarded executor large profile still preserves receipts and stays blocked for production throughput', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'guardedLarge' });
+  const blockers = new Set(report.claims.productionThroughput.blockers);
+
+  assert.equal(report.profile, 'guardedLarge');
+  assert.ok(report.shape.fileBytes >= 384 * MIB);
+  assert.ok(report.shape.rowCount >= 2_000);
+  assert.ok(report.evidence.chunkReceipts.expected > 0);
+  assert.equal(report.evidence.chunkReceipts.recorded, report.evidence.chunkReceipts.expected);
+  assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
+  assert.equal(report.evidence.recovery.partialCommitBlocksRecovery, true);
+  assert.equal(report.throughput.productionThroughput, 'not-claimed');
+  assert.equal(report.claims.productionThroughput.status, 'blocked');
+  assert.ok(blockers.has('production-atomic-group-commit-not-measured'));
+  assert.ok(blockers.has('production-storage-receipts-not-measured'));
+  assert.ok(blockers.has('production-row-batch-executor-not-measured'));
+});
