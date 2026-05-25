@@ -457,6 +457,7 @@ The production proof bundle is the same one used to review the real push
 extension:
 
 - `push-production-pull-bridge-contract.json` proves the immutable pull-to-push bridge.
+- `push-production-ladder-contract.json` proves the compact stage order from preflight through inspect-first recovery.
 - `push-remote-snapshot-listing-contract.json` proves planning-only remote hash listing.
 - `push-production-revalidation-contract.json` proves dry-run separation and apply-time revalidation.
 - `push-production-auth-session-journal-recovery-inspect-contract.json` proves the auth/session/journal/recovery floor.
@@ -469,13 +470,16 @@ extension:
 
 That review order is the production proof stack:
 
-- extension contract for stage order and inspect-first recovery
-- pull bridge contract for immutable provenance handoff
-- remote snapshot listing contract for planning-only live hash discovery
-- production revalidation contract for dry-run separation and apply-time revalidation
-- auth/session/journal/recovery inspect contract for the auth floor and inspect-first boundary
-- remote liveness topology contract for the dry-run/apply split under live drift
-- production topology contract for the one-remote, one-local, one-drift harness proof
+1. `push-production-ladder-contract.json` for the compact stage order from preflight through inspect-first recovery.
+2. `push-production-pull-bridge-contract.json` for immutable provenance handoff.
+3. `push-remote-snapshot-listing-contract.json` for planning-only live hash discovery.
+4. `push-production-revalidation-contract.json` for dry-run separation and apply-time revalidation.
+5. `push-production-auth-session-journal-recovery-inspect-contract.json` for the auth floor and inspect-first boundary.
+6. `push-production-push-recovery-contract.json` for the full push ladder from preflight through mutating recovery.
+7. `push-production-recovery-inspect-contract.json` for the inspect-first recovery branch and its journal-row, lease-fence, and fresh-live proof.
+8. `push-production-recovery-drift-contract.json` for the production-shaped recovery-after-drift proof.
+9. `push-remote-liveness-topology-contract.json` for the dry-run/apply split under live drift.
+10. `push-production-topology-contract.json` for the one-remote, one-local, one-drift harness proof.
 
 The stage contract is intentionally simple:
 

@@ -70,6 +70,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'push-production-ladder-contract.json` is the compact stage-order proof',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'push-protocol-extension-contract.json` is the top-level production ladder',
     ),
   );
@@ -194,6 +199,7 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
   const bridge = readJson('fixtures/protocol/push-production-pull-bridge-contract.json');
   const revalidation = readJson('fixtures/protocol/push-production-revalidation-contract.json');
   const authSession = readJson('fixtures/protocol/push-production-auth-session-journal-recovery-inspect-contract.json');
+  const ladder = readJson('fixtures/protocol/push-production-ladder-contract.json');
 
   assert.equal(
     bridge.pull_to_push_mapping.push_preflight,
@@ -245,6 +251,41 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
   assert.equal(authSession.topology.same_remote_identity, true);
   assert.ok(authSession.topology.proof.includes('dry-run and apply remain separate remote operations'));
   assert.ok(authSession.required_invariants.includes('journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable'));
+
+  assert.equal(
+    ladder.purpose,
+    'compact production ladder proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery on one remote source site, one imported local site, and one later drift observation of the same remote identity',
+  );
+  assert.deepEqual(ladder.push_ladder.map((stage) => stage.stage), [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    ladder.pull_to_push_mapping.push_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run',
+  );
+  assert.equal(ladder.auth_and_session.required_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.ok(ladder.topology.docker.proof.includes('push recovery inspect happens before any mutating repair'));
+  assert.ok(ladder.topology.playground.proof.includes('browser-visible inspection goes through the sandbox-provided 8080 ingress'));
+  assert.deepEqual(ladder.required_invariants, [
+    'pull exporter/importer establish the immutable base package before push',
+    'push preflight must bind the persisted pull base to one live remote identity and one short-lived session',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run and apply are separate remote operations',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'dry-run is a receipt, not a lock',
+    'push batch apply is separate from dry-run',
+    'push snapshot hashes are planning evidence only and never become write authority',
+    'push dry-run is an eligibility receipt, not a lock',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+  ]);
 });
 
 test('umbrella production contract keeps the pull bridge, apply revalidation, recovery inspect, and topology aligned', () => {
@@ -1101,7 +1142,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'remote-example',
   );
   assert.equal(
-    productionLadderContract.pull_to_push_mapping.recovery_inspect,
+    productionLadderContract.pull_to_push_mapping['push_recover inspect'],
     'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
   );
   assert.equal(
@@ -3169,8 +3210,12 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
     'scans the merge base and coverage evidence',
   );
   assert.equal(
-    productionLadderContract.pull_to_push_mapping.preflight,
-    'binds the persisted pull base to the live remote identity and a short-lived push session',
+    productionLadderContract.pull_to_push_mapping.push_preflight,
+    'binds the persisted pull base package to one live remote identity and one short-lived push session',
+  );
+  assert.equal(
+    productionLadderContract.pull_to_push_mapping['push_recover inspect'],
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
   );
   assert.equal(
     productionLadderContract.auth_and_session.required_floor,

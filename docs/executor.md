@@ -241,25 +241,27 @@ pull provenance back into a mutable cache:
 
 The production proof stack is fixed and should be read in this order:
 
-1. `push-production-pull-bridge-contract.json` for the immutable
+1. `push-production-ladder-contract.json` for the compact stage order from
+   preflight through inspect-first recovery.
+2. `push-production-pull-bridge-contract.json` for the immutable
    exporter/importer handoff into push.
-2. `push-remote-snapshot-listing-contract.json` for planning-only remote
+3. `push-remote-snapshot-listing-contract.json` for planning-only remote
    hash listing.
-3. `push-production-revalidation-contract.json` for dry-run separation and
+4. `push-production-revalidation-contract.json` for dry-run separation and
    apply-time revalidation.
-4. `push-production-auth-session-journal-recovery-inspect-contract.json` for
+5. `push-production-auth-session-journal-recovery-inspect-contract.json` for
    the auth/session/journal/inspect-first recovery floor.
-5. `push-production-recovery-inspect-contract.json` for the inspect-first
+6. `push-production-recovery-inspect-contract.json` for the inspect-first
    recovery branch that stays aligned with the journal row, lease fence, and
    fresh live hashes.
-6. `push-production-push-recovery-contract.json` for the full preflight-
+7. `push-production-push-recovery-contract.json` for the full preflight-
    through-mutation recovery ladder.
-7. `push-remote-liveness-topology-contract.json` for the one-remote,
+8. `push-remote-liveness-topology-contract.json` for the one-remote,
    one-local, one-drift harness plus the liveness split.
-8. `push-production-topology-contract.json` for the Docker and Playground
+9. `push-production-topology-contract.json` for the Docker and Playground
    harness shape, including the one-remote, one-local, one-drift roles, the
    `8080` ingress rule, and the journal-row/recovery-inspect boundary.
-8. `push-topology-matrix.json` for the compact Docker and Playground route
+10. `push-topology-matrix.json` for the compact Docker and Playground route
    matrix that keeps the same harness and ingress rules explicit.
 
 The executor follows the same production ladder the protocol defines:

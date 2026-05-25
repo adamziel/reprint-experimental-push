@@ -69,6 +69,9 @@ identity across `remote-base` and `remote-changed`:
   inspect-first recovery story in one object, with dry-run and apply kept
   separate while apply revalidates fresh live evidence before every batch and
   at the storage boundary.
+- `push-production-ladder-contract.json` is the compact stage-order proof
+  for the same preflight through inspect-first recovery ladder when you only
+  need the production sequence and the pull-to-push bridge in one object.
 - `push-protocol-extension-topology-contract.json` is the compact umbrella
   proof that keeps the same ladder aligned with the one-remote, one-local,
   one-drift Docker and Playground topology.
