@@ -1382,12 +1382,12 @@ test('atomic apply keeps the documented recovery states across failure boundarie
   const plan = planFor(base, local, remote);
 
   const failureScenarios = [
-    ['before mutation', { failBeforeMutation: true }, 'old-remote'],
-    ['after staging', { failAfterStaging: true }, 'old-remote'],
-    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote'],
+    ['before mutation', { failBeforeMutation: true }, 'old-remote', 'opened'],
+    ['after staging', { failAfterStaging: true }, 'old-remote', 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote', 'dependencies-validated'],
   ];
 
-  for (const [label, options, expectedStatus] of failureScenarios) {
+  for (const [label, options, expectedStatus, expectedJournalStatus] of failureScenarios) {
     const before = JSON.stringify(remote);
     const error = captureError(() => applyPlan(remote, plan, options));
 
@@ -1397,6 +1397,7 @@ test('atomic apply keeps the documented recovery states across failure boundarie
     assertRecoveryStateArtifacts(error.details.recovery, expectedStatus);
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
   }
 
   const completed = applyPlan(remote, plan);
@@ -1415,6 +1416,10 @@ test('atomic apply keeps the documented recovery states across failure boundarie
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    replay.recoveryState.artifacts.journal.entries.every((entry) => entry.status === 'applied'),
+    true,
+  );
 });
 
 test('completed replay remains inert for a matching remote and blocks drift with inspectable artifacts', () => {
