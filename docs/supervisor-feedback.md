@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 04:50:06 CEST
+Last updated: 2026-05-25 04:50:56 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 04:50:06 CEST - Supervisor Snapshot
+## 2026-05-25 04:50:56 CEST - Supervisor Snapshot
 
-- Going well: the page, log, and feedback note still line up, and the public page stays compact enough to scan quickly.
+- Going well: the page, log, and feedback note still line up, and the public page stays compact.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; this refresh trimmed repeated wording and kept the visible page pointed at linked docs.
+- Progress change: no new evidence landed; this pass only tightened repeated wording and scan density.
 - Next nudge: keep each lane to one proof gap, one concrete test, and one owner.
 
 | Lane | Current nudge |
@@ -30,7 +30,7 @@ Older entries repeated the same gaps. The durable archive remains in git history
 
 - Going well: the page, log, and feedback note still line up.
 - Not going well: the same production gaps are still unproven.
-- Progress change: no evidence delta landed; this archive stays terse.
+- Progress change: no evidence delta landed.
 - Next nudge: keep each lane to one proof gap, one test, and one owner.
 
 | Lane | Current nudge |
