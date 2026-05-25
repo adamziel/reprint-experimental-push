@@ -280,7 +280,9 @@ wording is allowed:
   another, but the next retry can still inherit the old approval or widen it
   to a different surface.
 - A manual-review artifact stays readable after drift, but the system cannot
-  prove it became unusable as write authority before the next apply.
+  prove server-side rejection turned it into audit-only evidence before the
+  next apply, or that the retry was forced to start from fresh live hashes
+  instead of inheriting the old approval.
 
 ## What Reprint, ZS-Sync, And ForkPress Actually Contribute
 
@@ -507,8 +509,8 @@ Treat the following as hard blockers for production wording:
   proves the lab surface converged, not that the live remote was preserved or
   that a stale approval was rejected before write.
 - Manual resolution is only acceptable if the remote is preserved for audit,
-  the stale approval stays readable but unusable, and the retry starts from a
-  fresh snapshot and fresh plan after a live revalidation failure, and the
+  the stale approval stays readable but unusable, server-side rejection forces
+  the next retry to start from fresh live hashes and a fresh plan, and the
   rejected artifact cannot be widened to a different row, file, or
   plugin-owned surface.
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
