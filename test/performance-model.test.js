@@ -225,6 +225,10 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('remote-index-and-cached-package-hash-skips-plugin-dependency-checks').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('index-and-cached-dependency-graph-skips-plugin-update-finalize').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('index-and-cached-dependency-graph-skips-plugin-update-finalize').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('index-and-cached-dependency-graph-skips-plugin-update-finalize').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('index-and-cached-dependency-graph-skips-plugin-update-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-update').violates.includes('atomic-groups'));
@@ -335,6 +339,12 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
     model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'compress-chunk-transit-frames-with-canonical-chunk-digests' &&
       fastPath.gateProofs.recovery.includes('durable chunk receipts')
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'reuse-planned-dependency-graph-for-plugin-update-with-live-finalize' &&
+      fastPath.gateProofs.group.includes('atomic-group commit barrier')
     ),
   );
   assert.ok(

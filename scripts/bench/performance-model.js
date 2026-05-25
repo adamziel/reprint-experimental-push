@@ -247,6 +247,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'remote-indexes',
+    reduces: ['remote-body-fetches', 'dependency-recheck-round-trips', 'planning-round-trips'],
+    allowedShortcut: 'reuse-planned-dependency-graph-for-plugin-update-with-live-finalize',
+    guardrails: [
+      'dependency-graph-is-planning-evidence-only',
+      'finalize-still-rechecks-live-member-preconditions',
+    ],
+    gateProofs: {
+      skip: 'a dependency-heavy plugin update can reuse a recorded dependency graph and indexed listing to avoid recomputing unchanged plan shape',
+      live: 'the eventual metadata and row writes still recheck live per-row and per-member preconditions at the storage boundary',
+      group: 'the dependency graph only informs planning; the plugin update still crosses visibility through one atomic-group commit barrier',
+      recovery: 'the plan retains the dependency graph, index cursor, and finalize record so a retry can classify old, new, or blocked without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-atomic-group-commit',
+    failureEvidence: 'planning cursor, dependency graph, and finalize record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
@@ -795,6 +815,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and batch compression can reduce work, but they cannot prove per-row preconditions, dependency checks, or the atomic-group commit survived failure',
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
+    id: 'index-and-cached-dependency-graph-skips-plugin-update-finalize',
+    proposal: 'treat a fresh remote index plus a cached dependency graph as enough proof to skip plugin-update finalize',
+    rejectedBecause: 'planning evidence and a cached dependency graph can reduce lookup work, but they cannot prove the live row compares, member metadata writes, or the atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
     id: 'compressed-row-batch-replaces-atomic-group',
