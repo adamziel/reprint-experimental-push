@@ -424,6 +424,7 @@ Highest-value next fix:
 3. Require the live-source, journal, lease/fencing, graph identity, plugin-driver, and benchmark checks to run in one enforced sequence.
 4. Make the gate fail if the final proof set does not include a real remote/local topology, a durable journal on the production storage path, and a measured end-to-end benchmark with a stated threshold.
 5. Make it impossible for `npm test` or `npm run test:playground` to satisfy the release bar on their own. If either command can clear release, the release bar is not enforced.
+6. Treat any route that still self-identifies as `labBacked: true` as release-blocking, even if its shape looks production-like or its packaging step passes.
 
 ## Release Gate Gap
 
@@ -450,6 +451,7 @@ Minimum acceptance rule for the gate:
 - The gate must fail if the proof set lacks a live remote/local topology, a durable journal on the real storage path, or a measured production-shaped speed result.
 - If any subcheck is still a lab fixture, the release command must say so and stop.
 - If the checked-in automation cannot invoke the gate by default, the release claim remains blocked even if every optional smoke passes.
+- If the release command cannot name the last failing proof bucket, it is not actionable enough to be the release gate.
 
 ## Test Verdict
 
