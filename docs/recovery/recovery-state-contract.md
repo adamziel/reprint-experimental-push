@@ -1,27 +1,30 @@
 # Recovery State Contract
 
-Atomic apply has three acceptable post-failure outcomes:
+The no-data-loss recovery path accepts only these post-failure states:
 
 - `old-remote`
 - `fully-updated-remote`
-- `blocked-recovery` with artifacts
+- `blocked-recovery` with inspectable artifacts
 
-The release-blocker rule is simple: a partial remote mutation without a recovery artifact is not acceptable.
+That contract is only safe when the journal is backed by durable storage.
+In-memory replay evidence is useful for modeling, but it is not a release
+boundary.
+
+## Required production primitive
+
+Before release, the apply path needs a real durable journal primitive:
+
+- DB rows or a file-backed append log, not transient JSON objects
+- `fsync` or an equivalent durability flush for the journal path
+- lease or fencing ownership so stale writers cannot keep mutating
+- recovery inspection that can restart from persisted artifacts
 
 ## Failure boundaries
 
-- failure before mutation, after staging, and after dependency validation should leave the remote as `old-remote`
-- replaying a completed plan should return `fully-updated-remote` and stay inert
-- stale or ambiguous recovery must return `blocked-recovery` and include inspectable artifacts
-
-## Evidence boundary
-
-JSON fixtures and lab-only evidence are useful for proving the model. They are not a substitute for production durable journal storage.
-
-Production recovery still needs:
-
-- durable journal rows or files that survive process exit
-- flush or fsync-equivalent persistence for the journal write path
-- restart-readable recovery metadata for inspection without replay
-- fencing or lease behavior so stale work cannot resurrect old local data
-
+- Failure before mutation must leave the remote unchanged.
+- Failure after staging or dependency validation must still be recoverable from
+  journal artifacts without exposing a partial remote mutation as safe.
+- A completed plan replay must remain inert on retry and must not duplicate
+  inserts or revive stale local data.
+- A partial remote mutation without inspectable recovery artifacts is a release
+  blocker.
