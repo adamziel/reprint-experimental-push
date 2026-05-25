@@ -17534,3 +17534,109 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
+
+test('failure before mutation keeps the old remote and leaves inspectable journal artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const plan = planFor(base, local, baseSite());
+  const remote = baseSite();
+  const snapshot = JSON.stringify(remote);
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failBeforeMutation: true,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.details.recovery.status, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'opened');
+  assert.equal(JSON.stringify(remote), snapshot);
+});
+
+test('failure after staging keeps the old remote and preserves staged journal evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const remote = baseSite();
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failAfterStaging: true,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.details.recovery.status, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'staged');
+  assert.equal(remote.files['index.php'], base.files['index.php']);
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+});
+
+test('failure after dependency validation keeps the old remote and retains validation-state journal artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const remote = baseSite();
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failAfterDependencyValidation: true,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.details.recovery.status, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'dependencies-validated');
+  assert.equal(remote.files['index.php'], base.files['index.php']);
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+});
+
+test('replaying a completed plan stays fully updated and does not resurrect stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(completed.site, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(persisted.records.filter((record) => record.type === 'journal-replayed').length, 1);
+  assert.equal(persisted.records.filter((record) => record.type === 'journal-completed').length, 1);
+});
