@@ -5,6 +5,11 @@ It is not retry authority. It only records what the upstream notes prove as
 historical context and what still needs branch-local proof before production-
 grade push wording is allowed.
 
+The comparison is intentionally conservative: a note can explain design
+lineage, but it cannot prove the live executor boundary, preserved-remote
+auditability, or retry authority unless this branch reran the same live
+boundary here and preserved the rejected remote for audit.
+
 ## Reprint
 
 - Proves: staged transport, resumability vocabulary, and chunked delivery
@@ -54,3 +59,7 @@ unless this branch reruns the same live boundary and proves:
 - old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface.
 
+If a comparison note says "passed", "resolved", or "production-ready" but
+does not name the exact live boundary and preserved remote on this branch,
+that wording is false reliability and must be treated as compatibility
+evidence only.
