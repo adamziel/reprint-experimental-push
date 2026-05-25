@@ -9,8 +9,8 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `778f4c35`
 - `origin/lane/no-data-loss-recovery` -> `02506805`
-- `origin/lane/fast-paths` -> `eed8eafd`
-- `origin/lane/independent-auditor` -> `33b839f0`
+- `origin/lane/fast-paths` -> `c3812794`
+- `origin/lane/independent-auditor` -> `b60ececf`
 - `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `12183774`
@@ -36,12 +36,12 @@ but it did not change the release conclusion:
   production gate at `02506805` while preserving the earlier recovery
   evidence.
 - `origin/lane/fast-paths` now tightens blocked production-claim diagnostics at
-  `eed8eafd`.
+  `c3812794` by failing closed on oversized chunk windows.
 - `origin/lane/critic` now refreshes the critic handoff at `f8591f9d`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `33b839f0`.
+  `b60ececf`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `534d941b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
