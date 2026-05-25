@@ -44,9 +44,9 @@ Minimum acceptable command shape:
 
 | Claim | Current status | Why it is still blocked |
 | --- | --- | --- |
-| No data loss | Unproven | The current passing suite proves local ordering, replay classification, and journal guardrails, but it does not prove live-source mutation on production storage preserves every touched WordPress data shape end to end. |
-| Reliability | Unproven | Auth/session, journal, lease/fencing, graph identity, and plugin-driver checks exist only as distributed helpers and smokes, not as one mandatory live-source release gate. |
-| Speed | Unproven | `productionThroughput` remains `not-claimed`, and the benchmark surface is refusal-only. There is still no required live-path measurement or enforced `speed unclaimed` release verdict. |
+| No data loss | Unproven | The current passing suite proves local ordering, replay classification, and journal guardrails, but it does not prove live-source mutation on production storage preserves every touched WordPress data shape end to end. Local success is not end-to-end durability proof. |
+| Reliability | Unproven | Auth/session, journal, lease/fencing, graph identity, and plugin-driver checks exist only as distributed helpers and smokes, not as one mandatory live-source release gate. There is no single enforced command that can fail closed on the combined release boundary. |
+| Speed | Unproven | `productionThroughput` remains `not-claimed`, and the benchmark surface is refusal-only. There is still no required live-path measurement or enforced `speed unclaimed` release verdict from a mandatory release command. |
 | Release readiness | Blocked | There is no checked-in command that reaches the live-source boundary, rechecks apply-time state, and fails closed on missing proof. |
 
 ## Evidence Table
