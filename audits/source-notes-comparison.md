@@ -5,7 +5,9 @@ what they do not support for production push wording.
 
 These notes are snapshots of previously observed upstream behavior, not
 current upstream proof, unless this branch reverified the exact cited revision
-or worktree at the same live mutation boundary.
+or worktree at the same live mutation boundary. If either the exact upstream
+state or the exact live boundary is missing, the note is historical context
+only.
 
 ## Reprint
 
@@ -79,6 +81,8 @@ reverified and the same live write boundary was exercised in this repo.
 If the claim only shows a route-shaped smoke, package mount, or
 `finalMatchesLocal` result, the note stays historical context and cannot
 stand in for live proof.
+If the claim does not name the exact upstream revision or worktree state and
+the exact live mutation boundary, it is not production wording.
 Without that revalidation, the notes cannot backfill missing proof for:
 
 - live remote drift rejection,
@@ -88,6 +92,11 @@ Without that revalidation, the notes cannot backfill missing proof for:
 - partial file/DB/plugin side-effect classification,
 - stale manual-review artifact reuse,
 - or remote-preserving retry behavior.
+
+Production-grade wording also needs the source-note comparison itself to say
+whether the cited Reprint, ZS-Sync, or ForkPress state was reverified at the
+same live write boundary. If it was not, the note remains design context,
+never current proof.
 
 A source-note comparison by itself is never enough to claim the live retry
 path is safe, auditable, or production-ready. It cannot be used to prove a
@@ -129,3 +138,15 @@ safe retry.
 That also covers any live-looking hash emitted by a fixture-backed or
 copied-lab path behind a production-shaped mount: the hash may confirm the
 route answered, but it still does not prove the live mutation executor ran.
+
+Release-barrier summary:
+
+- Reprint, ZS-Sync, and ForkPress notes are comparison evidence only unless
+  the exact upstream revision or worktree state is named and reverified.
+- Route shape, package mount shape, and `finalMatchesLocal` are compatibility
+  evidence only unless the same live mutation boundary was exercised against a
+  drifted remote.
+- A readable manual-review artifact is audit evidence only until it is shown
+  unusable as retry authority after drift.
+- A live-looking hash from a fixture-backed or copied-lab path never proves
+  the live executor ran.
