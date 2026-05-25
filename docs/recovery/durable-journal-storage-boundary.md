@@ -19,6 +19,17 @@ recovery-inspect edges:
 - a recovery-inspect command that reads the persisted artifact and classifies
   the remote without relying on in-memory plan state
 
+The current apply path already names the command boundaries that should feed
+that durable storage:
+
+- `recordDurablePlanOpened(...)` before any remote mutation
+- `recordDurableBoundary('apply-staged', ...)` after the staged plan exists
+- `recordDurableBoundary('dependencies-validated', ...)` after dependency checks
+- `recordDurableBoundary('journal-completed', ...)` once the remote is fully
+  updated
+- `recordDurableRecoveryState(...)` when a failure must leave inspectable
+  artifacts behind
+
 ## What must survive restart
 
 The persisted trail must carry enough evidence to answer these questions after
