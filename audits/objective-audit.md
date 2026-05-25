@@ -979,24 +979,24 @@ push.** Anything stronger is a blocked claim, not a conservative phrasing.
 
 ## Weakest Current Claim
 
-The weakest surviving claim is not really speed by itself. The broader blocker
-is that a live source WordPress site can be pushed back without silent data
-loss, and the repository still lacks the live write-boundary evidence needed to
-support that claim. Speed remains blocked too, but it is subordinate to the
-same missing release boundary: if the repo cannot prove the guarded write
-matrix on the live path, it also cannot justify a production speed claim for
-that path. In other words, the repo is not just missing a fast benchmark; it is
-missing the release boundary that would make any benchmark relevant to release.
+The weakest surviving claim is not speed by itself. The broader blocker is
+that the repository still lacks one non-bypassable release gate that proves the
+live source push boundary and the benchmark environment on the same required
+path. Without that gate, the suite can reject unsafe optimism, but it cannot
+authorize a production push.
+
+That missing gate is the next actionable proof target. It should be a single
+required command, wired into CI or another enforced entrypoint, that fails
+closed when any sub-check is still lab-backed, fixture-only, or missing a
+measured threshold. Until that exists, both the safety claim and the speed
+claim remain non-release claims, even when the individual smoke tests pass.
 
 Right now the repo only proves that selected fixtures survive selected lab
 paths, and those paths do not yet cover the same auth, storage, journal, lease,
-fencing, and graph boundaries as a real source mutation. That means the
-current evidence is enough to reject unsafe optimism, but not enough to
-authorize a release. The stricter and more actionable statement is:
-the repository does not yet have a non-bypassable release boundary that
-combines live-source auth, storage, graph identity, recovery, and performance
-checks, so both the safety claim and the speed claim remain non-release claims
-even when the individual smoke tests pass.
+fencing, and graph boundaries as a real source mutation. The stricter and more
+actionable statement is: the repository does not yet have a non-bypassable
+release boundary that combines live-source auth, storage, graph identity,
+recovery, and performance checks.
 
 To make the claim release-grade, the next proof must be a kill matrix that
 covers every guarded write boundary on a real push path, with live before/after
