@@ -10,9 +10,9 @@ Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, 
 
 ## 12h Delta
 
-The last 12 hours changed evidence, but not the release gates or the next owner. Current remote heads are `origin/lane/reliable-executor=e7de778c` and `origin/lane/independent-auditor=2febfecb`. The reliable-executor head `e7de778c` was cut at `2026-05-25 13:56:28 +0200` and still reports the boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`.
+The last 12 hours changed evidence, but not the release gates or the next owner. Current remote heads are `origin/lane/reliable-executor=e7de778c` and `origin/lane/independent-auditor=542926f8`. The reliable-executor head `e7de778c` was cut at `2026-05-25 13:56:28 +0200` and still reports the boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`.
 
-Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The exact proof that would move one gate is a checked command from this checkout that emits the same live-boundary verdict as the remote lane, with apply-time auth/session validation, durable journal readback, and recovery evidence from the same invocation.
+Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The exact proof that would move one gate is a checked command from this checkout that emits the same live-boundary verdict as the remote lane and includes apply-time auth/session validation, durable journal readback, and recovery evidence from the same invocation.
 
 ## Explicit Requirements
 
