@@ -10483,6 +10483,43 @@ test('no-data-loss recovery contract stays pinned across pre-mutation, post-stag
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('recovery state contract stays limited to old remote, fully updated remote, or blocked recovery artifacts', () => {
+  assert.deepEqual(ACCEPTABLE_RECOVERY_STATES, [
+    'old-remote',
+    'fully-updated-remote',
+    'blocked-recovery',
+  ]);
+
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const plan = planFor(base, local, baseSite());
+
+  const failureCases = [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote'],
+    ['after staging', { failAfterStaging: true }, 'old-remote'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote'],
+  ];
+
+  for (const [label, options, expectedStatus] of failureCases) {
+    const remote = baseSite();
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.equal(error.details.recovery.status, expectedStatus, label);
+    assertRecoveryStateArtifacts(error.details.recovery, expectedStatus);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replay = applyPlan(JSON.parse(JSON.stringify(completed.site)), plan, { journal: completed.journal });
+
+  assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('stale completed replay on a durable journal blocks recovery instead of duplicating inserts or reviving stale local data', () => {
   const base = baseSite();
   const local = baseSite();
