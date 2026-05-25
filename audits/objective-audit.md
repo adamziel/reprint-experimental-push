@@ -145,6 +145,7 @@ Release-command check:
 - there is still no checked-in `verify`, `verify:release`, or `release` command in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json)
 - there is still no checked-in workflow entrypoint in this checkout to force a live-source verdict
 - that absence is the top release blocker because it leaves fixture-only and lab-backed work able to stay green without proving the live boundary
+- any new fixture-only or lab-only work remains insufficient for shipping until a checked-in release command exists and fails closed on missing live-source proof
 
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
@@ -159,6 +160,7 @@ The bucket split above is intentional:
 - lab / fixture proof is useful for debugging, but it does not cross the release boundary
 - docs-only proof explains the desired gate, but it cannot substitute for the gate
 - missing proof is still the active blocker for no data loss, reliability, and speed claims
+- the absence of a real-site push preflight command is the first blocker to clear before any other release claim can be promoted
 
 Treat indirect evidence as insufficient:
 
