@@ -61,31 +61,31 @@ directory and no enforced CI entrypoint that could serve as a required release
 gate. That absence matters because a release claim needs a single path that
 fails closed, not a collection of opt-in scripts.
 
-The weakest current claim is speed, but the actual release blocker is broader:
-the repository still lacks one enforced release gate that runs the
-auth/session, durable journal, storage, graph identity, plugin-data-driver,
-real remote/local topology, crash-boundary, recovery, and benchmark checks in
-a single required command and fails closed when any of them are still
-fixture-scoped or lab-backed. `package.json` exposes only optional smokes and
-`npm test`; there is no checked-in `verify:release` command, and this tree
-does not contain a CI workflow that enforces the full safety matrix. The
-benchmark code already refuses an unsupported throughput claim by listing
-blockers such as missing durable chunk receipts, missing live remote
-preconditions, missing durable journal integrity, missing graph-identity
-evidence, missing recovery evidence, and non-production storage or row-apply
-capabilities. That is useful refusal logic, but it is still only refusal
-logic: it does not measure a production-shaped runtime or memory ceiling, and
-it cannot substitute for a required release command. `npm test` and
-`npm run test:playground` remain green even when the strongest checks are
-skipped, so the repo can look healthy while the objective remains unproven.
-The immediate action is to turn the strongest checks into one required
-`verify:release`-style gate that is wired into CI or another enforced
-entrypoint; until that exists, the current test story is stronger as a blocker
-generator than as release-grade proof of no data loss, reliability, or speed.
-The operational blocker is not only "speed is weak"; it is "the live source
-boundary is still unproven and no required gate forces it to be proven." The
-current suite therefore proves that release remains blocked, not that release
-is safe.
+The weakest current claim is not merely speed. The actual release blocker is
+the live-source no-data-loss boundary: the repository still lacks one
+enforced release gate that runs the auth/session, durable journal, storage,
+graph identity, plugin-data-driver, real remote/local topology, crash
+boundary, recovery, and benchmark checks in a single required command and
+fails closed when any of them are still fixture-scoped or lab-backed.
+`package.json` exposes only optional smokes and `npm test`; there is no
+checked-in `verify:release` command, and this tree does not contain a CI
+workflow that enforces the full safety matrix. The benchmark code already
+refuses an unsupported throughput claim by listing blockers such as missing
+durable chunk receipts, missing live remote preconditions, missing durable
+journal integrity, missing graph-identity evidence, missing recovery
+evidence, and non-production storage or row-apply capabilities. That is
+useful refusal logic, but it is still only refusal logic: it does not measure
+a production-shaped runtime or memory ceiling, and it cannot substitute for a
+required release command. `npm test` and `npm run test:playground` remain
+green even when the strongest checks are skipped, so the repo can look
+healthy while the objective remains unproven. The immediate action is to turn
+the strongest checks into one required `verify:release`-style gate that is
+wired into CI or another enforced entrypoint; until that exists, the current
+test story is stronger as a blocker generator than as release-grade proof of
+no data loss, reliability, or speed. The operational blocker is not only
+"speed is weak"; it is "the live source boundary is still unproven and no
+required gate forces it to be proven." The current suite therefore proves
+that release remains blocked, not that release is safe.
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
