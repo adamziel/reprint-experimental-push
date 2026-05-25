@@ -5286,6 +5286,10 @@ route shape, fixture replay, or review artifact looks production-shaped. The
 same is true if a later-discovered plugin-owned surface or remapped create
 target is folded into the first approval without its own preserve / reject /
 retry cycle on this branch.
+That includes any later row, file, relationship-bearing record, or remapped
+create target that only becomes visible after the first write; it still needs
+its own preserve / reject / retry cycle, even if the earlier review artifact
+still looks valid.
 
 Release-readiness filter:
 
