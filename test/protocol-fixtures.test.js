@@ -228,6 +228,55 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
   ]);
 });
 
+test('umbrella production contract keeps the pull bridge, apply revalidation, recovery inspect, and topology aligned', () => {
+  const extension = readJson('fixtures/protocol/push-protocol-extension-contract.json');
+
+  assert.equal(
+    extension.purpose,
+    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping, apply-time revalidation, and one-remote-one-local topology',
+  );
+  assert.equal(
+    extension.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.equal(
+    extension.production_boundary.remote_snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    extension.production_boundary.mutation_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run',
+  );
+  assert.equal(
+    extension.production_boundary.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(extension.topology.same_remote_identity, true);
+  assert.equal(extension.topology.networking.ingress_port, 8080);
+  assert.equal(extension.topology.networking.proxy_policy, 'local-only');
+  assert.equal(extension.topology.networking.tunnels, 'disallowed');
+  assert.ok(extension.topology.proof.includes('remote-base and remote-changed are the same remote identity observed at different times'));
+  assert.ok(extension.topology.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.deepEqual(extension.required_invariants, [
+    'dry-run and apply are separate remote operations',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run is a receipt, not a lock',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
+    'pull exporter/importer establish the immutable base package before push',
+    'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+    'remote snapshot hash listing may page large sites but never becomes write authority',
+    'dry-run and apply stay separate even when the same runner executes both',
+    'recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair',
+    'the pull exporter/importer pipeline remains the only source of immutable push provenance',
+    'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    'stale dry-run evidence never becomes recovery authority',
+  ]);
+});
+
 test('remote snapshot listing fixture keeps planning-only hash discovery separate from write authority', () => {
   const snapshotListing = readJson('fixtures/protocol/push-remote-snapshot-listing-contract.json');
 
