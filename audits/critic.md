@@ -175,7 +175,10 @@ blocks create-time identity remap, or classifies late-discovered
 plugin-owned surfaces before retry. If the branch cannot show those live-
 boundary proofs here, the source note remains design context only, even when
 the upstream state is named precisely or the route/package/reviewer wording
-matches.
+matches. A source note can explain why a design choice exists, but it cannot
+by itself prove that this worktree rejected the stale boundary, preserved the
+remote, and rebuilt retry scope from live hashes for the same live mutation
+boundary.
 
 Release-gate checklist before any production-grade push wording:
 
