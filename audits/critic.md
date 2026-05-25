@@ -14,6 +14,9 @@ rerun on the real boundary.
 Any claim that `verify:release` is "production-shaped" or "production-ready"
 must fail closed until that live rerun exists on a real local, Playground, or
 Docker `REPRINT_PUSH_SOURCE_URL`.
+Branch-local script inventory still shows only `plan`, `apply`, `test`, and
+playground/recovery compatibility helpers in `package.json`; there is no
+named real-site release command on this branch yet.
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
