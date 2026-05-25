@@ -89,12 +89,14 @@ and should not be claimed."
 
 The more actionable blocker is the live-source no-data-loss claim. It still
 needs a crash matrix that covers every guarded write boundary with before and
-after state plus journal evidence. Until the repo can show DB row
+after state plus durable journal evidence. Until the repo can show DB row
 update/insert/delete, file create/update/delete, plugin activation or package
 publish, finalization or commit write, replay after restart or duplicate
 request, and stale claim or lease expiry on the production-backed path, the
 no-data-loss claim remains blocked even if the model and fixtures keep
-passing.
+passing. The current tests prove the model and fixture surrogates can reject
+unsafe paths, but they do not prove the live source preserves all data through
+the actual production write boundary.
 
 The test audit is therefore uncomfortable but clear:
 
@@ -256,6 +258,35 @@ red flag, not as release authorization.
   a release authorization. The unit test confirms blocker detection and
   tamper rejection, but it still never exercises a live source site, a
   production executor, or a measured threshold.
+
+## Test Claim Audit
+
+What the current tests actually prove:
+
+- `test/performance-model.test.js` proves the benchmark model encodes the
+  intended gates, refusal states, and safe-speedup guardrails.
+- `test/recovery-journal.test.js` proves the file-backed journal keeps
+  monotonic records, redacts raw values, and classifies restart-inspectable
+  failure states in the journal model.
+- `test/push-planner.test.js` proves the planner and executor model reject
+  stale identities, preserve fixture invariants, and attach recovery evidence
+  when a failure is injected.
+- `test/guarded-executor-benchmark.test.js` proves unsupported throughput
+  claims are refused when the model reports missing durable evidence.
+
+What they do not prove:
+
+- They do not prove a production WordPress source site keeps rows, uploads,
+  and plugin-owned data intact through a live push.
+- They do not prove production auth/session, lease/fencing, or durable
+  journal storage on the real transport path.
+- They do not prove recovery after a real process death or duplicated request
+  against a live source site.
+- They do not prove speed for the live boundary because no required benchmark
+  runs there, and no enforced gate requires that proof.
+
+That is why the suite remains a proof of refusal and local safety modeling,
+not a proof of release readiness.
 
 The strongest unresolved claim is therefore live-boundary correctness, not
 raw throughput. Speed remains unproven, but the release blocker is broader:
