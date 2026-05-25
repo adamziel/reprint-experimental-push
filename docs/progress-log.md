@@ -4,6 +4,30 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 15:27:22
+
+<a id="2026-05-25-public-status-audit-152722"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 15:27:22 CEST`) and kept the first screen concise with the
+  accountability lead: last 12 hours evidence progressed while release gates
+  remain `0/4`.
+- `536015fb` is the newest release-surface evidence: the checked release
+  command now fails closed with the explicit
+  `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` boundary verdict. `ec1c9952`
+  still surfaces `protocolExtension.stages` and
+  `protocolExtension.pullToPushMapping`; `0c703230` still shows
+  `remoteSnapshotHashes`; `95164c8a` remains supporting lab durable-journal
+  proof; `7e0f27f2` still fails closed on apply-time revalidation with
+  `PRECONDITION_FAILED`; `35731b11` still shows `releaseProof.mode: "apply"`
+  and `rows: 17`; `ee43e194` keeps the verifier bound to the supplied source
+  URL. `56976794` also remains recorded as a plugin-owned live-boundary
+  regression. Production WordPress auth/session lifecycle and durable journal
+  storage with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 15:20:59
 
 <a id="2026-05-25-public-status-audit-152059"></a>
