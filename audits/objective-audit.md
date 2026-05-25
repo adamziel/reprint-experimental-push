@@ -78,7 +78,7 @@ The tests do the right kind of negative work, but they are not positive release 
 Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
-- This checkout exposes helper and Playground scripts, but no checked-in `verify`, `verify:release`, or `release` script. That absence matters for enforcement, and it is now a concrete release-engineering gap on top of the live-boundary proof gap.
+- This checkout exposes helper and Playground scripts, but no checked-in release gate that owns the live-source verdict. That absence matters for enforcement, and it is a concrete release-engineering gap on top of the live-boundary proof gap.
 - There is no checked-in `test:playground:production-shaped-release-proof` entry here, and the existing `production-shaped` helper remains a lab-shaped route smoke rather than a release gate.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
 - The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, but it remains regression-only evidence rather than a live-boundary release verdict.
@@ -95,8 +95,8 @@ Minimum properties of that gate:
 4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
 5. it must be the command CI or another default entrypoint actually invokes
 
-Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle and durable journal semantics, with graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift still only lab-backed. The missing script name is still worth fixing, but it is not the decisive blocker.
+Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle and durable journal semantics, with graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift still only lab-backed. The missing release gate is worth fixing, but it is not the decisive blocker.
 
 ## Conclusion
 
-The repository has good refusal, journaling, and benchmark-model evidence. It does not yet have live-boundary proof that production auth/session lifecycle and durable journal semantics hold at apply time, and graph identity, plugin-driver coverage, plus preserved-remote drift are still only lab-backed. There is also no checked `verify:release` or `release` entrypoint in this checkout. That is the actionable blocker, and it keeps the release gate closed.
+The repository has good refusal, journaling, and benchmark-model evidence. It does not yet have live-boundary proof that production auth/session lifecycle and durable journal semantics hold at apply time, and graph identity, plugin-driver coverage, plus preserved-remote drift are still only lab-backed. There is also no checked release gate in this checkout that owns the live-source verdict. That is the actionable blocker, and it keeps the release gate closed.
