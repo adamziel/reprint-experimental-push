@@ -15356,6 +15356,40 @@ test('durable replay boundary keeps interrupted states old-remote and completed 
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('durable stale completed replay blocks with artifacts instead of duplicating inserts or reviving stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const staleRemote = JSON.parse(JSON.stringify(completed.site));
+  staleRemote.files['index.php'] = '<?php echo "stale drift";';
+  const staleSnapshot = JSON.stringify(staleRemote);
+
+  const staleJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const staleError = captureError(() =>
+    applyPlan(staleRemote, plan, {
+      durableJournal: staleJournal,
+      journal: completed.journal,
+    }),
+  );
+  staleJournal.close();
+
+  assert.ok(staleError instanceof PushPlanError);
+  assertFailureRecoveryState(staleError.details.recovery, 'blocked-recovery');
+  assert.ok(staleError.details.recovery.artifacts.remote, 'stale replay must keep remote artifacts');
+  assert.ok(staleError.details.recovery.artifacts.journal, 'stale replay must keep journal artifacts');
+  assert.equal(staleError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale drift";');
+  assert.equal(staleError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(JSON.stringify(staleRemote), staleSnapshot);
+});
+
 test('durable recovery accepts only old-remote, fully-updated-remote, or blocked-recovery outcomes across the apply boundary', () => {
   const base = baseSite();
   const local = baseSite();
