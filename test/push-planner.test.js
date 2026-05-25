@@ -14577,6 +14577,28 @@ test('no-data-loss durable journal boundaries keep pre-mutation failures old-rem
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('durable journal write failure before mutation stays old-remote and preserves the journal artifact', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const remote = baseSite();
+  const snapshot = JSON.stringify(remote);
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: failingDurableJournal('journal-opened'),
+    }),
+  );
+
+  assert.ok(failure instanceof PushPlanError);
+  assertFailureRecoveryState(failure.details.recovery, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'opened');
+  assert.equal(JSON.stringify(remote), snapshot);
+});
+
 test('no-data-loss recovery boundaries allow only old-remote, fully-updated-remote, or blocked-recovery with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
