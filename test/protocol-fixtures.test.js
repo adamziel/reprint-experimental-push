@@ -334,6 +334,18 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'requires fresh live hashes plus journal evidence',
   );
   assert.equal(
+    readJson('fixtures/protocol/push-recovery-inspect-contract.json').session.remote_site_id,
+    'remote-example',
+  );
+  assert.equal(
+    readJson('fixtures/protocol/push-recovery-inspect-contract.json').live_evidence.same_remote_identity,
+    true,
+  );
+  assert.equal(
+    readJson('fixtures/protocol/push-recovery-inspect-contract.json').recovery.inspect_mode,
+    'inspect',
+  );
+  assert.equal(
     readJson('fixtures/protocol/push-executor-topology-proof.json').pull_to_push_mapping.preflight,
     'binds that persisted base package to the live remote identity and a short-lived session',
   );
