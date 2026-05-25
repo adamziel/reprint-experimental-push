@@ -16,6 +16,12 @@ command still does not prove preserved-remote safety, apply-time
 revalidation, production auth/session lifecycle, graph identity, or
 plugin-driver coverage on a real-site boundary. A wrapper, comparison note,
 or polished smoke name never replaces that proof.
+Any Reprint, ZS-Sync, or ForkPress note is only provenance until this branch
+names the exact upstream commit or worktree state, states what the note proves
+here, states what it does not prove here, and reruns the same live boundary on
+this worktree with a preserved remote that stayed inspectable after rejection.
+Route-family, package-mount, or reviewer-wording similarity does not promote a
+historical note to retry authority.
 The comparison rule is equally strict: any Reprint, ZS-Sync, or ForkPress
 note is provenance only unless it names the exact upstream commit or worktree
 state, says what it proves here, says what it does not prove here, and is
@@ -33,6 +39,10 @@ Must-change-before-production wording:
   journal/recovery inspection, graph identity, and plugin-driver coverage on
   the live boundary instead of inferring them from route shape or wrapper
   naming;
+- reject any claim that a source-note comparison is retry authority unless the
+  branch reran the same live boundary here and preserved the rejected remote
+  for audit; source notes can explain design lineage, but they cannot supply
+  live preserved-remote evidence on their own;
 - classify every touched row, file, relationship-bearing record, and
   plugin-owned surface old, new, or blocked before retry starts, and treat any
   later-discovered plugin-owned surface or remapped create target as a new
