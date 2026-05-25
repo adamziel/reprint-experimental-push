@@ -25,7 +25,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 01:06 CEST - Same-Plan Head Correction
 
-- Fresh `git ls-remote` evidence shows `same-plan-wordpress-graph-create` has moved again to `24c58564`; the prior `732e1251` value is stale.
+- Fresh `git ls-remote` evidence shows `same-plan-wordpress-graph-create` has moved again to `24c58564`; the prior `732e1251` value is stale, and the visible queue should keep the newer head exact.
 - The rest of the current queue still holds: `reliable-executor` remains at `0c4fd10f`, `independent-auditor` remains at `33b839f0`, `no-data-loss-recovery` remains at `47b675c0`, and `no-data-loss-invariants` remains at `fa0ce3ea`.
 - This is a coordination fix only. The release gate stays closed until `reliable-executor` produces a real production-shaped proof delta.
 - Next nudge: keep polling `reliable-executor`, and let `same-plan-wordpress-graph-create` finish its current proof before anyone treats the graph lane as settled.
