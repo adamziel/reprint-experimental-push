@@ -8580,6 +8580,55 @@ test('blocks plugin-owned deletes when the owner plugin was removed remotely eve
   assert.equal(remote.plugins.forms, undefined);
 });
 
+test('blocks plugin-owned updates when the owner plugin was removed remotely while preserving unrelated safe edits and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local ordinary edit";';
+  local.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'local' },
+    __pluginOwner: 'forms',
+  };
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  const remote = baseSite();
+  remote.files['index.php'] = '<?php echo "local ordinary edit";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const editDecision = decisionFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const conflictJson = JSON.stringify(conflict);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(conflict.class, 'plugin-data-conflict');
+  assert.equal(conflict.resourceKey, resourceKey);
+  assert.equal(conflictJson.includes('remote-only plugin drift'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['index.php'], '<?php echo "local ordinary edit";');
+  assert.equal(remote.plugins.forms, undefined);
+});
+
 test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();
