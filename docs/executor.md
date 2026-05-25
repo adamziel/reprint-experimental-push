@@ -191,6 +191,10 @@ The canonical proof stack for that executor story is the same one named in
 - `push-topology-matrix.json` for the canonical Docker/Playground stage
   matrix proving one remote source, one local edited site, and one drift
   witness
+- `push-protocol-extension-contract.json` for the ordered production ladder
+  from preflight through inspect-first recovery
+- `push-pull-to-topology-contract.json` for the compact pull-provenance to
+  push-topology bridge
 - `push-preflight-contract.json` for the first live binding between imported
   provenance, scope, and session
 - `push-recovery-inspect-contract.json` for the read-only recovery classifier

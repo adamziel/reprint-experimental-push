@@ -145,6 +145,11 @@ drift, and inspect-first recovery boundary in one object, use
 identity, not two different sites, and `local-edited` is the imported clone
 that carries the local edits used to build the canonical plan.
 
+For the compact stage contract that names the production extension in order,
+use `push-protocol-extension-contract.json`. For the compact topology bridge
+from pull provenance into the push ladder and one-remote, one-local test
+shape, use `push-pull-to-topology-contract.json`.
+
 ## Auth And Recovery
 
 Push auth must be at least as strict as current Reprint HMAC usage. The write

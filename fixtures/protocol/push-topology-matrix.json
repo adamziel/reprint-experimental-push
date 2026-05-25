@@ -1,6 +1,6 @@
 {
   "topology_matrix_id": "push-topology-docker-playground-matrix",
-  "purpose": "compact machine-readable proof for one remote source, one local edited site, and one live drift witness",
+  "purpose": "compact machine-readable proof for one remote source, one local edited site, and one live drift witness, with the pull exporter/importer handoff mapped into the push ladder",
   "push_pipeline": {
     "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
     "snapshot_hash_listing": "returns the live remote comparison set for planning only",
@@ -27,6 +27,7 @@
     "drift_proof": [
       "remote-base and remote-changed are the same remote identity observed at different times",
       "exporter/importer establish the immutable pull base package",
+      "preflight binds the persisted pull base to one live remote identity and one short-lived session",
       "dry-run and apply remain separate remote calls",
       "apply revalidates fresh live evidence before every batch and again at the storage boundary",
       "dry-run and apply remain separate remote operations",

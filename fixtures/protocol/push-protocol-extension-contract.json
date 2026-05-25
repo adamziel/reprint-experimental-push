@@ -1,6 +1,6 @@
 {
   "contract_id": "push-protocol-extension-production-contract",
-  "purpose": "compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping and apply-time revalidation",
+  "purpose": "compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping, apply-time revalidation, and one-remote-one-local topology",
   "pull_pipeline": {
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance",
@@ -85,6 +85,8 @@
       "runner owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and recovery",
       "remote snapshot hash listing stays planning-only and never upgrades into write authority",
       "pull exporter/importer establish the immutable base package before push",
+      "remote-base and remote-changed are the same remote identity observed at different times",
+      "local-edited carries the imported local edits used to build the canonical plan",
       "dry-run is a receipt, not a lock",
       "apply revalidates fresh live evidence before every batch and at the storage boundary",
       "journal inspect is read-only",
