@@ -5711,6 +5711,7 @@ Must-happen-before-production-grade-push-support checklist:
 - partial side effects: show the whole touched set classified old/new/blocked across file, DB, and plugin writes, with no surface silently succeeding while another surface is left in limbo;
 - stale manual-review artifacts: prove a readable review note cannot authorize a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface after drift unless the remote was preserved and the retry scope was rebuilt from live state;
 - production claims: never infer production-grade push support from lab route shape, package layout, fixture replay, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes, and they do not cover a later-discovered surface that appears only after the first write.
+- production claims must also name the exact boundary transition when a plugin-owned surface or remapped create target is discovered after the first write; if that discovery creates a new boundary, the earlier preserved remote and review artifact stay audit-only and cannot be reused as retry authority for the new boundary.
 
 Release-gate language checklist:
 
@@ -5719,6 +5720,7 @@ Release-gate language checklist:
 - no sentence turns route shape, package layout, fixture replay, or a readable review note into proof of live push safety;
 - no production-grade claim is allowed unless the branch-local live boundary rerun is named together with preserved-remote evidence, stale-authority rejection, and a fresh retry scope from live hashes;
 - any later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface is treated as a new boundary unless it is separately preserved, rejected, and retried; and
+- any later-discovered plugin-owned surface or remapped create target is treated as a new boundary even when it is found inside the same route family or package mount, because the earlier preserved remote only covers the boundary that was actually rerun; and
 - if any of the above is missing, the wording stays audit-only and cannot claim production-grade push support.
 
 Missing-proof matrix for the current design:
