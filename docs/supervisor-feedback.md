@@ -1,9 +1,45 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 02:47 CEST
+Last updated: 2026-05-25 23:41 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 23:41 CEST - Restart Evidence Check
+
+- What improved: the restart reset now has fresh lane heads, and the public
+  evidence chain is still coherent across `progress.html`, the progress log,
+  and the release-surface docs.
+- What still blocks shipping: release gates remain `0/4`; production
+  WordPress auth/session lifecycle plus durable journal storage with
+  lease/fencing are still unproven.
+- What changed since the last update: the newest evidence is release-boundary
+  and audit freshness, not a gate opening. The last 12 hours moved the
+  harness/release surface forward, but nothing yet proves a shippable
+  production path.
+- Next nudge: `reliable-executor` owns the next shippability proof
+  (production auth/session lifecycle or durable journal ownership with
+  lease/fencing). `progress-publisher` keeps the visible current date and
+  concise accountability summary aligned to the newest evidence.
+  `critic` should reject wording-only gate claims.
+
+- Going well: the restart preserved the evidence trail and the visible page
+  still points to detailed proof instead of embedding long audit text.
+- Not going well: the release gates are still closed, so the page should stay
+  explicit about blocked production evidence.
+- Progress change: no new gate opened; the useful movement is at the
+  release-surface and harness level.
+- Next nudge: keep the supervisor note compact and keep the owner for the
+  next proof explicit.
+
+| Lane | Nudge |
+| --- | --- |
+| Reliable executor | Prove production auth/session lifecycle or durable journal storage with lease/fencing. |
+| No Data Loss: recovery boundaries | Keep replay and failure-state evidence tied to durable production storage. |
+| No Data Loss: merge invariants | Land a real graph identity fixture before widening automatic apply. |
+| Fast path and chunking | Run the large-site benchmark only after the release gate evidence improves. |
+| Independent evidence and critique | Re-check the newest evidence and reject wording-only shipping claims. |
+| Progress publisher | Keep the visible date current and link the detailed evidence. |
 
 ## 2026-05-25 02:47 CEST - Live Progress Refresh
 

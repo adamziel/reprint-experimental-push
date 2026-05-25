@@ -4,6 +4,24 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 23:41:06
+
+<a id="2026-05-25-public-status-audit-234106"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 23:41:06 CEST`) and kept the first screen compact: the last 12
+  hours moved the release-surface and harness evidence forward, but release
+  gates remain `0/4`.
+- The newest public evidence is the restart-era release-boundary state:
+  `eb175ec7` is still the promoted page baseline, while the newer pushed lane
+  heads now include `b725b2d3`, `b9aebe71`, `134d0401`, `1e545163`, and
+  `781888d9`. That is useful evidence freshness, not a release gate opening.
+  Production WordPress auth/session lifecycle and durable journal storage with
+  lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 15:30:17
 
 <a id="2026-05-25-public-status-audit-153017"></a>
