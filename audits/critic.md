@@ -258,6 +258,14 @@ Current critic bar for this baseline:
   preserved remote, exact rejection point, dry-run receipt, apply-time
   revalidation, journal/recovery inspection, graph identity, plugin-driver
   coverage, and old/new/blocked classification for every touched surface.
+- Until that live rerun exists, this branch may cite the supervised lane's
+  retained-source `verify:release` run as evidence of progress only; it must
+  not be recast as retry authority, production proof, or preserved-remote
+  safety for this worktree.
+- Comparisons to Reprint, ZS-Sync, and ForkPress remain provenance-only unless
+  they name the upstream state, state what each note proves here, state what
+  it does not prove here, and are backed by a rerun of the same live
+  boundary.
 - Any later-discovered plugin-owned surface or remapped create target must
   get its own preserve / reject / retry cycle; it cannot inherit the earlier
   approval just because the route family, package mount, or review wording
