@@ -15198,6 +15198,91 @@ test('replaying a completed plan stays inert and does not duplicate inserts or r
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('durable recovery accepts only old-remote, fully-updated-remote, or blocked-recovery outcomes across the apply boundary', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const boundaryFailures = [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ];
+
+  for (const [label, options, expectedJournalStatus] of boundaryFailures) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const snapshot = JSON.stringify(remote);
+
+    const failure = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+
+    durableJournal.close();
+
+    assert.ok(failure instanceof PushPlanError, label);
+    assertAcceptableRecoveryState(failure.details.recovery);
+    assert.equal(failure.details.recovery.status, 'old-remote', label);
+    assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+  }
+
+  const partialJournalPath = tempRecoveryJournalPath();
+  const partialDurableJournal = openRecoveryJournal(partialJournalPath, { truncate: true, now: fixedNow });
+  const partialRemote = baseSite();
+  const partialFailure = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      durableJournal: partialDurableJournal,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  partialDurableJournal.close();
+
+  assert.ok(partialFailure instanceof PushPlanError);
+  assertAcceptableRecoveryState(partialFailure.details.recovery);
+  assert.equal(partialFailure.details.recovery.status, 'blocked-recovery');
+  assert.ok(partialFailure.details.recovery.artifacts.remote, 'partial commit must keep remote artifacts');
+  assert.ok(partialFailure.details.recovery.artifacts.journal, 'partial commit must keep journal artifacts');
+  assert.equal(partialFailure.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(
+    Object.keys(partialFailure.details.recovery.artifacts.remote.db.wp_posts).filter((key) => key === 'ID:2').length <= 1,
+    true,
+  );
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('durable no-data-loss recovery keeps failures old-remote and completed replay fully-updated with no duplicate work', () => {
   const base = baseSite();
   const local = baseSite();
