@@ -233,42 +233,41 @@ Must-fix blockers before any production wording:
 
 Source-note comparison summary:
 
-- Reprint `27c5f25` proves staged transport and resumable delivery rhythm in
-  the upstream pull pipeline. It does not prove production auth, live-write
-  safety, remote-preserving retry, or stale-authority rejection on this
-  branch. Missing repo proof: this branch has not shown a live source mutation
-  boundary that rejects stale authority before write, preserves the remote for
-  audit, and rebuilds retry scope from fresh live hashes after drift. A
-  matching route family or packaged mount is still not production proof.
-- ZS-Sync `d9334a0` proves bounded discovery and scoped scanning. It does not
-  prove create-time identity remap safety, remote-preserving retry, partial
-  side-effect classification, or plugin-owned surface coverage. Missing repo
-  proof: create-time identity reservation or remap safety, remote-preserving
-  retry, late-discovered plugin-owned surface blocking, and durable
-  old/new/blocked classification for partial side effects on the live write
-  path. A bounded scan is not evidence that a live write cannot alias, remap,
-  or lose state.
-- ForkPress `55f9879` proves review and conflict vocabulary plus a crash-
-  consistency target. It does not prove stale manual-review artifacts can stay
-  readable without becoming retry authority, nor does it prove plugin-owned
-  side effects are covered. Missing repo proof: a stale review artifact that
-  stays auditable but cannot authorize retry, widen scope, or silently widen
-  into a new row, file, relationship-bearing record, or plugin-owned surface,
-  including anything discovered after the first write. A readable review note
-  is not proof of safe retry authority.
-- None of the three source notes proves the full production claim set on its
-  own. Reprint is transport provenance, ZS-Sync is discovery provenance, and
-  ForkPress is audit/conflict provenance. What is still missing here is live
-  branch evidence for stale-drift rejection, create-time remap handling,
-  plugin-owned surface coverage, partial side-effect classification, and a
-  retry that rebuilt scope from fresh live hashes after the remote drifted.
-- None of the three source notes proves the production claim by itself. Reprint
-  is transport/protocol provenance, ZS-Sync is bounded discovery provenance,
-  and ForkPress is conflict/audit provenance. The missing repo proof remains
-  the same live mutation boundary on this branch, with drift rejection,
-  preserved remote evidence, and fresh retry scope recorded separately.
-  Even if the observed upstream commit, route family, or worktree state
-  matches, it still does not prove the live executor on this branch is safe.
+- Reprint `27c5f25`
+  - Proves: staged transport and resumable delivery rhythm in the upstream
+    pull pipeline.
+  - Does not prove: production auth, live-write safety, remote-preserving
+    retry, stale-authority rejection on this branch, or hidden plugin-owned
+    side effects.
+  - Missing branch proof: a live source mutation boundary that rejects stale
+    authority before write, preserves the remote for audit, and rebuilds retry
+    scope from fresh live hashes after drift.
+- ZS-Sync `d9334a0`
+  - Proves: bounded discovery and scoped scanning.
+  - Does not prove: create-time identity remap safety, remote-preserving
+    retry, partial side-effect classification, late-discovered plugin-owned
+    surface blocking, or live alias/renumber handling.
+  - Missing branch proof: explicit create-time identity reservation or hard
+    block before mutation, plus durable old/new/blocked classification for
+    partial side effects on the live write path.
+- ForkPress `55f9879`
+  - Proves: review/conflict vocabulary and a crash-consistency target.
+  - Does not prove: that a readable stale manual-review artifact stays
+    audit-only after drift, cannot become retry authority, or cannot widen
+    into a different row, file, relationship-bearing record, or plugin-owned
+    surface.
+  - Missing branch proof: a stale review artifact that remains auditable but
+    cannot authorize retry or widen scope, including anything discovered after
+    the first write.
+- Combined limit: the three notes are transport provenance, discovery
+  provenance, and conflict/audit provenance only. None of them proves the
+  full production claim set on its own, and none of them upgrades route shape,
+  package mount, or fixture replay into current proof without a branch-local
+  live recheck at the same mutation boundary.
+- Still missing here: live branch evidence for stale-drift rejection,
+  create-time remap handling, plugin-owned surface coverage, partial
+  side-effect classification, and a retry that rebuilt scope from fresh live
+  hashes after the remote drifted.
 
 Release-gate checklist for production-readiness wording:
 
