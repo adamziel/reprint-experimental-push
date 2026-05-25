@@ -45,6 +45,9 @@ the live remote immediately before apply.
 - Matching independent row deletions are treated the same way: if local and
   remote independently deleted the same row, the planner records
   `already-in-sync` and preserves any unrelated remote-only plugin drift.
+- A live-preconditioned delete can still apply when matching independent edit,
+  type swap, or row delete resources already match the live remote; the
+  unrelated remote-only plugin drift stays `keep-remote`.
 - Matching independent file type swaps that land on the same hash; these also
   produce `already-in-sync` decisions, not mutations.
 - Remote-only plugin changes remain preserved even when those matching
