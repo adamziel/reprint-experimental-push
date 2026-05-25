@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `2e30a637` moves durable-journal proof into the checked release path, while `3d8748b6`, `471440b9`, `889bd37a`, `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`, `6fc3ab64`, and `d3d04595` keep the fail-closed release surface and recovery evidence visible. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
-        <time class="update-stamp" datetime="2026-05-25T13:59:09+02:00">Last updated: May 25, 2026, 13:59:09 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `66830e6f` adds drift revalidation proof: the checked release-verify path now fails closed with `PRECONDITION_FAILED` when stale remote state is revalidated after snapshot, while `2e30a637`, `3d8748b6`, `471440b9`, `889bd37a`, `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`, `6fc3ab64`, and `d3d04595` keep the fail-closed release surface and recovery evidence visible. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
+        <time class="update-stamp" datetime="2026-05-25T14:10:46+02:00">Last updated: May 25, 2026, 14:10:46 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `2e30a637` moves durable-journal proof into the checked release path while the fail-closed gates and `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` remain visible</span>
+          <span class="pill">Trend: `66830e6f` adds drift revalidation proof and keeps `PRECONDITION_FAILED` visible for stale remote state while the gates stay closed</span>
           <span class="pill">Top blocker: real WordPress executor/auth plus durable journal semantics still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-135909">2026-05-25 13:59:09</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-141046">2026-05-25 14:10:46</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-135820">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-141046">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-        <span>Latest lane evidence tightens the release-verify boundary without changing the 0/4 release gates</span>
+        <span>Latest lane evidence adds drift revalidation proof without changing the 0/4 release gates</span>
       </div>
       <div class="metric">
         <strong>Flat</strong>
