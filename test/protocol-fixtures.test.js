@@ -233,7 +233,7 @@ test('umbrella production contract keeps the pull bridge, apply revalidation, re
 
   assert.equal(
     extension.purpose,
-    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping, apply-time revalidation, and one-remote-one-local topology',
+    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping, apply-time revalidation, auth floor parity, and one-remote-one-local-one-drift topology',
   );
   assert.equal(
     extension.pull_pipeline.persisted_base_package.remote_site_id,
@@ -1876,7 +1876,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
   assert.equal(
     protocolExtensionContract.purpose,
-    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping, apply-time revalidation, and one-remote-one-local topology',
+    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping, apply-time revalidation, auth floor parity, and one-remote-one-local-one-drift topology',
   );
   assert.equal(protocolExtensionContract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(protocolExtensionContract.pull_pipeline.importer, 'persists the base package as immutable provenance');

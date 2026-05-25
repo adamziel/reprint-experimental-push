@@ -104,6 +104,21 @@ The machine-readable proof bundle is layered around that same ladder:
   one-local, one-drift harness plus the liveness split
 - `push-production-topology-contract.json` proves the Docker and Playground
   harness shape
+- `push-topology-matrix.json` proves the exact stage order and route matrix
+  for Docker and Playground
+
+The existing pull/export/import pipeline maps to the push ladder without
+changing the auth floor or the liveness split:
+
+| Pull stage | Push stage | Contracted behavior |
+| --- | --- | --- |
+| exporter discovers merge base and coverage evidence | `push_preflight` | Binds the persisted pull base package to one live remote identity and one short-lived push session. |
+| importer persists the base package as immutable provenance | `push_snapshot_hashes` | Lists live remote comparison evidence for planning only. |
+| persisted pull base package | `push_plan_dry_run` | Uploads the canonical plan as an eligibility receipt, not a lock. |
+| immutable pull provenance | `push_batch_apply` | Revalidates fresh live evidence before every batch and again at the storage boundary. |
+| durable pull provenance | `push_journal` | Records durable evidence without authorizing mutation. |
+| immutable provenance plus fresh live hashes | `push_recover inspect` | Reads the journal and fresh live hashes before any mutating repair. |
+| importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutates only after inspect proves the branch safe with the same auth floor as the write path. |
 
 The production topology proof is fixed to one remote source site, one imported
 local edit site, one later drift observation of the same remote identity, and

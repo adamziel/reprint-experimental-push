@@ -91,6 +91,18 @@ The pull/export/import pipeline is the only immutable provenance source:
 - `push_recover auto|finish|rollback` mutates only after inspect proves the
   branch safe with the same auth floor as the write path
 
+For executor review, the pull pipeline maps to the push stages like this:
+
+| Pull provenance | Push stage | Executor rule |
+| --- | --- | --- |
+| exporter discovers merge base and coverage evidence | `push_preflight` | Bind the persisted pull base package to one live remote identity and one short-lived push session. |
+| importer persists the base package as immutable provenance | `push_snapshot_hashes` | Read live comparison evidence for planning only. |
+| persisted pull base package | `push_plan_dry_run` | Upload the canonical plan as an eligibility receipt, not a lock. |
+| immutable pull provenance | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
+| durable pull provenance | `push_journal` | Record durable evidence without authorizing mutation. |
+| immutable provenance plus fresh live hashes | `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
+| importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe with the same auth floor as the write path. |
+
 That mapping is the direct bridge from the exporter/importer pipeline into the
 push executor:
 
