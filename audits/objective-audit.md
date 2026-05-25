@@ -7,9 +7,9 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `3742aa8d`
+- `origin/lane/no-data-loss-invariants` -> `46c07b0f`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `b9096203`
+- `origin/lane/fast-paths` -> `7a3b4f8b`
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -30,11 +30,12 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now retries the release-proof port handling
   at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` now blocks unsupported special file
-  entries at `3742aa8d`, and the newer `63ebcc84` proof extends that blocker
-  coverage to socket-like special files.
+  entries at `46c07b0f`, and the newer `63ebcc84` proof extends that blocker
+  coverage to socket-like special files and hard-link special files.
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
-- `origin/lane/fast-paths` now refreshes benchmark evidence at `b9096203`.
+- `origin/lane/fast-paths` now tightens blocked production-claim diagnostics at
+  `7a3b4f8b`.
 - `origin/lane/critic` now refreshes the critic head snapshot at `f8591f9d`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
