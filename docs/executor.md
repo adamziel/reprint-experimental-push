@@ -87,6 +87,7 @@ The canonical proof stack for that scope is:
 | Proof | What it pins down |
 | --- | --- |
 | [`fixtures/protocol/push-protocol-extension-contract.json`](../fixtures/protocol/push-protocol-extension-contract.json) | The full push ladder: preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery. |
+| [`fixtures/protocol/push-remote-liveness-contract.json`](../fixtures/protocol/push-remote-liveness-contract.json) | The compact proof that dry-run and apply stay separate remote operations and that apply revalidates fresh live evidence. |
 | [`fixtures/protocol/push-deployment-topology-contract.json`](../fixtures/protocol/push-deployment-topology-contract.json) | The one-remote, one-local, one-drift topology in Docker and Playground. |
 | [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json) | The stage-level Docker/Playground proof with liveness, recovery, and apply revalidation rules. |
 | [`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json) | The push-session boundary, journal-row fence, and read-only recovery inspect rule. |
@@ -186,8 +187,9 @@ The pull-to-push handoff stays one-way:
 
 The pull-to-push bridge is easiest to review through the fixtures:
 
-- `push-pull-mapping.json` and `push-protocol-extension-contract.json` prove
-  the pull provenance, stage order, and recovery boundary.
+- `push-pull-mapping.json`, `push-protocol-extension-contract.json`, and
+  `push-remote-liveness-contract.json` prove the pull provenance, stage order,
+  dry-run/apply split, and recovery boundary.
 - `push-deployment-topology-contract.json` and
   `push-executor-topology-proof.json` prove the Docker and Playground
   topology, the same remote identity observed before and after drift, and the
