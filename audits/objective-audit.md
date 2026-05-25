@@ -49,6 +49,7 @@ Short version:
 
 - `npm test` is still a safety harness, not a release harness.
 - `npm run test:playground:*` commands are still evidence collectors, not release approvers.
+- `package.json` still has no release entrypoint, and this checkout still has no checked-in workflow under `.github/workflows/`.
 - The missing release command is the strongest blocker because it is the only thing that can turn the existing proof fragments into a mandatory decision.
 
 | Bucket | Current evidence | What it proves | Why it is not release proof |
