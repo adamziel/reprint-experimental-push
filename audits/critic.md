@@ -1,15 +1,15 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `68664884`, with `63a3502f` as an earlier retained-source proof
-point. That lane's completed `npm run verify:release` result, including
-`authSessionType`, minted session shape, `applyCommitted`, and
-`durableJournal.rows: 17`, is material retained-source lab evidence. It is a
-real improvement over the earlier route-shape-only claims, but it is still not
-branch-local retry authority. The remote lane now also exposes
-`verify:release` in `package.json`, so any remaining absence of that command on
-this checkout must be read as a branch-local merge gap, not a project-wide
-absence.
+remote head `889bd37a`, with `63a3502f` as an earlier retained-source proof
+point and `68664884` as the prior boundary-verdict step. That lane's completed
+`npm run verify:release` result, including `authSessionType`, minted session
+shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
+retained-source lab evidence. It is a real improvement over the earlier
+route-shape-only claims, but it is still not branch-local retry authority. The
+remote lane now also exposes `verify:release` in `package.json`, so any
+remaining absence of that command on this checkout must be read as a
+branch-local merge gap, not a project-wide absence.
 
 Single strongest blocker: this worktree still has no rerunnable live release
 command that proves the first executor/auth/preserved-remote boundary on a
@@ -367,7 +367,7 @@ Current critic bar for this baseline:
 
 - `3089aee2` remains retained-source evidence only; it does not authorize
   production wording by itself, and the newer supervised reliable-executor
-  remote head `68664884` still does not replace the required live rerun on
+  remote head `889bd37a` still does not replace the required live rerun on
   this branch.
 - The supervised lane's completed `verify:release` run is material evidence
   of improved lab fidelity, but it still stops at retained-source proof; it
@@ -786,7 +786,7 @@ original approval.
 The branch still cannot claim production-grade push support until one exact,
 rerunnable real-site command proves the same live boundary on a real local,
 Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. The supervised reliable-
-executor remote head `68664884` does provide retained-source lab evidence
+executor remote head `889bd37a` does provide retained-source lab evidence
 for `verify:release`, but that remains separate from this branch's own live
 rerun requirement. `package.json` on this branch currently exposes only
 `plan`, `apply`, `test`, and `test:playground:*` entry points, including
@@ -8226,7 +8226,7 @@ Lead finding for the current release-proof claim:
   retained-source evidence to a live WordPress auth/session lifecycle
   boundary, with durable journal semantics and explicit graph identity and
   plugin-driver evidence in the same rerun;
-- the supervised reliable-executor lane's remote head `68664884` is stronger
+- the supervised reliable-executor lane's remote head `889bd37a` is stronger
   retained-source lab evidence than this baseline, but it still stops short of
   branch-local live retry proof until this worktree reruns the same live
   boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
