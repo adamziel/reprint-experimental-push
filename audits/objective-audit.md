@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The repo still lacks one enforced command that proves the one-way pull base plus one-way push back to the live source on the real storage and transport path. `node --test` passes 89 subtests, but the passing suite is still fixture- and model-backed. It proves local rejection and recovery classifications, not end-to-end no-loss behavior, crash recovery on live storage, or a live-path speed claim. The benchmark surface is even more explicit: it returns `productionThroughput: 'not-claimed'` and blocks production throughput claims. That is negative proof, not release proof. The release claim is still false until a required gate closes that gap and is wired into a default entrypoint.
+The repo still lacks one enforced command that proves the one-way pull base plus one-way push back to the live source on the real storage and transport path. `node --test` passes 89 subtests, but the passing suite is still fixture- and model-backed. It proves local rejection and recovery classifications, not end-to-end no-loss behavior, crash recovery on live storage, or a live-path speed claim. The benchmark surface is even more explicit: it returns `productionThroughput: 'not-claimed'` and blocks production throughput claims. That is negative proof, not release proof. The release claim is still false until a required gate closes that gap, runs against the real live-source boundary, and is wired into a default entrypoint.
 
 ## Explicit Requirements
 
@@ -90,7 +90,7 @@ Add a required release entrypoint that fails closed unless it can prove, in one 
 1. a measured live-path throughput result plus an explicit release threshold, or
 2. an intentional refusal to make any production speed claim.
 
-If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence.
+If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate.
 
 ## Audit Rule
 
