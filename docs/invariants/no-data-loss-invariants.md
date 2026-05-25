@@ -17,6 +17,8 @@ This note summarizes the planner's no-overwrite contract.
 
 - Any remote-only change the local side does not touch.
 - Remote descendants that would be hidden by a local delete or file type swap.
+- Even when an unrelated change is safe to apply, topology-sensitive deletes and
+  file type swaps must stop if they would hide a live remote descendant.
 - Conflict and blocker evidence without raw file bodies, row contents, plugin
   payloads, or other secret values.
 - Independent resources that already match the remote hash should stay
