@@ -1845,3 +1845,27 @@ Concrete failure scenarios that still need repo-local proof:
 - A Reprint, ZS-Sync, or ForkPress comparison sounds current because the route
   or package shape matches. The missing proof is the exact upstream revision or
   worktree state and a fresh recheck at the same live write boundary.
+
+Production-readiness release gate for wording:
+
+- Name the exact live drift scenario the claim survived, not just the route or
+  package shape.
+- Show that stale authority was rejected before mutation and stayed readable
+  only as audit evidence.
+- Show that the retry rebuilt scope from fresh live hashes and did not inherit
+  the old approval.
+- Show the create-time identity decision, including any alias, renumber, or
+  remap case, or show the hard block that prevented mutation.
+- Show the complete plugin-owned surface list for the claim, and hard-block
+  anything outside it.
+- Show durable classification for partial file, DB, or plugin side effects, or
+  do not use production wording.
+- Show that any manual-review artifact cannot widen scope to a different row,
+  file, relationship-bearing record, or plugin-owned surface after drift.
+- Show that any comparison note from Reprint, ZS-Sync, or ForkPress was
+  reverified at the same live mutation boundary, or treat it as historical
+  context only.
+- Treat route-shape smokes, packaged-plugin mounts, fixture replay, and
+  `finalMatchesLocal` results as compatibility evidence only unless the same
+  evidence set also includes live remote revalidation and preserved remote
+  audit data.
