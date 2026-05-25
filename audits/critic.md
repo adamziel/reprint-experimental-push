@@ -6634,3 +6634,6 @@ Release gate for production-grade wording:
 - the claim rejects "manual resolution", "comparison passed", and
   "production-ready" as success labels unless the live rerun, preserved remote,
   rejection point, and per-surface classification are all present together.
+
+Use `audits/critic-release-gate.md` as the compact preflight checklist for
+these requirements before any wording is promoted.

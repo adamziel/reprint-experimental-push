@@ -94,6 +94,17 @@ Production-grade wording must still fail closed unless it names all of these:
 - the old/new/blocked classification for every touched surface; and
 - the separate preserve / reject / retry cycle for any later-discovered plugin-owned surface or remapped create target.
 
+Production-grade release checklist:
+
+- confirm the exact live boundary and stale-drift case are named in the claim;
+- confirm the rejected remote stayed preserved and inspectable for audit, not reused as generic success evidence;
+- confirm stale authority was rejected before the first write and the retry scope was rebuilt from live hashes on this branch;
+- confirm every touched row, file, relationship-bearing record, and plugin-owned surface is classified old, new, or blocked before retry starts;
+- confirm every plugin-owned surface outside the allowlist is enumerated or blocked before write, including hidden tables, cron rows, runtime registries, generated files, caches, serialized blobs, and plugin-owned files;
+- confirm any later-discovered plugin-owned surface, remapped create target, or mixed file/DB/plugin side effect is treated as a separate live boundary unless it already had its own preserve / reject / retry cycle before the first write;
+- confirm Reprint, ZS-Sync, and ForkPress citations are labeled as provenance only unless this branch reran the same live boundary and the note says what it proves here and what it does not prove here; and
+- confirm route-shaped smoke, production-shaped URL, fixture replay, and `finalMatchesLocal` are treated as compatibility evidence only unless they are paired with the preserved remote, rejection point, stale-artifact rejection, and fresh retry scope for the same boundary.
+
 False success to reject:
 
 - "manual resolution later" is not success if the readable artifact is still
