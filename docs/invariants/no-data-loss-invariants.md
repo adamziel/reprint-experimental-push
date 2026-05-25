@@ -12,6 +12,9 @@ It may apply automatically when:
   type swaps are preserved as already-in-sync instead of being re-written
 - matching file and row deletions that converge on the same hash are preserved
   as already-in-sync instead of being re-written
+- matching row restores and file type swaps can stay already-in-sync beside a
+  live-preconditioned row delete when the remote state still matches the shared
+  content hash
 - a live-preconditioned delete can still apply when matching independent
   restores and file type swaps converge on the same hash
 - a remote-only change is unrelated to the local mutation set and can be
