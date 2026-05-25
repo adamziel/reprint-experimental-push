@@ -20,7 +20,7 @@ The objective implies the following minimum release requirements:
 
 Those requirements are the minimum release bar, not aspirational extras.
 
-The weakest current requirement is the enforced release gate itself. The repo has many useful opt-in checks, but the objective is still blocked until one required command composes the safety matrix and fails closed when any claim is only lab-backed, fixture-scoped, or otherwise indirect. Right now [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L33) only exposes `test`, `test:playground`, and separate opt-in smokes such as `test:playground:authenticated-http-push`, `test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`, and `test:playground:production-plugin-package`; this checkout also has no checked-in `.github` workflow files, so there is no visible CI entrypoint to enforce a default release path. A green run can still stop short of the production bar, which means the strongest available evidence can still be bypassed by choosing the wrong command. That is not a documentation gap; it is a missing release control, and until it exists every other proof bucket remains bypassable. The actionable fix is a single required gate such as `npm run verify:release`, wired into CI or the release pipeline, that refuses any lab-backed or fixture-only proof and is the only path that can support a release claim.
+The weakest current requirement is the enforced release gate itself. The repo has many useful opt-in checks, but the objective is still blocked until one required command composes the safety matrix and fails closed when any claim is only lab-backed, fixture-scoped, or otherwise indirect. Right now [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L33) only exposes `test`, `test:playground`, and separate opt-in smokes such as `test:playground:authenticated-http-push`, `test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`, and `test:playground:production-plugin-package`; this checkout also has no checked-in `.github` workflow files, so there is no visible CI entrypoint to enforce a default release path. A green run can still stop short of the production bar, which means the strongest available evidence can still be bypassed by choosing the wrong command. That is not a documentation gap; it is a missing release control, and until it exists every other proof bucket remains bypassable. The actionable fix is a single required gate such as `npm run verify:release`, wired into CI or the release pipeline, that refuses any lab-backed or fixture-only proof and is the only path that can support a release claim. The gate must be evaluated from the checked-in default automation path, not from operator memory or manual script composition.
 
 The current lab/prod boundary is also explicit in code. [`src/authenticated-http-push-client.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/src/authenticated-http-push-client.js#L60-L74) still marks the authenticated route profile as `labBacked: true`, so even the strongest authenticated push path is self-described as lab evidence. That is useful for honest labeling, but it is also the clearest sign that the release claim cannot yet rest on that flow. Until a non-lab-backed path exists and is required by policy, the objective remains blocked.
 
@@ -143,6 +143,7 @@ Highest-value next fix:
 1. Add a mandatory `verify:release` entrypoint that rejects any `labBacked: true` or fixture-only proof.
 2. Make that command the checked-in CI default.
 3. Require the live-source, journal, lease/fencing, graph identity, plugin-driver, and benchmark checks to run in one enforced sequence.
+4. Make the gate fail if the final proof set does not include a real remote/local topology, a durable journal on the production storage path, and a measured end-to-end benchmark with a stated threshold.
 
 ## Release Gate Gap
 
@@ -164,6 +165,7 @@ Minimum acceptance rule for the gate:
 - A green `npm test` or green `npm run test:playground` result must not be enough to clear release.
 - The gate must fail if the proof set lacks a live remote/local topology, a durable journal on the real storage path, or a measured production-shaped speed result.
 - If any subcheck is still a lab fixture, the release command must say so and stop.
+- If the checked-in automation cannot invoke the gate by default, the release claim remains blocked even if every optional smoke passes.
 
 ## Test Verdict
 
