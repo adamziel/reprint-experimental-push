@@ -22,6 +22,8 @@ The objective implies these minimum release requirements:
 10. Make the release command print an explicit verdict for throughput. If the repo cannot measure live-path speed, the command must surface `speed unclaimed` and fail closed on any attempt to imply a production speed claim. The output must be unambiguous enough that CI or a reviewer can tell whether the release decided speed or merely skipped it, and the command must be mandatory rather than optional.
 11. Keep optional smokes available for local evidence collection, but do not let them stand in for release proof.
 
+Release gate rule: one mandatory command must reach the live-source boundary and print a machine-checkable verdict in the same run. That verdict must be either a measured live-path threshold or an explicit `speed unclaimed` decision. Any green path that does not emit that verdict remains blocker evidence, not release proof.
+
 Current command surface confirms the gap: `package.json` exposes `test`, `plan`, `apply`, and optional `test:playground:*` helpers, but no required `verify`, `release`, or `verify:release` entrypoint that can force the live-source verdict. In other words, the repo can still go green without making the release decision.
 
 ## Requirement Map
@@ -54,6 +56,8 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 - `Fast`: no current test reports a measured live-path throughput result or a release threshold; [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the opposite only, by asserting `report.throughput.productionThroughput === 'not-claimed'` and by rejecting unsupported production throughput claims. That is useful blocker evidence, but it is not a performance release proof. The missing release verdict is still operationally missing because no mandatory command exists that must print `speed unclaimed` or a measured threshold in the same run.
 
 The test surface also reveals a structural gap in how release evidence is collected. `npm test` proves the negative cases stay negative, but the repo has no required `verify`/`release`/`verify:release` entrypoint to force the live-source verdict. Optional Playground commands and local journal tests can keep improving confidence, but they remain optional and therefore cannot be the final release decision.
+
+Strict reading: if a test only proves refusal, redaction, replay classification, or local fixture integrity, it cannot be upgraded to `no data loss`, `reliable`, or `fast` at the live-source boundary.
 
 The pattern across the suite is consistent: it is better at proving that unsafe claims are blocked than at proving the live-source release claims themselves.
 
