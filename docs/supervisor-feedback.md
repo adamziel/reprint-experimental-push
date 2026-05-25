@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 08:18:20 CEST
+Last updated: 2026-05-25 08:19:10 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 08:18:20 CEST - Supervisor Snapshot
+## 2026-05-25 08:19:10 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and audit note still agree on the blocked state, and the evidence links stay easy to scan.
 - Not going well: proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; this pass kept the scan view terse and refreshed the live-copy warning.
+- Progress change: no evidence delta in this pass; the scan view now says the block is explicit and the live-copy note is clear.
 - Next nudge: keep each lane on one proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
