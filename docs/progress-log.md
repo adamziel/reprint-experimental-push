@@ -49,6 +49,21 @@ linked implementation artifacts.
   [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md), and
   [docs/supervisor-feedback.md](supervisor-feedback.md).
 
+## 2026-05-25 - Public Status Refresh 02:33:54
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:33:54 CEST`) and kept the visible last-updated stamp current.
+- Tightened the lead so the pending-proof list is stated once, while the first
+  screen still surfaces the verified test count, open gate, and blocker.
+- Public status remains conservative: 89 Node tests pass, production auth plus
+  durable journaling is still the gate, and the WordPress executor/auth,
+  recovery journal, Docker/Playground integration, graph identity, and
+  plugin-driver proof remain pending.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Public Status Refresh 02:30:09
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
