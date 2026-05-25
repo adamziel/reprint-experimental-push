@@ -3162,6 +3162,23 @@ Production-readiness release gate checklist:
    also shows the preserved remote, the stale rejection point, the fresh
    retry scope, and the fresh retry artifact on the same live write path.
 
+The branch still has four production-grade blocker classes to close:
+
+- Hidden data-loss modes: live drift, partial file/DB/plugin side effects, or
+  a late-discovered plugin-owned surface can still be widened into a false
+  success unless the proof shows the remote stayed preserved and the retry
+  started from fresh live hashes.
+- Ambiguous conflict policy: every touched row, file, relationship-bearing
+  record, and plugin-owned surface still needs an explicit old, new, or
+  blocked classification before retry starts.
+- Plugin data traps: fixture-shaped allowlist coverage still does not prove
+  custom tables, generated files, cron rows, runtime registries, serialized
+  blobs, or other plugin-owned side effects are discovered and handled.
+- False reliability claims: route shape, packaged mounts, fixture replay,
+  `finalMatchesLocal`, and a readable manual-review artifact remain
+  compatibility or audit evidence only until the preserved remote and fresh
+  retry artifact are recorded separately on the same live boundary.
+
 If any of those proofs is missing, the claim is not production-grade. The
 specific failure cases that still need explicit proof are:
 
@@ -3202,6 +3219,10 @@ Minimum proof artifacts before any production-grade push wording:
    worktree state, says whether it was reverified at the same live write
    boundary, and records the branch-local same-boundary recheck; otherwise
    the comparison remains historical context only.
+8. A release claim that avoids "manual resolution later" unless the remote was
+   preserved for audit, the stale artifact was rejected before mutation, and
+   the fresh retry artifact was recorded separately from the stale review
+   artifact.
 
 False reliability claims to avoid:
 
