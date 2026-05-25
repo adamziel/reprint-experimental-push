@@ -3470,6 +3470,67 @@ test('push topology matrix fixture captures the minimal docker and playground pr
   );
 });
 
+test('production push topology and recovery fixtures keep auth, journal, lease, and inspect aligned', () => {
+  const topology = readJson('fixtures/protocol/push-production-topology-contract.json');
+  const recovery = readJson('fixtures/protocol/push-production-push-recovery-contract.json');
+  const protocolExtension = readJson('fixtures/protocol/push-protocol-extension-contract.json');
+
+  assert.equal(topology.contract_id, 'push-production-topology-contract-one-remote-one-local');
+  assert.equal(topology.pull_pipeline.persisted_pull_base_package.remote_site_id, 'remote-example');
+  assert.equal(
+    topology.pull_to_push_mapping.push_plan_dry_run,
+    'uploads the canonical dry-run plan and returns an eligibility receipt, not a lock',
+  );
+  assert.equal(
+    topology.topology.docker.proof[0],
+    'remote-base and remote-changed are the same remote identity at different times',
+  );
+  assert.ok(
+    topology.topology.docker.proof.includes(
+      'journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch',
+    ),
+  );
+  assert.ok(
+    topology.topology.playground.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.deepEqual(topology.required_invariants, [
+    'dry-run and apply are separate remote operations',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable',
+    'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+  ]);
+
+  assert.equal(recovery.contract_id, 'push-production-push-recovery-contract-one-remote-one-local');
+  assert.equal(
+    recovery.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(
+    recovery.auth_and_session.mutating_calls,
+    'dry-run, apply, and mutating recovery require the push session, canonical push signature, and idempotency key',
+  );
+  assert.equal(recovery.journal_and_recovery.lease_fence, 'claim generation and lease expiry fence stale workers before mutation');
+  assert.equal(
+    recovery.journal_and_recovery.revalidation,
+    'mutating recovery still requires fresh live hashes plus journal evidence',
+  );
+  assert.ok(
+    recovery.topology.proof.includes(
+      'journal inspection stays read-only before inspect-first recovery can mutate',
+    ),
+  );
+  assert.ok(
+    protocolExtension.pull_to_push_mapping.push_batch_apply.includes('never reuses the dry-run receipt as a lock'),
+  );
+  assert.ok(protocolExtension.topology.proof.includes('Docker and Playground both keep the same remote identity mapping and route names'));
+  assert.ok(protocolExtension.required_invariants.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+});
+
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
   const executorTopology = readJson('fixtures/protocol/push-executor-topology-proof.json');
