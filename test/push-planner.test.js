@@ -8882,7 +8882,7 @@ test('durable mid-apply failures remain blocked with artifacts and replaying the
   const retrySnapshot = JSON.stringify(retryRemote);
   const retry = captureError(() =>
     applyPlan(retryRemote, plan, {
-    journal: error.details.recovery.artifacts.journal,
+      journal: error.details.recovery.artifacts.journal,
     }),
   );
 
@@ -8891,6 +8891,47 @@ test('durable mid-apply failures remain blocked with artifacts and replaying the
   assert.equal(retry.code, 'RECOVERY_BLOCKED');
   assertAcceptableRecoveryState(retry.details.recovery);
   assertRecoveryStateArtifacts(retry.details.recovery, 'blocked-recovery');
+  assert.equal(retry.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(retry.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+});
+
+test('durable blocked partial commit retries stay blocked and do not turn into a safe replay', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+  durableJournal.close();
+
+  const retryRemote = JSON.parse(JSON.stringify(error.details.recovery.artifacts.remote));
+  const retrySnapshot = JSON.stringify(retryRemote);
+  const retryJournal = openRecoveryJournal(tempRecoveryJournalPath(), { truncate: true, now: fixedNow });
+
+  const retry = captureError(() =>
+    applyPlan(retryRemote, plan, {
+      durableJournal: retryJournal,
+      journal: error.details.recovery.artifacts.journal,
+    }),
+  );
+  retryJournal.close();
+
+  assert.equal(JSON.stringify(retryRemote), retrySnapshot);
+  assert.ok(retry instanceof PushPlanError);
+  assert.equal(retry.code, 'RECOVERY_BLOCKED');
+  assertRecoveryStateArtifacts(retry.details.recovery, 'blocked-recovery');
+  assert.ok(retry.details.recovery.artifacts.journal, 'retry must preserve journal artifacts');
+  assert.ok(retry.details.recovery.artifacts.remote, 'retry must preserve remote artifacts');
   assert.equal(retry.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
   assert.equal(retry.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
 });
