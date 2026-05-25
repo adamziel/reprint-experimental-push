@@ -27,10 +27,13 @@ Every proposed fast path has to pass these gates before implementation:
 The benchmark model encodes the same gates in `fastPathGates`. Each
 `safeFastPaths` entry must carry a concrete proof for all four gates, even when
 the proof is that a gate is not doing mutation work, such as remote indexes or
-backpressure pauses. Each rejected entry names the first gate it breaks through
-`rejectedGate`; `violates` records the broader contract breaks that make the
-proposal unsafe. That keeps "fast but ambiguous after failure" proposals out of
-the safe list even when they improve a throughput metric.
+backpressure pauses. The executable fixture in `test/performance-model.test.js`
+also proves that the recovery path keeps bounded chunk-window sizing, row-batch
+parallelism, and atomic-group commit evidence visible together with the cursor,
+compression, and pause records. Each rejected entry names the first gate it
+breaks through `rejectedGate`; `violates` records the broader contract breaks
+that make the proposal unsafe. That keeps "fast but ambiguous after failure"
+proposals out of the safe list even when they improve a throughput metric.
 
 ## Safe Speedups
 

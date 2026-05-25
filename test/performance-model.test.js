@@ -1176,12 +1176,24 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
     'recovery fixture keeps compression evidence visible',
   );
   assert.ok(
+    fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'chunk-window-sizing')),
+    'recovery fixture keeps bounded chunk-window sizing visible',
+  );
+  assert.ok(
     fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')),
     'recovery fixture keeps backpressure evidence visible',
   );
   assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'chunk-upload')));
   assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'db-row-batch')));
+  assert.ok(
+    fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'db-batch-parallelism')),
+    'recovery fixture keeps bounded row-batch parallelism visible',
+  );
   assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'durable-receipt-flush')));
+  assert.ok(
+    fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'atomic-group-commit')),
+    'recovery fixture keeps the atomic-group barrier visible',
+  );
   assert.ok(
     fixture.rejectedFastPaths.some((fastPath) =>
       fastPath.id === 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit' &&
