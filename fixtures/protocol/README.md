@@ -421,6 +421,12 @@ Failure and recovery examples:
   after independent drift between dry-run and apply. It also records the
   remote identity binding that makes `remote-base` and `remote-changed` two
   observations of the same site rather than different sites.
+- the pull/export/import pipeline maps to the push ladder in the same order
+  the executor runs it: exporter discovers the merge base, importer persists
+  the base package, `push_preflight` binds the immutable input, `push_snapshot_hashes`
+  stays planning-only, `push_plan_dry_run` returns a receipt, `push_batch_apply`
+  revalidates before every batch, `push_journal` stays read-only, and
+  `push_recover inspect` stays read-only before any mutating recovery.
 - `push-executor-topology-proof.json` gives the shortest executor-shaped proof
   that Docker and Playground share the same remote identity twice, the same
   route names, and the same browser-visible ingress rule.

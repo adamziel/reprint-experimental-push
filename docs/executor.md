@@ -71,6 +71,25 @@ consumes it in order:
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating repair
 
+The pull/export/import pipeline becomes the executor's concrete runbook in
+the same order:
+
+1. exporter discovers the merge base and coverage evidence.
+2. importer persists the base package as immutable provenance.
+3. `persisted_pull_base_package` is the immutable input to push.
+4. `push_preflight` binds that input to one live remote identity and one
+   short-lived push session.
+5. `push_snapshot_hashes` stays planning-only.
+6. `push_plan_dry_run` uploads the canonical plan and returns a receipt, not
+   a lock.
+7. `push_batch_apply` revalidates fresh live evidence before every batch and
+   at the storage boundary.
+8. `push_journal` stays read-only.
+9. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+10. `push_recover auto|finish|rollback` mutates only after inspect proves
+   the branch safe.
+
 The one-remote, one-local, one-drift harness is fixed in both Docker and
 Playground:
 
@@ -84,6 +103,9 @@ Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+- the same one-remote, one-local, one-drift shape is used in both Docker and
+  Playground when validating dry-run/apply separation and inspect-first
+  recovery
 
 The concrete lab roles are:
 
