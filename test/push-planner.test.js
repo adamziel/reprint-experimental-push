@@ -8545,6 +8545,54 @@ test('completed replay remains inert even when the remote already matches the co
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('no-data-loss recovery matrix keeps failure-before-mutation, post-staging, post-validation, and completed replay within the safe envelope', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true }],
+    ['after staging', { failAfterStaging: true }],
+    ['after dependency validation', { failAfterDependencyValidation: true }],
+  ]) {
+    const remote = baseSite();
+    const snapshot = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    Object.values(replay.site.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length,
+    1,
+    'completed replay must not duplicate inserts',
+  );
+  assert.equal(
+    replay.site.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+    'completed replay must not resurrect stale local data',
+  );
+});
+
 test('atomic apply failure boundaries and completed replay stay within the accepted recovery states', () => {
   const base = baseSite();
   const local = baseSite();
