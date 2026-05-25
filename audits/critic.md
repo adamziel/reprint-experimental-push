@@ -12,7 +12,8 @@ What must change before any production-grade push claim:
 - create-time identity remapping, aliasing, or renumbering must be either
   proven safe with live identity evidence or hard-blocked before write;
 - every touched surface must be classified as old, new, or blocked before
-  retry, including mixed file, DB, and plugin side effects;
+  retry, including mixed file, DB, and plugin side effects, because a mixed
+  write cannot be relabeled as success after only the committed part;
 - every plugin-owned surface outside the allowlist must be enumerated live or
   blocked at apply time, including late-discovered tables, files, cron rows,
   runtime registries, generated assets, caches, and serialized blobs;
@@ -233,6 +234,20 @@ Known data-loss traps still unresolved:
 - a readable review artifact, comparison note, or route-shaped smoke can look
   authoritative while still failing to prove current retry authority for the
   exact live boundary on this branch.
+
+Release wording must treat the following as false reliability unless the
+branch also shows the preserved remote, the stale rejection point, and the
+fresh retry scope rebuilt from live hashes on this worktree:
+
+- "manual resolution succeeded" when the readable artifact could still be
+  reused after drift;
+- "production-grade push support" when the only proof is route shape,
+  package mount shape, fixture replay, or `finalMatchesLocal`;
+- "plugin-safe push" when hidden plugin-owned tables, files, cron rows,
+  runtime registries, generated assets, caches, or serialized blobs are not
+  separately enumerated or blocked; and
+- "comparison passed" when the comparison only matches upstream route family,
+  package layout, or reviewer wording without a branch-local live rerun.
 
 Release-gate checklist:
 
