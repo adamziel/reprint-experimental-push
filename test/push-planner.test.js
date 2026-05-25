@@ -18817,11 +18817,23 @@ test('atomic apply recovery only accepts old remote, fully updated remote, or bl
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.appliedMutations, 0);
   assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
+  assert.equal(
     persisted.records.filter((record) => record.type === 'journal-replayed').length,
     1,
   );
   assert.equal(
     persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote'),
     true,
+  );
+  assert.equal(
+    persisted.records[persisted.records.length - 2].type,
+    'recovery-state',
+  );
+  assert.equal(
+    persisted.records[persisted.records.length - 1].type,
+    'journal-replayed',
   );
 });
