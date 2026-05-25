@@ -146,6 +146,8 @@ one-local, one-drift topology, and the first remaining production boundary:
 That checked command now fails if the live preflight does not mint the
 expected session types or if the journal readback does not preserve durable
 apply-committed evidence after apply and recovery inspect.
+The checked proof also asserts the durable journal summary fields directly:
+`rows`, `applyCommitted`, `mutationApplied`, and `idempotencyOpened`.
 
 That checked release entrypoint has two exact outputs:
 

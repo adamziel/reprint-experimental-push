@@ -175,6 +175,14 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.match(proof.stdout, /"apply": \{/);
   assert.match(proof.stdout, /"recoveryInspect": \{/);
   assert.match(proof.stdout, /"after": \{/);
+  assert.match(
+    proof.stdout,
+    /"durableJournal": \{\s*"rows": \d+,\s*"applyCommitted": true,\s*"mutationApplied": \d+,\s*"idempotencyOpened": \d+\s*\}/,
+  );
+  assert.match(
+    proof.stdout,
+    /"preflight": \{\s*"status": 200,\s*"authSessionType": "application-password-basic",\s*"routeProfile": \{/,
+  );
   assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
   const releaseVerify = JSON.parse(
     readFileSync(path.join(repoRoot, 'fixtures/protocol/push-production-release-verify-contract.json'), 'utf8'),
