@@ -40,6 +40,9 @@ This note summarizes the planner's no-overwrite contract.
 - A plugin-owned delete may coexist with a matching independent edit and file
   type swap while remote-only plugin drift stays preserved and the delete keeps
   its own live remote precondition.
+- A plugin-owned delete must stop when the driver metadata is missing, even if
+  matching independent deletes, edits, or file type swaps already match the
+  live remote and unrelated remote-only plugin drift is present.
 - A stale plugin-owned delete must stop even when a matching independent edit
   is already in sync and remote-only plugin drift is present elsewhere.
 - A plugin-owned delete must stop when the live plugin owner context drifted,

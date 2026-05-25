@@ -9196,6 +9196,63 @@ test('blocks plugin-owned rows with missing driver metadata while preserving rem
   assert.equal(blockerJson.includes('local-advanced'), false);
 });
 
+test('blocks plugin-owned deletes with missing driver metadata while preserving matching independent deletes, type swaps, and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery/photo.txt'] = 'base photo';
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base shared title', post_status: 'publish' };
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery/photo.txt'] = { type: 'directory' };
+  delete local.db.wp_posts['ID:1'];
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared title', post_status: 'publish' };
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+    }),
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/gallery/photo.txt'] = { type: 'directory' };
+  delete remote.db.wp_posts['ID:1'];
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared title', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const matchingDelete = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery/photo.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const conflictJson = JSON.stringify(conflict);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(conflict.class, 'plugin-data-conflict');
+  assert.equal(conflict.resourceKey, resourceKey);
+  assert.equal(conflictJson.includes('remote-only plugin drift'), false);
+  assert.equal(conflictJson.includes('Shared title'), false);
+});
+
 test('blocks plugin-owned deletes when the owner plugin was removed remotely even with an unrelated safe edit', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
