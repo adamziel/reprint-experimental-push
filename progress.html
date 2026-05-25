@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `5822745b` now chains `test:playground:production-shaped-topology-proof` before the release and recovery checks, while `3d8748b6` keeps the release command fail-closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` still proves `REPRINT_PUSH_SECRET_REQUIRED` fails closed, and `889bd37a` keeps `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible. `6fc3ab64` adds the retained `test:recovery:file-journal` smoke to the checked release surface, and `d3d04595` keeps the recovery envelope artifact-backed in model evidence, not production durable journal storage or lease/fencing proof. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
-        <time class="update-stamp" datetime="2026-05-25T13:36:20+02:00">Last updated: May 25, 2026, 13:36:20 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `5822745b` now chains `test:playground:production-shaped-topology-proof` before the release and recovery checks, while `3d8748b6` keeps the release command fail-closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` still proves `REPRINT_PUSH_SECRET_REQUIRED` fails closed, `889bd37a` keeps `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible, and `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` remains the missing production boundary. `6fc3ab64` adds the retained `test:recovery:file-journal` smoke to the checked release surface, and `d3d04595` keeps the recovery envelope artifact-backed in model evidence, not production durable journal storage or lease/fencing proof. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
+        <time class="update-stamp" datetime="2026-05-25T13:41:08+02:00">Last updated: May 25, 2026, 13:41:08 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `5822745b` widens the checked release entrypoint while `3d8748b6` keeps the live-source gate fail-closed and `889bd37a` still marks the production boundary as missing, not ready</span>
+          <span class="pill">Trend: `5822745b` widens the checked release entrypoint while `3d8748b6` keeps the live-source gate fail-closed and `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` still marks the missing production boundary</span>
           <span class="pill">Top blocker: real WordPress executor/auth plus durable journal semantics still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-133620">2026-05-25 13:36:20</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-134108">2026-05-25 13:41:08</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-133448">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-133925">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-          <span>Latest lane evidence widens the checked recovery smoke without changing the production boundary; executor and auth proof are still absent</span>
+          <span>Latest lane evidence widens the checked recovery smoke without changing the production boundary; durable journal storage proof is still absent</span>
       </div>
       <div class="metric">
         <strong>Flat</strong>
