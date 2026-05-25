@@ -1281,6 +1281,39 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure').violates.includes('file-hashing'),
   );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('live-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('atomic-file-publish'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation').violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('backpressure'));
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
