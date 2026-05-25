@@ -24,6 +24,15 @@ The topology rules are fixed:
 - The local inspection proxy stays local-only.
 - Remote tunnels are disallowed.
 
+That topology is the same one-remote, one-local, one-drift proof in both
+environments:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` carries the imported local edits.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover.
+
 ## Canonical Execution
 
 The executor follows the production ladder in `protocol.md` without changing

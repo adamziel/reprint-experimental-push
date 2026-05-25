@@ -41,6 +41,23 @@ The push executor consumes the pull pipeline in the same order:
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe and the auth floor still holds
 
+The bridge is also easiest to review as a source-to-sink mapping:
+
+- exporter produces the immutable pull provenance
+- importer persists that provenance as `persisted_pull_base_package`
+- `push_preflight` is the first live binding to one remote identity and one
+  short-lived session
+- `push_snapshot_hashes` stays planning-only and may page large sites
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
+  lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` may mutate only after inspect proves
+  the branch safe with the same auth floor as the write path
+
 Authentication is intentionally conservative:
 
 - push auth must be at least as strict as current Reprint HMAC usage
