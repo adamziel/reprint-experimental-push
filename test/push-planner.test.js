@@ -12415,6 +12415,24 @@ test('durable recovery contract keeps pre-mutation, post-staging, post-validatio
     assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally', testCase.label);
   }
 
+  const failingOpenJournal = failingDurableJournal('journal-opened');
+  const openFailureRemote = baseSite();
+  const openFailureSnapshot = JSON.stringify(openFailureRemote);
+  const openFailure = captureError(() =>
+    applyPlan(openFailureRemote, plan, {
+      durableJournal: failingOpenJournal,
+    }),
+  );
+
+  assert.ok(openFailure instanceof PushPlanError, 'journal-opened failure');
+  assert.equal(openFailure.code, 'JOURNAL_WRITE_FAILED', 'journal-opened failure');
+  assert.equal(JSON.stringify(openFailureRemote), openFailureSnapshot, 'journal-opened failure');
+  assertAcceptableRecoveryState(openFailure.details.recovery);
+  assertRecoveryStateArtifacts(openFailure.details.recovery, 'old-remote');
+  assert.equal(openFailure.details.recovery.artifacts.journal.status, 'opened', 'journal-opened failure');
+  assert.equal(openFailure.details.recovery.artifacts.remote, undefined, 'journal-opened failure');
+  assert.equal(failingOpenJournal.events.length, 0, 'journal-opened failure');
+
   const completedJournalPath = tempRecoveryJournalPath();
   const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
