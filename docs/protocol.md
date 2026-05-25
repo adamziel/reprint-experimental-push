@@ -35,6 +35,20 @@ The production ladder is fixed:
    the action safe with fresh live evidence and the same auth floor as the
    write path.
 
+The pull-to-push handoff is explicit in the machine-readable proof:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable object the push executor
+  consumes after importer persistence
+- preflight is the first live binding after that immutable handoff
+- snapshot hash listing stays planning-only
+- dry-run uploads the canonical plan and returns an eligibility receipt
+- apply is a separate remote operation that revalidates before every batch
+  and at the storage boundary
+- journal inspect is read-only
+- recovery starts with inspect before any mutating repair
+
 The stage contract is intentionally simple:
 
 | Stage | What it does | What it does not do |
@@ -87,6 +101,20 @@ The same pull-to-push bridge is exercised in Docker and Playground:
 - `push_journal` stays read-only
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating repair
+
+The production topology is fixed to one remote source, one imported local
+site, and one drift witness:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or recover
+- Docker uses one private network for those four roles
+- Playground uses separate disposable blueprints with the same route names
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 - `push_recover auto|finish|rollback` may mutate only after inspect proves
   the branch safe with the same auth floor as the write path
 

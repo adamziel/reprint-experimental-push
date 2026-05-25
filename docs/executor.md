@@ -99,6 +99,21 @@ The pull-to-push bridge is one-way:
 | Persisted provenance checksum | `push_journal` | Read durable evidence only. |
 | Coverage and lineage replay | `push_recover inspect` | Classify recovery before any mutating repair. |
 
+The persisted pull base package is the concrete handoff object used by push:
+
+- `persisted_pull_base_package` is immutable provenance, not a mutable
+  snapshot cache
+- the exporter discovers the merge base and coverage evidence
+- the importer persists that base package
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` stays planning-only
+- `push_plan_dry_run` returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary
+- `push_journal` remains read-only
+- `push_recover inspect` reads the journal, fresh live hashes, and the
+  recovery fence before any mutating repair
+
 The production topology contract also names the immutable bridge explicitly:
 
 - `persisted_pull_base_package` is immutable provenance, not a mutable snapshot cache
@@ -115,6 +130,20 @@ The pull pipeline remains the source of immutable push provenance:
 - `push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary
 - `push_journal` records durable evidence without authorizing mutation
 - `push_recover inspect` reads the journal and fresh live hashes before any mutating repair
+
+The production topology is fixed to one remote source, one imported local
+site, and one drift witness:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or recover
+- Docker uses one private network for those four roles
+- Playground uses separate disposable blueprints with the same route names
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 
 The canonical production proof bundle is `push-protocol-extension-contract.json`:
 

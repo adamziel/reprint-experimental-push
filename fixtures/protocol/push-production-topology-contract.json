@@ -4,6 +4,12 @@
   "pull_pipeline": {
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance",
+    "persisted_pull_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "base_manifest_hash": "sha256:pull-base-manifest",
+      "base_coverage_hash": "sha256:pull-base-coverage",
+      "remote_site_id": "remote-example"
+    },
     "persisted_base_package": {
       "base_manifest_id": "pull-2026-05-24T00:00:00Z",
       "remote_site_id": "remote-example",
