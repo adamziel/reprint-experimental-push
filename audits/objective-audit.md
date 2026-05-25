@@ -6,6 +6,13 @@ The project is **not releasable as a production WordPress push path**.
 
 Current top blocker, rechecked on 2026-05-25: there is still no checked-in, required live-source release command. The repo has helper and lab scripts, but no enforced `verify`, `verify:release`, or `release` entrypoint that exports `REPRINT_PUSH_SOURCE_URL`, runs against a retained source endpoint, rechecks apply-time state, and records preserved-remote evidence in the same invocation. The claimed `test:playground:production-shaped-release-proof` surface is also absent in this checkout. The blocker is not "more tests"; it is the missing single command that must own the live-source verdict and fail closed when preserved-remote proof is absent.
 
+Top blocker, stated narrowly:
+
+- `package.json` still stops at `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers
+- there is still no checked-in `verify`, `verify:release`, or `release` command that can own the live-source verdict
+- there is still no checked-in workflow or other enforced entrypoint in this checkout that can make that command mandatory
+- until that changes, every green regression, lab, or refusal run remains support evidence only
+
 Fresh recheck on 2026-05-25: `package.json` still has no `verify`, `verify:release`, or `release` script, and this checkout still has no `.github` tree or workflow entrypoint. The concrete blocker is unchanged: there is still no checked-in command that can fail closed at the live-source boundary, export `REPRINT_PUSH_SOURCE_URL`, and record preserved-remote evidence in the same required invocation.
 Fresh recheck on 2026-05-25: there is still no checked-in command that supplies a retained local, Playground, or Docker source endpoint by default and then proves preserved-remote behavior from that same endpoint. The current helper surface can be run, but it does not yet supply the live-source input and verdict together, so the repository still lacks a true release gate rather than just a wrapper around one.
 Fresh recheck on 2026-05-25: `package.json` still exposes only helper and lab commands, including `test:playground:production-shaped-push`, but no checked-in `test:playground:production-shaped-release-proof`, `verify:release`, or equivalent command that both supplies a retained source endpoint by default and proves preserved-remote behavior in the same run. That keeps the current surface in the wrapper-only bucket, not the retained-source release-gate bucket, and it still leaves dry-run receipt/apply-time revalidation, recovery inspection, and auth/session lifecycle outside any required gate.
