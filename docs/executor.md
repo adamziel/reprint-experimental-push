@@ -66,7 +66,9 @@ The production test topology is the same in Docker and Playground:
 
 `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
 `push-remote-liveness-topology-contract.json` are the fixtures that pin that
-shared topology.
+shared topology. Use the deployment contract when you need the smallest
+topology-only proof, and the liveness-topology contract when you need the same
+one-remote, one-local, one-drift harness plus the dry-run/apply split.
 
 ## Stage Semantics
 

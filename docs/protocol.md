@@ -44,6 +44,14 @@ The ladder maps directly to the pull pipeline:
 - recovery starts with inspect and only mutates when journal evidence and
   fresh live hashes still prove the branch safe
 
+For the harness shape, keep the topology pair together:
+
+- `push-deployment-topology-contract.json` is the smallest topology-only proof
+  for one remote source, one local edited site, one drift witness, and the
+  sandbox-only ingress policy
+- `push-remote-liveness-topology-contract.json` adds the dry-run/apply
+  liveness split to the same one-remote, one-local, one-drift harness
+
 The machine-readable bridge is split across the fixtures:
 
 - `push-preflight-contract.json` captures the first live binding between the
@@ -61,6 +69,9 @@ The machine-readable bridge is split across the fixtures:
   define the Docker and Playground test topology with one remote source, one
   imported local site, one drift witness, and the sandbox-provided `8080`
   ingress rule
+- `push-remote-liveness-topology-contract.json` pairs that topology proof
+  with the dry-run/apply liveness split and the same one-remote,
+  one-local, one-drift harness
 
 ## Stage Semantics
 
