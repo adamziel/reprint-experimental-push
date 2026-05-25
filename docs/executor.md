@@ -235,6 +235,19 @@ The pull-to-push handoff stays one-way:
 - push batch apply revalidates before every batch and at the storage boundary
 - push journal and push recover inspect read durable evidence first
 
+The production test topology is the same in Docker and Playground:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| remote source | `remote-base` | `remote-base` |
+| imported local site | `local-edited` | `local-edited` |
+| drift witness | `remote-changed` | `remote-changed` |
+| runner | `runner` | local test process |
+
+That topology proves one remote identity observed twice and one imported local
+edit site in both harnesses, while browser-visible inspection stays on the
+sandbox-provided `8080` ingress through a local-only proxy.
+
 The fixture graph mirrors that one-way handoff:
 
 - `push-pull-mapping.json` and `push-protocol-extension-contract.json` prove
@@ -247,6 +260,18 @@ The fixture graph mirrors that one-way handoff:
   `push-auth-session-recovery-contract.json`, and
   `push-recovery-inspect-contract.json` prove the session fence, journal row
   fence, and inspect-first recovery boundary.
+
+When a review needs the explicit pull-to-push mapping, the shortest readable
+rule is:
+
+| Pull stage | Push consumer | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base to one live remote identity and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live hash listing. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan, but do not reserve a lock. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and again at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
 
 For the precise Docker/Playground harness shape, use
 [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json).

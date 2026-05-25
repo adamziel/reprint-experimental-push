@@ -73,6 +73,18 @@ The production topology proof stays just as explicit:
 - the Docker and Playground proofs keep browser-visible inspection on the
   sandbox-provided `8080` ingress through a local-only proxy
 
+The same proof shape is used in both harnesses:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| remote source | `remote-base` | `remote-base` |
+| imported local site | `local-edited` | `local-edited` |
+| drift witness | `remote-changed` | `remote-changed` |
+| runner | `runner` | local test process |
+
+This is enough to prove one remote identity observed twice, one imported local
+edit site, and one shared ingress rule without inventing any extra topology.
+
 The remote write path is deliberately split into a planning half and a write
 half:
 
