@@ -110,13 +110,13 @@ boundary and needs its own preserve / reject / retry cycle.
 Source-note bottom line: Reprint, ZS-Sync, and ForkPress notes are useful
 comparative context, but they do not prove the live executor, the preserved
 remote, stale-drift rejection, create-time remap safety, or late-discovered
-plugin-owned surface handling on this branch. The ForkPress note is the most
-explicit about audit and crash-consistency intent, but it is still only a
-historical design note here. A note that only matches route shape, package
-layout, fixture replay, or reviewer wording is compatibility evidence only.
-Even a named upstream state is still historical unless this branch reran the
-same live boundary and can show fresh preserved-remote, rejection-point, and
-retry evidence for that exact case.
+plugin-owned surface handling on this branch. ForkPress is the most explicit
+historical design note about audit and crash-consistency intent, but it is
+still only a historical design note here. A note that only matches route
+shape, package layout, fixture replay, or reviewer wording is compatibility
+evidence only. Even a named upstream state is still historical unless this
+branch reran the same live boundary and can show fresh preserved-remote,
+rejection-point, and retry evidence for that exact case.
 
 Production-readiness checklist:
 
@@ -201,6 +201,26 @@ Non-negotiable release gate:
   as a proof source instead of historical context, because the branch still
   needs live boundary evidence for stale drift, remapped create targets,
   partial side effects, and late plugin-owned surfaces.
+
+Release-readiness checklist:
+
+- the exact live drift case is named, not implied by a route family or
+  fixture name;
+- the preserved remote is still inspectable after reject and can be audited
+  independently of the retry artifact;
+- the stale authority rejection point occurs before the first write;
+- the retry scope is rebuilt from fresh live hashes on this branch;
+- every touched surface is classified as old, new, or blocked before retry;
+- every plugin-owned surface outside the allowlist is either enumerated live
+  or hard-blocked at apply time;
+- create-time identity remap, aliasing, or renumbering is either proven safe
+  with live identity evidence or blocked before write;
+- stale manual-review artifacts remain audit-only and cannot widen to another
+  row, file, relationship-bearing record, remapped create target, or
+  plugin-owned surface; and
+- each Reprint, ZS-Sync, or ForkPress comparison states what the note proves,
+  what it does not prove, and whether this branch reran the same live
+  boundary.
 
 Must change before any production-grade push claim:
 
@@ -663,14 +683,14 @@ Conservative comparison summary:
 
 Historical comparison summary:
 
-- Reprint is the strongest source for staged transport and resumability, but
-  its notes only illustrate push transport shape here. They do not prove live
-  mutation safety, identity remap handling, plugin-owned data discovery, or
-  partial-write classification on this branch.
+- Reprint is the most explicit source for staged transport and resumability,
+  but its notes only illustrate push transport shape here. They do not prove
+  live mutation safety, identity remap handling, plugin-owned data discovery,
+  or partial-write classification on this branch.
 - ZS-Sync is useful for scanner/resource batching and cursoring, but it only
   illustrates bounded discovery and does not prove write authorization,
   stale-drift rejection, or retry authority after a live remote changes.
-- ForkPress is the strongest source for conflict vocabulary and durability
+- ForkPress is the most explicit source for conflict vocabulary and durability
   language, but it still only illustrates review framing. It does not prove
   that a readable review artifact can be reused safely after drift, or that
   hidden plugin-owned state outside the allowlist is blocked before retry.
@@ -3219,7 +3239,7 @@ push must block on unknown or incomplete coverage.
 
 ### ForkPress
 
-The ForkPress notes provide the strongest observed comparison point for
+The ForkPress notes provide the most explicit observed comparison point for
 reviewed conflict handling: three-way merge records, reviewed conflict
 resolution, plugin validators, revalidation, and crash consistency where
 failure is old, new, or blocked with artifacts. They cover branch merge
