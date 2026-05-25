@@ -48,7 +48,8 @@ healthy while the objective remains unproven. The immediate action is to turn
 the strongest checks into one required `verify:release`-style gate that is
 wired into CI or another enforced entrypoint; until that exists, the current
 test story is stronger as a blocker generator than as release-grade proof of
-no data loss, reliability, or speed.
+no data loss, reliability, or speed. The operational blocker is not "speed
+is weak"; it is "the live source boundary is still unproven."
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
@@ -190,7 +191,8 @@ green.
 ## Test Audit
 
 The current tests are strongest where they reject unsafe claims, and weakest
-where they are asked to prove production release safety.
+where they are asked to prove production release safety. They are useful as a
+red flag, not as release authorization.
 
 - `npm test` proves the model and selected fixture logic are internally
   consistent. It does not prove live source mutation, production storage, or a
@@ -201,7 +203,8 @@ where they are asked to prove production release safety.
 - `npm run test:playground:production-shaped-push` and
   `npm run test:playground:production-plugin-package` prove route shape and
   packaging behavior. They still report `labBacked: true`, so they are
-  explicitly not production proof.
+  explicitly not production proof. They show that the route can look
+  production-shaped while still remaining a lab surrogate.
 - `scripts/bench/guarded-executor-benchmark.js` proves the benchmark can block
   unsupported throughput claims. It does not itself measure a live push path,
   set a required threshold, or enforce a release decision unless the claim
@@ -209,6 +212,11 @@ where they are asked to prove production release safety.
   a release authorization. The unit test confirms blocker detection and
   tamper rejection, but it still never exercises a live source site, a
   production executor, or a measured threshold.
+
+The strongest unresolved claim is therefore live-boundary correctness, not
+raw throughput. Speed remains unproven, but the release blocker is broader:
+the repository still lacks executable proof that the live WordPress source
+graph survives guarded writes without silent loss or duplication.
 
 That splits the suite into three evidence classes:
 
