@@ -250,6 +250,12 @@ The weakest claim is any implication that the current suite can certify the live
 - The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness, or that optional smokes are equivalent to a required release gate.
 - Said differently: the strongest present tests prove that the repository knows how to refuse unsafe claims, not that it can make the objective's positive claims on a live source.
 
+Actionable next step:
+
+- add one enforced command, then wire it into the default release path, so the repository cannot be read as releasable until the live-source verdict exists
+- require that command to fail closed unless it rechecks apply-time state, reaches the live-source boundary, and emits either a measured throughput result or `speed unclaimed`
+- treat every other green path as support evidence only, even if it exercises auth, journal, recovery, or benchmark helpers
+
 Actionably: the next release gate must be a checked-in command that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims." Any future claim of no data loss, reliability, or speed must point at that gate, not at `node --test` or the lab smokes, because those runs can still succeed without proving the live-source boundary.
 
 ## Proof Boundary
