@@ -149,10 +149,13 @@ Concrete failure scenarios that still block production wording:
 - stale manual-review artifacts after drift: missing proof is that the
   artifact stayed audit-only, could not become retry authority for a later
   row/file/relationship-bearing record/remapped target/plugin surface, and
-  was replaced by a fresh retry scope rebuilt from live hashes; and once a
-  later plugin-owned data trap appears, it is a new boundary unless it is
-  separately enumerated or blocked before write, even if the route family,
-  package mount, or reviewer wording looks unchanged;
+  was replaced by a fresh retry scope rebuilt from live hashes; "manual
+  resolution later" is only success for the exact rejected boundary it names,
+  never for a later remapped create target or plugin-owned surface that was
+  not already enumerated before write; and once a later plugin-owned data
+  trap appears, it is a new boundary unless it is separately enumerated or
+  blocked before write, even if the route family, package mount, or reviewer
+  wording looks unchanged;
 - false reliability claims: missing proof is that "comparison passed",
   "manual resolution succeeded", or "production-ready" names the rejected
   remote, the rejection point, and the exact live boundary that was retried;
