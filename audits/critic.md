@@ -2649,6 +2649,10 @@ Additional production-readiness blockers that still need explicit proof:
   case above, plus the exact plugin-owned surfaces that were discovered or
   hard-blocked. If the gate cannot name the exact failure scenario it survived,
   it is not a production gate.
+- A readable stale manual-review artifact is not enough on its own. The gate
+  must show that the artifact stayed audit-only after drift, that the remote
+  was preserved for audit, and that the retry was recorded as a fresh artifact
+  rebuilt from current live hashes rather than inherited approval.
 
 Before this project can claim production-grade push support, it still needs
 these explicit proofs:
@@ -2734,8 +2738,8 @@ Production-readiness release gate checklist:
 8. Fail closed if the wording only cites route shape, packaged-plugin mount,
    fixture replay, or `finalMatchesLocal` without the live boundary proof
    above. A readable manual-review artifact is not enough unless the claim
-   also shows the preserved remote, the stale rejection point, and the fresh
-   retry scope on the same live write path.
+   also shows the preserved remote, the stale rejection point, the fresh
+   retry scope, and the fresh retry artifact on the same live write path.
 
 If any of those proofs is missing, the claim is not production-grade. The
 specific failure cases that still need explicit proof are:
