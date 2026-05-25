@@ -5,11 +5,14 @@
 Verdict: the design still cannot claim production-grade push support.
 
 One weak claim still worth tightening explicitly: a production-shaped route,
-package mount, or fixture can be a copied-lab executor behind the same URL
-family. That means a green smoke, `finalMatchesLocal`, matching mount shape,
-or route-shaped replay must never be presented as proof that the live source
-executor rejected stale authority before mutation, preserved the remote for
-audit, or rebuilt retry scope from fresh live hashes.
+package mount, or fixture can still be a copied-lab executor behind the same
+URL family. That means a green smoke, `finalMatchesLocal`, matching mount
+shape, or route-shaped replay must never be presented as proof that the live
+source executor rejected stale authority before mutation, preserved the
+remote for audit, or rebuilt retry scope from fresh live hashes. The same
+rule applies to upstream citations: a matching Reprint, ZS-Sync, or ForkPress
+commit can justify the design direction, but without a branch-local live
+recheck it stays historical input only.
 
 Release gate for any production wording:
 
