@@ -281,6 +281,10 @@ same live write path:
 - Route shape, package mount shape, and `finalMatchesLocal` stay compatibility
   evidence only; they do not prove production durability, production auth, or
   production write safety.
+- A copied-lab executor behind the same URL family is still compatibility
+  evidence only; matching route names or package wiring does not prove the
+  live mutation boundary, preserved remote, or retry authority on the real
+  write path.
 
 1. Live remote drift between dry-run and apply fails closed before the first
    mutation, and the preserved remote remains auditable after reject.
