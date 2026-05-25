@@ -37,6 +37,16 @@ The current checkout does not yet satisfy those requirements at the release boun
 
 The weakest current requirement is the enforced release gate itself. The repo has many useful opt-in checks, but the objective is still blocked until one required command composes the safety matrix and fails closed when any claim is only lab-backed, fixture-scoped, benchmark-only, or otherwise indirect. Right now [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L33) only exposes `test`, `test:playground`, and separate opt-in smokes such as `test:playground:authenticated-http-push`, `test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`, and `test:playground:production-plugin-package`; there is still no `verify`, `release`, or `verify:release` script. The checked-in automation surface is also empty of `.github` workflow files, so there is no visible CI entrypoint to enforce a default release path. A green run can still stop short of the production bar, which means the strongest available evidence can still be bypassed by choosing the wrong command. That is not a documentation gap; it is a missing release control, and until it exists every other proof bucket remains bypassable. The actionable fix is a single required gate, such as `npm run verify:release`, wired into CI or the release pipeline, that refuses any lab-backed or fixture-only proof and is the only path that can support a release claim. The gate must be evaluated from the checked-in default automation path, not from operator memory or manual script composition. A production-shaped route is not enough on its own if the authenticated implementation still reports `labBacked: true`, and the absence of a checked-in workflow means the release control is not just unimplemented but unenforced. In practical terms, `npm test` and `npm run test:playground` are currently evidence collectors for local safety and refusal behavior, not release approvers.
 
+## Test Verdict
+
+The test suite is still an audit harness, not a release harness.
+
+- It proves local invariants and refusal logic.
+- It does not prove no data loss on the live source boundary.
+- It does not prove real-world reliability against crash, retry, duplicate request, lease expiry, or mid-apply restart on production storage.
+- It does not prove speed because the benchmark code refuses unsupported claims instead of timing the live push path.
+- It does not prove a release-safe default because no checked-in command forces the whole proof matrix.
+
 Minimal gate contract:
 
 1. One checked-in command, preferably `npm run verify:release`.
