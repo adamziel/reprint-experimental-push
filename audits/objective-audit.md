@@ -32,7 +32,7 @@ Design docs, model tests, and fixture smokes are useful, but they are indirect f
 
 For this audit:
 
-- `Executable proof` means the test or command exercises the claimed behavior directly.
+- `Executable proof` means the test or command exercises the claimed behavior directly at the claimed boundary.
 - `Lab/fixture proof` means the check is useful but still scoped to fixtures, local Playground, or a temporary package route.
 - `Docs-only proof` means the claim appears in prose, script names, or diagrams, but not in a required executable gate.
 - `Release blocker` means the objective still fails closed until stronger proof exists.
@@ -41,7 +41,7 @@ For this audit:
 
 | Requirement | Executable proof | Lab/fixture proof | Docs-only proof | Missing proof | Release blocker |
 | --- | --- | --- | --- | --- | --- |
-| One-way pull base, one-way push to live source | Planner and fixture smokes reject unsafe overwrites and preserve remote-only changes. | Local Playground push flows and protocol fixtures approximate the live boundary. | `README.md`, `docs/protocol.md`, and `docs/playground-topology.md` describe the intended flow. | A live-source push boundary that mutates the actual source site after a pull-base snapshot. | Yes: no executable evidence reaches the live source boundary. |
+| One-way pull base, one-way push to live source | Planner and fixture smokes reject unsafe overwrites and preserve remote-only changes in modeled sites. | Local Playground push flows and protocol fixtures approximate the live boundary. | `README.md`, `docs/protocol.md`, and `docs/playground-topology.md` describe the intended flow. | A live-source push boundary that mutates the actual source site after a pull-base snapshot. | Yes: no executable evidence reaches the live source boundary. |
 | Preserve all affected WordPress data shapes | Model and fixture tests cover selected rows, files, plugin-owned records, and graph-safe conflicts. | File and DB fixture checks exercise some data shapes and redaction paths. | `docs/recovery/acceptable-states.md` and `docs/invariants/no-overwrite.md` describe the desired data shapes. | Exhaustive live-source coverage for arbitrary DB rows, files, plugin-owned data, graph identity, and same-plan rewrites. | Yes: indirect coverage cannot prove no-loss behavior. |
 | Survive crash/retry/replay/duplicate/stale-claim/lease-expiry cases | Process-kill, stale-claim, idempotency, and replay smokes exist. | Recovery and journal tests model restart states and append semantics. | `docs/recovery/apply-journal.md` describes the intended recovery contract. | Production-backed journal durability, lease/fencing behavior, and crash recovery on the real storage and transport path. | Yes: the crash matrix is still fixture-scoped. |
 | Enforce auth/session/lease/fencing/journal/graph identity/plugin-driver checks | Authenticated local Playground routes, DB journal slices, and graph assertions exist in lab scope. | Script-level smokes and benchmark model checks refuse some unsafe shortcuts. | `docs/executor.md`, `docs/protocol.md`, and `fixtures/protocol/*` describe the checks. | A required production release gate that enforces all of them together. | Yes: the checks are split across optional commands only. |
