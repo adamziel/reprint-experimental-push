@@ -33,6 +33,10 @@ the same path returns live-looking output from a copied or fixture-backed
 executor. A production claim must show the exact live boundary, the exact
 stale drift case, and the exact fresh retry artifact on this branch; without
 those three pieces, the wording is only compatibility or design context.
+That includes lab/fixture route names that mimic production paths: a matching
+URL family can still hide a copied executor, so the claim must also show the
+preserved remote, the stale rejection point, and the fresh live-hash retry
+scope for the same boundary before any production-grade wording is allowed.
 
 Anti-trap clarification: a readable manual-review artifact can help audit the
 history of a boundary, but it is not retry authority unless the branch also
