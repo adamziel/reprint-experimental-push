@@ -142,6 +142,20 @@ retry. If the branch cannot show those live-boundary proofs here, the source
 note remains design context only, even when the upstream state is named
 precisely or the route/package/reviewer wording matches.
 
+Release gate for the remaining gap:
+
+- any comparison note, readable manual-review artifact, or `finalMatchesLocal`
+  result is audit/compatibility evidence only until this branch shows the same
+  live boundary with preserved-remote evidence, stale-authority rejection
+  before the first write, a retry scope rebuilt from live hashes, and
+  old/new/blocked classification for every touched surface;
+- any late-discovered plugin-owned surface is a new live boundary, not an
+  inherited success case, unless it was explicitly enumerated before write or
+  separately blocked with its own preserve / reject / retry cycle; and
+- any "manual resolution" claim that does not name the rejected boundary,
+  preserved remote, and fresh live-hash retry scope is false reliability, not
+  production-grade push support.
+
 Must change before the project can claim production-grade push support:
 
 - the branch must show the same live boundary rerun on this worktree against
