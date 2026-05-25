@@ -822,6 +822,11 @@ under load:
   is rejected because planning evidence, cached digests, and a pause can reduce
   recovery work, but they cannot prove which chunk acknowledgements survived
   the pause or restore the guarded publish barrier.
+- compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-
+  after-pause is rejected because planning evidence and cached receipts can
+  reduce replay work, but they cannot prove the bounded queue order, the
+  surviving acknowledgements, or the guarded publish barrier after a pause or
+  crash.
 - compressed-remote-index-and-compressed-chunk-ledger-skips-large-upload-publish
   is rejected because compressed planning evidence and compressed chunk ledgers
   can trim replay work, but they cannot prove which chunk acknowledgements
