@@ -314,6 +314,11 @@ Current critic bar for this baseline:
   production wording by itself, and the newer supervised reliable-executor
   remote head `68664884` still does not replace the required live rerun on
   this branch.
+- The supervised lane's completed `verify:release` run is material evidence
+  of improved lab fidelity, but it still stops at retained-source proof; it
+  does not show a production WordPress auth/session lifecycle, preserved
+  remote after rejection, or retry-safe recovery on a real local,
+  Playground, or Docker source.
 - The next acceptable proof must move from local retained-source evidence to
   production WordPress auth/session lifecycle and durable journal semantics,
   with graph identity and plugin-driver coverage explicit on the same live
