@@ -7788,6 +7788,58 @@ test('durable recovery boundaries preserve old-remote failures and completed rep
   );
 });
 
+test('durable replay after an old-remote failure stays append-only and does not duplicate inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      failAfterDependencyValidation: true,
+      durableJournal,
+    }),
+  );
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.details.recovery.status, 'old-remote');
+  assert.ok(failure.details.recovery.artifacts.journal, 'old-remote failure must keep journal artifacts');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(
+    Object.values(replay.site.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length,
+    1,
+    'completed replay must not duplicate inserted rows after an earlier failure',
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'journal-replayed' && record.state === 'fully-updated-remote'),
+    true,
+  );
+});
+
 test('stale completed replay blocks when the remote drifts outside the completed journal envelope', () => {
   const base = baseSite();
   const local = baseSite();
