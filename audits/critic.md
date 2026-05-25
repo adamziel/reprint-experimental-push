@@ -161,6 +161,15 @@ only, not production-grade push support. That includes lab-shaped route
 smokes, production-shaped wrapper names, and review notes that do not
 preserve the rejected remote for audit.
 
+Any claim that calls this state "production-grade", "release-ready", or
+"safe to push" before the checklist is satisfied is false reliability, not a
+minor wording issue. Scenario: a note says the branch is ready because manual
+resolution happened, a source note looks similar, or a live preflight wrapper
+returned green. Missing proof: the remote was not preserved and auditable, the
+retry scope was not rebuilt from fresh live hashes, and the touched surfaces
+were not classified old, new, or blocked on the actual live boundary. In that
+case the wording must fail closed.
+
 The same run also needs an explicit conflict-policy decision for every touched
 surface. Scenario: a reviewer says "manual resolution" without saying whether a
 surface was blocked, preserved, retried, or sent to manual review after the
