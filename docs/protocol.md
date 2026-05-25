@@ -107,6 +107,9 @@ The machine-readable bridge is split across the fixtures:
   one-local ladder in a shorter stage-by-stage proof with the pull base,
   session minting, dry-run receipt, apply-time revalidation, journal
   inspection, and inspect-first recovery all pinned together.
+- `push-production-recovery-inspect-contract.json` captures the compact
+  inspect-first recovery proof with the auth floor, live evidence, lease
+  fencing, and `8080` topology in one place.
 - `push-recovery-boundary-contract.json` captures the compact inspect-first
   recovery boundary with the auth floor and Docker/Playground topology in one
   place.

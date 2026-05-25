@@ -72,8 +72,8 @@ identity across `remote-base` and `remote-changed`:
   ties the pull provenance, the production push ladder, the one-remote,
   one-local topology, and inspect-first recovery into one reviewable object.
 - `push-production-recovery-inspect-contract.json` is the compact proof that
-  recovery inspect stays read-only while the journal row, lease fence, auth
-  floor, and `8080` topology still match the write path.
+  recovery inspect stays read-only while the journal row, lease fence, live
+  evidence, auth floor, and `8080` topology still match the write path.
 - `push-protocol-extension-contract.json` is the top-level production ladder
   proof that explicitly pins preflight, remote snapshot hash listing,
   dry-run plan upload, batched apply, journal inspect, and inspect-first
