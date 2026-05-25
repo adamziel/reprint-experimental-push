@@ -44,6 +44,10 @@ them out of production wording until the live write path is proven:
 
 - "The route is production-safe" when the only evidence is route shape,
   packaged-plugin mounting, or `finalMatchesLocal`.
+- "The route is production-safe because the source notes mention the same
+  feature" when the notes were not re-verified against the current upstream
+  commit or worktree and the branch has not reproduced the live mutation
+  boundary.
 - "Manual resolution is enough" when the stale artifact can be reused after a
   drift, widened to a different surface, or applied without a fresh live
   snapshot.
@@ -204,6 +208,11 @@ evidence for all of these, not just a plausible design:
   cites the source notes must state whether the upstream behavior was
   re-verified against the current commit or worktree state; if it was not,
   the note is comparison context only and cannot support production wording.
+- A doc, PR description, review comment, or status comment must never treat a
+  route-shape smoke plus a source-note citation as production proof. If the
+  source note was not re-verified against the current upstream commit or
+  worktree, the claim is still historical context and the live write path
+  remains unproven.
 - A route that looks production-shaped, returns live hashes, or passes a
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
