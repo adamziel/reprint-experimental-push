@@ -55,6 +55,7 @@ Current command-surface gap:
 - The current production-shaped routes still label themselves `labBacked: true`, so the real remote/local topology is still unproven.
 - The practical meaning is simple: `npm test` can stay green while the repository still has no mandatory command that can certify no data loss, reliability, or speed on the live source.
 - A direct filesystem check still finds no `.github` tree in this checkout, so there is also no checked-in workflow entrypoint that could enforce a missing release gate from the repository side.
+- The missing command is concrete: there is no checked-in `verify:release` or `release` entrypoint that runs a live-source preflight and fails closed on missing live proof.
 
 Release preflight absence:
 
@@ -74,6 +75,8 @@ Release command audit:
 - `test:recovery:file-journal` proves file-backed restart behavior only
 - there is no checked-in workflow or `.github` tree in this checkout that can upgrade regression evidence into a release gate
 - the current green suite is regression evidence, not proof of no data loss, reliability, or measured speed on the live push path
+- the weakest current claim is not "the tests are incomplete" but "the real-site push preflight command already exists"; that claim is false in this checkout
+- the actionable gap is the missing enforced command, not more fixture-only coverage
 
 ## Release Gate Definition
 
@@ -157,6 +160,7 @@ Release-command check:
 - that absence is the top release blocker because it leaves fixture-only and lab-backed work able to stay green without proving the live boundary
 - the missing artifact is a real-site push preflight command that fails closed on missing live-source proof
 - any new fixture-only or lab-only work remains insufficient for shipping until a checked-in release command exists and fails closed on missing live-source proof
+- new fixture-only work cannot close the blocker because the blocker is the missing live-source command, not the current regression suite
 
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
@@ -196,7 +200,7 @@ Proof ledger:
 | Lab / fixture proof | Playground smokes and route/package helpers still self-identify as `labBacked: true` | Support evidence, not release proof |
 | Docs-only proof | The objective and blocker notes correctly describe the intended live-source release boundary | Explanatory only |
 | Missing proof | Live-source apply-time mutation, durable production journal, lease/fence enforcement, graph identity proof, plugin-data-driver proof, and measured live-path speed | These are still required before release |
-| Release blocker | No checked-in real-site push preflight command or workflow fails closed on the missing live-source proof set, and no checked-in default entrypoint closes the gap | Release remains blocked |
+| Release blocker | No checked-in real-site push preflight command or workflow fails closed on the missing live-source proof set, and no checked-in default entrypoint closes the gap | Release remains blocked; fixture-only work cannot change that |
 
 ## Test Audit
 
