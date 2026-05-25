@@ -648,44 +648,56 @@ try {
 }
 
 async function startPlaygroundServer(name, blueprintPath) {
-  const port = await findLocalPort();
-  const baseUrl = `http://127.0.0.1:${port}`;
-  const args = [
-    '--yes',
-    '@wp-playground/cli@latest',
-    'server',
-    '--blueprint',
-    blueprintPath,
-    '--mount',
-    `${repoRoot}:/workspace`,
-    '--mount',
-    `${muPluginDir}:/wordpress/wp-content/mu-plugins`,
-    '--site-url',
-    baseUrl,
-    '--port',
-    String(port),
-    '--workers',
-    '1',
-    '--verbosity',
-    'quiet',
-  ];
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
+    const port = await findLocalPort();
+    const baseUrl = `http://127.0.0.1:${port}`;
+    const args = [
+      '--yes',
+      '@wp-playground/cli@latest',
+      'server',
+      '--blueprint',
+      blueprintPath,
+      '--mount',
+      `${repoRoot}:/workspace`,
+      '--mount',
+      `${muPluginDir}:/wordpress/wp-content/mu-plugins`,
+      '--site-url',
+      baseUrl,
+      '--port',
+      String(port),
+      '--workers',
+      '1',
+      '--verbosity',
+      'quiet',
+    ];
 
-  const child = spawn('npx', args, {
-    cwd: repoRoot,
-    env: process.env,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+    const child = spawn('npx', args, {
+      cwd: repoRoot,
+      env: process.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
-  let output = '';
-  child.stdout.on('data', (chunk) => {
-    output += chunk;
-  });
-  child.stderr.on('data', (chunk) => {
-    output += chunk;
-  });
+    let output = '';
+    child.stdout.on('data', (chunk) => {
+      output += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk;
+    });
 
-  await waitForServer(child, baseUrl, () => output);
-  return { name, baseUrl, child };
+    try {
+      await waitForServer(child, baseUrl, () => output);
+      return { name, baseUrl, child };
+    } catch (error) {
+      const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
+      await stopExitedServer(child);
+      if (!/EADDRINUSE/i.test(logs) || attempt === 8) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Unable to start Playground server for ${name} after retrying port collisions`);
 }
 
 async function stopPlaygroundServer(server) {
@@ -694,6 +706,14 @@ async function stopPlaygroundServer(server) {
   }
   server.child.kill('SIGTERM');
   await waitForExit(server.child, 12_000);
+}
+
+async function stopExitedServer(child) {
+  if (child.exitCode !== null) {
+    return;
+  }
+  child.kill('SIGTERM');
+  await waitForExit(child, 12_000);
 }
 
 async function exportSnapshot(name, baseUrl) {
