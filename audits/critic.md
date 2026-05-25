@@ -43,7 +43,9 @@ Concrete failure scenarios that still block production wording:
 - Reprint, ZS-Sync, or ForkPress comparisons: missing proof is the exact
   upstream state plus a rerun of the same live boundary on this branch, not
   route shape, package layout, reviewer wording, fixture replay, or a
-  readable review artifact reused as authority.
+  readable review artifact reused as authority; if the comparison does not
+  name what the note proves here and what it does not prove here, it stays
+  historical context only and cannot authorize a retry boundary.
 
 What must change before any production-grade push claim:
 
