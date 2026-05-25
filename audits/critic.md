@@ -14,6 +14,9 @@ Release gate for any production wording:
   proof or a hard block before write.
 - Show the full plugin-owned surface for the claim, including anything found
   late, and hard-block unknown or unvalidated surfaces.
+- Show that any plugin-owned surface discovered only after the first write
+  is classified as blocked, not retroactively folded into a success claim or
+  treated as a safe continuation without fresh live evidence.
 - Show each touched store as old, new, or blocked, and show retry rebuilt
   scope from fresh live evidence instead of inheriting the old decision.
 - Show that any success wording is not based on a readable review artifact,
