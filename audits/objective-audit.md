@@ -238,11 +238,11 @@ Without that command, every passing test remains support evidence only.
 
 ## Weakest Current Claim
 
-The weakest claim is any implication that the current suite can certify the live-source release boundary. That claim is unsupported for one simple reason: there is still no required command that must touch live source storage and then emit a release verdict in the same run, so the repo can still go green while the release decision remains unmade.
+The weakest claim is any sentence that treats the current green suite as proof of release readiness. That claim fails because no required command must touch live source storage and emit a machine-checkable verdict in the same run, so the repository can still go green while the release decision remains unmade.
 
-That makes the current green status a regression signal, not a release signal. The audit should treat every fixture, lab, refusal, or benchmark result as supporting evidence only until one enforced command proves the live-source apply boundary in the same invocation.
+That makes the current green status a regression signal, not a release signal. Treat every fixture, lab, refusal, or benchmark result as support evidence only until one enforced command proves the live-source apply boundary in the same invocation and fails closed when proof is missing.
 
-- No required command exists that must reach the live-source boundary and emit a machine-checkable release decision.
+- No required command exists that must reach the live-source boundary and emit a release decision.
 - The suite can still go green without proving live-source mutation, crash survival, replay safety, or throughput on the real path.
 - `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
