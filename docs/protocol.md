@@ -107,14 +107,21 @@ That ladder is the production contract in miniature:
   live hashes prove the action
 
 The one-remote, one-local, one-drift-witness test shape is the same in Docker
-and Playground: `remote-base` seeds the persisted pull base, `local-edited`
-holds the imported local edits, `remote-changed` is the same remote identity
-observed later after drift, and `runner` is the only process allowed to
-compare, upload, inspect, and recover. That is the compact end-to-end proof
-that dry-run and apply are separate remote operations, apply revalidates live
-evidence before every batch and at the storage boundary, and recovery starts
-with inspect before any mutating repair. Browser-visible inspection must stay
-on the sandbox-provided `8080` ingress through a local-only proxy.
+and Playground:
+
+- `remote-base` seeds the persisted pull base and is the first observation of
+  the remote identity.
+- `local-edited` holds the imported local edits that become the candidate plan.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only process allowed to compare, upload, inspect, revalidate,
+  and recover.
+
+That is the compact end-to-end proof that dry-run and apply are separate
+remote operations, apply revalidates live evidence before every batch and at
+the storage boundary, and recovery starts with inspect before any mutating
+repair. Browser-visible inspection must stay on the sandbox-provided `8080`
+ingress through a local-only proxy.
+
 The same proof shape is captured in
 [`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json)
 where `remote-example` and `local-dev-site` act as the concrete lab sites for
@@ -127,10 +134,11 @@ The production test topology can be written as a short matrix:
 | `remote-base` | `remote-base` | `remote-base` | Seeds the persisted pull base and the live remote identity. |
 | `local-edited` | `local-edited` | `local-edited` | Holds the imported local edits that form the candidate plan. |
 | `remote-changed` | `remote-changed` | `remote-changed` | Reuses the same remote identity later to prove drift after dry-run. |
-| `runner` | `runner` | local test process | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
+| `runner` | `runner` | local test process | Owns preflight, snapshot listing, dry-run, apply, journal inspect, revalidation, and recovery. |
 
 The same matrix is the proof that the same remote identity is observed twice,
-not that two different remotes were involved.
+not that two different remotes were involved. It also expresses the local
+edited site as an imported clone rather than a second remote source.
 
 The smallest machine-readable proof for that topology is
 [`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).

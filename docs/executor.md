@@ -186,6 +186,19 @@ recomputing provenance locally:
 7. journal and recover inspect durable evidence first, then permit mutating
    recovery only when fresh live hashes prove the action
 
+For test topology, the shortest production proof is:
+
+| Role | Docker | Playground | Meaning |
+| --- | --- | --- | --- |
+| `remote-base` | `remote-base` | `remote-base` | Seeds the persisted pull base and the first remote observation. |
+| `local-edited` | `local-edited` | `local-edited` | Holds the imported local edits that produce the candidate plan. |
+| `remote-changed` | `remote-changed` | `remote-changed` | Reuses the same remote identity later to witness drift. |
+| `runner` | `runner` | local test process | Owns preflight, snapshot listing, dry-run, apply, journal inspect, revalidation, and recovery. |
+
+That matrix is the proof that Docker and Playground are testing one remote
+site plus one local edited site, not two separate remotes. It also makes the
+drift witness explicit so apply-time revalidation can fail closed after dry-run.
+
 The importer never rewrites the stored base package to match later live
 evidence. It is read-only provenance for later push sessions, not a repair
 mechanism.
