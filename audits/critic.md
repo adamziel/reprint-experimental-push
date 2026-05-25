@@ -9,6 +9,10 @@ Release-gate checklist for production-readiness wording:
 - Name the exact live write path and the exact stale-remote drift case it
   survived; route shape, package layout, and `finalMatchesLocal` stay
   compatibility evidence only.
+- Name the exact source-note revision or worktree state being compared, and
+  say whether this branch reverified that exact upstream state at the same
+  live mutation boundary; otherwise the comparison is historical context
+  only.
 - Name the exact upstream revision or worktree state for any Reprint,
   ZS-Sync, or ForkPress comparison, plus the exact live write boundary that
   was reverified here; otherwise the comparison is historical context only.
@@ -20,6 +24,9 @@ Release-gate checklist for production-readiness wording:
   the first write.
 - Show that the retry rebuilt scope from fresh live hashes after drift,
   instead of inheriting the old decision or a stale manual-review artifact.
+- Show that any readable stale manual-review artifact stayed audit-only after
+  drift, could not authorize a retry, and could not be widened into a new
+  row, file, relationship-bearing record, or plugin-owned surface.
 - Show the create-time identity decision explicitly: either a durable remap
   proof or a hard block before write.
 - Show the complete plugin-owned surface list for the claim, including any
@@ -30,6 +37,9 @@ Release-gate checklist for production-readiness wording:
   including what was written, what was blocked, what remains safe to retry,
   and what must not be widened on retry because the live remote drifted or
   because a hidden plugin-owned store still has unreconciled state.
+- Show that a green hash, endpoint match, copied-lab mount, or route-shaped
+  smoke is only compatibility evidence unless the same live mutation
+  boundary also rejected stale authority before mutation on a drifted remote.
 - If Reprint, ZS-Sync, or ForkPress are cited, name the exact upstream
   revision or worktree state and say whether it was reverified at the same
   live mutation boundary; otherwise the comparison is historical context
