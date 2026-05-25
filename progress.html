@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof is still lab/model scope: 82 Node tests pass, packaged push accepts only scoped credentials, stale graph references block safely, and guarded benchmark claims fail closed. Production push remains blocked by durable auth, journal, lease, graph, and plugin-driver proof.</p>
-        <time class="update-stamp" datetime="2026-05-24T23:24:00+02:00">Last updated: May 24, 2026, 23:24 CEST</time>
+        <p class="lead">Current proof now includes a passing same-plan graph identity test: `node --test --test-name-pattern="allows local postmeta references to a post created by the same plan" test/push-planner.test.js` succeeded, and the graph-identity lane pushed cleanly. The broader production gate is still closed until the merged evidence set catches up.</p>
+        <time class="update-stamp" datetime="2026-05-26T00:31:00+02:00">Last updated: May 26, 2026, 00:31 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">82 Node tests passing</span>
           <span class="pill">Packaged plugin route passing</span>
@@ -483,6 +483,7 @@
           <span class="pill">Unscoped creds rejected</span>
           <span class="pill">Graph refs blocked</span>
           <span class="pill">Recovery claim fenced</span>
+          <span class="pill">Same-plan proof landed</span>
           <span class="pill">Production push blocked</span>
         </div>
       </div>
@@ -502,8 +503,8 @@
         <span>production readiness</span>
       </div>
       <div class="metric">
-        <strong>0</strong>
-        <span>production gates proven</span>
+        <strong>1</strong>
+        <span>new graph-identity proof</span>
       </div>
       <div class="metric">
         <strong>4</strong>
@@ -553,10 +554,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>82 Node tests pass; scoped credential proof, graph blocking, recovery fencing, and guarded benchmark evidence landed.</span></li>
-            <li><strong>Not going well</strong><span>Production auth, journal, leases, graph mapping, and plugin drivers remain unproven.</span></li>
-            <li><strong>Progress change</strong><span>Lab/model evidence moved up across four lanes; production readiness stayed blocked.</span></li>
-            <li><strong>Next nudge</strong><span>Replace lab auth/session/journal internals and prove graph identity mapping.</span></li>
+            <li><strong>Going well</strong><span>The same-plan graph identity test now passes, and the lane branch was pushed cleanly.</span></li>
+            <li><strong>Not going well</strong><span>The merged production gate is still closed; the newer graph proof has not yet been reflected in the broader end-to-end evidence set.</span></li>
+            <li><strong>Progress change</strong><span>There is now executable evidence for same-plan graph identity instead of only the earlier timeout.</span></li>
+            <li><strong>Next nudge</strong><span>Keep the page dated and explicit about the proof split between lane evidence and merged production evidence.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>

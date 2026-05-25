@@ -4,25 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-24 - Current Supervisor Snapshot
+## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `82` Node tests pass. The production-shaped, packaged-plugin, and
-  authenticated HTTP smokes pass against graph-safe route fixtures.
-- New proof: push routes now accept only explicitly provisioned push-scoped
-  Application Password entries. The packaged smoke rejects both an
-  unprovisioned alternate credential and an unscoped administrator Application
-  Password with `401`, then applies seven graph-safe mutations.
-- Also merged: stale WordPress graph references are blocked, stale recovery
-  claims fence old workers before mutation, and guarded executor benchmark
-  evidence refuses production throughput claims when proof is missing.
-- Trend: no-data-loss, recovery, fast-path, and reliable-executor evidence all
-  moved up in lab/model scope. Production readiness is still blocked.
-- Blocker: production credential lifecycle, durable storage, leases/fencing,
-  full WordPress graph identity mapping, and arbitrary plugin drivers remain
-  unproven.
-- Next nudge: replace lab-backed auth/session/journal internals with
-  production lifecycle and durable journal guarantees, then prove graph identity
-  mapping instead of dropping blocked graph edges from route smokes.
+- Status: `node --test --test-name-pattern="allows local postmeta references to a post created by the same plan" test/push-planner.test.js`
+  passed, and the lane pushed the graph-identity branch successfully. The
+  earlier `timeout 180s node scripts/playground/push-protocol-smoke.mjs`
+  result still exists, but it is no longer the newest proof.
+- New proof: same-plan graph identity now has a concrete passing Node test.
+- Trend: evidence improved for the planner lane, while the broader production
+  gate is still not closed on `main`.
+- Blocker: the merged production path still needs a visible end-to-end proof
+  set before the release gate should open.
+- Next nudge: keep the gate closed until the merged evidence set matches the
+  lane proof, then reassess whether a smaller fallback assertion is still
+  needed.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and keeps details behind links.
 

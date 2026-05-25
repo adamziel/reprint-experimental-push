@@ -1,9 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-24 23:24 CEST
+Last updated: 2026-05-26 00:31 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 00:31 CEST - Same-Plan Graph Proof Lands
+
+- Going well: `node --test --test-name-pattern="allows local postmeta references to a post created by the same plan" test/push-planner.test.js` passed, and the lane pushed the graph-identity branch cleanly.
+- Not going well: the broader production gate is still not closed on `main`, so the release gate should stay conservative until the merged proof is visible there.
+- Progress change: there is now executable evidence for same-plan graph identity instead of only the earlier smoke timeout.
+- Next nudge: keep the page brief, dated, and explicit that the graph-identity proof exists but the wider production gate remains closed.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Use the passing same-plan test as the current graph-identity proof, but keep the merged gate closed. |
+| Recovery | Keep the recovery proof bounded to executable evidence only. |
+| Reliable executor | Do not widen production claims past the merged evidence set. |
+| Fast paths | Leave benchmark claims blocked until the source smoke or a merged proof lands. |
+| Audit and critic | Re-check only after the timeout yields fresh evidence. |
+| Progress publisher | Keep the page dated, brief, and explicit about the proof split. |
 
 ## 2026-05-24 23:24 CEST - Scoped Credential And Graph Safety Refresh
 
