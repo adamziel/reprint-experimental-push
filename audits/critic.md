@@ -47,6 +47,20 @@ Source-note comparison rule:
   rejection point, and the fresh retry scope are recorded on this branch for
   the same boundary.
 
+Conservative upstream comparison summary:
+
+- Reprint only supports staged transport and resumability vocabulary. It does
+  not prove live push safety, remote preservation after drift, identity
+  remapping on create, plugin-owned allowlist coverage, or mixed-write
+  classification on this branch.
+- ZS-Sync only supports bounded discovery and resource-scanning vocabulary.
+  It does not prove source-site mutation, live drift rejection, hidden
+  plugin-state discovery, or retry authority for a live write boundary.
+- ForkPress only supports review and recovery vocabulary. It does not prove
+  that a readable manual-review artifact stays audit-only after drift, that
+  stale approval cannot be widened to a later boundary, or that this branch
+  preserved the remote while rebuilding retry scope from fresh live hashes.
+
 Release-gate checklist:
 
 - name the exact live write boundary and the exact stale-drift case rerun on
