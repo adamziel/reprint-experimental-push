@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 10:24:25
+
+<a id="2026-05-25-public-status-audit-102425"></a>
+
+- Updated [progress.html](../progress.html) so the public first screen now
+  names `npm run test:playground:production-shaped-release-verify`, the commit
+  `25c4ef54`, and the `LIVE_PREFLIGHT_OK` result.
+- Kept the status conservative: this remains lab evidence, and the real
+  WordPress executor/auth, recovery journal, Docker/Playground, and plugin
+  driver gates remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 10:06:00
 
 <a id="2026-05-25-public-status-audit-100600"></a>
