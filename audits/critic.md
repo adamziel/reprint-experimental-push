@@ -103,6 +103,21 @@ remote after reject, and separately proved any late-discovered plugin-owned
 surface was blocked or classified before retry. Provenance plus route family
 is not enough to become current retry authority.
 
+Comparison-specific release gate:
+
+- The comparison must name the exact upstream commit or worktree state and
+  the exact live boundary on this branch that was rerun.
+- The comparison must say what the cited Reprint, ZS-Sync, or ForkPress note
+  proves here and what it does not prove.
+- The comparison must show the preserved remote, the stale-authority
+  rejection point, and the fresh retry scope rebuilt from live hashes.
+- The comparison must separately account for any late-discovered plugin-owned
+  surface; if that surface was not independently blocked or classified, the
+  comparison remains historical context only.
+- The comparison must not promote route shape, package mount shape,
+  fixture replay, readable review output, or `finalMatchesLocal` into retry
+  authority.
+
 Concrete failure scenarios that still disqualify production wording:
 
 - Live remote drift: dry-run succeeds, the remote changes before apply, and
