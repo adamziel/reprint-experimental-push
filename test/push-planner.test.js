@@ -17785,6 +17785,51 @@ test('durable recovery writes the recovery-state boundary before journal-replaye
   assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
 });
 
+test('replaying a completed plan stays fully updated and does not duplicate durable replay records', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const firstReplay = applyPlan(completed.site, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  const secondReplay = applyPlan(firstReplay.site, plan, {
+    durableJournal: replayJournal,
+    journal: firstReplay.journal,
+  });
+  replayJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assertAcceptableRecoveryState(firstReplay.recoveryState);
+  assert.equal(firstReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(JSON.stringify(firstReplay.site), JSON.stringify(completed.site));
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assert.equal(secondReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(JSON.stringify(secondReplay.site), JSON.stringify(completed.site));
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    2,
+    'each completed replay should record one durable replay boundary',
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
+    3,
+    'the initial completion plus each completed replay should record a durable recovery-state boundary',
+  );
+});
+
 test('inspect-first replay on a drifted completed plan stays blocked with durable artifacts', () => {
   const base = baseSite();
   const local = baseSite();
