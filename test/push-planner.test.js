@@ -19562,3 +19562,44 @@ test('atomic apply recovery only permits old remote, fully updated remote, or bl
   assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
 });
+
+test('accepted post-failure recovery states are old remote, fully updated remote, or blocked recovery with artifacts', () => {
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'old-remote',
+      artifacts: { journal: { status: 'opened' } },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'fully-updated-remote',
+      artifacts: { journal: { status: 'completed' } },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: { status: 'completed' },
+        remote: { files: {} },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: { journal: { status: 'completed' } },
+    }),
+    false,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'partially-applied',
+      artifacts: { journal: { status: 'staged' } },
+    }),
+    false,
+  );
+});
