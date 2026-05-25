@@ -27,6 +27,14 @@ later drift observation of the same remote identity, and one runner:
 - `runner` is the only actor that may preflight, list hashes, dry-run,
   apply, inspect the journal, or recover
 
+That is the fixed production test topology in both Docker and Playground:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns preflight, snapshot listing, dry-run,
+  apply, journal inspect, and recovery
+
 The topology is intentionally minimal:
 
 - one remote source site, `remote-base`

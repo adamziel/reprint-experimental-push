@@ -25,6 +25,11 @@ The production push protocol is a fixed ladder:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
+That ladder is exercised in one fixed topology: one remote source site,
+one imported local edit site, one later drift observation of the same remote
+identity, and one runner that owns the push protocol calls in Docker and
+Playground.
+
 The production ladder is easiest to review when the proof set stays paired
 with the executor topology:
 
@@ -80,6 +85,15 @@ The same handoff can be read as a pull-stage to push-stage map:
 | Durable pull provenance | `push_journal` | Read-only evidence for later recovery. |
 | Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before any mutation. |
 | Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only after inspect and auth-floor checks pass. |
+
+The production topology is fixed to the same four roles in both Docker and
+Playground:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns preflight, snapshot listing, dry-run,
+  apply, journal inspect, and recovery
 
 That mapping preserves the pull pipeline boundaries instead of collapsing them
 into one mutable push session:
