@@ -122,6 +122,12 @@ identity across `remote-base` and `remote-changed`:
   `push-production-recovery-inspect-contract.json` are the paired production
   proofs for auth, session minting, journal rows, lease fencing, and
   inspect-first recovery on the same remote identity.
+- `push-production-topology-contract.json` is the compact proof that keeps
+  the immutable pull provenance, the production push ladder, and the
+  one-remote, one-local, one-drift topology aligned in one object.
+- `push-remote-liveness-topology-contract.json` is the compact proof that
+  keeps the topology and the dry-run/apply liveness split together while
+  still requiring apply-time revalidation.
 - `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
   listing clearly in the planning-only lane, including cursoring for larger

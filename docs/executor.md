@@ -262,6 +262,20 @@ This keeps the exporter/importer pipeline authoritative for the base package
 while making push a separate production write path that can only consume that
 persisted provenance.
 
+For review, the canonical executor chain is:
+
+1. exporter/importer create the immutable pull base package.
+2. `push_preflight` binds that package to the live remote identity and a
+   short-lived push session.
+3. `push_snapshot_hashes` stays planning-only.
+4. `push_plan_dry_run` returns a receipt, not a lock.
+5. `push_batch_apply` revalidates before every batch and again at the storage
+   boundary.
+6. `push_journal` remains read-only.
+7. `push_recover inspect` classifies recovery before any mutating repair.
+8. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe.
+
 In runbook form, the executor keeps the same order and boundary discipline:
 
 - exporter scans the merge base and coverage evidence

@@ -189,6 +189,22 @@ The machine-readable bridge is split across the fixtures:
   proof pair for auth, session minting, journal rows, lease fencing, apply
   revalidation, and inspect-first recovery on the same remote identity.
 
+For review and implementation work, the canonical production push chain is:
+
+1. pull exporter/importer create the immutable base package.
+2. `push_preflight` binds that package to one live remote identity and one
+   short-lived push session.
+3. `push_snapshot_hashes` lists live remote hashes for planning only.
+4. `push_plan_dry_run` uploads the canonical plan and returns a receipt, not
+   a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+6. `push_journal` records durable evidence without authorizing mutation.
+7. `push_recover inspect` reads the journal and fresh live evidence before
+   any mutating recovery branch.
+8. `push_recover auto|finish|rollback` may mutate only when inspect proves
+   the branch safe with the same auth floor as the write path.
+
 The compact proof chain is intentionally one-way:
 
 - pull exporter/importer produce the immutable base package that push consumes
