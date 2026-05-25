@@ -413,6 +413,10 @@ Before any production wording, the project must show:
 - a stale audit note, review comment, or handoff text is reused after remote
   drift, reminted auth, or a newly discovered plugin-owned surface, even if it
   sounded authoritative for the earlier boundary; and
+- a "manual resolution" note resolves the first visible conflict, then a
+  later plugin-owned option, custom table, registry row, or generated file is
+  discovered and silently treated as covered by the earlier note, so the
+  preserved remote can no longer be safely audited or retried; and
 - a lab or retained-source `verify:release` run is promoted to production
   evidence without the live WordPress auth/session boundary, preserved remote,
   apply-time revalidation, and journal durability on a real local, Playground,
