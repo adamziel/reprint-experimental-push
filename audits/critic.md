@@ -679,6 +679,10 @@ Changes that must happen before any production-grade push claim:
   with the stale remote hash set, the rejected approval, and the retry scope
   all named explicitly; route shape, packaged-plugin mounting, and
   `finalMatchesLocal` are only compatibility evidence.
+- Show that a readable stale manual-review artifact stayed audit-only after
+  drift, could not widen to a different row, file, relationship-bearing
+  record, or plugin-owned surface, and was replaced by a separately recorded
+  fresh retry artifact built from current live hashes.
 - Prove stale authority fails closed after live drift, while the rejected
   approval remains auditable but unusable for apply and cannot be widened to a
   different row, file, relationship-bearing record, or plugin-owned surface.
@@ -692,6 +696,10 @@ Changes that must happen before any production-grade push claim:
 - Prove partial file, DB, or plugin side effects are durably classified and do
   not let a retry widen the old approval, inherit stale scope, or treat a
   partially committed store as a fully successful push.
+- Keep any Reprint, ZS-Sync, or ForkPress comparison explicitly historical
+  unless the cited upstream commit or worktree state was reverified against
+  the same live boundary on this branch; route shape, fixture replay, and
+  `finalMatchesLocal` cannot promote a comparison into current proof.
 - Reverify any Reprint, ZS-Sync, or ForkPress comparison against the exact
   upstream commit or worktree state being cited, the exact live mutation
   boundary being claimed, and the branch-local same-boundary recheck, or
