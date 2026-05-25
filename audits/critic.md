@@ -5054,6 +5054,9 @@ worktree:
   ForkPress comparison, plus an explicit statement of what that note proves
   here and what it does not prove, including whether it says anything about a
   later boundary or only the original one.
+Historical source notes stay historical even when they match the same route
+family, package mount, or reviewer wording; they do not certify a later live
+retry boundary unless the branch separately reran that exact boundary here.
 If the branch cannot name those items for the exact live boundary, then any
 "manual resolution succeeded" wording is still false reliability, even when the
 route shape, fixture replay, or review artifact looks production-shaped. The

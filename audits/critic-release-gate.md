@@ -22,6 +22,7 @@ Do not use production wording unless the branch has all of the following for the
 - any claim of "production-grade push support" is rejected unless the same live boundary shows preserved-remote evidence, stale-authority rejection, fresh retry scope rebuilt from live hashes, and per-surface old/new/blocked classification; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
 - any remapped create target discovered during retry is treated as a new boundary until it is separately preserved, rejected, and retried with fresh live hashes; and
+- any claim that a historical Reprint, ZS-Sync, or ForkPress note proves a later live boundary must fail closed unless the note names the exact upstream state, says what it proves here, says what it does not prove here, and the same live boundary was rerun on this branch; and
 - proof for one live boundary does not transfer to a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface, even if the route family, package mount, fixture replay, or reviewer wording is the same; and
 - any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success; and
 - any claim that "manual resolution" succeeded without the preserved remote, the rejection point, and a fresh retry artifact rebuilt from live hashes for the same live boundary is false reliability, not success;
