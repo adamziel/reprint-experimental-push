@@ -45,7 +45,7 @@ try {
     );
     try {
       const client = authenticatedHttpClient({
-        sourceUrl: remoteServer.baseUrl,
+        sourceUrl: liveSourceUrl,
         credential: credentials,
         routeProfile: 'production-shaped',
       });
@@ -55,8 +55,8 @@ try {
       assert.equal(preflight.body.ok, true);
 
       const proof = await runAuthenticatedHttpPush({
-        sourceUrl: remoteServer.baseUrl,
-        base: await exportSnapshot('remote-base', remoteServer.baseUrl),
+        sourceUrl: liveSourceUrl,
+        base: await exportSnapshot('remote-base', liveSourceUrl),
         local: withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl)),
         username: credentials.username,
         applicationPassword: credentials.password,
@@ -74,6 +74,7 @@ try {
             {
               ok: false,
               topology: {
+                sourceUrl: liveSourceUrl,
                 remoteBase: remoteServer.baseUrl,
                 remoteChanged: remoteChangedServer.baseUrl,
                 localEdited: localServer.baseUrl,
@@ -172,6 +173,7 @@ try {
         {
           ok: true,
           topology: {
+            sourceUrl: liveSourceUrl,
             remoteBase: remoteServer.baseUrl,
             remoteChanged: remoteChangedServer.baseUrl,
             localEdited: localServer.baseUrl,

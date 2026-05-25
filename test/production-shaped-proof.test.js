@@ -170,6 +170,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
 
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
+    assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"remoteChanged": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"localEdited": "http:\/\/127\.0\.0\.1:\d+"/);
@@ -202,6 +203,7 @@ maybeTest('production-shaped release verify command fails closed when remote dri
 
     assert.equal(proof.status, 1, proof.stderr);
     assert.match(proof.stdout, /"ok": false/);
+    assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"drift": \{\s*"mode": "post-title",\s*"sameRemoteIdentity": true,\s*"changedHash": "[a-f0-9]{64}"\s*\}/);
     assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 412,\s*"code": "PRECONDITION_FAILED"\s*\}/);
     assert.match(proof.stdout, /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
