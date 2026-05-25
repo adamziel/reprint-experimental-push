@@ -8,6 +8,12 @@ The release gate stays closed because the live boundary is still not proven wher
 
 Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and real topology still need production-boundary proof too. They remain release blockers because they are not proven at the live apply boundary, even though the upstream verifier now covers more of the path than the local regression suite does.
 
+## 12h Delta
+
+The last 12 hours changed evidence, but not the release gates or the next owner. Current remote heads are `origin/lane/reliable-executor=e7de778c` and `origin/lane/independent-auditor=2febfecb`. The reliable-executor head `e7de778c` was cut at `2026-05-25 13:56:28 +0200` and still reports the boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`.
+
+Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The exact proof that would move one gate is a checked command from this checkout that emits the same live-boundary verdict as the remote lane, with apply-time auth/session validation, durable journal readback, and recovery evidence from the same invocation.
+
 ## Explicit Requirements
 
 The objective implies these minimum release requirements:
@@ -90,9 +96,3 @@ Minimum properties of the gate:
 ## Conclusion
 
 The repository has strong local regression, refusal, and journaling evidence. It does not yet have in-tree live-boundary proof that production auth/session lifecycle and durable journal semantics hold at apply time, and the remaining graph identity, plugin-driver, lease/fencing, preserved-remote drift, and topology claims are still only lab-backed or upstream-only. The release gate stays closed until this checkout owns a checked live-boundary verdict or an enforced default entrypoint that produces the same verdict here.
-
-## 12h Delta
-
-The last 12 hours changed evidence, but not the release gates or the next owner. Current remote heads are `origin/lane/reliable-executor=e7de778c` and `origin/lane/independent-auditor=2febfecb`. The reliable-executor head `e7de778c` was cut at `2026-05-25 13:56:28 +0200` and still reports the boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`; this audit lane only refreshed the written assessment.
-
-Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The one proof that would move a gate is a checked command from this checkout that emits the same live-boundary verdict as the remote lane, with apply-time auth/session validation, durable journal readback, and recovery evidence from the same invocation.
