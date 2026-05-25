@@ -104,6 +104,14 @@ The canonical proof stack for that scope is:
 | [`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json) | The push-session boundary, journal-row fence, and read-only recovery inspect rule. |
 | [`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json) | The same fence when recovery needs to prove finish, rollback, or block before mutating. |
 
+If a review needs the finer-grained auth and restart proof, add:
+
+| Fixture | What it proves |
+| --- | --- |
+| [`fixtures/protocol/push-auth-headers.json`](../fixtures/protocol/push-auth-headers.json) | Mutating requests must carry push-scoped HMAC headers at or above the current Reprint floor. |
+| [`fixtures/protocol/push-session-journal-proof.json`](../fixtures/protocol/push-session-journal-proof.json) | The minted session survives an interrupted apply only when the journal row and lease fence still prove the same claim. |
+| [`fixtures/protocol/push-recovery-inspect-contract.json`](../fixtures/protocol/push-recovery-inspect-contract.json) | Inspect reads the journal row and fresh live hashes before classifying finish, rollback, retry, or block. |
+
 The production sequence is fixed:
 
 1. `push_preflight` binds the persisted pull base to a live remote identity

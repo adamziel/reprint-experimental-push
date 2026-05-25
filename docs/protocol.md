@@ -261,6 +261,22 @@ Both harnesses keep browser-visible inspection on the sandbox-provided `8080`
 ingress through a local-only proxy, and both preserve the same remote identity
 across the base and drift observations.
 
+The remaining production proof for auth, sessions, journal rows, leases, and
+inspect-first recovery is split across focused fixtures:
+
+| Proof | What it fixes |
+| --- | --- |
+| `push-auth-headers.json` | Mutating calls require push-scoped HMAC headers that are at least as strict as the current Reprint floor. |
+| `push-auth-session-fencing-contract.json` | One minted push session stays fenced to one remote identity, one persisted pull base, and one journal row. |
+| `push-session-journal-proof.json` | The session, claim row, lease fence, and journal cursor survive ambiguous apply and restart. |
+| `push-auth-session-recovery-contract.json` | Mutating recovery stays behind the same auth floor and cannot run until inspect proves the path safe. |
+| `push-recovery-inspect-contract.json` | Inspect is read-only, reads the journal row and fresh live hashes, and classifies finish, rollback, retry, or block. |
+
+Those fixtures complete the production proof chain without widening the
+topology contract: auth is strict enough, the session is short-lived and
+fenced, the journal row is durable, the lease is enforced at the storage
+boundary, and recovery begins with inspect before any mutating repair.
+
 The machine-readable bridge between pull provenance and push execution is
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json).
 Use it when a test needs the importer-owned base package, the push stage
