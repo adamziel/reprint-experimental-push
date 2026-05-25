@@ -21,6 +21,10 @@ the live remote immediately before apply.
 - Remote-only plugin metadata or file changes do not block unrelated local file
   or row deletions when those deletions still satisfy the live remote hash
   check.
+- Remote-only plugin metadata or file changes do not block a live-preconditioned
+  delete or type swap when matching independent edits or type swaps are also
+  already in sync. The planner must keep the matching resources `already-in-sync`
+  and preserve the plugin drift as `keep-remote`.
 - When a plan mixes a live-preconditioned deletion with matching independent
   edits or type swaps, the matching resources stay `already-in-sync` and the
   deletion remains the only automatic mutation.
@@ -99,6 +103,10 @@ the resource key, the live remote hash observed during planning, and the
   drift when local mutations touch unrelated ordinary resources. The planner
   must preserve the remote plugin removal while still auto-applying only the
   safe unrelated mutation.
+- Remote-only plugin removals also stay preserved when a live-preconditioned
+  delete or type swap is mixed with matching independent edits or type swaps.
+  The removal stays `keep-remote`, and the matching resources stay
+  `already-in-sync`.
 - Unsafe file topology mutations are not emitted once a stop condition is
   found. Independent mutations may remain in the conflicted plan as
   hash-preconditioned audit evidence, but apply must refuse the whole non-ready
