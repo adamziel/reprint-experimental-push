@@ -206,6 +206,8 @@ The canonical proof stack for that executor story is the same one named in
 - `push-auth-session-journal-recovery-inspect-contract.json` for the compact
   proof that binds auth, session minting, journal rows, lease fencing, live
   drift, and inspect-first recovery into one object
+- `push-recovery-inspect-contract.json` for the read-only inspect gate that
+  must classify recovery before any mutation can proceed
 - `push-deployment-topology-contract.json` for the smallest topology-only
   contract that still proves the same remote identity twice, the imported
   local site, and the sandbox-provided `8080` ingress rule

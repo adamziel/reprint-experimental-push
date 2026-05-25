@@ -79,6 +79,9 @@ The machine-readable bridge is split across the fixtures:
 - `push-recovery-boundary-contract.json` captures the compact inspect-first
   recovery boundary with the auth floor and Docker/Playground topology in one
   place.
+- `push-auth-session-journal-recovery-inspect-contract.json` and
+  `push-recovery-inspect-contract.json` keep the read-only inspect gate
+  explicit before any mutating repair can run.
 - `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
   `push-remote-liveness-topology-contract.json` define the Docker and
   Playground test topology with one remote source, one imported local site,
