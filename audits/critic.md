@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and remote head `ec1c9952` surfacing protocol extension plus the earlier `0c703230` snapshot-hash proof. That is real progress, but it is still retained-source lab evidence, not production proof. It does not yet prove one rerunnable live WordPress mutation boundary on one exact source URL that preserves the rejected remote, re-enters the same auth/session after rejection, revalidates at apply time from fresh live hashes, writes through a lease-fenced durable journal on production-like storage, preserves graph identity under create-time remap, and covers late plugin-owned surfaces before the first write.
+The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and remote head `ec1c9952` surfacing protocol extension plus the earlier `0c703230` snapshot-hash proof. That is real progress, but it is still retained-source lab evidence, not production proof.
 
 The single blocker is still one rerunnable live mutation boundary on one exact source URL. Until that boundary preserves the rejected remote, re-derives authority from fresh live hashes at apply time, re-enters the same WordPress auth/session after rejection, and classifies plugin-owned surfaces before the first write, production wording stays false.
 
@@ -17,7 +17,7 @@ Worker-action checklist:
 - prove graph identity across create-time remap and late-discovered relationship-bearing records; and
 - prove plugin-driver coverage for late plugin-owned surfaces that appear outside the initial allowlist.
 
-The missing production proof is one rerunnable live mutation boundary on one exact source URL. That boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that exists, the retained-source proofs remain useful but non-production evidence. A wording change on this branch does not close the gap unless the remote lane shows the preserved rejected remote surviving refusal on that same live boundary, with the rejected source still inspectable after refusal and the auth/session state re-entered on that same rerunnable boundary.
+The missing production proof is one rerunnable live mutation boundary on one exact source URL. That boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that exists, the retained-source proofs remain useful but non-production evidence.
 
 What must happen before production wording is defensible:
 
@@ -53,9 +53,7 @@ Conservatively, the comparison is:
 
 That comparison must stay conservative even when the remote lane reports `verify:release`, `authSessionType`, `applyCommitted`, or `durableJournal.rows: 17`; those are useful lab signals, but they still do not prove the production WordPress auth/session lifecycle, lease-fenced journal semantics, graph identity, or plugin-driver coverage on one live boundary.
 
-If this branch lacks a command, file, or note that the supervised remote already has, treat that as a branch-local merge gap. Do not upgrade the release claim because of that local gap; the gate only opens when the same rerunnable live boundary exists and preserves the rejected remote.
-The supervised remote already improved the command surface and retained-source release verification, so the critique must not fall back to "no `verify:release` exists." The missing proof is the production WordPress boundary itself: live auth/session lifecycle, preserved-remote retention after rejection, lease-fenced durable journal semantics, create-time remap graph identity, and plugin-driver coverage all on one rerunnable live mutation.
-The remote lane's retained-source `verify:release` progress still counts as lab evidence, but it does not become production proof until the live WordPress boundary shows preserved-remote retention, fresh apply-time revalidation, lease/fenced journal semantics, graph identity, and plugin-driver coverage together on one rerunnable boundary.
+If this branch lacks a command, file, or note that the supervised remote already has, treat that as a branch-local merge gap. Do not upgrade the release claim because of that local gap; the gate only opens when the same rerunnable live boundary exists and preserves the rejected remote. The supervised remote already improved the command surface and retained-source release verification, so the critique must not fall back to "no `verify:release` exists."
 
 ## False reliability claims
 
@@ -70,14 +68,11 @@ The following should not be described as production-grade until they are proven 
 
 The presence of `verify:release` on the supervised remote lane is accepted as real lab progress, so command shape is no longer the blocker. Do not regress to "no release command exists" wording on this branch; the blocker is that the same rerunnable live boundary has not yet demonstrated production WordPress auth/session lifecycle, preserved-remote retention after rejection, durable journal lease/fencing on production-like storage, graph identity under create-time remap, and plugin-driver coverage together.
 
-The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
-
 ## Release gate reminder
 
 The retained-source `verify:release` run, minted session shape, and apply-revalidation proof are useful evidence, but they are still not the release gate. The release gate only opens when one rerunnable live boundary on one exact source URL preserves the rejected remote, revalidates from fresh live hashes at apply time, survives auth/session expiry and re-entry, writes through a lease-fenced durable journal, preserves graph identity across remap, and classifies late plugin-owned surfaces before the first write.
 
 Reprint, ZS-Sync, and ForkPress remain provenance, not retry authority. Reprint explains staged transport and resumability; ZS-Sync explains bounded discovery and cursoring; ForkPress explains merge-audit and crash-consistency vocabulary. None of them prove the missing branch-local live boundary, and none of them justify production wording here unless the same live mutation was rerun on this worktree with the rejected remote preserved and inspectable.
-The source notes are also not a substitute for the supervised remote's retained-source evidence: they can explain terminology, but they do not prove preserved-remote retention, apply-time revalidation, auth/session re-entry, lease/fenced storage, graph identity, or plugin-driver coverage on the live boundary that production wording requires.
 
 If the upstream notes are cited, they must be framed as source notes for vocabulary only:
 
@@ -233,4 +228,4 @@ If the next worker can only produce wording, local fixture output, or a manual-r
 
 The strongest blocker is still one named, rerunnable live release boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that rejects stale authority before the first write, preserves the rejected remote for audit, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation.
 
-That boundary must include auth/session expiry, refresh, and operator re-entry on the same source URL that was rejected, not just retained-source minting or a verdict string. Until that boundary exists, any production-grade push wording is false reliability, even though the supervised lane now has better retained-source evidence, a release-verification script on the remote branch, and an explicit auth/session lifecycle verdict. The current evidence still stops short of production proof because it does not show a preserved remote surviving rejection, stale authority blocked before the first write, a lease/fenced journal on production-like storage, graph identity under create-time remap, plugin-driver coverage for late-discovered surfaces, or a rerunnable apply-time retry that can reject stale manual resolution on the same live source URL.
+That boundary must include auth/session expiry, refresh, and operator re-entry on the same source URL that was rejected, not just retained-source minting or a verdict string. Until that boundary exists, any production-grade push wording is false reliability, even though the supervised lane now has better retained-source evidence, a release-verification script on the remote branch, and an explicit auth/session lifecycle verdict.
