@@ -105,6 +105,10 @@ Production-grade support is still blocked by these concrete gaps:
 - live remote drift can still be hidden by a lab-shaped smoke, because no
   rerunnable real-site command has yet preserved the rejected remote and
   printed the exact first-write rejection point on the same live boundary;
+- `npm run verify:release` is retained-source evidence, not production proof,
+  unless the same rerun also shows the live WordPress auth/session lifecycle,
+  durable journal semantics, graph identity, and plugin-driver coverage on a
+  real-site boundary;
 - create-time identity remapping can still fail silently, because the branch
   has not shown live apply-time identity evidence or a hard block before the
   write;
