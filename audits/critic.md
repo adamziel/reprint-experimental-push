@@ -1,10 +1,10 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane
-through remote head `68664884`, with `63a3502f` as an earlier retained-source
-proof point. That lane's completed `npm run verify:release` result, including
-`authSessionType`, minted session shape, `applyCommitted`, and
-`durableJournal.rows: 17`, is material retained-source lab evidence.
+through remote head `9975dfc9`, with `68664884` and `63a3502f` as earlier
+retained-source proof points. That lane's completed `npm run verify:release`
+result, including `authSessionType`, minted session shape, `applyCommitted`,
+and `durableJournal.rows: 17`, is material retained-source lab evidence.
 It is a real improvement over the earlier route-shape-only claims, but it is
 still not branch-local retry authority and it does not close the live-boundary
 gap on this worktree.
@@ -210,6 +210,19 @@ Primary critic finding:
   boundary exists here, any "production-grade push support" claim on this
   worktree is false reliability, even if the supervised reliable-executor lane
   already has retained-source replay, executor, and route-shape progress.
+
+The next acceptable proof from the supervised lane is now narrower and exact:
+
+- one rerunnable live release command on this worktree, against a real local,
+  Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- the executor identity and live auth/session boundary before the first write;
+- the preserved remote that stayed inspectable after rejection;
+- the exact rejection point before the first write;
+- dry-run receipt, apply-time revalidation, and journal/recovery inspection on
+  the same boundary; and
+- graph identity, plugin-driver coverage, and old/new/blocked classification
+  for every touched row, file, relationship-bearing record, and
+  plugin-owned surface before retry starts.
 
 What still blocks production-grade wording:
 
