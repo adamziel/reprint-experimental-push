@@ -16,6 +16,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 6. Plugin-driver coverage is not proven for plugin-owned surfaces outside the initial allowlist.
 7. The design still leaves hidden-loss modes where partial file, DB, cache, cron, and plugin side effects can mix without a production recovery artifact that cleanly classifies what committed, what was blocked, and what must remain preserved for audit or retry.
 8. There is still no proof of a single rerunnable boundary that can preserve the rejected remote, reject stale authority before the first write, rerun apply-time revalidation after fresh hashes are rebuilt, and cover plugin-owned surfaces that appear late on the same mutation.
+9. There is still no production proof that the journal can survive a real lease/fencing handoff on durable storage while the same boundary remains rerunnable after rejection.
 
 ## Hidden-loss scenarios
 
@@ -68,6 +69,8 @@ Before any doc or status line says "production-grade" or "release-ready", it mus
 - durable journal storage with lease/fencing on production-like storage;
 - graph identity for create-time remaps and late-discovered relationship-bearing records; and
 - plugin-driver coverage for any plugin-owned surface that appears outside the initial allowlist.
+
+Any claim that skips the live boundary, or replaces it with a retained-source harness or lab fixture, is still not production-grade.
 
 If any one of those bullets is missing, the wording must stay in the lab/prototype bucket.
 
