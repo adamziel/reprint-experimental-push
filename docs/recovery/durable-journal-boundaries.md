@@ -1,47 +1,25 @@
 # Durable Journal Boundaries
 
-This lane treats recovery as a hard contract: after any apply failure, the remote
-state must end up in exactly one of these states:
+The atomic apply path is only release-safe when every crash boundary lands in one of these outcomes:
 
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery`
+1. `old-remote`
+   - The remote stays unchanged.
+   - This covers failure before mutation, after staging, and after dependency validation.
+   - The journal can be open, staged, or dependency-validated, but it must remain inspectable.
 
-## Failure Boundaries
+2. `fully-updated-remote`
+   - Every planned mutation is committed.
+   - Replaying the same completed plan must be inert.
+   - Retry must not duplicate inserts or resurrect stale local data.
 
-The apply path must classify failures by the last durable boundary that was
-successfully recorded.
+3. `blocked-recovery`
+   - A partial remote mutation exists and recovery artifacts must stay available.
+   - Both the remote snapshot and the journal are required for inspection.
+   - Any partial remote mutation without a recovery artifact is a release blocker.
 
-- Before mutation:
-  - remote remains `old-remote`
-  - journal artifact is present and marked `opened`
-- After staging:
-  - remote remains `old-remote`
-  - journal artifact is present and marked `staged`
-- After dependency validation:
-  - remote remains `old-remote`
-  - journal artifact is present and marked `dependencies-validated`
-- Mid-apply partial commit:
-  - remote is `blocked-recovery`
-  - both remote and journal artifacts are preserved
+Apply-path hook points:
 
-## Replay Rules
-
-- A completed journal may be replayed only when the current remote already
-  matches the completed outcome.
-- Completed replay must be inert:
-  - no duplicate inserts
-  - no resurrection of stale local data
-  - no mutation of the remote snapshot
-- If the current remote drifts from the completed journal, replay must block and
-  preserve inspectable artifacts.
-
-## Release Bar
-
-A partial remote mutation without a recovery artifact is a release blocker.
-The durable journal must always leave behind enough evidence to classify the
-state as:
-
-- safe old remote
-- safe fully updated remote
-- blocked recovery with artifacts
+- `failBeforeMutation` keeps the remote old and records an `old-remote` recovery state.
+- `failAfterStaging` keeps the remote old and records the staged journal state.
+- `failAfterDependencyValidation` keeps the remote old and records the dependency-validated journal state.
+- A completed replay returns `fully-updated-remote` and must stay inert on retry.
