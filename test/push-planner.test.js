@@ -1284,6 +1284,8 @@ test('accepts only old remote, fully updated remote, or blocked recovery across 
     assert.equal(JSON.stringify(remote), snapshot, label);
     assertAcceptableRecoveryState(error.details.recovery);
     assertRecoveryStateArtifacts(error.details.recovery, expectedStatus);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
   }
 
   const completed = applyPlan(remote, plan);
@@ -1298,6 +1300,8 @@ test('accepts only old remote, fully updated remote, or blocked recovery across 
   assert.equal(replay.appliedMutations, 0);
   assertAcceptableRecoveryState(replay.recoveryState);
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
 test('replays a completed plan without reapplying mutations', () => {
