@@ -5,6 +5,57 @@ protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote source site, one imported local edit
 site, and one later drift observation of the same remote identity.
 
+## Canonical Execution Ladder
+
+The executor follows the same production ladder the protocol defines:
+
+1. Exporter/importer create and persist the immutable pull base package.
+2. `push_preflight` binds that package to one live remote identity and one
+   short-lived push session.
+3. `push_snapshot_hashes` stays planning-only and never becomes write
+   authority.
+4. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and at
+   the storage boundary.
+6. `push_journal` records durable evidence but never authorizes mutation.
+7. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+8. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe with the same auth floor as the write path.
+
+That means the executor is not a generic remote write loop. It is a
+single-remote, single-local production proof:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
+The pull/export/import pipeline is the only source of immutable push
+provenance:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable object the push executor
+  consumes after importer persistence
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning evidence only
+- `push_plan_dry_run` is an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary
+- `push_journal` is read-only durable evidence
+- `push_recover inspect` is read-only and must happen before any mutating
+  repair
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe and the auth floor still holds
+
 The concrete production proof shape is fixed:
 
 - one remote source site, `remote-base`
