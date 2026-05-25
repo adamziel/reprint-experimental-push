@@ -3003,6 +3003,44 @@ test('no-data-loss recovery stays within old remote, fully updated remote, or bl
   assert.equal(staleReplayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Externally edited after completion');
 });
 
+test('atomic apply recovery contract only accepts old remote, fully updated remote, or blocked recovery with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  for (const [label, options, expectedStatus] of [
+    ['failure before mutation', { failBeforeMutation: true }, 'old-remote'],
+    ['failure after staging', { failAfterStaging: true }, 'old-remote'],
+    ['failure after dependency validation', { failAfterDependencyValidation: true }, 'old-remote'],
+  ]) {
+    const current = baseSite();
+    const before = JSON.stringify(current);
+    const error = captureError(() => applyPlan(current, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(current), before, label);
+    assertRecoveryStateArtifacts(error.details.recovery, expectedStatus);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replay = applyPlan(JSON.parse(JSON.stringify(completed.site)), plan, { journal: completed.journal });
+
+  assert.equal(replay.appliedMutations, 0);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.db.wp_posts['ID:2'].post_title = 'Externally edited after completion';
+  const blocked = captureError(() => applyPlan(driftedRemote, plan, { journal: completed.journal }));
+
+  assert.ok(blocked instanceof PushPlanError);
+  assert.equal(blocked.details.recovery.status, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts.journal);
+  assert.ok(blocked.details.recovery.artifacts.remote);
+});
+
 test('durable apply journal classifies pre-commit failures as old remote', () => {
   const scenarios = [
     {
