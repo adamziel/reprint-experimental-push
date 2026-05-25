@@ -280,6 +280,11 @@ live mutation boundary. A precise note also cannot become retry authority
 unless it names the exact upstream revision or worktree state, the exact live
 write boundary on this branch, the exact stale-drift case, and the exact
 preserved remote that stayed inspectable after rejection.
+If a later-discovered row, file, relationship-bearing record, remapped create
+target, or plugin-owned surface is being discussed, the comparison note only
+applies if that later boundary was also rerun here with its own preserved-
+remote evidence and fresh live hashes; otherwise the earlier note stays
+historical context for the earlier boundary only.
 
 Source-note comparison matrix:
 
