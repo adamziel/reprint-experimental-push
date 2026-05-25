@@ -14008,3 +14008,52 @@ test('no-data-loss recovery replays completed plans without duplicating inserts 
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
+
+test('no-data-loss blocked partial recovery keeps inspectable artifacts and stays blocked on retry', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.details.recovery.status, 'blocked-recovery');
+  assertRecoveryStateArtifacts(failure.details.recovery, 'blocked-recovery');
+  assert.ok(failure.details.recovery.artifacts.journal, 'blocked partial recovery must keep journal artifacts');
+  assert.ok(failure.details.recovery.artifacts.remote, 'blocked partial recovery must keep remote artifacts');
+
+  const inspection = inspectRecoveryJournal({
+    journal: readRecoveryJournal(journalPath),
+    plan,
+    current: remote,
+  });
+  assert.equal(inspection.status, 'blocked-recovery');
+
+  const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retryError = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: retryJournal,
+      journal: failure.details.recovery.artifacts.journal,
+    }),
+  );
+  retryJournal.close();
+
+  assert.ok(retryError instanceof PushPlanError);
+  assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+  assertRecoveryStateArtifacts(retryError.details.recovery, 'blocked-recovery');
+  assert.ok(retryError.details.recovery.artifacts.remote, 'retry should keep remote artifacts');
+  assert.equal(retryError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+});
