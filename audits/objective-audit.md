@@ -36,21 +36,24 @@ blocker is structural: the repository still lacks one enforced release gate
 that runs the auth/session, durable journal, storage, graph identity,
 plugin-data-driver, real remote/local topology, crash-boundary, recovery, and
 benchmark checks in a single required command and fails closed when any of
-them are still fixture-scoped or lab-backed. The benchmark code already
-refuses an unsupported throughput claim by listing blockers such as missing
-durable chunk receipts, missing live remote preconditions, missing durable
-journal integrity, missing graph-identity evidence, missing recovery
-evidence, and non-production storage or row-apply capabilities. That is
-useful refusal logic, but it is still only refusal logic: it does not measure
-a production-shaped runtime or memory ceiling, and it cannot substitute for a
-required release command. `npm test` and `npm run test:playground` remain
-green even when the strongest checks are skipped, so the repo can look
-healthy while the objective remains unproven. The immediate action is to turn
-the strongest checks into one required `verify:release`-style gate that is
-wired into CI or another enforced entrypoint; until that exists, the current
-test story is stronger as a blocker generator than as release-grade proof of
-no data loss, reliability, or speed. The operational blocker is not "speed
-is weak"; it is "the live source boundary is still unproven."
+them are still fixture-scoped or lab-backed. `package.json` exposes only
+optional smokes and `npm test`; there is no checked-in `verify:release`
+command, and this tree does not contain a CI workflow that enforces the full
+safety matrix. The benchmark code already refuses an unsupported throughput
+claim by listing blockers such as missing durable chunk receipts, missing live
+remote preconditions, missing durable journal integrity, missing
+graph-identity evidence, missing recovery evidence, and non-production
+storage or row-apply capabilities. That is useful refusal logic, but it is
+still only refusal logic: it does not measure a production-shaped runtime or
+memory ceiling, and it cannot substitute for a required release command.
+`npm test` and `npm run test:playground` remain green even when the strongest
+checks are skipped, so the repo can look healthy while the objective remains
+unproven. The immediate action is to turn the strongest checks into one
+required `verify:release`-style gate that is wired into CI or another
+enforced entrypoint; until that exists, the current test story is stronger as
+a blocker generator than as release-grade proof of no data loss, reliability,
+or speed. The operational blocker is not "speed is weak"; it is "the live
+source boundary is still unproven."
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
@@ -244,7 +247,7 @@ fall into five buckets:
 | Executable proof | `npm test`, `test/push-planner.test.js`, `test/recovery-journal.test.js`, `test/performance-model.test.js`, `test/guarded-executor-benchmark.test.js` | Planner invariants, recovery classifications, redaction rules, refusal logic, and model-level safety constraints | Live source mutation, production topology, or measured speed on the release path |
 | Lab/fixture proof | `npm run test:playground`, `test:playground:authenticated-http-push`, `test:playground:db-journal-idempotency`, `test:playground:storage-guarded-db-write`, `test:playground:storage-guarded-file-write`, `test:playground:production-shaped-push`, `test:playground:production-plugin-package` | Useful end-to-end slices through local Playground, route shape, journal behavior, and fixture storage guards | Production WordPress semantics, durable production storage, or release-safe auth/session and lease/fencing enforcement |
 | Docs-only proof | `progress.html`, `docs/fast-paths.md`, `docs/supervised-lanes.md`, `supervision/README.md`, script names and comments | The intended release bar, data-loss concerns, and the desired check ordering are described | No executable proof that the described release bar is actually enforced |
-| Missing proof | No required `verify:release`-style command; no enforced CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks | Nothing by itself; this bucket marks the gap | The objective still lacks a single required release gate that fails closed when any safety proof remains optional |
+| Missing proof | No required `verify:release`-style command in `package.json`; no checked-in CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks | Nothing by itself; this bucket marks the gap | The objective still lacks a single required release gate that fails closed when any safety proof remains optional |
 | Release blocker | The best evidence still says `labBacked: true` for the production-shaped route/package smokes, the benchmark path remains refusal-only, and no required release gate exists to force the stronger checks together | Honest refusal to overclaim release readiness | Production no-data-loss, reliability, and speed remain unproven until the missing gate and live-source evidence exist |
 
 That split matters because a green default run still does not mean the release
