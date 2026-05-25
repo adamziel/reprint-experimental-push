@@ -2154,6 +2154,16 @@ dry-run, apply, journal, and recovery phases. That topology proves the dry-run
 receipt is not a lock, apply still revalidates fresh live state, and recovery
 still begins with inspect.
 
+The inspect-first recovery fence is part of the same proof:
+
+- `push_journal` records claim ownership, generation, lease expiry, and the
+  storage-boundary evidence that survives an interrupted apply.
+- `push_recover inspect` reads that journal and the live hashes before any
+  finish, rollback, or auto step.
+- `push_recover auto|finish|rollback` mutates only when the journal row and
+  fresh live hashes still agree.
+- a stale dry-run receipt never becomes recovery authority.
+
 For the sandboxed proof, the only exposed HTTP ingress is the sandbox-provided
 `8080` port, and any browser-visible inspection must stay on a local-only
 proxy. Remote tunnels are disallowed.

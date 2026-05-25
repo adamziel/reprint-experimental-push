@@ -497,6 +497,12 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(remoteLivenessContract.required_invariants.includes('dry-run and apply are separate remote operations'));
   assert.ok(remoteLivenessContract.required_invariants.includes('journal inspection is read-only and never authorizes mutation by itself'));
   assert.ok(remoteLivenessContract.required_invariants.includes('authentication must be at least as strict as current Reprint HMAC usage'));
+  assert.equal(authSessionRecoveryContract.recovery.inspect_mode, 'inspect');
+  assert.equal(authSessionRecoveryContract.recovery.mutates, false);
+  assert.ok(authSessionRecoveryContract.recovery.blocked_when.includes('fresh live hashes do not match the journaled target'));
+  assert.ok(authSessionRecoveryContract.recovery.blocked_when.includes('the journal cannot prove a safe finish or rollback'));
+  assert.ok(authSessionRecoveryContract.recovery.blocked_when.includes('the claim lease has expired and the worker is fenced'));
+  assert.ok(authSessionRecoveryContract.required_invariants.includes('inspect is read-only and must come before any mutating recovery mode'));
   assert.ok(headers.read_only_request_headers['X-Auth-Signature'].startsWith('hmac-sha256:'), 'read-only auth must stay HMAC-based');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Session'], 'mutating requests must carry a push session');
   assert.ok(headers.dry_run_apply_or_mutating_recovery_headers['X-Reprint-Push-Idempotency-Key'], 'mutating requests must carry an idempotency key');

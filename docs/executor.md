@@ -119,6 +119,16 @@ The importer never rewrites the stored base package to match later live
 evidence. It is read-only provenance for later push sessions, not a repair
 mechanism.
 
+Recovery inherits the same provenance boundary:
+
+- `push_journal` records the claim, lease, and storage-boundary evidence
+  needed to explain an interrupted apply.
+- `push_recover inspect` must read the journal before any finish, rollback,
+  or auto step.
+- `push_recover auto|finish|rollback` may mutate only after fresh live hashes
+  and the journal row prove the action is still safe.
+- a stale dry-run receipt is never upgraded into recovery authority.
+
 That mapping is intentionally one-way:
 
 - exporter/importer create the immutable pull base package

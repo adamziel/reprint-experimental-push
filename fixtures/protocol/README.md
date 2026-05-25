@@ -164,6 +164,21 @@ Failure and recovery examples:
   journal inspect stays read-only, and recovery must start with inspect before
   any mutating repair.
 
+The recovery proof fixtures are intentionally split so the auth fence and the
+inspect fence can be asserted independently or together:
+
+- `push-auth-session-journal-proof.json` binds push auth, session minting,
+  claim generation, lease expiry, and inspect-first recovery to the same
+  journal row.
+- `push-auth-session-recovery-contract.json` keeps the stronger auth floor and
+  the recovery fence together when a test wants to prove the claim is still
+  fenced at recovery time.
+- `push-recovery-inspect-contract.json` keeps the inspect-only recovery step
+  explicit when a test only needs the session, journal row, and live hash
+  classification.
+- `push-recovery-revalidation-contract.json` shows the same drift case still
+  requires fresh live hashes before apply or mutating recovery.
+
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
 request bodies and should verify idempotency with byte-identical replays.
