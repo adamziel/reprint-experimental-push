@@ -125,8 +125,9 @@ Must-fix blockers before any production wording:
   history, not current authority.
 - A source-note comparison must not be treated as current retry authority
   just because the upstream commit, route family, or worktree state matches;
-  without a branch-local live drift rerun, it stays provenance and cannot
-  rule out hidden plugin-owned side effects on the real executor.
+  without a branch-local live drift rerun on the same mutation boundary, it
+  stays provenance and cannot rule out hidden plugin-owned side effects on the
+  real executor.
 - A readable stale manual-review artifact must not be described as durable
   retry authority, even when it remains inspectable; if a retry consumed it as
   authority, the proof failed to preserve a clean remote-audit separation.
@@ -204,6 +205,8 @@ Source-note comparison summary:
   and ForkPress is conflict/audit provenance. The missing repo proof remains
   the same live mutation boundary on this branch, with drift rejection,
   preserved remote evidence, and fresh retry scope recorded separately.
+  Even if the observed upstream commit, route family, or worktree state
+  matches, it still does not prove the live executor on this branch is safe.
 
 Release-gate checklist for production-readiness wording:
 
