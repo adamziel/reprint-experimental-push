@@ -228,6 +228,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(
     model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'compressed-queue-drains-means-complete',
+    ),
+    'model rejects treating a drained compressed queue as proof that staged work reached the remote',
+  );
+  assert.ok(
+    model.rejectedFastPaths.some(
       (rejection) => rejection.id === 'fingerprint-and-cached-digest-completes-large-upload',
     ),
     'model rejects treating a local fingerprint plus a cached digest as large-upload completion',
@@ -243,6 +249,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
       (rejection) => rejection.id === 'index-and-compressed-manifest-hash-completes-large-upload',
     ),
     'model rejects treating a fresh remote index plus a compressed manifest hash as large-upload completion',
+  );
+  assert.ok(
+    model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'parallelize-finalize-across-groups',
+    ),
+    'model rejects treating cross-group finalize as a safe completion shortcut',
   );
   assert.ok(
     model.rejectedFastPaths.some((rejection) => rejection.id === 'chunk-ledger-completes-large-upload'),
