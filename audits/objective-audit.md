@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The repo still lacks one enforced command that proves the live-source boundary on the real storage and transport path. `npm test` passes, but it only proves the suite is internally consistent and model-safe. It does not prove no data loss, reliability, or speed on the live-source boundary, so the release claim is still false.
+The repo still lacks one enforced command that proves the live-source boundary on the real storage and transport path. `npm test` passes, but the passing suite is still fixture- and model-backed. It does not prove no data loss, reliability, or speed on the live-source boundary, so the release claim is still false.
 
 ## Explicit Requirements
 
@@ -15,8 +15,8 @@ The objective implies these minimum release requirements:
 3. Preserve every WordPress data shape the push can touch, including rows, files, plugin-owned data, serialized payloads, and graph identity.
 4. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary.
 5. Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes.
-6. Prove the real remote/local topology, not just a local Playground route, fixture mount, or hostname alias with different backing storage.
-7. Either publish a measured speed claim from the live push path or explicitly refuse to make one.
+6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or any storage abstraction that can satisfy the tests without touching live source storage.
+7. Either publish a measured speed claim from the live push path or explicitly refuse to make one. Refusal-only benchmarks are not a speed claim.
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
 9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
 10. Keep optional smokes available for local evidence collection, but do not let them stand in for release proof.
@@ -62,6 +62,7 @@ The objective stays blocked for five concrete reasons:
 3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path, publish a live-path threshold, or establish a production release speed claim.
 4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary, and they do not exercise a real remote-to-local-to-remote release path or no-loss behavior under the production storage semantics named by the objective.
 5. There is no checked-in CI workflow in this checkout and no `verify`/`release`/`verify:release` script in `package.json`, so there is no visible enforced entrypoint that could make the release gate mandatory or close the loop from proof to deployable gate.
+6. The tests that look strongest are still proving preconditions and refusal behavior, not end-to-end mutation safety under a crash boundary. That is useful, but it is not release evidence.
 
 ## Audit Rule
 
