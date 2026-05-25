@@ -22,6 +22,9 @@ This note captures the planner boundary in plain language.
 - The same file type swap stop rule also holds when the remote side removed
   the unrelated plugin entirely and a matching independent edit stays
   `already-in-sync`.
+- The same file type swap stop rule also holds when the remote side removed
+  the unrelated plugin entirely and a matching independent edit plus matching
+  independent row delete stay `already-in-sync`.
 
 ## Must Preserve
 

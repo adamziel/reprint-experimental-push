@@ -53,6 +53,9 @@ This is the short operational version of the planner invariant policy.
 - The same file type swap stop condition also holds when the unrelated plugin
   was removed entirely and a matching independent edit remains
   `already-in-sync`.
+- The same file type swap stop condition also holds when the unrelated plugin
+  was removed entirely and matching independent edit and row delete resources
+  remain `already-in-sync`.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Local delete or file type swap only if it preserves remote-only plugin
