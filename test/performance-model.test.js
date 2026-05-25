@@ -325,6 +325,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-unbounded-upload-parallelism-skips-backpressure').violates.includes('durable-progress'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-backpressure').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-backpressure').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-backpressure').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-backpressure').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-backpressure').violates.includes('durable-progress'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').rejectedGate,
     'group',
   );
