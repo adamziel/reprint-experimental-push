@@ -11,6 +11,15 @@ move the proof onto a rerunnable live boundary with preserved-remote audit
 evidence. The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
+Primary critic finding:
+
+- the branch still has no named real-site release command that reruns the same
+  live boundary against a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL` and preserves the rejected remote for audit; until
+  that exists, any "production-grade push support" claim is false reliability,
+  even if the executor, route shape, and retained-source replay all look
+  correct.
+
 Current critic bar for this baseline:
 
 - `3089aee2` is retained-source evidence only; it does not authorize
@@ -76,6 +85,8 @@ preserve / reject / retry cycle.
 
 Production-grade push support checklist:
 
+- a named real-site release command exists and can be rerun on demand against
+  the same live boundary;
 - one rerunnable live command against a real local, Playground, or Docker
   `REPRINT_PUSH_SOURCE_URL`, not a wrapper label or compatibility smoke;
 - executor identity, auth/session boundary, preserved remote, exact rejection
