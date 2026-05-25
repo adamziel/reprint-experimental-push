@@ -100,6 +100,7 @@ The canonical proof stack for that scope is:
 | [`fixtures/protocol/push-protocol-extension-contract.json`](../fixtures/protocol/push-protocol-extension-contract.json) | The full push ladder: preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery. |
 | [`fixtures/protocol/push-remote-liveness-contract.json`](../fixtures/protocol/push-remote-liveness-contract.json) | The compact proof that dry-run and apply stay separate remote operations and that apply revalidates fresh live evidence. |
 | [`fixtures/protocol/push-deployment-topology-contract.json`](../fixtures/protocol/push-deployment-topology-contract.json) | The one-remote, one-local, one-drift topology in Docker and Playground. |
+| [`fixtures/protocol/push-executor-topology-proof.json`](../fixtures/protocol/push-executor-topology-proof.json) | The compact executor proof for the same remote identity observed twice, the same route names in both harnesses, and the sandbox-provided `8080` ingress rule. |
 | [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json) | The stage-level Docker/Playground proof with liveness, recovery, and apply revalidation rules. |
 | [`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json) | The push-session boundary, journal-row fence, and read-only recovery inspect rule. |
 | [`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json) | The same fence when recovery needs to prove finish, rollback, or block before mutating. |
@@ -220,8 +221,9 @@ The pull-to-push bridge is easiest to review through the fixtures:
   never skips apply-time revalidation.
 - `push-deployment-topology-contract.json` and
   `push-executor-topology-proof.json` prove the Docker and Playground
-  topology, the same remote identity observed before and after drift, and the
-  sandbox-provided `8080` ingress rule.
+  topology, the same remote identity observed before and after drift, the
+  same route names in both harnesses, and the sandbox-provided `8080` ingress
+  rule.
 - `push-auth-session-fencing-contract.json`,
   `push-auth-session-recovery-contract.json`, and
   `push-recovery-inspect-contract.json` prove the session fence, journal row

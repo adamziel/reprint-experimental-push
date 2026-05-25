@@ -67,6 +67,9 @@ The production proof bundle is intentionally layered:
 - `push-topology.json`, `push-topology-matrix.json`, and
   `push-deployment-topology-contract.json` prove the one-remote, one-local,
   one-drift-witness topology in both Docker and Playground.
+- `push-executor-topology-proof.json` is the shortest proof that the executor
+  keeps the same remote identity, the same route names, and the
+  sandbox-provided `8080` ingress rule aligned across Docker and Playground.
 
 Failure and recovery examples:
 
@@ -118,6 +121,9 @@ Failure and recovery examples:
   after independent drift between dry-run and apply. It also records the
   remote identity binding that makes `remote-base` and `remote-changed` two
   observations of the same site rather than different sites.
+- `push-executor-topology-proof.json` gives the shortest executor-shaped proof
+  that Docker and Playground share the same remote identity twice, the same
+  route names, and the same browser-visible ingress rule.
 - `push-recovery-decision.json` gives the inspect-first recovery decision
   matrix that keeps `inspect` read-only and requires fresh live proof before
   any mutating recovery mode.
