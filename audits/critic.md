@@ -34,10 +34,14 @@ authority for this worktree. Any claim that `verify:release` is
 "production-shaped" or "production-ready" must fail closed until that live
 rerun exists on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
 
-On this audit branch, the local script inventory still shows only `plan`,
-`apply`, `test`, and playground/recovery compatibility helpers in
-`package.json`; there is no named real-site release command on this branch
-yet. That is a branch-local gap, not a contradiction of the supervised
+On this audit branch, `package.json` does include release-shaped scripts such
+as `test:playground:authenticated-cli-push`,
+`test:playground:authenticated-http-push`, and
+`test:playground:production-shaped-push`. Those are compatibility scripts
+only until one of them is explicitly promoted into the named real-site
+release command and rerun as the live boundary with preserved-remote audit
+evidence on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
+That is a branch-local gap, not a contradiction of the supervised
 reliable-executor lane, and it is not the main production blocker by itself;
 the main blocker remains the missing rerunnable live boundary with preserved-
 remote audit evidence on a real local, Playground, or Docker
