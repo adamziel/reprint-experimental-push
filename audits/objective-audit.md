@@ -703,7 +703,7 @@ invocation and can be skipped while `npm test` remains green.
    arbitrary files, plugin file publish, DB inserts/deletes, schema changes,
    activation side effects, transactions, locks, rollback, or target `fsync`.
 
-12. **Crash recovery coverage is sparse relative to the claim.** The process
+13. **Crash recovery coverage is sparse relative to the claim.** The process
    kill smoke is valuable but covers one local Playground path. There is no
    kill-at-every-boundary matrix across DB writes, file writes, plugin
    activation, journal writes, finalization, stale claims, and replay. The
@@ -711,32 +711,36 @@ invocation and can be skipped while `npm test` remains green.
    classified, but not that the production executor restarts without losing or
    duplicating live source changes.
 
-13. **Reliability assertions often count events rather than prove every hash
+14. **Reliability assertions often count events rather than prove every hash
     transition.** Several smokes verify expected event names, counts, and coarse
     replay behavior. Release-grade recovery needs deeper assertions that each
     journaled before/after/observed hash corresponds to the live storage state
     at every recovery boundary.
 
-14. **Auth is lab-auth, not production-auth.** The authenticated and
+15. **Auth is lab-auth, not production-auth.** The authenticated and
     production-shaped Playground tests are good protocol-shape evidence, but the
     fallback Application Password verifier and lab HMAC/session store do not
     prove production credentials, TLS, secret scoping, nonce cleanup, replay
     retention, or source-site authorization.
 
-15. **Plugin safety is intentionally hard-coded.** The tests prove that the lab
+16. **Plugin safety is intentionally hard-coded.** The tests prove that the lab
    blocks arbitrary plugin data and allows exact fixtures. That is the right
    conservative behavior, but it means production plugin-owned data remains a
    release blocker until validator contracts and real plugin fixtures exist.
 
-16. **Speed has no measured evidence at the production boundary.** The
+17. **Speed has no measured evidence at the production boundary.** The
    performance tests prove a model, claim gates, and guardrails. They do not
    move bytes, mutate a source site, measure memory, measure throughput, or
    pin those numbers to a documented benchmark environment with a release
    threshold. The current proof is enough to block unsupported speed claims,
    not to justify a "fast" release claim. If the release path cannot run this
    measurement automatically, the speed claim stays blocked.
+   The minimum release threshold for speed should be explicit, executable, and
+   mandatory: a documented environment, a real push path, measured runtime and
+   memory ceilings, and a failing exit code when the measurement is absent or
+   the thresholds are not met.
 
-17. **The release surface is real but fragmented.** The repository already
+18. **The release surface is real but fragmented.** The repository already
     exposes high-value smokes for auth, journal durability, storage guards,
     and production-shaped routing, but they are not collected under one
     enforced gate. That means the current proof set is larger than `npm test`
@@ -749,7 +753,7 @@ invocation and can be skipped while `npm test` remains green.
     the existing ones into release-proof order and fails closed if any step is
     skipped or downgraded to lab-only proof.
 
-18. **The highest-value missing edge case is a real crash matrix on the live
+19. **The highest-value missing edge case is a real crash matrix on the live
     write boundaries.** The current smoke suite can show one process-kill path
     and one stale-claim path, but it does not kill the executor at each
     production-grade boundary for DB writes, filesystem writes, plugin
