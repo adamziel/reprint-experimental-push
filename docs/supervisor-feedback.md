@@ -9,7 +9,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 - Going well: the page, log, and audit note still agree on the blocked state.
 - Not going well: proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no evidence delta; the visible surfaces stay scan-first and linked to the latest note.
+- Progress change: no evidence delta; the visible surfaces stay scan-first and linked to the latest audit note.
 - Next nudge: keep each lane to one proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
@@ -21,7 +21,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Audit and critic | Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim. |
 | Progress publisher | Owner: lane. Gap: keep the page dated, concise, and linked to evidence. Next test: keep the page and log aligned after each refresh. |
 
-Note: the lane-local page becomes live only after merge to `main`; GitHub Pages lags until then.
+Note: this lane-local page becomes live only after merge to `main`; GitHub Pages lags until then.
 
 Audit note: [audits/supervisor-note-20260525-080033.md](../audits/supervisor-note-20260525-080033.md) captures the latest alignment pass in one screen.
 
