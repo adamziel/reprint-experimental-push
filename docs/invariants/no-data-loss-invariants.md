@@ -77,6 +77,9 @@ This note summarizes the planner's no-overwrite contract.
 - Matching independent file deletions, edits, and file type swaps may also
   coexist with a live-preconditioned delete while remote-only plugin drift or
   removals stay preserved.
+- Matching independent file deletions, edits, and file type swaps may coexist
+  with a live-preconditioned delete while remote-only plugin changes stay
+  preserved and every mutation still carries its own live remote precondition.
 - Matching independent row deletions and file type swaps may also coexist
   with a live-preconditioned delete while remote-only plugin drift stays
   preserved.
