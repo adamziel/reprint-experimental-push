@@ -335,8 +335,8 @@ fall into five buckets:
 | Executable proof | `npm test`, `test/push-planner.test.js`, `test/recovery-journal.test.js`, `test/performance-model.test.js`, `test/guarded-executor-benchmark.test.js` | Planner invariants, recovery classifications, redaction rules, refusal logic, and model-level safety constraints | Live source mutation, production topology, or measured speed on the release path |
 | Lab/fixture proof | `npm run test:playground`, `test:playground:authenticated-http-push`, `test:playground:db-journal-idempotency`, `test:playground:storage-guarded-db-write`, `test:playground:storage-guarded-file-write`, `test:playground:production-shaped-push`, `test:playground:production-plugin-package` | Useful end-to-end slices through local Playground, route shape, journal behavior, and fixture storage guards | Production WordPress semantics, durable production storage, or release-safe auth/session and lease/fencing enforcement |
 | Docs-only proof | `progress.html`, `docs/fast-paths.md`, `docs/supervised-lanes.md`, `supervision/README.md`, script names and comments | The intended release bar, data-loss concerns, and the desired check ordering are described | No executable proof that the described release bar is actually enforced |
-| Missing proof | No required `verify:release`-style command in `package.json`; no checked-in `.github` workflow or equivalent CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks | Nothing by itself; this bucket marks the gap | The objective still lacks a single required release gate that fails closed when any safety proof remains optional |
-| Release blocker | The best evidence still says `labBacked: true` for the production-shaped route/package smokes, the benchmark path remains refusal-only, and no required release gate exists to force the stronger checks together | Honest refusal to overclaim release readiness | Production no-data-loss, reliability, and speed remain unproven until the missing gate and live-source evidence exist |
+| Missing proof | No required `verify:release`-style command in `package.json`; current repo scans also show no checked-in `.github` workflow or equivalent CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks | Nothing by itself; this bucket marks the gap | The objective still lacks a single required release gate that fails closed when any safety proof remains optional |
+| Release blocker | The best evidence still says `labBacked: true` for the production-shaped route/package smokes, the benchmark path remains refusal-only, and the strongest checks are still opt-in scripts rather than one enforced release path | Honest refusal to overclaim release readiness | Production no-data-loss, reliability, and speed remain unproven until the missing gate and live-source evidence exist |
 
 The table above is intentionally harsh. The repo has useful executable proof,
 but it is split across the model suite, lab fixtures, and opt-in smokes. That
@@ -440,14 +440,14 @@ gate. `package.json` confirms the split: the default suite is `npm test`, the
 bundled lab chain is `npm run test:playground`, and the stronger auth,
 journal, storage, recovery, plugin, and benchmark checks are only available
 as separate opt-ins. There is no `npm run release`, `npm run verify`, or
-`npm run verify:release`, and no checked-in CI workflow that chains those
-checks into one required release path. A green run can therefore omit the
-exact proof the objective needs, even though the strongest route smokes still
-report `labBacked: true` and the benchmark suite only refuses unsupported
-throughput claims. This is a release blocker, not a documentation gap: until
-one required command exists, the project can keep producing passing lab runs
-without proving production safety at the live remote/local boundary or a
-measured speed claim on the real push path.
+`npm run verify:release`, and the repo scan still found no checked-in `.github`
+workflow that chains those checks into one required release path. A green
+run can therefore omit the exact proof the objective needs, even though the
+strongest route smokes still report `labBacked: true` and the benchmark suite
+only refuses unsupported throughput claims. This is a release blocker, not a
+documentation gap: until one required command exists, the project can keep
+producing passing lab runs without proving production safety at the live
+remote/local boundary or a measured speed claim on the real push path.
 
 - `npm test` is the default automated suite, but it only covers the model and
   selected fixture logic.
