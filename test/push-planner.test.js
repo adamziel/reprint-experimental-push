@@ -18965,6 +18965,40 @@ test('atomic apply keeps only the approved recovery states across the failure cu
     'journal-replayed',
   );
   assert.equal(persistedReplay.integrity.status, 'ok');
+
+  const secondReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  const secondReplayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const secondReplay = applyPlan(secondReplayRemote, plan, {
+    durableJournal: secondReplayJournal,
+    journal: completed.journal,
+  });
+  secondReplayJournal.close();
+
+  const persistedSecondReplay = readRecoveryJournal(completedJournalPath);
+
+  assert.equal(JSON.stringify(secondReplayRemote), JSON.stringify(completed.site));
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assert.equal(secondReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(
+    persistedSecondReplay.records.filter((record) => record.type === 'journal-replayed').length,
+    2,
+  );
+  assert.equal(
+    persistedSecondReplay.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
+    3,
+  );
+  assert.equal(
+    persistedSecondReplay.records[persistedSecondReplay.records.length - 2].type,
+    'recovery-state',
+  );
+  assert.equal(
+    persistedSecondReplay.records[persistedSecondReplay.records.length - 1].type,
+    'journal-replayed',
+  );
+  assert.equal(persistedSecondReplay.integrity.status, 'ok');
 });
 
 test('atomic apply recovery only accepts old remote, fully updated remote, or blocked recovery with artifacts across interrupted apply and completed replay', () => {
