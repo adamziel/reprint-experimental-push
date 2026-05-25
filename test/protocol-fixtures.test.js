@@ -1954,6 +1954,50 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
     productionLadderContract.push_ladder[5].proof,
     'starts with inspect and may block when finish or rollback cannot be proven safe',
   );
+  assert.equal(
+    productionLadderContract.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(
+    productionLadderContract.auth_and_session.preflight_binding,
+    'mints one short-lived push session bound to one remote identity and one persisted pull base',
+  );
+  assert.equal(
+    productionLadderContract.auth_and_session.mutating_calls,
+    'dry-run, apply, and mutating recovery require the push session, canonical push signature, and idempotency key',
+  );
+  assert.equal(
+    productionLadderContract.remote_liveness.snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    productionLadderContract.remote_liveness.dry_run,
+    'uploads an eligibility receipt only and never reserves remote state',
+  );
+  assert.equal(
+    productionLadderContract.remote_liveness.apply,
+    'revalidates the live remote before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    productionLadderContract.remote_liveness.journal,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    productionLadderContract.remote_liveness.recovery_inspect,
+    'must happen before any mutating recovery mode',
+  );
+  assert.equal(
+    productionLadderContract.remote_liveness.recovery_mutate,
+    'requires fresh live hashes plus journal evidence',
+  );
+  assert.equal(
+    productionLadderContract.journal_and_recovery.lease_fence,
+    'claim generation and lease expiry fence stale workers before mutation',
+  );
+  assert.equal(
+    productionLadderContract.journal_and_recovery.revalidation,
+    'mutating recovery still requires fresh live hashes plus journal evidence',
+  );
   assert.equal(productionLadderContract.topology.networking.ingress_port, 8080);
   assert.equal(productionLadderContract.topology.networking.proxy_policy, 'local-only');
   assert.equal(productionLadderContract.topology.networking.tunnels, 'disallowed');
