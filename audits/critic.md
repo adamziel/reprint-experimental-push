@@ -22,7 +22,7 @@ Latest supervision evidence narrows the remaining gap, but does not close it:
 `origin/lane/independent-auditor` is at `33b839f0`,
 `origin/lane/feedback-supervisor` is at `f386dfa6`,
 `origin/lane/progress-publisher` is at `7695e1f9`,
-and `origin/lane/same-plan-wordpress-graph-create` is at `732e1251`,
+and `origin/lane/same-plan-wordpress-graph-create` is at `d1994422`,
 while the critic branch still matches `origin/lane/critic` at `c036004c`.
 These moves refresh the audit snapshot but do not change the underlying
 verdict: production auth/session lifecycle, durable journal ownership with
