@@ -17,6 +17,9 @@ This note is the short form of the planner policy in
   alongside a live-preconditioned deletion in the same plan; the matching
   resources still stay `already-in-sync` and do not weaken the deletion
   precondition.
+- Matching independent deletions can also appear alongside remote-only plugin
+  drift; the delete stays `already-in-sync`, the plugin drift stays
+  `keep-remote`, and no extra mutation is created.
 - Matching independent deletions, edits, and file type swaps can also appear
   alongside a live-preconditioned deletion; they still stay `already-in-sync`,
   and the remote plugin drift stays preserved.
