@@ -27,6 +27,16 @@ can be handed to a real-site operator, rerun after drift, and independently
 prove the preserved remote was still inspectable when the write was rejected.
 Route shape, reviewer wording, and smoke logs do not supply that proof.
 
+Concrete release-gate failure mode:
+
+- if the only runnable proof is a smoke script, Playground route, or review
+  artifact, the branch still lacks a real-site preflight/release command;
+- if that command is missing, the branch cannot show the exact reject point
+  before the first write on a live remote; and
+- if the preserved remote is not auditable after rejection, then manual
+  resolution, comparison notes, and `finalMatchesLocal` remain audit-only and
+  cannot be promoted to production wording.
+
 Command-surface audit:
 
 - `plan` and `apply` are present, but they are not a named real-site release
