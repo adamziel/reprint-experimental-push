@@ -31,6 +31,10 @@ Release-gate checklist for production-readiness wording:
   revision or worktree state and say whether it was reverified at the same
   live mutation boundary; otherwise the comparison is historical context
   only.
+- If a source note names the right upstream commit but this branch did not
+  reverify that exact upstream state at the same live write boundary, the
+  citation stays historical context only. A correct commit id without a fresh
+  live-boundary recheck is still not current proof.
 
 Source-note claim gate:
 
@@ -220,6 +224,8 @@ Changes that must happen before any production-grade push claim:
 - Reverify the cited Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress
   `55f9879` notes against the live boundary or stop treating them as current
   evidence.
+- Do not collapse "correct upstream citation" into "current evidence"; the
+  claim must also show a fresh branch-local recheck at the same live boundary.
 - Treat `docs/source-notes.md` as historical input unless the branch can name
   the exact upstream commit or worktree state and the live write boundary that
   was reverified; a local note file does not upgrade itself into production
