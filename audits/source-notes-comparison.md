@@ -95,6 +95,10 @@ lab route, fixture replay, or package mount is the real production executor.
 If the claim cannot show the exact live request path, preserved remote state,
 and stale-authority rejection at the current write boundary, the comparison
 remains context only.
+It also cannot be used to claim that manual resolution was successful unless
+the remote was preserved for audit, the stale approval was rejected before
+mutation, and the retry rebuilt scope from fresh live hashes instead of
+reusing the old decision.
 If the claim also cannot show a preserved-remote retry after drift, then
 "manual resolution" is still only an unresolved conflict label, not proof
 that the comparison maps to safe production behavior.
@@ -102,6 +106,9 @@ If the same comparison is then reused to justify a stale manual-review
 artifact, the claim still fails unless the artifact is rejected before write,
 the remote is preserved for audit, and the next retry rebuilds scope from
 fresh live hashes instead of inheriting old approval.
+The comparison also does not prove that partial file, DB, or plugin side
+effects were classified durably; a matching route name or package mount can
+still hide a mixed-write failure that needs fresh live evidence on retry.
 If the comparison does not also pin the exact upstream commit hash or
 worktree state that was reverified, it stays historical context even when the
 feature name matches and the route shape looks production-shaped.
