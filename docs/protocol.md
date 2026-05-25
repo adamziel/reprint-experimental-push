@@ -199,6 +199,9 @@ It starts a local Playground remote source and a local edited site, feeds the
 remote into the live protocol proof with production-shaped auth, and prints
 the exact live preflight result plus the release-proof status, the later
 remote-drift witness, and the live protocol evidence.
+If `REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT=post-title` is set, the same checked
+command fails closed with `PRECONDITION_FAILED` when the stale remote is
+revalidated at dry-run time after the authenticated snapshot.
 
 The supervisor-facing release entrypoint is `npm run verify:release`.
 It first runs the one-remote, one-local topology proof, then the same

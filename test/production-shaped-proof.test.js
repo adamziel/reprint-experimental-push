@@ -182,6 +182,32 @@ maybeTest('production-shaped release verify command runs the live protocol branc
   });
 });
 
+maybeTest('production-shaped release verify command fails closed when remote drift appears after the authenticated snapshot', () => {
+  return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
+    const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+        REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT: 'post-title',
+        NODE_NO_WARNINGS: '1',
+      },
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+    });
+
+    assert.equal(proof.status, 1, proof.stderr);
+    assert.match(proof.stdout, /"ok": false/);
+    assert.match(proof.stdout, /"drift": \{\s*"mode": "post-title",\s*"sameRemoteIdentity": true,\s*"changedHash": "[a-f0-9]{64}"\s*\}/);
+    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": false,\s*"status": 412,\s*"code": "PRECONDITION_FAILED"\s*\}/);
+    assert.match(proof.stdout, /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
+    assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  });
+});
+
 test('production-shaped release verify command fails closed on the explicit live-source and secret gates', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,

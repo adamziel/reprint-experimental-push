@@ -101,6 +101,12 @@ Use it when you need the same live topology plus the snapshot, dry-run, and
 apply revalidation boundary, recovery inspect, and journal readback on the
 real Playground remote.
 
+The release-facing drift rejection proof is the same
+`npm run test:playground:production-shaped-release-verify` entrypoint with
+`REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT=post-title`.
+It demonstrates the stale remote being rejected at dry-run revalidation with
+`PRECONDITION_FAILED` instead of being treated as a valid receipt lock.
+
 The release-facing checked command is `npm run test:playground:production-shaped-proof`.
 Use it when you need one executable entry point that proves both the protocol
 ladder and the explicit missing-secret and missing-live-source gates.

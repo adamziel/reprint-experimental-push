@@ -18,6 +18,7 @@ const credentials = {
 const liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 const username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
 const applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
+const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT || '';
 
 if (!liveSourceUrl) {
   const missingSourceResult = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-source-gate-smoke.mjs'], {
@@ -133,10 +134,64 @@ try {
         idempotencyKey: 'production-shaped-release-verify-001',
         routeProfile: 'production-shaped',
         dryRunOnly: false,
-        labDriftAfterSnapshot: '',
+        labDriftAfterSnapshot,
         now: new Date('2026-05-25T10:12:00.000Z'),
       });
 
+      if (!proof.ok) {
+        const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
+        process.stdout.write(
+          JSON.stringify(
+            {
+              ok: false,
+              topology: {
+                remoteBase: remoteServer.baseUrl,
+                remoteChanged: remoteChangedServer.baseUrl,
+                localEdited: localServer.baseUrl,
+              },
+              drift: labDriftAfterSnapshot ? {
+                mode: labDriftAfterSnapshot,
+                sameRemoteIdentity: true,
+                changedHash: snapshotHash(remoteChangedSnapshot),
+              } : {
+                sameRemoteIdentity: true,
+              },
+              boundary: {
+                firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+                status: 'unimplemented',
+                verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+                durableJournal: {
+                  storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+                  verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                },
+              },
+              preflight: {
+                status: preflight.status,
+                authSessionType: preflight.body.auth.session.type,
+                routeProfile: preflight.body.routeProfile,
+                session: {
+                  id: preflight.body.session.id,
+                  type: preflight.body.session.type,
+                },
+              },
+              releaseProof: {
+                ok: false,
+                status: proof.dryRun?.status || proof.apply?.status || 1,
+                code: proof.code || proof.apply?.body?.code || proof.dryRun?.body?.code || 'APPLY_FAILED',
+              },
+              dryRun: proof.dryRun,
+              apply: proof.apply,
+              recoveryInspect: proof.recoveryInspect,
+              after: proof.after,
+              dbJournal: proof.dbJournal,
+            },
+            null,
+            2,
+          ),
+        );
+        process.stdout.write('\n');
+        process.exit(1);
+      }
       assert.equal(proof.ok, true, JSON.stringify(proof, null, 2));
       assert.equal(proof.preflight.status, 200);
       assert.equal(preflight.body.auth.session.type, 'application-password-basic');
@@ -185,16 +240,23 @@ try {
 
       process.stdout.write(
         JSON.stringify(
-          {
-            ok: true,
-            topology: {
-              remoteBase: remoteServer.baseUrl,
-              remoteChanged: remoteChangedServer.baseUrl,
-              localEdited: localServer.baseUrl,
-            },
-            liveDrift,
-            boundary: {
-              firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+        {
+          ok: true,
+          topology: {
+            remoteBase: remoteServer.baseUrl,
+            remoteChanged: remoteChangedServer.baseUrl,
+            localEdited: localServer.baseUrl,
+          },
+          drift: labDriftAfterSnapshot ? {
+            mode: labDriftAfterSnapshot,
+            sameRemoteIdentity: true,
+            changedHash: liveDrift.changedHash,
+          } : {
+            sameRemoteIdentity: true,
+          },
+          liveDrift,
+          boundary: {
+            firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
               status: 'unimplemented',
               verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
               durableJournal: {
