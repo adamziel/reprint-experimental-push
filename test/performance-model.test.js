@@ -261,6 +261,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('backpressure'));
