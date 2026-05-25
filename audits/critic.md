@@ -5069,6 +5069,22 @@ Current blocking scenarios still needing branch-local proof:
   not been separately rejected, preserved, and rebuilt into a fresh retry
   scope for a later boundary.
 
+Specific false-reliability trap to reject:
+
+- if preflight, route shape, or a readable review artifact matches the earlier
+  plan but the remote has drifted before apply, the branch must not say
+  "manual resolution succeeded"; the artifact is audit-only until the remote
+  is preserved, the stale authority is rejected before mutation, and the retry
+  scope is rebuilt from live hashes for that exact boundary;
+- if the first write exposes a later plugin-owned table, file, cron row,
+  runtime registry entry, generated asset, cache entry, or serialized blob,
+  that surface is a new boundary and cannot inherit the first approval without
+  its own preserve / reject / retry cycle; and
+- if a mixed file, database, and plugin run leaves only part of the state
+  committed, the surviving part must be labeled old, new, or blocked before
+  retry; partial success wording is false reliability unless the untouched
+  surfaces are separately accounted for.
+
 Minimum evidence still missing for production wording:
 
 - live proof that stale authority fails before the first mutation and that
