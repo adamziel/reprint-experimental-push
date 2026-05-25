@@ -10,7 +10,8 @@ retires the stale "no verify:release exists" critique, but it does not convert
 retained-source evidence into branch-local retry authority or production
 proof. The remote lane now also exposes `verify:release` in `package.json`, so
 any remaining absence of that command on this checkout is only a branch-local
-merge gap, not a project-wide absence.
+merge gap, not a project-wide absence, and must not be confused with the live
+proof gap this branch still has.
 
 Exact evidence that improved in the supervised lane: the retained-source run
 now names executor/session/journal details and the boundary verdict is
