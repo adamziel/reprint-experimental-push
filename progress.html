@@ -475,7 +475,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until production evidence lands. Linked docs hold the proof trail.</p>
-        <time class="update-stamp" datetime="2026-05-25T07:17:26+02:00">Last updated: May 25, 2026, 07:17:26 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T07:18:24+02:00">Last updated: May 25, 2026, 07:18:24 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production evidence</span>
           <span class="pill">Proof trail lives in linked docs</span>
@@ -517,16 +517,16 @@
         <ul class="compact-list" aria-label="Supervisor snapshot">
           <li><strong>Going well</strong><span>The page, log, and latest audit note still agree on the blocked state.</span></li>
           <li><strong>Not going well</strong><span>Production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.</span></li>
-          <li><strong>Progress change</strong><span>No new evidence landed; this pass only refreshed the dated snapshot and kept the lane nudges terse.</span></li>
+          <li><strong>Progress change</strong><span>No new evidence landed; the newest snapshot is shorter and easier to scan.</span></li>
           <li><strong>Next nudge</strong><span>Keep each lane to one proof gap, one owner, and one production-backed test.</span></li>
         </ul>
         <ul class="compact-list" aria-label="Lane nudges">
-          <li><strong>Invariants</strong><span>Owner: lane. Gap: graph identity mapping on a real site. Next test: prove the mapping against live content.</span></li>
-          <li><strong>Recovery</strong><span>Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill the process mid-write and inspect restart state.</span></li>
-          <li><strong>Reliable executor</strong><span>Owner: lane. Gap: auth, session, and lease behavior in production. Next test: prove the full auth/session path on a real endpoint.</span></li>
-          <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the large-site benchmark and record the bound.</span></li>
+          <li><strong>Invariants</strong><span>Owner: lane. Gap: graph identity mapping on a real site. Next test: prove it against live content.</span></li>
+          <li><strong>Recovery</strong><span>Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill mid-write and inspect restart state.</span></li>
+          <li><strong>Reliable executor</strong><span>Owner: lane. Gap: auth, session, and lease behavior in production. Next test: prove the auth/session path on a real endpoint.</span></li>
+          <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the benchmark and record the bound.</span></li>
           <li><strong>Audit and critic</strong><span>Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim.</span></li>
-          <li><strong>Progress publisher</strong><span>Owner: lane. Gap: keep the page dated, concise, and linked to evidence. Next test: keep the visible page and log aligned after each dated refresh.</span></li>
+          <li><strong>Progress publisher</strong><span>Owner: lane. Gap: keep the page dated, concise, and linked to evidence. Next test: keep the page and log aligned after each refresh.</span></li>
         </ul>
       </div>
     </section>
