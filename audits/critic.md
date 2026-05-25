@@ -363,6 +363,10 @@ Release-gate checklist for production-readiness wording:
   upstream revision or worktree state and the exact live write boundary that
   was reverified here; otherwise the comparison is historical context only,
   even if the route family, package shape, or feature vocabulary matches.
+- Show that any readable review artifact, route-shaped smoke, fixture replay,
+  or `finalMatchesLocal` result is labeled audit-only unless this branch
+  reran the same live mutation boundary against the same drift case and
+  recorded the preserved remote, rejection point, and fresh retry scope.
 - Show that a stale manual-review artifact cannot be reused as retry
   authority for any plugin-owned surface or hidden side effect that was not
   already classified on the first pass.
