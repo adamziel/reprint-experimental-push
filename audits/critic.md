@@ -35,9 +35,9 @@ The supervised reliable-executor lane now has material retained-source evidence:
 
 ## Source-note comparison
 
-- Reprint source notes contribute staged transport and resumable-delivery lineage, but not live mutation safety, preserved-remote retry, or WordPress auth/session lifecycle proof on this branch.
-- ZS-Sync source notes contribute discovery and batching lineage, but not source-mutation safety, create-time remap safety, or plugin-owned surface coverage on this branch.
-- ForkPress source notes contribute audit and crash-consistency vocabulary, but not a live WordPress boundary with preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
+- Reprint source notes prove staged transport and resumable-delivery vocabulary here, but they do not prove a live mutation boundary, preserved-remote retry authority, or WordPress auth/session lifecycle on this branch.
+- ZS-Sync source notes prove discovery and batching vocabulary here, but they do not prove source-mutation safety, create-time remap safety, graph identity, or plugin-owned surface coverage on this branch.
+- ForkPress source notes prove audit and crash-consistency vocabulary here, but they do not prove a live WordPress boundary, preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
 - Reprint proves staged pull delivery and resumability vocabulary here; ZS-Sync proves bounded change discovery here; ForkPress proves audit and crash-consistency intent here.
 - None of them prove live push safety on this branch.
 - None of the three source notes prove the required production boundary here: the missing proof is still one rerunnable live mutation on one exact source URL with preserved-remote retention, apply-time revalidation, auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage all observed together.
