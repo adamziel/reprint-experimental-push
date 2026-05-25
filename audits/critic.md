@@ -3464,6 +3464,10 @@ Production release gate checklist:
 - Any stale manual-review artifact must remain audit-only after drift; it
   cannot become retry authority for another row, file, relationship-bearing
   record, or plugin-owned surface.
+- Any stale manual-review artifact must also stay audit-only when the second
+  write touches a late-discovered plugin-owned surface; if the proof does not
+  show that surface was blocked or durably classified before retry, then the
+  earlier artifact cannot authorize the new boundary.
 - Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
   revision or worktree state and show branch-local revalidation of the same
   live boundary; otherwise it is historical context only.
