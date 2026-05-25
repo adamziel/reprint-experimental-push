@@ -58,6 +58,7 @@
     }
   ],
   "remote_liveness": {
+    "remote_snapshot_hash_listing": "planning evidence only and never write authority",
     "snapshot_hash_listing": "planning evidence only and never write authority",
     "dry_run": "uploads an eligibility receipt only and never reserves remote state",
     "apply": "revalidates the live remote before every batch and again at the storage boundary",

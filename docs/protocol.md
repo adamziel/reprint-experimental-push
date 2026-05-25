@@ -6,7 +6,7 @@ that keeps pull provenance immutable, separates planning from mutation,
 revalidates the live remote identity at apply time, and keeps the dry-run and
 apply liveness split explicit.
 
-## Canonical Extension
+## Push Ladder
 
 The production push protocol is a fixed ladder:
 
@@ -24,6 +24,8 @@ The production push protocol is a fixed ladder:
    mutating repair.
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
+
+## Pull Bridge
 
 The pull/export/import pipeline is the immutable source of push provenance:
 
@@ -60,6 +62,8 @@ the docs:
   repair
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe with the same auth floor as the write path
+
+## Auth Floor
 
 Authentication stays at least as strict as current Reprint HMAC usage:
 
@@ -102,6 +106,8 @@ Authentication is intentionally conservative:
 - journal inspect is read-only and never authorizes mutation by itself
 - mutating recovery is fenced by fresh live hashes and the journal row claim
   and lease evidence
+
+## Test Topology
 
 The canonical test topology is one remote source, one imported local edit
 site, and one later drift observation of the same remote identity:
