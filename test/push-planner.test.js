@@ -11078,6 +11078,57 @@ test('blocks a file type swap that would hide a live remote descendant while pre
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
 
+test('blocks a file type swap that would hide a live remote descendant while preserving matching independent delete, edit, and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = 'base gallery file';
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant bytes';
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:5'] = { ID: 5, post_title: 'Base post 5', post_status: 'publish' };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/gallery/keep.txt'];
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_posts['ID:5'] = { ID: 5, post_title: 'Shared post 5', post_status: 'publish' };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/keep.txt'] = 'remote descendant bytes';
+  delete remote.files['index.php'];
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_posts['ID:5'] = { ID: 5, post_title: 'Shared post 5', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/gallery');
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const rowDecision = decisionFor(plan, 'row:["wp_posts","ID:5"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const conflictJson = JSON.stringify(conflict);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(rowDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery/keep.txt');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflictJson.includes('base descendant bytes'), false);
+  assert.equal(conflictJson.includes('remote descendant bytes'), false);
+  assert.equal(conflictJson.includes('remote-only plugin drift'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks a direct file conflict while preserving an unrelated live delete and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
