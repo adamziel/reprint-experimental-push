@@ -11,17 +11,20 @@ Release-gate checklist for production-readiness wording:
   compatibility evidence only.
 - Show that the stale approval was rejected before mutation, remained
   readable for audit, and could not be reused as authority for any other
-  row, file, relationship-bearing record, or plugin-owned surface.
+  row, file, relationship-bearing record, plugin-owned surface, or hidden
+  side effect such as a cron row, cache entry, registry entry, generated
+  asset, or custom table write.
 - Show that the retry rebuilt scope from fresh live hashes after drift,
   instead of inheriting the old decision or a stale manual-review artifact.
 - Show the create-time identity decision explicitly: either a durable remap
   proof or a hard block before write.
 - Show the complete plugin-owned surface list for the claim, including any
   late-discovered custom table, generated file, cron row, cache entry,
-  activation hook, or runtime registry, and hard-block anything outside it.
+  activation hook, runtime registry, serialized blob, or external side
+  effect, and hard-block anything outside it.
 - Show durable classification for partial file, DB, or plugin side effects,
-  including what was written, what was blocked, and what remains safe to
-  retry.
+  including what was written, what was blocked, what remains safe to retry,
+  and what must not be widened on retry because the live remote drifted.
 - If Reprint, ZS-Sync, or ForkPress are cited, name the exact upstream
   revision or worktree state and say whether it was reverified at the same
   live mutation boundary; otherwise the comparison is historical context
@@ -34,20 +37,24 @@ Blocked production claims:
   preserved the remote for audit.
 - "safe manual resolution" is blocked unless the stale review artifact is
   audit-only after drift, cannot authorize retry, and cannot be widened to a
-  different row, file, relationship-bearing record, or plugin-owned surface.
+  different row, file, relationship-bearing record, plugin-owned surface, or
+  hidden plugin side effect.
 - "plugin-safe push" is blocked until the full plugin-owned surface list is
   either enumerated live at apply time or hard-blocked, including late
   discoveries such as options, custom tables, generated files, hooks, cron
-  rows, caches, runtime registries, and serialized blobs.
+  rows, caches, runtime registries, serialized blobs, and external side
+  effects.
 - "safe create handling" is blocked until the create-time identity decision
   is explicit and durable, including rename, alias, or renumber cases on the
   live remote.
 - "recoverable partial write" is blocked until every touched store is
-  classified old, new, or blocked and the retry rebuilds scope from fresh live
-  evidence instead of inheriting the old approval.
+  classified old, new, or blocked and the retry rebuilds scope from fresh
+  live evidence instead of inheriting the old approval or widening a partial
+  success into a broader claim.
 - "current upstream proof" is blocked for any Reprint, ZS-Sync, or ForkPress
   comparison unless the exact cited upstream revision or worktree state was
-  reverified at the same live mutation boundary.
+  reverified at the same live mutation boundary and the comparison names the
+  live write path, not just the feature family.
 
 The protocol has useful lab properties: dry-run/apply separation, live-remote
 revalidation, idempotency keys, a recovery vocabulary, and hash-only evidence
