@@ -17,7 +17,9 @@ Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
 unless this branch reruns the same live boundary with preserved-remote
-evidence and fresh live hashes. Any claim that `verify:release` is
+evidence and fresh live hashes. Even when the supervised lane advances to a
+new remote head, that does not convert its retained-source result into retry
+authority for this worktree. Any claim that `verify:release` is
 "production-shaped" or "production-ready" must fail closed until that live
 rerun exists on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
 On this audit branch, the local script inventory still shows only `plan`,
@@ -91,7 +93,9 @@ What must change before production-grade wording is defensible:
 - source-note comparisons to Reprint, ZS-Sync, and ForkPress must stay
   provenance-only unless they name the exact upstream state, state what each
   note proves here, state what it does not prove here, and are backed by a
-  rerun of the same live boundary on this worktree.
+  rerun of the same live boundary on this worktree; a newer upstream head or
+  a completed lab harness run still does not become production retry authority
+  on this branch by itself.
 
 Comparison with the source notes stays conservative:
 
