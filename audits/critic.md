@@ -11,9 +11,10 @@ show preserved-remote retention across rejection, live WordPress auth/session
 lifecycle, apply-time revalidation against a fresh real-site source, durable
 journal storage and lease/fencing semantics outside the Playground harness,
 graph identity under remap, or plugin-driver coverage for late-discovered
-plugin-owned surfaces. The supervised lane may now be the best available lab
-evidence, but this branch still lacks a rerunnable live boundary that
-preserves the rejected remote and revalidates from fresh live hashes.
+plugin-owned surfaces. The supervised lane is now stronger lab evidence, not
+release evidence for this branch, because it still does not demonstrate a
+runnable live boundary that preserves the rejected remote and revalidates
+from fresh live hashes.
 Production-grade wording is still false if it relies on lab-session shape,
 retained-source journal rows, or route compatibility as a stand-in for live
 WordPress auth/session durability.
