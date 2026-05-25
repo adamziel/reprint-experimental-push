@@ -2034,6 +2034,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation-after-pause',
+    proposal: 'treat a compressed remote index plus cached row-batch receipts as enough proof to skip plugin-install activation after a pause',
+    rejectedBecause: 'planning evidence and cached row receipts can reduce replay work, but after a pause they still cannot prove the activation change, per-row preconditions, or atomic-group barrier survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback',
     proposal: 'treat a compressed remote index plus cached row-batch receipts as enough proof to skip plugin-install writeback',
     rejectedBecause: 'planning evidence and cached row receipts can trim replay work, but they cannot prove the plugin metadata writes, per-row compares, or the atomic-group writeback survived failure',
