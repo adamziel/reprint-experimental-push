@@ -34,6 +34,10 @@ This note summarizes the planner's no-overwrite contract.
 - A live-preconditioned delete may coexist with a matching independent row
   restore, edit, or file type swap when each matching resource independently
   reaches the live remote hash and plugin drift remains preserved.
+- A live-preconditioned delete may coexist with matching independent delete,
+  restore, and file type swap resources when each matching resource
+  independently reaches the live remote hash and remote-only plugin removals
+  remain preserved.
 - A plugin-owned delete may coexist with a matching independent edit while
   remote-only plugin drift stays preserved and the delete keeps its own live
   remote precondition.
