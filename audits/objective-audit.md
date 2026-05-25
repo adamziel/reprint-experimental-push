@@ -164,6 +164,7 @@ The distinction is operational: if a command does not export `REPRINT_PUSH_SOURC
 
 Direct command-surface check on 2026-05-25: [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still has no `verify`, `verify:release`, or `release` script, so the repo still lacks a checked-in real-site push preflight command that could own the release verdict.
 Direct filesystem check on 2026-05-25: this checkout has no `.github` tree or workflow entrypoint, so there is no checked-in automation path that can compensate for the missing release command.
+Current recheck summary on 2026-05-25: the checked-in command surface still ends at `test`, `plan`, `apply`, `test:recovery:file-journal`, and `test:playground:*`, and the release automation tree is still absent.
 Current release-gate absence checklist:
 
 - no checked-in `verify` wrapper that exports `REPRINT_PUSH_SOURCE_URL`
