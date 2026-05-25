@@ -168,12 +168,15 @@
     "required_auth_floor": "at least as strict as current Reprint HMAC usage"
   },
   "required_invariants": [
+    "pull exporter/importer establish the immutable base package before push",
     "dry-run and apply are separate remote operations",
     "remote snapshot hash listing is planning evidence, not write authority",
     "dry-run is a receipt, not a lock",
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy",
     "push preflight must mint a short-lived session bound to one remote identity and one persisted pull base",
     "dry-run and apply are separate remote operations even when the same runner executes both",
     "apply must revalidate fresh live hashes after dry-run and before any storage boundary commit",

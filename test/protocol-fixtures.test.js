@@ -388,6 +388,14 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.lab_topology.remote_changed.identity, 'remote-example');
   assert.equal(topologyMatrix.lab_topology.live_drift.between[0], 'remote_base');
   assert.equal(topologyMatrix.lab_topology.live_drift.proof[0], 'remote-base and remote-changed are the same remote identity observed at different times');
+  assert.ok(topologyMatrix.required_invariants.includes('pull exporter/importer establish the immutable base package before push'));
+  assert.ok(topologyMatrix.required_invariants.includes('dry-run and apply are separate remote operations'));
+  assert.ok(topologyMatrix.required_invariants.includes('remote snapshot hash listing is planning evidence, not write authority'));
+  assert.ok(topologyMatrix.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
+  assert.ok(topologyMatrix.required_invariants.includes('journal inspection is read-only and never authorizes mutation by itself'));
+  assert.ok(topologyMatrix.required_invariants.includes('recovery must begin with inspect before any mutating repair'));
+  assert.ok(topologyMatrix.required_invariants.includes('authentication must be at least as strict as current Reprint HMAC usage'));
+  assert.ok(topologyMatrix.required_invariants.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
   assert.equal(
     topologyMatrix.test_topology.proof_order[0],
     'preflight',
