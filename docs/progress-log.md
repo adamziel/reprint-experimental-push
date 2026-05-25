@@ -4,6 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 01:05:00
+
+<a id="2026-05-26-public-status-audit-010500"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the visible last-updated date aligned with the latest remote-head refresh. The first screen still stays conservative: release gates remain `0/4`, and production WordPress auth/session lifecycle plus durable journal storage with lease/fencing remain pending.
+- `git ls-remote` showed several lane heads changed since the last audit note: `critic` is now `4e487df4`, `fast-paths` is `b54f1b34`, `feedback-supervisor` is `f386dfa6`, `progress-publisher` is `7695e1f94`, `same-plan-wordpress-graph-create` is `732e1251`, and `no-data-loss-invariants` is `fa0ce3ea`. `reliable-executor` stayed at `0c4fd10f`, so the live proof still has not advanced past the fixture-suite recheck.
+- Evidence trail: [progress.html](../progress.html), [release-gate checklist](../progress.html#proof-gates), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Public Status Audit 00:31:00
 
 <a id="2026-05-26-public-status-audit-003100"></a>

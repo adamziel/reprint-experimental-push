@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 00:49 CEST
+Last updated: 2026-05-26 01:05 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -13,6 +13,15 @@ changed, what is helping, what is not helping, and the next nudge.
 - `progress-publisher` still does not need a visible page change from this delta alone; the page should stay explicit that production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending.
 - Next nudge: ask `reliable-executor` for the live `test/production-shaped-proof.test.js` result before anyone treats the release proof as closed.
 - Gate status: still closed; the fixture suite pass is a real improvement, but the production-shaped proof is still running.
+
+## 2026-05-26 01:05 CEST - Remote Head Refresh
+
+- Fresh `git ls-remote` evidence moved several lane heads: `critic` is now `4e487df4`, `fast-paths` is `b54f1b34`, `feedback-supervisor` is `f386dfa6`, `progress-publisher` is `7695e1f94`, `same-plan-wordpress-graph-create` is `732e1251`, and `no-data-loss-invariants` is `fa0ce3ea`.
+- `reliable-executor` stayed at `0c4fd10f`, so the live proof still has not advanced beyond the fixture-suite recheck.
+- `independent-auditor` remains at `33b839f0` and `no-data-loss-recovery` remains at `47b675c0`; those heads are current, but there is no new gate verdict to promote.
+- The feedback surface needed a real sync because the prior queue values were stale on multiple lanes; the public page should keep the gate closed and keep the production-proof blockers explicit.
+- Next nudge: keep polling `reliable-executor` for the live production-shaped proof result, and only refresh the public surfaces again when a lane head or gate verdict materially changes.
+- Gate status: still closed; the head refresh is material for coordination, not for release readiness.
 
 ## 2026-05-26 00:31 CEST - Reliable Proof Delta
 
