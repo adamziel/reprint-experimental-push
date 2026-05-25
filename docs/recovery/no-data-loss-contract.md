@@ -1,21 +1,26 @@
-# No Data Loss Recovery Contract
+# No-Data-Loss Recovery Contract
 
-This lane keeps the push path inside three acceptable post-failure states:
+This lane treats recovery as a three-state contract:
 
-1. `old-remote`
-2. `fully-updated-remote`
-3. `blocked-recovery` with inspectable artifacts
+* `old-remote` for failures that happen before any remote mutation can be
+  committed.
+* `fully-updated-remote` for successful completion or replay of a completed
+  plan.
+* `blocked-recovery` when the remote has partial writes or drift and the
+  recovery path must preserve artifacts.
 
-The contract is intentionally conservative:
+The last state is only acceptable when it carries both:
 
-- A failure before remote mutation must leave the remote unchanged and surface only the journal artifacts needed to inspect the attempt.
-- A completed plan replay must stay read-only and classify as `fully-updated-remote`.
-- A partial commit is only acceptable when recovery is explicitly blocked and the durable artifacts include enough evidence to inspect the partial remote safely.
+* durable journal artifacts, and
+* a classified remote snapshot or equivalent recovery evidence.
 
-Durable recovery evidence is not the same as lab or JSON evidence:
+Anything else is a release blocker because a partial mutation without recovery
+artifacts cannot be safely retried.
 
-- JSON or in-memory fixtures can help model the boundary.
-- Production recovery requires durable journal rows, flushed file or DB writes, and a usable inspect path.
-- Retry logic must not duplicate inserts, resurrect stale local data, or treat a partial write without artifacts as safe.
+The tests in `test/push-planner.test.js` pin this contract across:
 
-The tests in `test/push-planner.test.js` are the executable version of this contract.
+* failure before mutation,
+* failure after staging,
+* failure after dependency validation,
+* replay of a completed plan, and
+* stale replay of a completed plan on a drifted remote.

@@ -10627,6 +10627,10 @@ test('stale completed replay on a durable journal blocks recovery instead of dup
     'Drifted after completion',
   );
   assert.equal(
+    Object.keys(replayError.details.recovery.artifacts.remote.db.wp_posts).filter((key) => key === 'ID:2').length,
+    1,
+  );
+  assert.equal(
     persistedAfterReplay.records.filter((record) => record.type === 'journal-replayed').length,
     persistedBeforeReplay.records.filter((record) => record.type === 'journal-replayed').length,
   );
