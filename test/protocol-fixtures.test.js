@@ -240,6 +240,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'For the production Docker and Playground harness shape, the topology pair is:',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'push-production-journal-lease-recovery-inspect-contract.json` is the compact production proof for journal rows, lease fencing, and read-only recovery inspect after the dry-run/apply split.',
     ),
   );

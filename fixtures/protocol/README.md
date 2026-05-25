@@ -94,6 +94,15 @@ For the canonical production ladder and topology handoff, cite:
 7. `push-production-journal-lease-recovery-inspect-contract.json`
 8. `push-production-executor-flow-contract.json`
 
+For the production Docker and Playground harness shape, the topology pair is:
+
+1. `push-production-topology-contract.json`
+2. `push-production-route-matrix-contract.json`
+
+Use that pair when you need the one-remote, one-local, one-drift proof plus the
+shared route matrix, ingress rule, and local-only proxy policy in one review
+path.
+
 When you need the exact one-remote, one-local topology proof, start with:
 
 1. `push-production-topology-contract.json`
