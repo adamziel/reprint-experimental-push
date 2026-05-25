@@ -1127,6 +1127,24 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
     ),
   );
+  assert.equal(
+    deploymentTopologyContract.test_topology.shape,
+    'one remote source site, one imported local site, and one later drift observation of the same remote identity',
+  );
+  assert.equal(deploymentTopologyContract.test_topology.docker.remote_base, 'remote-base');
+  assert.equal(deploymentTopologyContract.test_topology.docker.local_edited, 'local-edited');
+  assert.equal(deploymentTopologyContract.test_topology.docker.remote_changed, 'remote-changed');
+  assert.ok(
+    deploymentTopologyContract.test_topology.docker.proof.includes(
+      'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.equal(deploymentTopologyContract.test_topology.playground.remote_base, 'remote-base');
+  assert.ok(
+    deploymentTopologyContract.test_topology.playground.proof.includes(
+      'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
   assert.equal(deploymentTopologyContract.pull_to_push_mapping.exporter, 'scans the merge base and coverage evidence');
   assert.equal(
     deploymentTopologyContract.pull_to_push_mapping.importer,

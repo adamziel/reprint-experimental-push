@@ -59,6 +59,34 @@
       ]
     }
   },
+  "test_topology": {
+    "shape": "one remote source site, one imported local site, and one later drift observation of the same remote identity",
+    "docker": {
+      "remote_base": "remote-base",
+      "local_edited": "local-edited",
+      "remote_changed": "remote-changed",
+      "proof": [
+        "remote-base seeds the persisted pull base",
+        "local-edited is the imported local site with user edits",
+        "remote-changed is the same remote identity observed later after drift",
+        "dry-run and apply remain separate remote operations",
+        "apply revalidates fresh live evidence before every batch and at the storage boundary",
+        "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
+      ]
+    },
+    "playground": {
+      "remote_base": "remote-base",
+      "local_edited": "local-edited",
+      "remote_changed": "remote-changed",
+      "proof": [
+        "remote-base seeds the persisted pull base",
+        "local-edited is the imported local site with user edits",
+        "remote-changed is the same remote identity observed later after drift",
+        "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
+        "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
+      ]
+    }
+  },
   "pull_to_push_mapping": {
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance",
