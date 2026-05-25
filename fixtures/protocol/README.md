@@ -103,6 +103,10 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-auth-session-journal-recovery-inspect-contract.json` is
   the compact production auth/session/journal/lease/recovery-inspect proof
   for the same remote identity and local edit site.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is
+  the proof to cite when you need the minimum production evidence for auth
+  floor, push session minting, journal rows, lease fencing, and read-only
+  recovery inspect on the same remote identity.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-preflight-contract.json` keeps the first live binding explicit: the
