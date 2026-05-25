@@ -58,6 +58,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.journal.allJournalsIntegrityOk, true);
   assert.equal(report.evidence.redaction.durableJournalsContainNoRawValues, true);
   assert.equal(report.resourceLimits.memoryCeilingBytes, 32 * 1024 * 1024);
+  assert.equal(report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling, true);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
@@ -89,6 +90,7 @@ test('guarded benchmark refuses production throughput claims until production ga
     report.claims.productionThroughputDetails.resourceLimits.maxBufferedUploadBytes,
     32 * 1024 * 1024,
   );
+  assert.equal(report.claims.productionThroughputDetails.chunkWindowWithinMemoryCeiling, true);
   assert.equal(
     report.claims.productionThroughputDetails.receiptCursor.resourceKey,
     'file:wp-content/uploads/2026/05/catalog-export.bin',
@@ -132,6 +134,9 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
   assert.ok(
     report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
+  );
+  assert.ok(
+    !report.claims.productionThroughput.blockers.includes('chunk-window-exceeds-memory-ceiling'),
   );
   assert.ok(
     !report.claims.productionThroughput.blockers.includes('missing-valid-receipt-cursor'),
@@ -197,6 +202,12 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   delete missingMemoryCeiling.resourceLimits.memoryCeilingBytes;
   assert.ok(
     productionThroughputBlockers(missingMemoryCeiling).includes('production-memory-ceiling-not-measured'),
+  );
+
+  const oversizedChunkWindow = clone(report);
+  oversizedChunkWindow.shape.chunkSizeBytes = oversizedChunkWindow.resourceLimits.maxBufferedUploadBytes + 1;
+  assert.ok(
+    productionThroughputBlockers(oversizedChunkWindow).includes('chunk-window-exceeds-memory-ceiling'),
   );
 
   const missingGraphIdentity = clone(report);

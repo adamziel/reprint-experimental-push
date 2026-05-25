@@ -191,6 +191,13 @@ export function productionThroughputBlockers(report) {
   if (!Number.isFinite(report.resourceLimits?.memoryCeilingBytes) || report.resourceLimits.memoryCeilingBytes <= 0) {
     blockers.push('production-memory-ceiling-not-measured');
   }
+  if (
+    !Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
+    || report.resourceLimits.maxBufferedUploadBytes <= 0
+    || report.shape.chunkSizeBytes > report.resourceLimits.maxBufferedUploadBytes
+  ) {
+    blockers.push('chunk-window-exceeds-memory-ceiling');
+  }
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
     blockers.push('production-atomic-group-commit-not-measured');
   }
@@ -217,6 +224,7 @@ export function productionThroughputDetails(report) {
     throughput: report.throughput,
     executorCapabilities: report.executorCapabilities,
     resourceLimits: report.resourceLimits,
+    chunkWindowWithinMemoryCeiling: report.evidence.resourceLimits.chunkWindowWithinMemoryCeiling,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     recovery: report.evidence.recovery,
@@ -631,6 +639,11 @@ function buildReport({
         partialCommitGroupNewTargets: partialFailure.groupNewTargets,
         partialCommitStatus: partialFailure.inspectionStatus,
         productionAtomicCommitMeasured: false,
+      },
+      resourceLimits: {
+        memoryCeilingBytes: config.maxBufferedUploadBytes,
+        maxBufferedUploadBytes: config.maxBufferedUploadBytes,
+        chunkWindowWithinMemoryCeiling: config.chunkSizeBytes <= config.maxBufferedUploadBytes,
       },
       recovery: {
         successInspectionStatus: successInspection.status,
