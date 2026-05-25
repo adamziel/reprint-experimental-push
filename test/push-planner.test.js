@@ -9507,4 +9507,15 @@ test('explicit recovery matrix stays limited to old remote, fully updated remote
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  const secondReplayRemote = JSON.parse(JSON.stringify(replay.site));
+  const secondReplaySnapshot = JSON.stringify(secondReplayRemote);
+  const secondReplay = applyPlan(secondReplayRemote, plan, { journal: replay.journal });
+
+  assert.equal(JSON.stringify(secondReplayRemote), secondReplaySnapshot);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
 });
