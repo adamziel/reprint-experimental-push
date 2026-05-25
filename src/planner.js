@@ -204,6 +204,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const revisionSupport = unsupportedRevisionResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!revisionSupport.supported) {
+        addUnsupportedRevisionResourceBlocker(plan, {
+          resource,
+          support: revisionSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const commentsUsersSupport = unsupportedCommentsUsersResourceSupport({
         resource,
         baseValue,
@@ -1544,6 +1564,37 @@ function addUnsupportedNavigationResourceBlocker(plan, {
   });
 }
 
+function addUnsupportedRevisionResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-revision-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-revision-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Revision graph resource ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function addUnsupportedCommentsUsersResourceBlocker(plan, {
   resource,
   support,
@@ -1688,7 +1739,11 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
   }
 
   const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
-  if (!candidate || candidate === ABSENT || candidate.post_type !== 'wp_navigation') {
+  if (
+    !candidate
+    || candidate === ABSENT
+    || !['wp_navigation', 'nav_menu_item'].includes(candidate.post_type)
+  ) {
     return { supported: true };
   }
 
@@ -1696,6 +1751,23 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
     supported: false,
     className: 'unsupported-navigation-resource',
     reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+  };
+}
+
+function unsupportedRevisionResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_posts') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT || candidate.post_type !== 'revision') {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-revision-resource',
+    reason: 'Revision graph resources are not yet supported by the planner.',
   };
 }
 

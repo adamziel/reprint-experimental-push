@@ -174,6 +174,9 @@ the resource key, the live remote hash observed during planning, and the
   owner context. The stale owner context wins over the unrelated safe edit.
 - Plugin-owned deletions when the owning plugin context no longer matches the
   live remote context, even if unrelated remote-only plugin drift is present.
+- Plugin-owned deletions keep blocking when the owner plugin was removed
+  remotely and the local plan opts into delete support for that row. Delete
+  support does not override the stale owner-context stop.
 - Unrelated remote-only plugin drift does not make a stale plugin-context
   mutation safe. If local touches the same plugin's files or plugin-owned data,
   stop.
@@ -186,6 +189,10 @@ the resource key, the live remote hash observed during planning, and the
 - WordPress graph mutations that reference a graph target absent from the live
   remote. Creating new target identities and rewriting relationship rows in the
   same plan remains blocked until an identity-map/rewrite proof exists.
+- WordPress revision graph rows. The planner must stop on `post_type =
+  revision` instead of pretending revision history is a regular post resource.
+- WordPress navigation menu item rows. The planner must stop on
+  `post_type = nav_menu_item` instead of treating menu items as ordinary posts.
 - File topology conflicts where applying a local file or type change would
   require overwriting, removing, or hiding a live remote ancestor or descendant.
   The conflicting file mutation and its precondition must be suppressed rather
