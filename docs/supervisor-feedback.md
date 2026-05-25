@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 15:21:34 CEST
+Last updated: 2026-05-25 15:23:18 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 15:23:18 CEST
+
+- Going well: `reliable-executor` added `ec1c9952`, which makes the release verifier emit the protocol extension stages and pull-to-push mapping in checked output.
+- Not going well: the production gate is still closed because auth/session lifecycle and durable journal storage with lease/fencing remain unproven.
+- Progress delta: the release harness is more explicit, but this is still release-surface evidence rather than a shippable boundary proof.
+- Next nudge: `reliable-executor` owns the next production-boundary proof; `progress-publisher` should headline `ec1c9952` and keep the page terse; `critic` and `auditor` should reject wording-only gate claims.
+- Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 
 ## 2026-05-25 15:21:34 CEST
 

@@ -508,7 +508,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until the production boundary proof gap closes. The linked docs hold the proof trail; this page stays scan-first.</p>
-        <time class="update-stamp" datetime="2026-05-25T15:21:34+02:00">Last updated: May 25, 2026, 15:21:34 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T15:23:18+02:00">Last updated: May 25, 2026, 15:23:18 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production-boundary evidence</span>
           <span class="pill">Lane-local only until merge to main</span>
@@ -518,7 +518,7 @@
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/supervisor-feedback.md">Open supervisor feedback</a>
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <a class="log-link" href="audits/supervisor-note-20260525-152134.md">Open latest audit note</a>
+        <a class="log-link" href="audits/supervisor-note-20260525-152318.md">Open latest audit note</a>
         <a class="log-link" href="audits/objective-audit.md">Open objective audit</a>
         <p>Scan view only. Details stay in linked docs; this lane-local copy becomes live on GitHub Pages after merge to <code>main</code>.</p>
       </div>
@@ -550,12 +550,12 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>Reliable-executor still has the strongest lab release-harness proof, and <code>95164c8a</code> added file-journal lease/fence smoke evidence.</span></li>
+          <li><strong>Going well</strong><span><code>ec1c9952</code> made the release verifier emit the protocol extension stages and pull-to-push mapping in checked output.</span></li>
           <li><strong>Not going well</strong><span>The production gate is still closed because auth/session lifecycle and durable journal storage with lease/fencing remain unproven.</span></li>
-          <li><strong>Progress delta</strong><span>No new material evidence landed, so the visible status should stay unchanged.</span></li>
-          <li><strong>Next nudge</strong><span>Reliable-executor is the lane drifting from the production-boundary proof; it owns the next real-site release command, progress-publisher stays quiet until material evidence changes, and critic and auditor should reject wording-only gate claims.</span></li>
+          <li><strong>Progress delta</strong><span>The release harness is more explicit, but this is still release-surface evidence rather than a shippable boundary proof.</span></li>
+          <li><strong>Next nudge</strong><span>Reliable-executor owns the next production-boundary proof; progress-publisher should headline <code>ec1c9952</code> and keep the page terse; critic and auditor should reject wording-only gate claims.</span></li>
         </ul>
-        <p class="note">For the terse evidence trail, open <a href="audits/supervisor-note-20260525-152134.md">the latest audit note</a>.</p>
+        <p class="note">For the terse evidence trail, open <a href="audits/supervisor-note-20260525-152318.md">the latest audit note</a>. This lane-local copy becomes live on GitHub Pages only after merge to <code>main</code>.</p>
         <details class="lane-nudges">
           <summary>Lane nudges</summary>
           <ul class="compact-list" aria-label="Lane nudges">
