@@ -6,6 +6,8 @@ This design still cannot claim production-grade push support.
 
 The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the latest fetched remote head `536015fb` surfacing the explicit durable-journal boundary verdict plus the earlier `ec1c9952` protocol extension and `0c703230` snapshot-hash proofs. That is concrete retained-source progress, but it is still lab evidence until one live mutation boundary preserves the rejected remote and survives replay on production-like storage.
 
+The latest remote evidence also reached `889bd37a` with the exact verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. That is the clearest current boundary: the release gate is still closed because production WordPress auth/session lifecycle, durable journal storage plus lease/fencing, preserved-remote retention after rejection, apply-time revalidation, graph identity, and plugin-driver coverage are not yet proven together on one rerunnable live boundary.
+
 The single blocker is one rerunnable live mutation boundary on one exact source URL. Until that boundary preserves the rejected remote for audit and retry, re-derives authority from fresh live hashes at apply time, re-enters the same WordPress auth/session after rejection, and classifies plugin-owned surfaces before the first write, production wording stays false.
 
 Worker-action checklist:
@@ -238,6 +240,8 @@ Until that boundary exists, `verify:release`, retained-source verdicts, and the 
 If the next worker can only produce wording, local fixture output, or a manual-resolution artifact, that is not enough. The proof must leave the rejected remote preserved for audit and retry.
 
 ## Strongest blocker
+
+One rerunnable live mutation boundary on one exact source URL is still missing. The retained-source lane now proves more of the command and session surface, but it does not yet prove production WordPress auth/session expiry, refresh, and operator re-entry on the same rejected source URL, plus lease-fenced journal durability, preserved-remote retention after refusal, graph identity under remap, and plugin-driver coverage on the same replayable boundary.
 
 The strongest blocker is still one named, rerunnable live release boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that rejects stale authority before the first write, preserves the rejected remote for audit, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation.
 
