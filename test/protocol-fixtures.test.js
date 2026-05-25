@@ -1232,6 +1232,46 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'inspect reads the journal row and live hashes before classifying finish, rollback, retry, or block',
     ),
   );
+  assert.equal(authSessionJournalRecoveryInspectContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(
+    authSessionJournalRecoveryInspectContract.session.base_manifest_id,
+    'pull-2026-05-24T00:00:00Z',
+  );
+  assert.equal(
+    authSessionJournalRecoveryInspectContract.journal_fence.claim_generation,
+    authSessionJournalRecoveryInspectContract.journal_row.claim_generation,
+  );
+  assert.equal(
+    authSessionJournalRecoveryInspectContract.recovery_inspect.mode,
+    'inspect',
+  );
+  assert.equal(
+    authSessionJournalRecoveryInspectContract.recovery_inspect.mutates,
+    false,
+  );
+  assert.ok(
+    authSessionJournalRecoveryInspectContract.required_invariants.includes(
+      'fresh live hashes must still be checked before finish, rollback, or auto',
+    ),
+  );
+  assert.equal(
+    productionRecoveryInspectContract.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(
+    productionRecoveryInspectContract.recovery_inspect.authorization,
+    'read-only evidence reader that never authorizes mutation by itself',
+  );
+  assert.ok(
+    productionRecoveryInspectContract.topology.proof.includes(
+      'recovery inspect happens before any mutating repair',
+    ),
+  );
+  assert.ok(
+    productionRecoveryInspectContract.required_invariants.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
   assert.ok(
     authSessionJournalRecoveryInspectContract.required_invariants.includes(
       'claim generation and lease expiry fence stale workers before mutation',
