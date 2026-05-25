@@ -894,6 +894,10 @@ The model exposes three contract lists that tests should keep current:
   installs and subsequent coupled changes. Those workloads must expose chunk
   receipts, row receipts, and group-finalize records directly so recovery can
   classify old, new, or blocked without guessing from throughput alone.
+- The same benchmark run should keep the file-hash, chunk-upload, database-row,
+  remote-index, compression, parallelism, and backpressure evidence visible for
+  the large upload and plugin install paths, rather than collapsing them into a
+  tiny-row microbenchmark that hides the recovery boundaries.
 - `failureInjectionBoundaries` names the durable transitions that benchmarks
   must exercise: chunk ack, database batch commit, group staging finalize, and
   atomic group commit.

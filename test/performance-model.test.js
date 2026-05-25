@@ -105,6 +105,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     pluginInstall.actions.some((action) => action.type === 'group-staging-finalize' && action.finalizeMode === 'receipts-plus-live-preconditions'),
     'plugin install keeps the group barrier intact during finalize',
   );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'atomic-group-commit' && action.commitPolicy === 'all-or-nothing'),
+    'plugin install keeps the atomic group commit barrier explicit',
+  );
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
@@ -290,11 +294,21 @@ test('failure boundaries carry the receipts and commit records needed for recove
   assert.ok(boundaries.get('db-batch-commit'));
   assert.ok(boundaries.get('group-staging-finalize'));
   assert.ok(boundaries.get('atomic-group-commit'));
+  assert.equal(boundaries.get('chunk-ack').recoveryEvidence, 'chunk digest plus plan-scoped idempotency key');
+  assert.equal(
+    boundaries.get('group-staging-finalize').recoveryEvidence,
+    'member resource hash, staging hash, atomic group id',
+  );
+  assert.equal(
+    boundaries.get('atomic-group-commit').recoveryEvidence,
+    'commit record after all member preconditions are rechecked',
+  );
 
   assert.ok(largeUpload.actions.some((action) => action.type === 'chunk-upload' && action.durableAckRequired));
   assert.ok(largeUpload.actions.some((action) => action.type === 'file-publish' && action.precondition?.expectedHash));
   assert.ok(pluginInstall.actions.some((action) => action.type === 'db-row-batch' && action.preconditions.kind === 'per-row-hash'));
   assert.ok(pluginInstall.actions.some((action) => action.type === 'group-staging-finalize' && action.requiredReceipts.rowBatches > 0));
+  assert.ok(pluginInstall.actions.some((action) => action.type === 'plugin-metadata-stage' && action.canonicalVisible === false));
   assert.ok(pluginUpdate.actions.some((action) => action.type === 'group-staging-finalize' && action.failsClosedWhen.includes('validator-missing')));
   assert.ok(pluginUpdate.actions.some((action) => action.type === 'atomic-group-commit' && action.validators.includes('dependency-preconditions')));
 });
