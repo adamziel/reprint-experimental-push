@@ -251,6 +251,9 @@ proof:
   boundary explicit and confirm the retained-source verifier path is still
   being tightened, but it still stays inside the supervised lane's lab
   harness.
+- The latest explicit verdict, `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`,
+  is the right release gate for this head; it keeps the boundary closed even
+  with the improved retained-source handoff.
 - The evidence still does not show a production WordPress auth/session
   lifecycle on a real source boundary.
 - The evidence still does not show durable journal semantics outside the
