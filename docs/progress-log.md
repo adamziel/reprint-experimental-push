@@ -6,9 +6,21 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 02:54:48 CEST.
+- Last update: 2026-05-25 02:55:22 CEST.
 - Status: Lab/model evidence still holds; production proof is still missing.
 - Trend: the visible page, this log, and the newest supervisor note stay aligned; the newest pass kept the visible summary short and linked without changing readiness.
+- Supervision: the same-plan graph worker remains active and unmerged.
+- Blocker: production credential lifecycle, durable storage, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers remain unproven.
+- Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to this log and the feedback note for the evidence trail.
+- Pending proof gates: production auth/session storage, durable journal ownership, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers.
+- Next nudge: keep production gates blocked until a worker proves production auth/session/journal internals and graph identity mapping.
+- Public page: [progress.html](../progress.html) carries the visible update date and links to the evidence trail. This lane's copy becomes live only after merge to `main`.
+
+## 2026-05-25 - Fresh Supervisor Snapshot
+
+- Last update: 2026-05-25 02:55:22 CEST.
+- Status: Lab/model evidence still holds; production proof is still missing.
+- Trend: the visible page, this log, and the newest supervisor note stay aligned; the newest pass did not add evidence and kept the surface short and linked.
 - Supervision: the same-plan graph worker remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to this log and the feedback note for the evidence trail.
