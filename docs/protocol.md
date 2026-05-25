@@ -163,6 +163,24 @@ The topology model is deliberately minimal:
 - journal inspection remains read-only and recovery must begin with inspect
   before any mutating repair.
 
+The deployment test topology is the same in Docker and Playground:
+
+- one remote source site, `remote-base`
+- one imported local edited site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner that owns all push protocol calls
+- browser-visible inspection only through the sandbox-provided `8080`
+  ingress and a local-only proxy
+
+The topology is captured in these fixtures:
+
+- `push-deployment-topology-contract.json` for the smallest topology-only
+  proof
+- `push-remote-liveness-topology-contract.json` for the dry-run/apply split
+  that proves liveness stays separate from write authority
+- `push-production-topology-contract.json` for the compact production bundle
+  that includes the pull provenance, push stage sequence, and topology proof
+
 Docker and Playground use the same topology labels and the same ingress
 policy:
 
@@ -233,6 +251,19 @@ The reviewable bridge from pull to push is intentionally linear:
 
 That table is the contract boundary: pull discovers and persists immutable
 provenance, and push consumes that provenance without ever rewriting it.
+
+The production executor therefore has one source of truth for provenance and
+one source of truth for live state:
+
+- exporter/importer own the immutable pull base package
+- preflight binds that package to one live remote identity and one
+  short-lived push session
+- snapshot hash listing is planning evidence only
+- dry-run uploads the canonical plan and returns a receipt, not a lock
+- batch apply is the only mutation stage and must revalidate fresh live
+  evidence before every batch and at the storage boundary
+- journal inspect is read-only evidence gathering
+- recovery must begin with inspect before any mutating repair
 
 The auth floor is explicit:
 

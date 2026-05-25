@@ -40,6 +40,17 @@ The executor follows the same ordered stages defined in the protocol:
 7. `push_recover auto|finish|rollback` mutates only when inspect proves the
    branch safe and the auth floor still holds.
 
+The executor boundary is intentionally production-shaped:
+
+- exporter/importer are the immutable provenance source
+- preflight is the first live binding after importer persistence
+- remote snapshot hash listing is planning evidence only
+- dry-run is a receipt, not a lock
+- apply is a separate remote call that revalidates before every batch and at
+  the storage boundary
+- journal inspect is read-only
+- recovery starts with inspect before any mutating repair
+
 The pull/export/import handoff remains the provenance source for every push
 stage:
 
@@ -118,6 +129,19 @@ That mapping is the executor contract, not just an implementation note:
 - `push_recover inspect` is read-only and must precede any mutating repair.
 - `push_recover auto|finish|rollback` may mutate only when inspect plus fresh
   live hashes prove the branch safe.
+
+The same mapping is what the Docker and Playground proofs must exercise:
+
+- one remote source site, `remote-base`
+- one imported local edited site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner that owns the protocol calls
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+
+Use `push-deployment-topology-contract.json` for the smallest topology proof
+and `push-remote-liveness-topology-contract.json` when you need the dry-run
+and apply liveness split in the same harness.
 
 This keeps the exporter/importer pipeline authoritative for the base package
 while making push a separate production write path that can only consume that
