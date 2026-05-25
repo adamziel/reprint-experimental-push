@@ -206,7 +206,9 @@ contributes audit and crash-consistency vocabulary; none of them prove live
 push safety, preserved-remote auditability, graph identity, plugin-driver
 coverage, or plugin-owned surface handling on this branch. Route-family,
 package-mount, or reviewer-wording similarity does not promote a historical
-note to retry authority.
+note to retry authority, and a source-note "pass" is still not production
+evidence unless it is paired with the live command, the live URL, the rejected
+remote, and the post-rejection audit trail on this branch.
 The compact comparison record lives in
 [`audits/critic-source-notes-matrix.md`](./critic-source-notes-matrix.md).
 An authenticated HTTP or CLI smoke does not upgrade that provenance either:
