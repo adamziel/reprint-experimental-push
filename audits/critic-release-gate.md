@@ -77,6 +77,7 @@ Production-readiness language checklist:
 - show the preserved remote stayed auditable after rejection;
 - show the stale approval, review artifact, or comparison note was rejected before mutation and cannot widen to a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
 - show the fresh retry artifact was rebuilt from live hashes on this branch, not inherited from earlier approval or copied from a note;
+- show the exact live boundary was rerun here, not just a matching route shape or package mount;
 - classify every touched surface as old, new, or blocked before retry starts;
 - enumerate or block every plugin-owned surface outside the allowlist, including late-discovered tables, files, cron rows, runtime registries, serialized blobs, caches, and generated assets;
 - treat route shape, package mount shape, fixture replay, readable review output, and `finalMatchesLocal` as compatibility evidence only; and

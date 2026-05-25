@@ -4621,3 +4621,20 @@ Route-shaped smokes and fixture replays are useful compatibility evidence, but
 they do not establish production safety unless the branch separately proves the
 live executor, preserved remote, stale-artifact rejection, and fresh retry
 scope for the exact same boundary.
+
+Minimum proof still missing for any production-grade claim:
+
+- the exact live boundary that was rerun here, not just a matching route or
+  package shape;
+- the preserved remote after rejection, with audit evidence that remains
+  inspectable but cannot authorize retry by itself;
+- the stale approval or review artifact rejecting point, including proof that
+  it cannot widen to a different row, file, relationship-bearing record,
+  remapped create target, or plugin-owned surface;
+- the fresh retry artifact rebuilt from live hashes on this branch rather than
+  inherited from a note, fixture, or earlier approval;
+- old/new/blocked classification for every touched surface, including any late-
+  discovered plugin-owned table, file, cron row, runtime registry, generated
+  asset, cache entry, or serialized blob; and
+- a separate preserve / reject / retry cycle for any later-discovered plugin-
+  owned surface that appears after the first write.
