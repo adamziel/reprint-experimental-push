@@ -18,6 +18,9 @@ or comparison-only.
   The audit trail must show the rejected artifact stayed auditable, but could
   not be widened into a new row, file, relationship-bearing record, or
   plugin-owned surface. A readable stale artifact is not a valid retry token.
+  "Manual resolution later" is not a success state until the remote-preserving
+  reject, the audit-only artifact, and the fresh-scope retry are all visible on
+  the same live write boundary.
 - The claim shows live remote drift between dry-run and apply failed closed
   before the first write, not after the executor had already modified a row,
   file, or plugin-owned surface.
@@ -28,7 +31,8 @@ or comparison-only.
   identity without a live remap proof.
 - The claim shows plugin-owned state outside the allowlist is either discovered
   or hard-blocked, including options, custom tables, generated files, activation
-  hooks, cron, cache state, and other plugin side effects.
+  hooks, cron, cache state, runtime registries, serialized blobs, and other
+  plugin side effects.
 - The claim shows plugin data traps are not being mistaken for success just
   because a fixture-owned option or table row matches the expected shape while
   the real plugin also owns custom tables, serialized counters, cron rows,
@@ -106,6 +110,10 @@ or comparison-only.
   just because it is readable; if it can be reused against a new row, file,
   relationship-bearing record, or plugin-owned surface, the claim is not
   production-safe.
+- The claim does not let "manual resolution later" stand in for success unless
+  the remote was preserved for audit, the stale artifact stayed unusable, and
+  the retry rebuilt scope from fresh live evidence on the same live write
+  boundary.
 - The claim includes the exact upstream revision or worktree state for any
   Reprint, ZS-Sync, or ForkPress comparison, and says whether that exact
   state was reverified at the same live write boundary. If not, the
