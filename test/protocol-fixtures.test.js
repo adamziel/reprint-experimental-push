@@ -402,6 +402,32 @@ test('production route matrix fixture keeps the shared Docker and Playground rou
   assert.ok(routeMatrix.required_invariants.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
 });
 
+test('protocol extension topology fixture keeps the one-remote one-local one-drift harness aligned with the push bridge', () => {
+  const extensionTopology = readJson('fixtures/protocol/push-protocol-extension-topology-contract.json');
+
+  assert.equal(extensionTopology.contract_id, 'push-protocol-extension-topology-contract-one-remote-one-local');
+  assert.equal(extensionTopology.topology.same_remote_identity, true);
+  assert.equal(extensionTopology.topology.networking.ingress_port, 8080);
+  assert.equal(extensionTopology.topology.networking.proxy_policy, 'local-only');
+  assert.equal(extensionTopology.topology.networking.tunnels, 'disallowed');
+  assert.ok(extensionTopology.topology.docker.proof.includes('runner owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and recovery'));
+  assert.ok(extensionTopology.topology.docker.proof.includes('apply revalidates fresh live evidence before every batch and at the storage boundary'));
+  assert.ok(extensionTopology.topology.playground.proof.includes('runner uses the same route names as Docker'));
+  assert.ok(extensionTopology.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.deepEqual(extensionTopology.required_invariants, [
+    'dry-run and apply are separate remote operations',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run is a receipt, not a lock',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'pull exporter/importer establish the immutable base package before push',
+    'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+    'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+  ]);
+});
+
 test('production bridge and revalidation fixtures keep the pull handoff and live revalidation proof aligned', () => {
   const bridge = readJson('fixtures/protocol/push-production-pull-bridge-contract.json');
   const revalidation = readJson('fixtures/protocol/push-production-revalidation-contract.json');
