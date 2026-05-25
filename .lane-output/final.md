@@ -9,7 +9,7 @@ Evidence checked:
 - `git rev-parse --short HEAD`
 
 What changed:
-- `origin/lane/critic` is now recorded at `efacccfb`.
+- `origin/lane/critic` is now recorded at `3041eae6`.
 - `origin/lane/progress-publisher` is now recorded at `7695e1f9`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` is now recorded at `a37a7261`.
 - `origin/lane/same-plan-wordpress-graph-create` is still recorded at `24c58564`.
