@@ -17,6 +17,11 @@ compatibility evidence, or live retry proof, it must fail closed. The same
 rule applies to later-discovered plugin-owned surfaces: the wording has to say
 whether that surface is in scope, excluded, or blocked before write, because
 a note that never names the boundary cannot authorize a later boundary.
+If the wording only says that the route shape, package mount, reviewer note,
+or fixture looked production-shaped, it is still compatibility evidence only.
+That phrasing cannot become production proof unless the same live boundary on
+this branch also shows the preserved remote, the stale rejection point, and a
+fresh retry scope rebuilt from live hashes.
 
 Concrete failure scenarios that still block production wording:
 
