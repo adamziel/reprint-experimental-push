@@ -48,6 +48,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const contract = readJson('fixtures/protocol/push-contract.json');
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
   const topologyMatrix = readJson('fixtures/protocol/push-topology-matrix.json');
+  const deploymentTopologyContract = readJson('fixtures/protocol/push-deployment-topology-contract.json');
 
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
@@ -285,6 +286,27 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(
     readJson('fixtures/protocol/push-executor-topology-proof.json').pull_to_push_mapping.preflight,
     'binds that persisted base package to the live remote identity and a short-lived session',
+  );
+  assert.equal(deploymentTopologyContract.contract_id, 'push-deployment-topology-contract');
+  assert.equal(deploymentTopologyContract.topology.remote_base, 'remote-base');
+  assert.equal(deploymentTopologyContract.topology.local_edited, 'local-edited');
+  assert.equal(deploymentTopologyContract.topology.remote_changed, 'remote-changed');
+  assert.equal(deploymentTopologyContract.topology.runner, 'runner');
+  assert.equal(deploymentTopologyContract.topology.same_remote_identity, true);
+  assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'remote-changed is the same remote identity observed later after drift',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.deployment.docker.proof.includes(
+      'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.deployment.playground.proof.includes(
+      'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
   );
   assert.ok(
     readJson('fixtures/protocol/push-executor-topology-proof.json').required_invariants.includes(

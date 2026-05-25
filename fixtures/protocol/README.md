@@ -38,6 +38,7 @@ The normal sequence is:
 30. `push-snapshot-hashes-page-contract.json`
 31. `push-dry-run-apply-revalidation-contract.json`
 32. `push-remote-liveness-contract.json`
+33. `push-deployment-topology-contract.json`
 
 Failure and recovery examples:
 
@@ -136,6 +137,10 @@ Failure and recovery examples:
   twice, keep `remote-base` and `remote-changed` as two observations of that
   one site, and keep browser-visible inspection on the sandbox-provided `8080`
   ingress with a local-only proxy.
+- `push-deployment-topology-contract.json` gives the smallest topology-only
+  contract for Docker and Playground. It isolates the one-remote, one-local,
+  one-drift-witness shape and keeps the pull-to-push mapping and ingress rules
+  visible in one compact object.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact

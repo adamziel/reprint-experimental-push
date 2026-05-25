@@ -71,6 +71,12 @@ observed later after drift, and `runner` is the only process allowed to
 compare, upload, inspect, and recover. Browser-visible inspection must stay on
 the sandbox-provided `8080` ingress through a local-only proxy.
 
+The smallest machine-readable proof for that topology is
+[`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).
+It keeps the deployment shape separate from the larger auth and recovery
+fixtures so focused tests can assert the one-remote, one-local, one-drift
+witness boundary directly.
+
 ## Runtime Stages
 
 The production push extension has six ordered remote stages:

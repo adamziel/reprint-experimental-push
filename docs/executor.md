@@ -937,6 +937,11 @@ Browser-visible inspection, when needed, must stay behind the
 sandbox-provided `8080` ingress through a local-only proxy. Remote tunnels are
 disallowed.
 
+The smallest machine-readable proof for that deployment shape is
+[`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).
+Use it when a test only needs the one-remote, one-local, one-drift-witness
+topology and ingress rule, not the full auth/session or recovery matrix.
+
 ## One-Remote, One-Local Test Topology
 
 The recommended production-shaped topology is one remote source, one edited
