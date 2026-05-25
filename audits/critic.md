@@ -41,16 +41,19 @@ real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` has yet proven
 preserved-remote retention after rejection, apply-time revalidation from
 fresh live hashes, production auth/session lifecycle, durable journal storage
 with lease/fencing, graph identity, and plugin-driver coverage on the same
-mutation. Until one command can be rerun here and still show the rejected
-remote preserved for audit, retry, and later inspection, the rest of the
-evidence remains lab progress.
+mutation. The supervised reliable-executor lane now has material
+retained-source evidence, but this branch still lacks the same live boundary
+with an auditable rejected remote, so the rest of the evidence remains lab
+progress.
 
 Next proof required: one rerunnable live command on a real local, Playground,
 or Docker `REPRINT_PUSH_SOURCE_URL` that rejects stale drift before the first
 write, preserves the remote after rejection, revalidates at apply time from
 fresh live hashes, and records journal/recovery, graph identity, plugin-driver
-coverage, and auth/session lifecycle on the same mutation. Anything shorter is
-still lab evidence, not production-grade push support.
+coverage, and auth/session lifecycle on the same mutation. The command must
+leave the rejected remote inspectable after failure and must be safe to retry
+from fresh live hashes; anything shorter is still lab evidence, not
+production-grade push support.
 
 Before the project can claim production-grade push support, the proof set
 must include all of the following on one rerunnable live boundary:
