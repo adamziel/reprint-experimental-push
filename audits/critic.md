@@ -117,6 +117,15 @@ If the wording says "comparison passed", "manual resolution succeeded", or
 was rejected before write, that wording is false reliability and must fail
 closed.
 
+Current weakest claim to reject: a production-shaped `/wp-json/reprint/v1/push/*`
+smoke or a readable "manual resolution" note can look like live retry proof
+after drift. Missing proof is still the same live boundary rerun on this
+branch, the exact stale-drift case, the preserved remote that stayed
+inspectable after rejection, the rejection point before the first write, and
+old/new/blocked classification for every touched surface. Without all of that,
+the smoke and the note remain compatibility evidence or audit evidence only,
+even when the route family and reviewer wording match the production path.
+
 Concrete failure scenarios that still block production wording:
 
 - live remote drift after dry-run but before apply: missing proof is the
