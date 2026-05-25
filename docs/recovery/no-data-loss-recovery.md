@@ -1,48 +1,42 @@
 # No Data Loss Recovery
 
-This lane defines the recovery envelope for atomic apply and the durable
-journal boundary that backs it.
+This lane treats atomic apply as a durable recovery protocol, not just an in-memory mutation.
 
 ## Accepted post-failure states
 
-An interrupted or replayed apply must resolve to exactly one of:
+After any interrupted apply, the system must resolve to one of:
 
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery`
+1. `old-remote`
+2. `fully-updated-remote`
+3. `blocked-recovery` with inspectable artifacts
 
-Anything else is a contract failure.
+Any partial remote mutation without recovery artifacts is a release blocker.
 
-## What each state means
+## Boundary contract
 
-- `old-remote`: no remote mutation became durable. The remote stays on the pre-apply snapshot and the journal records the interruption boundary.
-- `fully-updated-remote`: every planned mutation is already present on the remote and the completed journal can be replayed without duplicating inserts or reviving stale local data.
-- `blocked-recovery`: the remote cannot be classified safely from the journal alone. The recovery artifact must preserve both the journal and the observed remote so inspection can decide the next action.
-
-## Boundary coverage
-
-The apply contract treats these boundaries as the minimum durable proof set:
+The apply path is expected to stay within these boundaries:
 
 - failure before mutation
 - failure after staging
 - failure after dependency validation
 - replay of a completed plan
 
-The first three boundaries must stay `old-remote`. A completed replay must stay `fully-updated-remote`. If a retry or inspect step observes drift, the recovery result must become `blocked-recovery` with artifacts.
+For the first three boundaries, the remote must remain in `old-remote` and the journal must preserve the interruption evidence.
 
-The durable journal is the executable proof surface for those boundaries. A
-passing run must leave either:
+For a completed plan replay, the remote must remain fully updated and the replay must be inert:
 
-- the old remote with a recoverable journal after an interrupted apply
-- the fully updated remote with a completed journal after replay
-- a blocked recovery state with both journal and remote artifacts after drift
+- no duplicate inserts
+- no resurrection of stale local data
+- no fresh mutation work
 
-Anything else means the atomic apply boundary lost information.
+If the current remote drifts away from the completed journal, recovery must stay blocked and keep the artifacts inspectable.
 
-## Release rule
+## Recovery artifacts
 
-A partial remote mutation without a recovery artifact is a release blocker.
+Blocked recovery must carry enough evidence to inspect the failure safely:
 
-Retrying a completed plan must not duplicate inserts, resurrect stale local data,
-or expand the journal with new mutation work. Recovery inspect must be able to
-classify the persisted journal without relying on hidden in-memory state.
+- the durable journal
+- the current remote snapshot
+
+The journal should remain append-only across retries so completed plans can be replayed without duplicating the mutation set.
+
