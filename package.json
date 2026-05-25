@@ -18,6 +18,7 @@
     "test:playground:authenticated-http-push": "node ./scripts/playground/authenticated-http-push-smoke.mjs",
     "test:playground:authenticated-cli-push": "node ./scripts/playground/authenticated-cli-push-smoke.mjs",
     "test:playground:production-shaped-push": "node ./scripts/playground/production-shaped-route-smoke.mjs",
+    "test:playground:production-shaped-topology-proof": "node ./scripts/playground/production-shaped-topology-proof.mjs",
     "test:playground:production-shaped-missing-secret": "node ./scripts/playground/production-shaped-missing-secret-smoke.mjs",
     "test:playground:production-shaped-missing-live-source": "node ./scripts/playground/production-shaped-live-source-gate-smoke.mjs",
     "test:playground:production-shaped-proof": "node ./scripts/playground/production-shaped-proof.mjs",

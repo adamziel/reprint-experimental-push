@@ -26,3 +26,23 @@ test('production-shaped proof wrapper emits the checked proof summary and exact 
   assert.ok(proof.stdout.includes('missingSecret'));
   assert.ok(proof.stdout.includes('missingLiveSource'));
 });
+
+test('production-shaped topology proof wrapper emits the fixed one-remote one-local one-drift harness', () => {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-topology-proof.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(proof.status, 0);
+  assert.match(proof.stdout, /"remoteBase": "remote-base"/);
+  assert.match(proof.stdout, /"localEdited": "local-edited"/);
+  assert.match(proof.stdout, /"remoteChanged": "remote-changed"/);
+  assert.match(proof.stdout, /"runner": "runner"/);
+  assert.match(proof.stdout, /"ingressPort": 8080/);
+  assert.match(proof.stdout, /"proxyPolicy": "local-only"/);
+  assert.match(proof.stdout, /"tunnels": "disallowed"/);
+});

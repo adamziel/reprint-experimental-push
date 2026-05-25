@@ -190,6 +190,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'npm run test:playground:production-shaped-topology-proof',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'browser-visible inspection stays on the sandbox-provided `8080` ingress',
     ),
   );
@@ -216,6 +221,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   assert.ok(executorDocs.includes('That bridge is one-way'));
   assert.ok(
     executorDocs.includes('The production route surface is intentionally split'),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'npm run test:playground:production-shaped-topology-proof',
+    ),
   );
   assert.ok(
     executorDocs.includes(

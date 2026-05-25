@@ -169,6 +169,10 @@ remote snapshot hash listing, dry-run plan upload, apply-time revalidation,
 journal inspection, and inspect-first recovery boundary against the fixture
 contracts that model the one-remote, one-local, one-drift topology.
 
+The checked topology proof is `npm run test:playground:production-shaped-topology-proof`.
+That command prints the one-remote, one-local, one-drift harness summary and
+the shared Docker and Playground route matrix without needing live credentials.
+
 The release-facing proof command is `npm run test:playground:production-shaped-proof`.
 It pairs the protocol fixture test with the explicit missing-secret smoke so
 the executable boundary proves both the production ladder and the fast-fail

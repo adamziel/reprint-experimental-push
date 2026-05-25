@@ -70,6 +70,10 @@ the production handshake from preflight through inspect-first recovery, and
 the explicit missing-secret failure contract that blocks preflight, dry-run,
 and apply when the real push secret is unavailable.
 
+The checked topology proof is `npm run test:playground:production-shaped-topology-proof`.
+Use it when you need the fixed one-remote, one-local, one-drift harness summary
+and the shared Docker and Playground route matrix without live credentials.
+
 The release-facing checked command is `npm run test:playground:production-shaped-proof`.
 Use it when you need one executable entry point that proves both the protocol
 ladder and the explicit missing-secret and missing-live-source gates.

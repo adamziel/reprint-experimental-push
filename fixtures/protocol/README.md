@@ -114,6 +114,15 @@ Use that pair when you need the one-remote, one-local, one-drift proof plus the
 shared route matrix, ingress rule, and local-only proxy policy in one review
 path.
 
+The checked command for the topology proof is:
+
+```sh
+npm run test:playground:production-shaped-topology-proof
+```
+
+It prints the one-remote, one-local, one-drift harness summary and the shared
+Docker and Playground route matrix without requiring live credentials.
+
 The checked proof command for this fixture set is `node --test test/protocol-fixtures.test.js`.
 It exercises the production executor flow contract, the route matrix, the pull
 bridge, the live revalidation contract, and the inspect-first recovery boundary
