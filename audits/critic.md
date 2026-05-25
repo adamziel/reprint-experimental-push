@@ -105,6 +105,9 @@ Source-note comparison rule:
 - Reprint, ZS-Sync, and ForkPress notes are historical context unless the
   exact upstream commit or worktree state is named and this branch reran the
   same live mutation boundary with preserved-remote evidence;
+- naming the upstream revision is provenance, not proof: a cited note can
+  still describe a copied executor, fixture-backed route, or review-only
+  replay that never exercised the live write path on this branch;
 - even when the upstream revision is named correctly, the comparison still
   fails closed unless this branch revalidated the same live boundary here;
 - even when the upstream revision is named correctly, the note still cannot
@@ -146,6 +149,10 @@ Release-gate checklist:
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface;
+- do not let a correct upstream citation upgrade route shape, package mount
+  shape, fixture replay, readable review output, or `finalMatchesLocal` into
+  production proof; the branch still needs the live rejection point and fresh
+  retry hashes;
 - classify every touched surface as old, new, or blocked before retry starts,
   including any late-discovered plugin-owned table, file, registry entry,
   cache entry, generated asset, or serialized blob;
