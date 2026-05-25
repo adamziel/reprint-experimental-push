@@ -4,6 +4,46 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 23:44:06
+
+<a id="2026-05-25-public-status-audit-234406"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 23:44:06 CEST`) after all restart-cycle lanes became idle.
+  The first screen stays concise: evidence progressed, release gates remain
+  `0/4`, and production WordPress auth/session lifecycle plus durable journal
+  storage with lease/fencing remain pending.
+- `b725b2d3` remains the newest release-surface evidence because it adds the
+  explicit production auth/session release boundary. Supporting restart-cycle
+  evidence now also includes `b9aebe71`, `134d0401`, `4e13d882`, `63dd27cc`,
+  and `9208c2da` for no-data-loss, recovery, critique, fast-path bounds, and
+  objective-audit freshness.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 23:41:06
+
+<a id="2026-05-25-public-status-audit-234106"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 23:41:06 CEST`) and kept the first screen concise with the
+  accountability lead: last 12 hours evidence progressed while release gates
+  remain `0/4`.
+- `b725b2d3` is the newest release-surface evidence: the checked release
+  boundary now explicitly covers production auth/session release behavior.
+  `b9aebe71` and `134d0401` remain visible as supporting no-data-loss and
+  recovery evidence; `536015fb` still records the explicit
+  `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` verdict; `7e0f27f2` still
+  fails closed on apply-time revalidation with `PRECONDITION_FAILED`;
+  `35731b11` still shows `releaseProof.mode: "apply"` and `rows: 17`; and
+  `ee43e194` keeps the verifier bound to the supplied source URL. Production
+  WordPress auth/session lifecycle and durable journal storage with
+  lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 15:30:17
 
 <a id="2026-05-25-public-status-audit-153017"></a>
