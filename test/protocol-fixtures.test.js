@@ -125,6 +125,19 @@ test('push contract fixture binds the pull handoff to the production push sequen
     contract.production_shape.preflight_session_binding,
     'a short-lived session bound to the persisted pull base and live remote identity',
   );
+  assert.equal(
+    protocolExtensionContract.push_phases.batch_apply,
+    'revalidates fresh live evidence before every batch and at the storage boundary',
+  );
+  assert.equal(
+    protocolExtensionContract.push_phases.recovery_mutate,
+    'may mutate only after inspect proves the branch safe with fresh live evidence and the same auth floor as the write path',
+  );
+  assert.ok(
+    protocolExtensionContract.required_invariants.includes(
+      'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
+    ),
+  );
   assert.equal(contract.topology.networking.ingress_port, 8080);
   assert.equal(contract.topology.networking.proxy_policy, 'local-only');
   assert.equal(contract.topology.networking.tunnels, 'disallowed');

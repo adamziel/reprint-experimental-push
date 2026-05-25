@@ -20,6 +20,15 @@
     "push_recover inspect",
     "push_recover auto|finish|rollback"
   ],
+  "push_phases": {
+    "preflight": "binds the persisted pull base package to one live remote identity and one short-lived push session",
+    "snapshot_hash_listing": "reads the live remote comparison surface for planning only and never becomes write authority",
+    "dry_run_upload": "uploads the canonical plan as an eligibility receipt, not a lock",
+    "batch_apply": "revalidates fresh live evidence before every batch and at the storage boundary",
+    "journal_inspect": "reads durable claim, lease, and fencing evidence without authorizing mutation",
+    "recovery_inspect": "runs before any mutating recovery branch and classifies finish, rollback, retry, or block",
+    "recovery_mutate": "may mutate only after inspect proves the branch safe with fresh live evidence and the same auth floor as the write path"
+  },
   "pull_to_push_mapping": {
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance",
@@ -127,6 +136,7 @@
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
     "authentication must be at least as strict as current Reprint HMAC usage",
+    "preflight binds the persisted pull base package to one live remote identity and one short-lived push session",
     "pull exporter/importer establish the immutable base package before push",
     "one remote source site, one imported local site, and one drift witness are enough to prove the production topology"
   ]
