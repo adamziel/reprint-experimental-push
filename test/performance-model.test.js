@@ -532,6 +532,11 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback').violates.includes('durable-progress'));
   assert.equal(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-plugin-install-writeback').rejectedGate, 'recovery');
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-plugin-install-writeback').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-plugin-install-writeback').violates.includes('compression'));
