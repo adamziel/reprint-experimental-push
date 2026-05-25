@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 08:58:07 CEST
+Last updated: 2026-05-25 08:59:21 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 08:59:21 CEST
+
+- Going well: the public page, progress log, and latest audit note now point at the same blocked snapshot.
+- Not going well: the proof gaps are unchanged, so the blocker still stands.
+- Progress change: corrected the latest audit pointer and refreshed the visible status date.
+- Next nudge: keep each lane on one missing proof item, one owner, and one production-backed test.
+- Audit note: [audits/supervisor-note-20260525-085921.md](../audits/supervisor-note-20260525-085921.md) captures this alignment pass in one screen.
 
 ## 2026-05-25 08:58:07 CEST
 
