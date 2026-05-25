@@ -68,7 +68,7 @@ identity across `remote-base` and `remote-changed`:
   listing, dry-run plan upload, batched apply, journal inspect, and
   inspect-first recovery story in one object, with dry-run and apply kept
   separate while apply revalidates fresh live evidence before every batch and
-  at the storage boundary.
+  again at the storage boundary.
 - `push-protocol-extension-contract.json` also carries the canonical
   exporter/importer bridge, so the immutable pull base package, pull
   provenance mapping, auth floor, and one-remote-one-local-one-drift topology

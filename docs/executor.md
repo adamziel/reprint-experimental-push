@@ -58,7 +58,7 @@ The executor treats each write-path step as a separate remote boundary:
 | `push_preflight` | First live binding after importer persistence; mints the short-lived push session. |
 | `push_snapshot_hashes` | Planning-only remote comparison surface; never write authority. |
 | `push_plan_dry_run` | Eligibility receipt only; never a lock. |
-| `push_batch_apply` | Separate mutation path; revalidates fresh live evidence before every batch and at the storage boundary. |
+| `push_batch_apply` | Separate mutation path; revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run. |
 | `push_journal` | Durable evidence only; never authorizes mutation. |
 | `push_recover inspect` | Read-only recovery inspection; must happen before any mutating repair. |
 | `push_recover auto|finish|rollback` | Mutating recovery only after inspect proves the branch safe and the auth floor still holds. |

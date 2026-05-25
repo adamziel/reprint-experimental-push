@@ -18,7 +18,7 @@ The production push protocol is a fixed ladder:
 4. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
    receipt, not a lock.
 5. `push_batch_apply` revalidates fresh live evidence before every batch and
-   again at the storage boundary.
+   again at the storage boundary, separate from dry-run.
 6. `push_journal` records durable evidence without authorizing mutation.
 7. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair.
@@ -31,7 +31,8 @@ The pull/export/import pipeline is the immutable source of push provenance:
 - importer persists the base package as immutable provenance
 - `persisted_pull_base_package` is the immutable handoff object push consumes
 - `push_preflight` is the first live binding after importer persistence
-- `push_snapshot_hashes` is planning evidence only
+- `push_snapshot_hashes` is planning evidence only and never becomes write
+  authority
 - `push_plan_dry_run` is an eligibility receipt, not a lock
 - `push_batch_apply` revalidates fresh live evidence before every batch and at
   the storage boundary
@@ -332,7 +333,7 @@ Read as one production contract, the push ladder is:
 - `push_plan_dry_run` uploads the canonical plan and returns an eligibility
   receipt, not a lock
 - `push_batch_apply` revalidates fresh live evidence before every batch and
-  at the storage boundary
+  again at the storage boundary, separate from dry-run
 - `push_journal` records durable evidence without authorizing mutation
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating repair
