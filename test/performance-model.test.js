@@ -1710,6 +1710,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('atomic-file-publish'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-backpressure').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-backpressure').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-backpressure').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-backpressure').violates.includes('atomic-file-publish'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation').rejectedGate,
     'group',
   );
