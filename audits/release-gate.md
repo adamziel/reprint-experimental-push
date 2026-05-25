@@ -2,99 +2,45 @@
 
 This checklist is the minimum bar before any doc, PR description, review
 comment, status comment, or release note can claim production-grade push
-support.
+support. If any item is missing, the wording must stay explicitly lab-backed
+or comparison-only.
 
-- The claim cites a live write-path proof on the actual request path, not
-  only route shape, packaged-plugin mounting, fixture replay, or
-  `finalMatchesLocal`, which are compatibility evidence only.
-- A lab-shaped route that only matches ingress, endpoint name, package
-  layout, or a live-looking hash is compatibility evidence only; it does
-  not prove the production executor ran, the remote was preserved, or stale
-  authority failed closed.
-- A green lab smoke is never enough unless the same request path was re-run
-  against a live remote after drift and the stale attempt failed before any
-  mutation; otherwise it proves only that the lab route answered.
-- A route-shaped or package-shaped smoke never upgrades stale manual review
-  into current authority; the claim must show the stale artifact was rejected
-  against the fresh live snapshot before any write, not merely still readable
-  for audit.
-- The claim says whether any comparison to Reprint, ZS-Sync, or ForkPress
-  was re-verified against the current upstream commit or worktree state.
-- If the comparison was not re-verified at the exact live write boundary, or
-  if the branch cannot name the exact upstream revision or worktree state,
-  the comparison is historical context only and cannot support production
-  wording.
-- If the comparison was not re-verified at the exact live write boundary, it
-  stays historical context only, even when the route name or package layout
-  matches the production path.
-- A source-note comparison never becomes current proof by itself; the claim
-  must name the exact upstream revision or worktree state, the exact live
-  mutation boundary, and the exact stale remote-drift case that failed
-  closed before any write.
-- The claim does not treat an unverified Reprint, ZS-Sync, or ForkPress
-  comparison as current proof, even if the endpoint path, package layout, or
-  expected hash looks production-shaped.
-- If the cited upstream commit or worktree state was not re-verified against
-  the exact live mutation boundary being claimed, the comparison stays
-  historical context only and cannot be promoted into current proof by a
-  matching route shape, package layout, or fixture-backed smoke.
-- If that upstream comparison was not re-verified, the claim must label it as
-  historical context only and must not present it as current proof. A
-  comparison note that sounds current but lacks re-verification is still a
-  stale assumption about behavior, not evidence for this repo's live write
-  path.
-- The claim shows a live remote drift case between dry-run and apply, and the
-  stale attempt fails closed before any mutation.
+- The claim cites a live write-path proof on the actual request path, not only
+  route shape, packaged-plugin mounting, fixture replay, or `finalMatchesLocal`.
+- The same request path was re-run against a live remote after drift, and the
+  stale attempt failed before any mutation.
+- The claim names the exact stale remote hash set, the rejected approval, the
+  retry scope, and the proof that the remote was preserved for audit.
 - The claim shows the stale manual-review artifact remains readable for audit
   but is unusable for apply after drift, and the next retry starts from fresh
   live hashes rather than inherited approval.
-- Readability alone is not success for a stale manual-review artifact; the
-  claim must show the artifact cannot authorize a new apply after remote
-  drift, even if the old review record is still available for audit.
 - The claim shows create-time identity remapping is either safely represented
   or hard-blocked before write.
-- A create path cannot be called production-safe if it can renumber, alias, or
-  reassign the target identity without a live remap proof or a pre-write hard
-  block.
-- The claim shows plugin-owned state outside the allowlist is either
-  discovered or hard-blocked, including options, custom tables, generated
-  files, activation hooks, cron, cache state, and other plugin side effects.
-- Unknown plugin-owned state is not a manual-resolution success condition; if
-  the allowlist is incomplete, the path must block and keep the rejected scope
-  auditable instead of assuming a later operator fix.
-- The claim shows plugin-owned ownership changes are revalidated at apply
-  time, not inherited from stale local metadata.
+- The claim shows plugin-owned state outside the allowlist is either discovered
+  or hard-blocked, including options, custom tables, generated files, activation
+  hooks, cron, cache state, and other plugin side effects.
+- The claim shows plugin-owned ownership changes are revalidated at apply time,
+  not inherited from stale local metadata.
 - The claim shows any partial file, DB, or plugin side effect is classified
-  durably and that retry starts from fresh evidence rather than reused
-  approval.
-- A partial file, DB, or plugin side effect cannot be treated as a clean
-  success unless the remaining remote state is preserved for audit and the
-  next attempt rebuilds scope from fresh live hashes.
+  durably and that retry starts from fresh evidence rather than reused approval.
 - The claim shows the same live write path rejected stale authority before
-  mutation; a route-shaped smoke or packaged-plugin mount is only relevant
-  if it exercised that exact boundary against the drifted remote.
-- The claim explicitly says that stale manual-review artifacts remain
-  auditable but are unusable as authority after drift, and that a retry
-  starts from fresh live evidence rather than inheriting the old approval.
-- The claim shows a manual-resolution artifact remains readable for audit but
-  cannot authorize a widened retry after the live snapshot changes.
-- The claim includes the exact live hashes, the rejected stale approval, the
-  retry scope, and the proof that the remote was preserved for audit.
-- The claim includes the exact stale snapshot or hash set that invalidated
-  the old approval and the exact replay-safe boundary that prevented reuse.
-- The claim includes the exact live snapshot or hash set that invalidated the
-  old approval, not just a route-shaped smoke result or a package mount that
-  happened to look current.
+  mutation, and that a route-shaped smoke or packaged-plugin mount only counts
+  as compatibility evidence if it exercised that exact boundary.
 - The claim includes the failure classification for any partial file, DB, or
   plugin side effect and shows recovery cannot silently widen the old approval
   to unrelated rows, files, relationship-bearing records, or plugin-owned
   surfaces.
 - The claim includes the rejection reason for any unknown plugin-owned state
-  and shows the blocked scope stayed auditable without becoming writable
-  through fallback behavior.
-- The claim identifies the exact reverified upstream revision or worktree for
-  any Reprint, ZS-Sync, or ForkPress comparison; otherwise the comparison is
-  context only.
+  and shows the blocked scope stayed auditable without becoming writable through
+  fallback behavior.
+- Any comparison to Reprint, ZS-Sync, or ForkPress must say whether it was
+  re-verified against the current upstream commit or worktree state.
+- If that comparison was not re-verified at the exact live write boundary, or
+  the branch cannot name the exact upstream revision or worktree state, the
+  comparison is historical context only.
+- A source-note comparison never becomes current proof by itself; the claim
+  must name the exact upstream revision or worktree state, the exact live
+  mutation boundary, and the exact stale remote-drift case that failed closed.
 - The claim does not rely on route shape, packaged-plugin mounting,
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
   production proof.
@@ -103,23 +49,11 @@ support.
   side-effect classification, or stale approval expiry unless the same live
   write boundary was reverified at the exact upstream revision or worktree
   state.
-- The claim does not treat a lab route shape or fixture-shaped package mount
-  as proof of current production safety, even if the path name matches the
-  production route.
 - The claim does not treat manual resolution as success unless the remote is
   preserved, the stale artifact stays auditable but unusable, and the retry
   rebuilds scope from fresh live hashes before any write.
-- The claim does not treat a stale manual-review artifact as current
-  authority, even if it is still readable; readability alone is not a
-  production guarantee.
-- The claim does not let a stale approval be widened to a different row,
-  file, relationship-bearing record, or plugin-owned surface on retry.
-- Manual resolution is not a production proof if the approval can be reused
-  after drift, if the remote was not preserved for audit, or if the retry
-  inherits scope from the stale snapshot instead of re-reading the live one.
-- The claim does not treat a stale review artifact as current authority even
-  if it is still readable, because readability alone does not preserve the
-  remote or prove the write path failed closed.
+- The claim does not let a stale approval be widened to a different row, file,
+  relationship-bearing record, or plugin-owned surface on retry.
 - The claim does not treat a production claim as valid if the proof set omits
   the create-time remap decision, the plugin-owned allowlist decision, or the
   partial side-effect classification for the exercised write path.

@@ -17,16 +17,21 @@ the stale approval was rejected before mutation.
 
 Changes that must happen before any production-grade push claim:
 
-- Tie the claim to a real live write-path proof, not route shape,
-  packaged-plugin mounting, or `finalMatchesLocal`.
+- Tie the claim to a real live write-path proof on the exact request path,
+  with the stale remote hash set, the rejected approval, and the retry scope
+  all named explicitly; route shape, packaged-plugin mounting, and
+  `finalMatchesLocal` are only compatibility evidence.
 - Prove stale authority fails closed after live drift, while the rejected
-  approval remains auditable but unusable for apply.
+  approval remains auditable but unusable for apply and cannot be widened to a
+  different row, file, relationship-bearing record, or plugin-owned surface.
 - Prove create-time identity remapping is either safe and replayable or
-  hard-blocked before write.
+  hard-blocked before write, with the identity reservation or failure case
+  named for the live remote.
 - Prove plugin-owned state outside the allowlist is either fully enumerated or
-  hard-blocked, including ownership revalidation at apply time.
+  hard-blocked, including ownership revalidation at apply time and a failure
+  path for late discovery.
 - Prove partial file, DB, or plugin side effects are durably classified and do
-  not let a retry widen the old approval.
+  not let a retry widen the old approval or inherit stale scope.
 - Reverify any Reprint, ZS-Sync, or ForkPress comparison against the exact
   upstream commit or worktree state being cited and the exact live mutation
   boundary being claimed, or label it historical only.
