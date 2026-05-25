@@ -122,6 +122,12 @@ the main blocker remains the missing rerunnable live boundary with preserved-
 remote audit evidence on a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL`.
 
+If this checkout ever lacks `verify:release` or a related release-shaped
+script locally, treat that as a branch-local merge gap only. Do not use it to
+erase the supervised lane's retained-source evidence, and do not use the
+supervised lane's script list to imply this worktree already has live retry
+authority.
+
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
