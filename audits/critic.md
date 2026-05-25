@@ -225,6 +225,10 @@ What must change before production-grade wording is defensible:
   auth/session boundary, preserved remote, exact rejection point, dry-run
   receipt, apply-time revalidation, and journal/recovery inspection for the
   same boundary;
+- the conflict policy must be explicit for each touched row, file,
+  relationship-bearing record, and plugin-owned surface, including whether a
+  drifted item is rejected, preserved for audit, or queued for a new retry
+  scope;
 - that command must prove the preserved remote is still inspectable after
   rejection, so audit and retry can both be verified instead of only asserted
   in review prose or inferred from route shape;
@@ -240,6 +244,9 @@ What must change before production-grade wording is defensible:
   file/DB/plugin side effect must get its own preserve / reject / retry cycle
   unless it was already enumerated before the first write, and the audit trail
   must show the earlier remote was preserved instead of overwritten;
+- the manual-resolution path must never collapse a later plugin-owned surface
+  into the first approval; if the remote is preserved but the later surface is
+  not separately auditable and retryable, the claim stays false reliability;
 - source-note comparisons to Reprint, ZS-Sync, and ForkPress must stay
   provenance-only unless they name the exact upstream state, state what each
   note proves here, state what it does not prove here, and are backed by a

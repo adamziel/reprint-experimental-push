@@ -12,6 +12,17 @@ Required proof artifacts on the same live boundary:
 - graph identity and plugin-driver coverage on the live boundary; and
 - old/new/blocked classification for every touched row, file, relationship-bearing record, and plugin-owned surface before retry starts.
 
+Conflict handling must also be explicit:
+
+- a drifted row, file, relationship-bearing record, or plugin-owned surface must
+  be classified as rejected, preserved, or queued for a new retry scope before
+  the next write;
+- "manual resolution" is not a success label unless the preserved remote stays
+  inspectable and the same boundary can be audited and retried from fresh live
+  hashes; and
+- any later-discovered plugin-owned surface or remapped create target gets its
+  own preserve / reject / retry cycle instead of inheriting the first approval.
+
 If any claim cannot name all of those artifacts for the same rerunnable live boundary, it is compatibility evidence only and must not be phrased as production-grade push support.
 
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
@@ -38,6 +49,7 @@ Do not use production wording unless the branch has all of the following for the
 - if the proof only shows a wrapper label, route-shaped smoke, or source-note comparison without the exact live boundary and preserved remote, it is still compatibility evidence only;
 - if no branch-local command has yet been run against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, then the branch has not proven the first executor/auth/preserved-remote boundary and every production-grade claim must stay blocked;
 - if a claim points to `npm run test:playground:production-shaped-release-proof` or any similarly named wrapper without a matching `package.json` entry and a rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, treat that claim as setup-only and fail closed;
+- if a later plugin-owned surface appears after the first write, the earlier approval does not cover it unless the boundary separately preserved the remote, rejected stale authority, and rebuilt retry scope from fresh live hashes for that later surface;
 - the next acceptable proof from reliable-executor must be a live rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that records the exact executable command string, the executor identity, the preserved remote that remained inspectable after rejection, the exact rejection point before the first write, and the journal/recovery inspection needed to audit retry scope; without those facts from one rerun, the branch still has compatibility evidence only;
 - the next proof must name the exact executable command string that produced those facts; if the evidence is only a wrapper around setup, a route-shaped smoke, or a review note, it does not count as a live rerun of the boundary;
 - if the claim cannot name the exact command string and the exact live source URL in the same sentence, it has not identified a rerunnable release gate and must not be described as production-ready;
