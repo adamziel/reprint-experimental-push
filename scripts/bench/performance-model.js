@@ -1010,6 +1010,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install',
+    proposal: 'treat a compressed remote index plus cached row-batch receipts as enough proof to skip a plugin install',
+    rejectedBecause: 'planning evidence and compressed batch receipts can reduce recovery work, but they cannot prove dependency checks, per-row preconditions, or the atomic-group commit survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
