@@ -1,21 +1,22 @@
 # Critic Audit
 
 Current baseline for this critique: the latest supervised reliable-executor
-lane head `889bd37a` on `origin/lane/reliable-executor`, with the retained-
-source evidence anchored at `63a3502f` and the explicit verdict
+lane head `2e30a637` on `origin/lane/reliable-executor`, extending the
+retained-source evidence anchored at `63a3502f` and the explicit verdict
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. The remote lane now proves a
-retained-source `npm run verify:release` lineage, a broader command-topology
-proof, and the lab-session details `authSessionType`, minted session shape,
-`applyCommitted`, and `durableJournal.rows: 17`. That retires any stale claim
-that there is no retained-source `verify:release` evidence. It still does not
-prove a live production boundary because this branch lacks preserved-remote
-retention after rejection, apply-time revalidation against fresh live hashes,
-production WordPress auth/session lifecycle, durable journal storage with
-lease/fencing outside the Playground harness, graph identity under remap, and
-plugin-driver coverage for late-discovered plugin-owned surfaces. Production
-wording is false if it treats lab-session shape, retained-source journal
-rows, route compatibility, or command-topology proof as a substitute for a
-rerunnable live mutation boundary on this branch.
+retained-source `npm run verify:release` lineage, durable-journal proof folded
+into that verify path, a broader command-topology proof, and the lab-session
+details `authSessionType`, minted session shape, `applyCommitted`, and
+`durableJournal.rows: 17`. That retires any stale claim that there is no
+retained-source `verify:release` evidence. It still does not prove a live
+production boundary because this branch lacks preserved-remote retention after
+rejection, apply-time revalidation against fresh live hashes, production
+WordPress auth/session lifecycle, durable journal storage with lease/fencing
+outside the Playground harness, graph identity under remap, and plugin-driver
+coverage for late-discovered plugin-owned surfaces. Production wording is
+false if it treats lab-session shape, retained-source journal rows, route
+compatibility, or command-topology proof as a substitute for a rerunnable live
+mutation boundary on this branch.
 
 Source-note comparison, kept conservative and non-authoritative unless this branch reran the same live boundary:
 
