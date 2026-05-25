@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 07:36:05 CEST.
+- Last update: 2026-05-25 07:36:44 CEST.
 - Status: blocked; the visible page, log, and latest audit note still line up.
-- Trend: no new evidence landed in this pass; the public page stayed scan-first and the evidence trail remains linked instead of repeated.
+- Trend: no new evidence landed in this pass; the visible page stayed scan-first and the proof trail stayed linked.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: production auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) stays compact and keeps the proof trail linked.
