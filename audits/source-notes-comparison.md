@@ -10,12 +10,13 @@ prove this branch's live push executor, stale-drift rejection, or remote-
 preserving retry behavior.
 
 These notes are snapshots of previously observed upstream behavior, not
-current upstream proof. They only become current proof if this branch
+current upstream proof. They only become live retry proof if this branch
 reverified the exact cited revision or worktree and the exact live mutation
-boundary for the same claim. If either the exact upstream state or the exact
-live boundary is missing, the note is historical context only and cannot be
-used to claim that the live executor, retry path, or manual-review flow is
-safe.
+boundary for the same claim, then preserved the rejected remote for audit.
+If either the exact upstream state, the exact live boundary, or the
+preserved-remote evidence is missing, the note is historical context only
+and cannot be used to claim that the live executor, retry path, or
+manual-review flow is safe.
 
 A route-shaped smoke, package mount, live-looking hash, lab-shaped route
 smoke, copied executor output, or matching `finalMatchesLocal` result does
@@ -34,8 +35,9 @@ Reprint does not prove preserved-remote push safety, production auth/session
 lifecycle, graph identity, or plugin-driver coverage on this branch; ZS-Sync
 does not prove plugin-owned surface coverage, graph identity, or identity-
 remap safety; and ForkPress does not prove stale-review artifacts stay audit-
-only after drift or that plugin-driver coverage can be inferred from audit
-vocabulary alone.
+only after drift, that plugin-driver coverage can be inferred from audit
+vocabulary alone, or that a later-discovered plugin-owned surface can inherit
+the earlier boundary's authority.
 In other words: a named feature family is not enough. The branch must be able
 to point to the exact upstream commit or worktree state and the exact live
 mutation boundary that was exercised here, or the comparison stays historical
@@ -185,7 +187,8 @@ stand in for live proof.
 If the claim does not also name a drifted remote that was preserved for
 audit, the stale authority rejection point, and the fresh retry scope built
 from new live hashes, then the comparison is still only design context even
-when the route or fixture replay looks production-shaped.
+when the route or fixture replay looks production-shaped. A copied mount,
+fixture replay, or live-looking hash never upgrades the note by itself.
 If the claim does not name the exact upstream revision or worktree state and
 the exact live mutation boundary, it is not production wording.
 If the only apparent match is the same route family, package layout, or
@@ -316,9 +319,10 @@ Release gate for this comparison note:
 - name the exact live mutation boundary exercised on this branch;
 - state what the cited upstream state does not prove here, especially for
   remote drift, create-time remap, plugin-owned allowlists, partial side
-  effects, and stale manual-review artifacts; and
-- reject any claim that only has route shape, package shape, or
-  `finalMatchesLocal` evidence.
+  effects, stale manual-review artifacts, and late-discovered plugin-owned
+  surfaces; and
+- reject any claim that only has route shape, package shape, copied-lab
+  output, live-looking hashes, or `finalMatchesLocal` evidence.
 - A late-discovered plugin-owned surface is a separate boundary; a source note
   for the first write cannot authorize it unless this branch preserved the
   remote, classified the later surface, and rebuilt retry scope from fresh
