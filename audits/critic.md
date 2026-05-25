@@ -5578,3 +5578,12 @@ Production-grade blocker summary:
 - if a comparison note is the only remaining evidence, it still must name the exact live boundary, the preserved remote that stayed inspectable after rejection, and the fresh retry scope rebuilt from live hashes; otherwise the note is audit context only and cannot support production-grade wording or production-grade push support claims.
 
 Before any production-grade wording is allowed, the evidence must name the exact live boundary, the exact stale-drift case, the preserved remote that stayed inspectable after rejection, the fresh retry scope rebuilt from live hashes, and the old/new/blocked status for every touched surface. If any late-discovered plugin-owned surface appears after the first write, it becomes a new boundary until it is separately enumerated or hard-blocked.
+
+Must-happen-before-production-grade-push-support checklist:
+
+- live remote drift: prove the rejected remote is still inspectable after stale authority is denied, and prove the retry scope was rebuilt from fresh live hashes rather than from the earlier plan artifact;
+- identity remap on create: prove the remapped target was derived from live identity evidence at apply time, or show the remap was rejected before any write; route shape alone is not proof;
+- plugin-owned surfaces outside the allowlist: enumerate late-discovered tables, blobs, cron rows, runtime registries, generated files, caches, and plugin-owned files, then either block them or give each its own preserve / reject / retry cycle;
+- partial side effects: show the whole touched set classified old/new/blocked across file, DB, and plugin writes, with no surface silently succeeding while another surface is left in limbo;
+- stale manual-review artifacts: prove a readable review note cannot authorize a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface after drift unless the remote was preserved and the retry scope was rebuilt from live state;
+- production claims: never infer production-grade push support from lab route shape, package layout, fixture replay, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes.
