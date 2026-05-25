@@ -4147,3 +4147,22 @@ stale rejection point, the fresh retry artifact, and the exact live mutation
 boundary where the new boundary was reclassified. A readable stale artifact
 or a matching upstream note remains audit evidence only until this branch
 shows that it was unusable as retry authority for the later boundary.
+
+If the project wants production-grade push wording, the proof must also show
+that Reprint, ZS-Sync, and ForkPress are being cited as named upstream
+provenance, not as substitute runtime evidence. That means each comparison
+must include the exact upstream revision or worktree state, the scenario it
+was rerun against on this branch, and a plain statement of what still failed
+to prove here, especially for live drift rejection, create-time identity
+remapping, and plugin-owned surfaces discovered after the first write. A
+comparison note that lacks that branch-local rerun is historical context
+only, even if the note is readable and seems production-shaped.
+
+Mixed writes need one more explicit failure mode on the record: if the first
+write succeeds, then a later snapshot reveals a different row, file,
+relationship-bearing record, or plugin-owned surface in the same logical
+change, the earlier approval is stale by definition. The proof must show the
+later surface was either blocked or separately classified before retry, and
+it must do so with preserved-remote evidence on this branch. Without that,
+the claim can still hide a second-write data-loss path behind "manual
+resolution" language.
