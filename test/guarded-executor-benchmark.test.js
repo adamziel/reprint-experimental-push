@@ -84,6 +84,14 @@ test('guarded benchmark refuses production throughput claims until production ga
     32 * 1024 * 1024,
   );
   assert.equal(
+    report.claims.productionThroughputDetails.resourceLimits.maxBufferedUploadBytes,
+    32 * 1024 * 1024,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.receiptCursor.resourceKey,
+    'file:wp-content/uploads/2026/05/catalog-export.bin',
+  );
+  assert.equal(
     report.claims.productionThroughputDetails.recovery.partialCommitInspectionStatus,
     'blocked-recovery',
   );
@@ -125,9 +133,13 @@ test('guarded benchmark refuses production throughput claims until production ga
     (error) =>
       error instanceof BenchmarkClaimError
       && error.code === 'PRODUCTION_THROUGHPUT_CLAIM_BLOCKED'
+      && error.details.claim.status === 'blocked'
       && error.details.throughput.productionThroughput === 'not-claimed'
       && error.details.executorCapabilities.fileReceipts === 'lab-file-journal-receipts'
       && error.details.resourceLimits.memoryCeilingBytes === 32 * 1024 * 1024
+      && error.details.receiptCursor.chunkIndex === report.shape.chunkCount - 1
+      && error.details.productionThroughputDetails.blockers.includes('production-storage-receipts-not-measured')
+      && error.details.productionThroughputDetails.executorCapabilities.rowApply === 'per-row-apply-model'
       && error.details.blockers.includes('production-atomic-group-commit-not-measured'),
   );
 });

@@ -210,6 +210,7 @@ export function productionThroughputDetails(report) {
     throughput: report.throughput,
     executorCapabilities: report.executorCapabilities,
     resourceLimits: report.resourceLimits,
+    receiptCursor: report.evidence.chunkReceipts.resumeCursor,
     recovery: report.evidence.recovery,
     atomicGroup: report.evidence.atomicGroup,
     blockers: productionThroughputBlockers(report),
@@ -219,14 +220,18 @@ export function productionThroughputDetails(report) {
 export function assertCanClaimProductionThroughput(report) {
   const claim = productionThroughputClaim(report);
   if (!claim.allowed) {
+    const details = productionThroughputDetails(report);
     throw new BenchmarkClaimError(
       `Production throughput claim blocked: ${claim.blockers.join(', ')}`,
       {
         code: 'PRODUCTION_THROUGHPUT_CLAIM_BLOCKED',
         blockers: claim.blockers,
+        claim,
         throughput: report.throughput,
         executorCapabilities: report.executorCapabilities,
         resourceLimits: report.resourceLimits,
+        receiptCursor: details.receiptCursor,
+        productionThroughputDetails: details,
       },
     );
   }
@@ -561,6 +566,7 @@ function buildReport({
     },
     resourceLimits: {
       memoryCeilingBytes: config.maxBufferedUploadBytes,
+      maxBufferedUploadBytes: config.maxBufferedUploadBytes,
     },
     evidence: {
       chunkReceipts: {
