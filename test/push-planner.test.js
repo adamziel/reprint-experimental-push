@@ -18535,6 +18535,32 @@ test('replaying a completed plan stays fully updated and does not resurrect stal
   assert.equal(persisted.records.filter((record) => record.type === 'journal-completed').length, 1);
 });
 
+test('completed replay fails closed when the durable journal cannot append replay recovery state', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayJournal = failingDurableJournal('journal-replayed');
+  const replayError = captureError(() =>
+    applyPlan(JSON.parse(JSON.stringify(completed.site)), plan, {
+      durableJournal: replayJournal,
+      journal: completed.journal,
+    }),
+  );
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.code, 'JOURNAL_WRITE_FAILED');
+  assert.equal(replayError.details.boundary, 'journal-replayed');
+  assert.equal(replayError.details.recovery.status, 'fully-updated-remote');
+  assert.equal(replayError.details.recovery.artifacts.remote, undefined);
+  assert.equal(replayError.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(replayJournal.events.filter((event) => event.type === 'recovery-state').length, 1);
+  assert.equal(replayJournal.events.some((event) => event.type === 'journal-replayed'), false);
+});
+
 test('durable recovery replay stays inert while preserving the approved post-failure envelope', () => {
   const base = baseSite();
   const local = baseSite();
