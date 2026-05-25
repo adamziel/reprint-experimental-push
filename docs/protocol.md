@@ -34,6 +34,20 @@ The proof is only valid when `remote-base` and `remote-changed` are the same
 remote identity observed at two different times, because that is what
 demonstrates apply-time revalidation instead of replaying dry-run evidence.
 
+The production push extension has six ordered remote stages:
+
+1. `push_preflight` binds the persisted pull base to the live remote identity
+   and mints a short-lived session.
+2. `push_snapshot_hashes` lists the live remote comparison set for planning
+   only.
+3. `push_plan_dry_run` uploads the canonical plan as eligibility evidence and
+   returns a receipt, not a lock.
+4. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+5. `push_journal` reads durable evidence without authorizing mutation.
+6. `push_recover` starts with `inspect`, then allows finish, rollback, or
+   auto only when the journal and fresh live hashes prove the action.
+
 Production liveness is split on purpose:
 
 - `push_plan_dry_run` is an eligibility receipt, not a reservation or lock.
@@ -63,6 +77,12 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
    the storage boundary
 7. `push_journal` and `push_recover inspect` inspect durable evidence first,
    then allow mutating recovery only when fresh live hashes prove the action
+
+That map is intentionally one-way: the importer creates the immutable base
+package, and push consumes it without ever rewriting it to make a stale remote
+look current. The live snapshot hash listing is planning evidence only, the
+dry-run receipt is eligibility evidence only, and apply must re-read live
+state before every batch even when the dry-run receipt is still valid.
 
 The handoff is intentionally asymmetric:
 
@@ -142,7 +162,7 @@ The compact topology fixture at
 [`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
 captures the same one-remote, one-local, one-drift-witness test shape for
 Docker and Playground. Both packaging modes must preserve the same proof
-boundary:
+boundary and the same stage order:
 
 The executor-topology companion at
 [`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)

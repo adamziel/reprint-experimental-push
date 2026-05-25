@@ -470,6 +470,29 @@ test('push topology matrix fixture captures the minimal docker and playground pr
   const matrix = readJson('fixtures/protocol/push-topology-matrix.json');
 
   assert.equal(matrix.topology_matrix_id, 'push-topology-docker-playground-matrix');
+  assert.equal(
+    matrix.push_pipeline.snapshot_hash_listing,
+    'returns the live remote comparison set for planning only',
+  );
+  assert.equal(
+    matrix.push_pipeline.mutation_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(matrix.test_topology.runner, 'the only actor allowed to run the push protocol');
+  assert.deepEqual(matrix.test_topology.proof_order, [
+    'preflight',
+    'snapshot-hashes',
+    'dry-run',
+    'apply',
+    'journal',
+    'recovery-inspect',
+    'recovery-mutate',
+  ]);
+  assert.ok(
+    matrix.test_topology.drift_proof.includes(
+      'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
   assert.equal(matrix.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(matrix.pull_pipeline.importer, 'persists the base package as immutable provenance');
   assert.equal(matrix.pull_pipeline.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');

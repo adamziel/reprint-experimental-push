@@ -269,6 +269,8 @@ adds the explicit `push_pipeline` stage map plus apply-revalidation and
 inspect-first recovery evidence so Docker and Playground tests can assert the
 same preflight, snapshot listing, dry-run, apply, journal, and recovery split
 without relying on prose only.
+It mirrors the one-remote, one-local, one-drift-witness test shape and the
+`8080` ingress rule in compact form.
 
 Shared harness rules:
 
