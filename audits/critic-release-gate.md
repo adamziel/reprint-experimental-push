@@ -65,6 +65,21 @@ Evidence classes:
 - compatibility evidence: route shape, package mount shape, fixture replay, `finalMatchesLocal`, and similar smoke results that show surface similarity but not live boundary safety; and
 - live retry proof: the branch-local live boundary rerun with preserved-remote evidence, stale-authority rejection, a fresh retry scope rebuilt from live hashes, and per-surface old/new/blocked classification.
 
+What the upstream notes prove here:
+
+- Reprint notes prove transport, staged delivery, or resumability vocabulary only; they do not prove live push safety, preserved remote retention, or stale-drift rejection on this branch.
+- ZS-Sync notes prove discovery or cursoring vocabulary only; they do not prove source-mutation safety, create-time remap handling, or plugin-owned surface coverage here.
+- ForkPress notes prove review or crash-consistency vocabulary only; they do not prove retry authority, preserved-remote auditability, or authority over a later boundary discovered after the note was written.
+
+Production-grade wording must still fail closed unless it names all of these:
+
+- the exact live boundary and the exact stale-drift case;
+- the preserved remote that stayed inspectable after rejection;
+- the rejection point before the first write;
+- the fresh retry scope rebuilt from live hashes on this branch;
+- the old/new/blocked classification for every touched surface; and
+- the separate preserve / reject / retry cycle for any later-discovered plugin-owned surface or remapped create target.
+
 False success to reject:
 
 - "manual resolution later" is not success if the readable artifact is still
