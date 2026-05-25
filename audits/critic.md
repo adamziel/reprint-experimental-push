@@ -4061,6 +4061,34 @@ Do not let success wording outrun the evidence:
   live drift or retry case on the same mutation boundary and recorded the
   preserved remote, rejection point, and fresh retry scope here.
 
+The current design still has these production-grade failure traps until the
+branch proves otherwise:
+
+- Live remote drift can still be misread as success if the claim only shows a
+  route-shaped smoke or a readable review artifact. Missing proof: the actual
+  apply path rejected stale authority before mutation and kept the remote
+  auditable afterward.
+- Create-time identity remap can still lose or reassign a target if the claim
+  only preserves the fixture ID shape. Missing proof: live identity evidence
+  for the remap, or a hard block before write.
+- Plugin-owned state can still hide outside the allowlist if the claim only
+  covers one row, option, or fixture asset. Missing proof: live enumeration or
+  apply-time blocking of hidden cron, cache, runtime registry, generated
+  files, serialized blobs, custom tables, and plugin files.
+- Partial file, DB, or plugin side effects can still leave a mixed-write hole
+  if the claim only records the successful store. Missing proof: old/new/
+  blocked classification for every touched surface, plus a retry rebuilt from
+  fresh live hashes instead of inherited approval.
+- A stale manual-review artifact can still become false retry authority if it
+  stays readable after drift. Missing proof: the artifact remained audit-only,
+  could not widen to another row, file, relationship-bearing record, or
+  plugin-owned surface, and was replaced by a separately recorded fresh retry
+  artifact.
+- Reprint, ZS-Sync, or ForkPress can still be cited as if they prove current
+  safety when they only provide historical context. Missing proof: the exact
+  upstream revision or worktree state, the exact live mutation boundary on this
+  branch, and what that upstream state does not prove here.
+
 The branch also still needs explicit proof for the following failure modes,
 not a generic success label:
 
