@@ -57,6 +57,12 @@
       "the journal cannot prove a safe finish, rollback, or block"
     ]
   },
+  "remote_liveness": {
+    "snapshot_hash_listing": "planning evidence only and never write authority",
+    "dry_run": "eligibility evidence only and never a lock",
+    "apply": "a separate remote stage that revalidates before every batch and at the storage boundary",
+    "recovery": "inspect-first and mutating only when journal evidence plus fresh live hashes prove the action"
+  },
   "dry_run_receipt": {
     "mode": "dry-run",
     "mutates": false,

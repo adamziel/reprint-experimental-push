@@ -644,6 +644,16 @@ test('push topology matrix fixture captures the minimal docker and playground pr
   assert.equal(matrix.apply_revalidation.before_each_batch, 'fresh live hashes');
   assert.equal(matrix.apply_revalidation.at_storage_boundary, 'fresh live hashes plus storage-guard proof');
   assert.ok(matrix.apply_revalidation.rejected_if.includes('the remote changed after the dry-run receipt'));
+  assert.equal(matrix.remote_liveness.snapshot_hash_listing, 'planning evidence only and never write authority');
+  assert.equal(matrix.remote_liveness.dry_run, 'eligibility evidence only and never a lock');
+  assert.equal(
+    matrix.remote_liveness.apply,
+    'a separate remote stage that revalidates before every batch and at the storage boundary',
+  );
+  assert.equal(
+    matrix.remote_liveness.recovery,
+    'inspect-first and mutating only when journal evidence plus fresh live hashes prove the action',
+  );
   assert.equal(matrix.dry_run_receipt.mode, 'dry-run');
   assert.equal(matrix.dry_run_receipt.mutates, false);
   assert.equal(matrix.dry_run_receipt.effect, 'eligibility evidence only');
