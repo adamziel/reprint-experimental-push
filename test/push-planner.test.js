@@ -17307,3 +17307,50 @@ test('durable recovery keeps the approved failure envelope and retries do not du
     assert.equal(Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
   }
 });
+
+test('durable recovery inspect blocks live drift after a completed replay and keeps the persisted journal readable', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const drifted = JSON.parse(JSON.stringify(completed.site));
+  drifted.files['index.php'] = '<?php echo "drifted";';
+  const inspection = inspectRecoveryJournal({
+    journalPath,
+    plan,
+    current: drifted,
+  });
+
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const blocked = captureError(() =>
+    applyPlan(drifted, plan, {
+      durableJournal: replayJournal,
+      journal: completed.journal,
+    }),
+  );
+  replayJournal.close();
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.ok(inspection.reason.includes('partially updated') || inspection.reason.includes('cannot be classified'));
+  assert.equal(inspection.journal.integrity.status, 'ok');
+  assert.equal(inspection.claim.status, 'none');
+  assert.equal(inspection.targets.some((target) => target.state === 'new'), true);
+  assert.equal(inspection.targets.some((target) => target.state === 'blocked-unknown'), true);
+
+  assertFailureRecoveryState(blocked.details.recovery, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts.remote);
+  assert.ok(blocked.details.recovery.artifacts.journal);
+  assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(
+    readRecoveryJournal(journalPath).integrity.status,
+    'ok',
+  );
+});
