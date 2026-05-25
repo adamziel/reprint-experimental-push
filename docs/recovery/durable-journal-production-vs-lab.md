@@ -30,9 +30,21 @@ For a real durable recovery journal, the implementation needs:
 - restart-readable recovery metadata for inspection without replaying the plan
 - a blocked partial mutation artifact that survives restart and explains why the
   remote is not safe to treat as current
+- replay-safe completed-plan artifacts that let a retried apply stay inert
+- enough evidence to classify mid-apply failures as blocked rather than
+  reusing a partial remote write as if it were complete
 
 ## Release blocker rule
 
 A partial remote mutation without inspectable recovery artifacts is unsafe.
 If the remote changed and the recovery state cannot be classified from durable
 artifacts, the system must stay blocked until recovery inspection resolves it.
+
+In practical terms, a durable journal must let recovery distinguish:
+
+- `old-remote` after failures before mutation, after staging, or after
+  dependency validation
+- `fully-updated-remote` when a completed plan is replayed and no new mutation
+  work is needed
+- `blocked-recovery` when a mid-apply partial write or drifted completed replay
+  needs inspection before retry
