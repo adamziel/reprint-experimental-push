@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 07:59:39 CEST.
+- Last update: 2026-05-25 08:00:33 CEST.
 - Status: blocked; the visible page, log, and latest audit note line up.
 - Trend: no proof gap closed; the public page stays tight and easier to scan.
 - Supervision: the feedback-supervisor lane remains active.
@@ -15,7 +15,7 @@ linked implementation artifacts.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
 - Next nudge: keep the gates blocked until a worker proves one concrete gap at a time, with one owner and one production-backed test per lane.
 - Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. This lane-local copy becomes live only after merge to `main`; GitHub Pages will lag until then.
-- Audit note: [audits/supervisor-note-20260525-075524.md](../audits/supervisor-note-20260525-075524.md) captures the latest alignment pass in one screen.
+- Audit note: [audits/supervisor-note-20260525-080033.md](../audits/supervisor-note-20260525-080033.md) captures the latest alignment pass in one screen.
 
 ## 2026-05-25 - Supervisor Follow-up
 
