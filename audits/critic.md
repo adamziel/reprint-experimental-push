@@ -1207,7 +1207,10 @@ Before any production-grade push claim, the project needs all of these:
     reassign target identity without a live remap proof. The gate must also
     require evidence that the rejected scope stayed auditable, that the remote
     was preserved for retry, and that the next attempt rebuilt its plan from
-    fresh live hashes rather than inheriting the old approval.
+    fresh live hashes rather than inheriting the old approval. It must also
+    reject any production claim that relies on Reprint, ZS-Sync, or ForkPress
+    notes unless the cited upstream revision or worktree was reverified and the
+    same live write boundary was exercised in this repo.
 
 Addendum: each of these conditions must be independently testable in the
 release suite. A passing route-shape smoke is not sufficient if any one of the
@@ -1230,6 +1233,10 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   validation.
 - Any create-time remap, alias, or renumber event must either have a proven
   identity reservation or hard-block the push before mutation.
+- Any plugin-owned state that is outside the declared allowlist, including
+  custom tables, generated assets, runtime registries, cron-backed rows, or
+  external side effects, must hard-block the push unless a plugin-specific
+  validator proves safe handling for that exact surface.
 - Any plugin-owned surface outside the allowlist must block the push, even if
   a route-shape smoke or packaged-plugin mount still looks correct.
 - Any mixed DB/filesystem/plugin side effect path must have durable
@@ -1251,6 +1258,9 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   not prove current upstream behavior today, and they do not prove this repo's
   live mutation boundary unless the same upstream revision or worktree was
   independently reverified.
+- A claim that cites those notes must say whether the upstream revision or
+  worktree was reverified. If it was not, the note is historical context only
+  and cannot support production wording.
 - Status comments, branch notes, and release notes must not cite source-note
   comparisons or live-looking hashes as substitutes for current production
   proof.
