@@ -189,7 +189,9 @@ npm run verify:release
 It must either exercise the real Playground preflight branch or fail closed
 at the explicit live-source or secret gate before dry-run or apply begins.
 The command also runs the file-journal restart smoke, so the durable journal
-storage/lease/fence proof stays part of the same checked surface.
+storage/lease/fence proof stays part of the same checked surface and the
+checked ladder still includes snapshot-hash listing, dry-run receipt upload,
+apply revalidation, journal inspect, and inspect-first recovery.
 
 The checked release topology is the same one-remote, one-local, one-drift
 harness used by the protocol contract:

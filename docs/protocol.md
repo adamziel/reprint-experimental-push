@@ -222,9 +222,10 @@ Its `pull_to_push_bridge.push_ladder_mapping` block maps each push step back
 to the existing pull/export/import provenance in the same order the executor
 runs it.
 The runnable proof asserts that the live preflight response minted a session,
-that the auth/session type matches the production-shaped handshake, and that
-the journal readback still contains durable apply-committed rows after apply
-and recovery inspect.
+that the auth/session type matches the production-shaped handshake, that the
+remote snapshot hash listing stays planning-only, and that the journal
+readback still contains durable apply-committed rows after apply and recovery
+inspect.
 It also emits the checked boundary verdict
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` so the supervisor can tell the
 lab-shaped proof from the still-missing production boundary.

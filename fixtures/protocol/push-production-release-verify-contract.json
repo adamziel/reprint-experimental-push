@@ -1,6 +1,6 @@
 {
   "contract_id": "push-production-release-verify-contract-one-remote-one-local",
-  "purpose": "checked supervisor entrypoint for the production-shaped retained-source proof that exercises live preflight, dry-run, apply revalidation, durable journal readback, and the first remaining production-only boundary",
+  "purpose": "checked supervisor entrypoint for the production-shaped retained-source proof that exercises live preflight, remote snapshot hash listing, dry-run receipt upload, apply revalidation, durable journal readback, inspect-first recovery, and the first remaining production-only boundary",
   "checked_command": "npm run verify:release",
   "pull_to_push_bridge": {
     "exporter": "discovers the merge base and coverage evidence before any push request exists",
@@ -82,6 +82,7 @@
   "required_invariants": [
     "dry-run and apply are separate remote operations",
     "apply must revalidate the live remote before every batch and at the storage boundary",
+    "snapshot hash listing is planning-only evidence and never becomes write authority",
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
     "authentication must be at least as strict as current Reprint HMAC usage",
