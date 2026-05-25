@@ -20,6 +20,18 @@ The objective implies these minimum release requirements:
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
 9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix. This checkout has no `.github/` workflow directory, and nothing in `package.json` compensates for that gap. `npm run test:playground` is an optional lab chain, not an enforced release path.
 
+## Release Gate Definition
+
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible.
+
+Minimum properties of that gate:
+
+1. it must run on the real release boundary, not just on fixtures or Playground storage
+2. it must revalidate apply-time live state before mutation
+3. it must fail closed if auth/session, journal, leases/fencing, graph identity, plugin-driver, or topology proof is still lab-backed
+4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
+5. it must be the command CI or another default entrypoint actually invokes
+
 ## Evidence Table
 
 | Bucket | Current proof | Missing proof | Release blocker |
@@ -66,7 +78,7 @@ One more uncomfortable point: the repository already has enough evidence to desc
 | Missing release proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict or enforced `speed unclaimed` refusal emitted by a mandatory release command. |
 | Release blocker | There is no mandatory `verify`, `verify:release`, or `release` command that can fail closed when any of those proofs are absent, and no checked-in workflow entrypoint closes that gap. |
 
-Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict. The blocker is structural: no required command owns the live-source verdict.
+Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict. The blocker is structural: no required command owns the live-source verdict, so every green result still depends on optional evidence rather than a mandatory release gate.
 
 ## Actionable Gate
 
