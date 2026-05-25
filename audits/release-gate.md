@@ -22,6 +22,9 @@ or comparison-only.
   The audit trail must show the rejected artifact stayed auditable, but could
   not be widened into a new row, file, relationship-bearing record, or
   plugin-owned surface. A readable stale artifact is not a valid retry token.
+  "Manual resolution later" is not success unless the preserved remote, the
+  stale rejection point, and the fresh retry artifact are all visible on the
+  same live write boundary.
   This includes late-discovered plugin-owned surfaces such as a hidden custom
   table, generated file, cron row, runtime registry entry, or serialized blob;
   if the stale artifact can still authorize any one of those, the claim is not
@@ -63,6 +66,9 @@ or comparison-only.
   because a fixture-owned option or table row matches the expected shape while
   the real plugin also owns custom tables, serialized counters, cron rows,
   generated assets, runtime registries, or external side effects.
+- The claim shows the allowlist decision was made against live plugin state,
+  not inferred from a fixture row whose narrow shape hides other owned plugin
+  surfaces.
 - The claim shows plugin data traps cannot pass as success because one fixture
   row or option matched while the real plugin also owns other state outside
   the allowlist.

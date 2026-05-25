@@ -27,11 +27,30 @@ The missing proof is still branch-local and live:
 - any partial file, DB, or plugin side effect has to be durably classified as
   old, new, or blocked before retry can rebuild scope from fresh live hashes.
 
+Before this branch can claim production-grade push support, the design must
+also prove all of the following on the live mutation boundary:
+
+- a stale remote is rejected before any write and the preserved remote stays
+  auditable after reject;
+- the same stale artifact cannot become authority for a different row, file,
+  relationship-bearing record, or plugin-owned surface on retry;
+- late-discovered plugin-owned state is classified explicitly, not folded into
+  a successful manual-resolution story after the first write;
+- partial DB/file/plugin side effects are recorded as old, new, or blocked so
+  the next retry starts from fresh live evidence; and
+- any source-note comparison stays provenance only unless this branch reruns
+  the same live boundary against the same drift case and records the fresh
+  retry scope.
+
 The remaining production traps are still unproven in this branch:
 
 - live remote drift can still be detected too late unless the apply boundary
   shows the preserved remote, the rejection point, and the unusable stale
   approval separately;
+- conflict policy can still stay ambiguous when the remote drifts after a
+  dry-run, because "manual resolution" can hide whether the remaining work is
+  old, new, or blocked unless the retry scope is rebuilt from fresh live
+  hashes and the preserved remote remains inspectable;
 - false reliability claims can still leak in through lab-shaped language:
   a production-shaped route, package mount, fixture replay, readable review
   artifact, or `finalMatchesLocal` result is only compatibility evidence
@@ -62,6 +81,9 @@ Release gate for any production wording:
 - Show that any plugin-owned surface discovered only after the first write
   is classified as blocked, not retroactively folded into a success claim or
   treated as a safe continuation without fresh live evidence.
+- Show that late-discovered plugin-owned state does not widen the write scope
+  silently through cached ownership, fallback behavior, or a second write that
+  only appears harmless because the first write already committed.
 - Show that a stale manual-review artifact remains audit-only after drift,
   cannot authorize a second write, and cannot be widened into a different
   row, file, relationship-bearing record, or plugin-owned surface without a
