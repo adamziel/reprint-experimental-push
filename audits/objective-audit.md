@@ -57,7 +57,7 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 
 The test surface also reveals a structural gap in how release evidence is collected. `npm test` proves the negative cases stay negative, but the repo has no required `verify`/`release`/`verify:release` entrypoint to force the live-source verdict. Optional Playground commands and local journal tests can keep improving confidence, but they remain optional and therefore cannot be the final release decision.
 
-Strict reading: if a test only proves refusal, redaction, replay classification, or local fixture integrity, it cannot be upgraded to `no data loss`, `reliable`, or `fast` at the live-source boundary.
+Strict reading: if a test only proves refusal, redaction, replay classification, or local fixture integrity, it cannot be upgraded to `no data loss`, `reliable`, or `fast` at the live-source boundary. The only honest release-language outcome for the current suite is that those claims remain unproven until a mandatory live-source gate exists.
 
 The pattern across the suite is consistent: it is better at proving that unsafe claims are blocked than at proving the live-source release claims themselves.
 
