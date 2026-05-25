@@ -203,6 +203,10 @@ Release gate for any production wording:
 - Show that a claim does not upgrade route shape, package mount, fixture
   replay, or a readable review artifact into production safety unless the
   branch-local live drift rerun and stale rejection are recorded here.
+- Show that a stale manual-review artifact from the first write cannot be
+  reused as retry authority for a later-discovered plugin-owned surface,
+  even if that later boundary is still behind the same route family or
+  package mount shape.
 - Show that a matching upstream revision or worktree state never becomes
   current retry authority by itself, even when it matches the feature family
   or route shape described in Reprint, ZS-Sync, or ForkPress source notes;
