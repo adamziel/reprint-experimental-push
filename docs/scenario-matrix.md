@@ -646,8 +646,8 @@ The plain-language invariant note lives in
   identity creates stay blocked. It does not prove safe automatic rewriting for
   attachments, GUIDs, nav menus, term splitting, serialized blocks,
   `_thumbnail_id`, `post_parent`, `wp_term_relationships`,
-  `wp_term_taxonomy`, `wp_termmeta`, cross-table create batches, or production
-  importer/exporter identity maps.
+  `wp_term_taxonomy.parent`, `wp_termmeta`, cross-table create batches, or
+  production importer/exporter identity maps.
 - Production DB-table journal and kill-process recovery tests around every
   durable WordPress boundary. The current DB journal/idempotency/process-kill
   plus missing-commit finalization and all-old stale-claim retry slices are

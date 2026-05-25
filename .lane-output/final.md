@@ -1,30 +1,29 @@
 # no-data-loss-invariants handoff
 
-Captured the current lane-owned gap instead of repeating the already-proved attachment, taxonomy, or `_thumbnail_id` surfaces.
+Added one fixture-backed proof for a missing live remote term identity under `wp_term_taxonomy.parent`, and tightened the remaining matrix gap to the narrower parent-reference class.
 
 Evidence:
-- `docs/scenario-matrix.md` now explicitly marks menu/nav graph references as unproven in the current planner model.
-- The planner docs still group nav menus with other reference-graph classes that are not yet covered by executable proof.
-- The focused test search still does not surface a menu/nav proof in `test/push-planner.test.js`; the only hits are the existing docs references.
-- The focused attachment probe remains green, so re-running that class would not change the verdict.
+- `test/push-planner.test.js` now blocks a `wp_term_taxonomy` row whose `parent` points at a live remote term that no longer exists, and verifies the blocker shape, remote precondition, and refusal to apply.
+- `docs/scenario-matrix.md` now narrows the unproved graph gap from the whole `wp_term_taxonomy` bucket to `wp_term_taxonomy.parent`.
+- The focused proof for the new scenario passes.
 
 Changed files:
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants/test/push-planner.test.js)
 - [`docs/scenario-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-invariants/docs/scenario-matrix.md)
+
 Commands run:
-- `rg -n "menu|nav|navigation|plugin/theme file|theme file|plugin file|file identity drift|remote-only deletion|deletion restoration|restore|wp_terms.*menu|menu_item|menu-item|nav_menu" test/push-planner.test.js docs/scenario-matrix.md docs/invariants/no-data-loss-invariants.md src/planner.js`
-- `git status --short --branch && git rev-parse --short HEAD && git rev-parse --short origin/lane/no-data-loss-invariants`
-- `git diff -- docs/scenario-matrix.md`
-- `sed -n '620,670p' docs/scenario-matrix.md`
-- `node --test --test-name-pattern='thumbnail_id|featured-image-attachment|attachment' test/push-planner.test.js`
+- `git status --short --branch && git rev-parse --short HEAD && git rev-parse --short origin/lane/no-data-loss-invariants && git rev-parse --short origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
+- `git diff -- test/push-planner.test.js docs/scenario-matrix.md .lane-output/final.md`
+- `node --test --test-name-pattern='keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent file delete, a matching file type swap, a matching independent edit, and remote-only plugin removals after apply revalidation' test/push-planner.test.js`
 
 Push result:
-- None
+- Pending
 
 Worktree status:
-- Dirty tracked file: `docs/scenario-matrix.md`
+- Dirty tracked files: `test/push-planner.test.js`, `docs/scenario-matrix.md`, `.lane-output/final.md`
 - Branch: `lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration`
-- `HEAD`: `09c63a25`
-- `origin/lane/no-data-loss-invariants`: `fa0ce3ea`
+- `HEAD`: `668f886c`
+- `origin/lane/no-data-loss-invariants`: `668f886c`
 
 Next supervisor nudge:
-- Either turn the menu/nav graph gap into an executable fixture-backed proof, or keep it documented as pending and hand this lane a different unproved reference-graph class.
+- Commit and push the integration branch if the lane wants this proof published, or assign a distinct unproved reference-graph class if the remaining parent-reference gap is not the next target.
