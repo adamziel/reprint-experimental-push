@@ -1825,6 +1825,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-backpressure',
+    proposal: 'use a compressed remote index plus cached manifest hashes to skip backpressure pauses during large-upload resume',
+    rejectedBecause: 'planning evidence and cached manifest hashes can trim lookup work, but they cannot prove the bounded queue order and durable chunk acknowledgements needed to recover after pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-after-pause',
     proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip large-upload resume after a pause',
     rejectedBecause: 'planning evidence and cached receipts can reduce replay work, but they cannot prove the bounded queue order, the surviving acknowledgements, or the guarded publish barrier after a pause or crash',
