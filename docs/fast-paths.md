@@ -184,6 +184,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus cached chunk receipts still cannot skip the guarded publish finalize for a large upload.
 - A dependency-heavy plugin update still cannot use a fresh remote index or a cached package hash to skip dependency preconditions at the atomic-group barrier.
 - A compressed remote index plus a cached dependency graph still cannot skip plugin-update dependency checks, because planning evidence and dependency shape do not prove the live row preconditions, member metadata writes, or the atomic-group barrier survived failure.
+- A compressed remote index plus a cached dependency graph still cannot skip plugin-update writeback, because planning evidence and dependency shape do not prove the live row compares, metadata writes, or the atomic-group barrier survived failure.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove a plugin install finished, because dependency checks, metadata writes, file receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove plugin activation finished, because the activation change, dependency checks, and the atomic-group commit still need durable evidence.
 - A compressed remote index plus a cached dependency graph still cannot skip plugin-update row preconditions, because planning evidence and dependency shape do not replace the live per-row compares or the atomic-group barrier.
