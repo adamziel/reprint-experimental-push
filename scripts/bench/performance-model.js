@@ -1160,6 +1160,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-package-cache-skips-plugin-install-dependency-checks',
+    proposal: 'treat a compressed remote index plus a cached package cache as enough proof to skip plugin-install dependency checks',
+    rejectedBecause: 'planning evidence and a cached package cache can reduce lookup work, but they cannot prove dependency checks, metadata writes, or the atomic-group barrier survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation',
     proposal: 'treat a compressed remote index plus a cached package cache as enough proof to skip plugin install activation',
     rejectedBecause: 'planning evidence and a cached package cache can reduce lookup work, but they cannot prove dependency checks, staged metadata, or the atomic-group activation barrier survived failure',
