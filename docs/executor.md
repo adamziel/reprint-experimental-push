@@ -4,6 +4,19 @@ This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
+The concrete production proof shape is fixed:
+
+- one remote source site, `remote-base`
+- one imported local edited site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner that owns preflight, snapshot listing, dry-run, apply, journal
+  inspect, and recovery
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 The executor follows the same production ladder the protocol defines:
 
 1. pull exporter/importer create the immutable base package.
@@ -46,6 +59,23 @@ The executor is therefore not a general remote write loop:
 - recovery starts with inspect
 - journal inspection never authorizes mutation by itself
 - push auth must be at least as strict as current Reprint HMAC usage
+
+The pull-to-push bridge is also fixed and one-way:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the only pull-derived input the executor may
+  consume
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` stays planning-only
+- `push_plan_dry_run` returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` is read-only durable evidence
+- `push_recover inspect` classifies finish, rollback, retry, or block before
+  any mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe
 
 The topology is fixed for both Docker and Playground:
 
