@@ -588,6 +588,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'chunk-upload',
+    reduces: ['wire-bytes', 'planning-round-trips', 'queue-drain-time'],
+    allowedShortcut: 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-large-upload-windows',
+    guardrails: [
+      'compressed-index-remains-planning-evidence-only',
+      'window-sizing-stays-within-byte-and-receipt-budgets',
+    ],
+    gateProofs: {
+      skip: 'a compressed remote-index listing can shorten large-upload resume scans while the planning cursor is reused to size the next bounded window',
+      live: 'the final file publish still compares the live remote resource hash against the expected file precondition',
+      group: 'the compressed listing and cursor only narrow planning work inside the same file boundary and never widen the atomic-group barrier',
+      recovery: 'compressed planning evidence stays advisory while durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'planning-only-with-transport-compression',
+    failureEvidence: 'compressed index cursor plus bounded chunk receipt ledger and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'parallelism-limits',
     reduces: ['idle-time', 'head-of-line-blocking'],
     allowedShortcut: 'run-independent-staging-work-within-per-site-and-per-kind-budgets',
@@ -842,6 +862,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'package identity does not prove that coupled remote resources are ready to commit',
     rejectedGate: 'group',
     violates: ['atomic-groups', 'plugin-preconditions'],
+  },
+  {
+    id: 'compressed-index-finalizes-plugin-install',
+    proposal: 'treat a compressed remote-index listing and cached dependency graph as enough proof to finalize a plugin install',
+    rejectedBecause: 'planning evidence can reduce lookup work, but it cannot prove dependency checks, staged rows, or the atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'plugin-preconditions', 'remote-index-planning-only'],
   },
   {
     id: 'cross-group-row-batch',

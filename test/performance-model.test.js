@@ -2637,6 +2637,24 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('atomic-file-publish'),
   );
+  const compressedLargeUploadWindowing = model.safeFastPaths.find(
+    (fastPath) => fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-size-bounded-large-upload-windows',
+  );
+  assert.ok(compressedLargeUploadWindowing, 'compressed large-upload windowing fast path exists');
+  assert.equal(compressedLargeUploadWindowing.bypassesLivePreconditions, false);
+  assert.equal(compressedLargeUploadWindowing.splitsAtomicGroup, false);
+  assert.ok(compressedLargeUploadWindowing.gateProofs.skip.includes('compressed remote-index listing'));
+  assert.ok(compressedLargeUploadWindowing.gateProofs.recovery.includes('durable chunk receipts'));
+  assert.ok(
+    rejectedById.get('compressed-index-finalizes-plugin-install').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-index-finalizes-plugin-install').violates.includes('plugin-preconditions'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-index-finalizes-plugin-install').rejectedGate,
+    'group',
+  );
   const drainedBufferFastPath = model.safeFastPaths.find(
     (fastPath) => fastPath.allowedShortcut === 'treat-drained-upload-buffer-as-publish-ready',
   );
