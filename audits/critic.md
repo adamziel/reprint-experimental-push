@@ -324,6 +324,10 @@ Claims that must still be rejected as false reliability:
   missing proof is the live mutation boundary rejecting stale authority on a
   drifted remote before mutation, with the preserved remote still auditable
   after the reject.
+- "The packaged plugin mounted the right endpoint, so production is ready"
+  when the package only reproduces the lab URL family; the missing proof is a
+  live write-path reject on a drifted remote plus an auditable preserved
+  remote and fresh retry scope on the same branch.
 - "The review artifact was readable, so retry was safe" when the artifact is
   stale manual-review output; the missing proof is that the artifact stayed
   audit-only, could not authorize retry, and could not widen into another
@@ -333,6 +337,10 @@ Claims that must still be rejected as false reliability:
   surfaces or a hard block for unknown surfaces, including late-discovered
   options, cron rows, cache entries, custom tables, generated files, runtime
   registries, serialized blobs, hooks, and external side effects.
+- "The smoke looked current, so the live executor must be current" when the
+  only evidence is a copied fixture or route-shaped mount; the missing proof
+  is the exact live boundary, stale rejection point, preserved remote, and
+  retry artifact on this branch.
 - "The comparison passed" when Reprint, ZS-Sync, or ForkPress are cited by
   commit alone; the missing proof is a branch-local recheck of the same live
   mutation boundary and the same drift or retry case, not just provenance for
@@ -548,6 +556,9 @@ Release-grade checklist:
 - The stale approval stayed auditable but could not authorize a retry, a
   different row, a different file, a relationship-bearing record, or a
   plugin-owned surface, including a late-discovered one.
+- A lab route, package mount, or fixture replay was never used as a shortcut
+  for production wording, even if it matched the expected endpoint family or
+  produced `finalMatchesLocal`.
 - A readable manual-review artifact was demoted to audit-only and could not be
   reused as current write authority after drift.
 - Manual resolution stayed audit-visible but could not be reused as current
