@@ -95,6 +95,9 @@ lab route, fixture replay, or package mount is the real production executor.
 If the claim cannot show the exact live request path, preserved remote state,
 and stale-authority rejection at the current write boundary, the comparison
 remains context only.
+If the claim also cannot show a preserved-remote retry after drift, then
+"manual resolution" is still only an unresolved conflict label, not proof
+that the comparison maps to safe production behavior.
 If the same comparison is then reused to justify a stale manual-review
 artifact, the claim still fails unless the artifact is rejected before write,
 the remote is preserved for audit, and the next retry rebuilds scope from

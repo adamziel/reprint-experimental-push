@@ -1648,13 +1648,17 @@ evidence must be attached or directly referenced:
    approval expiry, create-time remap handling, plugin-owned allowlist
    coverage, or partial side-effect classification.
 11. The claim does not treat Reprint, ZS-Sync, or ForkPress source notes as
-   current upstream proof unless the exact upstream revision or worktree
-   state named in the claim was reverified at the same live write boundary.
+    current upstream proof unless the exact upstream revision or worktree
+    state named in the claim was reverified at the same live write boundary.
 12. The claim does not use a source-note comparison to backfill any missing
-   live proof for drift rejection, create remap, plugin ownership, partial
-   side-effect classification, or stale approval expiry, and it does not use
-   route shape or package shape to upgrade historical notes into production
-   evidence.
+    live proof for drift rejection, create remap, plugin ownership, partial
+    side-effect classification, or stale approval expiry, and it does not use
+    route shape or package shape to upgrade historical notes into production
+    evidence.
+13. The claim does not treat "manual resolution" as success unless the remote
+    was preserved for audit, the stale approval was rejected before mutation,
+    and the retry can be audited from fresh live hashes without widening the
+    approved scope.
 
 ## Minimum Production Claim Gates
 
