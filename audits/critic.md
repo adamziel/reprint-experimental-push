@@ -143,6 +143,11 @@ Release gate for any production wording:
 - Show that any source-note comparison names the exact upstream revision or
   worktree state being cited; otherwise it stays historical context even when
   the feature family matches.
+- Show that an inspectable manual-review artifact or source-note comparison
+  still does not prove production safety when the route shape, package mount,
+  or `finalMatchesLocal` output matches; unless this branch reran the same
+  live drift case at the same mutation boundary, the artifact remains
+  historical evidence only.
 - Show that the comparison set is conservative: Reprint proves staged
   transport rhythm and resumable pull structure, ZS-Sync proves bounded
   discovery and cursoring, and ForkPress proves reviewed-resolution
