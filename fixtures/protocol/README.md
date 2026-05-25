@@ -62,10 +62,11 @@ The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
 
 - `push-protocol-extension-contract.json` is the top-level production ladder
-  proof. Start here when you need the full preflight, snapshot hash listing,
-  dry-run, batched apply, journal inspect, and inspect-first recovery story in
-  one object, with dry-run and apply kept separate while apply revalidates
-  fresh live evidence before every batch and at the storage boundary.
+  proof. Start here when you need the full preflight, remote snapshot hash
+  listing, dry-run plan upload, batched apply, journal inspect, and
+  inspect-first recovery story in one object, with dry-run and apply kept
+  separate while apply revalidates fresh live evidence before every batch and
+  at the storage boundary.
 - It is the canonical machine-readable bridge from the exporter/importer pull
   pipeline into the push write path.
 - `push-production-revalidation-contract.json` is the compact proof that

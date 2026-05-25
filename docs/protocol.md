@@ -16,7 +16,7 @@ The production ladder is fixed:
 
 1. `push_preflight` binds the persisted pull base package to one live remote
    identity, one requested scope, and one short-lived push session.
-2. `push_snapshot_hashes` lists the live remote comparison surface for
+2. `push_snapshot_hashes` performs the remote snapshot hash listing for
    planning only and never becomes write authority. It may page through
    large sites, but it never becomes a lock, a lease, or apply authority.
    This is the remote snapshot hash listing stage, and it stays read-only.
@@ -61,8 +61,9 @@ provenance:
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
 - `push_preflight` is the first live binding after importer persistence
-- `push_snapshot_hashes` is read-only planning evidence and may page large
-  sites, but it never becomes write authority
+- `push_snapshot_hashes` performs the remote snapshot hash listing for
+  planning only and may page large sites, but it never becomes write
+  authority
 - `push_plan_dry_run` uploads the canonical plan and returns an eligibility
   receipt, not a lock
 - `push_batch_apply` is a separate remote operation that revalidates fresh
@@ -78,8 +79,8 @@ above:
 1. exporter scans the merge base and coverage evidence
 2. importer persists the base package as immutable provenance
 3. `push_preflight` is the first live binding after importer persistence
-4. `push_snapshot_hashes` stays planning-only and never becomes write
-   authority
+4. `push_snapshot_hashes` performs the remote snapshot hash listing for
+   planning only and never becomes write authority
 5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
    receipt, not a lock
 6. `push_batch_apply` revalidates fresh live evidence before every batch and
@@ -126,8 +127,8 @@ the production executor:
 1. exporter discovers the merge base and coverage evidence.
 2. importer persists the base package as immutable provenance.
 3. `push_preflight` binds that persisted package to one live remote identity.
-4. `push_snapshot_hashes` stays planning-only and may page through the live
-   comparison surface.
+4. `push_snapshot_hashes` performs the remote snapshot hash listing for
+   planning only and may page through the live comparison surface.
 5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
    receipt, not a lock.
 6. `push_batch_apply` revalidates fresh live evidence before every batch and
@@ -176,7 +177,8 @@ The canonical production ladder bundle is `push-protocol-extension-contract.json
 The bridge is machine-readable and stage-ordered:
 
 1. `push_preflight` binds the imported pull base package to one live remote identity and one short-lived push session.
-2. `push_snapshot_hashes` lists the live remote comparison surface for planning only and may page large sites.
+2. `push_snapshot_hashes` performs the remote snapshot hash listing for
+   planning only and may page large sites.
 3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an eligibility receipt, not a lock.
 4. `push_batch_apply` revalidates fresh live evidence before every batch and again at the storage boundary.
 5. `push_journal` records durable evidence without authorizing mutation.
