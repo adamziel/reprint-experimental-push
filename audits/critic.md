@@ -39,10 +39,11 @@ preserved-remote retry evidence that can be rerun and audited from this branch.
 
 ## Single strongest blocker
 
-This worktree still has no named real-site release command that can be rerun
-unchanged on the same live boundary. Until that exact boundary exists here,
-production-grade push wording is false reliability, even if the supervised
-lane has stronger retained-source evidence and an explicit boundary verdict.
+This worktree still has no branch-local named real-site release command that
+can be rerun unchanged on the same live boundary. Until that exact boundary
+exists here, production-grade push wording is false reliability, even if the
+supervised lane has stronger retained-source evidence and an explicit boundary
+verdict.
 
 The next acceptable proof must be one rerunnable live command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
@@ -211,6 +212,10 @@ Before any production wording, the project must show:
 - a comparison note says Reprint, ZS-Sync, or ForkPress "covers" the branch
   because the route family or package mount looks similar, but it does not
   name the exact upstream state or the exact live boundary on this worktree;
+- the supervised reliable-executor lane's retained-source `verify:release`
+  result is treated as project evidence only, not as proof that this branch has
+  its own rerunnable live boundary, preserved-remote retry audit, or production
+  WordPress auth/session lifecycle;
 - a claim treats the remote lane's retained-source `verify:release` rows or
   minted session shape as proof of production auth/session lifecycle, durable
   journal correctness, or preserved-remote retry safety;
