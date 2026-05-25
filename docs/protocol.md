@@ -17,6 +17,20 @@ The production extension has one non-negotiable shape:
 - recovery must begin with inspect before any mutating finish or rollback
 - authentication must be at least as strict as current Reprint HMAC usage
 
+The remote write path is deliberately split into a planning half and a write
+half:
+
+- `push_preflight` binds the persisted pull base to one live remote identity
+  and one short-lived push session.
+- `push_snapshot_hashes` is planning evidence only.
+- `push_plan_dry_run` uploads a canonical plan and returns an eligibility
+  receipt, not a lock.
+- `push_batch_apply` is the first write stage and must revalidate live remote
+  evidence before every batch and again at the storage boundary.
+- `push_journal` is read-only.
+- `push_recover` starts with `inspect`; mutating recovery is only allowed
+  after inspect proves the action safe with fresh live hashes.
+
 The live remote is trusted in two different ways and those ways must stay
 separate:
 
@@ -63,6 +77,10 @@ already establishes:
   again at the storage boundary
 - push journal and push recover inspect durable evidence first, then permit
   mutating recovery only when fresh live hashes prove the action
+
+In other words, the pull/export/import pipeline produces immutable provenance,
+and the push executor consumes that provenance without ever rewriting it to
+make stale evidence look current.
 
 The one-remote, one-local, one-drift-witness test shape is the same in Docker
 and Playground: `remote-base` seeds the persisted pull base, `local-edited`
@@ -200,6 +218,12 @@ That ladder is the production contract in miniature:
 - apply is the first write stage and must revalidate fresh live evidence before every batch and at the storage boundary
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh live hashes prove the action
+
+The recovery path has one more safety rule:
+
+- `push_recover inspect` is not a shortcut to mutation.
+- `push_recover finish|rollback|auto` may only run after inspect has already
+  read the journal and live hashes and classified the attempt as safe.
 
 The compact proof objects in `fixtures/protocol/` mirror that ladder:
 

@@ -15,6 +15,15 @@ The executor has one production shape:
 - it inspects the journal before any mutating recovery
 - it never uses dry-run as a lock or snapshot listing as write authority
 
+The auth and session boundary is part of the production shape:
+
+- preflight must mint one short-lived push session bound to the persisted pull
+  base and live remote identity.
+- read-only inspection may stay on the existing HMAC family.
+- dry-run, apply, and mutating recovery must use the push session plus the
+  canonical push signature and idempotency key.
+- the push session scopes the write path, but it does not reserve remote state.
+
 Scope:
 
 - one persisted pull base package
@@ -51,6 +60,16 @@ The executor must keep the live remote split explicit:
 - journal inspect is read-only
 - recovery is inspect-first and cannot mutate until fresh live evidence proves
   the path is safe
+
+That split is the core liveness guarantee:
+
+- snapshot hashes are planning evidence only.
+- dry-run is an eligibility receipt, not a lock.
+- apply is the first write stage and must revalidate before every batch and at
+  the storage boundary.
+- journal inspect is read-only.
+- recovery starts with inspect and only mutates after journal rows plus fresh
+  live hashes prove the action.
 
 Recovery classifies the attempt into the same four states used by the protocol
 contract:
@@ -256,6 +275,10 @@ The executor must treat the pull pipeline as immutable provenance and the push p
 5. Dry-run uploads the canonical plan as eligibility evidence only.
 6. Apply revalidates the live remote before every batch and again at the storage boundary.
 7. Journal inspect and recovery inspect read durable evidence first, then allow mutation only when fresh live proof exists.
+
+The executor never rewrites the stored pull base to make stale evidence look
+current. If the live remote drifts after dry-run, apply must fail until it
+revalidates the fresh live state and recomputes the plan.
 
 The pull-to-push bridge is the compact proof the executor should preserve:
 

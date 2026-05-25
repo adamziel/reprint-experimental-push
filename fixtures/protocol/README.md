@@ -40,6 +40,20 @@ The normal sequence is:
 32. `push-remote-liveness-contract.json`
 33. `push-deployment-topology-contract.json`
 
+The production proof bundle is intentionally layered:
+
+- `push-pull-mapping.json` and `push-contract.json` map the immutable pull
+  provenance into the push protocol.
+- `push-remote-liveness-contract.json`, `push-dry-run-apply-revalidation-contract.json`,
+  and `push-recovery-revalidation-contract.json` keep the liveness split and
+  inspect-first recovery rules explicit.
+- `push-auth-headers.json`, `push-auth-session-journal-proof.json`, and
+  `push-auth-session-recovery-contract.json` show the auth floor that is at
+  least as strict as current Reprint HMAC usage.
+- `push-topology.json`, `push-topology-matrix.json`, and
+  `push-deployment-topology-contract.json` prove the one-remote, one-local,
+  one-drift-witness topology in both Docker and Playground.
+
 Failure and recovery examples:
 
 - `push-precondition-failed-response.json` shows apply-time liveness
