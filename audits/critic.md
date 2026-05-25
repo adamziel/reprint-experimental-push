@@ -21,10 +21,11 @@ What must change before any production-grade push claim:
   cannot become retry authority for a different row, file, relationship-
   bearing record, remapped create target, or plugin-owned surface; and
 - any Reprint, ZS-Sync, or ForkPress note must be treated as historical
-  context unless this branch names the exact upstream state, reruns the same
-  live boundary here, and says what that note proves and does not prove here;
-  a note that only matches the same route family, package layout, or reviewer
-  wording is still compatibility evidence, not production proof.
+  context unless this branch names the exact upstream state from
+  `docs/source-notes.md` (`27c5f25`, `d9334a0`, or `55f9879`), reruns the
+  same live boundary here, and says what that note proves and does not prove
+  here; a note that only matches the same route family, package layout, or
+  reviewer wording is still compatibility evidence, not production proof.
 
 Important boundary: a lab-shaped route family, packaged mount, fixture replay,
 or `finalMatchesLocal` result can still be compatible without proving the
