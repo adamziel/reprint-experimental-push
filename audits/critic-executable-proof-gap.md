@@ -11,8 +11,11 @@ Primary finding:
   existing `plan`, `apply`, and `test:playground:*` commands are lab or
   compatibility surfaces only, and the current production-shaped smoke still
   advertises `labBacked: true`. Until a named real-site release command exists
-  and can be rerun on an actual remote, any production-grade push wording is
-  false reliability and must fail closed;
+  and can be rerun on an actual remote with a real `REPRINT_PUSH_SOURCE_URL`
+  target, live preflight evidence, and the first real executor/auth/
+  preserved-remote boundary recorded, any production-grade push wording is
+  false reliability and must fail closed; docs-only or lab-only success
+  claims are not enough;
 
 Supporting failures:
 
@@ -34,10 +37,11 @@ Supporting failures:
 Required changes before production-grade push support can be claimed:
 
 - add a named executable preflight/release command for real-site use, not just
-  lab or playground compatibility flows;
+  lab or playground compatibility flows, and make it accept a real
+  `REPRINT_PUSH_SOURCE_URL` rather than a fixture-only target;
 - make that command prove the exact rejection point, preserved remote, fresh
-  retry scope, and boundary-specific live boundary identity on the actual
-  remote;
+  retry scope, executor/auth lifecycle, and boundary-specific live boundary
+  identity on the actual remote;
 - classify every touched row, file, relationship-bearing record, and
   plugin-owned surface as old, new, or blocked before retry starts; and
 - ensure later-discovered plugin-owned surfaces or remapped create targets get
