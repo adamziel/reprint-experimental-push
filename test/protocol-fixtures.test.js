@@ -53,6 +53,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
   const protocolExtensionContract = readJson('fixtures/protocol/push-protocol-extension-contract.json');
   const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
+  const snapshotHashesPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
   const authSessionJournalRecoveryContract = readJson(
     'fixtures/protocol/push-auth-session-journal-recovery-contract.json',
   );
@@ -219,6 +220,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'performs the remote snapshot hash listing for planning only and never becomes write authority',
   );
   assert.equal(
+    protocolExtensionContract.push_guards.snapshot_hash_listing,
+    'returns live remote comparison evidence for planning only and never upgrades into write authority',
+  );
+  assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_plan_dry_run,
     'uploads the canonical dry-run plan as eligibility evidence and returns a receipt, not a lock',
   );
@@ -236,6 +241,14 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.topology.local_edited, 'local-edited');
   assert.equal(protocolExtensionContract.topology.remote_changed, 'remote-changed');
   assert.equal(protocolExtensionContract.topology.runner, 'runner');
+  assert.equal(snapshotHashesPageContract.contract_id, 'push-snapshot-hashes-page-contract-one-remote-one-local');
+  assert.equal(snapshotHashesPageContract.response.complete, false);
+  assert.deepEqual(snapshotHashesPageContract.required_invariants, [
+    'snapshot hash listing is cursorable for large sites',
+    'partial listings remain planning evidence, not write authority',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'dry-run receipts must not promote a snapshot cursor into a lock',
+  ]);
   assert.equal(protocolExtensionContract.lab_topology.remote_base.identity, 'remote-example');
   assert.equal(protocolExtensionContract.lab_topology.local_edited.identity, 'local-dev-site');
   assert.equal(protocolExtensionContract.lab_topology.remote_changed.identity, 'remote-example');
