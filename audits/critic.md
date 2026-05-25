@@ -4446,6 +4446,10 @@ False reliability claims to reject:
 - "manual resolution succeeded" when the preserved remote, rejection point,
   and fresh retry scope are not all recorded on this branch for the same
   live boundary;
+- "manual resolution later" when the stale artifact is still being reused as
+  authority for a different row, file, relationship-bearing record, remapped
+  create target, or plugin-owned surface instead of being treated as audit-
+  only after drift;
 - "plugin-safe push" when any plugin-owned surface outside the allowlist,
   including a late-discovered table, file, registry entry, generated asset,
   cache entry, cron row, or serialized blob, is still only implied rather
@@ -4466,7 +4470,8 @@ One more false-reliability trap to reject explicitly:
   fixture-backed executor behind the same URL shape, so none of those
   outcomes prove the live write path rejected stale authority before the
   first mutation, preserved the remote, or rebuilt retry authority from fresh
-  live hashes.
+  live hashes; a production-shaped route can still be served by the wrong
+  executor, so shape is compatibility evidence only.
 
 Production-readiness language checklist:
 
