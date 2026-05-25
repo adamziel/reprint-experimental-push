@@ -108,6 +108,8 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 - `Reliable`: the suite proves refusal behavior, restart states, and local journal integrity, but no current test composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks into one enforced release decision against real storage. The current passes are distributed across helper paths, not concentrated in a required gate.
 - `Fast`: [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) is explicit anti-claim evidence. It asserts `report.throughput.productionThroughput === 'not-claimed'`, rejects unsupported production throughput claims, and verifies blocker lists. That is useful because it prevents overclaiming, but it is not a measured live-path speed result, not a release threshold, and not a mandatory verdict emitted by a release command. If anything, it proves the suite can block a speed claim while still leaving the release gate absent.
 
+The sharpest test verdict is therefore negative: the current tests are good at proving what the repo must refuse, but they do not prove the live-source path succeeds under the release boundary. That means the suite is suitable as guardrail evidence and regression evidence only until a mandatory release command exists.
+
 Test readout, in release terms:
 
 | Claim | What the tests actually prove | What they do not prove |
