@@ -13,3 +13,5 @@ Replay behavior must stay idempotent:
 - reapplying a completed plan must not duplicate inserts;
 - reapplying a completed plan must not resurrect stale local data;
 - a completed journal replay only reports `fully-updated-remote` when the current remote still matches the journaled after hashes.
+
+The failure boundaries before mutation, after staging, and after dependency validation remain `old-remote` only when they carry a journal artifact; any partial remote mutation without a durable recovery artifact is a release blocker.
