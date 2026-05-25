@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and remote head `ec1c9952` surfacing protocol extension plus the earlier `0c703230` snapshot-hash proof. That is real progress, but it is still retained-source lab evidence, not production proof.
+The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and remote head `536015fb` surfacing the explicit durable-journal boundary verdict plus the earlier `ec1c9952` protocol extension and `0c703230` snapshot-hash proofs. That is real progress, but it is still retained-source lab evidence, not production proof.
 
 The single blocker is still one rerunnable live mutation boundary on one exact source URL. Until that boundary preserves the rejected remote, re-derives authority from fresh live hashes at apply time, re-enters the same WordPress auth/session after rejection, and classifies plugin-owned surfaces before the first write, production wording stays false.
 
