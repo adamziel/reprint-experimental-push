@@ -154,6 +154,11 @@ Production-grade comparison gate:
   cannot become retry authority for a different row/file/relationship-bearing
   record/remapped create target/plugin-owned surface, or preserve the remote
   while rebuilding retry scope from live hashes on this branch.
+- None of the three notes prove a later-discovered plugin-owned table, file,
+  cron row, runtime registry entry, generated asset, cache entry, or
+  serialized blob is already covered just because an earlier note used the
+  same route family, mount shape, or reviewer vocabulary; that later surface
+  is a separate boundary and needs its own preserve / reject / retry proof.
 - If a later claim only matches the same route family, package mount, or
   reviewer wording, treat it as compatibility evidence only. A matching shape
   can still hide a copied executor, fixture-backed replay, or stale approval
@@ -197,6 +202,10 @@ Non-negotiable release gate:
   route shape, package mount shape, fixture replay, readable manual-review
   artifacts, `finalMatchesLocal`, or a "manual resolution" label without the
   preserved remote, rejection point, and fresh live-hash retry scope.
+- no production-grade push claim is allowed if a later-discovered plugin-owned
+  surface is being backfilled into an earlier note, because that later surface
+  is a separate boundary and the earlier note cannot widen to cover it without
+  new live proof on this branch.
 - no production-grade push claim is allowed if any upstream note is described
   as a proof source instead of historical context, because the branch still
   needs live boundary evidence for stale drift, remapped create targets,
