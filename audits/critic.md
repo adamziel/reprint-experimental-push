@@ -1,5 +1,29 @@
 # Critic Audit
 
+## 2026-05-25 Commit `2b00b189` Is Still A Wrapper, Not Release Proof
+
+Commit `2b00b189` adds a release-shaped wrapper, but the branch still does
+not show the live source endpoint that wrapper needs in order to become
+production evidence. The missing proof is not a better script label; it is a
+real-site command that runs against a live local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL`, proves the preserved remote stayed inspectable
+after rejection, and prints the exact executor/auth boundary before the first
+write.
+
+Scenario: someone points to `npm run test:playground:production-shaped-release-proof`
+and treats the name as a release gate. Missing proof: `package.json` does not
+expose that command, and the commit does not supply a live source endpoint,
+apply-time revalidation, recovery-journal inspection, or auth/session boundary
+evidence for an actual remote.
+
+The next command reliable-executor must produce is a named real-site
+preflight/release invocation that can be rerun on demand and that prints, in
+one run, the live `REPRINT_PUSH_SOURCE_URL`, the executor identity, the
+preserved remote that remained auditable after rejection, the exact
+rejection point before the first write, and the journal/recovery inspection
+needed to audit retry scope. Until that exact command exists and is rerun on
+a real remote, commit `2b00b189` stays a compatibility wrapper only.
+
 ## 2026-05-25 Real-Site Command Still Missing
 
 Primary finding: this branch still does not expose a single named real-site

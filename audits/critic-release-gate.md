@@ -4,6 +4,12 @@ This note is a compact checklist for any wording that might claim production-gra
 
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
 
+- commit `2b00b189` is not treated as proof until a live real-site command,
+  not a wrapper label, has been rerun against a real local, Playground, or
+  Docker `REPRINT_PUSH_SOURCE_URL` and has printed the executor identity, the
+  preserved remote that stayed inspectable after rejection, the exact
+  rejection point before the first write, and the journal/recovery inspection
+  needed to audit retry scope;
 - `REPRINT_PUSH_SOURCE_URL` is supplied from a real local, Playground, or Docker source and is used by a live preflight/release command, not just a setup placeholder;
 - the claimed `npm run test:playground:production-shaped-release-proof` command is not a proof command at all if it is absent from `package.json`; if it exists only as a discussion label or wrapper around other playground scripts, it remains compatibility evidence only;
 - a single executable real-site preflight/release command is named and can be rerun on demand; this repo currently exposes only `plan`, `apply`, `test`, and `test:playground:*` in `package.json`, including `test:playground:authenticated-http-push`, `test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`, and `test:playground:production-plugin-package`, so those scripts remain compatibility checks only unless one of them is explicitly promoted into the real-site release command and proves the live boundary end to end on an actual remote;
