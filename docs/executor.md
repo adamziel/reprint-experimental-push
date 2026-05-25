@@ -4,6 +4,17 @@ This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
+The executor has one production shape:
+
+- it starts from a persisted pull base package
+- it binds that package to one live remote identity in `push_preflight`
+- it treats `push_snapshot_hashes` as planning evidence only
+- it uploads a canonical dry-run plan as eligibility evidence only
+- it applies in batches with live revalidation before every batch and at the
+  storage boundary
+- it inspects the journal before any mutating recovery
+- it never uses dry-run as a lock or snapshot listing as write authority
+
 Scope:
 
 - one persisted pull base package
