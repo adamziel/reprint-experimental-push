@@ -34,7 +34,19 @@ The weakest claim is the production release verdict itself.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
 - The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added.
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
-- The next concrete release step should be a mandatory `verify:release` or `release` command that composes the existing guardrail tests, prints either a measured live-path threshold or `speed unclaimed`, and exits non-zero until that verdict is produced.
+- The next concrete release step is a mandatory `verify:release` or `release` command that composes the existing guardrail tests, prints either a measured live-path threshold or `speed unclaimed`, and exits non-zero until that verdict is produced.
+
+## Actionable Gate
+
+The repo needs one checked-in command that is impossible to confuse with optional smokes:
+
+1. run the existing guardrail suites
+2. reach the live-source boundary in the same invocation
+3. recheck apply-time state before mutation
+4. fail closed if auth/session, journal, lease/fencing, graph identity, plugin-data-driver, or topology proof is still lab-backed
+5. emit a machine-checkable verdict for throughput, either a measured threshold or `speed unclaimed`
+
+Without that command, every passing test remains support evidence only.
 
 ## Release Summary
 
