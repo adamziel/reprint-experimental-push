@@ -394,12 +394,15 @@ widen the earlier boundary.
 Current highest-value blocker: the branch still does not expose a real-site
 preflight/release command that proves the same live boundary on an actual
 remote and records the preserved remote, rejection point, and retry scope in a
-single executable flow. Until such a command exists and is audited end to end,
-the design cannot claim that the protocol docs, smoke tests, or manual-review
-notes are production release support rather than lab-only compatibility
-evidence. If the only available entry points remain `plan`, `apply`, and
-`test:playground:*`, the branch is still lab-only and the release gate fails
-closed.
+single executable flow. The missing proof wrapper is specifically a command
+that can run against a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL`, execute live preflight, and record the first real
+executor/auth/preserved-remote boundary. Until such a command exists and is
+audited end to end, the design cannot claim that the protocol docs, smoke
+tests, or manual-review notes are production release support rather than
+lab-only compatibility evidence. If the only available entry points remain
+`plan`, `apply`, and `test:playground:*`, the branch is still lab-only and the
+release gate fails closed.
 
 Fail-closed wording rule:
 
