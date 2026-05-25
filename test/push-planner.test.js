@@ -23436,3 +23436,45 @@ test('keeps same-remote graph identity at the live release boundary while a read
   assert.equal(driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode, 'late plugin-owned drift');
   assert.equal(driftedRemote.plugins.forms.description, 'remote-only plugin drift');
 });
+
+test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent edit and remote-only plugin removals and refuses late remote drift on re-apply', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin removal */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin removal */');
+
+  const driftedRemote = deepClone(result.site);
+  driftedRemote.files['about.php'] = '<?php echo "late remote drift";';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.files['about.php'], '<?php echo "late remote drift";');
+  assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin removal */');
+});
