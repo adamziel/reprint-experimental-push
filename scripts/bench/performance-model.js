@@ -1852,6 +1852,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish'],
   },
+  {
+    id: 'compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure',
+    proposal: 'use a compressed remote index to justify unbounded file-hash fanout and treat the resulting queue as backpressure-safe',
+    rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded hash fanout can still outrun the bounded queue order and journal evidence needed to recover after a pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'file-hashing', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

@@ -1174,6 +1174,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('atomic-file-publish'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure').violates.includes('parallelism-limits'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-hash-fanout-skips-backpressure').violates.includes('file-hashing'),
+  );
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('backpressure'));
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
