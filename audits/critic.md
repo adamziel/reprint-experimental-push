@@ -5,12 +5,12 @@ through remote head `68664884`, with `63a3502f` as the earlier retained-source
 proof point. That lane's `npm run verify:release` result is material
 retained-source lab evidence, but it is still not live retry authority unless
 the same branch also proves the live production WordPress auth/session
-boundary, durable journal semantics, graph identity, and plugin-driver
-coverage on a real-site rerun. The retired critique is the one that said no
-`verify:release` command exists; do not reintroduce it on this branch. The
-current blocker on this audit branch is the missing rerunnable live boundary
-with preserved-remote audit evidence on a real local, Playground, or Docker
-`REPRINT_PUSH_SOURCE_URL`.
+boundary, durable journal semantics, graph identity, plugin-driver coverage,
+and leases/fencing on a real-site rerun. The retired critique is the one that
+said no `verify:release` command exists; do not reintroduce it on this branch.
+The current blocker on this audit branch is the missing rerunnable live
+boundary with preserved-remote audit evidence on a real local, Playground, or
+Docker `REPRINT_PUSH_SOURCE_URL`.
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
