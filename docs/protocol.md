@@ -39,6 +39,24 @@ The production push extension has six ordered remote stages:
 6. `push_recover` starts with `inspect`, then allows finish, rollback, or
    auto only when the journal and fresh live hashes prove the action.
 
+## Endpoint Contract
+
+Each stage has a distinct job and evidence boundary:
+
+| Stage | Writes remote state? | What it proves |
+| --- | --- | --- |
+| `push_preflight` | No | The persisted pull base matches the live remote identity and the session can be scoped for push. |
+| `push_snapshot_hashes` | No | The live remote comparison set is complete enough for planning, but not a lock. |
+| `push_plan_dry_run` | No | The uploaded plan is eligible, signed, and receipt-backed, but still stale-able. |
+| `push_batch_apply` | Yes | The remote still matches the live preconditions for this batch and its storage boundary. |
+| `push_journal` | No | The durable claim, lease, fencing, and idempotency evidence can be inspected safely. |
+| `push_recover inspect` | No | The journal plus fresh live hashes classify the attempt as finish, rollback, retry, or block. |
+| `push_recover auto|finish|rollback` | Maybe | Mutating recovery is allowed only after inspect and only when fresh live proof says it is safe. |
+
+That split is the core production rule: the listing stage is planning
+evidence, the dry-run stage is a receipt, apply is the first write stage, and
+recovery is always inspect-first.
+
 Production liveness is split on purpose:
 
 - `push_plan_dry_run` is an eligibility receipt, not a reservation or lock.
@@ -74,6 +92,12 @@ package, and push consumes it without ever rewriting it to make a stale remote
 look current. The live snapshot hash listing is planning evidence only, the
 dry-run receipt is eligibility evidence only, and apply must re-read live
 state before every batch even when the dry-run receipt is still valid.
+
+The pull importer therefore has one extra obligation that push depends on: it
+must persist enough lineage, coverage, and resource identity to let preflight
+bind the later push session to the exact imported base. If the persisted base
+cannot be matched back to the remote identity that produced it, push stops
+before any write-capable stage can begin.
 
 ## Authentication
 

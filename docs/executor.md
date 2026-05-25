@@ -1472,6 +1472,11 @@ That mapping is one-way on purpose. The pull package never becomes a lock,
 and a later remote drift is valid evidence that apply must revalidate rather
 than reuse stale dry-run state.
 
+Operationally, that means the executor copies the immutable pull base into
+the push attempt state directory and treats it as read-only provenance. The
+base package can be read to build plans and to bind preflight, but it cannot
+be rewritten to make later live evidence look current.
+
 Recovery should always begin with `push_journal` or `push_recover` in
 `inspect` mode before any mutating retry. If the remote cannot prove the same
 claim, session, and live hashes that were present when the batch opened, the
@@ -1518,6 +1523,12 @@ The test topology is therefore fixed:
   and performs recovery
 - only the sandbox-provided `8080` ingress may be used for browser-visible
   inspection
+
+The runner should treat the pull base as immutable input, not as a shared
+working copy. That is what keeps `remote-base`, `local-edited`, and
+`remote-changed` meaningful: one remote identity is observed twice, one local
+clone supplies edits, and the runner alone decides when to compare, upload,
+inspect, or recover.
 
 Playground is best for protocol, planner, and recovery fixtures. Docker with
 MySQL/MariaDB remains necessary for transaction, lock, and fencing behavior

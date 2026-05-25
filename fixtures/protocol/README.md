@@ -59,6 +59,9 @@ Failure and recovery examples:
 - `push-pull-mapping.json` shows how the persisted pull base package becomes
   immutable provenance for push preflight, snapshot listing, dry-run upload,
   batched apply, journal inspection, and recovery.
+- `push-production-ladder-contract.json` shows the production stage order and
+  the liveness split: preflight, snapshot listing, dry-run, apply, journal
+  inspect, and inspect-first recovery stay separate.
 - `push-session-journal-proof.json` shows the restart-proof tuple that binds
   the minted push session to the journal claim, lease fence, and inspect-first
   recovery path.
