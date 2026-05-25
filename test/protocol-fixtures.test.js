@@ -148,6 +148,16 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     executorDocs.includes(
+      'dry-run and apply remain separate remote operations even when the same',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'apply revalidates fresh live evidence before every batch and at the storage',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
       'it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary',
     ),
   );

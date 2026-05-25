@@ -378,6 +378,11 @@ The same mapping is what the Docker and Playground proofs must exercise:
 - one runner that owns the protocol calls
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
+- dry-run and apply remain separate remote operations even when the same
+  runner executes both
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect stays read-only before any mutating recovery branch
 
 The production proof topology is intentionally minimal and repeated across
 both harnesses:
