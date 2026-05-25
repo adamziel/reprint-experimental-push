@@ -261,6 +261,7 @@ test('keeps remote-only changes and does not overwrite them', () => {
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.conflicts, 0);
   assert.equal(plan.decisions[0].decision, 'keep-remote');
   const result = applyPlan(remote, plan);
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Remote editorial update');
@@ -8409,6 +8410,43 @@ test('blocks local featured-image references when the remote deleted the referen
   assert.equal(planJson.includes('local featured image note'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.db.wp_posts['ID:2'], undefined);
+});
+
+test('blocks a file type swap that would hide a live remote descendant while preserving remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = 'base gallery file';
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant bytes';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/gallery/keep.txt'];
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/keep.txt'] = 'remote descendant bytes';
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const evidence = plan.conflicts[0] || plan.blockers[0];
+  const evidenceJson = JSON.stringify(evidence);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations >= 0, true);
+  assert.equal(plan.summary.blockers + plan.summary.conflicts > 0, true);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery').action, 'put');
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery').changeKind, 'type-change');
+  assert.equal(decisionFor(plan, 'file:about.php').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+  assert.equal(evidence.class, 'file-conflict');
+  assert.equal(evidence.resourceKey, 'file:wp-content/uploads/gallery/keep.txt');
+  assert.equal(evidenceJson.includes('base descendant bytes'), false);
+  assert.equal(evidenceJson.includes('remote descendant bytes'), false);
+  assert.equal(evidenceJson.includes('remote-only plugin drift'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
 test('blocks an atomic plugin install when dependencies are absent', () => {

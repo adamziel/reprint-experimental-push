@@ -20,6 +20,9 @@ This note summarizes the planner's no-overwrite contract.
 
 - Any remote-only change the local side does not touch.
 - Remote descendants that would be hidden by a local delete or file type swap.
+- A local file type swap that would hide a live remote descendant must stop
+  as a `file-topology-conflict`, even when unrelated remote-only plugin drift
+  is present.
 - Even when an unrelated change is safe to apply, topology-sensitive deletes and
   file type swaps must stop if they would hide a live remote descendant.
 - The planner must keep matching independent resources `already-in-sync` even
