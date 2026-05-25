@@ -67,9 +67,32 @@ False success to reject:
   family, package layout, or reviewer wording; shape similarity is not live
   proof of preserved-remote safety, stale-artifact rejection, or retry
   authority on this branch.
+- "same upstream note" is not success if the note lacks the exact upstream
+  revision or worktree state, the branch-local live rerun, and an explicit
+  statement of what it proves here and what it does not prove here.
 - "scorecard proof" is not success if the claim points to a high design score
   in `docs/approach-scorecard.md`; that table is a heuristic, not evidence of
   a live boundary rejecting stale authority before mutation.
+
+Checklist before any production-grade wording:
+
+- identify the exact claim being made, then map it to the proof it requires;
+- refuse any claim that is only supported by a route shape, mount shape,
+  fixture replay, readable review artifact, or `finalMatchesLocal` result;
+- require a live boundary rerun on this branch whenever the claim mentions
+  stale drift, preserved remote, remapped create targets, or plugin-owned
+  surfaces;
+- require a separate preserve / reject / retry cycle for any later-discovered
+  plugin-owned surface, even if the route family or reviewer wording matches
+  an earlier boundary;
+- require old/new/blocked classification for every touched surface before
+  retry starts, including any mixed file, DB, or plugin side effects;
+- require source-note comparisons to state the exact upstream revision or
+  worktree state, the branch-local rerun, what the note proves here, and what
+  it does not prove here; and
+- fail closed on any "manual resolution" description that cannot point to the
+  preserved remote, the stale rejection point, and the fresh retry scope
+  rebuilt from live hashes on this branch.
 
 Source-note comparisons are historical context unless the exact upstream revision or worktree state is named and this branch reran the same live boundary against the same drift case. A named Reprint, ZS-Sync, or ForkPress note can justify historical transport, discovery, or review vocabulary, but it does not prove the live executor, the preserved remote, retry safety, create-time remap safety, or plugin-owned surface handling on this branch.
 

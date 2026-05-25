@@ -154,6 +154,10 @@ Production-grade comparison gate:
   cannot become retry authority for a different row/file/relationship-bearing
   record/remapped create target/plugin-owned surface, or preserve the remote
   while rebuilding retry scope from live hashes on this branch.
+- Taken together, the three notes still do not prove production-grade push
+  support until this branch names the exact upstream state, reruns the same
+  live boundary, and shows preserved-remote, stale-rejection, and fresh
+  live-hash retry evidence for the same drift case.
 - None of the three notes prove a later-discovered plugin-owned table, file,
   cron row, runtime registry entry, generated asset, cache entry, or
   serialized blob is already covered just because an earlier note used the
