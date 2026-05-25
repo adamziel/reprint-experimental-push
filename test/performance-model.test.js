@@ -927,6 +927,22 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-hash-backpressure-after-pause')?.rejectedGate,
     'recovery',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-update-writeback-after-pause')?.rejectedGate,
+    'group',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-update-writeback-after-pause')?.violates.includes('plugin-preconditions'),
+    'cached file hashes still cannot bypass plugin update preconditions',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-update-writeback-after-pause')?.violates.includes('atomic-groups'),
+    'cached file hashes still cannot bypass the plugin update atomic-group barrier',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-update-writeback-after-pause')?.violates.includes('backpressure'),
+    'cached file hashes still cannot bypass backpressure recovery evidence',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-backpressure')?.violates.includes('file-hashing'),
   );

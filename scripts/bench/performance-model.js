@@ -2984,6 +2984,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'row-preconditions', 'backpressure', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-update-writeback-after-pause',
+    proposal: 'use a compressed remote index plus a cached file hash to skip plugin-update writeback after a pause',
+    rejectedBecause: 'planning evidence and cached hashes can trim duplicate inspection, but they cannot prove the live row compares, dependency checks, or atomic-group writeback barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
     proposal: 'use a compressed remote index plus cached row receipts to skip plugin-install finalize after a pause',
     rejectedBecause: 'planning evidence and cached row receipts can trim lookup work, but they cannot prove the plugin dependency checks, staged metadata writes, or the atomic-group finalize barrier survived the pause',
