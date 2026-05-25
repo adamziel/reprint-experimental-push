@@ -17386,6 +17386,11 @@ test('the durable recovery boundary remains fail-closed until the release gate w
     true,
     'the release gate still only proves restart smoke, not durable recovery inspect, durable storage, or replay classification',
   );
+  assert.equal(
+    packageJson.scripts['verify:release'].includes('recovery-inspect'),
+    false,
+    'the release gate still does not execute an inspect-first recovery proof at the release command boundary',
+  );
 
   const base = baseSite();
   const local = baseSite();
