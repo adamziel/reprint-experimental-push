@@ -12,7 +12,7 @@ rejection, live WordPress auth/session lifecycle, apply-time revalidation
 against a fresh real-site source, durable journal storage and lease/fencing
 semantics outside the Playground harness, graph identity under remap, or
 plugin-driver coverage for late-discovered plugin-owned surfaces. The
-supervised lane is now stronger lab evidence, not release evidence for this
+supervised lane is stronger lab evidence, not release evidence for this
 branch, because it still does not demonstrate a runnable live boundary that
 preserves the rejected remote and revalidates from fresh live hashes.
 Production-grade wording is still false if it relies on lab-session shape,
@@ -42,12 +42,12 @@ evidence that can be rerun and audited from this branch.
 
 ## Single strongest blocker
 
-This worktree still has no branch-local named real-site release command that
-can be rerun unchanged on the same live boundary with preserved-remote
-retention and fresh live-hash revalidation. That is a branch-local gap, not a
-project-wide absence: the supervised lane already has `verify:release` and
-retained-source evidence, but this checkout does not yet expose the same
-rerunnable live boundary. Until that exact boundary exists here,
+This worktree still has no rerunnable live boundary on a real local,
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that proves preserved-remote
+retention and fresh live-hash revalidation on the same mutation. That is a
+branch-local gap, not a project-wide absence: the supervised lane already has
+`verify:release` and retained-source evidence, but this checkout does not yet
+expose the same live boundary. Until that exact boundary exists here,
 production-grade push wording is false reliability, even if the supervised
 lane has stronger retained-source evidence and an explicit boundary verdict.
 
@@ -217,6 +217,28 @@ remote evidence:
 - graph identity across create-time remaps and late-discovered records; and
 - plugin-driver coverage for plugin-owned surfaces outside the initial
   allowlist.
+
+## Must-change items
+
+Before the project can claim production-grade push support, the design needs
+all of the following to be explicit and exercised:
+
+- preserved-remote retention that survives rejection and is still inspectable
+  for audit and retry;
+- a live auth/session lifecycle on production WordPress, not just a retained-
+  source session shape;
+- apply-time revalidation from fresh live hashes, with rejection before any
+  irreversible write if drift appears;
+- durable journal and recovery semantics outside the Playground harness,
+  including lease/fencing proof under retry and concurrent writer pressure;
+- graph identity proof for create-time remaps and late-discovered
+  relationship-bearing records;
+- plugin-driver coverage for plugin-owned surfaces that are not visible in the
+  initial allowlist;
+- explicit old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface; and
+- a replayable live command and receipt trail that lets a reviewer audit the
+  exact rejection, retry scope, and preserved remote without manual resolution.
 
 The reliable-executor lane's retained-source `verify:release` run is still
 useful lab evidence, but it is not production proof for this branch until the
