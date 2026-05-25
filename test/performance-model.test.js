@@ -426,6 +426,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches')?.failureEvidence,
     'index cursor, dependency graph, and batch idempotency key',
   );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-presize-bounded-plugin-update-batches')?.visibilityBoundary,
+    'planning-only-until-batch-commit',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-remote-index-listings-and-reuse-cursor-to-presize-bounded-plugin-update-batches')?.failureEvidence,
+    'compressed index cursor, dependency graph, and batch idempotency key',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-row-batch-replaces-atomic-group')?.violates.includes('atomic-groups'),
   );
@@ -928,6 +936,14 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('atomic-groups'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing').rejectedGate,
+    'live',
+  );
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('chunk-receipts'));

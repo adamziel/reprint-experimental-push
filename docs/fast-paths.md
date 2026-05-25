@@ -48,6 +48,7 @@ the safe list even when they improve a throughput metric.
 | Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order with one precondition per row. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
 | Database row batching | Reuse one prepared statement per table and batch shape inside a single atomic group so large plugin installs and updates avoid repeated parse and bind work. | Prepared statements only remove duplicate SQL setup. Each row still needs its live compare, the batch still needs durable receipts, and the atomic-group barrier stays fixed. |
 | Database row batching | Reuse a recorded dependency graph and remote index cursor to pre-size bounded plugin-update batches so rescans do not repeat unchanged dependency shape. | The dependency graph is planning evidence only. It cannot skip row preconditions, widen the batch past its row budget, or move the atomic-group barrier. |
+| Database row batching | Compress remote-index listings and reuse the cursor to pre-size bounded plugin-update batches so rescans move fewer bytes before the live compare. | Compression is transport-only. The compressed listing still cannot skip row preconditions, batch receipts, or the atomic-group barrier. |
 | Database row batching | Reuse a remote-index cursor and dependency graph to pre-size bounded plugin-install batches so rescans do not repeat unchanged dependency shape. | The index cursor is planning evidence only. It cannot skip row preconditions, widen the batch past its row budget, or move the atomic-group barrier. |
 | Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, strong hash, and owner so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
 | Remote indexes | Compress index responses and cache the planning cursor so repeated scans move fewer bytes without changing planning semantics. | Compression stays transport-only, and a compressed index response still cannot authorize apply or widen the atomic-group barrier. |
@@ -152,6 +153,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed in-memory buffer still cannot prove a plugin install finished, because dependency checks, metadata writes, file receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed in-memory buffer still cannot prove plugin activation finished, because the activation change, dependency checks, and the atomic-group commit still need durable evidence.
 - A compressed remote index plus a cached dependency graph still cannot skip plugin-update row preconditions, because planning evidence and dependency shape do not replace the live per-row compares or the atomic-group barrier.
+- A compressed remote index plus a cached dependency graph still cannot skip bounded plugin-update batch sizing, because planning evidence and dependency shape do not replace the live row preconditions, batch receipts, or the atomic-group barrier.
 - A remote index cursor plus a cached dependency graph still cannot skip plugin-install row preconditions, because planning evidence can reduce lookup work but cannot prove the live row compares, metadata writes, or the atomic-group barrier survived failure.
 - A fresh remote index plus a compressed file-hash cache still cannot prove a plugin install finished, because dependency checks, staged files, row receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed file-hash cache still cannot prove a plugin update finished, because dependency checks, staged files, row receipts, and the atomic-group commit still need durable evidence.
@@ -846,6 +848,10 @@ under load:
   is rejected because planning evidence and a cached dependency graph can
   reduce lookup work, but they cannot prove the live row compares, member
   metadata writes, or the atomic-group finalize survived failure.
+- compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing
+  is rejected because planning evidence and a cached dependency graph can
+  reduce rescanning, but they cannot prove the live row preconditions, batch
+  receipts, or the atomic-group barrier survived failure.
 - compressed-remote-index-and-cached-package-hash-skips-plugin-update-finalize
   is rejected because planning evidence and cached package hashes can reduce
   planning and lookup work, but they cannot prove dependency checks, metadata

@@ -407,6 +407,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['round-trips', 'wire-bytes-for-planning', 'batch-shape-recomputation'],
+    allowedShortcut: 'compress-remote-index-listings-and-reuse-cursor-to-presize-bounded-plugin-update-batches',
+    guardrails: [
+      'compressed-index-remains-planning-evidence-only',
+      'batch-bounds-still-honor-row-preconditions',
+    ],
+    gateProofs: {
+      skip: 'a plugin update can reuse a compressed remote-index listing and cursor to avoid rescanning unchanged planning data when sizing row batches',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary before visibility changes',
+      group: 'the compressed listing only narrows planning work inside the same atomic group and never widens visibility across owners',
+      recovery: 'the compressed index cursor, dependency graph, and batch receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'compressed index cursor, dependency graph, and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
@@ -898,6 +918,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and dependency graphs can reduce rescanning, but they cannot replace the live per-row compares or the atomic-group barrier',
     rejectedGate: 'live',
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'plugin-preconditions'],
+  },
+  {
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
+    proposal: 'use a compressed remote index plus a cached dependency graph to skip bounded plugin-update batch sizing',
+    rejectedBecause: 'planning evidence and dependency graphs can reduce rescanning, but they cannot prove the live row preconditions, batch receipts, or atomic-group boundary survived failure',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
     id: 'index-and-chunk-receipts-skip-guarded-publish',
