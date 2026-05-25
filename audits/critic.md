@@ -2159,7 +2159,8 @@ of the following in the same evidence set:
 - The claim does not say "manual resolution succeeded" unless the preserved
   remote can still be audited, the stale artifact was rejected before write,
   and the retry rebuilt scope from fresh live hashes instead of reusing the
-  old approval.
+  old approval, even if the artifact stayed readable and the route or
+  package mount still looks production-shaped.
 - The claim does not say a manual-review artifact is still current authority
   after drift. If the artifact is only readable, the missing proof is a
   rejected-before-write boundary that preserves the remote and prevents the
