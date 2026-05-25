@@ -1,42 +1,32 @@
-# Durable Recovery Contract
+# Durable Journal Contract
 
-This lane treats recovery as a no-data-loss problem, not just a successful test-model replay.
+This lane treats recovery evidence in two different categories:
 
-## Acceptable post-failure states
+1. Lab evidence
+2. Durable production evidence
 
-After any push attempt, the remote must end up in one of these states:
+Lab evidence is useful for model tests and local inspection. It can live entirely in JSON artifacts, in-memory fixtures, or test-only journals. That evidence proves the state machine, but it does not prove crash safety.
 
-1. `old-remote`
-   - No mutation reached the remote.
-   - Recovery artifacts may exist, but they must describe the untouched remote.
-2. `fully-updated-remote`
-   - Every planned mutation is visible on the remote.
-   - A completed journal may be replayed inertly.
-3. `blocked-recovery`
-   - A partial or drifted state exists.
-   - Recovery must preserve artifacts for inspection and retry fencing.
+Production recovery needs durable artifacts that survive interruption:
 
-Anything else is a data-loss bug.
+- Journal rows or records written to persistent storage
+- `fsync` or equivalent flush semantics for file-backed journals
+- Plugin or worker activation state recorded durably
+- Lease or fencing checks that reject stale workers before mutation
+- Recovery inspection that can classify a remote as `old-remote`, `fully-updated-remote`, or `blocked-recovery`
 
-## What the lab model can prove
+Acceptable post-failure states are narrow by design:
 
-The JSON test model is good at proving:
+- `old-remote` means nothing observable escaped the pre-mutation boundary
+- `fully-updated-remote` means all planned mutations are committed and replay is inert
+- `blocked-recovery` means the remote may be partially changed, but durable artifacts exist so the operator can inspect and recover safely
 
-- mutation ordering
-- idempotent completed replay
-- rejection of stale or drifted replay
-- preservation of remote evidence after injected failures
+Anything that leaves a partially mutated remote without recovery artifacts is a release blocker.
 
-It cannot by itself prove production durability.
+Retry safety rules:
 
-## What production still needs
+- Retries must not duplicate inserts
+- Retries must not resurrect stale local data
+- Partial writes without durable artifacts must not be treated as safe replay
 
-To make the contract real outside the test model, the runtime needs:
-
-- durable journal rows
-- fsync or equivalent flush semantics
-- explicit plugin activation and ownership tracking
-- fencing or leases so stale workers cannot continue
-- recovery inspection that can classify `old-remote`, `fully-updated-remote`, and `blocked-recovery`
-
-If a partial remote mutation exists without a durable recovery artifact, the system has already violated the contract.
+The code and tests in this lane should continue to prove the above contract at every new recovery boundary.
