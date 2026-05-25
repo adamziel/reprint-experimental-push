@@ -81,6 +81,8 @@ test('push contract fixture binds the pull handoff to the production push sequen
     contract.pull_handoff['push_recover auto|finish|rollback'],
     'mutates only when the journal row, lease fence, and fresh live hashes prove the action',
   );
+  assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(contract.pull_pipeline.importer, 'persists the base package as immutable provenance');
   assert.equal(
     contract.production_shape.remote_snapshot_hash_listing,
     'a cursorable live remote hash listing used only for planning',
@@ -247,6 +249,8 @@ test('push contract fixture binds the pull handoff to the production push sequen
     protocolExtensionContract.purpose,
     'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery',
   );
+  assert.equal(protocolExtensionContract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(protocolExtensionContract.pull_pipeline.importer, 'persists the base package as immutable provenance');
   assert.deepEqual(protocolExtensionContract.push_sequence, [
     'push_preflight',
     'push_snapshot_hashes',
@@ -259,6 +263,11 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(
     protocolExtensionContract.pull_pipeline.bridge_rule,
     'the importer-owned base package is immutable provenance for planning, apply, journal, and recovery',
+  );
+  assert.ok(
+    protocolExtensionContract.topology.proof.includes(
+      'pull exporter/importer establish the immutable base package before push',
+    ),
   );
   assert.deepEqual(protocolExtensionContract.push_sequence, [
     'push_preflight',

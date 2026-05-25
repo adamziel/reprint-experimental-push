@@ -132,6 +132,11 @@ It keeps the deployment shape separate from the larger auth and recovery
 fixtures so focused tests can assert the one-remote, one-local, one-drift
 witness boundary directly.
 
+For the compact end-to-end production ladder, cite
+[`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json).
+It binds the exporter/importer handoff, push stage order, pull provenance,
+and Docker/Playground topology into one object.
+
 ## Runtime Stages
 
 The production push extension has six ordered remote stages:

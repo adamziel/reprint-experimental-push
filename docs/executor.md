@@ -78,6 +78,10 @@ dry-run upload, batched apply, journal inspection, inspect-first recovery, and
 the one-remote, one-local, one-drift topology used in both Docker and
 Playground.
 
+Use that contract when a test needs the whole production ladder in one proof;
+use `push-deployment-topology-contract.json` when the test only needs the
+topology slice.
+
 Recovery classifies the attempt into the same four states used by the protocol
 contract:
 
