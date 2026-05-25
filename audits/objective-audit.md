@@ -198,15 +198,19 @@ Concrete read:
 - `npm test` is therefore a valid regression check and not a release gate.
 - The absence of a required live-source command means the suite cannot prove no data loss, reliability under crash/replay, or speed on the real push path.
 
-## Release Summary
+## Evidence Table
 
-| Item | Current reading |
-| --- | --- |
-| Strongest executable proof | `node --test` plus the fixture and model suites can prove refusal behavior, classification, and local integrity checks. None of them reach the live-source boundary, and none of them can emit a mandatory release verdict. They do not prove no data loss, reliable crash recovery, or measured live-path speed. |
-| Strongest lab proof | Playground and authenticated smokes can exercise route shape, auth/session scaffolding, journaling, and stale-claim rejection, but they still self-identify as `labBacked: true`, so they are explicitly not release proof. |
-| Strongest docs-only proof | The audit and blocker notes correctly describe the intended one-way pull base plus one-way push flow. |
-| Missing release proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict or enforced `speed unclaimed` refusal emitted by a mandatory release command. |
-| Release blocker | There is no mandatory `verify`, `verify:release`, or `release` command that can fail closed when any of those proofs are absent, and no checked-in workflow entrypoint closes that gap. |
+| Requirement | Current proof | Missing proof | Release blocker |
+| --- | --- | --- | --- |
+| One-way pull base, then one-way push to the live source | Planner, refusal, and model tests prove directionality and guardrails in fixtures or lab mode | A required live-source invocation that actually mutates the source boundary in the same run | No checked-in command forces the live-source boundary |
+| Recheck live source at apply time before mutating it | Stale-claim and replay guards show the intent in tests | Apply-time revalidation on the real source before mutation | The current suite stops before the live apply boundary |
+| Preserve WordPress data shapes without loss | Local integrity checks cover some data-shape handling | Proof over rows, files, plugin-owned data, serialized payloads, and graph identity on live storage | No live-source data-shape proof exists |
+| Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart | Recovery and journal tests cover file-backed and modeled recovery cases | Crash-boundary proof on production storage and transport | No release gate exercises the real crash boundary |
+| Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-driver checks | Individual tests and smokes cover pieces of the matrix | One enforced release command that composes all gates and fails closed when any are missing | No mandatory command owns the release decision |
+| Prove real remote/local topology | Route smokes prove shape and auth behavior | Topology proof that touches live source rather than Playground or fixture aliases | Existing smokes still self-identify as `labBacked: true` |
+| Publish a measured speed claim or explicitly refuse one | Benchmark-model and guarded-benchmark tests refuse unsupported throughput claims | A machine-checkable live-path throughput verdict or an enforced `speed unclaimed` refusal from the same command | No checked-in gate prints the throughput verdict on the live path |
+| Expose one required release command | Audit prose describes the needed command | A checked-in `verify`, `verify:release`, or `release` command | `package.json` has no mandatory release entrypoint |
+| Wire the release command into CI or another default entrypoint | Audit notes document the gap | A checked-in workflow or default automation path that runs the gate | This checkout has no enforced workflow entrypoint |
 
 Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict. The blocker is structural: no required command owns the live-source verdict, so every green result still depends on optional evidence rather than a mandatory release gate. If the release decision is not forced through the live-source path, the repository still cannot claim no data loss, reliability, or speed.
 
