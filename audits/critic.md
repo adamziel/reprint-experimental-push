@@ -1009,6 +1009,31 @@ is preserved for audit, retries start from fresh evidence, and partial side
 effects are classified without reusing stale manual permission or stale
 approval artifacts.
 
+## Must-Happen Before Production Claims
+
+Before this project can honestly claim production-grade push support, the
+design still needs proof for each of these failure classes:
+
+- Live remote drift between dry-run and apply must fail closed before the
+  first write, and the rejected state must remain auditable without being
+  reusable.
+- Create-time identity remapping must be proven or hard-blocked whenever a
+  target can renumber, alias, or reassign under the same request path.
+- Plugin-owned state outside the declared allowlist must stop the push unless
+  a semantic driver proves the exact owned-resource graph and side effects for
+  that plugin surface.
+- Partial file, DB, or plugin side effects must be classified durably as old,
+  new, or blocked, and the retry must start from fresh live evidence rather
+  than inheriting stale approval.
+- Manual review artifacts must stay readable for audit while becoming unusable
+  for apply after drift or partial recovery.
+- Comparison notes from Reprint, ZS-Sync, and ForkPress must remain
+  historical context unless the exact upstream revision or worktree state was
+  reverified and the same live write boundary was exercised in this repo.
+- Route-shape, packaged-plugin mounting, fixture replay, and `finalMatchesLocal`
+  remain lab evidence only; none of them prove live mutation safety on their
+  own.
+
 ## Production Claim Checklist
 
 Use this checklist before any doc, PR, branch status, review comment, or
