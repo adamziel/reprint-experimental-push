@@ -44,8 +44,9 @@ Source-note claim gate:
   rejection, create-time remap handling, or plugin-owned surface coverage.
 - If a claim says a Reprint, ZS-Sync, or ForkPress note is current evidence,
   it must name the exact upstream commit or worktree state, the exact live
-  write boundary, and the exact drift or retry case that was reverified. If
-  any of those are missing, the note stays historical context only.
+  write boundary, the exact drift or retry case that was reverified, and the
+  branch-local same-boundary recheck. If any of those are missing, the note
+  stays historical context only.
 - A matching route shape, package mount, or `finalMatchesLocal` result never
   upgrades a source note into production proof. Those artifacts only show that
   a lab-shaped path still looks compatible with the source-note description.
@@ -219,8 +220,9 @@ Changes that must happen before any production-grade push claim:
   not let a retry widen the old approval, inherit stale scope, or treat a
   partially committed store as a fully successful push.
 - Reverify any Reprint, ZS-Sync, or ForkPress comparison against the exact
-  upstream commit or worktree state being cited and the exact live mutation
-  boundary being claimed, or label it historical only.
+  upstream commit or worktree state being cited, the exact live mutation
+  boundary being claimed, and the branch-local same-boundary recheck, or
+  label it historical only.
 - Reverify the cited Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress
   `55f9879` notes against the live boundary or stop treating them as current
   evidence.
