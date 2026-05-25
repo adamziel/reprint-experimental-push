@@ -49,6 +49,10 @@ Release-gate checklist for production-readiness wording:
   revision or worktree state and say whether it was reverified at the same
   live mutation boundary; otherwise the comparison is historical context
   only.
+- Source notes are design input, not current proof. A matching upstream
+  commit, mount shape, or route family still does not count unless this branch
+  rechecked the same live write path and the same drift or retry case on the
+  same boundary.
 - For this branch, the source-note commits `27c5f25`, `d9334a0`, and
   `55f9879` remain historical input until a branch-local live-boundary
   recheck is recorded here.
@@ -172,6 +176,10 @@ Release-gate addendum for the next production claim:
 - Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
   commit or worktree state, the exact live write boundary, and the exact drift
   or retry case rechecked on this branch; otherwise it is historical only.
+- Any comparison that only matches the source-note vocabulary, upstream
+  revision, or route shape remains historical context until the audit shows
+  the live mutation executor, preserved remote, stale rejection point, and
+  fresh retry scope on this branch.
 - Any manual-resolution claim must show the preserved remote, the rejection
   point before mutation, and that the old artifact cannot authorize a retry
   against a different row, file, relationship-bearing record, or plugin-owned
