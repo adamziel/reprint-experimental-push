@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 04:32:22 CEST
+Last updated: 2026-05-25 04:33:06 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 04:32:22 CEST - Supervisor Snapshot
+## 2026-05-25 04:33:06 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and feedback note still line up.
-- Not going well: production proof is still missing, so the public status remains blocked.
-- Progress change: no new evidence landed; the scan view stays short and the older history stays collapsed.
+- Not going well: production proof is still missing, so the public status stays blocked.
+- Progress change: no new evidence landed; the newest note stays short and older history stays collapsed.
 - Next nudge: give each lane one proof gap, one test, and one owner, then land that proof before widening scope.
 
 | Lane | Current nudge |
