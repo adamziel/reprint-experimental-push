@@ -29,3 +29,6 @@ Durable journal expectation:
 - The durable journal should record the boundary that was reached before failure.
 - Recovery inspection should be able to distinguish an untouched remote, a fully completed replay, and a blocked partial commit from persisted artifacts alone.
 - A completed replay should be append-only: it records the replay boundary, does not re-stage mutations, and does not resurrect stale local inserts or edits.
+- Failures before mutation, after staging, and after dependency validation remain `old-remote` even when a durable journal is present.
+- Replaying a completed plan remains `fully-updated-remote` and must not reopen mutation work or rewrite completed inserts.
+- Any partial commit must be classified as `blocked-recovery` with both journal and remote artifacts so retry stays fenced.
