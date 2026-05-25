@@ -9575,6 +9575,32 @@ test('completed replay remains idempotent across repeated recovery journal repla
   assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('completed replay with remote drift blocks recovery instead of duplicating the completed plan', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "stale-local";';
+  const driftedSnapshot = JSON.stringify(driftedRemote);
+
+  const error = captureError(() => applyPlan(driftedRemote, plan, { journal: completed.journal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assert.equal(JSON.stringify(driftedRemote), driftedSnapshot);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked recovery must keep remote artifacts');
+  assert.ok(error.details.recovery.artifacts.journal, 'blocked recovery must keep journal artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale-local";');
+});
+
 test('durable pre-mutation journal failure keeps the remote old and preserves inspectable artifacts', () => {
   const base = baseSite();
   const local = baseSite();
