@@ -1530,6 +1530,64 @@ test('durable completed replay stays fully-updated and remains inspectable from 
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('durable completed replay stays inert across repeated retries and does not duplicate recovery evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const firstReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  const firstReplaySnapshot = JSON.stringify(firstReplayRemote);
+  const firstReplayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const firstReplay = applyPlan(firstReplayRemote, plan, {
+    durableJournal: firstReplayJournal,
+    journal: completed.journal,
+  });
+  firstReplayJournal.close();
+
+  const secondReplayRemote = JSON.parse(JSON.stringify(firstReplay.site));
+  const secondReplaySnapshot = JSON.stringify(secondReplayRemote);
+  const secondReplayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const secondReplay = applyPlan(secondReplayRemote, plan, {
+    durableJournal: secondReplayJournal,
+    journal: completed.journal,
+  });
+  secondReplayJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(firstReplayRemote), firstReplaySnapshot);
+  assert.equal(JSON.stringify(secondReplayRemote), secondReplaySnapshot);
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assertAcceptableRecoveryState(firstReplay.recoveryState);
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assert.equal(firstReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(firstReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(firstReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(firstReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(secondReplay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    2,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
+    3,
+  );
+  assert.equal(persisted.integrity.status, 'ok');
+});
+
 test('supported recovery boundaries only resolve to old-remote, fully-updated-remote, or blocked-recovery', () => {
   const base = baseSite();
   const local = baseSite();
