@@ -13,6 +13,9 @@ or comparison-only.
 - The claim does not treat a readable review artifact or source-note
   comparison as current proof unless the same live boundary was revalidated on
   this branch.
+- The claim does not let a readable review artifact become retry authority
+  after drift unless the preserved remote, rejection point, and fresh retry
+  scope are all recorded on this branch for the same live boundary.
 - The claim does not treat a matching route family, package mount, fixture
   replay, or `finalMatchesLocal` result as production evidence unless the audit
   also names the live executor, the stale remote-drift case, the preserved
@@ -55,6 +58,11 @@ or comparison-only.
   preserved the remote, recorded the rejection point for that later surface,
   and rebuilt retry scope from fresh live hashes, the earlier approval stays
   audit-only and cannot authorize the new surface.
+- The claim shows ambiguous conflict policy is resolved conservatively: the
+  branch must preserve the remote, classify every touched surface as old,
+  new, or blocked, and keep "manual resolution" from silently widening scope
+  to a different row, file, relationship-bearing record, or plugin-owned
+  surface.
 - The claim shows manual resolution never becomes current authority just
   because the artifact is readable, the route looks production-shaped, or the
   package mount is live; the remote must stay preserved, and the retry must
@@ -122,6 +130,10 @@ or comparison-only.
 - The claim shows any partial file, DB, or plugin side effect is durably
   classified and that retry starts from fresh evidence rather than inherited
   approval.
+- The claim shows any partial file, DB, or plugin side effect cannot be
+  relabeled as success after a second snapshot, replay, or source-note check
+  unless the remote was preserved and the side effect was separately
+  classified on this branch.
 - The claim shows partial file, DB, or plugin side effects do not leave an
   implied success state just because one store committed; mixed writes need
   old/new/blocked evidence for the whole path.
@@ -186,6 +198,10 @@ or comparison-only.
   `finalMatchesLocal` result stand in for live remote drift rejection, stale
   approval expiry, create-time remap handling, plugin-owned allowlist
   coverage, or partial side-effect classification.
+- The claim does not treat a green route-shaped smoke, packaged mount, or
+  fixture replay as proof that partial file, DB, or plugin side effects were
+  safely contained; the audit must show the mixed-write classification, not
+  just the successful part.
 - The claim does not treat a plugin-owned fixture row or option as proof that
   broader plugin-owned surfaces were safe if custom tables, generated files,
   cron, caches, or runtime registries were not revalidated live.

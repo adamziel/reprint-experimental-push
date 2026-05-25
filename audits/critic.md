@@ -4053,6 +4053,9 @@ show the following with branch-local live evidence, not lab shape:
   inheriting stale approval;
 - any "manual resolution" claim preserved the remote for audit, recorded the
   stale rejection point, and produced a fresh retry artifact on this branch;
+- any readable review artifact, route-shaped smoke, or `finalMatchesLocal`
+  result is treated as compatibility evidence only and cannot prove the live
+  executor, the preserved remote, or the stale rejection point;
 - any route-shape smoke, packaged-plugin mount, fixture replay, readable
   review artifact, `finalMatchesLocal` result, or lab-shaped route is
   treated as compatibility evidence only; and
