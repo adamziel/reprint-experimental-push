@@ -4,6 +4,12 @@ This note is a compact checklist for any wording that might claim production-gra
 
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
 
+- the exact stale-drift case is named and rerun here, not inferred from a route-shaped smoke, fixture replay, or copied mount;
+- the remote that drifted is preserved, still inspectable after rejection, and treated as audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
+- the stale approval or review artifact is rejected before the first write and cannot become retry authority for any later row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
+- every touched row, file, relationship-bearing record, and plugin-owned surface is classified old, new, or blocked before retry starts, so mixed file/DB/plugin side effects cannot be relabeled as success; and
+- any later-discovered plugin-owned surface or remapped create target is a new live boundary unless it was already enumerated before write and separately preserved, rejected, and retried.
+
 - the exact stale-drift case is named;
 - the remote that drifted is preserved and still inspectable after rejection, and that preserved remote stays audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
