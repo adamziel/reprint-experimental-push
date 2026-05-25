@@ -18586,6 +18586,76 @@ test('keeps same-remote graph identity at the live release boundary while a read
   assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent delete, edit, and file type swap and refuses late plugin drift after remote-only plugin removals', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+  base.files['wp-content/uploads/legacy.txt'] = 'base legacy bytes';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.files['wp-content/uploads/legacy.txt'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  delete remote.files['wp-content/uploads/legacy.txt'];
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  remote.plugins.seo = { version: '2.0.0', active: true, description: 'remote-only plugin drift' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingDelete = decisionFor(plan, 'file:wp-content/uploads/legacy.txt');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(completed.site.files, 'wp-content/uploads/legacy.txt'), false);
+  assert.equal(completed.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(completed.site.files['wp-content/uploads/cover'].type, 'directory');
+  assert.equal(completed.site.plugins.seo.description, 'remote-only plugin drift');
+  assert.equal(Object.hasOwn(completed.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(completed.site.files, 'wp-content/plugins/forms/forms.php'), false);
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.plugins.forms = {
+    name: 'Forms',
+    description: 'late plugin drift',
+    version: '1.0.0',
+  };
+  driftedRemote.files['wp-content/plugins/forms/forms.php'] = '<?php /* late plugin drift */';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.plugins.forms.description, 'late plugin drift');
+  assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* late plugin drift */');
+});
+
 test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching plugin-owned resource and remote-only plugin removals', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
