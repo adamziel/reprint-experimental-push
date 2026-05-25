@@ -2662,6 +2662,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-batch-parallelism-after-pause',
+    proposal: 'use a compressed remote index plus cached row receipts to skip plugin-update batch parallelism after a pause',
+    rejectedBecause: 'planning evidence and cached row receipts can trim duplicate lookup work, but they cannot prove the live row compares, queue order, or atomic-group barrier survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'parallelism-limits', 'backpressure', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish',
     proposal: 'use a compressed remote index to justify unbounded chunk upload parallelism and treat the drained queue as publish-ready',
     rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded chunk parallelism can still erase the receipt order and backpressure evidence needed to recover after pause or crash',

@@ -299,6 +299,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'live',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-batch-parallelism-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-batch-parallelism-after-pause')?.violates.includes('parallelism-limits'),
+    'cached row receipts still cannot bypass bounded row-batch parallelism',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-batch-parallelism-after-pause')?.violates.includes('atomic-groups'),
+    'cached row receipts still cannot bypass the plugin-update atomic-group barrier',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.rejectedGate,
     'recovery',
   );
