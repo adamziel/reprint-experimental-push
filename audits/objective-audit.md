@@ -24,6 +24,8 @@ The objective implies these minimum release requirements:
 
 The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone.
 
+Right now the best available commands are `node --test`, `npm run test:playground`, `plan`, and `apply`. Those are useful, but they are support paths, not a release gate, because none of them force a live-source verdict in the same invocation.
+
 Minimum properties of that gate:
 
 1. it must run on the real release boundary, not just on fixtures or Playground storage
@@ -31,6 +33,12 @@ Minimum properties of that gate:
 3. it must fail closed if auth/session, journal, leases/fencing, graph identity, plugin-driver, or topology proof is still lab-backed
 4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
 5. it must be the command CI or another default entrypoint actually invokes
+
+Minimum acceptable command shape:
+
+- `verify` or `verify:release` is the clearest choice for an enforced gate.
+- `release` is acceptable only if it is the actual default gate and cannot be bypassed by optional helper scripts.
+- Anything that only shells out to `test:playground:*` or `node --test` remains support evidence, not release proof.
 
 ## Claim Status
 
@@ -106,6 +114,12 @@ Concrete read:
 | Release blocker | There is no mandatory `verify`, `verify:release`, or `release` command that can fail closed when any of those proofs are absent, and no checked-in workflow entrypoint closes that gap. |
 
 Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict. The blocker is structural: no required command owns the live-source verdict, so every green result still depends on optional evidence rather than a mandatory release gate. If the release decision is not forced through the live-source path, the repository still cannot claim no data loss, reliability, or speed.
+
+Actionable release criterion:
+
+- add one checked-in command that revalidates live state, applies to the real source boundary, and prints a fail-closed verdict
+- wire that command into CI or another default invocation path
+- keep `speed unclaimed` as the required output until a live-path measurement is available
 
 ## Actionable Gate
 
