@@ -131,6 +131,9 @@ or comparison-only.
   any write, and the proof names the same live write boundary that drifted.
   "Manual resolution later" is still a failure state until the rejected
   snapshot cannot be reused as authority.
+- The claim does not omit the exact upstream revision or worktree state when
+  citing Reprint, ZS-Sync, or ForkPress; if that state is not named and
+  reverified at the same live boundary, the comparison stays historical only.
 - The claim does not treat a stale manual-review artifact as a reusable
   decision token for a new row, file, relationship-bearing record, or
   plugin-owned surface after remote drift.
