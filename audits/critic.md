@@ -184,6 +184,25 @@ Conservative upstream comparison summary:
   stale approval cannot be widened to a later boundary, or that this branch
   preserved the remote while rebuilding retry scope from fresh live hashes.
 
+Known data-loss traps still unresolved:
+
+- a live remote can drift between preflight and apply, and the branch still
+  needs proof that stale authority fails before the first write while the
+  remote remains auditable for retry;
+- create-time identity can be remapped, aliased, or renumbered, and the
+  branch still needs proof that the create target is either preserved or
+  blocked before write;
+- plugin-owned state can exist outside any allowlist in late tables, files,
+  cron rows, runtime registries, generated assets, caches, and serialized
+  blobs, and the branch still needs live enumeration or an explicit block for
+  each surface;
+- a write can touch files, DB rows, and plugin state in one run, and the
+  branch still needs old/new/blocked classification for the full mixed write
+  path instead of success for only the committed part; and
+- a readable review artifact, comparison note, or route-shaped smoke can look
+  authoritative while still failing to prove current retry authority for the
+  exact live boundary on this branch.
+
 Release-gate checklist:
 
 - name the exact live write boundary and the exact stale-drift case rerun on
