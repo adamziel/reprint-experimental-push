@@ -1,25 +1,18 @@
-Updated the objective audit snapshot to match the live fetched lane heads, without changing the verdict.
+Updated the objective audit to reflect the live same-plan head change and kept the verdict closed.
 
 Evidence checked:
-- `origin/lane/reliable-executor` at `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` at `29bfcd55`
-- `origin/lane/no-data-loss-recovery` at `47b675c0`
-- `origin/lane/fast-paths` at `ff1915fb`
-- `origin/lane/critic` at `c036004c`
-- `origin/lane/progress-publisher` at `43a230f8`
-- `origin/lane/same-plan-wordpress-graph-create` at `70925d88`
-- `origin/lane/independent-auditor` at `33b839f0`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` at `f0b2fcde`
+- `git fetch origin --prune`
+- `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort`
 - `audits/objective-audit.md`
-- `git diff -- audits/objective-audit.md`
 - `scripts/supervision/status.sh`
 - `scripts/supervision/accountability.sh`
 - `git status --short --branch`
+- `git diff -- audits/objective-audit.md`
 
 What I found:
-- The audit verdict still holds: the repository is not releasable as a production WordPress push path.
-- The current heads do not add a new production-backed mutation, recovery, or measured-speed proof that would move the release gates, including the new same-plan silent smoke blocker.
-- The audit file needed a live-head refresh, but the release blockers and verdict did not change.
+- `origin/lane/same-plan-wordpress-graph-create` is now at `70925d88` and the audit now records that its silent smoke blocker still falls short of release-grade proof.
+- The overall release verdict is unchanged: the repository is still not releasable as a production WordPress push path.
+- No new production-backed mutation, recovery, or measured-speed evidence appeared in this pass.
 
 Changed files:
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
@@ -30,9 +23,9 @@ Push result:
 
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
-- Dirty tracked-file state until this handoff is committed
-- Relative to `origin/main`: `ahead 1213, behind 198`
-- Supervisor accountability remains clean
+- Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
+- Relative to `origin/main`: `ahead 1215, behind 198`
+- Supervisor accountability: clean
 
 Next supervisor nudge:
 - Re-poll `origin/lane/reliable-executor` only when it advances past `0c4fd10f` with new executable production-backed proof; otherwise keep the audit verdict and release gates closed.

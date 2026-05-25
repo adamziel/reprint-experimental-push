@@ -37,7 +37,8 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `43a230f8`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a silent smoke
-  blocker at `70925d88`.
+  blocker at `70925d88`, so the same-plan path still stops short of release-
+  grade proof.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
