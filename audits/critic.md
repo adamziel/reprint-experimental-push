@@ -17,7 +17,7 @@ What must happen before production wording is defensible:
 - prove WordPress auth/session expiry, refresh, and operator re-entry on the rejected source URL;
 - write through a lease-fenced durable journal on production-like storage, not just report row counts;
 - preserve graph identity across create-time remap and late-discovered relationship-bearing records; and
-- classify late plugin-owned surfaces before the first write, not after a manual review artifact exists.
+- classify late plugin-owned surfaces before the first write, not after a manual review artifact exists, on that same rerunnable boundary.
 
 The project still lacks production proof for these concrete failure modes:
 
