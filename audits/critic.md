@@ -21,7 +21,9 @@ What must change before any production-grade push claim:
   bearing record, remapped create target, or plugin-owned surface; and
 - any Reprint, ZS-Sync, or ForkPress note must be treated as historical
   context unless this branch names the exact upstream state, reruns the same
-  live boundary here, and says what that note proves and does not prove.
+  live boundary here, and says what that note proves and does not prove here;
+  a note that only matches the same route family, package layout, or reviewer
+  wording is still compatibility evidence, not production proof.
 
 Important boundary: a lab-shaped route family, packaged mount, fixture replay,
 or `finalMatchesLocal` result can still be compatible without proving the
@@ -52,9 +54,11 @@ looks production-shaped.
 Source-note bottom line: Reprint, ZS-Sync, and ForkPress notes are useful
 comparative context, but they do not prove the live executor, the preserved
 remote, stale-drift rejection, create-time remap safety, or late-discovered
-plugin-owned surface handling on this branch. A note only counts as current
-proof if the exact upstream state is named and the same live boundary was
-rerun here with fresh preserved-remote and retry evidence.
+plugin-owned surface handling on this branch. A note that only matches route
+shape, package layout, fixture replay, or reviewer wording is compatibility
+evidence only. A note only counts as current proof if the exact upstream
+state is named and the same live boundary was rerun here with fresh
+preserved-remote and retry evidence.
 
 Production-grade comparison gate:
 
