@@ -258,6 +258,20 @@ Production-readiness language checklist:
 9. Treat "manual resolution" as audit-only unless the preserved remote stays
    inspectable, the stale rejection point is recorded, and the retry artifact
    is fresh on this branch for the same boundary.
+
+Conflict boundary rule:
+
+- if a later live snapshot exposes a new plugin-owned row, file, registry
+  entry, generated asset, cache entry, or serialized blob, that surface is a
+  new mutation boundary, not a continuation of the earlier approval;
+- the earlier readable review artifact stays audit-only for that new
+  boundary even if it remains readable, route-shaped, or compatible with the
+  prior note;
+- the branch must record a fresh preserve/reject/retry cycle for the new
+  surface before any wording can call it resolved; and
+- manual resolution is not success for the new boundary unless the preserved
+  remote, the rejection point, and the fresh retry artifact are all present
+  on this branch for that later surface.
 10. Treat any later-discovered plugin-owned surface as a new boundary unless
     the branch proves it was blocked or separately classified before retry;
     do not fold it into the first write's success story.
