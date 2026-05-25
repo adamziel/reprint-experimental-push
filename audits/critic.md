@@ -14,7 +14,9 @@ run does not show preserved-remote retention across rejection, live WordPress
 auth/session lifecycle, apply-time revalidation against a fresh real-site
 source, durable journal storage and lease/fencing semantics outside the
 Playground harness, graph identity under remap, or plugin-driver coverage for
-late-discovered plugin-owned surfaces.
+late-discovered plugin-owned surfaces. The supervised lane may now be the best
+available lab evidence, but this branch still lacks a rerunnable live boundary
+that preserves the rejected remote and revalidates from fresh live hashes.
 Production-grade wording is still false if it relies on lab-session shape,
 retained-source journal rows, or route compatibility as a stand-in for live
 WordPress auth/session durability.
@@ -166,6 +168,11 @@ The source notes are still useful, but only as design input:
   observed upstream commit; it does not prove this branch can preserve the
   rejected remote, classify plugin-owned side effects, or rerun the same live
   boundary with fresh live hashes.
+
+Those notes are strongest when they are treated as input to the design, not as
+evidence that the current branch already satisfies release gating. Route shape
+similarity, package layout similarity, or a matching review phrase is not proof
+of preserved-remote safety.
 
 ## Why the latest remote lane still does not unlock release
 
