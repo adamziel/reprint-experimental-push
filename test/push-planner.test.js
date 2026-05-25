@@ -5279,6 +5279,41 @@ test('durable no-data-loss recovery boundaries stay in the accepted post-failure
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
 });
 
+test('durable stale completed replay blocks with inspectable artifacts instead of reapplying', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completed = applyPlan(baseSite(), plan);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const staleRemote = JSON.parse(JSON.stringify(completed.site));
+  staleRemote.db.wp_posts['ID:2'].post_title = 'Drifted after completion';
+  const staleBefore = JSON.stringify(staleRemote);
+
+  const error = captureError(() =>
+    applyPlan(staleRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }));
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(JSON.stringify(staleRemote), staleBefore);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal, 'blocked replay must retain journal artifacts');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked replay must retain remote artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Drifted after completion');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records.length, 0);
+});
+
 test('mid-apply failure only leaves blocked recovery with artifacts, never a silent partial remote', () => {
   const base = baseSite();
   const local = baseSite();
