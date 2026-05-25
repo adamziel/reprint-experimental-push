@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 08:51:08
+## 2026-05-25 - Public Status Audit 08:51:46
 
-<a id="2026-05-25-public-status-audit-085108"></a>
+<a id="2026-05-25-public-status-audit-085146"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 08:51:08 CEST`) and kept the visible last-updated stamp current.
+  (`2026-05-25 08:51:46 CEST`) and kept the visible last-updated stamp current.
 - Kept the first screen concise and audit-friendly: the newest audit, flat
   trend, `0/4` gates, and the top blocker remain visible without inflating the
   proof claim.
