@@ -13185,6 +13185,84 @@ test('durable recovery boundary matrix keeps old-remote failures safe and comple
   }
 });
 
+test('atomic recovery boundaries only land in approved states and completed replay stays inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options, expectedJournalStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const remoteSnapshot = JSON.stringify(remote);
+
+    const failure = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+
+    durableJournal.close();
+
+    assert.ok(failure instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), remoteSnapshot, label);
+    assertAcceptableRecoveryState(failure.details.recovery);
+    assertRecoveryStateArtifacts(failure.details.recovery, 'old-remote');
+    assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
+
+    const replayRemote = baseSite();
+    const replaySnapshot = JSON.stringify(replayRemote);
+    const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+    const replay = applyPlan(replayRemote, plan, {
+      durableJournal: replayJournal,
+      journal: failure.details.recovery.artifacts.journal,
+    });
+    replayJournal.close();
+
+    assert.equal(JSON.stringify(replayRemote), replaySnapshot, label);
+    assert.equal(replay.appliedMutations, plan.mutations.length, label);
+    assertAcceptableRecoveryState(replay.recoveryState);
+    assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+    assert.equal(replay.recoveryState.artifacts.remote, undefined, label);
+    assert.equal(replay.recoveryState.artifacts.journal.status, 'completed', label);
+    assert.equal(replay.site.files['index.php'], '<?php echo "local";', label);
+    assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally', label);
+    assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1, label);
+  }
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('durable recovery contract stays limited to the accepted boundary states and replay stays inert', () => {
   const base = baseSite();
   const local = baseSite();
