@@ -14,6 +14,19 @@ rule applies to upstream citations: a matching Reprint, ZS-Sync, or ForkPress
 commit can justify the design direction, but without a branch-local live
 recheck it stays historical input only.
 
+The missing proof is still branch-local and live:
+
+- a drifted remote has to fail closed on the actual mutation boundary, with
+  the preserved remote auditable after reject and the stale approval unusable
+  for retry;
+- create-time identity remapping has to be either durably proven or hard-
+  blocked before mutation, including alias, rename, and renumber cases;
+- plugin-owned state outside the allowlist has to be enumerated or blocked at
+  apply time, including late-discovered cron rows, cache entries, runtime
+  registries, generated assets, custom tables, and plugin-owned files; and
+- any partial file, DB, or plugin side effect has to be durably classified as
+  old, new, or blocked before retry can rebuild scope from fresh live hashes.
+
 The remaining production traps are still unproven in this branch:
 
 - live remote drift can still be detected too late unless the apply boundary
@@ -49,6 +62,10 @@ Release gate for any production wording:
 - Show that any plugin-owned surface discovered only after the first write
   is classified as blocked, not retroactively folded into a success claim or
   treated as a safe continuation without fresh live evidence.
+- Show that a stale manual-review artifact remains audit-only after drift,
+  cannot authorize a second write, and cannot be widened into a different
+  row, file, relationship-bearing record, or plugin-owned surface without a
+  fresh live retry scope.
 - Show that a stale manual-review artifact cannot become retry authority for
   a late-discovered plugin-owned surface just because the first write already
   succeeded on a narrower surface set; the proof must keep the preserved
@@ -197,16 +214,18 @@ Source-note comparison summary:
   prove create-time identity remap safety, remote-preserving retry, partial
   side-effect classification, or plugin-owned surface coverage. Missing repo
   proof: create-time identity reservation or remap safety, remote-preserving
-  retry, and durable old/new/blocked classification for partial side effects
-  on the live write path. A bounded scan is not evidence that a live write
-  cannot alias, remap, or lose state.
+  retry, late-discovered plugin-owned surface blocking, and durable
+  old/new/blocked classification for partial side effects on the live write
+  path. A bounded scan is not evidence that a live write cannot alias, remap,
+  or lose state.
 - ForkPress `55f9879` proves review and conflict vocabulary plus a crash-
   consistency target. It does not prove stale manual-review artifacts can stay
   readable without becoming retry authority, nor does it prove plugin-owned
   side effects are covered. Missing repo proof: a stale review artifact that
   stays auditable but cannot authorize retry, widen scope, or silently widen
-  into a new row, file, relationship-bearing record, or plugin-owned surface.
-  A readable review note is not proof of safe retry authority.
+  into a new row, file, relationship-bearing record, or plugin-owned surface,
+  including anything discovered after the first write. A readable review note
+  is not proof of safe retry authority.
 - None of the three source notes proves the full production claim set on its
   own. Reprint is transport provenance, ZS-Sync is discovery provenance, and
   ForkPress is audit/conflict provenance. What is still missing here is live
