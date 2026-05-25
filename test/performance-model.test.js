@@ -262,6 +262,22 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-resume-after-pause')?.rejectedGate,
     'recovery',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause')?.violates.includes('file-hashing'),
+    'cached chunk hashes still cannot bypass file hashing preconditions',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause')?.violates.includes('chunk-receipts'),
+    'cached chunk hashes still cannot bypass durable chunk receipts',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause')?.violates.includes('backpressure'),
+    'cached chunk hashes still cannot bypass backpressure recovery evidence',
+  );
   for (const area of [
     'file-hashing',
     'chunk-receipts',
