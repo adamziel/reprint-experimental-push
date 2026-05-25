@@ -69,10 +69,10 @@ The pull-to-push bridge is one-way:
 - `push_preflight` is the first live bind after importer persistence
 - `push_snapshot_hashes` is planning-only evidence
 - `push_plan_dry_run` is a receipt, not a lock
-- `push_batch_apply` revalidates again at apply time
+- `push_batch_apply` is a separate remote mutation and revalidates fresh live evidence before every batch and again at the storage boundary
 - `push_journal` is read-only evidence
 - `push_recover inspect` is read-only and must happen first
-- mutating recovery uses the same HMAC floor as apply
+- mutating recovery uses the same HMAC floor as apply and must not bypass inspect
 
 The bridge also preserves the existing pull/export/import provenance chain:
 

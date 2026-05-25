@@ -28,10 +28,10 @@ That ladder comes straight from the pull/export/import pipeline:
 - `preflight` is the first live bind after importer persistence
 - `snapshot-hashes` is planning-only evidence
 - `dry-run` is a receipt, not a lock
-- `apply` revalidates again at apply time
+- `apply` is a separate remote mutation and revalidates fresh live evidence before every batch and again at the storage boundary
 - `journal` stays read-only
 - `recovery-inspect` must happen before any mutating repair
-- `recovery-mutate` uses the same HMAC floor as apply
+- `recovery-mutate` uses the same HMAC floor as apply and must not bypass inspect
 
 The shared test topology is fixed:
 
