@@ -14,23 +14,17 @@ changed, what is helping, what is not helping, and the next nudge.
 - Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 
-## 2026-05-25 11:04:23 CEST
+<details>
+<summary>Earlier same-state refreshes</summary>
 
-- Going well: the blocked snapshot still fits on one screen, and the linked evidence trail is easy to scan.
-- Not going well: `integration` still has not returned the real-site release command, so `reliable-executor` remains the drifting lane.
-- Progress delta: none; this is a decision refresh, not a release-state change.
-- Next nudge: `integration` must own the next real-site release command; `reliable-executor` should keep the gate tied to a real URL/topology; `invariants` and `recovery` should wait for the same retained run.
-- Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
-- Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
+- 2026-05-25 11:04:23 CEST: same blocker, same next nudge, no release-state change.
+- 2026-05-25 11:02:42 CEST: same blocker, same next nudge, no release-state change.
+- 2026-05-25 10:59:39 CEST: same blocker, same next nudge, no release-state change.
+- 2026-05-25 10:56:36 CEST: same blocker, same next nudge, no release-state change.
+- 2026-05-25 10:51:22 CEST: same blocker, same next nudge, no release-state change.
+- 2026-05-25 10:50:13 CEST: same blocker, same next nudge, no release-state change.
 
-## 2026-05-25 11:02:42 CEST
-
-- Going well: the blocked snapshot still stays compact, and the linked evidence trail remains easy to scan.
-- Not going well: `integration` still has not returned the real-site release command, so `reliable-executor` has no real endpoint to bind.
-- Progress delta: none; this is a decision refresh only, and the visible page stays lane-local until merge.
-- Next nudge: `integration` owns the next real-site release command; `reliable-executor` must bind the gate to a real URL/topology; `invariants` and `recovery` should wait for the same retained run.
-- Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
-- Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
+</details>
 
 ## 2026-05-25 10:59:39 CEST
 
