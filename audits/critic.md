@@ -4,6 +4,15 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+What still has to change before any production-grade claim is credible:
+
+- the branch must show the exact live boundary, the exact stale-drift case, and the exact rejection point before the first write;
+- the rejected remote must stay inspectable for audit and retry, not merely be mentioned in a readable note;
+- every touched file, DB row, relationship-bearing record, and plugin-owned surface must be classified old, new, or blocked before retry starts, including mixed file/DB/plugin side effects;
+- any later-discovered plugin-owned surface or remapped create target must become a new live boundary unless it was already enumerated before write and separately blocked or classified;
+- any "manual resolution" or "comparison passed" wording must stay audit-only unless it names the preserved remote, the upstream source-note state, and the same live boundary rerun on this branch; and
+- route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` remain compatibility evidence only.
+
 Scope note: this audit only accepts production wording when the same live
 boundary on this worktree shows preserved-remote evidence, stale authority
 rejection before the first write, fresh retry scope rebuilt from live hashes,
