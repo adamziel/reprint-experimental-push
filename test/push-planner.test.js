@@ -17432,6 +17432,47 @@ test('the durable recovery boundary remains fail-closed until the release gate w
   assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
 });
 
+test('inspect-first replay on a drifted completed plan stays blocked with durable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const drifted = JSON.parse(JSON.stringify(completed.site));
+  drifted.files['index.php'] = '<?php echo "stale drift";';
+
+  const inspection = inspectRecoveryJournal({
+    journal: readRecoveryJournal(journalPath),
+    plan,
+    current: drifted,
+  });
+  const blockedJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const blocked = captureError(() =>
+    applyPlan(drifted, plan, {
+      durableJournal: blockedJournal,
+      journal: completed.journal,
+    }),
+  );
+  blockedJournal.close();
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.equal(inspection.claim.status, 'none');
+  assert.ok(inspection.reason.includes('partially updated') || inspection.reason.includes('cannot be classified'));
+  assert.ok(blocked instanceof PushPlanError);
+  assert.equal(blocked.details.recovery.status, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts.remote);
+  assert.ok(blocked.details.recovery.artifacts.journal);
+  assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale drift";');
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(readRecoveryJournal(journalPath).integrity.status, 'ok');
+});
+
 test('durable recovery accepts only old remote, fully updated remote, or blocked recovery with artifacts across the apply and replay boundary', () => {
   const base = baseSite();
   const local = baseSite();
