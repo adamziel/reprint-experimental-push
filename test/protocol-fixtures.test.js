@@ -193,6 +193,7 @@ test('topology matrix fixture keeps the Docker and Playground route matrix align
 test('production bridge and revalidation fixtures keep the pull handoff and live revalidation proof aligned', () => {
   const bridge = readJson('fixtures/protocol/push-production-pull-bridge-contract.json');
   const revalidation = readJson('fixtures/protocol/push-production-revalidation-contract.json');
+  const authSession = readJson('fixtures/protocol/push-production-auth-session-journal-recovery-inspect-contract.json');
 
   assert.equal(
     bridge.pull_to_push_mapping.push_preflight,
@@ -226,6 +227,24 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
     'claim generation and lease expiry fence stale workers before mutation',
     'fresh live hashes must still be checked before finish, rollback, or auto',
   ]);
+
+  assert.deepEqual(authSession.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(authSession.session.scope, 'one live remote identity and one persisted pull base package');
+  assert.equal(authSession.recovery_inspect.authorization, 'read-only evidence reader that never authorizes mutation by itself');
+  assert.deepEqual(authSession.recovery_inspect.classifies, ['finish', 'rollback', 'retry', 'block']);
+  assert.ok(authSession.journal_row.storage_guard.includes('filesystem-compare-rename'));
+  assert.ok(authSession.journal_fence.proof.includes('claim generation and lease expiry fence stale workers before mutation'));
+  assert.equal(authSession.topology.same_remote_identity, true);
+  assert.ok(authSession.topology.proof.includes('dry-run and apply remain separate remote operations'));
+  assert.ok(authSession.required_invariants.includes('journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable'));
 });
 
 test('umbrella production contract keeps the pull bridge, apply revalidation, recovery inspect, and topology aligned', () => {
