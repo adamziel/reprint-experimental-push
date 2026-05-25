@@ -186,7 +186,8 @@ a second drift.
 ## Production Claim Checklist
 
 Before the project can use production-grade push wording, the audit needs
-evidence for all of these, not just a plausible design:
+evidence for all of these, not just a plausible design or a route-shaped
+smoke:
 
 The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md); it is the shorter checklist for docs, PRs, review comments, and status updates.
 
@@ -1435,6 +1436,25 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
 - Status comments, branch notes, and release notes must not cite source-note
   comparisons or live-looking hashes as substitutes for current production
   proof.
+
+### Non-Negotiable Proofs
+
+Do not let any production-grade wording through unless the claim can show all
+of the following in the same evidence set:
+
+- The live remote drift happened between dry-run and apply.
+- The stale approval was rejected before mutation and remained readable for
+  audit only.
+- The retry started from fresh live hashes and a fresh scope decision.
+- The create-time identity case either had a durable remap proof or was
+  hard-blocked before write.
+- The plugin-owned surface list is complete for the claim, or unknown surfaces
+  are hard-blocked.
+- The partial file, DB, or plugin side effect class is classified durably and
+  cannot silently inherit the old approval.
+- Any Reprint, ZS-Sync, or ForkPress comparison is marked historical unless
+  the exact upstream revision or worktree was reverified at the same live
+  mutation boundary.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
