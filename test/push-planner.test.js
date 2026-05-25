@@ -3667,6 +3667,7 @@ test('pre-commit failures and completed replay only produce the documented recov
 
     assert.ok(error instanceof PushPlanError, label);
     assert.equal(JSON.stringify(remote), before, label);
+    assertAcceptableRecoveryState(error.details.recovery);
     assert.equal(error.details.recovery.status, 'old-remote', label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
@@ -3751,9 +3752,23 @@ test('documented recovery boundaries keep the remote old, updated, or blocked wi
 
   assert.equal(JSON.stringify(replayRemote), replayBefore);
   assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
+
+  const staleReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  staleReplayRemote.files['index.php'] = '<?php echo "drifted";';
+  const staleReplayBefore = JSON.stringify(staleReplayRemote);
+  const staleReplayError = captureError(() =>
+    applyPlan(staleReplayRemote, plan, { journal: completed.journal }));
+
+  assert.ok(staleReplayError instanceof PushPlanError);
+  assert.equal(JSON.stringify(staleReplayRemote), staleReplayBefore);
+  assertAcceptableRecoveryState(staleReplayError.details.recovery);
+  assertRecoveryStateArtifacts(staleReplayError.details.recovery, 'blocked-recovery');
+  assert.ok(staleReplayError.details.recovery.artifacts.journal);
+  assert.ok(staleReplayError.details.recovery.artifacts.remote);
 });
 
 test('stale completed replay blocks instead of duplicating inserts or reviving stale local data', () => {
