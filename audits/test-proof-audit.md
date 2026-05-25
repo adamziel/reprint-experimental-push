@@ -13,7 +13,7 @@ This note is narrower than the objective audit. It only answers what the current
 
 ## Why The Suite Is Not Release Proof
 
-The tests are valuable because they catch local regressions and refuse unsafe claims. They are insufficient because they stop short of the live-source boundary that the objective requires. They prove guardrails, not no data loss, reliability, or speed on the production path. The practical implication is blunt: the suite can support a lab narrative, but it cannot by itself support a release narrative. Every passing test still needs to be read as fixture-, model-, or refusal-backed unless it mutates the live source in the same run, and a refusal-only green run still leaves `speed unclaimed` as a missing release verdict.
+The tests are valuable because they catch local regressions and refuse unsafe claims. They are insufficient because they stop short of the live-source boundary that the objective requires. They prove guardrails, not no data loss, reliability, or speed on the production path. The practical implication is blunt: the suite can support a lab narrative, but it cannot by itself support a release narrative. Every passing test still needs to be read as fixture-, model-, or refusal-backed unless it mutates the live source in the same run, and a refusal-only green run still leaves `speed unclaimed` as a missing release verdict. A green `npm test` run therefore remains regression evidence only, not release evidence.
 
 The missing proof is structural:
 
