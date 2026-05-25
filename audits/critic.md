@@ -112,6 +112,27 @@ What must change before any production-grade push claim:
   here; a note that only matches the same route family, package layout, or
   reviewer wording is still compatibility evidence, not production proof.
 
+Production-grade push support still needs proof for these failure scenarios,
+not just wording that sounds conservative:
+
+- live remote drift between dry-run and apply must show the exact rejected
+  boundary, the preserved remote, and the fresh retry scope; a fixture replay
+  or route-shaped smoke is not the missing proof;
+- create-time identity remap, aliasing, or renumbering must either be blocked
+  before the first write or proven safe with live identity evidence; a same-ID
+  fixture is not proof of the live remap behavior;
+- plugin-owned data outside the allowlist, including hidden tables, cron
+  rows, runtime registries, generated files, caches, and serialized blobs,
+  must be enumerated live or blocked before write; a post-write discovery
+  cannot be backfilled into the earlier approval;
+- partial file, DB, or plugin side effects must stay old/new/blocked by
+  surface before retry; a successful sub-part cannot relabel the mixed write as
+  overall success; and
+- stale manual-review artifacts must stay audit-only after drift and cannot
+  become retry authority for a later row, file, relationship-bearing record,
+  remapped create target, or plugin-owned surface unless that later boundary
+  also has its own preserve / reject / retry cycle.
+
 Comparison bottom line: Reprint proves staged pull transport, ZS-Sync proves
 bounded discovery, and ForkPress proves review/durability vocabulary. None of
 them proves a live push executor on this branch that rejects stale drift
