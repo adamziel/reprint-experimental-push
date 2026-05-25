@@ -4,8 +4,8 @@ This note is a compact checklist for any wording that might claim production-gra
 
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
 
-- a single executable real-site preflight/release command is named and can be rerun on demand; `plan`, `apply`, and route-smoke scripts are not enough unless they are explicitly the real-site release command and prove the live boundary end to end;
-- if the repo only exposes lab and playground entry points (`plan`, `apply`, and `test:playground:*`), production wording must fail closed until a named real-site release command exists and can be rerun on an actual remote;
+- a single executable real-site preflight/release command is named and can be rerun on demand; `plan`, `apply`, route-smoke scripts, and fixture-shaped lab runs are compatibility checks only unless they are explicitly the real-site release command and prove the live boundary end to end;
+- if the repo only exposes lab and playground entry points (`plan`, `apply`, and `test:playground:*`), production wording must fail closed until a named real-site release command exists, can be rerun on an actual remote, and produces preserved-remote evidence for the rejected boundary;
 - the exact stale-drift case is named and rerun here, not inferred from a route-shaped smoke, fixture replay, or copied mount;
 - the remote that drifted is preserved, still inspectable after rejection, and treated as audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority for any later row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
