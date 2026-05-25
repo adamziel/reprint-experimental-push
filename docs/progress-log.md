@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 12:27:00 CEST.
+- Last update: 2026-05-25 12:31:15 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: the lab release harness tightened again, but the production gate stayed closed.
+- Trend: no new evidence landed; the production gate stayed closed.
 - Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, real-endpoint proof, and plugin drivers remain unproven outside the lab.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, real-endpoint proof, and plugin drivers.
