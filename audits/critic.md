@@ -12,6 +12,15 @@ boundary, dry-run receipt, journal/recovery inspection, auth/session
 lifecycle, graph identity, and plugin-owned surface classification in one
 rerun.
 
+This remains the primary blocker even if the branch has a polished release-
+shaped wrapper. Scenario: a reviewer upgrades a live preflight or lab-shaped
+script into production proof. Missing proof: the branch has still not shown a
+single real-site command that can be rerun unchanged and that emits the exact
+executor identity, exact live source URL, preserved remote after rejection,
+dry-run receipt, apply-time revalidation, journal/recovery inspection, and
+per-surface conflict policy from one run. Without that, any "production-
+grade" wording is false reliability.
+
 Scenario: a reviewer upgrades a live Playground or lab-shaped script name into
 production proof. Missing proof: the branch still has not shown the exact
 executor/auth boundary before the first write, the rejected remote that
@@ -24,6 +33,14 @@ authority. Missing proof: the citation still needs the exact upstream state,
 an explicit statement of what it proves here and what it does not prove here,
 and a branch-local rerun of the same live boundary. Until that exists, those
 notes are historical context only.
+
+Source-note comparison rule: a citation to Reprint, ZS-Sync, or ForkPress is
+only provenance until it names the exact upstream state, states the exact
+boundary it supports here, states the exact boundary it does not support here,
+and is backed by a branch-local live rerun. If the citation only justifies
+transport vocabulary, discovery vocabulary, or audit vocabulary, it must not
+be used as proof of preserved remote safety, auth/session lifecycle, graph
+identity, or plugin-owned surface coverage.
 
 ## 2026-05-25 Production Wording Still Fails Without a Real-Site Release Command
 
