@@ -14,7 +14,7 @@ linked implementation artifacts.
 - Visible page: [progress.html](../progress.html) stays compact and keeps the proof trail linked.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
 - Next nudge: keep one owner per gap and require one production-backed test before any readiness claim.
-- Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy becomes live only after merge to `main`; GitHub Pages lags until then.
+- Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages only after merge to `main`; the deployed copy lags until then.
 - Audit note: [audits/supervisor-note-20260525-093409.md](../audits/supervisor-note-20260525-093409.md) captures the newest scan pass; no new production-backed proof landed.
 
 ## 2026-05-25 - Supervisor Follow-up
@@ -27,7 +27,7 @@ linked implementation artifacts.
 - Visible page: [progress.html](../progress.html) remains scan-first and keeps the detailed trail in linked docs.
 - Pending proof gates: one gap at a time, starting with auth/session or crash-safe journal evidence.
 - Next nudge: do not expand scope until one lane can show a concrete production-backed check.
-- Public page: [progress.html](../progress.html) still becomes live only after merge to `main`; GitHub Pages lags until then.
+- Public page: [progress.html](../progress.html) still reaches GitHub Pages only after merge to `main`; the deployed copy lags until then.
 
 <details>
 <summary>Earlier progress entries</summary>
