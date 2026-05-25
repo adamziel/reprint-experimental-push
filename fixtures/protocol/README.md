@@ -70,7 +70,8 @@ identity across `remote-base` and `remote-changed`:
 - It is the canonical machine-readable bridge from the exporter/importer pull
   pipeline into the push write path.
 - `push-production-topology-contract.json` pairs the pull bridge with the
-  one-remote, one-local, one-drift topology for the production harness.
+  one-remote, one-local, one-drift topology for the production harness in
+  both Docker and Playground.
 - `push-deployment-topology-contract.json` is the smaller topology-only proof
   for Docker and Playground when you only need the one-remote, one-local
   harness shape.
@@ -78,10 +79,6 @@ identity across `remote-base` and `remote-changed`:
   the compact production proof that keeps auth, session minting, journal rows,
   lease fencing, and inspect-first recovery aligned on the same remote
   identity and local edit site.
-- `push-production-auth-session-journal-recovery-inspect-contract.json` is
-  the proof to cite when you need the minimum production evidence for auth
-  floor, push session minting, journal rows, lease fencing, and read-only
-  recovery inspect on the same remote identity.
 - `push-remote-snapshot-listing-contract.json` is the compact proof that
   keeps planning-only remote hash discovery separate from write authority.
 - `push-production-revalidation-contract.json` is the compact proof that
