@@ -251,9 +251,10 @@ Release-gate addendum for the next production claim:
   the live mutation executor, preserved remote, stale rejection point, and
   fresh retry scope on this branch.
 - Any manual-resolution claim must show the preserved remote, the rejection
-  point before mutation, and that the old artifact cannot authorize a retry
-  against a different row, file, relationship-bearing record, or plugin-owned
-  surface.
+  point before mutation, and that the old artifact stayed audit-only: it
+  cannot authorize a retry against a different row, file, relationship-
+  bearing record, or plugin-owned surface, and the next attempt must produce
+  a fresh retry artifact.
 - Any retry claim must show a newly recorded retry artifact tied to the
   preserved remote, not a reused review note or stale approval, and must
   prove that the retry rebuilt scope from fresh live evidence after drift.
@@ -2672,7 +2673,9 @@ Additional production-readiness blockers that still need explicit proof:
 - A readable stale manual-review artifact is not enough on its own. The gate
   must show that the artifact stayed audit-only after drift, that the remote
   was preserved for audit, and that the retry was recorded as a fresh artifact
-  rebuilt from current live hashes rather than inherited approval.
+  rebuilt from current live hashes rather than inherited approval. If no fresh
+  retry artifact exists, the wording remains blocked even if the stale note is
+  still readable.
 
 Before this project can claim production-grade push support, it still needs
 these explicit proofs:
