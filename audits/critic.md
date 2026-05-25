@@ -24,6 +24,10 @@ Release gate for any production wording:
 - Show that any plugin-owned surface discovered only after the first write
   is classified as blocked, not retroactively folded into a success claim or
   treated as a safe continuation without fresh live evidence.
+- Show that a late-discovered plugin-owned surface cannot be widened into a
+  second successful write just because the first write already happened; the
+  proof must separate the preserved remote, the blocked late surface, and the
+  fresh retry scope for the remaining work.
 - Show each touched store as old, new, or blocked, and show retry rebuilt
   scope from fresh live evidence instead of inheriting the old decision.
 - Show the release claim is anchored in live-boundary evidence, not a copied
@@ -65,6 +69,10 @@ Must-fix blockers before any production wording:
 - A readable stale manual-review artifact must not be described as durable
   retry authority, even when it remains inspectable; if a retry consumed it as
   authority, the proof failed to preserve a clean remote-audit separation.
+- A readable stale manual-review artifact must not be allowed to justify a
+  second write against a late-discovered plugin-owned surface; the proof has
+  to show that the late surface was blocked or separately classified before
+  any retry continued.
 - A readable stale manual-review artifact must not be mistaken for branch-
   local revalidation. If the live write boundary, preserved remote, and fresh
   retry scope were not rechecked on this branch, the artifact stays
