@@ -47,6 +47,29 @@ journal/recovery inspection, lease/fencing proof outside Playground, graph
 identity proof, plugin-driver coverage, and exact preserved-remote retry
 evidence that can be rerun and audited from this branch.
 
+## Hidden-loss scenarios that remain unproven
+
+The current design still has hidden data-loss modes that are not closed by the
+retained-source lab evidence:
+
+- if drift appears after dry-run receipt but before apply, the remote must stay
+  preserved and the mutation must fail closed; no proof shows that the rejected
+  remote is still auditable after the failure;
+- if create-time identity remaps during apply, the graph identity must stay
+  stable across the remap or the retry is a new mutation; no proof shows that a
+  remapped row, file, or relationship-bearing record can be traced back to the
+  original preserved remote;
+- if a plugin-owned surface is discovered after the initial allowlist, the
+  system must classify it as blocked or retryable before any side effect lands;
+  no proof shows late-discovered plugin data traps are surfaced before commit;
+- if partial file, DB, and plugin side effects occur together, the recovery
+  artifact must expose exactly which surfaces committed and which were blocked;
+  no proof shows mixed-surface recovery can be audited without manual
+  reconstruction; and
+- if stale review text or a reminted session is reused, the retry must still
+  point to the same preserved remote and not authorize a new mutation; no proof
+  shows manual resolution is safe when the remote has drifted.
+
 ## Single strongest blocker
 
 This worktree still has no rerunnable live boundary on a real local,
@@ -72,6 +95,9 @@ local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
 - plugin-driver coverage; and
 - old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface before retry starts.
+
+Any claim that skips one of those receipts is not production-grade proof; it is
+an unverified manual-resolution note.
 
 Until that live boundary exists, `verify:release` is only retained-source lab
 evidence, not proof that production WordPress push can safely preserve,
@@ -207,7 +233,7 @@ or production auth/session lifecycle.
 The remote reliable-executor head now gives better lab evidence, not release
 proof:
 
-- `bd9ef3e8` keeps the release boundary explicit and confirms the retained-
+- `3b6e5dbd` keeps the release boundary explicit and confirms the retained-
   source verifier path is still being tightened, but it still stays inside the
   supervised lane's lab harness.
 - The evidence still does not show a production WordPress auth/session
