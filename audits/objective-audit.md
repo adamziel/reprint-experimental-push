@@ -42,6 +42,7 @@ Current state:
 - No checked-in workflow file exists in this checkout.
 - The strongest push smoke still labels its route `labBacked: true`.
 - The suite can therefore prove local invariants and lab refusal, but it cannot yet force a release-safe decision.
+- A green default run can still stop at `npm test` or a standalone smoke and never exercise the full release matrix.
 
 The exact missing proof bucket is now clear enough to act on:
 
