@@ -1,11 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 01:58 CEST
+Last updated: 2026-05-25 02:47 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 01:58 CEST - Supervised Lane Merge Refresh
+## 2026-05-25 02:47 CEST - Live Progress Refresh
+
+- Going well: `89` Node tests pass, and supervised lanes are still active.
+- Trend: latest lane evidence at 02:46:44 CEST stayed aligned on recovery,
+  protocol, critic, and objective-audit details.
+- Not going well: production auth/session storage, durable journal ownership,
+  leases, full graph identity mapping, Docker/full Playground integration, and
+  general plugin drivers remain unproven.
+- Progress change: the public progress surface was refreshed to match the
+  newest supervised evidence and keep the first screen concise.
+- Next nudge: keep workers focused on production-backed auth/journal proof and
+  graph identity mapping.
 
 - Going well: `89` Node tests pass after supervised lane merges, and the swarm
   is still active.
