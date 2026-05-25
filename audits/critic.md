@@ -450,6 +450,12 @@ Claims that must still be rejected as false reliability:
   commit alone; the missing proof is a branch-local recheck of the same live
   mutation boundary and the same drift or retry case, not just provenance for
   a matching route family or mount shape.
+- "The source note matched, so hidden side effects are covered" when the
+  only evidence is an upstream commit, route family, or fixture-shaped replay;
+  the missing proof is a branch-local live rerun that enumerated or blocked
+  the full plugin-owned surface set on the real executor, including late
+  discovered options, cron rows, caches, custom tables, generated files, and
+  runtime registries.
 - "The upstream note looks current, so the branch is current" when the note
   only proves design provenance; the missing proof is a fresh branch-local
   recheck of the same live write path, the same stale-remote case, and the
