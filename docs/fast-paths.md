@@ -537,6 +537,10 @@ under load:
   because planning evidence and batch compression cannot prove row-level
   preconditions, dependency checks, or the atomic-group commit survived a
   failure.
+- remote-index-plus-compressed-row-batch-skips-backpressure is rejected because
+  planning evidence and batch compression can reduce queue pressure, but they
+  cannot prove the paused rows, dependency checks, or atomic-group commit
+  record survived failure.
 - remote-index-plus-compressed-row-summary-completes-plugin-update is rejected
   because planning evidence and a compressed row summary cannot prove row
   receipts, dependency checks, or the atomic-group commit survived failure.
