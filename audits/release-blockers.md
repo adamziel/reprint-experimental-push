@@ -4,8 +4,8 @@ This note is intentionally narrow: it records the current blockers that keep the
 
 ## Current blockers
 
-1. There is no single required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, real remote/local topology, crash-boundary, recovery, and benchmark checks.
-2. The strongest authenticated push route still self-identifies as `labBacked: true`, so the best visible push evidence is still lab-scoped.
+1. No command in this checkout currently owns the live-source verdict, so there is no single release gate that can fail closed on auth/session, durable journal, leases/fencing, graph identity, plugin-driver, topology, crash-boundary, recovery, and benchmark gaps in one invocation.
+2. The strongest authenticated push route still self-identifies as `labBacked: true`, so the best visible push evidence is still lab-scoped and does not prove the production boundary.
 3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path, establish a release threshold, or fail closed on missing live-path speed proof.
 4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary.
 5. There is no checked-in CI workflow in this checkout, so there is no visible enforced entrypoint that could make the release gate mandatory.
@@ -21,6 +21,10 @@ This note is intentionally narrow: it records the current blockers that keep the
 - Graph identity behavior for the WordPress data shapes that can be rewritten or preserved.
 - Measured end-to-end speed evidence with an explicit threshold, or a required command that fails when the speed claim is still `not-claimed`.
 - One enforced release gate that fails closed if any of the above is missing or only lab-backed, and that is the same command CI actually invokes.
+
+## Practical next step
+
+Add or locate a single checked command that reaches the retained source, revalidates at apply time, and prints a machine-checkable failure when any of the required live-boundary claims are still only lab-backed. Until that exists, every passing helper remains support evidence rather than release evidence.
 
 ## Audit rule
 

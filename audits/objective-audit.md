@@ -18,7 +18,7 @@ The release gate therefore remains closed until there is executable proof for al
 - plugin-driver coverage
 - CI/default enforcement of the gate
 
-If any of those remain only lab-backed, fixture-backed, or docs-backed, the release claim is still blocked. The current repo state still leaves the gate closed because the required live-boundary proof does not exist here yet.
+If any of those remain only lab-backed, fixture-backed, or docs-backed, the release claim is still blocked. The current repo state still leaves the gate closed because the required live-boundary proof does not exist here yet. The next concrete acceptance test is a single checked command that reaches the retained source, revalidates immediately before apply, and emits a machine-checkable failure if any of the listed claims still lack production evidence.
 
 ## Explicit Requirements
 
