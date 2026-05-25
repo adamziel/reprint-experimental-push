@@ -4932,6 +4932,10 @@ boundary-specific, not wording-specific:
 - Reprint, ZS-Sync, and ForkPress notes still need to be treated as source-note
   provenance only unless the exact upstream state is named and this branch
   reran the same live boundary with preserved-remote evidence.
+- The approach scorecard in `docs/approach-scorecard.md` is only a design
+  heuristic. Even the highest reliability score there does not prove stale
+  authority was rejected before mutation, the remote was preserved for audit,
+  or retry scope was rebuilt from fresh live hashes on this branch.
 
 The local source-note anchors in `docs/source-notes.md` are the observed
 historical references `27c5f25` for Reprint, `d9334a0` for ZS-Sync, and

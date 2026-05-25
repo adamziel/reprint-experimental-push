@@ -46,6 +46,9 @@ False success to reject:
   family, package layout, or reviewer wording; shape similarity is not live
   proof of preserved-remote safety, stale-artifact rejection, or retry
   authority on this branch.
+- "scorecard proof" is not success if the claim points to a high design score
+  in `docs/approach-scorecard.md`; that table is a heuristic, not evidence of
+  a live boundary rejecting stale authority before mutation.
 
 Source-note comparisons are historical context unless the exact upstream revision or worktree state is named and this branch reran the same live boundary against the same drift case. A named Reprint, ZS-Sync, or ForkPress note can justify historical transport, discovery, or review vocabulary, but it does not prove the live executor, the preserved remote, or retry safety on this branch.
 
