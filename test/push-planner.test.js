@@ -12124,6 +12124,12 @@ test('durable recovery keeps the documented failure states and completed replay 
     ),
     true,
   );
+  assert.equal(
+    readRecoveryJournal(completedJournalPath).records.some(
+      (record) => record.type === 'recovery-state' && record.state === 'blocked-recovery',
+    ),
+    false,
+  );
 });
 
 test('durable recovery boundary matrix keeps pre-commit failures old-remote and completed replay inert', () => {
