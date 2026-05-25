@@ -12483,6 +12483,7 @@ test('rejects a forged ready file delete when the live remote precondition is st
 
   const remote = baseSite();
   remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
   remote.plugins.forms.description = 'remote-only plugin drift';
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
@@ -13704,6 +13705,7 @@ test('applies an atomic plugin install when dependencies are included in the sam
         allowedPluginOwnedResource(
           'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
           atomicDependentPlugin,
+          'wp-option',
         ),
       ),
     },
@@ -13840,6 +13842,7 @@ test('executor rejects forged ready atomic plan when live dependency evidence is
         allowedPluginOwnedResource(
           'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
           atomicDependentPlugin,
+          'wp-option',
         ),
       ),
     },
@@ -13935,6 +13938,78 @@ test('blocks an atomic plugin bundle when its dependency mutation is outside the
   assert.equal(dependentGroup.blockers[0].class, 'plugin-dependency-outside-atomic-group');
   assert.equal(dependentGroup.blockers[0].plugin, atomicDependencyPlugin);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('keeps remote-only plugin drift while a ready atomic plugin bundle preserves a matching independent edit and its dependency mutation stays safe', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* dependency */';
+  local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent */';
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.plugins[atomicDependentPlugin] = { version: '1.0.0', active: true, requires: [atomicDependencyPlugin] };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+    option_name: 'reprint_push_atomic_fixture_data',
+    option_value: { mode: 'local' },
+    __pluginOwner: atomicDependentPlugin,
+  };
+  local.pushIntents = [
+    {
+      id: 'install-atomic-fixture-stack',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: [
+        `file:${pluginMainFile(atomicDependencyPlugin)}`,
+        `file:${pluginMainFile(atomicDependentPlugin)}`,
+        `plugin:${atomicDependencyPlugin}`,
+        `plugin:${atomicDependentPlugin}`,
+        'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+      ],
+      dependencies: {
+        plugins: [
+          {
+            name: atomicDependencyPlugin,
+            version: '2.1.0',
+            hash: resourceHash(local, pluginResource(atomicDependencyPlugin)),
+          },
+        ],
+      },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(
+          'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]',
+          atomicDependentPlugin,
+          'wp-option',
+        ),
+      ),
+    },
+  ];
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const dependentMutation = mutationFor(plan, `plugin:${atomicDependentPlugin}`);
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.atomicGroups[0].status, 'ready');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(plan.atomicGroups[0].dependencyRequirements[0].source, 'live-remote');
+  assert.equal(dependentMutation.action, 'put');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(remote.files['about.php'], '<?php echo "shared about";');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('blocks a dependent atomic bundle when a remote dependency changed since base', () => {
