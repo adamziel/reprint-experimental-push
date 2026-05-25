@@ -119,7 +119,8 @@ push pipeline consumes it in order:
 
 ## Deployment Topology
 
-The test topology follows the same split in both Docker and Playground:
+The test topology follows the same split in both Docker and Playground and is
+the minimum production-shaped proof the executor must preserve:
 
 - `remote-base` seeds the persisted pull base
 - `local-edited` is the user-edited imported clone
@@ -128,6 +129,29 @@ The test topology follows the same split in both Docker and Playground:
 - Docker and Playground must prove the same identity twice, not two different sites.
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy.
 - remote tunnels are disallowed.
+
+The topology is intentionally asymmetric:
+
+- `remote-base` and `remote-changed` are two observations of the same remote
+  site, not two separate sites.
+- `local-edited` is the imported local clone that produces the candidate plan.
+- `runner` owns the entire push lane and is the only process allowed to
+  compare, upload, inspect, or recover.
+- the live drift witness must appear after the dry-run receipt so apply-time
+  revalidation is actually exercised.
+
+The same role split applies in Docker and Playground:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| `remote-base` | `remote-base` | `remote-base` |
+| `local-edited` | `local-edited` | `local-edited` |
+| `remote-changed` | `remote-changed` | `remote-changed` |
+| `runner` | `runner` | `local test process` |
+
+Both harnesses must keep browser-visible inspection on the sandbox-provided
+`8080` ingress with a local-only proxy. That rule is part of the production
+proof, not just a convenience for local testing.
 
 The minimum production-shaped topology is:
 
@@ -202,6 +226,17 @@ The executor must treat the pull pipeline as immutable provenance and the push p
 5. Dry-run uploads the canonical plan as eligibility evidence only.
 6. Apply revalidates the live remote before every batch and again at the storage boundary.
 7. Journal inspect and recovery inspect read durable evidence first, then allow mutation only when fresh live proof exists.
+
+That is the production mapping from pull/export/import to push:
+
+- exporter/importer create and persist the immutable base package
+- `push_preflight` binds that base package to a live remote identity and a short-lived push session
+- `push_snapshot_hashes` records planning-only live evidence
+- `push_plan_dry_run` uploads a canonical plan and returns an eligibility receipt
+- `push_batch_apply` revalidates live evidence before every batch and again at the storage boundary
+- `push_journal` reads durable evidence without granting write authority
+- `push_recover inspect` reads first, then classifies finish, rollback, retry, or block before any mutating repair
+- mutating recovery only proceeds when the journal row, lease fence, and fresh live hashes prove the action
 
 That provenance boundary is the same one the pull/export/import pipeline already
 uses:

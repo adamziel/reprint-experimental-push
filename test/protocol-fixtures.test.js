@@ -219,6 +219,22 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.networking.ingress_port, 8080);
   assert.equal(topologyMatrix.networking.proxy_policy, 'local-only');
   assert.equal(topologyMatrix.networking.tunnels, 'disallowed');
+  assert.equal(topologyMatrix.docker.remote_base, 'remote-base');
+  assert.equal(topologyMatrix.docker.local_edited, 'local-edited');
+  assert.equal(topologyMatrix.docker.remote_changed, 'remote-changed');
+  assert.equal(topologyMatrix.playground.remote_base, 'remote-base');
+  assert.equal(topologyMatrix.playground.local_edited, 'local-edited');
+  assert.equal(topologyMatrix.playground.remote_changed, 'remote-changed');
+  assert.ok(
+    topologyMatrix.docker.proof.includes(
+      'push preflight mints one short-lived session bound to the persisted base and live remote identity',
+    ),
+  );
+  assert.ok(
+    topologyMatrix.playground.proof.includes(
+      'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
   assert.equal(topologyMatrix.lab_topology.remote_base.identity, 'remote-example');
   assert.equal(topologyMatrix.lab_topology.local_edited.identity, 'local-dev-site');
   assert.equal(topologyMatrix.lab_topology.remote_changed.identity, 'remote-example');
