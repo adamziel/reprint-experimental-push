@@ -14,12 +14,18 @@ the system reports a plausible success.
 In particular, a green lab result never counts as production proof unless the
 same live write path was exercised against a drifted remote and the audit shows
 the stale approval was rejected before mutation.
+The same rule applies to Reprint, ZS-Sync, and ForkPress comparisons: they
+can justify the design direction, but they do not become current proof unless
+this branch reverified the cited upstream state at the exact live write
+boundary being claimed.
 
 The next production-proof gap is not general reliability jargon. It is four
 specific missing proofs:
 
 - live remote drift must be rejected on the exact write path, with the stale
   hash set, rejected approval, and preserved remote all auditable;
+- a readable stale manual-review artifact must remain audit-visible but be
+  unusable as a retry token after drift;
 - create-time identity remapping must either be proven safe or fail closed
   before mutation, so a create cannot silently alias a different target;
 - plugin-owned state outside the allowlist must be discovered or blocked at

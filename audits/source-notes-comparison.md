@@ -79,3 +79,6 @@ lab route, fixture replay, or package mount is the real production executor.
 If the claim cannot show the exact live request path, preserved remote state,
 and stale-authority rejection at the current write boundary, the comparison
 remains context only.
+Manual-review artifacts, route-shape smokes, and `finalMatchesLocal` results
+stay in the same bucket: useful for lab review, but not retry authority and
+not proof that the cited upstream note maps to current production behavior.
