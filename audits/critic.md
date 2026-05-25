@@ -5845,3 +5845,69 @@ Production-ready wording gate:
 - if any plugin-owned table, file, cron row, runtime registry entry, generated asset, cache entry, or serialized blob is outside the allowlist and not explicitly blocked before write, the branch does not have production-grade push proof;
 - if any file, DB row, or plugin side effect survives a failed apply, the whole touched set must be labeled old, new, or blocked before retry starts; a partially successful write cannot be relabeled as success; and
 - if a Reprint, ZS-Sync, or ForkPress note is cited, it must say exactly what the note proves here and what it does not prove here; otherwise it remains historical context only and cannot support production wording.
+
+## Remaining Production-Grade Gaps
+
+The design still has not closed the following production-grade gaps:
+
+- conflict policy is still ambiguous when the remote drifts between dry-run
+  and apply; missing proof is a branch-local rejection point before the first
+  write, plus an auditable preserved remote that the user can inspect and
+  retry from, not a generic "manual resolution" label or a successful
+  fixture replay;
+- create-time identity remap is still a hidden data-loss mode if the target ID
+  is aliased, renumbered, or redirected at apply time; missing proof is live
+  identity evidence at the write boundary or a hard block before mutation,
+  not a same-shaped fixture or route note;
+- plugin-owned state outside the allowlist remains a data trap if hidden
+  tables, cron rows, runtime registries, generated files, caches, or
+  serialized blobs are only discovered after the first write; missing proof is
+  live enumeration or apply-time blocking for every owned surface on this
+  branch, including any late-discovered surface that must become its own new
+  boundary;
+- partial file, DB, or plugin side effects remain unreconciled if the audit
+  does not classify each touched surface as old, new, or blocked before
+  retry; missing proof is per-surface classification that survives mixed
+  outcomes, not a final success label applied to the committed subset;
+- stale manual-review artifacts are still a false-reliability risk if they can
+  be reused after drift to authorize a later row, file, relationship-bearing
+  record, remapped create target, or plugin-owned surface; missing proof is
+  that the artifact stays audit-only, the remote stayed inspectable after
+  rejection, and the retry scope was rebuilt from fresh live hashes on this
+  branch;
+- comparisons to Reprint, ZS-Sync, or ForkPress still overclaim if they are
+  used as proof instead of historical context; missing proof is the exact
+  upstream state, what the note proves here, what it does not prove here, and
+  a rerun of the same live boundary on this branch with preserved-remote,
+  stale-rejection, and fresh-retry evidence; and
+- any "production-ready" or "manual resolution" wording is false reliability
+  unless it names the exact drift case, the preserved remote, the rejection
+  point before the first write, the fresh live-hash retry scope, and the
+  old/new/blocked status for every touched surface.
+
+Release gate for this branch:
+
+- no production-grade push claim unless the exact drift case is named and the
+  remote stayed inspectable after rejection for audit/retry;
+- no production-grade push claim unless the stale approval or review artifact
+  was rejected before the first write and cannot widen to a later row, file,
+  relationship-bearing record, remapped create target, or plugin-owned
+  surface;
+- no production-grade push claim unless create-time identity remap is either
+  proven safe with live identity evidence or hard-blocked before write;
+- no production-grade push claim unless every touched file, DB row,
+  relationship-bearing record, and plugin-owned surface is classified old,
+  new, or blocked before retry starts;
+- no production-grade push claim unless every plugin-owned surface outside
+  the allowlist is enumerated live or blocked at apply time, including hidden
+  tables, cron rows, runtime registries, generated files, caches, and
+  serialized blobs;
+- no production-grade push claim unless any later-discovered plugin-owned
+  surface is treated as a new boundary with its own preserve / reject /
+  retry cycle and not backfilled into the earlier approval;
+- no production-grade push claim unless any comparison to Reprint,
+  ZS-Sync, or ForkPress says what the note proves here, what it does not
+  prove here, and whether this branch reran the same live boundary; and
+- no production-grade push claim unless the evidence is live-boundary proof,
+  not route shape, package mount, fixture replay, readable review output, or
+  `finalMatchesLocal`.
