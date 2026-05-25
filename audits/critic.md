@@ -4047,10 +4047,35 @@ Do not let success wording outrun the evidence:
   classified as old, new, or blocked and any late-discovered plugin-owned
   surface is handled as a separate boundary, not folded into the earlier
   success story; and
+- "comparison passed" is not acceptable unless the note names the exact
+  upstream revision or worktree state, states what that state does not prove
+  for this branch, and shows the same live drift or retry boundary was
+  revalidated here with preserved-remote evidence; and
 - a comparison note that names the right Reprint, ZS-Sync, or ForkPress
   revision is still not enough by itself unless this branch reran the same
   live drift or retry case on the same mutation boundary and recorded the
   preserved remote, rejection point, and fresh retry scope here.
+
+The branch also still needs explicit proof for the following failure modes,
+not a generic success label:
+
+- Live remote drift between dry-run and apply: missing proof is the actual
+  apply path rejecting stale authority before mutation, plus the preserved
+  remote remaining auditable after reject.
+- Create-time identity remap or alias: missing proof is live identity
+  evidence for the remap, or a hard block before mutation.
+- Plugin-owned state outside the allowlist: missing proof is live
+  enumeration or apply-time blocking of the full plugin-owned surface, not
+  just one fixture row or option.
+- Partial file, DB, or plugin side effects: missing proof is old/new/blocked
+  classification for every touched surface, with retry rebuilt from fresh
+  live hashes instead of inherited approval.
+- Stale manual-review artifacts: missing proof is that the artifact stayed
+  audit-only after drift, could not authorize a later boundary, and was
+  replaced by a separately recorded fresh retry artifact.
+- Reprint, ZS-Sync, or ForkPress comparisons: missing proof is the exact
+  upstream revision or worktree state plus branch-local revalidation of the
+  same live mutation boundary on this repo.
 
 Before this project can claim production-grade push support, the audit must
 show the following with branch-local live evidence, not lab shape:
