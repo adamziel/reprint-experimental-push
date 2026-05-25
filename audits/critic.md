@@ -5054,7 +5054,9 @@ Release-readiness filter:
   state and state plainly what it does not prove here.
 If any claim depends on a historical Reprint, ZS-Sync, or ForkPress note, the
 note must stay historical context only unless this branch separately reran the
-same live boundary and preserved the remote that actually drifted.
+same live boundary and preserved the remote that actually drifted. Naming the
+exact upstream revision or worktree state is still not enough by itself; the
+live boundary on this branch has to be revalidated too.
 
 Do not let a lab-shaped route, package mount, fixture replay, or
 `finalMatchesLocal` output stand in for the live boundary above. Those signals
