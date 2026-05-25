@@ -539,6 +539,10 @@ Source-note comparison policy:
 - Any note that names the right family but omits the exact upstream revision
   or worktree state remains provenance only, even if it matches route shape,
   package mount shape, or a readable review artifact.
+- Any note that merely matches the same route family, package layout, or
+  reviewer wording still remains provenance only; similarity to the design
+  family does not prove the live rejection point, preserved remote, or fresh
+  retry scope on this branch.
 - Even when the exact upstream revision is named, a source note is still not
   current proof unless this branch reran the same live mutation boundary and
   separately proved any late-discovered plugin-owned surface was blocked or
