@@ -14153,6 +14153,53 @@ test('completed replay stays idempotent when re-applied from the persisted compl
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('persisted completed journal replays without duplicating completion records or reviving stale local state', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const persistedBefore = readRecoveryJournal(journalPath);
+  assert.equal(
+    persistedBefore.records.filter((record) => record.type === 'journal-completed').length,
+    1,
+  );
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  const persistedAfter = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], undefined);
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assert.equal(
+    persistedAfter.records.filter((record) => record.type === 'journal-completed').length,
+    1,
+  );
+  assert.equal(
+    persistedAfter.records.filter((record) => record.type === 'journal-replayed').length,
+    1,
+  );
+});
+
 test('no-data-loss blocked partial recovery keeps inspectable artifacts and stays blocked on retry', () => {
   const base = baseSite();
   const local = baseSite();
