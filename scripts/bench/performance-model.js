@@ -919,6 +919,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-upload-queue-skips-large-upload-resume',
+    proposal: 'treat a compressed upload queue as enough proof to skip missing chunk receipts during a large-upload resume',
+    rejectedBecause: 'queue compression can reduce memory pressure, but it cannot prove which chunk acknowledgements survived a crash or restore the guarded publish boundary',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
     id: 'index-and-compressed-chunk-receipts-complete-large-upload',
     proposal: 'treat a fresh remote index plus compressed chunk receipts as proof that a large upload already finished',
     rejectedBecause: 'planning evidence and compressed receipts can reduce recovery work, but they cannot prove the live compare, guarded publish, or every chunk acknowledgement survived failure',
