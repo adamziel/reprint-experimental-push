@@ -50,6 +50,20 @@ The topology rules are fixed:
 - The local inspection proxy stays local-only.
 - Remote tunnels are disallowed.
 
+The production harness is the same one-remote, one-local, one-drift shape in
+both environments:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 The executor uses the same route names in Docker and Playground:
 
 | Stage | Route name |
