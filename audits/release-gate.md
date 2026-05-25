@@ -20,6 +20,10 @@ or comparison-only.
 - The claim shows plugin-owned state outside the allowlist is either discovered
   or hard-blocked, including options, custom tables, generated files, activation
   hooks, cron, cache state, and other plugin side effects.
+- The claim shows plugin data traps are not being mistaken for success just
+  because a fixture-owned option or table row matches the expected shape while
+  the real plugin also owns custom tables, serialized counters, cron rows,
+  generated assets, runtime registries, or external side effects.
 - The claim shows plugin-owned ownership changes are revalidated at apply time,
   not inherited from stale local metadata.
 - The claim shows a plugin data trap cannot pass as success when a fixture-owned
@@ -65,6 +69,10 @@ or comparison-only.
 - The claim does not treat manual resolution as success unless the remote is
   preserved, the stale artifact stays auditable but unusable, and the retry
   rebuilds scope from fresh live hashes before any write.
+- The claim does not treat "manual resolution later" as a success state unless
+  the preserved remote is still auditable, the stale artifact cannot authorize
+  a retry, and the next attempt starts from fresh live evidence rather than the
+  old approval.
 - The claim does not let a stale approval be widened to a different row, file,
   relationship-bearing record, or plugin-owned surface on retry.
 - The claim does not treat a production claim as valid if the proof set omits
