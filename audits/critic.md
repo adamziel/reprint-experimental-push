@@ -5304,6 +5304,10 @@ Production-grade release gate:
 - show any readable manual-review artifact stayed audit-only after drift and
   could not authorize a later row, file, remapped create target, or plugin-
   owned surface; and
+- show that any later-discovered plugin-owned table, file, cron row, runtime
+  registry entry, generated asset, cache entry, or serialized blob was treated
+  as a new boundary with its own preserve / reject / retry cycle, not as a
+  continuation of the earlier readable artifact;
 - show each Reprint, ZS-Sync, or ForkPress comparison names the exact
   upstream state, states what the note proves here, and states what it does
   not prove here.
@@ -5311,3 +5315,13 @@ Production-grade release gate:
 Single-sentence release gate:
 
 - this branch may only claim production-grade push support when the exact live boundary on this worktree shows the drifted remote preserved for audit, stale authority rejected before the first write, fresh retry scope rebuilt from live hashes, every touched surface classified old/new/blocked, and every late-discovered plugin-owned surface either blocked or given its own preserve / reject / retry cycle; if any part of that proof is missing, then route shape, package layout, reviewer wording, readable artifacts, `finalMatchesLocal`, and Reprint / ZS-Sync / ForkPress comparisons stay compatibility evidence only.
+
+Proof-substitution fail-closed rule:
+
+- a readable manual-review artifact, comparison note, or route-shaped smoke
+  cannot be promoted to retry authority for a later-discovered plugin-owned
+  surface, remapped create target, or new row/file/relationship-bearing
+  record unless this branch separately preserves the remote, rejects stale
+  authority before mutation, and rebuilds retry scope from live hashes for
+  that later boundary; otherwise the later surface remains blocked or audit-
+  only, regardless of how similar it looks to the earlier boundary.
