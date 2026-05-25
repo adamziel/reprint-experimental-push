@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: this checkout still lacks executable proof that the live push boundary is safe. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping, plugin-driver coverage, and preserved-remote drift are still only lab-shaped. The decisive blocker is still the missing live-boundary proof for production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, and preserved-remote drift at apply time. A checked release command would help only if it owned that verdict in the same invocation; helper scripts alone do not.
+Current top blocker, rechecked on 2026-05-25: this checkout still lacks executable proof that the live push boundary is safe. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping, plugin-driver coverage, and preserved-remote drift are still only lab-shaped. The decisive blocker is the missing live-boundary proof for production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, and preserved-remote drift at apply time. The lack of a checked release command is a separate release-engineering gap, but it is not the primary blocker unless that command also proves the live boundary in the same invocation.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -76,7 +76,7 @@ The tests do the right kind of negative work, but they are not positive release 
 Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
-- This checkout exposes helper and Playground scripts, but no checked-in `verify`, `verify:release`, or `release` script.
+- This checkout exposes helper and Playground scripts, but no checked-in `verify`, `verify:release`, or `release` script. That absence matters for enforcement, but it does not change the main blocker: the live-boundary proof itself is still missing.
 - There is no checked-in `test:playground:production-shaped-release-proof` entry here, and the existing `production-shaped` helper remains a lab-shaped route smoke rather than a release gate.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
 - The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, but it remains regression-only evidence rather than a live-boundary release verdict.
