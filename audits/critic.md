@@ -345,7 +345,10 @@ any production-grade wording is defensible:
 - Route shape, packaged-plugin smoke results, and fixture `finalMatchesLocal`
   outputs are compatibility evidence only; they are never sufficient by
   themselves to claim production mutation safety, credential isolation, or
-  remote-preserving retry semantics.
+  remote-preserving retry semantics. A live-looking hash on any of those
+  paths is still only evidence that the route answered, not that the live
+  remote was preserved, the stale approval failed closed, or the retry scope
+  was rebuilt from fresh evidence.
 - A packaged-plugin mount or route-shape smoke that returns live-looking
   hashes still does not prove the write path is the production executor, that
   stale review artifacts are rejected before mutation, or that the retry path
@@ -502,7 +505,9 @@ repo-specific evidence, not in lab shape or source-note comparison language:
   production-safe, retry-safe, or durable unless the live write path, fresh
   snapshot, and stale-artifact rejection have all been proven on the same
   request path. Live-looking hashes do not change that standard, and they do
-  not justify production wording by association.
+  not justify production wording by association. If the only evidence is a
+  lab or fixture route that happens to emit the expected hash, the claim must
+  stay explicitly compatibility-only.
 - Any doc, PR description, review comment, or status comment that cites the
   source notes must state whether the cited upstream behavior was re-
   verified against the current commit or worktree state. If not, the wording
