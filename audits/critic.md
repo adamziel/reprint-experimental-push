@@ -3791,3 +3791,26 @@ Do not let success wording outrun the evidence:
   revision is still not enough by itself unless this branch reran the same
   live drift or retry case on the same mutation boundary and recorded the
   preserved remote, rejection point, and fresh retry scope here.
+
+Before this project can claim production-grade push support, the audit must
+show the following with branch-local live evidence, not lab shape:
+
+- the stale remote was rejected before the first write, the preserved remote
+  stayed inspectable after reject, and the stale approval could not be reused
+  as retry authority for a different row, file, relationship-bearing record,
+  or plugin-owned surface;
+- create-time identity remapping, aliasing, or renumbering was either proved
+  safe with live identity evidence or hard-blocked before mutation;
+- any later-discovered plugin-owned surface was classified separately before
+  retry, not folded into the earlier success story;
+- any partial file, DB, or plugin side effect was classified as old, new, or
+  blocked so the next retry rebuilt scope from fresh live hashes instead of
+  inheriting stale approval;
+- any "manual resolution" claim preserved the remote for audit, recorded the
+  stale rejection point, and produced a fresh retry artifact on this branch;
+- any route-shape smoke, packaged-plugin mount, fixture replay, readable
+  review artifact, or `finalMatchesLocal` result is treated as compatibility
+  evidence only; and
+- any Reprint, ZS-Sync, or ForkPress citation names the exact upstream
+  revision or worktree state, states what that note proves, and explicitly
+  states what it does not prove for this branch.
