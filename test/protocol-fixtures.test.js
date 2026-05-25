@@ -223,7 +223,12 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.push_pipeline.recovery, 'allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action');
   assert.equal(topologyMatrix.apply_revalidation.before_each_batch, 'fresh live hashes');
   assert.equal(topologyMatrix.apply_revalidation.at_storage_boundary, 'fresh live hashes plus storage-guard proof');
+  assert.equal(topologyMatrix.remote_liveness.snapshot_hash_listing, 'planning evidence only and never write authority');
   assert.equal(topologyMatrix.remote_liveness.dry_run, 'eligibility evidence only and never a lock');
+  assert.equal(
+    topologyMatrix.remote_liveness.apply,
+    'a separate remote stage that revalidates before every batch and at the storage boundary',
+  );
   assert.equal(topologyMatrix.recovery_inspect.authorization, 'read-only evidence reader that never authorizes mutation by itself');
   assert.equal(topologyMatrix.remote_snapshot_hash_listing, 'cursorable live hash evidence used for planning only and never treated as write authority');
   assert.equal(topologyMatrix.pull_to_push_mapping.exporter, 'scans the merge base and coverage evidence');
@@ -350,6 +355,18 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'must revalidate the live remote before every batch and at the storage boundary',
   );
   assert.equal(protocolExtensionContract.push_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(
+    protocolExtensionContract.auth_session_recovery_proofs.auth_session_fencing,
+    'fixtures/protocol/push-auth-session-fencing-contract.json',
+  );
+  assert.equal(
+    protocolExtensionContract.auth_session_recovery_proofs.auth_session_recovery,
+    'fixtures/protocol/push-auth-session-recovery-contract.json',
+  );
+  assert.equal(
+    protocolExtensionContract.auth_session_recovery_proofs.recovery_inspect,
+    'fixtures/protocol/push-recovery-inspect-contract.json',
+  );
   assert.equal(protocolExtensionContract.topology.networking.ingress_port, 8080);
   assert.equal(protocolExtensionContract.topology.networking.proxy_policy, 'local-only');
   assert.equal(protocolExtensionContract.topology.networking.tunnels, 'disallowed');

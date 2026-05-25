@@ -104,6 +104,7 @@ The canonical proof stack for that scope is:
 | [`fixtures/protocol/push-deployment-topology-contract.json`](../fixtures/protocol/push-deployment-topology-contract.json) | The one-remote, one-local, one-drift topology in Docker and Playground. |
 | [`fixtures/protocol/push-executor-topology-proof.json`](../fixtures/protocol/push-executor-topology-proof.json) | The compact executor proof for the same remote identity observed twice, the same route names in both harnesses, and the sandbox-provided `8080` ingress rule. |
 | [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json) | The stage-level Docker/Playground proof with liveness, recovery, and apply revalidation rules. |
+| [`fixtures/protocol/push-remote-liveness-contract.json`](../fixtures/protocol/push-remote-liveness-contract.json) | The dry-run/apply split and apply-time revalidation rule for the live remote. |
 | [`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json) | The push-session boundary, journal-row fence, and read-only recovery inspect rule. |
 | [`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json) | The same fence when recovery needs to prove finish, rollback, or block before mutating. |
 | [`fixtures/protocol/push-recovery-inspect-contract.json`](../fixtures/protocol/push-recovery-inspect-contract.json) | Inspect reads the journal row and fresh live hashes before classifying finish, rollback, retry, or block. |
@@ -136,6 +137,8 @@ The production sequence is fixed:
 7. `push_recover inspect` runs before any mutating recovery mode, and mutating
    recovery only proceeds when journal rows plus fresh live hashes prove the
    action.
+8. `push_recover auto|finish|rollback` still requires the same journal fence
+   and fresh live hashes before it can mutate.
 
 The remote API is split by evidence class, not just by route name:
 
@@ -150,6 +153,8 @@ The remote API is split by evidence class, not just by route name:
 - `push_journal` is read-only.
 - `push_recover inspect` starts before any mutating recovery and may block
   until fresh live hashes prove the repair path.
+- `push_recover auto|finish|rollback` only mutates when journal evidence and
+  fresh live hashes still prove the path safe.
 
 ## Topology
 
