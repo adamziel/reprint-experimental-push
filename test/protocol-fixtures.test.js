@@ -52,6 +52,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const deploymentTopologyContract = readJson('fixtures/protocol/push-deployment-topology-contract.json');
   const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
   const protocolExtensionContract = readJson('fixtures/protocol/push-protocol-extension-contract.json');
+  const productionRevalidationContract = readJson(
+    'fixtures/protocol/push-production-revalidation-contract.json',
+  );
   const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
   const snapshotHashesPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
   const authSessionJournalRecoveryContract = readJson(
@@ -238,6 +241,43 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.push_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
   assert.equal(protocolExtensionContract.topology.same_remote_identity, true);
   assert.equal(protocolExtensionContract.topology.remote_base, 'remote-base');
+  assert.equal(productionRevalidationContract.contract_id, 'push-production-revalidation-contract-one-remote-one-local');
+  assert.equal(
+    productionRevalidationContract.push_phases.snapshot_hash_listing,
+    'reads the live remote comparison surface for planning only and never becomes write authority',
+  );
+  assert.equal(
+    productionRevalidationContract.push_phases.dry_run_upload,
+    'uploads the canonical plan as an eligibility receipt, not a lock',
+  );
+  assert.equal(
+    productionRevalidationContract.push_phases.batch_apply,
+    'revalidates fresh live evidence before every batch and at the storage boundary, and remains separate from dry-run',
+  );
+  assert.equal(
+    productionRevalidationContract.push_phases.journal_inspect,
+    'reads durable claim, lease, fencing, and apply-boundary evidence without authorizing mutation',
+  );
+  assert.equal(
+    productionRevalidationContract.push_phases.recovery_inspect,
+    'runs before any mutating recovery branch and classifies finish, rollback, retry, or block',
+  );
+  assert.equal(productionRevalidationContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(productionRevalidationContract.session.remote_site_id, 'remote-example');
+  assert.equal(productionRevalidationContract.journal_row.claim_generation, 4);
+  assert.ok(
+    productionRevalidationContract.required_invariants.includes(
+      'apply must revalidate the live remote before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    productionRevalidationContract.required_invariants.includes(
+      'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
+  assert.ok(
+    productionRevalidationContract.topology.networking.tunnels === 'disallowed',
+  );
   assert.equal(protocolExtensionContract.topology.local_edited, 'local-edited');
   assert.equal(protocolExtensionContract.topology.remote_changed, 'remote-changed');
   assert.equal(protocolExtensionContract.topology.runner, 'runner');

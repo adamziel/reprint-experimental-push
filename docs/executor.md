@@ -160,6 +160,10 @@ The canonical proof stack for that executor story is the same one named in
   production ladder from preflight through inspect-first recovery
 - `push-protocol-extension-contract.json` for the compact end-to-end
   production story and pull provenance mapping
+- `push-production-revalidation-contract.json` for the compact proof that
+  keeps preflight, planning-only snapshot hashes, dry-run eligibility,
+  apply-time revalidation, journal evidence, and inspect-first recovery
+  together
 - `push-dry-run-apply-revalidation-contract.json` for the planning-only dry-
   run receipt and apply-time revalidation boundary
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge

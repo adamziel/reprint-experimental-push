@@ -48,6 +48,7 @@ The normal sequence is:
 40. `push-pull-to-topology-contract.json`
 41. `push-preflight-contract.json`
 42. `push-remote-liveness-topology-contract.json`
+43. `push-production-revalidation-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -55,6 +56,10 @@ The production proof bundle is intentionally layered:
   proof. Start here when you need the full preflight, snapshot hash listing,
   dry-run, batched apply, journal inspect, and inspect-first recovery story in
   one object.
+- `push-production-revalidation-contract.json` is the compact proof that
+  keeps preflight, planning-only snapshot hashes, dry-run eligibility,
+  apply-time revalidation, journal evidence, and inspect-first recovery
+  together.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-preflight-contract.json` keeps the first live binding explicit: the
@@ -79,6 +84,10 @@ The production proof bundle is intentionally layered:
 - `push-auth-session-journal-recovery-inspect-contract.json` is the compact
   proof that folds live drift classification into that same auth, session,
   journal, lease, and inspect-first recovery chain.
+- `push-production-revalidation-contract.json` is the compact proof that
+  keeps the same auth floor, the minted push session, the journal row, the
+  lease fence, and the inspect-first recovery path in one place while still
+  making apply-time revalidation explicit.
 - `push-journal-inspect-contract.json` is the compact proof that journal
   inspection is read-only evidence and never becomes write authority.
 - `push-auth-session-recovery-contract.json` keeps the stronger auth floor and
@@ -217,6 +226,10 @@ Failure and recovery examples:
   one-local, one-drift topology explicit. It also points at the narrower
   auth/session fencing, recovery-inspect, and liveness proofs so the
   production bundle stays easy to navigate.
+- `push-production-revalidation-contract.json` gives the compact proof that
+  keeps the preflight, snapshot hash listing, dry-run eligibility, apply-time
+  revalidation, journal evidence, and inspect-first recovery boundaries in one
+  object.
 - `push-deployment-topology-contract.json` and `push-pull-to-topology-contract.json`
   give the deployment and pull-to-push bridge proofs for the same one-remote,
   one-local, one-drift topology in Docker and Playground.

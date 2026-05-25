@@ -247,6 +247,10 @@ Use these fixtures as the canonical proof bundle:
   plan upload, batched apply, journal inspect, and inspect-first recovery.
 - `push-protocol-extension-contract.json` is the top-level compact proof that
   keeps the full production story and pull provenance mapping in one object.
+- `push-production-revalidation-contract.json` is the compact proof that
+  keeps preflight, planning-only snapshot hashes, dry-run eligibility,
+  apply-time revalidation, journal evidence, and inspect-first recovery in
+  one object.
 - `push-dry-run-apply-revalidation-contract.json` keeps the live snapshot
   planning, dry-run eligibility, apply-time revalidation, and storage-boundary
   proof explicit.
