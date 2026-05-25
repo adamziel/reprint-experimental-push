@@ -1,24 +1,26 @@
-# Durable journal production notes
+# Durable Journal Production Notes
 
-The recovery model in this lane accepts only three post-failure outcomes:
+The atomic apply model in this lane treats the recovery journal as the
+authoritative crash-recovery artifact, but the JSON fixtures and in-memory
+replay checks only prove the shape of the contract.
 
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery` with artifacts
+Production recovery still needs durable storage semantics:
 
-The lab tests prove the shape of those states, but production recovery still
-needs durable storage that survives process exit and restart.
+- journal rows or files must be written durably, not just constructed in memory
+- recovery writes must survive process death, so flush/fsync semantics matter
+- writers need fencing or lease semantics so stale retries cannot win after a
+  newer claim exists
+- recovery inspection must preserve enough artifact state to diagnose a blocked
+  partial write
 
-Minimum production requirements:
+Acceptable post-failure states remain only these:
 
-- journal rows or files that persist after a crash
-- flush or `fsync`-equivalent durability before acknowledging recovery state
-- claim fencing or lease ownership so only one writer can advance recovery
-- restart-readable metadata for inspection without replaying the plan
+- `old-remote`: the remote stayed on the pre-apply side of the failure
+  boundary
+- `fully-updated-remote`: the whole plan was already committed and replay is
+  inert
+- `blocked-recovery`: the remote drifted or partially applied state needs
+  recovery artifacts before retry
 
-Operational rule:
-
-- treat any partial remote mutation without inspectable recovery artifacts as a blocker
-- do not retry a completed plan if the current remote no longer matches the completed journal envelope
-- do not treat stale local data as a reason to resurrect inserts or rewrite already committed remote state
-
+Anything that leaves a partial remote mutation without a durable recovery
+artifact is a release blocker.
