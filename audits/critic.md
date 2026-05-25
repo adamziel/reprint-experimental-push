@@ -5046,6 +5046,10 @@ boundary-specific, not wording-specific:
   reran the same live boundary with preserved-remote evidence; even then, the
   note proves only the cited boundary and does not transfer retry authority to
   a later row, file, remapped create target, or plugin-owned surface.
+- a named upstream anchor plus matching route family, package mount, or
+  reviewer wording still does not prove that the live executor on this branch
+  preserved the remote, rejected stale authority before mutation, or rebuilt
+  retry scope from fresh live hashes;
 - The approach scorecard in `docs/approach-scorecard.md` is only a design
   heuristic. Even the highest reliability score there does not prove stale
   authority was rejected before mutation, the remote was preserved for audit,
