@@ -15349,6 +15349,42 @@ test('durable no-data-loss recovery rejects mid-apply partial commits and keeps 
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('replaying a completed plan blocks drifted remote state and keeps recovery artifacts inspectable', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "drifted";';
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+
+  const replayError = captureError(() =>
+    applyPlan(replayRemote, plan, {
+      durableJournal: replayJournal,
+      journal: completed.journal,
+    }),
+  );
+
+  replayJournal.close();
+
+  assert.ok(replayError instanceof PushPlanError);
+  assertFailureRecoveryState(replayError.details.recovery, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.remote, 'blocked replay must retain remote artifacts');
+  assert.ok(replayError.details.recovery.artifacts.journal, 'blocked replay must retain journal artifacts');
+  assert.equal(replayError.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replayRemote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(Object.keys(replayRemote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('durable no-data-loss recovery keeps the persisted completed journal replay inert and the failure boundaries recoverable', () => {
   const base = baseSite();
   const local = baseSite();
