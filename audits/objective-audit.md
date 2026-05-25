@@ -170,3 +170,5 @@ Proof buckets used below:
 | Mandatory release gate | Optional smokes and `npm test` | A checked-in `verify`, `verify:release`, or `release` command, plus a checked-in workflow or other default entrypoint that invokes it | Optional runs can bypass the live-source verdict |
 
 Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path. A passing lab suite here is still compatible with a release that would lose writes, fail under a crash, or have no measured throughput at all.
+
+The practical audit conclusion is therefore narrower than "the tests are incomplete": the repo lacks a mandatory live-source release gate, so the existing tests cannot be upgraded into release proof by interpretation alone. Until one checked-in command owns the live-source mutation and the speed verdict in the same run, every passing test remains support evidence only.
