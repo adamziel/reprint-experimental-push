@@ -9986,3 +9986,52 @@ test('durable recovery boundary states stay limited to old remote, fully updated
     false,
   );
 });
+
+test('stale completed replay on a durable journal blocks recovery instead of duplicating inserts or reviving stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.db.wp_posts['ID:2'].post_title = 'Drifted after completion';
+  const driftSnapshot = JSON.stringify(driftedRemote);
+  const persistedBeforeReplay = readRecoveryJournal(journalPath);
+
+  const replayError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      durableJournal,
+      journal: completed.journal,
+    }),
+  );
+
+  durableJournal.close();
+  const persistedAfterReplay = readRecoveryJournal(journalPath);
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.code, 'RECOVERY_BLOCKED');
+  assert.equal(JSON.stringify(driftedRemote), driftSnapshot);
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assertAcceptableRecoveryState(replayError.details.recovery);
+  assertRecoveryStateArtifacts(replayError.details.recovery, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.journal, 'blocked replay must keep journal artifacts');
+  assert.ok(replayError.details.recovery.artifacts.remote, 'blocked replay must keep remote artifacts');
+  assert.equal(replayError.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(
+    replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Drifted after completion',
+  );
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'journal-replayed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'journal-replayed').length,
+  );
+  assert.equal(
+    persistedAfterReplay.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    true,
+  );
+});
