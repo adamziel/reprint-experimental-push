@@ -1347,6 +1347,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['backpressure', 'durable-progress', 'chunk-receipts'],
   },
+  {
+    id: 'unbounded-parallel-plugin-install-finalize',
+    proposal: 'run plugin install finalize work for all dependency groups at once once row staging is done',
+    rejectedBecause: 'row staging can overlap, but unlimited finalize parallelism can erase the backpressure and commit ordering needed to tell which plugin group owns a partial failure',
+    rejectedGate: 'group',
+    violates: ['atomic-groups', 'backpressure', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

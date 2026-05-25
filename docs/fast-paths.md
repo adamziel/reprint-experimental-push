@@ -151,6 +151,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Remote indexes cannot become a lock, because the listing is only planning evidence and may be stale by the time apply runs.
 - Compression cannot hash compressed bytes as canonical state, because transport encoding must not change the compare-and-swap value.
 - Parallelism cannot move the atomic-group commit barrier, because independent staging work is not the same as shared visibility.
+- Parallelism cannot run plugin install finalize work for every dependency group at once, because the shared backpressure and commit ordering would no longer identify which group owns a partial failure.
 - Backpressure cannot clear a queue and call the work complete, because durable receipts are still required to classify recovery.
 
 Area-specific rejection examples are worth keeping explicit because each one
