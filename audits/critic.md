@@ -9,10 +9,33 @@ boundary on this worktree shows preserved-remote evidence, stale authority
 rejection before the first write, fresh retry scope rebuilt from live hashes,
 and old/new/blocked classification for every touched surface. Lab-shaped
 route matches, package-mount matches, fixture replay, readable manual-review
-artifacts, and `finalMatchesLocal` stay compatibility evidence only.
+artifacts, production-shaped URL smokes, and `finalMatchesLocal` stay
+compatibility evidence only.
 Even a precise upstream commit or a matching route family is still only
 historical design context unless this branch reran the same live boundary and
 kept the rejected remote inspectable for audit/retry.
+
+What must happen before any production-grade push claim:
+
+- the exact live boundary and exact stale-drift case must be named;
+- the rejected remote must stay inspectable after rejection so the user can
+  audit the drift and retry from fresh live hashes;
+- the stale approval or manual-review artifact must be rejected before the
+  first write and cannot widen to a later row, file, relationship-bearing
+  record, remapped create target, or plugin-owned surface;
+- any later-discovered plugin-owned surface must be treated as a new boundary
+  unless it was enumerated before write or separately blocked with its own
+  preserve / reject / retry cycle;
+- every touched file, DB row, relationship-bearing record, and plugin-owned
+  surface must be classified old, new, or blocked before retry starts,
+  including mixed file/DB/plugin side effects;
+- any comparison to Reprint, ZS-Sync, or ForkPress must name the exact
+  upstream state, state what the note proves here, state what it does not
+  prove here, and be rerun against the same live boundary on this branch; and
+- route shape, package layout, fixture replay, readable review output, and
+  `finalMatchesLocal` remain compatibility evidence only unless they are
+  paired with the preserved remote and a fresh retry scope rebuilt from live
+  hashes on this worktree.
 
 Production-readiness gate, in one place:
 

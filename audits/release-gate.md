@@ -27,6 +27,10 @@ or comparison-only.
   replay, or `finalMatchesLocal` result as production evidence unless the audit
   also names the live executor, the stale remote-drift case, the preserved
   remote, and the fresh retry scope on this branch.
+- The claim does not treat a production-shaped URL smoke or lab-backed route
+  path as production evidence by itself; the same live boundary must also show
+  preserved-remote rejection, fresh live-hash retry scope, and per-surface
+  old/new/blocked classification.
 - The same request path was re-run against a live remote after drift, and the
   stale attempt failed before any mutation.
 - The claim names the exact stale remote hash set, the rejected approval, the
