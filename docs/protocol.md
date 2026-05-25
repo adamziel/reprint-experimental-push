@@ -38,6 +38,10 @@ The production contract is deliberately strict:
    inspect step before any finish-or-rollback action.
 7. Authentication must be at least as strict as current Reprint HMAC usage.
 
+The executor must treat the pull base package as immutable provenance for the
+entire push attempt. It is read to build plans and bind preflight, but it is
+never rewritten to make stale evidence look current.
+
 ## Runtime Stages
 
 The production push extension has six ordered remote stages:
@@ -111,6 +115,27 @@ That mapping is intentionally one-way:
   let preflight bind the later push session to the exact imported base
 - if the persisted base cannot be matched back to the remote identity that
   produced it, push stops before any write-capable stage can begin
+
+The production push ladder maps directly to the pull pipeline:
+
+| Pull artifact or stage | Push consumer | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base to one live remote identity and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live hash listing. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan, but do not reserve a lock. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and again at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
+
+The same provenance rule is what keeps the one-remote, one-local test topology
+honest:
+
+- `remote-base` is the live remote source of truth.
+- `local-edited` is the imported local clone that produced the candidate plan.
+- `remote-changed` is the same remote identity observed later after drift.
+- the runner is the only process allowed to compare, upload, inspect, or recover.
+- browser-visible inspection, when needed, must use the sandbox-provided `8080`
+  ingress and a local-only proxy, never a remote tunnel.
 
 ## Authentication
 

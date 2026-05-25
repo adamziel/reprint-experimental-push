@@ -1523,6 +1523,21 @@ The pull/export/import pipeline is the provenance source for every push run:
 7. `push_journal` and `push_recover inspect` read durable evidence first and
    never turn old proof into current authority
 
+The executor should keep that handoff explicit in implementation:
+
+- the exported pull base stays read-only on disk
+- the imported base package is copied into push attempt state as provenance
+- `push_preflight` binds that provenance to the live remote identity and a
+  short-lived session
+- `push_snapshot_hashes` is planning evidence only and can be paged without
+  becoming a lock
+- `push_plan_dry_run` is a receipt, not a reservation
+- `push_batch_apply` revalidates live evidence before every batch and again at
+  the storage boundary
+- `push_journal` and `push_recover inspect` are the read-only recovery gates
+- mutating recovery can only proceed after inspect proves the action against
+  the live remote again
+
 That mapping is one-way on purpose. The pull package never becomes a lock,
 and a later remote drift is valid evidence that apply must revalidate rather
 than reuse stale dry-run state.
