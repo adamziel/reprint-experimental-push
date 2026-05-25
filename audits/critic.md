@@ -214,6 +214,7 @@ evidence for all of these, not just a plausible design or a route-shaped
 smoke:
 
 The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md); it is the shorter checklist for docs, PRs, review comments, and status updates.
+Its purpose is to prevent a lab-shaped route, a package-mounted smoke, or a `finalMatchesLocal` match from being read as proof that the live write path preserved the remote.
 
 ### Release-Grade Wording Gate
 
