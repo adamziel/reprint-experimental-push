@@ -1212,7 +1212,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(
     mapping.push_sequence.mutation_batch_apply,
-    'revalidate live remote evidence before every batch and at the storage boundary',
+    'revalidate live remote evidence before every batch and at the storage boundary, and recheck the auth floor before mutation',
   );
   assert.equal(
     mapping.restart_proof.persisted_evidence.includes('journal_cursor'),
@@ -1970,7 +1970,7 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
   assert.equal(mapping.pull_exports.exporter, 'scans the merge base and coverage evidence');
   assert.equal(
     mapping.push_bindings.push_batch_apply,
-    'revalidates fresh live evidence before every batch and again at the storage boundary',
+    'revalidates fresh live evidence before every batch and again at the storage boundary, and rechecks the auth floor before mutation',
   );
   assert.equal(
     mapping.push_bindings.push_recover,

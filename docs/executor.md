@@ -19,7 +19,8 @@ The executor follows the same ordered stages defined in the protocol:
    planning only.
 3. `push_plan_dry_run` uploads the canonical plan as a receipt, not a lock.
 4. `push_batch_apply` revalidates fresh live evidence before every batch and
-   at the storage boundary.
+   at the storage boundary. Apply must not reuse the dry-run receipt as
+   authority.
 5. `push_journal` stays read-only.
 6. `push_recover inspect` classifies finish, rollback, retry, or block before
    any mutating recovery.
@@ -39,6 +40,7 @@ The same pull-to-push bridge applies here:
 - dry-run uploads a canonical plan receipt and never becomes a lock
 - batched apply revalidates fresh live evidence before every batch and again
   at the storage boundary, and is a separate remote operation from dry-run
+  while also rechecking the auth floor before mutation
 - journal inspection stays read-only
 - inspect-first recovery is the only safe starting point for mutating
   recovery
@@ -167,6 +169,7 @@ The canonical proof stack for that executor story is the same one named in
   proof that ties pull provenance, the production push ladder, and inspect-
   first recovery into one reviewable object, with `remote-base` and
   `remote-changed` proving the same remote identity before and after drift
+  and with apply-time revalidation kept separate from dry-run
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge
 - `push-deployment-topology-contract.json` for the smallest topology-only
   contract that still proves the same remote identity twice, the imported

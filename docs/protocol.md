@@ -23,7 +23,8 @@ The production ladder is fixed and each stage keeps its own boundary:
    eligibility receipt, not a lock.
 4. `push_batch_apply` is the first mutation stage and must revalidate fresh
    live evidence before every batch and again at the storage boundary. Dry-run
-   and apply are separate remote operations.
+   and apply are separate remote operations, and apply must not trust the
+   dry-run receipt as a lock.
 5. `push_journal` is read-only durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair.
@@ -58,7 +59,8 @@ Each stage has one job and one boundary:
 - `push_batch_apply` is the first mutation stage. It must revalidate fresh
   live evidence before every batch and again at the storage boundary so drift
   between dry-run and apply cannot be ignored. Dry-run and apply are separate
-  remote operations even when the same runner performs both.
+  remote operations even when the same runner performs both, and apply must
+  recheck auth plus live state instead of reusing the dry-run receipt.
 - `push_journal` is read-only durable evidence. It records claim, lease,
   fencing, and recovery facts, but it never authorizes mutation by itself.
 - `push_recover inspect` reads the journal and fresh live hashes before any
@@ -85,6 +87,9 @@ Recovery is intentionally inspect-first:
 The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
 site, and one live remote identity that must be revalidated at apply time.
+It also keeps the push session and the remote comparison surface separate:
+preflight mints the session, snapshot hashes only plan, dry-run only records
+eligibility, and apply must still revalidate before mutation.
 
 ## Topology
 
