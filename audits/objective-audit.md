@@ -45,9 +45,10 @@ a production-shaped runtime or memory ceiling, and it cannot substitute for a
 required release command. `npm test` and `npm run test:playground` remain
 green even when the strongest checks are skipped, so the repo can look
 healthy while the objective remains unproven. The immediate action is to turn
-the strongest checks into one required `verify:release`-style gate; until
-that exists, the current test story is stronger as a blocker generator than
-as release-grade proof of no data loss, reliability, or speed.
+the strongest checks into one required `verify:release`-style gate that is
+wired into CI or another enforced entrypoint; until that exists, the current
+test story is stronger as a blocker generator than as release-grade proof of
+no data loss, reliability, or speed.
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
@@ -177,6 +178,9 @@ where they are asked to prove production release safety.
   unsupported throughput claims. It does not itself measure a live push path,
   set a required threshold, or enforce a release decision unless the claim
   gate is explicitly invoked. That makes it a refusal test, not speed proof.
+  The unit test confirms blocker detection and tamper rejection, but it still
+  never exercises a live source site, a production executor, or a measured
+  threshold.
 
 That splits the suite into three evidence classes:
 
