@@ -175,6 +175,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume-after-pause').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume-after-pause').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('remote-index-and-cached-package-hash-skips-plugin-dependency-checks').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('remote-index-and-cached-package-hash-skips-plugin-dependency-checks').violates.includes('atomic-groups'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
 });
 
