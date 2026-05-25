@@ -377,6 +377,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-barrier')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-row-batch-skips-plugin-install-barrier')?.rejectedGate,
     'group',
   );
@@ -843,6 +847,24 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').violates.includes('durable-progress'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-barrier').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-barrier').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-barrier').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-barrier').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-barrier').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-barrier').violates.includes('durable-progress'),
   );
   assert.ok(rejectedById.get('compressed-upload-queue-skips-large-upload-resume').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-upload-queue-replaces-chunk-receipts').violates.includes('compression'));

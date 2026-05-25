@@ -2012,6 +2012,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'atomic-groups', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-barrier',
+    proposal: 'use a compressed remote index to justify unbounded row-batch parallelism for plugin installs once staging has begun',
+    rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded row-batch parallelism can still erase the per-row preconditions and install barrier needed to recover a partial failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish',
     proposal: 'use a compressed remote index to justify unbounded chunk upload parallelism and treat the drained queue as publish-ready',
     rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded chunk parallelism can still erase the receipt order and backpressure evidence needed to recover after pause or crash',
