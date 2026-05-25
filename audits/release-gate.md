@@ -52,6 +52,9 @@ or comparison-only.
 - The claim shows partial file, DB, or plugin side effects do not leave an
   implied success state just because one store committed; mixed writes need
   old/new/blocked evidence for the whole path.
+- The claim shows a stale manual-review artifact cannot be widened into a
+  different row, file, relationship-bearing record, or plugin-owned surface
+  after drift; if it can be reused that way, the push is not production-safe.
 - The claim shows the same live write path rejected stale authority before
   mutation, and that a route-shaped smoke or packaged-plugin mount only counts
   as compatibility evidence if it exercised that exact boundary on a drifted
@@ -94,6 +97,10 @@ or comparison-only.
 - The claim does not let Reprint, ZS-Sync, or ForkPress notes imply current
   upstream reliability unless the exact upstream revision or worktree state was
   reverified and the live mutation boundary was exercised in this repo.
+- The claim does not let a comparison note, manual review artifact, or live
+  looking hash stand in for proof that the remote stayed preserved, the stale
+  authority was rejected before mutation, and the retry rebuilt scope from
+  fresh live hashes.
 - The claim does not treat matching route shape plus a green lab smoke as
   evidence of production safety if the underlying path never revalidated the
   live remote or the hidden plugin-owned surface at apply time.
