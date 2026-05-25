@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is the lack of live-boundary evidence for those remaining production claims, not helper availability or release-shaped wrappers. The release gate must stay closed until that evidence exists in a checked-in, enforced entrypoint.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run yet proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping and plugin-driver coverage are still only lab-shaped. The precise blocker is the lack of live-boundary evidence for those remaining production claims, not helper availability or release-shaped wrappers. The release gate must stay closed until that evidence exists in a checked-in, enforced entrypoint.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -28,7 +28,7 @@ The objective implies these minimum release requirements:
 2. Revalidate the live source at apply time before mutating it. A stale preflight is not enough.
 3. Preserve all touched WordPress data shapes end to end, including rows, files, plugin-owned data, serialized payloads, and graph identity.
 4. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes.
-5. Prove production auth/session lifecycle, durable journal semantics, leases/fencing, graph identity, and plugin-driver behavior at the release boundary, not only in helper scripts or optional smokes. If any of these remain helper-scoped, the release claim is blocked.
+5. Prove production auth/session lifecycle and durable journal semantics at the release boundary, not only in helper scripts or optional smokes. Leases/fencing, graph identity, and plugin-driver behavior also need release-boundary proof, but they are still only lab-backed here. If any of these remain helper-scoped, the release claim is blocked.
 6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or storage abstraction that can satisfy tests without touching live source storage.
 7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one.
 8. Expose one required release command that fails closed when any safety gate is still lab-backed, fixture-only, benchmark-only, or missing live-source proof. Optional helpers are not enough.
@@ -74,6 +74,7 @@ Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
 - This checkout does not expose a checked-in `verify`, `verify:release`, or `release` script.
+- A history check shows commit `3089aee2` documenting a `verify:release` alias, but that alias is not present in this worktree, so the visible release surface here is still absent.
 - There is no checked-in `test:playground:production-shaped-release-proof` entry here, and the existing `production-shaped` helper remains a lab-shaped route smoke rather than a release gate.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
 - The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation.
