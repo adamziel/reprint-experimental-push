@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is no longer abstract command absence; this lane still lacks a checked live-boundary verdict that proves the production apply path end to end. Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker.
+Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is not command-surface absence anymore; it is the missing checked live-boundary verdict on this branch. Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -57,7 +57,7 @@ Evidence buckets used below:
 | Durable journal semantics | [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js), [`test:playground:db-journal-idempotency`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), and [`test:playground:db-journal-process-kill`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) prove local and Playground journal integrity | Live-source journal durability that survives the apply boundary in this checkout | Journal proof is split across helpers and fixtures, so it does not yet prove durable apply/recovery behavior on production storage |
 | Graph identity mapping | [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) encodes graph identity expectations | Production push-path graph identity proof on the retained source endpoint in this checkout | Identity is still modeled, not shipped |
 | Plugin-driver coverage | [`test:playground:production-plugin-package`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:plugin-atomic-install`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), and route smokes cover helper/plugin install flows | End-to-end plugin-driver behavior in the required release gate in this checkout | Plugin proof is still helper-scoped |
-| Required release gate | Upstream `npm run verify:release` now reports live preflight, dry-run, apply, recovery, and journal readback outputs, with the retained-source run also naming the remaining production boundary | A checked run that completes the real live boundary and proves auth/session lifecycle plus durable journal semantics, not just wrapper shape | The gate shape is important, but the live-boundary verdict is still incomplete where release safety matters |
+| Required release gate | A release-shaped verifier exists upstream and reports live preflight, dry-run, apply, recovery, and journal readback outputs | A checked run in this checkout that completes the real live boundary and proves auth/session lifecycle plus durable journal semantics, not just wrapper shape | The gate shape is important, but the live-boundary verdict is still incomplete where release safety matters |
 | CI/default enforcement | None | A checked-in workflow or default entrypoint that runs the gate | Green default runs can still bypass release proof |
 | Preserved remote drift / real topology | Helper smokes and fixtures model it indirectly, and the upstream release verifier includes a live drift witness | A required command that proves the retained source remains live across preflight and apply in the same invocation on the release boundary | Drift witness coverage is stronger, but it still does not prove the production auth/session plus journal boundary |
 
@@ -85,7 +85,7 @@ Direct command-surface recheck on 2026-05-25:
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone, even though a release wrapper exists upstream.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone, even if a release wrapper exists upstream.
 
 Minimum properties of that gate:
 
