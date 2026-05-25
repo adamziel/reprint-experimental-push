@@ -22,6 +22,7 @@ The missing proof is structural:
 3. no test here composes auth/session, durable journal, leases/fencing, graph identity, and plugin-driver checks into one required release gate
 4. no test here measures live-path throughput or converts the current `not-claimed` speed stance into an enforced release decision
 5. no test here can be treated as release proof unless it runs through the same live-source boundary that the objective names, which means the current passing suite still leaves no-data-loss, reliability, and speed as unproven claims
+6. no current test or smoke converts `productionThroughput: 'not-claimed'` into an enforced release verdict; that missing verdict is itself part of the blocker, not an incidental omission
 
 ## Practical Conclusion
 
