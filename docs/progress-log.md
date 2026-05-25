@@ -4,24 +4,27 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-Newest public summary stays concise by design; details belong in the linked
-evidence trail below.
+## 2026-05-25 - Public Status Audit 08:31:37
 
-## 2026-05-25 - Public Status Audit 08:26:18
-
-<a id="2026-05-25-public-status-audit-082618"></a>
+<a id="2026-05-25-public-status-audit-083137"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 08:26:18 CEST`) and kept the visible last-updated stamp current.
-- Kept the first screen concise and conservative: lab evidence only, flat
-  trend, `0/4` verified gates, and the newest audit link now points at this
-  entry.
+  (`2026-05-25 08:31:37 CEST`) and kept the visible last-updated stamp current.
+- Kept the first screen concise and conservative: newest audit link, gate
+  checklist, and evidence trail stay visible without repeating the same
+  pending list.
 - No new production proof was added; the real WordPress executor/auth,
-  recovery journaling, Docker/Playground integration, graph identity, and
-  plugin drivers remain pending until proven.
+  recovery journal, Docker/Playground integration, graph identity, and plugin
+  drivers remain pending until proven.
 - Evidence trail: [progress.html](../progress.html),
   [audits/objective-audit.md](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates),
+  [newest audit](../progress.html#recent-public-audits),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md).
+
+Newest public summary stays concise by design; details belong in the linked
+evidence trail below.
   [newest audit](../progress.html#recent-public-audits),
   [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
   [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md).
