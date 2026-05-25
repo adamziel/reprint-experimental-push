@@ -207,8 +207,14 @@ The push half of the story is intentionally separate from pull execution:
 
 Use these fixtures as the canonical proof bundle:
 
-- `push-protocol-extension-contract.json` is the end-to-end production ladder
-  proof.
+- `push-production-ladder-contract.json` is the canonical machine-readable
+  production ladder proof for preflight, remote snapshot hash listing, dry-run
+  plan upload, batched apply, journal inspect, and inspect-first recovery.
+- `push-protocol-extension-contract.json` is the top-level compact proof that
+  keeps the full production story and pull provenance mapping in one object.
+- `push-dry-run-apply-revalidation-contract.json` keeps the live snapshot
+  planning, dry-run eligibility, apply-time revalidation, and storage-boundary
+  proof explicit.
 - `push-pull-to-topology-contract.json` is the smallest composite proof that
   links pull provenance, push stages, auth floor, and topology.
 - `push-journal-inspect-contract.json` is the compact proof that journal

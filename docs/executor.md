@@ -154,7 +154,12 @@ three-site proof:
 The canonical proof stack for that executor story is the same one named in
 [protocol.md](protocol.md):
 
-- `push-protocol-extension-contract.json` for the full production ladder
+- `push-production-ladder-contract.json` for the canonical machine-readable
+  production ladder from preflight through inspect-first recovery
+- `push-protocol-extension-contract.json` for the compact end-to-end
+  production story and pull provenance mapping
+- `push-dry-run-apply-revalidation-contract.json` for the planning-only dry-
+  run receipt and apply-time revalidation boundary
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge
 - `push-deployment-topology-contract.json` for the smallest topology-only
   contract that still proves the same remote identity twice, the imported

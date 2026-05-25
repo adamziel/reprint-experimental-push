@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (relativePath) =>
   JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
+const protocolReadme = fs.readFileSync(path.join(repoRoot, 'fixtures/protocol/README.md'), 'utf8');
 
 test('push protocol fixture captures the production stage order and recovery rules', () => {
   const flow = readJson('fixtures/protocol/push-flow.json');
@@ -62,7 +63,6 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const remoteLivenessTopologyContract = readJson(
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
   );
-
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(contract.pull_pipeline.importer, 'persists the base package as immutable provenance');
@@ -1395,6 +1395,9 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
       'remote snapshot hash listing is planning evidence, not write authority',
     ),
   );
+  assert.ok(protocolReadme.includes('push-production-ladder-contract.json'));
+  assert.ok(protocolReadme.includes('push-dry-run-apply-revalidation-contract.json'));
+  assert.ok(protocolReadme.includes('push-protocol-extension-contract.json'));
   assert.ok(
     executorTopologyProof.topology.docker.proof.includes(
       'push journal remains read-only before mutating recovery',
