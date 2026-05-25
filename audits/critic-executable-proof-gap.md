@@ -11,10 +11,12 @@ Primary finding:
   production-shaped smoke remains lab or compatibility evidence only and the
   current `labBacked: true` signal cannot be promoted into production proof.
   Until a named real-site release command exists, can be rerun on an actual
-  remote with a real `REPRINT_PUSH_SOURCE_URL` target, and records the first
-  real executor/auth/preserved-remote boundary, any production-grade push
-  wording is false reliability and must fail closed; docs-only or lab-only
-  success claims are not enough;
+  remote with a real `REPRINT_PUSH_SOURCE_URL` target, records the exact
+  executable command string, and captures the first real
+  executor/auth/preserved-remote boundary plus apply-time revalidation and
+  journal/recovery inspection, any production-grade push wording is false
+  reliability and must fail closed; docs-only or lab-only success claims are
+  not enough;
 
 Supporting failures:
 
