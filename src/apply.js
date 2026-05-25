@@ -589,6 +589,7 @@ function assertProductionDurableJournalSupport(options, writer) {
     && typeof writer.flush === 'function'
     && typeof writer.close === 'function'
     && typeof writer.inspect === 'function'
+    && typeof writer.assertCurrentClaim === 'function'
     && durableJournalInspectSurface(writer)
   ) {
     return;

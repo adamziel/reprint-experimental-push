@@ -19759,6 +19759,37 @@ test('production durable journal claims fail closed when restart inspection is n
   assert.equal(error.details.requiresDurableJournal, true);
 });
 
+test('production durable journal claims fail closed when the writer cannot fence claims', () => {
+  const writer = {
+    nextSequence: 1,
+    appendEvent() {
+      this.nextSequence += 1;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return { records: [] };
+    },
+  };
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.equal(error.details.requiresDurableJournal, true);
+});
+
 test('production durable journal claims allow a restart-oriented writer contract', () => {
   const events = [];
   const writer = {
@@ -19773,6 +19804,7 @@ test('production durable journal claims allow a restart-oriented writer contract
     inspect() {
       return { records: events.slice() };
     },
+    assertCurrentClaim() {},
   };
   const plan = planFor(baseSite(), baseSite(), {
     ...baseSite(),
