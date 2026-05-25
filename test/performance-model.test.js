@@ -2018,6 +2018,10 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').rejectedGate,
     'group',
   );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause').rejectedGate,
+    'group',
+  );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('remote-index-planning-only'),
   );
@@ -2038,6 +2042,15 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('durable-progress'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause').violates.includes('file-hashing'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause').violates.includes('durable-progress'),
   );
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('compression'));
@@ -2376,13 +2389,23 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.ok(model.workloads.some((workload) => workload.kind === 'large-upload'));
   assert.ok(model.workloads.some((workload) => workload.kind === 'plugin-install'));
   assert.ok(model.workloads.some((workload) => workload.kind === 'plugin-update'));
+  assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'remote-index-probe')));
+  assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'compression-decision')));
+  assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')));
+  assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'durable-receipt-flush')));
+  assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'group-staging-finalize')));
+  assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'atomic-group-commit')));
   assert.ok(model.schedules.some((schedule) => schedule.totals.uploadChunks > 0));
   assert.ok(model.schedules.some((schedule) => schedule.totals.dbRows > 0));
   assert.ok(model.totals.uploadBytes >= 2 * 1024 * MIB);
   assert.ok(model.totals.dbRows >= 10_000);
+  assert.equal(model.totals.filePublishes, 9);
+  assert.ok(model.totals.backpressurePauses >= 2);
   assert.ok(report.evidence.chunkReceipts.expected > 0);
   assert.equal(report.evidence.chunkReceipts.recorded, report.evidence.chunkReceipts.expected);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
+  assert.equal(report.evidence.atomicGroup.requireAtomic, true);
+  assert.equal(report.evidence.atomicGroup.successAllTargetsNew, true);
   assert.equal(report.evidence.recovery.partialCommitBlocksRecovery, true);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
   assert.equal(report.claims.productionThroughput.status, 'blocked');

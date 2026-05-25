@@ -2160,6 +2160,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause',
+    proposal: 'treat a compressed remote index plus a cached package hash as enough proof to skip plugin install finalize after a pause',
+    rejectedBecause: 'planning evidence and cached package hashes can trim replay work, but they cannot prove dependency checks, staged rows, or the atomic-group finalize survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-publish',
     proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip the guarded publish step for a large upload',
     rejectedBecause: 'planning evidence and cached hashes can reduce lookup and hashing work, but they cannot prove chunk receipts, the live compare, or the guarded publish survived failure',
