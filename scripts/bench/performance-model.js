@@ -1134,6 +1134,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize',
+    proposal: 'treat a compressed remote index plus a paused row queue as enough proof to skip plugin install finalize',
+    rejectedBecause: 'planning evidence and a paused queue can reduce replay work, but they cannot prove dependency checks, per-row preconditions, or the atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
