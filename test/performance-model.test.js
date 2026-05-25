@@ -152,6 +152,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-planned-dependency-graph-to-presize-bounded-plugin-update-batches')?.visibilityBoundary,
+    'planning-only-until-batch-commit',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions')?.rejectedGate,
+    'live',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'fingerprint-skips-live-publish-compare')?.rejectedGate,
     'live',
   );
@@ -411,6 +419,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('atomic-file-publish'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('chunk-receipts'));

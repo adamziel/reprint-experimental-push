@@ -287,6 +287,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['round-trips', 'rescan-work', 'batch-shape-recomputation'],
+    allowedShortcut: 'reuse-planned-dependency-graph-to-presize-bounded-plugin-update-batches',
+    guardrails: [
+      'dependency-graph-is-planning-evidence-only',
+      'batch-bounds-still-honor-row-preconditions',
+    ],
+    gateProofs: {
+      skip: 'a dependency-heavy plugin update can reuse a recorded dependency graph and indexed plan to avoid rescanning unchanged resources when sizing row batches',
+      live: 'every row in the batch still rechecks its live compare at the storage boundary',
+      group: 'the batch shape only narrows planning work inside the same atomic group and never widens visibility across owners',
+      recovery: 'the planning graph, cursor, and batch receipts still classify retry, pause, or crash without guessing',
+    },
+    visibilityBoundary: 'planning-only-until-batch-commit',
+    failureEvidence: 'planning cursor, dependency graph, and batch idempotency key',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
@@ -757,6 +777,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and chunk acknowledgements can prove staged progress, but they cannot prove the live file still matches the publish precondition',
     rejectedGate: 'live',
     violates: ['remote-index-planning-only', 'chunk-receipts', 'live-preconditions'],
+  },
+  {
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
+    proposal: 'use a compressed remote index plus a cached dependency graph to skip row preconditions in a plugin update',
+    rejectedBecause: 'planning evidence and dependency graphs can reduce rescanning, but they cannot replace the live per-row compares or the atomic-group barrier',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'plugin-preconditions'],
   },
   {
     id: 'index-and-chunk-receipts-skip-guarded-publish',
