@@ -145,9 +145,9 @@ if the supervised lane has stronger retained-source evidence and an explicit
 boundary verdict.
 
 The single strongest proof gap is still production WordPress auth/session
-lifecycle plus preserved-remote auditability on a live boundary. Until that is
-shown with exact remote preservation and retry evidence on this branch, the
-retained-source `verify:release` lineage remains lab evidence only.
+lifecycle plus preserved-remote auditability on one rerunnable live boundary.
+Until that is shown with exact remote preservation and retry evidence on this
+branch, the retained-source `verify:release` lineage remains lab evidence only.
 
 The next acceptable proof must be one rerunnable live command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
