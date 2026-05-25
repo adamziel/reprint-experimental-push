@@ -6624,6 +6624,10 @@ Release gate for production-grade wording:
 - the claim treats any later-discovered plugin-owned surface or remapped
   create target as a separate live boundary unless it already had its own
   preserve / reject / retry cycle before the first write;
+- the claim distinguishes provenance from proof for every Reprint, ZS-Sync,
+  or ForkPress citation: the upstream anchor may explain why the design
+  exists, but it never authorizes this branch unless the same live boundary
+  reran here with preserved-remote evidence and a fresh retry scope; and
 - the claim says what each source note proves here and what it does not prove
   here, so Reprint, ZS-Sync, and ForkPress stay provenance unless this branch
   reran the same live boundary with fresh live hashes; and
