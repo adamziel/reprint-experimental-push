@@ -126,6 +126,13 @@ The supervisor-facing shortcut is `npm run verify:release`.
 It resolves to the same retained-source proof, so the checked command and the
 release alias stay aligned.
 
+That checked release entrypoint has two exact outputs:
+
+- with live source and production-shaped auth, it prints the live preflight
+  proof and a JSON envelope whose `releaseProof.code` is `LIVE_PREFLIGHT_OK`
+- without a live source, it fails with
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.`
+
 The narrow live-preflight command for a real remote source is:
 
 ```sh
