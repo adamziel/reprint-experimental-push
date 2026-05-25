@@ -875,6 +875,32 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   assert.equal(remote.plugins.forms.active, false);
 });
 
+test('keeps remote-only plugin changes while recognizing a matching independent file creation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared created file";';
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared created file";';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const createDecision = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(createDecision.decision, 'already-in-sync');
+  assert.equal(createDecision.change.localChange, 'create');
+  assert.equal(createDecision.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(remote.files['about.php'], '<?php echo "shared created file";');
+  assert.equal(remote.plugins.forms.version, '1.1.0');
+  assert.equal(remote.plugins.forms.active, false);
+});
+
 test('recognizes matching independent deletions as already in sync', () => {
   const base = baseSite();
   const local = baseSite();

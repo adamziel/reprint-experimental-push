@@ -6,6 +6,8 @@ The planner policy summary lives in
 [No Overwrite Playbook](invariants/no-overwrite-playbook.md).
 The compact boundary note lives in
 [No Overwrite Boundaries](invariants/no-overwrite-boundaries.md).
+The shortest no-data-loss summary lives in
+[No Data Loss Invariants](invariants/no-data-loss-invariants.md).
 
 | Scenario | Expected behavior | Current evidence |
 | --- | --- | --- |
@@ -156,6 +158,7 @@ The compact boundary note lives in
 | Remote-only plugin change while a matching delete, edit, and type swap remain safe | The matching delete, edit, and type swap stay `already-in-sync`, the remote plugin change stays `keep-remote`, and no mutation is produced. | `keeps remote-only plugin changes while matching independent delete, edit, and type swap stay already in sync` |
 | Remote-only plugin change while a live-preconditioned delete, matching edit, and file type swap stay safe | The delete and type swap are the only mutations, both keep live remote preconditions, the matching edit stays `already-in-sync`, and the remote plugin change stays `keep-remote`. | `keeps remote-only plugin changes while a live-preconditioned delete, matching edit, and file type swap stay safe` |
 | Remote-only plugin change while a matching deletion, restore, and type swap remain safe | The matching delete, restore, and type swap stay `already-in-sync`, the remote plugin change stays `keep-remote`, and no mutation is produced. | `keeps remote-only plugin changes while matching deletion, restore, and type swap stay already in sync` |
+| Remote-only plugin change while a matching independent file creation stays safe | The matching file creation stays `already-in-sync`, the remote plugin change stays `keep-remote`, and no mutation is produced. | `keeps remote-only plugin changes while recognizing a matching independent file creation` |
 | Remote-only plugin change while a matching deletion and restore stay safe | The matching delete and restore stay `already-in-sync`, the remote plugin change stays `keep-remote`, and the only mutation keeps a live remote precondition. | `keeps remote-only plugin changes while recognizing a matching independent deletion and restore` |
 | Remote-only plugin change while a matching row deletion, edit, and type swap remain safe | The matching row deletion, edit, and type swap stay `already-in-sync`, the remote plugin change stays `keep-remote`, and no mutation is produced. | `keeps remote-only plugin changes while matching independent row delete, edit, and type swap stay already in sync` |
 | Remote-only plugin metadata or file changed while local deletes an ordinary file | The local ordinary deletion can proceed with a live remote precondition while remote-only plugin changes are kept as `keep-remote` decisions. | `preserves remote-only plugin changes while local deletes an ordinary file` |
