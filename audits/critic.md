@@ -25,6 +25,12 @@ Must change before any production-grade push claim:
 - classify partial file, DB, and plugin side effects as old, new, or blocked
   before retry so a mixed write cannot be relabeled as success.
 
+The missing proof is not just "the route works" or "the reviewer can
+manually inspect the result." The branch still needs live evidence that the
+preserved remote survives reject, that stale approval cannot be widened into a
+new boundary, and that every touched surface has a durable old/new/blocked
+classification before the next retry starts.
+
 Required proof pack before the claim can move from compatibility wording to
 production wording:
 
@@ -55,6 +61,14 @@ Additional proof gaps that still need to be closed:
 - prove the branch can preserve the remote, reject the stale boundary, and
   rebuild fresh retry scope even when a late plugin-owned surface appears only
   after the first write.
+
+Production-grade push support also needs an explicit anti-trap rule: if the
+first write lands and a later snapshot exposes a plugin-owned table, file,
+registry entry, generated asset, cache entry, or serialized blob that was not
+part of the original live boundary, that later surface is a new boundary. It
+is not acceptable to fold that surface into the earlier "manual resolution"
+story unless the preserve/reject/retry proof is repeated for that later
+surface on this branch.
 
 Source-note comparisons are still only historical context unless this branch
 names the exact upstream revision or worktree state and reruns the same live
@@ -120,6 +134,20 @@ Conservative comparison summary:
   review artifact stays audit-only after drift, that stale approval cannot be
   reused for a later boundary, or that this branch preserved the remote while
   rebuilding retry scope from fresh live hashes on the actual write path.
+
+Historical comparison summary:
+
+- Reprint is the strongest source for staged transport and resumability, but
+  its notes only support push transport shape here. They do not prove live
+  mutation safety, identity remap handling, plugin-owned data discovery, or
+  partial-write classification on this branch.
+- ZS-Sync is useful for scanner/resource batching and cursoring, but it does
+  not prove write authorization, stale-drift rejection, or retry authority
+  after a live remote changes.
+- ForkPress is the strongest source for conflict vocabulary and durability
+  language, but it still does not prove that a readable review artifact can
+  be reused safely after drift, or that hidden plugin-owned state outside the
+  allowlist is blocked before retry.
 
 Most important unresolved trap:
 
@@ -223,6 +251,11 @@ Production-readiness language checklist:
     only unless it is paired with the preserved remote and a fresh retry
     artifact on the same live boundary; readability alone is not retry
     authority.
+14. Treat any late-discovered plugin-owned surface as a new boundary unless
+    the branch proves it was blocked or separately classified with its own
+    preserved remote and fresh retry artifact.
+15. Treat partial file/DB/plugin side effects as data-loss risk unless every
+    touched surface is durably marked old, new, or blocked before retry.
 
 Release gate for production wording:
 
@@ -244,6 +277,9 @@ Release gate for production wording:
 - A production-grade push claim must fail if any touched row, file, relation-
   bearing record, or plugin-owned surface is left unclassified before retry
   scope is rebuilt.
+- A production-grade push claim must fail if create-time identity remap is
+  only shown through a fixture that keeps the same ID while the live remote
+  could have renumbered, aliased, or reassigned the target.
 - A production-grade push claim must fail if any Reprint, ZS-Sync, or
   ForkPress note is used as current proof without naming the exact upstream
   revision or worktree state and rerunning the same live boundary here.
