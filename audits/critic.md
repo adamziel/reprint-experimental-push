@@ -189,6 +189,33 @@ evidence for all of these, not just a plausible design:
 
 The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md); it is the shorter checklist for docs, PRs, review comments, and status updates.
 
+### Release-Grade Wording Gate
+
+Any public-facing claim that the project has production-grade push support must
+explicitly satisfy all of the following. If any item is missing, the wording
+must stay lab-backed or comparison-only.
+
+- Name the exact live write path that was exercised, not just the route shape,
+  packaged-plugin mount, fixture replay, or `finalMatchesLocal`.
+- Name the stale remote-drift case that was rejected before mutation.
+- Name the preserved remote snapshot or hash set that made the stale approval
+  auditable but unusable for apply.
+- Name the retry scope rebuilt from fresh live evidence after drift.
+- Name the create-time identity case and whether it was safely remapped or
+  hard-blocked.
+- Name every plugin-owned surface that was proven safe or explicitly blocked,
+  including options, custom tables, generated files, activation hooks, cron,
+  cache state, and other plugin side effects.
+- Name the partial file, DB, or plugin side effect class that was classified
+  durably and how the next retry was forced to start from fresh evidence.
+- Name the exact upstream Reprint, ZS-Sync, or ForkPress revision or worktree
+  state that was reverified, or say that the comparison is historical context
+  only.
+- State whether the stale manual-review artifact stays readable for audit but
+  cannot authorize a widened retry after remote drift.
+- Avoid phrases like "production-safe," "production-ready," or "supports
+  production push" unless the proof above is attached to the current claim.
+
 - The source notes for Reprint, ZS-Sync, and ForkPress are treated as
   conservative design input only. They do not prove live remote drift
   rejection, stable identity reservation for creates, plugin-owned state
