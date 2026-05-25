@@ -441,6 +441,27 @@ with the executor topology:
 - `push-production-executor-flow-contract.json` proves the full preflight
   through inspect-first recovery flow in one compact object.
 
+The pull/export/import pipeline maps to push like this:
+
+| Pull pipeline | Push extension | Boundary it preserves |
+| --- | --- | --- |
+| Exporter merge-base and coverage scan | `push_preflight` | The first live bind after importer persistence. |
+| Importer persisted base package | `push_snapshot_hashes` | Planning-only remote hash listing. |
+| Immutable pull provenance | `push_plan_dry_run` | Eligibility receipt upload, not a lock. |
+| Persisted pull base package plus live drift evidence | `push_batch_apply` | Fresh live revalidation before every batch and at the storage boundary. |
+| Durable pull provenance | `push_journal` | Read-only durability evidence. |
+| Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only recovery classification before mutation. |
+| Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only after inspect and HMAC-floor checks pass. |
+
+The executor keeps the same liveness split in every topology:
+
+- dry-run and apply are separate remote operations
+- apply revalidates the live remote before every batch and again at the storage
+  boundary
+- journal inspect is read-only and never authorizes mutation by itself
+- recovery must begin with inspect before any mutating repair
+- authentication must be at least as strict as current Reprint HMAC usage
+
 The production proof inventory is intentionally redundant across those
 contracts so each risk has a dedicated object:
 

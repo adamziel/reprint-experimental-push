@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
@@ -8,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const serverStartupTimeoutMs = 120_000;
+const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -174,9 +176,25 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.match(proof.stdout, /"recoveryInspect": \{/);
   assert.match(proof.stdout, /"after": \{/);
   assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
-  const releaseVerify = readJson('fixtures/protocol/push-production-release-verify-contract.json');
+  const releaseVerify = JSON.parse(
+    readFileSync(path.join(repoRoot, 'fixtures/protocol/push-production-release-verify-contract.json'), 'utf8'),
+  );
   assert.equal(releaseVerify.contract_id, 'push-production-release-verify-contract-one-remote-one-local');
   assert.equal(releaseVerify.checked_command, 'npm run verify:release');
+  assert.deepEqual(releaseVerify.protocol_ladder, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    releaseVerify.pull_to_push_bridge.persisted_pull_base_package,
+    'the immutable provenance object that preflight binds to one live remote identity and one short-lived push session',
+  );
+  assert.equal(releaseVerify.proof.snapshot_hash_listing, 'planning-only remote hash listing');
   assert.equal(releaseVerify.proof.boundary.first_remaining_production_boundary, 'auth/session lifecycle and durable journal semantics');
   assert.equal(releaseVerify.proof.boundary.status, 'unimplemented');
   assert.equal(releaseVerify.topology.networking.ingress_port, 8080);

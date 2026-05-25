@@ -33,6 +33,18 @@ That ladder comes straight from the pull/export/import pipeline:
 - `recovery-inspect` must happen before any mutating repair
 - `recovery-mutate` uses the same HMAC floor as apply and must not bypass inspect
 
+The same handoff is the pull-to-push map:
+
+| Pull pipeline | Push stage | Boundary it preserves |
+| --- | --- | --- |
+| Exporter merge-base and coverage scan | `preflight` | First live bind after importer persistence. |
+| Importer persisted base package | `snapshot-hashes` | Planning-only remote hash listing. |
+| Immutable pull provenance | `dry-run` | Eligibility receipt upload, not a lock. |
+| Persisted pull base package plus live drift evidence | `apply` | Fresh live revalidation before every batch and at the storage boundary. |
+| Durable pull provenance | `journal` | Read-only durability evidence. |
+| Immutable provenance plus fresh live hashes | `recovery-inspect` | Read-only recovery classification before mutation. |
+| Importer-owned provenance plus live drift evidence | `recovery-mutate` | Mutating recovery only after inspect and HMAC-floor checks pass. |
+
 The shared test topology is fixed:
 
 - one remote source site, `remote-base`

@@ -2,6 +2,20 @@
   "contract_id": "push-production-release-verify-contract-one-remote-one-local",
   "purpose": "checked supervisor entrypoint for the production-shaped retained-source proof that exercises live preflight, dry-run, apply revalidation, journal readback, and the first remaining production-only boundary",
   "checked_command": "npm run verify:release",
+  "pull_to_push_bridge": {
+    "exporter": "discovers the merge base and coverage evidence before any push request exists",
+    "importer": "persists the immutable pull base package as the only origin push may consume",
+    "persisted_pull_base_package": "the immutable provenance object that preflight binds to one live remote identity and one short-lived push session"
+  },
+  "protocol_ladder": [
+    "push_preflight",
+    "push_snapshot_hashes",
+    "push_plan_dry_run",
+    "push_batch_apply",
+    "push_journal",
+    "push_recover inspect",
+    "push_recover auto|finish|rollback"
+  ],
   "topology": {
     "remote_base": "remote-base",
     "local_edited": "local-edited",
@@ -17,6 +31,7 @@
   "proof": {
     "live_preflight": "production-shaped live preflight against a supplied local Playground source",
     "dry_run": "canonical dry-run receipt",
+    "snapshot_hash_listing": "planning-only remote hash listing",
     "apply": "fresh live revalidation before every batch and at the storage boundary",
     "journal": "durable journal readback",
     "recovery": "inspect-first recovery readback",
