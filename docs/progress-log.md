@@ -7,6 +7,24 @@ linked implementation artifacts.
 Newest public summary stays concise by design; details belong in the linked
 evidence trail below.
 
+## 2026-05-25 - Public Status Audit 07:20:52
+
+<a id="2026-05-25-public-status-audit-072052"></a>
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 07:20:52 CEST`) and kept the visible last-updated stamp current.
+- Trimmed the header lead so the first screen says the same thing once: lab
+  evidence only, production executor/auth still unproven, and the release gates
+  remain open.
+- No new production proof was added; real WordPress executor/auth, durable
+  recovery journaling, Docker/Playground integration, and plugin drivers remain
+  pending until proven.
+- Evidence trail: [progress.html](../progress.html),
+  [audits/objective-audit.md](../audits/objective-audit.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 07:20:05
 
 <a id="2026-05-25-public-status-audit-072005"></a>
