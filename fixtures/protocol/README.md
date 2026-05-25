@@ -54,7 +54,8 @@ The normal sequence is:
 46. `push-production-recovery-inspect-contract.json`
 47. `push-production-recovery-drift-contract.json`
 
-The production proof bundle is intentionally layered:
+The production proof bundle is intentionally layered and keeps the same remote
+identity across `remote-base` and `remote-changed`:
 
 - `push-protocol-extension-contract.json` is the top-level production ladder
   proof. Start here when you need the full preflight, snapshot hash listing,
@@ -87,7 +88,8 @@ The production proof bundle is intentionally layered:
   cite a single compact proof for both sequencing and harness shape.
 - `push-production-push-recovery-contract.json` is the canonical
   end-to-end production bundle for the pull provenance, push ladder, and
-  one-remote, one-local topology story.
+  one-remote, one-local topology story, including the same remote identity
+  before and after drift.
 - `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
   listing clearly in the planning-only lane.

@@ -43,7 +43,8 @@ The same pull-to-push bridge applies here:
 - inspect-first recovery is the only safe starting point for mutating
   recovery
 
-The executor should treat the mapped pull pipeline as immutable provenance:
+The executor should treat the mapped pull pipeline as immutable provenance and
+keep the same remote identity across planning, apply, and recovery:
 
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
@@ -164,7 +165,8 @@ The canonical proof stack for that executor story is the same one named in
   auth, and the one-remote, one-local topology still line up
 - `push-production-push-recovery-contract.json` for the compact end-to-end
   proof that ties pull provenance, the production push ladder, and inspect-
-  first recovery into one reviewable object
+  first recovery into one reviewable object, with `remote-base` and
+  `remote-changed` proving the same remote identity before and after drift
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge
 - `push-deployment-topology-contract.json` for the smallest topology-only
   contract that still proves the same remote identity twice, the imported
@@ -191,7 +193,8 @@ The canonical proof stack for that executor story is the same one named in
 
 - `push-production-push-recovery-contract.json` for the canonical end-to-end
   proof that ties the pull provenance, the production push ladder, and the
-  one-remote, one-local topology into one reviewable object
+  one-remote, one-local topology into one reviewable object while proving the
+  same remote identity before and after drift
 
 These are the same proof points the protocol contract uses:
 

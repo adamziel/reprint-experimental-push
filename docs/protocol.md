@@ -115,7 +115,9 @@ The topology proof means:
 
 The canonical machine-readable bundle for that proof is
 `push-production-push-recovery-contract.json`. Use it when a review needs the
-full pull provenance, push ladder, and topology story in one place.
+full pull provenance, push ladder, and topology story in one place. In that
+bundle, `remote-base` and `remote-changed` are two observations of the same
+remote identity, not two different sites.
 
 ## Auth And Recovery
 
@@ -161,7 +163,8 @@ persisted base package that importer saved:
 | Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
 | Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
 
-The pull-to-push bridge is intentionally one-way:
+The pull-to-push bridge is intentionally one-way and preserves the same remote
+identity across the staged proof:
 
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
@@ -258,6 +261,8 @@ For both Docker and Playground, the test topology is intentionally the same:
 - one remote source site provides the persisted pull base package
 - one local edited site carries the imported edits that become the candidate
   push plan
+- one drift observation proves the same remote identity still revalidates at
+  apply time
 - one later observation of the same remote identity proves drift handling
 - one runner process owns preflight, hash listing, dry-run upload, batch
   apply, journal inspection, and recovery
