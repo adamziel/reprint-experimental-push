@@ -210,7 +210,10 @@ The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprin
   widened scope before write.
 - A real production Reprint push endpoint that does not resolve to Playground
   or copied lab internals, plus a repo-specific proof that package mounting
-  only exposes the endpoint shape rather than the write-path semantics.
+  only exposes the endpoint shape rather than the write-path semantics. A
+  mounted route that returns live-looking hashes still does not prove the
+  production executor ran; it can still be a fixture-backed or copied-lab
+  stand-in that happens to answer on the right path.
 - The source-note snapshots themselves are not current upstream proof: a
   locally observed commit, worktree state, or README claim in Reprint, ZS-
   Sync, or ForkPress only anchors the comparison text. It does not prove that
@@ -382,6 +385,9 @@ repo-specific evidence, not in lab shape or source-note comparison language:
 - Route-shape smokes, packaged-plugin mounts, and fixture `finalMatchesLocal`
   results may appear in evidence, but they cannot be cited as production proof
   unless the same write path was exercised against a live remote after drift.
+  A live-looking hash from a mounted route is still compatibility evidence
+  only until the audit identifies the exact write executor and the exact
+  remote-drift rejection that happened on that request path.
 - Partial file, DB, or plugin side effects are classified with durable
   artifacts that survive retry and preserve the remote for audit.
 - A manual-resolution artifact is bound to the exact stale snapshot it was
