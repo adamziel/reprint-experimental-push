@@ -1,27 +1,39 @@
 # Recovery State Matrix
 
-The atomic apply path in this lane only accepts three post-failure outcomes:
+This lane treats recovery as a durability contract, not just a test fixture outcome.
 
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery`
+## Allowed outcomes
 
-The safe outcome depends on where the interruption happened:
+Every apply attempt must end in one of these states:
 
-| Failure point | Acceptable state | Required artifacts |
+| State | Meaning | Required artifacts |
 | --- | --- | --- |
-| Before mutation | `old-remote` | Recovery journal describing the planned mutation set |
-| After staging | `old-remote` | Recovery journal plus staged boundary evidence |
-| After dependency validation | `old-remote` | Recovery journal plus validated boundary evidence |
-| Completed-plan replay | `fully-updated-remote` | Completed journal replay evidence |
-| Partial or ambiguous recovery | `blocked-recovery` | Journal plus remote artifacts that explain the drift |
+| `old-remote` | No remote mutation has been committed. | Journal artifact required. Remote artifact optional. |
+| `fully-updated-remote` | All planned mutations are present. | Journal artifact required. Remote artifact optional. |
+| `blocked-recovery` | A partial, drifted, or otherwise unsafe state was observed. | Both journal and remote artifacts required. |
 
-Rules that matter for recovery safety:
+Anything outside that matrix is a release blocker.
 
-- A partial remote mutation without a recovery artifact is a release blocker.
-- Retrying a completed plan must not duplicate inserts.
-- Retrying a completed plan must not resurrect stale local data.
-- If recovery inspection cannot prove safety, the result must remain blocked.
+## Failure boundaries
 
-This file is intentionally narrow. It records the contract that the tests in
-`test/push-planner.test.js` enforce.
+The apply model currently exercises these explicit boundaries:
+
+| Boundary | Expected classification |
+| --- | --- |
+| Before mutation | `old-remote` |
+| After staging | `old-remote` |
+| After dependency validation | `old-remote` |
+| Completed replay | `fully-updated-remote` |
+
+The key rule is that a partial remote mutation is never treated as safe unless the recovery state is explicitly blocked and carries inspectable artifacts.
+
+## Durable journal expectations
+
+The JSON journal used in tests is evidence for the model only. Production recovery still needs:
+
+- durable journal rows
+- flush or fsync-equivalent persistence
+- recovery fencing so stale workers cannot continue
+- inspectable artifacts for blocked recovery
+
+If a retry can mutate the remote without a matching durable artifact trail, the system has lost the no-data-loss guarantee.
