@@ -59,6 +59,7 @@ Current command-surface gap:
 
 - Current checked-in scripts are `test`, `plan`, `apply`, `test:recovery:file-journal`, `test:playground`, and the `test:playground:*` helpers for plan/apply/push-protocol, HTTP push, authenticated push, production-shaped push, plugin package, atomic install, journal idempotency, storage-guarded writes, drift, kill, missing commit finalization, stale-claim replay, and recovery.
 - None of those scripts is a required `verify`, `verify:release`, or `release` command, so there is still no checked-in real-site push preflight or release gate on the command surface.
+- None of those scripts supplies a retained source endpoint by default and then proves preserved-remote evidence from that same endpoint, so they remain wrappers around release-shaped checks rather than a release gate.
 - Optional scripts such as `test:recovery:file-journal`, `test:playground:*`, and the raw `node --test` suite do not substitute for a release gate.
 - If a candidate gate does not touch the live-source boundary in the same invocation, it is still not release proof, even if it also exercises auth, journal, or recovery logic.
 - The current production-shaped routes still label themselves `labBacked: true`, so the real remote/local topology is still unproven.
@@ -80,6 +81,7 @@ Release preflight absence:
 Release command audit:
 
 - direct command-surface recheck on 2026-05-25: [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still has no `verify`, `verify:release`, or `release` script, so there is still no checked-in release gate to own the live-source verdict
+- direct command-surface recheck on 2026-05-25: `package.json` still has no `test:playground:production-shaped-release-proof` or equivalent checked-in gate, so there is still no helper that both supplies a source endpoint and proves preserved-remote behavior in one required invocation
 - `package.json` has no `verify`, `verify:release`, or `release` script
 - `npm test` only executes `node --test`; it does not force a live-source apply boundary
 - `test:playground:*` helpers are optional and lab-scoped
