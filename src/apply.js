@@ -39,6 +39,7 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   validateSupportedPluginOwnedMutations(remote, plan);
+  validateMutationDependencies(plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
   const durableJournal = getDurableJournalWriter(options);
@@ -195,6 +196,78 @@ export function applyPlan(remote, plan, options = {}) {
       },
     },
   };
+}
+
+function validateMutationDependencies(plan) {
+  const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
+  const mutationById = new Map(mutations.map((mutation) => [mutation.id, mutation]));
+  const seen = new Set();
+
+  for (const mutation of mutations) {
+    const dependencies = Array.isArray(mutation.dependsOnMutationIds)
+      ? mutation.dependsOnMutationIds
+      : [];
+
+    for (const dependencyId of dependencies) {
+      if (!mutationById.has(dependencyId)) {
+        throw new PushPlanError(
+          'MUTATION_DEPENDENCY_INVALID',
+          `Mutation ${mutation.id} depends on unknown mutation ${dependencyId}.`,
+          { mutationId: mutation.id, dependencyId },
+        );
+      }
+      if (!seen.has(dependencyId)) {
+        throw new PushPlanError(
+          'MUTATION_DEPENDENCY_INVALID',
+          `Mutation ${mutation.id} depends on ${dependencyId}, but the dependency is not ordered first.`,
+          { mutationId: mutation.id, dependencyId },
+        );
+      }
+    }
+
+    validateWordPressGraphMutationDependencies(mutation, mutationById, new Set(dependencies));
+    seen.add(mutation.id);
+  }
+}
+
+function validateWordPressGraphMutationDependencies(mutation, mutationById, dependencyIds) {
+  const references = Array.isArray(mutation.wordpressGraphReferences)
+    ? mutation.wordpressGraphReferences
+    : [];
+
+  for (const reference of references) {
+    if (reference?.resolutionPolicy !== 'same-plan-local-create') {
+      continue;
+    }
+
+    const dependency = reference?.dependency && typeof reference.dependency === 'object'
+      ? reference.dependency
+      : {};
+    const targetMutationId = dependency.targetMutationId;
+    const targetMutation = mutationById.get(targetMutationId);
+    const targetMatches = Boolean(targetMutation)
+      && dependencyIds.has(targetMutationId)
+      && dependency.source === 'same-plan-local-create'
+      && dependency.targetResourceKey === reference.targetResourceKey
+      && dependency.targetLocalHash === reference.targetLocalHash
+      && targetMutation.resourceKey === dependency.targetResourceKey
+      && targetMutation.action === 'put'
+      && targetMutation.changeKind === 'create'
+      && targetMutation.localHash === dependency.targetLocalHash;
+
+    if (!targetMatches) {
+      throw new PushPlanError(
+        'MUTATION_DEPENDENCY_INVALID',
+        `Mutation ${mutation.id} has invalid same-plan WordPress graph dependency evidence.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          targetMutationId: targetMutationId || null,
+          targetResourceKey: reference.targetResourceKey || null,
+        },
+      );
+    }
+  }
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {

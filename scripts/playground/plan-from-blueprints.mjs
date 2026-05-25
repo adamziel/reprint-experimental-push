@@ -33,6 +33,7 @@ assert.equal(snapshots.local.meta.fixture, 'local-edited');
 assert.equal(snapshots.remote.meta.fixture, 'remote-changed');
 
 const sharedPostKey = postKeyByTitle(snapshots.base, 'Shared base post');
+const localOnlyPostKey = postKeyByTitle(snapshots.local, 'Local-only draft');
 assert.equal(sharedPostKey, postKeyByTitle(snapshots.local, 'Shared base post'));
 assert.equal(sharedPostKey, postKeyByTitle(snapshots.remote, 'Shared base post'));
 
@@ -43,8 +44,13 @@ assertConflict(plan, 'row:["wp_options","option_name:reprint_push_forms_fixture"
 assertConflict(plan, 'row:["wp_options","option_name:reprint_push_plugin_payload"]', 'plugin-data-conflict');
 assertConflict(plan, 'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]', 'plugin-data-conflict');
 
-assertMutation(plan, postKeyByTitle(snapshots.local, 'Local-only draft'), 'create');
-assertBlocker(plan, 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]', 'stale-wordpress-graph-identity');
+assertMutation(plan, localOnlyPostKey, 'create');
+assertMutation(plan, 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]', 'create');
+assertGraphDependency(
+  plan,
+  'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
+  localOnlyPostKey,
+);
 assertMutation(plan, 'file:wp-content/uploads/reprint-push/local-only.txt', 'create');
 
 assertDecision(plan, postKeyByTitle(snapshots.remote, 'Remote-only announcement'), 'keep-remote');
@@ -133,6 +139,22 @@ function assertBlocker(plan, resourceKey, className) {
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   assert.ok(blocker, `missing blocker ${resourceKey}`);
   assert.equal(blocker.class, className);
+}
+
+function assertGraphDependency(plan, resourceKey, targetResourceKey) {
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === resourceKey);
+  const targetMutation = plan.mutations.find((entry) => entry.resourceKey === targetResourceKey);
+  assert.ok(mutation, `missing graph source mutation ${resourceKey}`);
+  assert.ok(targetMutation, `missing graph target mutation ${targetResourceKey}`);
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(mutation),
+    `target ${targetResourceKey} must be ordered before ${resourceKey}`,
+  );
+  assert.deepEqual(mutation.dependsOnMutationIds, [targetMutation.id]);
+  const reference = mutation.wordpressGraphReferences?.[0];
+  assert.equal(reference?.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference?.dependency?.targetMutationId, targetMutation.id);
+  assert.equal(reference?.targetResourceKey, targetResourceKey);
 }
 
 function assertDecision(plan, resourceKey, decision) {

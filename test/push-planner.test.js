@@ -1004,6 +1004,79 @@ test('blocks local postmeta references to stale remote-created post identity', (
   assert.equal(remote.db.wp_posts['ID:2'].post_title, 'remote-private-post-title');
 });
 
+test('allows local postmeta references to a post created by the same plan', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local child post',
+    post_content: 'local-private-post-body',
+    post_status: 'draft',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 2,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-meta-payload',
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences[0];
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(targetMutation) < plan.mutations.indexOf(postmetaMutation),
+    'target post create must be ordered before dependent postmeta',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [targetMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.dependency.targetMutationId, targetMutation.id);
+  assert.equal(reference.dependency.targetLocalHash, targetMutation.localHash);
+  assert.equal(referenceJson.includes('local-private-meta-payload'), false);
+  assert.equal(referenceJson.includes('local-private-post-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local child post');
+  assert.equal(result.site.db.wp_postmeta['meta_id:45'].post_id, 2);
+
+  const assertInvalidMutationDependency = (candidate) => {
+    assert.throws(
+      () => applyPlan(remote, candidate),
+      (error) => error instanceof PushPlanError && error.code === 'MUTATION_DEPENDENCY_INVALID',
+    );
+  };
+
+  const missingDependencyPlan = tamperReadyPlan(plan, (copy) => {
+    const mutation = mutationFor(copy, resourceKey);
+    delete mutation.dependsOnMutationIds;
+  });
+  assertInvalidMutationDependency(missingDependencyPlan);
+
+  const forgedEvidencePlan = tamperReadyPlan(plan, (copy) => {
+    const mutation = mutationFor(copy, resourceKey);
+    mutation.wordpressGraphReferences[0].dependency.targetLocalHash = '0'.repeat(64);
+  });
+  assertInvalidMutationDependency(forgedEvidencePlan);
+
+  const misorderedPlan = tamperReadyPlan(plan, (copy) => {
+    copy.mutations.reverse();
+  });
+  assertInvalidMutationDependency(misorderedPlan);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();

@@ -41,7 +41,7 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
-const packageLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+const packageLocalSnapshot = snapshots.local;
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-production-plugin-package-'));
 const packageRoot = path.join(tmpDir, 'package');
@@ -197,15 +197,6 @@ function buildPluginPackage(targetDir) {
       path.join(includesDir, file),
     );
   }
-}
-
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
-  return next;
 }
 
 function writeActivationBlueprint(sourceBlueprintPath, targetBlueprintPath) {

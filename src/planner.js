@@ -205,6 +205,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         });
         continue;
       }
+      const wordpressGraphReferences = graphIdentitySupport.references || [];
 
       const mutation = {
         id: `mutation-${plan.mutations.length + 1}`,
@@ -219,6 +220,9 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         change,
         atomicGroupId: intentByResource.get(resource.key) || null,
       };
+      if (wordpressGraphReferences.length > 0) {
+        mutation.wordpressGraphReferences = wordpressGraphReferences;
+      }
       if (isPluginOwnedDataResource(resource, owner)) {
         const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
         mutation.pluginOwnedResource = {
@@ -268,6 +272,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     });
   }
 
+  finalizeWordPressGraphDependencies(plan);
   addFileTopologyConflicts(plan, resources, base, local, remote);
   plan.atomicGroups = intents.map((intent) => buildAtomicGroup(intent, plan, base, remote));
   const existingBlockerIds = new Set(plan.blockers.map((blocker) => blocker.id));
@@ -976,7 +981,14 @@ function wordpressGraphIdentitySupport({
     .filter((reference) => isUnsafeWordPressGraphReference(reference));
 
   if (unsafeReferences.length === 0) {
-    return { supported: true };
+    const samePlanReferences = references
+      .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
+      .filter((reference) => isSamePlanWordPressGraphCreate(reference))
+      .map((reference) => samePlanWordPressGraphReferenceEvidence(reference));
+    return {
+      supported: true,
+      ...(samePlanReferences.length > 0 ? { references: samePlanReferences } : {}),
+    };
   }
 
   return {
@@ -988,6 +1000,10 @@ function wordpressGraphIdentitySupport({
 }
 
 function isUnsafeWordPressGraphReference(reference) {
+  if (isSamePlanWordPressGraphCreate(reference)) {
+    return false;
+  }
+
   if (reference.targetChange.remote.state !== 'present') {
     return true;
   }
@@ -997,6 +1013,123 @@ function isUnsafeWordPressGraphReference(reference) {
   }
 
   return reference.targetLocalHash !== reference.targetRemoteHash;
+}
+
+function isSamePlanWordPressGraphCreate(reference) {
+  return reference.targetChange.base.state === 'absent'
+    && reference.targetChange.local.state === 'present'
+    && reference.targetChange.remote.state === 'absent'
+    && reference.targetChange.localChange === 'create'
+    && reference.targetChange.remoteChange === 'unchanged';
+}
+
+function samePlanWordPressGraphReferenceEvidence(reference) {
+  return {
+    relationshipKey: reference.relationshipKey,
+    relationshipType: reference.relationshipType,
+    sourceResourceKey: reference.sourceResourceKey,
+    sourceTable: reference.sourceTable,
+    sourceRowId: reference.sourceRowId,
+    targetResource: reference.targetResource,
+    targetResourceKey: reference.targetResourceKey,
+    targetTable: reference.targetTable,
+    targetId: reference.targetId,
+    targetBaseHash: reference.targetBaseHash,
+    targetLocalHash: reference.targetLocalHash,
+    targetRemoteHash: reference.targetRemoteHash,
+    targetChange: reference.targetChange,
+    resolutionPolicy: 'same-plan-local-create',
+    dependency: {
+      source: 'same-plan-local-create',
+      targetResourceKey: reference.targetResourceKey,
+      targetLocalHash: reference.targetLocalHash,
+    },
+  };
+}
+
+function finalizeWordPressGraphDependencies(plan) {
+  const mutationByResourceKey = new Map(
+    plan.mutations.map((mutation) => [mutation.resourceKey, mutation]),
+  );
+  let blockerIndex = plan.blockers.length + 1;
+
+  for (const mutation of plan.mutations) {
+    const references = mutation.wordpressGraphReferences || [];
+    if (references.length === 0) {
+      continue;
+    }
+
+    const dependencyIds = new Set(mutation.dependsOnMutationIds || []);
+    for (const reference of references) {
+      if (reference.resolutionPolicy !== 'same-plan-local-create') {
+        continue;
+      }
+
+      const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
+      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference)) {
+        plan.blockers.push({
+          id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
+          class: 'missing-wordpress-graph-dependency',
+          resource: mutation.resource,
+          resourceKey: mutation.resourceKey,
+          reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan target without a matching target create mutation.`,
+          resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
+          references: [reference],
+        });
+        continue;
+      }
+
+      reference.dependency = {
+        ...reference.dependency,
+        targetMutationId: targetMutation.id,
+        targetResourceKey: targetMutation.resourceKey,
+        targetLocalHash: targetMutation.localHash,
+      };
+      dependencyIds.add(targetMutation.id);
+    }
+
+    if (dependencyIds.size > 0) {
+      mutation.dependsOnMutationIds = [...dependencyIds];
+    }
+  }
+
+  plan.mutations = orderMutationsByDependencies(plan.mutations);
+}
+
+function isValidSamePlanWordPressGraphTarget(targetMutation, reference) {
+  return Boolean(targetMutation)
+    && targetMutation.action === 'put'
+    && targetMutation.changeKind === 'create'
+    && targetMutation.resourceKey === reference.targetResourceKey
+    && targetMutation.localHash === reference.targetLocalHash;
+}
+
+function orderMutationsByDependencies(mutations) {
+  const mutationById = new Map(mutations.map((mutation) => [mutation.id, mutation]));
+  const remaining = new Set(mutations.map((mutation) => mutation.id));
+  const ordered = [];
+
+  while (remaining.size > 0) {
+    let progressed = false;
+    for (const mutation of mutations) {
+      if (!remaining.has(mutation.id)) {
+        continue;
+      }
+      const dependencies = (mutation.dependsOnMutationIds || [])
+        .filter((dependencyId) => mutationById.has(dependencyId));
+      if (dependencies.some((dependencyId) => remaining.has(dependencyId))) {
+        continue;
+      }
+      ordered.push(mutation);
+      remaining.delete(mutation.id);
+      progressed = true;
+    }
+    if (!progressed) {
+      return mutations;
+    }
+  }
+
+  return ordered;
 }
 
 function wordpressGraphReferences(resource, value) {

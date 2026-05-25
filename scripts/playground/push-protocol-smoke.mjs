@@ -33,7 +33,7 @@ const snapshots = Object.fromEntries(
 assert.equal(snapshots.base.meta.fixture, 'remote-base');
 assert.equal(snapshots.local.meta.fixture, 'local-edited');
 assert.equal(snapshots.remoteChanged.meta.fixture, 'remote-changed');
-const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+const readyLocalSnapshot = snapshots.local;
 
 const readyPlan = createPushPlan({
   base: snapshots.base,
@@ -49,6 +49,54 @@ assert.ok(readyPlan.mutations.length > 0, 'expected ready plan mutations');
 assertReadyPlanResources(readyPlan);
 
 const readyPlanPath = writeJson('push-protocol-ready-plan.json', readyPlan);
+const graphPostmetaResourceKey = 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]';
+const graphTargetPostResourceKey = 'row:["wp_posts","ID:2001"]';
+
+const forgedGraphDependencyPlanPath = writeJson(
+  'push-protocol-forged-graph-dependency-plan.json',
+  tamperedPlan(readyPlan, (plan) => {
+    const mutation = mutationForResourceKey(plan, graphPostmetaResourceKey);
+    mutation.wordpressGraphReferences[0].dependency.targetLocalHash = '0'.repeat(64);
+  }),
+);
+
+const forgedGraphDependencyDryRun = runEndpoint({
+  name: 'forged graph dependency dry-run',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'dry-run',
+  planPath: forgedGraphDependencyPlanPath,
+});
+
+assertInvalidPlanNoMutation(forgedGraphDependencyDryRun, snapshots.base, 'forged graph dependency dry-run');
+
+const misorderedGraphDependencyPlanPath = writeJson(
+  'push-protocol-misordered-graph-dependency-plan.json',
+  tamperedPlan(readyPlan, (plan) => {
+    plan.mutations.sort((left, right) => {
+      if (left.resourceKey === graphPostmetaResourceKey) {
+        return -1;
+      }
+      if (right.resourceKey === graphPostmetaResourceKey) {
+        return 1;
+      }
+      return 0;
+    });
+    assert.ok(
+      plan.mutations.findIndex((mutation) => mutation.resourceKey === graphPostmetaResourceKey)
+        < plan.mutations.findIndex((mutation) => mutation.resourceKey === graphTargetPostResourceKey),
+      'misordered graph dependency fixture must put the source before the target',
+    );
+  }),
+);
+
+const misorderedGraphDependencyDryRun = runEndpoint({
+  name: 'misordered graph dependency dry-run',
+  blueprintPath: path.join(repoRoot, fixtures.base),
+  mode: 'dry-run',
+  planPath: misorderedGraphDependencyPlanPath,
+});
+
+assertInvalidPlanNoMutation(misorderedGraphDependencyDryRun, snapshots.base, 'misordered graph dependency dry-run');
 
 const missingReceiptApply = runEndpoint({
   name: 'ready apply missing receipt',
@@ -230,6 +278,10 @@ console.log(JSON.stringify({
       planHashTamperedApply.result.code,
       preconditionTamperedApply.result.code,
     ],
+    invalidGraphDependencyCodes: [
+      forgedGraphDependencyDryRun.result.code,
+      misorderedGraphDependencyDryRun.result.code,
+    ],
     applied: apply.result.applied,
     verifiedKeys: apply.result.verifiedKeys.length,
   },
@@ -340,6 +392,23 @@ function tamperedReceipt(receipt, mutate) {
   return next;
 }
 
+function tamperedPlan(plan, mutate) {
+  const next = JSON.parse(JSON.stringify(plan));
+  mutate(next);
+  next.status = 'ready';
+  next.conflicts = [];
+  next.blockers = [];
+  next.summary.conflicts = 0;
+  next.summary.blockers = 0;
+  return next;
+}
+
+function mutationForResourceKey(plan, resourceKey) {
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === resourceKey);
+  assert.ok(mutation, `missing mutation ${resourceKey}`);
+  return mutation;
+}
+
 function parseMarkedJson(stdout, begin, end, missingMessage) {
   const match = stdout.match(new RegExp(`${begin}\\n([\\s\\S]*?)\\n${end}`));
   if (!match) {
@@ -418,15 +487,6 @@ function assertVisibleSurfaceEqual(actual, expected, label) {
   assert.deepEqual(visibleSurface(actual), visibleSurface(expected), `${label} mismatch`);
 }
 
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
-  return next;
-}
-
 function visibleSurface(snapshot) {
   return {
     files: snapshot.files,
@@ -442,6 +502,7 @@ function assertReadyPlanResources(plan) {
     'row:["wp_options","option_name:reprint_push_forms_fixture"]',
     'row:["wp_options","option_name:reprint_push_plugin_payload"]',
     'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
     'row:["wp_posts","ID:1001"]',
     'row:["wp_posts","ID:2001"]',
   ];
@@ -601,6 +662,16 @@ function assertFailureNoMutation(endpointRun, expectedSnapshot, { label, code, j
   assert.equal(endpointRun.result.ok, false);
   assert.equal(endpointRun.result.code, code);
   assertJournalEvent(endpointRun.result, journalEvent);
+  assertNoJournalEvent(endpointRun.result, 'apply-started');
+  assertNoJournalEvent(endpointRun.result, 'apply-committed');
+  assertSnapshotContentEqual(endpointRun.readback.beforeSnapshot, expectedSnapshot, `${label} before snapshot`);
+  assertSnapshotEqual(endpointRun.readback.afterSnapshot, endpointRun.readback.beforeSnapshot, `${label} same-process readback`);
+}
+
+function assertInvalidPlanNoMutation(endpointRun, expectedSnapshot, label) {
+  assert.notEqual(endpointRun.status, 0, `expected ${label} to fail`);
+  assert.equal(endpointRun.result.ok, false);
+  assert.equal(endpointRun.result.code, 'INVALID_PLAN');
   assertNoJournalEvent(endpointRun.result, 'apply-started');
   assertNoJournalEvent(endpointRun.result, 'apply-committed');
   assertSnapshotContentEqual(endpointRun.readback.beforeSnapshot, expectedSnapshot, `${label} before snapshot`);

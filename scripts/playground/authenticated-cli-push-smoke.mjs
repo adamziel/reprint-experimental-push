@@ -32,7 +32,7 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
-const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+const readyLocalSnapshot = snapshots.local;
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-cli-push-'));
 const basePath = path.join(tmpDir, 'base.json');
@@ -548,15 +548,6 @@ function assertVisibleSurfaceEqual(actual, expected, label) {
 function snapshotWithPostTitle(snapshot, title) {
   const next = JSON.parse(JSON.stringify(snapshot));
   next.db.wp_posts['ID:1001'].post_title = title;
-  return next;
-}
-
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
   return next;
 }
 

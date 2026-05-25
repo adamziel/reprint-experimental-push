@@ -1201,6 +1201,69 @@ function reprint_push_protocol_validate_mutations_and_preconditions(
         }
         reprint_push_assert_supported_apply_resource($precondition['resource']);
     }
+
+    reprint_push_protocol_validate_mutation_dependencies($mutations);
+}
+
+function reprint_push_protocol_validate_mutation_dependencies(array $mutations): void
+{
+    $mutation_by_id = [];
+    foreach ($mutations as $mutation) {
+        $mutation_by_id[(string) $mutation['id']] = $mutation;
+    }
+
+    $seen = [];
+    foreach ($mutations as $mutation) {
+        $mutation_id = (string) $mutation['id'];
+        $dependency_ids = array_keys(reprint_push_protocol_string_set($mutation['dependsOnMutationIds'] ?? []));
+        foreach ($dependency_ids as $dependency_id) {
+            if (!array_key_exists($dependency_id, $mutation_by_id)) {
+                reprint_push_protocol_fail([
+                    'ok' => false,
+                    'code' => 'INVALID_PLAN',
+                    'message' => 'Mutation ' . $mutation_id . ' depends on unknown mutation ' . $dependency_id . '.',
+                ]);
+            }
+            if (!array_key_exists($dependency_id, $seen)) {
+                reprint_push_protocol_fail([
+                    'ok' => false,
+                    'code' => 'INVALID_PLAN',
+                    'message' => 'Mutation ' . $mutation_id . ' depends on ' . $dependency_id . ', but the dependency is not ordered first.',
+                ]);
+            }
+        }
+
+        foreach (reprint_push_protocol_plan_array($mutation, 'wordpressGraphReferences') as $reference) {
+            if ((string) ($reference['resolutionPolicy'] ?? '') !== 'same-plan-local-create') {
+                continue;
+            }
+            $dependency = is_array($reference['dependency'] ?? null) ? $reference['dependency'] : [];
+            $target_mutation_id = (string) ($dependency['targetMutationId'] ?? '');
+            $target_resource_key = (string) ($dependency['targetResourceKey'] ?? '');
+            $target_local_hash = (string) ($dependency['targetLocalHash'] ?? '');
+            $target_mutation = $target_mutation_id !== '' && array_key_exists($target_mutation_id, $mutation_by_id)
+                ? $mutation_by_id[$target_mutation_id]
+                : null;
+            $target_matches = is_array($target_mutation)
+                && in_array($target_mutation_id, $dependency_ids, true)
+                && (string) ($dependency['source'] ?? '') === 'same-plan-local-create'
+                && $target_resource_key === (string) ($reference['targetResourceKey'] ?? '')
+                && $target_local_hash === (string) ($reference['targetLocalHash'] ?? '')
+                && (string) ($target_mutation['resourceKey'] ?? '') === $target_resource_key
+                && (string) ($target_mutation['action'] ?? '') === 'put'
+                && (string) ($target_mutation['changeKind'] ?? '') === 'create'
+                && (string) ($target_mutation['localHash'] ?? '') === $target_local_hash;
+            if (!$target_matches) {
+                reprint_push_protocol_fail([
+                    'ok' => false,
+                    'code' => 'INVALID_PLAN',
+                    'message' => 'Mutation ' . $mutation_id . ' has invalid same-plan WordPress graph dependency evidence.',
+                ]);
+            }
+        }
+
+        $seen[$mutation_id] = true;
+    }
 }
 
 function reprint_push_protocol_validate_fixture_atomic_dependencies(
