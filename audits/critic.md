@@ -26,12 +26,14 @@ Release-gate checklist for production-readiness wording:
   side effect such as a cron row, cache entry, registry entry, generated
   asset, custom table write, or plugin-owned file that only surfaced after
   the first write.
-- Show that the retry rebuilt scope from fresh live hashes after drift,
-  and that the fresh retry artifact is recorded separately instead of
-  inheriting the old decision or a stale manual-review artifact.
+- Show that the retry rebuilt scope from fresh live hashes after drift, and
+  that the fresh retry artifact is recorded separately from the stale review
+  artifact instead of inheriting the old decision or a stale manual-review
+  artifact as current authority.
 - Show that any readable stale manual-review artifact stayed audit-only after
   drift, could not authorize a retry, and could not be widened into a new
-  row, file, relationship-bearing record, or plugin-owned surface.
+  row, file, relationship-bearing record, plugin-owned surface, or hidden
+  side effect.
 - Show the create-time identity decision explicitly: either a durable remap
   proof or a hard block before write.
 - Show the complete plugin-owned surface list for the claim, including any
