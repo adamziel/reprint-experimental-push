@@ -279,6 +279,11 @@ fall into five buckets:
 | Missing proof | No required `verify:release`-style command in `package.json`; no checked-in `.github` workflow or equivalent CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks | Nothing by itself; this bucket marks the gap | The objective still lacks a single required release gate that fails closed when any safety proof remains optional |
 | Release blocker | The best evidence still says `labBacked: true` for the production-shaped route/package smokes, the benchmark path remains refusal-only, and no required release gate exists to force the stronger checks together | Honest refusal to overclaim release readiness | Production no-data-loss, reliability, and speed remain unproven until the missing gate and live-source evidence exist |
 
+The table above is intentionally harsh. The repo has useful executable proof,
+but it is split across the model suite, lab fixtures, and opt-in smokes. That
+split is acceptable for research; it is not acceptable for a production
+release claim because the strongest checks can still be skipped.
+
 That split matters because a green default run still does not mean the release
 gates were exercised.
 
