@@ -357,6 +357,56 @@ in both environments:
   through a local-only proxy
 - remote tunnels are disallowed
 
+## Canonical Production Extension
+
+The production push extension is the same in Docker and Playground and keeps
+the pull/export/import pipeline as the only source of immutable provenance:
+
+1. exporter discovers the merge base and coverage evidence.
+2. importer persists the base package as immutable provenance.
+3. `push_preflight` binds that persisted base package to one live remote
+   identity and one short-lived push session.
+4. `push_snapshot_hashes` lists remote hashes for planning only.
+5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+6. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+7. `push_journal` records durable evidence without authorizing mutation.
+8. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+9. `push_recover auto|finish|rollback` may mutate only after inspect proves
+   the branch safe and the auth floor still holds.
+
+That extension keeps the remote liveness split explicit:
+
+- dry-run and apply are separate remote operations
+- apply must revalidate the live remote before every batch and at the storage
+  boundary
+- remote snapshot hash listing is planning evidence, not write authority
+- journal inspection is read-only and never authorizes mutation by itself
+- recovery must begin with inspect before any mutating repair
+- authentication must be at least as strict as current Reprint HMAC usage
+
+The same production proof bundle is reviewed in a fixed order:
+
+1. `push-protocol-extension-contract.json` for the full ladder, pull bridge,
+   auth floor, and one-remote-one-local-one-drift topology.
+2. `push-production-topology-contract.json` for the Docker and Playground
+   topology and ingress rules.
+3. `push-production-pull-bridge-contract.json` for the immutable
+   exporter/importer handoff.
+4. `push-remote-snapshot-listing-contract.json` for planning-only remote hash
+   discovery.
+5. `push-production-revalidation-contract.json` for the dry-run/apply liveness
+   split.
+6. `push-production-auth-session-journal-recovery-inspect-contract.json` for
+   the auth/session/journal/lease/recovery-inspect floor plus the apply-time
+   revalidation boundary.
+7. `push-production-journal-lease-recovery-inspect-contract.json` for the
+   narrow journal and lease fence proof.
+8. `push-production-executor-flow-contract.json` for the full end-to-end flow
+   in one compact bundle.
+
 ## Canonical Proof Set
 
 The production push extension is reviewed in a fixed order so the protocol,

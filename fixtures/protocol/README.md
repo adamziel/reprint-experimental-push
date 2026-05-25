@@ -207,6 +207,9 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-journal-lease-recovery-inspect-contract.json` is the
   narrowest production proof for journal rows, lease fencing, and inspect-
   first recovery after the dry-run/apply split.
+- `push-production-executor-flow-contract.json` is the compact end-to-end
+  proof for the full preflight through inspect-first recovery ladder on the
+  one-remote, one-local, one-drift harness.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-protocol-extension-contract.json` is the umbrella ladder proof that

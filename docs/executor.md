@@ -448,6 +448,29 @@ The executor treats each write-path step as a separate remote boundary:
 | `push_recover inspect` | Read-only recovery inspection; must happen before any mutating repair. |
 | `push_recover auto|finish|rollback` | Mutating recovery only after inspect proves the branch safe and the auth floor still holds. |
 
+The same route matrix is used in both Docker and Playground:
+
+| Stage | Route name |
+| --- | --- |
+| Preflight | `preflight` |
+| Remote snapshot hash listing | `snapshot-hashes` |
+| Dry-run plan upload | `dry-run` |
+| Mutation batch apply | `apply` |
+| Journal inspect | `journal` |
+| Recovery inspect | `recovery-inspect` |
+| Recovery mutate | `recovery-mutate` |
+
+The harness topology is fixed and browser-visible inspection stays on the
+sandbox-provided `8080` ingress through a local-only proxy:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns the push protocol calls
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- remote tunnels are disallowed
+
 The remote liveness split stays explicit across the whole executor:
 
 - dry-run and apply are separate remote operations
@@ -458,6 +481,18 @@ The remote liveness split stays explicit across the whole executor:
 - recovery inspect stays read-only and cannot authorize mutation
 - recovery must begin with inspect before any mutating repair
 - authentication must be at least as strict as current Reprint HMAC usage
+
+The pull-to-push bridge is the executor contract boundary:
+
+| Pull provenance | Push stage | Executor rule |
+| --- | --- | --- |
+| Exporter discovers merge base and coverage evidence | `push_preflight` | Bind the persisted pull base package to one live remote identity and one short-lived push session. |
+| Importer persists the base package as immutable provenance | `push_snapshot_hashes` | Read live comparison evidence for planning only. |
+| Persisted pull base package | `push_plan_dry_run` | Upload the canonical plan as an eligibility receipt, not a lock. |
+| Immutable pull provenance | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
+| Durable pull provenance | `push_journal` | Record durable evidence without authorizing mutation. |
+| Immutable provenance plus fresh live hashes | `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
+| Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe with the same auth floor as the write path. |
 
 The production executor proof is therefore anchored on
 `push-protocol-extension-contract.json` plus the
