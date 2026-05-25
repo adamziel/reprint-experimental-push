@@ -1,43 +1,53 @@
 # No Data Loss Recovery Contract
 
-This lane treats recovery as a three-state contract:
+This lane keeps the apply path inside a small set of acceptable post-failure states:
 
 - `old-remote`
 - `fully-updated-remote`
-- `blocked-recovery` with preserved artifacts
+- `blocked-recovery`
 
-## Failure boundaries
+The goal is to prevent a partially mutated remote from being treated as safe unless the recovery artifact makes that state explicit and inspectable.
 
-The allowed failure boundaries are:
+## State meaning
 
-- before mutation
-- after staging
-- after dependency validation
-- after a completed plan has already been replayed
+### `old-remote`
 
-Across those boundaries, the system must never invent success. A failure may
-leave the remote unchanged, may reveal that the remote is already fully
-updated, or may block recovery with inspectable artifacts.
+The remote stayed unchanged. The recovery artifact should show the plan was opened or staged, but no remote mutation was committed.
 
-A partial remote mutation without a recovery artifact is a release blocker.
+### `fully-updated-remote`
+
+The remote already contains every planned mutation. Replay must be inert and must not duplicate inserts or resurrect stale local data.
+
+### `blocked-recovery`
+
+The remote is partially or ambiguously mutated, or the recovery journal no longer proves safe replay. This state must carry artifacts for inspection.
+
+## Evidence model
+
+Test fixtures and JSON snapshots are useful for proving behavior, but they are not the production durability boundary.
+
+Production recovery needs durable journal writes that survive process failure:
+
+- DB rows or filesystem artifacts that record plan open, staging, dependency validation, commit, and completion
+- fsync-backed persistence where the platform supports it
+- plugin activation or other fencing signals when those are part of the mutation boundary
+- recovery inspection artifacts that let the operator distinguish `old-remote`, `fully-updated-remote`, and `blocked-recovery`
 
 ## Retry rules
 
-Retries must not:
+- Retry must not duplicate inserts.
+- Retry must not resurrect stale local data once the remote already contains the completed plan.
+- A partial remote write without a recovery artifact is a release blocker.
+- If the journal cannot prove a safe replay, the only valid outcome is `blocked-recovery` with artifacts.
 
-- duplicate inserts
-- resurrect stale local data
-- treat partial writes without artifacts as safe
+## Test coverage target
 
-If a retry cannot explain the remote state from the durable journal and the
-observed artifacts, it must stay blocked.
+The current test matrix should keep covering:
 
-## Production note
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+- completed-plan replay
+- stale completed replay
+- blocked partial recovery
 
-The test suite in this lane uses JSON and temporary-file fixtures to prove the
-state machine. Production recovery still needs durable journal storage, flushed
-or fsynced writes, restart-readable inspection, and fencing so one writer owns
-the journal advance.
-
-If a partial remote mutation cannot be explained after restart, that is a
-release blocker.
