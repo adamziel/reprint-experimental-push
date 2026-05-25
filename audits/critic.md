@@ -9,11 +9,11 @@ and preserve the rejected remote for audit. A command like `npm run
 verify:release` would only matter if it actually existed in `package.json` and
 proved the live boundary instead of just the route topology; in this worktree it
 is not present, so the critique still fails closed on the missing executable
-boundary. The current `test:playground:production-shaped-release-verify` path is
-still only live preflight unless it is rerun against a real remote and proves
-preserved remote drift, dry-run receipt, apply-time revalidation,
-journal/recovery inspect, production auth/session lifecycle, graph identity, and
-plugin-owned surfaces in one run.
+boundary. If a later branch adds that command and it only proves a local
+Playground protocol flow, the missing-proof finding still stands until it also
+shows preserved remote drift, dry-run receipt, apply-time revalidation,
+journal/recovery inspect, production auth/session lifecycle, graph identity,
+and plugin-owned surfaces in one run.
 
 Scenario: someone upgrades a green Playground run or a polished script name into
 "production-ready push". Missing proof: the repo still lacks a live release
@@ -45,7 +45,11 @@ that records all of the following in the same run:
 - the classification of any plugin-owned surface, including late-discovered
   ones and remapped create targets;
 - preserved remote drift evidence for the rejected remote; and
-- dry-run receipt evidence that is auditable before any write is finalized.
+- dry-run receipt evidence that is auditable before any write is finalized;
+- live preserved-remote drift evidence, not just a topology claim; and
+- proof that production auth/session, graph identity, and plugin-owned
+  surfaces were exercised on the same live boundary rather than inferred from a
+  playground-only protocol flow.
 
 Until that rerun exists, production wording must fail closed. Route shape,
 fixture replay, manual review notes, and source-note comparisons remain
