@@ -263,6 +263,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause')?.rejectedGate,
     'recovery',
   );
@@ -277,6 +281,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause')?.violates.includes('backpressure'),
     'cached chunk hashes still cannot bypass backpressure recovery evidence',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause')?.rejectedGate,
+    'live',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause')?.rejectedGate,
+    'group',
   );
   for (const area of [
     'file-hashing',
