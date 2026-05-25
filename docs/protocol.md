@@ -45,6 +45,22 @@ The production ladder is fixed and ordered:
    the action safe with fresh live evidence and the same auth floor as the
    write path.
 
+The stage contract stays narrow:
+
+- `push_preflight` binds immutable pull provenance to one live remote
+  identity, one requested scope, and one short-lived push session.
+- `push_snapshot_hashes` lists the live remote comparison surface for
+  planning only, including cursoring when the remote is large.
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock.
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary.
+- `push_journal` is durable evidence only and never authorizes a mutation.
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating recovery mode.
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe and the auth floor still holds.
+
 The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
 site, and one live remote identity that must be revalidated at apply time.
@@ -76,6 +92,30 @@ That ordering matters because the pull pipeline stays the provenance source:
 - batch apply revalidates fresh live evidence before every batch and at the
   storage boundary
 - journal inspect is read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes still prove the action safe
+
+The handoff into push is one-way and explicit:
+
+| Pull stage or artifact | Push consumer | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base and coverage scan | `push_preflight` | Bind the imported base package to one live remote identity, one requested scope, and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live remote hash listing. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan as a receipt, not a lock. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
+
+That handoff never rewrites persisted provenance:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the pull base package as immutable provenance
+- preflight binds that package to one live remote identity and one short-lived
+  push session
+- snapshot hash listing stays planning-only
+- dry-run uploads the canonical plan as a receipt, not a lock
+- batch apply revalidates before every batch and at the storage boundary
+- journal inspect stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes still prove the action safe
 
@@ -114,6 +154,17 @@ identity. The local edited site is the imported clone derived from the
 persisted pull base package, and the runner is the only actor that may run
 preflight, snapshot hash listing, dry-run, apply, journal inspect, or
 recovery.
+
+The proof identities stay fixed across both harnesses:
+
+- `remote-base` and `remote-changed` are two observations of the same remote
+  identity
+- `local-edited` is the imported local clone derived from the persisted pull
+  base package
+- `runner` is the only actor that may run preflight, snapshot listing,
+  dry-run upload, batch apply, journal inspect, or recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
 
 ## Pull To Push Mapping
 
