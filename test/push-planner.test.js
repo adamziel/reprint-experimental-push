@@ -3015,6 +3015,7 @@ test('atomic apply recovery contract keeps the documented states and artifact sh
 
   for (const [label, options, expectedStatus, expectedJournalStatus] of [
     ['before mutation', { failBeforeMutation: true }, 'old-remote', 'opened'],
+    ['mid-apply', { failBeforeCommitAtMutation: 1 }, 'old-remote', 'staging'],
     ['after staging', { failAfterStaging: true }, 'old-remote', 'staged'],
     ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote', 'dependencies-validated'],
   ]) {
