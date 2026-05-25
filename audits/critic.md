@@ -23,6 +23,10 @@ What must happen before any production-grade push claim:
 - the stale approval or manual-review artifact must be rejected before the
   first write and cannot widen to a later row, file, relationship-bearing
   record, remapped create target, or plugin-owned surface;
+- any conflict policy claim must say whether the next action is block, retry,
+  preserve, or manual resolve, and it must prove that the choice cannot hide a
+  remote drift, remapped create target, or late plugin-owned surface behind a
+  readable success note;
 - any later-discovered plugin-owned surface must be treated as a new boundary
   unless it was enumerated before write or separately blocked with its own
   preserve / reject / retry cycle;
@@ -112,6 +116,10 @@ Concrete failure scenarios that still block production wording:
 - create-time identity remap, alias, or renumbering: missing proof is live
   identity evidence that shows the remap is safe, or a hard block before the
   first write, not a fixture that keeps the same ID shape;
+- ambiguous conflict policy: missing proof is an explicit rule for whether a
+  changed row, file, relationship-bearing record, or plugin-owned surface is
+  blocked, preserved, or retried, not a vague "manual resolution" label that
+  lets a later note reinterpret the outcome as success;
 - plugin-owned state outside the allowlist, including hidden tables, cron
   rows, runtime registries, generated files, caches, and serialized blobs:
   missing proof is live enumeration or an apply-time block for every owned
@@ -127,6 +135,11 @@ Concrete failure scenarios that still block production wording:
   later plugin-owned data trap appears, it is a new boundary unless it is
   separately enumerated or blocked before write, even if the route family,
   package mount, or reviewer wording looks unchanged;
+- false reliability claims: missing proof is that "comparison passed",
+  "manual resolution succeeded", or "production-ready" names the rejected
+  remote, the rejection point, and the exact live boundary that was retried;
+  otherwise the wording can hide a failed first boundary behind a later
+  readable artifact;
 - stale manual-review artifacts after a successful first write are still not
   retry authority for a second boundary: if the later boundary is a remapped
   create target, a late-discovered plugin-owned table, or a plugin-owned file
@@ -248,6 +261,18 @@ cannot become retry authority unless it names the exact upstream revision or
 worktree state, the exact live write boundary on this branch, the exact
 stale-drift case, and the exact preserved remote that stayed inspectable
 after rejection.
+
+Source-note comparison matrix:
+
+- Reprint proves staged pull sequencing and resumability vocabulary, but not
+  live push safety, preserved-remote auditability, create-time remap safety,
+  or late plugin-owned surface handling on this branch;
+- ZS-Sync proves bounded scanning and resource discovery ideas, but not live
+  mutation safety, conflict policy, or classification of partial file, DB, or
+  plugin side effects before retry here; and
+- ForkPress proves audit and crash-consistency vocabulary, but not that a
+  readable review artifact stays audit-only after drift, or that the same
+  live boundary was rerun on this branch with fresh live hashes.
 
 Those anchors are still insufficient if the branch only shows a matching
 route family, package layout, or readable review artifact. For production
