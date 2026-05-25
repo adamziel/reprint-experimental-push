@@ -72,7 +72,7 @@ and apply when the real push secret is unavailable.
 
 The release-facing checked command is `npm run test:playground:production-shaped-proof`.
 Use it when you need one executable entry point that proves both the protocol
-ladder and the explicit missing-secret gate.
+ladder and the explicit missing-secret and missing-live-source gates.
 
 The release-facing proof command that combines the protocol fixture test with
 the explicit missing-secret gate is:
@@ -95,6 +95,10 @@ npm run test:playground:production-shaped-proof
 
 If the real push secret is missing, the harness must fail fast with
 `REPRINT_PUSH_SECRET_REQUIRED` before preflight, dry-run, or apply can run.
+
+If the live source URL is missing, the harness must fail fast with
+`REPRINT_PUSH_LIVE_SOURCE_REQUIRED` before preflight, dry-run, or apply can
+run.
 
 The direct missing-secret smoke is:
 

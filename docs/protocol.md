@@ -174,6 +174,11 @@ It pairs the protocol fixture test with the explicit missing-secret smoke so
 the executable boundary proves both the production ladder and the fast-fail
 auth gate in one checked entry point.
 
+That same checked wrapper also proves the explicit live-source gate:
+
+- `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` when the live source URL is missing
+- `REPRINT_PUSH_SECRET_REQUIRED` when the real push secret is missing
+
 Run the proof command when you need the exact production-shaped boundary:
 
 ```sh
@@ -184,6 +189,7 @@ That checked command is the one that matters for the release proof:
 
 - it exercises the protocol fixture ladder
 - it fails fast with `REPRINT_PUSH_SECRET_REQUIRED` when the real push secret is absent
+- it fails fast with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` when the live source URL is absent
 - it keeps dry-run and apply separate
 - it preserves the one-remote, one-local, one-drift topology across the checked entry point
 
