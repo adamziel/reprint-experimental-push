@@ -26,12 +26,18 @@
     ],
     "drift_proof": [
       "remote-base and remote-changed are the same remote identity observed at different times",
+      "exporter/importer establish the immutable pull base package",
       "dry-run and apply remain separate remote calls",
       "apply revalidates fresh live evidence before every batch and again at the storage boundary",
       "journal inspection stays read-only before inspect-first recovery can mutate",
       "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
     ]
   },
+  "drift_proof": [
+    "exporter/importer establish the immutable pull base package",
+    "remote-base and remote-changed are the same remote identity observed at different times",
+    "dry-run and apply remain separate remote calls"
+  ],
   "pull_to_push_mapping": {
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance",
@@ -138,6 +144,7 @@
     "dry-run and apply are separate remote operations even when the same runner executes both",
     "apply must revalidate fresh live hashes after dry-run and before any storage boundary commit",
     "journal inspect must precede mutating recovery and cannot authorize mutation on its own",
-    "mutating recovery must still be fenced by fresh live hashes and journal evidence"
+    "mutating recovery must still be fenced by fresh live hashes and journal evidence",
+    "pull exporter/importer establish the immutable base package before push"
   ]
 }

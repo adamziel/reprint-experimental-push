@@ -1391,12 +1391,13 @@ reusing stale planning evidence.
 The executor should treat the protocol as six ordered checks on that single
 remote identity:
 
-1. preflight binds the persisted pull base to the live remote
-2. remote snapshot hash listing stays planning-only
-3. dry-run plan upload returns a receipt, not a lock
-4. mutation batch apply revalidates before every batch and at the storage boundary
-5. journal inspect resolves lost-response ambiguity without mutating state
-6. recovery begins with inspect and only then may finish, roll back, or auto-advance
+1. exporter/importer establish the immutable pull base package
+2. preflight binds the persisted pull base to the live remote
+3. remote snapshot hash listing stays planning-only
+4. dry-run plan upload returns a receipt, not a lock
+5. mutation batch apply revalidates before every batch and at the storage boundary
+6. journal inspect resolves lost-response ambiguity without mutating state
+7. recovery begins with inspect and only then may finish, roll back, or auto-advance
 
 Use the topology to prove the remote and local roles are separate and that
 the pull package remains immutable provenance:
@@ -1418,7 +1419,7 @@ The pull/export/import pipeline is the provenance source for every push run:
 3. `push_preflight` binds that package to the live remote identity and a
    short-lived push session
 4. `push_snapshot_hashes` lists the live remote comparison set for planning
-   only
+   only and never turns into a lock
 5. `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
    lock
 6. `push_batch_apply` revalidates the live remote before every batch and at

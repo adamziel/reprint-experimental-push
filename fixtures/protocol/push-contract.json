@@ -60,6 +60,12 @@
       "proof": [
         "one private network",
         "remote-base and remote-changed are the same remote identity at different times",
+        "push preflight binds the persisted pull base to the live remote identity",
+        "push snapshot hashes stay planning-only",
+        "push dry-run returns a receipt, not a lock",
+        "push batch apply revalidates live evidence before every batch and at the storage boundary",
+        "push journal remains read-only before mutating recovery",
+        "push recovery inspect happens before any mutating repair",
         "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     },
@@ -71,6 +77,12 @@
       "proof": [
         "separate disposable blueprints",
         "remote-base and remote-changed are the same remote identity at different times",
+        "push preflight binds the persisted pull base to the live remote identity",
+        "push snapshot hashes stay planning-only",
+        "push dry-run returns a receipt, not a lock",
+        "push batch apply revalidates live evidence before every batch and at the storage boundary",
+        "push journal remains read-only before mutating recovery",
+        "push recovery inspect happens before any mutating repair",
         "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     }
@@ -107,6 +119,7 @@
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
-    "authentication must be at least as strict as current Reprint HMAC usage"
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "pull exporter/importer establish the immutable base package before push"
   ]
 }

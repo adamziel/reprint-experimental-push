@@ -65,6 +65,10 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 7. `push_journal` and `push_recover inspect` inspect durable evidence first,
    then allow mutating recovery only when fresh live hashes prove the action.
 
+That mapping is one-way: exporter/importer establish the immutable base
+package, and push consumes it as provenance without rewriting it to make a
+stale remote look current.
+
 That map is intentionally one-way: the importer creates the immutable base
 package, and push consumes it without ever rewriting it to make a stale remote
 look current. The live snapshot hash listing is planning evidence only, the
@@ -221,12 +225,20 @@ Required behavior:
 - `push_snapshot_hashes` returns a complete, cursorable live remote hash list
   plus coverage proof for the requested scopes. It is a planning read only and
   must be treated as stale as soon as live remote state changes.
+- `push_snapshot_hashes` is the remote snapshot hash listing stage. It never
+  upgrades into write authority, even when the listing is complete.
 - `push_plan_dry_run` uploads a canonical plan, validates it, and records the
   result in the journal or idempotency store without mutating target resources.
+- `push_plan_dry_run` is the dry-run plan upload stage. It produces an
+  eligibility receipt only, not a reservation.
 - `push_batch_apply` is the normal mutation path and only applies an accepted
   dry-run plan in legal batches.
+- `push_batch_apply` must revalidate the live remote again before every batch
+  and at the storage boundary, so a valid dry-run receipt can still be stale.
 - `push_journal` reports dry-run, apply, idempotency, claim, lease, fencing,
   and recovery state so the executor can resolve ambiguous responses.
+- `push_journal` is read-only and exists to let the executor inspect durable
+  rows before any mutating retry.
 - `push_recover` has a read-only `inspect` mode plus mutating `auto`,
   `finish`, and `rollback` modes. It inspects, finishes, rolls back, or
   blocks an interrupted batch only when journal artifacts and live hashes

@@ -110,8 +110,43 @@ test('push contract fixture binds the pull handoff to the production push sequen
     ),
   );
   assert.ok(
+    contract.topology.docker.proof.includes(
+      'push preflight binds the persisted pull base to the live remote identity',
+    ),
+  );
+  assert.ok(
+    contract.topology.docker.proof.includes(
+      'push snapshot hashes stay planning-only',
+    ),
+  );
+  assert.ok(
+    contract.topology.docker.proof.includes(
+      'push dry-run returns a receipt, not a lock',
+    ),
+  );
+  assert.ok(
+    contract.topology.docker.proof.includes(
+      'push batch apply revalidates live evidence before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    contract.topology.docker.proof.includes(
+      'push recovery inspect happens before any mutating repair',
+    ),
+  );
+  assert.ok(
     contract.topology.playground.proof.includes(
       'separate disposable blueprints',
+    ),
+  );
+  assert.ok(
+    contract.topology.playground.proof.includes(
+      'push preflight binds the persisted pull base to the live remote identity',
+    ),
+  );
+  assert.ok(
+    contract.topology.playground.proof.includes(
+      'push recovery inspect happens before any mutating repair',
     ),
   );
   assert.equal(contract.topology.docker.remote_base, 'remote-base');
@@ -178,6 +213,16 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     topologyMatrix.required_invariants.includes(
       'push preflight must mint a short-lived session bound to one remote identity and one persisted pull base',
+    ),
+  );
+  assert.ok(
+    topologyMatrix.drift_proof.includes(
+      'exporter/importer establish the immutable pull base package',
+    ),
+  );
+  assert.ok(
+    topologyMatrix.required_invariants.includes(
+      'pull exporter/importer establish the immutable base package before push',
     ),
   );
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
@@ -450,7 +495,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   );
   assert.ok(
     executorTopologyProof.topology.docker.proof.includes(
-      'journal inspection remains read-only before mutating recovery',
+      'push journal remains read-only before mutating recovery',
     ),
   );
 });

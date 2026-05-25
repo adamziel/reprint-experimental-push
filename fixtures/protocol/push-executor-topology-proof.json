@@ -13,7 +13,7 @@
   },
   "push_pipeline": {
     "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
-    "snapshot_hashes": "returns the live remote comparison set for planning only",
+    "snapshot_hashes": "returns the live remote comparison set for planning only and never acts as write authority",
     "dry_run": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
     "apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
     "journal": "reads durable evidence without authorizing mutation",
@@ -34,10 +34,14 @@
       "proof": [
         "one private network",
         "remote-base and remote-changed are the same remote identity at different times",
+        "push preflight binds the persisted pull base to the live remote identity",
+        "push snapshot hashes stay planning-only",
+        "push dry-run returns a receipt, not a lock",
+        "push batch apply revalidates live evidence before every batch and at the storage boundary",
+        "push journal remains read-only before mutating recovery",
+        "push recovery inspect happens before any mutating repair",
         "dry-run and apply are separate remote operations",
-        "journal inspection remains read-only before mutating recovery",
         "push preflight mints one short-lived session bound to the persisted base and live remote identity",
-        "recovery inspect happens before any mutating repair",
         "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     },
@@ -49,6 +53,12 @@
       "proof": [
         "separate disposable blueprints",
         "remote-base and remote-changed are the same remote identity at different times",
+        "push preflight binds the persisted pull base to the live remote identity",
+        "push snapshot hashes stay planning-only",
+        "push dry-run returns a receipt, not a lock",
+        "push batch apply revalidates live evidence before every batch and at the storage boundary",
+        "push journal remains read-only before mutating recovery",
+        "push recovery inspect happens before any mutating repair",
         "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
         "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
@@ -62,6 +72,7 @@
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
     "push preflight must mint a short-lived session bound to one remote identity and one persisted pull base",
-    "authentication must be at least as strict as current Reprint HMAC usage"
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "pull exporter/importer establish the immutable base package before any push stage runs"
   ]
 }
