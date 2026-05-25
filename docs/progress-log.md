@@ -7,12 +7,12 @@ linked implementation artifacts.
 Newest public summary stays concise by design; details belong in the linked
 evidence trail below.
 
-## 2026-05-25 - Public Status Audit 08:21:38
+## 2026-05-25 - Public Status Audit 08:26:18
 
-<a id="2026-05-25-public-status-audit-082138"></a>
+<a id="2026-05-25-public-status-audit-082618"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 08:21:38 CEST`) and kept the visible last-updated stamp current.
+  (`2026-05-25 08:26:18 CEST`) and kept the visible last-updated stamp current.
 - Kept the first screen concise and conservative: lab evidence only, flat
   trend, `0/4` verified gates, and the newest audit link now points at this
   entry.
