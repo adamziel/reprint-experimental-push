@@ -144,8 +144,9 @@ Release-gate checklist:
 
 - name the exact live write boundary and the exact stale-drift case rerun on
   this worktree;
-- show the preserved remote stayed auditable after reject, not just readable
-  before apply;
+- show the preserved remote stayed auditable after reject and the user can
+  still inspect and retry from fresh live evidence, not just read a preserved
+  note before apply;
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface;
@@ -162,6 +163,20 @@ Release-gate checklist:
 - require any Reprint, ZS-Sync, or ForkPress comparison to name the exact
   upstream revision or worktree state, the exact live boundary rerun here,
   and the exact proof boundary it does and does not cover.
+
+False reliability claims to reject:
+
+- "production-grade push support" when the branch only shows compatibility
+  evidence, a readable review note, or a preserved route shape but not a
+  live rejection point plus a fresh retry artifact on this branch;
+- "manual resolution succeeded" when the remote is not preserved for audit,
+  the stale artifact can still be reused, or the user cannot safely retry
+  from fresh live hashes;
+- "plugin-safe push" when plugin-owned tables, files, registries, caches,
+  generated assets, cron rows, or serialized blobs outside the allowlist
+  are not enumerated, blocked, or separately classified; and
+- "comparison passed" when the comparison note is historical only and does
+  not rerun the same live boundary with preserved-remote evidence.
 
 The following wording must fail closed unless the branch shows the same live
 boundary, preserved remote, and fresh retry scope on this worktree:
