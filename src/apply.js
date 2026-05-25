@@ -991,19 +991,49 @@ function recoveryState(status, remote, plan, journal, reason, details = {}) {
     ...details,
   };
 
-  if (status !== 'blocked-recovery' && recovery.artifacts?.remote !== undefined) {
-    delete recovery.artifacts.remote;
-  }
-
   if (status !== 'blocked-recovery') {
     recovery.artifacts = {
       ...(recovery.artifacts || {}),
       journal,
     };
     delete recovery.artifacts.remote;
+    validateRecoveryArtifacts(recovery);
+    return recovery;
   }
 
+  validateRecoveryArtifacts(recovery);
   return recovery;
+}
+
+function validateRecoveryArtifacts(recovery) {
+  if (recovery.status === 'blocked-recovery') {
+    if (!recovery.artifacts?.journal || !recovery.artifacts?.remote) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states must preserve both journal and remote artifacts.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+        },
+      );
+    }
+    return;
+  }
+
+  if (!recovery.artifacts?.journal) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Non-blocked recovery states must preserve the journal artifact.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+      },
+    );
+  }
+
+  if (recovery.artifacts.remote !== undefined) {
+    delete recovery.artifacts.remote;
+  }
 }
 
 function sanitizeRecoveryRemote(remote, plan) {
