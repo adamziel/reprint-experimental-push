@@ -107,6 +107,12 @@ The machine-readable companion at
 captures that one-way handoff in compact form. Tests can use it to prove the
 base package stays immutable provenance while push adds session, snapshot,
 dry-run, journal, and recovery evidence on top.
+In that handoff, exporter/importer own the persisted pull base package and
+push consumes it in order: preflight binds the package to the live remote
+identity, snapshot hashes enumerate live comparison evidence, dry-run uploads
+the canonical plan as eligibility evidence, apply revalidates before every
+batch and at the storage boundary, and journal inspect plus recovery inspect
+stay read-only until fresh live hashes prove a mutating repair is safe.
 The compact auth-and-recovery proof at
 [`fixtures/protocol/push-auth-session-journal-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-journal-proof.json)
 shows the stricter mutating request floor: push-scoped HMAC auth, a short-lived

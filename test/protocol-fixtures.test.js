@@ -492,6 +492,16 @@ test('push topology matrix fixture captures the minimal docker and playground pr
       'mutating recovery must still be fenced by fresh live hashes and journal evidence',
     ),
   );
+  assert.ok(
+    matrix.required_invariants.includes(
+      'dry-run and apply are separate remote operations even when the same runner executes both',
+    ),
+  );
+  assert.ok(
+    matrix.required_invariants.includes(
+      'journal inspect must precede mutating recovery and cannot authorize mutation on its own',
+    ),
+  );
 });
 
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {

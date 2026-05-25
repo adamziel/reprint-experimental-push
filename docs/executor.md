@@ -70,6 +70,30 @@ That mapping is intentionally one-way:
 - mutating recovery only proceeds when the journal and fresh live hashes prove
   the action
 
+In runtime terms, the pull pipeline contributes immutable provenance and the
+push pipeline consumes it in order:
+
+1. exporter produces the merge-base evidence and coverage hash
+2. importer persists that base package as immutable provenance
+3. push preflight binds the stored base package to the live remote identity
+   and a short-lived session
+4. snapshot hashes enumerate live remote comparison evidence for planning only
+5. dry-run uploads the canonical plan and returns an eligibility receipt
+6. apply revalidates fresh live hashes before every batch and again at the
+   storage boundary
+7. journal inspect and recovery inspect read durable evidence before any
+   mutating recovery step
+
+The test topology follows the same split:
+
+- `remote-base` seeds the persisted pull base
+- `local-edited` is the user-edited imported clone
+- `remote-changed` is the same remote identity seen later after drift
+- `runner` is the only actor that may preflight, plan, upload, inspect, and recover
+- Docker and Playground must prove the same identity twice, not two different sites
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
+
 ## Executor Responsibilities
 
 The executor is the client-side orchestrator. It runs after a site was pulled,
