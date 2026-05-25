@@ -71,6 +71,28 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
   assert.equal(report.claims.productionThroughput.allowed, false);
   assert.equal(report.claims.productionThroughput.status, 'blocked');
+  assert.equal(report.claims.productionThroughputDetails.throughput.productionThroughput, 'not-claimed');
+  assert.equal(
+    report.claims.productionThroughputDetails.executorCapabilities.fileReceipts,
+    'lab-file-journal-receipts',
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.resourceLimits.memoryCeilingBytes,
+    32 * 1024 * 1024,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.recovery.partialCommitInspectionStatus,
+    'blocked-recovery',
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.atomicGroup.preCommitFailureLeavesRemoteUnchanged,
+    true,
+  );
+  assert.ok(
+    report.claims.productionThroughputDetails.blockers.includes(
+      'production-atomic-group-commit-not-measured',
+    ),
+  );
   assert.equal(
     report.claims.productionThroughput.status === 'allowed' &&
       report.executorCapabilities.fileReceipts === 'production-storage-receipts' &&
@@ -98,6 +120,7 @@ test('guarded benchmark refuses production throughput claims until production ga
       && error.code === 'PRODUCTION_THROUGHPUT_CLAIM_BLOCKED'
       && error.details.throughput.productionThroughput === 'not-claimed'
       && error.details.executorCapabilities.fileReceipts === 'lab-file-journal-receipts'
+      && error.details.resourceLimits.memoryCeilingBytes === 32 * 1024 * 1024
       && error.details.blockers.includes('production-atomic-group-commit-not-measured'),
   );
 });

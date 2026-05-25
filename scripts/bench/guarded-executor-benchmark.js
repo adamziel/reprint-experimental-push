@@ -140,6 +140,7 @@ export function runGuardedExecutorBenchmark(options = {}) {
     partialFailure,
   });
   report.claims.productionThroughput = productionThroughputClaim(report);
+  report.claims.productionThroughputDetails = productionThroughputDetails(report);
 
   if (config.claimProductionThroughput) {
     assertCanClaimProductionThroughput(report);
@@ -204,6 +205,17 @@ export function productionThroughputClaim(report) {
   };
 }
 
+export function productionThroughputDetails(report) {
+  return {
+    throughput: report.throughput,
+    executorCapabilities: report.executorCapabilities,
+    resourceLimits: report.resourceLimits,
+    recovery: report.evidence.recovery,
+    atomicGroup: report.evidence.atomicGroup,
+    blockers: productionThroughputBlockers(report),
+  };
+}
+
 export function assertCanClaimProductionThroughput(report) {
   const claim = productionThroughputClaim(report);
   if (!claim.allowed) {
@@ -214,6 +226,7 @@ export function assertCanClaimProductionThroughput(report) {
         blockers: claim.blockers,
         throughput: report.throughput,
         executorCapabilities: report.executorCapabilities,
+        resourceLimits: report.resourceLimits,
       },
     );
   }
