@@ -18,6 +18,12 @@ Boundary checklist:
 - replay of a completed plan must not duplicate inserts or resurrect stale local file content
 - any partial remote mutation without a durable recovery artifact is a release blocker
 
+Acceptable post-failure states:
+
+- `old-remote` when the apply never mutated remote state
+- `fully-updated-remote` when the plan is already fully reflected and replay is inert
+- `blocked-recovery` when the remote may have drifted or partially changed and the recovery artifact must be inspected before retry
+
 Test fixture scope:
 
 - JSON state and temporary files are enough to prove the lane-level state machine
