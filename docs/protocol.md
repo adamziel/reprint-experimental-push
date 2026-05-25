@@ -62,7 +62,8 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 7. `push_journal` and `push_recover` inspect durable evidence first, then
    allow mutating recovery only when fresh live hashes prove the action
 
-The production push ladder is the same handoff expressed as a runtime flow:
+The production push ladder is the same handoff expressed as a runtime flow,
+and the executor must keep each stage distinct:
 
 1. preflight binds the persisted pull base to the live remote identity and
    mints a short-lived session
@@ -73,19 +74,6 @@ The production push ladder is the same handoff expressed as a runtime flow:
 5. journal inspect reads durable evidence without authorizing mutation
 6. recovery inspect comes first, and recovery may only mutate when the
    journal and fresh live hashes prove the action
-
-The push extension therefore has five production stages that the executor
-must keep separate:
-
-- preflight binds the persisted pull base to the live remote identity and
-  mints a short-lived session
-- remote snapshot hash listing is a read-only planning view of live remote
-  state
-- dry-run plan upload records eligibility and returns a receipt, not a lock
-- mutation batch apply revalidates fresh live evidence before every batch and
-  again at the storage boundary
-- journal inspect and recovery inspect read durable evidence first; mutating
-  recovery only happens after inspect proves the action is safe
 
 That handoff is one-way on purpose:
 
@@ -135,15 +123,10 @@ The executor-topology companion at
 [`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
 binds the pull pipeline, push stages, and ingress policy into one compact
 proof object. It is the shortest machine-readable summary of the production
-push contract and the one-remote/one-local test topology.
-
-The companion now includes an explicit `push_pipeline` block so tests can
-assert the production stage order directly: preflight binds the persisted
-pull base to the live remote identity, snapshot listing stays planning only,
-dry-run returns a receipt rather than a lock, apply revalidates before every
-batch and at the storage boundary, journal inspection stays read-only, and
-recovery must begin with inspect and only mutating recovery modes may finish
-or roll back after fresh live proof.
+push contract and the one-remote/one-local test topology. Its `push_pipeline`
+block pins the runtime order directly: preflight, snapshot listing, dry-run,
+batch apply, journal inspect, and inspect-first recovery with mutating modes
+allowed only after fresh live proof.
 
 - Docker uses one private network and browser-visible inspection through the
   sandbox-provided `8080` ingress with a local-only proxy.

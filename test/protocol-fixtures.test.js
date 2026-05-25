@@ -198,6 +198,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const snapshotPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
   const dryRunApplyContract = readJson('fixtures/protocol/push-dry-run-apply-revalidation-contract.json');
   const productionLadderContract = readJson('fixtures/protocol/push-production-ladder-contract.json');
+  const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
 
   assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightRequest.remote_site_id, 'remote-example');
@@ -357,6 +358,28 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
       'authentication must be at least as strict as current Reprint HMAC usage',
     ),
   );
+  assert.equal(productionLadderContract.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.deepEqual(
+    productionLadderContract.push_ladder.map((stage) => stage.stage),
+    [
+      'push_preflight',
+      'push_snapshot_hashes',
+      'push_plan_dry_run',
+      'push_batch_apply',
+      'push_journal',
+      'push_recover inspect',
+      'push_recover auto|finish|rollback',
+    ],
+  );
+  assert.ok(
+    productionLadderContract.topology.docker.proof.includes(
+      'remote-base and remote-changed are the same remote identity at different times',
+    ),
+  );
+  assert.equal(executorTopologyProof.push_pipeline.recovery, 'starts with inspect and allows mutating repair only when the journal and live hashes prove the action');
+  assert.equal(executorTopologyProof.topology.networking.ingress_port, 8080);
+  assert.equal(executorTopologyProof.topology.networking.proxy_policy, 'local-only');
+  assert.equal(executorTopologyProof.topology.networking.tunnels, 'disallowed');
 });
 
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {

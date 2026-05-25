@@ -1206,6 +1206,9 @@ The machine-readable fixture [`fixtures/protocol/push-topology.json`](/home/clau
 captures the same one-remote, one-local, one-drift-witness split for test code, and
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
 captures the pull-to-push handoff that the executor must preserve.
+[`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
+ties the production ladder together: preflight, snapshot listing, dry-run,
+batch apply, journal inspect, and inspect-first recovery all stay separate.
 [`fixtures/protocol/push-recovery-decision.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-decision.json)
 captures the inspect-first recovery gate that keeps mutating repair behind
 fresh live proof.
