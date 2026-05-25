@@ -46,6 +46,12 @@ Comparison gap summary:
 - ForkPress helps with audit and crash-consistency vocabulary, not with proving
   that a readable review artifact cannot be widened to a remapped create
   target, hidden plugin state, or second live boundary after drift.
+- If any Reprint, ZS-Sync, or ForkPress note only matches the same route
+  family, package mount, reviewer wording, or fixture shape, it is still just
+  historical context. That similarity does not prove live retry authority for a
+  later boundary, does not prove the remote stayed preserved after rejection,
+  and does not prove a late-discovered plugin-owned surface was enumerated or
+  blocked before the first write.
 
 Scope note: this audit only accepts production wording when the same live
 boundary on this worktree shows preserved-remote evidence, stale authority
