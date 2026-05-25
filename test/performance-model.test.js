@@ -2022,6 +2022,10 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause').rejectedGate,
     'group',
   );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure').rejectedGate,
+    'group',
+  );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('remote-index-planning-only'),
   );
@@ -2047,10 +2051,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause').violates.includes('file-hashing'),
   );
   assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause').violates.includes('atomic-groups'),
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause').violates.includes('durable-progress'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure').violates.includes('durable-progress'),
   );
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('compression'));
@@ -2400,7 +2416,9 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.ok(model.totals.uploadBytes >= 2 * 1024 * MIB);
   assert.ok(model.totals.dbRows >= 10_000);
   assert.equal(model.totals.filePublishes, 9);
-  assert.ok(model.totals.backpressurePauses >= 2);
+  assert.ok(
+    model.schedules.flatMap((schedule) => schedule.actions).filter((action) => action.type === 'backpressure-pause').length >= 2,
+  );
   assert.ok(report.evidence.chunkReceipts.expected > 0);
   assert.equal(report.evidence.chunkReceipts.recorded, report.evidence.chunkReceipts.expected);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
