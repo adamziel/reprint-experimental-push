@@ -45,10 +45,10 @@ The executor uses the same route names in Docker and Playground:
 | Stage | Route name |
 | --- | --- |
 | Preflight | `preflight` |
-| Snapshot hashes | `snapshot-hashes` |
-| Dry-run | `dry-run` |
-| Apply | `apply` |
-| Journal | `journal` |
+| Remote snapshot hash listing | `snapshot-hashes` |
+| Dry-run plan upload | `dry-run` |
+| Mutation batch apply | `apply` |
+| Journal inspect | `journal` |
 | Recovery inspect | `recovery-inspect` |
 | Recovery mutate | `recovery-mutate` |
 
@@ -108,6 +108,23 @@ shapes:
 - Both harnesses keep browser-visible inspection on the sandbox-provided
   `8080` ingress through a local-only proxy.
 - Remote tunnels are disallowed in both harnesses.
+
+The same production proof stack is reviewed in this order:
+
+1. `push-protocol-extension-contract.json` for the full ladder, pull bridge,
+   auth floor, and one-remote-one-local-one-drift topology.
+2. `push-production-topology-contract.json` for the Docker and Playground
+   topology and ingress rules.
+3. `push-production-pull-bridge-contract.json` for the importer-owned base
+   package bridge.
+4. `push-remote-snapshot-listing-contract.json` for planning-only remote hash
+   discovery.
+5. `push-production-revalidation-contract.json` for the dry-run/apply liveness
+   split.
+6. `push-production-auth-session-journal-recovery-inspect-contract.json` for
+   the auth/session/journal/lease/recovery-inspect floor.
+7. `push-production-executor-flow-contract.json` for the full end-to-end flow
+   in one compact bundle.
 
 That topology is the same one-remote, one-local, one-drift proof in both
 environments:

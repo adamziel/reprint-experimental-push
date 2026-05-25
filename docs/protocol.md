@@ -245,6 +245,32 @@ Docker and Playground differ only in harness mechanics:
   `8080` ingress through a local-only proxy
 - both harnesses forbid remote tunnels
 
+The shared route matrix is:
+
+| Stage | Route |
+| --- | --- |
+| Preflight | `preflight` |
+| Remote snapshot hash listing | `snapshot-hashes` |
+| Dry-run plan upload | `dry-run` |
+| Mutation batch apply | `apply` |
+| Journal inspect | `journal` |
+| Recovery inspect | `recovery-inspect` |
+| Recovery mutate | `recovery-mutate` |
+
+The most useful review order is:
+
+1. `push-protocol-extension-contract.json` for the full ladder, pull bridge,
+   auth floor, and topology.
+2. `push-production-topology-contract.json` for the Docker and Playground
+   harness proof.
+3. `push-production-pull-bridge-contract.json` for the importer-owned base
+   package bridge.
+4. `push-production-revalidation-contract.json` for the dry-run/apply split.
+5. `push-production-auth-session-journal-recovery-inspect-contract.json` for
+   the auth/session/journal/lease/recovery-inspect floor.
+6. `push-production-executor-flow-contract.json` for the compact end-to-end
+   production flow.
+
 The machine-readable proof bundle is layered around that same ladder:
 
 - `push-protocol-extension-contract.json` is the top-level production ladder
