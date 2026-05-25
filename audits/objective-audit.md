@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The current blocker is now precise: this checkout still lacks checked, production-boundary proof that auth/session lifecycle and durable journal semantics survive the live apply path. The old "no release command exists" framing is stale. Upstream `verify:release`-style reports are relevant but not sufficient; reported runs there include live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback `rows: 17`, but that remains upstream evidence until this checkout owns an equivalent enforced verdict. Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional gaps, but they do not displace the main blocker.
+The current blocker is now precise: this checkout still lacks checked, production-boundary proof that auth/session lifecycle and durable journal semantics survive the live apply path. The old "no release command exists" framing is stale. `origin/lane/reliable-executor` does expose `verify:release` at `9975dfc9`, and reported runs there include live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback `rows: 17`, but that remains upstream evidence until this checkout owns an equivalent enforced verdict. Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional gaps, but they do not displace the main blocker.
 
 The gate stays closed until one required invocation proves, in the same run:
 
