@@ -2560,6 +2560,7 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
   assert.equal(report.evidence.atomicGroup.requireAtomic, true);
   assert.equal(report.evidence.atomicGroup.successAllTargetsNew, true);
+  assert.equal(report.evidence.atomicGroup.productionAtomicCommitMeasured, false);
   assert.equal(report.evidence.recovery.partialCommitBlocksRecovery, true);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
   assert.equal(report.claims.productionThroughput.status, 'blocked');

@@ -364,6 +364,9 @@ The benchmark shape must stay realistic:
 - The executable guarded-executor benchmark also includes a `guardedLarge`
   profile so the same receipts and recovery checks are exercised at a much
   larger upload and row volume.
+- The `guardedLarge` profile stays below any production throughput claim
+  because the benchmark still measures lab-grade file receipts, per-row apply,
+  and recovery evidence rather than production storage receipts.
 - Each of those workloads keeps recovery evidence visible in the model: chunk
   receipts for uploads, batch receipts for rows, and group-finalize records
   for coupled plugin changes.
