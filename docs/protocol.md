@@ -2348,3 +2348,31 @@ The inspect-first recovery fence is part of the same proof:
 For the sandboxed proof, the only exposed HTTP ingress is the sandbox-provided
 `8080` port, and any browser-visible inspection must stay on a local-only
 proxy. Remote tunnels are disallowed.
+
+## Canonical Proof Shape
+
+When a test needs the shortest production-shaped summary, use this object:
+
+- pull/export/import establish the immutable base package
+- `push_preflight` binds that package to one live remote identity and one
+  short-lived push session
+- `push_snapshot_hashes` lists live remote comparison evidence for planning
+  only
+- `push_plan_dry_run` uploads a canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` remains read-only
+- `push_recover inspect` runs before any mutating repair
+- mutating recovery only proceeds when the journal row and fresh live hashes
+  prove the action safe
+
+For topology proofs, the one remote source, one local edited site, one drift
+witness, one runner shape is fixed in both Docker and Playground:
+
+- `remote-base` seeds the persisted pull base
+- `local-edited` is the imported local site with user edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, planning, apply, journal inspect, and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy

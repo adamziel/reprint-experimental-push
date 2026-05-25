@@ -1995,6 +1995,27 @@ lease expiry, or apply-time revalidation against a production-shaped database
 boundary; use Playground when you need fast, repeatable protocol and recovery
 smokes against the same one-remote, one-local shape.
 
+## Canonical Topology
+
+Use the same production proof shape in both harnesses:
+
+| Role | Meaning |
+| --- | --- |
+| `remote-base` | Seeds the persisted pull base and the first remote observation. |
+| `local-edited` | Holds the imported local edits that produce the candidate plan. |
+| `remote-changed` | Reuses the same remote identity later to witness drift. |
+| `runner` | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
+
+The operational rule is the same in Docker and Playground:
+
+- `push_snapshot_hashes` is planning evidence only
+- `push_plan_dry_run` returns a receipt, not a lock
+- `push_batch_apply` revalidates before every batch and at the storage boundary
+- `push_journal` is read-only
+- `push_recover inspect` must run before any mutating repair
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+
 ## Test Fixtures
 
 Protocol fixtures live under `fixtures/protocol/`.
