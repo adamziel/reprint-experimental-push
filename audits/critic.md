@@ -5294,3 +5294,7 @@ Production-grade release gate:
 - show each Reprint, ZS-Sync, or ForkPress comparison names the exact
   upstream state, states what the note proves here, and states what it does
   not prove here.
+
+Single-sentence release gate:
+
+- this branch may only claim production-grade push support when the exact live boundary on this worktree shows the drifted remote preserved for audit, stale authority rejected before the first write, fresh retry scope rebuilt from live hashes, every touched surface classified old/new/blocked, and every late-discovered plugin-owned surface either blocked or given its own preserve / reject / retry cycle; if any part of that proof is missing, then route shape, package layout, reviewer wording, readable artifacts, `finalMatchesLocal`, and Reprint / ZS-Sync / ForkPress comparisons stay compatibility evidence only.
