@@ -156,6 +156,10 @@ The machine-readable bridge is split across the fixtures:
   inspect-first recovery in one object.
 - `push-production-topology-contract.json` keeps the same topology and the
   full push stage sequence in one compact production object.
+- `push-production-push-recovery-contract.json` and
+  `push-production-recovery-inspect-contract.json` are the production-shaped
+  proof pair for auth, session minting, journal rows, lease fencing, apply
+  revalidation, and inspect-first recovery on the same remote identity.
 
 The compact proof chain is intentionally one-way:
 
@@ -180,6 +184,9 @@ The compact production proof stack is:
 - `push-protocol-extension-contract.json` for the full production ladder from
   preflight through inspect-first recovery, including the pull/export/import
   bridge and the one-remote-one-local test topology
+- `push-production-push-recovery-contract.json` and
+  `push-production-recovery-inspect-contract.json` for the production auth,
+  session, journal, lease, and recovery proof pair
 
 The pull-to-push bridge is one-way:
 

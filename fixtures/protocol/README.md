@@ -118,6 +118,10 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-topology-contract.json` is the compact one-remote,
   one-local, one-drift proof that keeps the pull provenance, push ladder, and
   Docker/Playground topology aligned in one object.
+- `push-production-push-recovery-contract.json` and
+  `push-production-recovery-inspect-contract.json` are the paired production
+  proofs for auth, session minting, journal rows, lease fencing, and
+  inspect-first recovery on the same remote identity.
 - `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
   listing clearly in the planning-only lane, including cursoring for larger
@@ -165,6 +169,10 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-topology-contract.json` is the compact production bundle
   that keeps the same one-remote, one-local, one-drift topology and the
   push-stage sequence in a single object.
+- `push-production-push-recovery-contract.json` and
+  `push-production-recovery-inspect-contract.json` are the compact production
+  recovery pair for auth, session, journal, lease, and inspect-first
+  recovery proof.
 - The test topology is the same in both harnesses: `remote-base` seeds the
   persisted pull base, `local-edited` holds the imported local edits,
   `remote-changed` is the same remote identity after drift, and `runner`
