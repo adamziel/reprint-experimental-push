@@ -6559,6 +6559,10 @@ Comparison release gate:
   does not prove here, and the rerun status on this branch must fail closed,
   even if the route family, package layout, or reviewer wording matches the
   production path.
+- any note that says "comparison passed", "manual resolution succeeded", or
+  "production-ready" still has to name the preserved remote, the rejection
+  point, and the live rerun on this branch; otherwise it remains audit-only
+  and cannot be promoted to retry authority.
 - the observed anchors `27c5f25`, `d9334a0`, and `55f9879` are provenance
   only; if this branch did not rerun the same live boundary with preserved-
   remote evidence and a fresh retry scope, those anchors cannot be promoted
