@@ -4330,3 +4330,16 @@ Release gate additions needed before production-grade push support:
    fixture replay, readable review artifacts, source-note comparison, and
    `finalMatchesLocal` are compatibility evidence only. They do not prove the
    live executor ran, and they do not replace a live drift-rejection proof.
+
+False reliability claims to reject:
+
+- "manual resolution succeeded" when the preserved remote, rejection point,
+  and fresh retry scope are not all recorded on this branch for the same
+  live boundary;
+- "plugin-safe push" when any plugin-owned surface outside the allowlist,
+  including a late-discovered table, file, registry entry, generated asset,
+  cache entry, cron row, or serialized blob, is still only implied rather
+  than enumerated or blocked live; and
+- "comparison passed" when a Reprint, ZS-Sync, or ForkPress note does not
+  name the exact upstream revision or worktree state and does not say what
+  the note proves here versus what it does not prove.
