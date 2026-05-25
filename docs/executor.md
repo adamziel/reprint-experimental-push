@@ -65,6 +65,12 @@ That handoff is intentionally one-way:
 - journal inspection stays read-only
 - recovery starts with inspect before any mutating repair
 
+The auth floor is not relaxed for the executor:
+
+- push auth must be at least as strict as current Reprint HMAC usage
+- stronger session material is allowed, but it may not weaken that floor
+- journal inspect and recovery use the same auth floor as the write path
+
 For reviewers, the shortest proof chain is:
 
 1. exporter discovers the merge base and coverage evidence

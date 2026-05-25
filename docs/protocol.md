@@ -35,12 +35,26 @@ The production ladder is fixed:
    the action safe with fresh live evidence and the same auth floor as the
    write path.
 
+The write path is deliberately one-way:
+
+- pull discovers and persists the immutable base package
+- push consumes that persisted package and never turns it back into a mutable
+  snapshot cache
+- preflight is the first live binding after importer persistence
+- snapshot hash listing is read-only planning evidence
+- dry-run is an eligibility receipt, not write authority
+- apply is a separate remote operation that must revalidate fresh live
+  evidence before every batch and again at the storage boundary
+- journal inspect is read-only evidence gathering
+- recovery starts with inspect before any mutating repair
+
 The ladder maps directly to the pull pipeline:
 
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
 - preflight is the first live binding after importer persistence
-- snapshot hash listing is planning evidence only and may page large sites
+- snapshot hash listing is planning evidence only and may page large sites,
+  but it never becomes write authority
 - dry-run is an eligibility receipt, not a lock, and never authorizes apply
 - batch apply is a separate remote operation that revalidates before every
   batch and again at the storage boundary
@@ -219,6 +233,12 @@ The reviewable bridge from pull to push is intentionally linear:
 
 That table is the contract boundary: pull discovers and persists immutable
 provenance, and push consumes that provenance without ever rewriting it.
+
+The auth floor is explicit:
+
+- push auth must be at least as strict as current Reprint HMAC usage
+- stronger session material is allowed, but it may not weaken that HMAC floor
+- journal inspect and recovery keep the same auth floor as the write path
 
 ## Topology
 
