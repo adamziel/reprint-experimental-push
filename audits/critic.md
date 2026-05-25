@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `3d8748b6`, with earlier retained-source proof steps `2ac32891`,
+remote head `91ef2b06`, with earlier retained-source proof steps `2ac32891`,
 `889bd37a`, and `63a3502f` still useful as history, not as release proof.
 The latest explicit verdict on that lane is
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the lane's completed
@@ -77,7 +77,8 @@ The evidence improved, but only in the lab-harness sense:
 - The lab evidence now names executor/session/journal details:
   `authSessionType`, minted session shape, `applyCommitted`, and
   `durableJournal.rows: 17`.
-- The boundary verdict is explicit instead of implicit.
+- The boundary verdict is explicit instead of implicit, and the latest remote
+  head keeps that verdict current instead of stale.
 
 That is real progress, but it still does not prove retry authority on this
 branch. A retained-source replay is not the same as a live rerun that preserves
@@ -109,7 +110,7 @@ the following on the same live boundary:
   visible in the initial plan; and
 - a preserved-remote receipt that is still inspectable after rejection and
   lets a reviewer audit, retry, and compare the exact boundary without
-  depending on manual resolution.
+  depending on manual resolution or stale review text.
 
 Until those proofs exist on the same live boundary, any wording that says the
 system is production-ready is a claim without audit-grade support.
@@ -147,8 +148,9 @@ Any hidden-loss mode that is not proven there remains a blocker:
   as a new preserve / reject / retry decision, not folded into an earlier
   manual resolution note.
 
-Manual resolution is not success unless the remote is preserved and the user
-can safely audit and retry the exact boundary.
+Manual resolution is not success unless the remote is preserved, the retry is
+auditable from fresh live hashes, and the user can safely replay the exact
+boundary without trusting stale review text.
 
 ## What the source notes prove, and do not prove
 
@@ -164,6 +166,27 @@ The source notes are still useful, but only as design input:
   observed upstream commit; it does not prove this branch can preserve the
   rejected remote, classify plugin-owned side effects, or rerun the same live
   boundary with fresh live hashes.
+
+## Why the latest remote lane still does not unlock release
+
+The remote reliable-executor head now gives better lab evidence, not release
+proof:
+
+- `91ef2b06` aligns the release-gate assertions and confirms the retained-
+  source verifier path is being tightened, but it still stays inside the
+  supervised lane's lab harness.
+- The evidence still does not show a production WordPress auth/session
+  lifecycle on a real source boundary.
+- The evidence still does not show durable journal semantics outside the
+  Playground harness or lease/fencing behavior against a live remote.
+- The evidence still does not show graph identity across remap on the same
+  live mutation.
+- The evidence still does not show plugin-driver coverage for late-discovered
+  plugin-owned surfaces outside the initial allowlist.
+
+That means the next proof must be a live, rerunnable boundary with preserved-
+remote retention and fresh live-hash revalidation, not another wording
+adjustment on the retained-source lane.
 
 ## Release gate
 
