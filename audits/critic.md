@@ -47,7 +47,10 @@ Source-note comparison audit:
   boundary, preserve the rejected remote for audit, or become retry authority
   for a remapped create target or plugin-owned surface on this branch. Even a
   perfect wording match stays audit-only unless this branch reran the same
-  live boundary with live hashes.
+  live boundary with live hashes. A preserved review note is only historical
+  context until the branch also proves the rejected remote stayed inspectable
+  after rejection and the later boundary rebuilt retry scope from fresh live
+  hashes.
 
 Comparison gap summary:
 
