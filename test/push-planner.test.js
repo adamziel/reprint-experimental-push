@@ -10825,3 +10825,56 @@ test('durable journal replay stays inert after old-remote failures and a complet
     false,
   );
 });
+
+test('durable recovery artifacts only surface remote state when recovery is actually blocked', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const oldRemote = baseSite();
+  const oldFailure = captureError(() =>
+    applyPlan(oldRemote, plan, {
+      durableJournal,
+      failAfterDependencyValidation: true,
+    }),
+  );
+
+  assert.ok(oldFailure instanceof PushPlanError);
+  assert.equal(oldFailure.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assert.equal(oldFailure.details.recovery.status, 'old-remote');
+  assert.equal(oldFailure.details.recovery.artifacts.remote, undefined);
+  assert.equal(oldFailure.details.recovery.artifacts.journal.status, 'dependencies-validated');
+
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal,
+    journal: completed.journal,
+  });
+
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  const blockedRemote = JSON.parse(JSON.stringify(completed.site));
+  blockedRemote.db.wp_posts['ID:2'].post_title = 'Drifted after completion';
+  const blockedError = captureError(() =>
+    applyPlan(blockedRemote, plan, {
+      durableJournal,
+      journal: completed.journal,
+    }),
+  );
+
+  durableJournal.close();
+
+  assert.ok(blockedError instanceof PushPlanError);
+  assert.equal(blockedError.code, 'RECOVERY_BLOCKED');
+  assert.equal(blockedError.details.recovery.status, 'blocked-recovery');
+  assert.ok(blockedError.details.recovery.artifacts.remote);
+  assert.ok(blockedError.details.recovery.artifacts.journal);
+});
