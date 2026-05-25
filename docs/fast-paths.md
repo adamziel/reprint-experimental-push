@@ -254,6 +254,12 @@ fails in a different way:
 - Backpressure cannot collapse journal flushes into a summary that loses the raw
   chunk, row, or group receipts, because recovery still needs the original
   evidence to classify a partial failure.
+- Compressed receipt logs cannot authorize apply or recovery on their own,
+  because raw receipt keys, request hashes, and commit records are still what
+  distinguish "already committed" from "only staged" after a crash.
+- Batched receipt flushes cannot move the commit boundary or merge atomic
+  groups, because recovery still needs to know which members belong to which
+  group when a partial failure lands mid-flight.
 
 The safe version of a fast path is usually a "skip duplicate staging work" or
 "stage earlier" optimization, not a "commit earlier" optimization. The commit

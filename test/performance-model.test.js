@@ -319,6 +319,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'durable queue and journal entries with affected resource identifiers',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'batch-durable-receipt-flushes-within-bounded-journal-lag')?.visibilityBoundary,
+    'journal-flush-only',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys')?.failureEvidence,
+    'compressed receipt log plus original durable receipt key',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches')?.failureEvidence,
     'index cursor, dependency graph, and batch idempotency key',
   );
@@ -508,12 +516,17 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('parallel-finalize-merged-across-groups').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('parallelize-finalize-across-groups').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('backpressure-drops-queued-receipts').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-receipt-log-authorizes-apply').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('unbounded-parallel-large-upload-resume').violates.includes('backpressure'));
   assert.ok(rejectedById.get('unbounded-parallel-large-upload-resume').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('unbounded-parallel-large-upload-resume').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('unbounded-parallel-plugin-install-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('unbounded-parallel-plugin-install-finalize').violates.includes('backpressure'));
   assert.ok(rejectedById.get('unbounded-parallel-plugin-install-finalize').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('parallelize-atomic-group-commit').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('parallelize-db-batch-visibility-across-groups').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('parallelize-chunk-visibility-across-groups').violates.includes('atomic-groups'));
   assert.equal(
     rejectedById.get('compressed-remote-index-and-unbounded-upload-parallelism-skips-backpressure').rejectedGate,
     'recovery',
