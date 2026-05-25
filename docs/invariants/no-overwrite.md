@@ -35,8 +35,9 @@ the live remote immediately before apply.
   deletions or edits, the matching resources stay `already-in-sync` and the
   type swap remains the only automatic mutation.
 - Matching independent edits where local and remote changed a resource to the
-  same hash, including deletions, file edits, and plugin context changes; these
-  produce `already-in-sync` decisions, not mutations.
+  same hash, including creations, deletions, file edits, type swaps, and
+  plugin context changes; these produce `already-in-sync` decisions, not
+  mutations.
 - Matching independent row deletions are treated the same way: if local and
   remote independently deleted the same row, the planner records
   `already-in-sync` and preserves any unrelated remote-only plugin drift.
