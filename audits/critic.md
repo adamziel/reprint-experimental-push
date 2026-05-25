@@ -6815,6 +6815,10 @@ these requirements before any wording is promoted.
 Do not let the branch claim production-grade push support until all of these
 are true on this worktree:
 
+- the primary blocker is the absence of a named real-site preflight/release
+  command; if this branch only has lab or compatibility flows, production
+  wording must fail closed regardless of route shape, smoke naming, or
+  review-artifact polish;
 - the branch names one real-site preflight/release command that can be rerun
   against an actual remote and whose output alone proves the rejected remote
   stayed inspectable, the rejection point happened before the first write,
