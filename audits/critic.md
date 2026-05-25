@@ -79,6 +79,22 @@ runnable on this branch and the rejected remote remains auditable and
 retryable. If the only available proof is a retained-source or fixture replay,
 the claim must stay at "lab progress" rather than "production-ready."
 
+## Release Gate Checklist
+
+Before any production-grade wording is allowed, one rerunnable live boundary
+must show all of the following on the same mutation:
+
+- preserved remote still inspectable after rejection;
+- apply-time revalidation against fresh live hashes;
+- production WordPress auth/session lifecycle;
+- durable journal storage with lease/fencing semantics;
+- graph identity across create-time remaps and relationship-bearing records;
+- plugin-driver coverage for late-discovered plugin-owned surfaces; and
+- auditable retry scope that survives manual-review text without trusting it.
+
+If any item is only shown in a retained-source replay, lab fixture, or route
+shape smoke, the claim remains blocked.
+
 ## What must change before production-grade wording is defensible
 
 Before the project can claim production-grade push support, the proof set
