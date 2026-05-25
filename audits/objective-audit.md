@@ -60,7 +60,7 @@ The current tests are strongest where they reject unsafe claims, and weakest whe
 - `npm run test:playground:authenticated-http-push` and `npm run test:playground:authenticated-cli-push` exercise auth flows, but only in lab topology; they do not prove source-site credentials, TLS-bound session lifecycle, leases, or fenced writes on the live remote/local boundary.
 - The authenticated push client is still self-labeled `labBacked: true`, so even the best authenticated path is not claiming production proof.
 - `test/recovery-journal.test.js` proves file-backed JSONL append/restart behavior, monotonic sequences, no raw journal values, and restart classification. It does not prove production storage durability, cross-process lease handling, a live remote/local crash boundary, or any production WordPress mutation path, so it is proof of a journal model rather than proof of the live storage path.
-- `test/performance-model.test.js` proves the benchmark model keeps proof obligations attached to the proposed fast paths and that unsupported throughput claims are blocked. `test/guarded-executor-benchmark.test.js` proves the refusal path on tampered evidence. Neither test measures a production push path, sets an actual runtime or memory threshold, or proves that the live source topology is fast, so they support refusal of unsupported speed claims rather than a release-speed claim.
+- `test/performance-model.test.js` proves the benchmark model keeps proof obligations attached to the proposed fast paths and that unsupported throughput claims are blocked. `test/guarded-executor-benchmark.test.js` proves the refusal path on tampered evidence. Neither test measures a production push path, sets an actual runtime or memory threshold, or proves that the live source topology is fast; they only prove that unsupported speed claims are rejected before release.
 - All of the optional smokes can pass at once and still leave the objective blocked, because none of them is mandatory and none of them is the single enforced decision point the release bar needs.
 - The current test surface is therefore honest about risk, but honesty is not enough: it proves that the suite can refuse unsafe claims, not that the live release path is safe.
 - In practical terms, the suite currently proves "we refuse to overclaim" much better than it proves "we can safely release."
@@ -72,6 +72,8 @@ The uncomfortable conclusion is that the suite proves guardrails, not release sa
 - a real lease/fencing boundary that prevents concurrent or stale writers;
 - a measured end-to-end benchmark on the production-shaped push path with a stated threshold;
 - one enforced gate that fails closed when any of the above is still fixture-only or refusal-only.
+
+Put differently: the suite can demonstrate that the project knows what it cannot yet prove, but it cannot yet prove the objective itself.
 
 ## Test Claim Audit
 
