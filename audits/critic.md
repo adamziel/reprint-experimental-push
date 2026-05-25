@@ -251,6 +251,17 @@ Release-go/no-go scenarios:
   exact upstream revision or worktree state and the exact live write boundary
   that was reverified. Otherwise it is historical context, not current proof.
 
+Release wording must stay blocked if the only support is a route-shaped lab
+fixture, copied package mount, or hash match:
+
+- A fixture that reproduces the path shape, package layout, or endpoint name
+  does not prove the live mutation executor was exercised.
+- A copied-lab mount that returns the expected hash does not prove the remote
+  was drifted, rejected, preserved, and re-audited on the same boundary.
+- A note that sounds current but was not reverified at the exact live write
+  boundary must be treated as historical context even if it mentions the right
+  route family or package mount.
+
 Comparison rule: a source note can support design context, but it cannot
 support current production wording unless the branch rechecked the same
 upstream state at the same live write boundary. If that recheck did not
