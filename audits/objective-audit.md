@@ -222,6 +222,17 @@ That splits the suite into three evidence classes:
 The practical consequence is that the suite is good at proving "do not claim
 release yet." It is not yet good enough to prove "release is safe."
 
+To keep the evidence map explicit, the strongest currently visible artifacts
+fall into five buckets:
+
+| Bucket | Current evidence | What it proves | What it does not prove |
+| --- | --- | --- | --- |
+| Executable proof | `npm test`, `test/push-planner.test.js`, `test/recovery-journal.test.js`, `test/performance-model.test.js`, `test/guarded-executor-benchmark.test.js` | Planner invariants, recovery classifications, redaction rules, refusal logic, and model-level safety constraints | Live source mutation, production topology, or measured speed on the release path |
+| Lab/fixture proof | `npm run test:playground`, `test:playground:authenticated-http-push`, `test:playground:db-journal-idempotency`, `test:playground:storage-guarded-db-write`, `test:playground:storage-guarded-file-write`, `test:playground:production-shaped-push`, `test:playground:production-plugin-package` | Useful end-to-end slices through local Playground, route shape, journal behavior, and fixture storage guards | Production WordPress semantics, durable production storage, or release-safe auth/session and lease/fencing enforcement |
+| Docs-only proof | `progress.html`, `docs/fast-paths.md`, `docs/supervised-lanes.md`, `supervision/README.md`, script names and comments | The intended release bar, data-loss concerns, and the desired check ordering are described | No executable proof that the described release bar is actually enforced |
+| Missing proof | No required `verify:release`-style command; no enforced CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks | Nothing by itself; this bucket marks the gap | The objective still lacks a single required release gate that fails closed when any safety proof remains optional |
+| Release blocker | The best evidence still says `labBacked: true` for the production-shaped route/package smokes, and the speed path remains refusal-only | Honest refusal to overclaim release readiness | Production no-data-loss, reliability, and speed remain unproven until the missing gate and live-source evidence exist |
+
 That split matters because a green default run still does not mean the release
 gates were exercised.
 
