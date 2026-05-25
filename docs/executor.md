@@ -129,6 +129,18 @@ The test topology follows the same split in both Docker and Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy.
 - remote tunnels are disallowed.
 
+The minimum production-shaped topology is:
+
+| Role | Meaning |
+| --- | --- |
+| `remote-base` | Seeds the persisted pull base and the live remote identity. |
+| `local-edited` | Holds the imported local edits that become the canonical plan. |
+| `remote-changed` | Reuses the same remote identity later to prove drift after dry-run. |
+| `runner` | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
+
+That shape is only valid when `remote-base` and `remote-changed` are the same
+remote identity observed at different times.
+
 The packaging rule is the same in both environments:
 
 - one remote source site seeds the persisted pull base

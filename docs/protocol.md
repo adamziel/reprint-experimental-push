@@ -259,6 +259,17 @@ drift witness, and one runner:
 Docker and Playground must prove the same identity twice, not two different
 sites:
 
+| Role | Docker | Playground |
+| --- | --- | --- |
+| `remote-base` | source-site container on a private network | source-site blueprint that seeds the persisted pull base |
+| `local-edited` | imported edited-site container on the same network | separate disposable blueprint with user edits |
+| `remote-changed` | the same remote container after live drift | the same remote blueprint after a later mutation |
+| `runner` | client container or host process | local test process |
+
+The topology proof only holds when `remote-base` and `remote-changed` are the
+same remote identity at different times. If they are different sites, the
+proof no longer demonstrates live revalidation.
+
 - Docker keeps the roles on one private network and exposes browser-visible
   inspection only through the sandbox-provided `8080` ingress with a local-only
   proxy.
