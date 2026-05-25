@@ -1879,6 +1879,9 @@ Concrete failure scenarios that still need repo-local proof:
 - A Reprint, ZS-Sync, or ForkPress comparison sounds current because the route
   or package shape matches. The missing proof is the exact upstream revision or
   worktree state and a fresh recheck at the same live write boundary.
+- Route-shape smokes, packaged-plugin mounts, fixture replay, and
+  `finalMatchesLocal` are not reliability proof on their own, because they do
+  not show the live write boundary preserving the remote under drift.
 
 Production-readiness release gate for wording:
 
@@ -1903,3 +1906,6 @@ Production-readiness release gate for wording:
   `finalMatchesLocal` results as compatibility evidence only unless the same
   evidence set also includes live remote revalidation and preserved remote
   audit data.
+- Treat "manual resolution" as a failed production proof unless the remote is
+  preserved for audit, the stale approval is rejected on retry, and the retry
+  can be independently audited from fresh live hashes.
