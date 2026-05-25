@@ -259,7 +259,9 @@ Release-gate checklist:
   approval;
 - show that a readable manual-review artifact or source-note comparison stays
   audit-only for any later-discovered plugin-owned surface unless that later
-  surface has its own preserve / reject / retry evidence on this branch;
+  surface has its own preserve / reject / retry evidence on this branch,
+  even if the later boundary reuses the same route family, package mount, or
+  reviewer wording;
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface;
@@ -272,6 +274,9 @@ Release-gate checklist:
 - require any Reprint, ZS-Sync, or ForkPress comparison to name the exact
   upstream revision or worktree state, the exact live boundary rerun here,
   and the exact proof boundary it does and does not cover;
+- require any Reprint, ZS-Sync, or ForkPress comparison to state whether it
+  proves only historical compatibility or current retry authority on this
+  branch;
 - require any Reprint, ZS-Sync, or ForkPress comparison to say whether a
   later-discovered plugin-owned surface is in scope or explicitly excluded;
 - require any later-discovered plugin-owned surface to get its own preserve /
