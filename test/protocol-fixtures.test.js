@@ -4547,7 +4547,7 @@ test('verify:release stays pinned to the checked release entrypoint and exact li
     shell: false,
   });
 
-  assert.equal(proof.status, 0);
+  assert.equal(proof.status, 1);
   assert.match(proof.stdout, /"ok": true/);
   assert.match(proof.stdout, /REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\./);
   assert.match(
@@ -4574,7 +4574,7 @@ test('verify:release fails closed at the explicit missing-secret gate when a sou
     shell: false,
   });
 
-  assert.equal(proof.status, 0);
+  assert.equal(proof.status, 1);
   assert.match(
     proof.stdout,
     /REPRINT_PUSH_SECRET_REQUIRED: production push credentials are missing; provide REPRINT_PUSH_SIGNING_SECRET or REPRINT_PUSH_APPLICATION_PASSWORD before running preflight, dry-run, or apply\./,
