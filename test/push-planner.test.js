@@ -17356,7 +17356,7 @@ test('durable recovery inspect blocks live drift after a completed replay and ke
   );
 });
 
-test('the durable recovery boundary remains fail-closed until the release gate wires in durable journal replay proof', () => {
+test('the durable recovery boundary remains fail-closed until the release gate wires durable journal replay into the release path', () => {
   const packageJson = JSON.parse(
     execFileSync('git', ['show', 'origin/lane/reliable-executor:package.json'], { encoding: 'utf8' }),
   );
