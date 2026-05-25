@@ -1232,7 +1232,8 @@ function pluginOwnedOwnerContextSupport({
     ? intents.find((candidate) => candidate.id === intentId)
     : null;
   const ownerDependencyDeclared = intentDeclaresPluginDependency(intent, owner);
-  if (ownerDependencyDeclared && !hasPlugin(remote, owner)) {
+  const ownerPluginIncludedInIntent = intentIncludesPluginResource(intent, owner);
+  if (ownerDependencyDeclared && !hasPlugin(remote, owner) && ownerPluginIncludedInIntent) {
     return { supported: true };
   }
 
@@ -1309,6 +1310,14 @@ function intentDeclaresPluginDependency(intent, plugin) {
   }
   return normalizePluginDependencies(intent.dependencies?.plugins || [])
     .some((dependency) => dependency.name === plugin);
+}
+
+function intentIncludesPluginResource(intent, plugin) {
+  if (!intent) {
+    return false;
+  }
+  return Array.isArray(intent.resources)
+    && intent.resources.some((resourceKey) => resourceKey === `plugin:${plugin}`);
 }
 
 function addPluginOwnedResourceBlocker(plan, {

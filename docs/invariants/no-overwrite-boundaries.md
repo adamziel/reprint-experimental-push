@@ -47,7 +47,9 @@ This note is the short form of the planner policy in
   unrelated matching independent edits or file type swaps.
 - Plugin-context and plugin-owned data mutations only when their required live
   remote plugin context still matches the pull base or the local side
-  independently matches the live remote context.
+  independently matches the live remote context. A declared dependency on the
+  owning plugin is not enough if the live remote removed that plugin and the
+  same plan does not also include the plugin resource itself.
 - If the live remote removed the owning plugin, any local plugin-owned data
   mutation for that plugin must stop.
 - A local mutation that still touches a remotely removed plugin's files or

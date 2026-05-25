@@ -2997,8 +2997,8 @@ test('remote-only plugin removal blocks stale local dependency assumptions', () 
 
   assert.equal(plan.status, 'blocked');
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
-  assert.equal(plan.blockers[0].class, 'missing-plugin-dependency');
-  assert.equal(plan.blockers[0].plugin, 'forms');
+  assert.equal(plan.blockers[0].class, 'stale-plugin-owner-context');
+  assert.equal(plan.blockers[0].pluginOwner, 'forms');
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
@@ -4780,6 +4780,39 @@ test('blocks plugin-owned option deletions without explicit delete opt-in', () =
   assert.equal(blocker.pluginOwner, 'forms');
   assert.match(blocker.reason, /delete mutations/);
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
+test('blocks plugin-owned option updates when the owning plugin was removed remotely and only the dependency is declared', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  local.pushIntents = [
+    {
+      id: 'update-forms-settings',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      dependencies: { plugins: ['forms'] },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      ),
+    },
+  ];
+  const remote = baseSite();
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {
