@@ -184,6 +184,23 @@ The objective is to push local changes back to the original WordPress source sit
 | Speed | `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the repository refuses unsupported throughput claims and keeps benchmark evidence honest about what is missing. That is refusal proof, not a measured speed result. | It does not define a reproducible measurement contract, nor does it measure throughput or memory on a production-shaped executor or on a production-backed push path, so it cannot support a release claim that the path is fast. | Missing measured end-to-end benchmark on the real push path with a stated threshold. | Yes: no timed production benchmark means no speed claim. |
 | Release gate | `package.json` exposes only `test`, `test:playground`, and separate opt-in smokes; there is no checked-in workflow file to force a default release path. The benchmark suite proves only refusal behavior and evidence invariants, so even the strongest test artifacts can still be bypassed by choosing a different command. | It does not have one required command that chains auth/session, durable journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and performance checks and fails closed when any one is still lab-backed, fixture-scoped, or benchmark-only. | Missing enforced release gate and missing checked-in CI entrypoint to enforce it. | Until the gate exists, a green `npm test` or green `npm run test:playground` can still be mistaken for release approval even though neither proves the live boundary. | Yes: every other claim remains bypassable until the gate exists, and this checkout has no `verify`, `release`, or `verify:release` script to close the gap. |
 
+## Test Audit
+
+The test suite is useful, but it does not yet prove the release claims it is most often associated with:
+
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) proves planner behavior, live-remote precondition modeling, and refusal on conflicts. It does not prove the actual production push boundary or a live remote mutation path.
+- [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) proves file-backed journal monotonicity, redaction, and restart classification in fixtures. It does not prove production storage durability, lease handling, or fencing on the live source.
+- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) proves benchmark shape and guardrail modeling. It does not time the real push path or establish a release threshold.
+- [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the repo refuses unsupported throughput claims and blocks tampered benchmark evidence. It does not prove a positive speed claim.
+- [`npm test`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a sanity check, not a release gate.
+- [`npm run test:playground`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a lab smoke chain, not a production approval path.
+
+Current test verdict:
+
+- Strong at refusal, fixture integrity, and modeled guardrails.
+- Weak at proving live-source no-data-loss, production reliability, and measured speed.
+- Insufficient as a release approval surface because it can still be bypassed by command choice.
+
 ## Release Priority
 
 The weakest current claim is the release gate, and that weakness propagates to every other claim. Until the repository has one mandatory command that composes the safety matrix, the suite can still produce green results without proving production readiness.
