@@ -475,7 +475,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until production evidence lands. Linked docs hold the proof trail.</p>
-        <time class="update-stamp" datetime="2026-05-25T06:48:59+02:00">Last updated: May 25, 2026, 06:48:59 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T06:49:47+02:00">Last updated: May 25, 2026, 06:49:47 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production evidence</span>
           <span class="pill">Proof trail lives in linked docs</span>
@@ -485,14 +485,14 @@
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/supervisor-feedback.md">Open supervisor feedback</a>
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>Scan view only. Linked docs carry the evidence trail and lane nudges. Audit notes stay in <code>audits/</code>.</p>
+        <p>Scan view only. Linked docs carry the evidence trail and lane nudges. Audit notes stay in <code>audits/</code>. This lane-local copy becomes live only after merge to <code>main</code>.</p>
       </div>
     </header>
 
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong>Lab evidence only</strong>
-        <span>Checks here still cover lab and model paths only.</span>
+        <span>Checks here still cover lab and model paths only; production proof remains missing.</span>
       </div>
       <div class="metric">
         <strong>Blocked state</strong>
@@ -515,9 +515,9 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>The page and log still agree on the blocked state, and the newest note is easier to scan.</span></li>
+          <li><strong>Going well</strong><span>The page and log still agree on the blocked state, and the visible copy stays compact.</span></li>
           <li><strong>Not going well</strong><span>Production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.</span></li>
-          <li><strong>Progress change</strong><span>The public page now keeps older history collapsed and trims repeated audit text.</span></li>
+          <li><strong>Progress change</strong><span>No evidence delta this pass; the main gain is less repeated wording on the public page.</span></li>
           <li><strong>Next nudge</strong><span>Keep each lane to one proof gap, one owner, and one concrete production-backed test.</span></li>
         </ul>
         <ul class="compact-list" aria-label="Lane nudges">
