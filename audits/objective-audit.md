@@ -93,6 +93,6 @@ The repository has strong local regression, refusal, and journaling evidence. It
 
 ## 12h Delta
 
-The last 12 hours did not change the release gate or next owner. Current remote heads are `origin/lane/reliable-executor=e7de778c` and `origin/lane/independent-auditor=d82245d8`. The reliable-executor lane still keeps the release verifier on the remote side, and the remaining boundary verdict is still `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`.
+The last 12 hours changed evidence, but not the release gates or the next owner. Current remote heads are `origin/lane/reliable-executor=e7de778c` and `origin/lane/independent-auditor=2febfecb`. The independent-auditor lane refreshed the audit text; the reliable-executor lane still keeps the release verifier on the remote side, and the remaining boundary verdict is still `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`.
 
 Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The one proof that would move a gate is a checked command from this checkout that emits the same live-boundary verdict as the remote lane, with apply-time auth/session validation, durable journal readback, and recovery evidence from the same invocation.
