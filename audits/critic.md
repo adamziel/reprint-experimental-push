@@ -422,6 +422,12 @@ Concrete failure scenarios that still disqualify production wording:
   artifact for the same live boundary; readability alone is audit evidence,
   not retry authority, and it cannot be widened to a later row, file, or
   plugin-owned surface.
+- Release-language failure rule: any "production-grade push support" claim
+  must fail if it relies on a readable review artifact, comparison note, or
+  route-shaped smoke that was not rebuilt from live hashes on this branch;
+  the artifact may remain readable for audit, but it cannot authorize a
+  different row, file, relationship-bearing record, remapped create target,
+  or plugin-owned surface after drift.
 - False reliability from source-note comparisons: a Reprint, ZS-Sync, or
   ForkPress note is cited as if it proved this branch's live executor. The
   missing proof is the branch-local rerun of the same live boundary, the
