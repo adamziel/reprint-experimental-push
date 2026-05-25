@@ -26,6 +26,8 @@ What it proves:
 - Reprint already has a pull pipeline with staged phases, resumability, and
   export-side resource helpers.
 - The repo here can borrow the idea of staged execution and resumable work.
+- The note can justify transport sequencing ideas only, not write safety,
+  audit durability, or retry authority on a live source site.
 
 What it does not prove:
 
@@ -55,6 +57,8 @@ What it proves:
 - ZS-Sync shows a scanner/resource model for detecting changes and batching
   them.
 - It can inform the planning side of a push design.
+- The note can justify discovery and batching ideas only, not live mutation,
+  conflict policy, or durable recovery.
 
 What it does not prove:
 
@@ -74,6 +78,8 @@ What it proves:
   copy-and-replay design.
 - It is a useful source for invariants around merge auditability and recovery
   state.
+- The note can justify review vocabulary only, not a production executor or
+  a safe manual-resolution lifecycle.
 
 What it does not prove:
 

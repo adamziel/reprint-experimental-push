@@ -8,6 +8,8 @@ or comparison-only.
 - The claim cites a live write-path proof on the actual request path, and
   treats route shape, packaged-plugin mounting, fixture replay, and
   `finalMatchesLocal` as compatibility evidence only.
+- The proof names the exact live write boundary, the exact stale remote case,
+  and the exact preserved remote hash set that was rejected before mutation.
 - The same request path was re-run against a live remote after drift, and the
   stale attempt failed before any mutation.
 - The claim names the exact stale remote hash set, the rejected approval, the
@@ -97,6 +99,8 @@ or comparison-only.
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
   production proof unless the same live write boundary was reverified against a
   drifted remote.
+- The claim does not let a lab route, copied mount, or fixture hash become a
+  proxy for the live executor, even if the endpoint path matches production.
 - The claim does not let a comparison note become current proof unless it
   names the exact upstream revision or worktree state, the exact live
   mutation boundary, the preserved remote, and the stale-authority rejection
@@ -123,6 +127,9 @@ or comparison-only.
   just because it is readable; if it can be reused against a new row, file,
   relationship-bearing record, or plugin-owned surface, the claim is not
   production-safe.
+- The claim does not let "manual resolution later" count as success unless the
+  remote was preserved, the stale artifact stayed unusable, and the next retry
+  rebuilt scope from fresh live evidence.
 - The claim does not let "manual resolution later" stand in for success unless
   the remote was preserved for audit, the stale artifact stayed unusable, and
   the retry rebuilt scope from fresh live evidence on the same live write
@@ -193,6 +200,9 @@ Release go/no-go scenarios:
 - A readable stale manual-review artifact is audit evidence only after drift.
   It is not retry authority unless the proof shows it cannot widen to another
   row, file, relationship-bearing record, or plugin-owned surface.
+- A successful manual-review claim must also name the exact rejection point and
+  the exact fresh-live retry scope, not just the fact that the artifact stayed
+  readable.
 - Reprint, ZS-Sync, or ForkPress comparisons are historical context only
   unless the exact upstream revision or worktree state and the exact live
   write boundary were reverified.
