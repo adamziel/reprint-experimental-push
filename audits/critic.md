@@ -18,6 +18,16 @@ Must change before any production-grade push claim:
 - classify partial file, DB, and plugin side effects as old, new, or blocked
   before retry so a mixed write cannot be relabeled as success.
 
+Source-note comparisons are still only historical context unless this branch
+names the exact upstream revision or worktree state and reruns the same live
+mutation boundary here. A Reprint, ZS-Sync, or ForkPress note can justify
+transport shape, discovery shape, or review vocabulary, but it does not
+prove this branch preserved the remote, rejected the stale artifact before
+mutation, or rebuilt retry authority from fresh live hashes. If the claim
+only shows a route-shaped smoke, packaged mount, fixture replay, readable
+manual-review artifact, or `finalMatchesLocal`, the comparison remains
+non-authoritative for production wording.
+
 Most important unresolved trap:
 
 If the first write succeeds on a narrower surface and a later live snapshot
