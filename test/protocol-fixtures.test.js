@@ -265,6 +265,10 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
   assert.equal(authSession.topology.same_remote_identity, true);
   assert.ok(authSession.topology.proof.includes('dry-run and apply remain separate remote operations'));
   assert.ok(authSession.required_invariants.includes('journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable'));
+  assert.equal(authSession.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(authSession.journal_row.claim_owner, authSession.journal_fence.claim_owner);
+  assert.equal(authSession.journal_row.lease_expires_at, authSession.journal_fence.lease_expires_at);
+  assert.ok(authSession.recovery_inspect.blocked_when.includes('fresh live hashes do not match the journaled target'));
 
   assert.equal(
     ladder.purpose,
@@ -286,6 +290,10 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
   assert.equal(ladder.auth_and_session.required_floor, 'at least as strict as current Reprint HMAC usage');
   assert.ok(ladder.topology.docker.proof.includes('push recovery inspect happens before any mutating repair'));
   assert.ok(ladder.topology.playground.proof.includes('browser-visible inspection goes through the sandbox-provided 8080 ingress'));
+  assert.ok(ladder.topology.docker.proof.includes('push batch apply revalidates live evidence before every batch and at the storage boundary'));
+  assert.ok(ladder.topology.playground.proof.includes('push snapshot hashes are planning evidence only'));
+  assert.equal(ladder.remote_liveness.apply, 'revalidates the live remote before every batch and again at the storage boundary');
+  assert.equal(ladder.journal_and_recovery.recover_inspect, 'must happen before any mutating recovery mode');
   assert.deepEqual(ladder.required_invariants, [
     'pull exporter/importer establish the immutable base package before push',
     'push preflight must bind the persisted pull base to one live remote identity and one short-lived session',
