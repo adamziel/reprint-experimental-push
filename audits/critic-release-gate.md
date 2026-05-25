@@ -56,7 +56,7 @@ False success to reject:
   in `docs/approach-scorecard.md`; that table is a heuristic, not evidence of
   a live boundary rejecting stale authority before mutation.
 
-Source-note comparisons are historical context unless the exact upstream revision or worktree state is named and this branch reran the same live boundary against the same drift case. A named Reprint, ZS-Sync, or ForkPress note can justify historical transport, discovery, or review vocabulary, but it does not prove the live executor, the preserved remote, or retry safety on this branch.
+Source-note comparisons are historical context unless the exact upstream revision or worktree state is named and this branch reran the same live boundary against the same drift case. A named Reprint, ZS-Sync, or ForkPress note can justify historical transport, discovery, or review vocabulary, but it does not prove the live executor, the preserved remote, retry safety, create-time remap safety, or plugin-owned surface handling on this branch.
 
 That means:
 

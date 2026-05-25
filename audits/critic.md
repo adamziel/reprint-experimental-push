@@ -4979,7 +4979,10 @@ The local source-note anchors in `docs/source-notes.md` are the observed
 historical references `27c5f25` for Reprint, `d9334a0` for ZS-Sync, and
 `55f9879` for ForkPress. Those anchors can justify transport, discovery, and
 review vocabulary, but they do not prove live push safety, preserved-remote
-retention, create-time remap safety, or retry authority on this branch. The
+retention, create-time remap safety, retry authority, or plugin-owned surface
+handling on this branch. Even when the exact upstream revision or worktree
+state is named, the note is still historical context only until this branch
+reruns the same live boundary and preserves the drifted remote for audit. The
 missing proof is branch-local and live: the exact stale-drift case was rejected
 before the first write, the remote stayed auditable after rejection, and each
 later-discovered plugin-owned surface was either blocked or given its own
