@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 14:10:46
+
+<a id="2026-05-25-public-status-audit-141046"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:10:46 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and added `66830e6f` as the
+  newest drift revalidation proof.
+- `66830e6f` shows the checked release-verify path failing closed with
+  `PRECONDITION_FAILED` when stale remote state is revalidated after snapshot;
+  release gates stay at `0/4`, and production WordPress executor/auth plus
+  durable journal semantics remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 13:59:09
 
 <a id="2026-05-25-public-status-audit-135909"></a>
