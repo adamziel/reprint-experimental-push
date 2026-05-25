@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-25 - Public Status Audit 11:48:11
+
+<a id="2026-05-25-public-status-audit-114811"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 11:48:11 CEST`) and kept the public anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- The first screen now keeps `63a3502f` visible with `authSessionType`,
+  `applyCommitted`, and `durableJournal.rows: 17`, while `6e89211e` and
+  `e552c02a` continue to show the live remote drift and recovery inspect replay
+  regressions; `f9fcb123` still names the blocker as
+  `auth/session lifecycle and durable journal semantics`.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-25 - Public Status Audit 11:43:30
 
 <a id="2026-05-25-public-status-audit-114330"></a>
