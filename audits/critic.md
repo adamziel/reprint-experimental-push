@@ -223,6 +223,14 @@ production path. A later-discovered plugin-owned surface or remapped create
 target still needs its own preserve / reject / retry cycle; shape similarity
 does not widen the earlier boundary.
 
+Current highest-value blocker: the branch still does not expose a real-site
+preflight/release command that proves the same live boundary on an actual
+remote and records the preserved remote, rejection point, and retry scope in a
+single executable flow. Until such a command exists and is audited end to end,
+the design cannot claim that the protocol docs, smoke tests, or manual-review
+notes are production release support rather than lab-only compatibility
+evidence.
+
 Fail-closed wording rule:
 
 - compatibility evidence: route shape, package layout, fixture replay,
