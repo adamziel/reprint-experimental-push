@@ -18496,3 +18496,39 @@ test('durable recovery keeps the failure-before-mutation, failure-after-staging,
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.integrity.status, 'ok');
 });
+
+test('durable replay drift closes into blocked recovery with inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replayError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      durableJournal: replayJournal,
+      journal: completed.journal,
+    }),
+  );
+  replayJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.journal);
+  assert.ok(replayError.details.recovery.artifacts.remote);
+  assert.equal(replayError.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'blocked-recovery');
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state');
+  assert.equal(persisted.integrity.status, 'ok');
+});
