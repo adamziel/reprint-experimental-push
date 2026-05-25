@@ -79,6 +79,9 @@ This note is the short form of the planner policy in
   plugin files, or plugin removals are preserved.
 - Remote-only plugin drift stays preserved when the local plan also contains
   unrelated matching independent edits or file type swaps.
+- A live-preconditioned delete may still apply alongside a matching
+  independent restore, edit, and file type swap while remote-only plugin drift
+  stays preserved through apply.
 - Plugin-context and plugin-owned data mutations only when their required live
   remote plugin context still matches the pull base or the local side
   independently matches the live remote context. A declared dependency on the
@@ -113,6 +116,9 @@ mutation id, the resource key, the remote hash observed during planning, and
   local side did not independently reach the live remote hash.
 - Any local delete or file type swap that would overwrite a remote-only
   plugin change instead of preserving it in `keep-remote`.
+- Any local delete that would hide a live remote descendant, even if matching
+  independent restore, edit, or file type swap resources are already safe in
+  the same plan.
 - Plugin-owned deletions when the owner context is stale and the local side did
   not independently match the live remote context.
 - Plugin-owned deletions remain blocked even when unrelated matching
