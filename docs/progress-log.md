@@ -1,3 +1,21 @@
+## 2026-05-25 - Public Status Audit 06:42:43
+
+<a id="2026-05-25-public-status-audit-064243"></a>
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 06:42:43 CEST`) and kept the visible last-updated stamp current.
+- Tightened the header audit strip so the first screen carries less repeated
+  wording while still surfacing the top blocker, latest audit, and release-gate
+  links.
+- No new production proof was added; real WordPress executor/auth, durable
+  recovery journaling, Docker/Playground integration, graph identity, and
+  plugin drivers remain pending until proven.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [audits/objective-audit.md](../audits/objective-audit.md), [docs/approach-scorecard.md](approach-scorecard.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
+  [docs/supervisor-feedback.md](supervisor-feedback.md), [release-gate checklist](../progress.html#proof-gates).
+
 # Progress Log
 
 This log records evidence present in this repository. Percentages must remain
