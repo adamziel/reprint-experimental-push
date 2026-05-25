@@ -49,6 +49,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
 
   assert.equal(contract.contract_id, 'push-contract-production-extension');
+  assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(contract.pull_pipeline.importer, 'persists the base package as immutable provenance');
+  assert.equal(contract.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
   assert.equal(contract.pull_handoff.exporter, 'scans the merge base and coverage evidence');
   assert.equal(contract.pull_handoff.importer, 'persists the base package as immutable provenance');
   assert.equal(
@@ -122,6 +125,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology_matrix.push_pipeline.mutation_batch_apply, 'revalidates fresh live evidence before every batch and again at the storage boundary');
   assert.equal(contract.topology_matrix.push_pipeline.journal_inspect, 'reads durable evidence without authorizing mutation');
   assert.equal(contract.topology_matrix.push_pipeline.recovery, 'starts with inspect and allows mutating repair only when the journal and live hashes prove the action');
+  assert.equal(contract.topology_matrix.roles.remote_base, 'the one remote source site that seeds the persisted pull base');
+  assert.equal(contract.topology_matrix.roles.local_edited, 'the one imported local site with user edits');
+  assert.equal(contract.topology_matrix.roles.remote_changed, 'the same remote site observed later after independent drift');
+  assert.equal(contract.topology_matrix.roles.runner, 'the only process allowed to compare, upload, inspect, and recover');
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
   assert.equal(
     contract.proofs.auth_session_journal,
