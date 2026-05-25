@@ -849,6 +849,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'live-preconditions', 'durable-progress', 'atomic-file-publish'],
   },
   {
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish',
+    proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip the guarded publish step for a large upload',
+    rejectedBecause: 'planning evidence and cached receipts can reduce replay work, but they cannot prove the live compare or guarded publish barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-buffer-completes-chunk-resume',
     proposal: 'treat a fresh remote index plus a compressed in-memory buffer as enough proof to skip missing chunk receipts during resume',
     rejectedBecause: 'planning evidence and compressed buffers can reduce stalled work, but they cannot prove which chunk acknowledgements survived a crash or pause',
