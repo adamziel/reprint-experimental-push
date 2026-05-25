@@ -273,6 +273,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-update-activation')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-finalize')?.rejectedGate,
     'group',
   );
