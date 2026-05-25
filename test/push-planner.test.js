@@ -9947,6 +9947,42 @@ test('blocks a file type swap that would hide a live remote descendant while pre
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });
 
+test('blocks a direct file conflict while preserving an unrelated live delete and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "local about";';
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "remote about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const evidence = plan.conflicts[0] || plan.blockers[0];
+  const evidenceJson = JSON.stringify(evidence);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.action, 'delete');
+  assert.equal(mutation.changeKind, 'delete');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(evidence.class, 'file-conflict');
+  assert.equal(evidence.resourceKey, 'file:about.php');
+  assert.equal(evidenceJson.includes('local about'), false);
+  assert.equal(evidenceJson.includes('remote about'), false);
+  assert.equal(evidenceJson.includes('remote-only plugin drift'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete and file type swap preserve matching independent edits and deletions', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = 'base gallery file';
