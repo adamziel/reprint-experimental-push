@@ -9604,6 +9604,44 @@ test('keeps remote-only plugin removals while a live-preconditioned delete and m
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent delete stay safe', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/notes.txt'] = 'base notes';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.files['wp-content/uploads/notes.txt'];
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = JSON.parse(JSON.stringify(base));
+  delete remote.files['wp-content/uploads/notes.txt'];
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingDelete = decisionFor(plan, 'file:wp-content/uploads/notes.txt');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/notes.txt'), false);
+  assert.equal(result.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
