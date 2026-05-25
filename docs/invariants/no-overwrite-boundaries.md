@@ -10,6 +10,9 @@ This note is the short form of the planner policy in
   ancestor or descendant would be hidden.
 - Matching independent edits, including deletes, file edits, and file type
   swaps that end on the same hash.
+- Matching independent edits may appear alongside a live-preconditioned
+  deletion in the same plan; the matching resources still stay
+  `already-in-sync` and do not weaken the deletion precondition.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Remote-only plugin drift stays preserved when the local plan also contains
