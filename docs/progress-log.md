@@ -4,6 +4,42 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 13:41:08
+
+<a id="2026-05-25-public-status-audit-134108"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:41:08 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and surfaced
+  `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` alongside the existing
+  fail-closed release gates.
+- `3d8748b6` keeps the release command fail-closed on
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` still proves
+  `REPRINT_PUSH_SECRET_REQUIRED` fails closed, `889bd37a` keeps
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible, and
+  `d3d04595` remains model recovery evidence rather than production durable
+  journal storage or lease/fencing proof.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 13:39:25
+
+<a id="2026-05-25-public-status-audit-133925"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:39:25 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- `3d8748b6` keeps the release command fail-closed on
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` still proves
+  `REPRINT_PUSH_SECRET_REQUIRED` fails closed, `889bd37a` keeps
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible, and
+  `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` remains the missing production
+  boundary.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 13:36:20
 
 <a id="2026-05-25-public-status-audit-133620"></a>
