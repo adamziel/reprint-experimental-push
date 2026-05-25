@@ -2389,8 +2389,8 @@ False reliability claims to avoid:
   scope.
 - "Current proof" when a comparison note names Reprint, ZS-Sync, or ForkPress
   but does not also name the exact upstream revision or worktree state, the
-  exact live mutation boundary, the preserved remote, and the stale rejection
-  point.
+  exact live mutation boundary, the preserved remote, the stale rejection
+  point, and the fresh retry scope rebuilt from that preserved remote.
 
 Additional production-readiness blockers that still need explicit proof:
 
