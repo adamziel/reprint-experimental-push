@@ -2050,3 +2050,22 @@ If any of those notes are cited in production-readiness language, the claim
 must also name the exact upstream revision or worktree state that was
 reverified at the same live mutation boundary. Otherwise the comparison is
 historical context only.
+
+Do not accept these claims as production wording unless the same live write
+boundary, preserved remote, stale rejection, and fresh retry scope are all
+present in the proof:
+
+- "The route is production-safe" when the only evidence is route shape,
+  packaged mount shape, or `finalMatchesLocal`.
+- "Manual resolution succeeded" when the remote was not preserved for audit,
+  the stale artifact could still authorize a retry, or the retry scope was not
+  rebuilt from fresh live hashes.
+- "The plugin is handled" when the proof only covers the main row and not the
+  plugin-owned allowlist, custom tables, generated files, activation hooks,
+  cron rows, cache entries, runtime registries, or other side effects.
+- "The comparison proves it" when the Reprint, ZS-Sync, or ForkPress note was
+  not reverified against the exact upstream revision or worktree state at the
+  same live mutation boundary.
+- "Recovery succeeded" when one store committed and the rest were only
+  classified, because mixed file, DB, or plugin writes still need durable
+  old/new/blocked evidence and a retry that starts from fresh live evidence.
