@@ -14583,6 +14583,68 @@ test('blocks a file type swap that would hide a live remote descendant while pre
   assert.equal(plan.preconditions.length, 0);
 });
 
+test('blocks a file delete that would hide a live remote descendant while preserving matching independent delete, restore, edit, and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = 'base gallery file';
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant bytes';
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:8'] = { ID: 8, post_title: 'Base matched title 8', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery'];
+  delete local.files['wp-content/uploads/gallery/keep.txt'];
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  delete local.db.wp_posts['ID:1'];
+  local.db.wp_posts['ID:8'] = { ID: 8, post_title: 'Shared matched title 8', post_status: 'publish' };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/keep.txt'] = 'remote descendant bytes';
+  delete remote.files['index.php'];
+  remote.files['about.php'] = '<?php echo "shared about";';
+  delete remote.db.wp_posts['ID:1'];
+  remote.db.wp_posts['ID:8'] = { ID: 8, post_title: 'Shared matched title 8', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteConflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:wp-content/uploads/gallery');
+  const matchingDelete = decisionFor(plan, 'file:index.php');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingRestore = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const matchingRowEdit = decisionFor(plan, 'row:["wp_posts","ID:8"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const conflictJson = JSON.stringify(deleteConflict);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(deleteConflict.class, 'file-topology-conflict');
+  assert.equal(deleteConflict.relatedResourceKey, 'file:wp-content/uploads/gallery/keep.txt');
+  assert.equal(conflictJson.includes('base descendant bytes'), false);
+  assert.equal(conflictJson.includes('remote descendant bytes'), false);
+  assert.equal(conflictJson.includes('remote-only plugin drift'), false);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'delete');
+  assert.equal(matchingRestore.change.remoteChange, 'delete');
+  assert.equal(matchingRowEdit.decision, 'already-in-sync');
+  assert.equal(matchingRowEdit.change.localChange, 'update');
+  assert.equal(matchingRowEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(plan.mutations.length, 0);
+  assert.equal(plan.preconditions.length, 0);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks a file delete that would hide a live remote descendant while preserving matching independent edit, type swap, and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
