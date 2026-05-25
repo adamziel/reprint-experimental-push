@@ -187,6 +187,17 @@ by itself prove that this worktree rejected the stale boundary, preserved the
 remote, and rebuilt retry scope from live hashes for the same live mutation
 boundary.
 
+Comparison proof rule: when a source note is cited, the citation must say
+which exact upstream revision or worktree state it refers to, whether it is
+historical context or live retry proof, and what live boundary was rerun on
+this branch. If any of those three pieces is missing, the note is not
+production evidence. Route shape, package shape, reviewer wording, readable
+manual-review output, and fixture replay all stay compatibility evidence only
+unless the same live boundary on this branch also shows preserved-remote
+evidence, stale-authority rejection before the first write, a fresh retry
+scope rebuilt from live hashes, and old/new/blocked classification for every
+touched surface.
+
 Release-gate checklist before any production-grade push wording:
 
 - the exact live boundary on this branch is named, and the exact stale-drift
@@ -229,6 +240,27 @@ Release gate for the remaining gap:
 - any "manual resolution" claim that does not name the rejected boundary,
   preserved remote, and fresh live-hash retry scope is false reliability, not
   production-grade push support.
+
+Release gate checklist for production wording:
+
+- name the exact live boundary and exact stale-drift case that was rejected;
+- show the preserved remote stayed inspectable after rejection so the user can
+  audit and retry from fresh live hashes;
+- prove the first write was blocked or retried only after the fresh retry
+  scope was rebuilt from live hashes on this branch;
+- classify every touched file, DB row, relationship-bearing record, and
+  plugin-owned surface as old, new, or blocked before retry starts, including
+  mixed file/DB/plugin side effects;
+- either enumerate every plugin-owned surface outside the allowlist before
+  write or block it at apply time, including late-discovered tables, files,
+  cron rows, runtime registries, generated assets, caches, and serialized
+  blobs;
+- state for each Reprint, ZS-Sync, or ForkPress comparison what the note
+  proves here, what it does not prove here, and the exact upstream revision
+  or worktree state it came from; and
+- treat any readable manual-review artifact as audit-only unless it names the
+  rejected boundary, preserved remote, and fresh retry scope for that same
+  live boundary.
 
 Must change before the project can claim production-grade push support:
 
