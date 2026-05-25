@@ -1,16 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 11:38:53 CEST
+Last updated: 2026-05-25 11:40:59 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 11:38:53 CEST
+## 2026-05-25 11:40:59 CEST
 
-- Going well: the page and log stay compact, and the evidence trail remains linked instead of repeated.
-- Not going well: the lane that owns the next real-site release command has not returned it, so `reliable-executor` remains the drifting lane.
-- Progress delta: none; the blocked release state is unchanged and there is still no retained real-endpoint proof.
-- Next nudge: the release-command owner must bring back one retained real-endpoint run; `reliable-executor` must keep the gate tied to a real URL/topology; `invariants` and `recovery` should wait for that same retained run.
+- Going well: `reliable-executor` tightened `npm run verify:release`, and the latest lab proof at `63a3502f` now asserts `authSessionType`, minted session shape, `durableJournal.rows: 17`, and `applyCommitted: true`.
+- Not going well: the production gate is still closed because the retained real-endpoint boundary has not been proven outside the lab/Playground topology.
+- Progress delta: the harness is more explicit, but the release state stays blocked because the same proof has not crossed onto a real endpoint.
+- Next nudge: `reliable-executor` must turn the same proof toward a real endpoint; `progress-publisher` must keep the public page terse and linked; `critic` and `auditor` should reject wording-only proof.
 - Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 
