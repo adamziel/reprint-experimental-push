@@ -15900,6 +15900,50 @@ test('keeps same-remote release boundaries and refuses drift after a ready delet
   assert.equal(driftedRemote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('keeps remote-only plugin drift at the live release boundary while a ready delete plan preserves a matching independent file type swap and refuses late drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = 'base gallery bytes';
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery');
+
+  const driftedRemote = baseSite();
+  driftedRemote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  driftedRemote.files['about.php'] = '<?php echo "shared about";';
+  driftedRemote.plugins.forms.description = 'remote-only plugin drift';
+  driftedRemote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+  driftedRemote.files['index.php'] = '<?php echo "late drift";';
+
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.files['index.php'], '<?php echo "late drift";');
+  assert.equal(driftedRemote.files['wp-content/uploads/gallery'].type, 'directory');
+  assert.equal(driftedRemote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('keeps remote-only plugin drift at the live release boundary while a ready delete plan preserves late plugin-owned drift', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
