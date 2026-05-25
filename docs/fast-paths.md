@@ -628,6 +628,10 @@ under load:
 - remote-index-plus-compressed-buffer-completes-chunk-resume is rejected because
   compressed buffers and planning evidence cannot prove which chunk receipts
   survived a crash or pause.
+- compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish
+  is rejected because planning evidence, compression, and cached receipts can
+  reduce replay work, but they cannot prove the live compare or guarded
+  publish barrier survived failure.
 
 ## Benchmark Shape
 
