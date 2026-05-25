@@ -1,6 +1,6 @@
 # Release Blockers
 
-This note is intentionally narrow: it records the current blockers that keep the WordPress push objective from being a production release claim.
+This note is intentionally narrow: it records the current blockers that keep the WordPress push objective from being a production release claim. A green `npm test` run is still only refusal-, fixture-, or lab-backed evidence unless the same run also reaches the live source boundary and fails closed when any release proof is missing.
 
 ## Current blockers
 
@@ -9,6 +9,7 @@ This note is intentionally narrow: it records the current blockers that keep the
 3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path, establish a release threshold, or fail closed on missing live-path speed proof.
 4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary.
 5. There is no checked-in CI workflow in this checkout, so there is no visible enforced entrypoint that could make the release gate mandatory.
+6. `package.json` still exposes `test`, `plan`, `apply`, and optional playground helpers only. That surface can support release work, but it does not itself define an enforced release verdict.
 
 ## Required proof before release
 
@@ -21,4 +22,4 @@ This note is intentionally narrow: it records the current blockers that keep the
 
 ## Audit rule
 
-If a claim is still supported only by fixture tests, refusal tests, route-shape smokes, or `labBacked: true` evidence, it does not count as release proof.
+If a claim is still supported only by fixture tests, refusal tests, route-shape smokes, or `labBacked: true` evidence, it does not count as release proof. That includes a green `npm test` run unless the checked-in release gate itself reaches the live source boundary.
