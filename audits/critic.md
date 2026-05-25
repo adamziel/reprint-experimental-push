@@ -437,6 +437,12 @@ remote for audit. Until that command exists and can be rerun, any
 production-readiness wording is still just a wrapper around compatibility
 evidence.
 
+Source-note comparisons stay provenance until they are paired with that same
+live boundary. Reprint, ZS-Sync, and ForkPress notes may explain the design
+family, but they do not become retry authority on this branch unless the
+comparison names the exact upstream revision or worktree state, the exact live
+command, the exact rejected remote, and the exact proof gap that remains here.
+
 Release-gate checklist for production wording:
 
 - exact branch-local command string, runnable without prose edits;
