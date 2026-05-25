@@ -93,6 +93,16 @@ The executor topology proof is intentionally narrow:
 - one runner process owns preflight, snapshot listing, dry-run, apply,
   journal inspect, and recovery
 
+The executor keeps the same security envelope in Docker and Playground:
+
+- the sandbox-provided `8080` ingress is the only browser-visible path
+- local-only proxies are allowed
+- remote tunnels are disallowed
+- the pull exporter/importer produce immutable provenance before push starts
+- dry-run and apply remain separate remote operations
+- apply-time revalidation must still happen before every batch and at the
+  storage boundary
+
 Recovery classifies the attempt into the same four states used by the protocol
 contract:
 

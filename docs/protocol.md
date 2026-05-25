@@ -32,6 +32,15 @@ half:
 - `push_recover` starts with `inspect`; mutating recovery is only allowed
   after inspect proves the action safe with fresh live hashes.
 
+The production stage names are intentionally explicit:
+
+- preflight
+- remote snapshot hash listing
+- dry-run plan upload
+- mutation batch apply
+- journal inspect
+- recovery
+
 The live remote is trusted in two different ways and those ways must stay
 separate:
 
@@ -106,6 +115,19 @@ That ladder is the production contract in miniature:
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes prove the action
 
+The pull/export/import pipeline is the provenance source for that ladder:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted base package to one live remote identity and
+  one short-lived push session
+- remote snapshot hash listing stays planning-only
+- dry-run plan upload returns an eligibility receipt, not a lock
+- mutation batch apply is the first write stage and must revalidate before
+  every batch and again at the storage boundary
+- journal inspect is read-only
+- recovery must begin with inspect before any mutating repair
+
 The one-remote, one-local, one-drift-witness test shape is the same in Docker
 and Playground:
 
@@ -121,6 +143,15 @@ remote operations, apply revalidates live evidence before every batch and at
 the storage boundary, and recovery starts with inspect before any mutating
 repair. Browser-visible inspection must stay on the sandbox-provided `8080`
 ingress through a local-only proxy.
+
+Docker and Playground share that same security envelope:
+
+- the sandbox-provided `8080` ingress is the only browser-visible path
+- local-only proxies are allowed
+- remote tunnels are disallowed
+- dry-run and apply remain separate remote operations
+- apply-time revalidation must still happen before every batch and at the
+  storage boundary
 
 The same proof shape is captured in
 [`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json)
