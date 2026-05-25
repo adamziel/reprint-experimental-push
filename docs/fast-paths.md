@@ -633,6 +633,10 @@ under load:
   is rejected because planning evidence and cached batch receipts can reduce
   replay work, but they cannot prove dependency checks, per-row preconditions,
   or the atomic-group finalize survived failure.
+- compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback
+  is rejected because planning evidence and cached row receipts can trim replay
+  work, but they cannot prove the plugin metadata writes, per-row compares, or
+  the atomic-group writeback survived failure.
 - compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize is
   rejected because planning evidence and cached hashes can skip duplicate
   lookup and rehash work, but they cannot prove dependency checks, staged rows,
@@ -834,3 +838,5 @@ Rejected fast paths stay rejected even when they look fast on paper:
   ability to classify the remote state.
 - A drained queue cannot prove that the remote acknowledged every staged chunk
   or row.
+- Cached row receipts cannot skip plugin-install writeback, because the
+  metadata writes and atomic-group barrier still need durable proof.
