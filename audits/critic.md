@@ -5,20 +5,23 @@ remote head `2ac32891`, which clarifies the release-proof contract and carries
 the retained-source `verify:release` evidence forward from the earlier
 boundary-verdict steps `889bd37a` and `68664884`, with `63a3502f` as an
 earlier retained-source proof point and `c00eb112` as a later retained-source
-lab run that still sits below the production bar. The remote lane's completed
-`npm run verify:release` result, including `authSessionType`, minted session
-shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
-retained-source lab evidence. The remote lane also exposes `verify:release` in
-`package.json`, so any remaining absence of that command on this checkout is a
-branch-local merge gap, not a project-wide absence. That is useful progress,
-but it still does not prove a live production boundary because the
-retained-source run does not show preserved-remote retention across rejection,
-live auth/session lifecycle on WordPress, apply-time revalidation against a
-fresh real-site source, durable journal storage and lease/fencing semantics
-outside the Playground harness, or plugin-driver coverage for late-discovered
-plugin-owned surfaces. Production-grade wording also remains false if it
-relies on lab-session shape, retained-source journal rows, or route
-compatibility as a stand-in for live WordPress auth/session durability.
+lab run that still sits below the production bar. The latest explicit verdict
+on that lane is `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, which is the
+right boundary to keep in view: the remote lane's completed `npm run
+verify:release` result, including `authSessionType`, minted session shape,
+`applyCommitted`, and `durableJournal.rows: 17`, is material retained-source
+lab evidence, but it is still not production proof. The remote lane also
+exposes `verify:release` in `package.json`, so any remaining absence of that
+command on this checkout is a branch-local merge gap, not a project-wide
+absence. That is useful progress, but it still does not prove a live
+production boundary because the retained-source run does not show
+preserved-remote retention across rejection, live auth/session lifecycle on
+WordPress, apply-time revalidation against a fresh real-site source, durable
+journal storage and lease/fencing semantics outside the Playground harness,
+or plugin-driver coverage for late-discovered plugin-owned surfaces.
+Production-grade wording also remains false if it relies on lab-session shape,
+retained-source journal rows, or route compatibility as a stand-in for live
+WordPress auth/session durability.
 
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
