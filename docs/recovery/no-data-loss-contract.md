@@ -1,24 +1,25 @@
 # No Data Loss Recovery Contract
 
-This lane treats the recovery boundary as valid only when one of these states is observable after a failure or replay:
+This lane treats recovery as a strict three-state contract:
 
-1. `old-remote`
-   - No remote mutation escaped the boundary.
-   - Recovery artifacts may show the plan as opened, staged, or dependency-validated.
-   - The remote snapshot itself must remain unchanged.
+- `old-remote` for failures before any remote mutation is committed
+- `fully-updated-remote` for completed plans and safe replays
+- `blocked-recovery` when the remote may be partially updated and recovery artifacts are required
 
-2. `fully-updated-remote`
-   - The plan completed successfully.
-   - Replaying the same completed plan must stay inert.
-   - The replay path must not duplicate inserts or resurrect stale local data.
+## Required behavior
 
-3. `blocked-recovery`
-   - A partial remote mutation was observed or a stale completed replay was rejected.
-   - Recovery artifacts must remain inspectable.
-   - A blocked state is acceptable only when it carries enough journal and remote evidence to explain the refusal.
+- A failure before mutation, after staging, or after dependency validation must leave the remote unchanged.
+- A completed replay must not apply fresh mutations again.
+- A stale completed replay must block instead of pretending the remote is safe.
+- Any partial remote mutation must carry recovery artifacts. A partial mutation without artifacts is a release blocker.
 
-Release rule:
+## Artifact expectations
 
-- A partial remote mutation without a recovery artifact is a blocker.
-- Any retry must either reclassify to `fully-updated-remote` or remain blocked with artifacts.
-- Anything else is treated as data-loss risk.
+- `old-remote` must include the journal artifact and must not include a remote artifact.
+- `fully-updated-remote` must include the journal artifact and must not include a remote artifact.
+- `blocked-recovery` must include both journal and remote artifacts.
+
+## Durable journal note
+
+The durable journal is the operational evidence trail. JSON test fixtures are useful for model coverage, but production recovery needs durable writes, claim fencing, and inspectable artifacts that survive process failure.
+
