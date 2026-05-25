@@ -55,6 +55,10 @@ Must-fix blockers before any production wording:
 - A readable stale manual-review artifact must not be described as durable
   retry authority, even when it remains inspectable; if a retry consumed it as
   authority, the proof failed to preserve a clean remote-audit separation.
+- If a plugin-owned surface is discovered only after the first write, the
+  claim must show the remote stayed preserved, the late discovery was blocked
+  or durably classified, and the retry rebuilt scope from fresh live hashes;
+  otherwise the late surface can still hide a partial-write loss mode.
 - Reprint, ZS-Sync, and ForkPress comparisons stay historical unless the
   exact upstream revision or worktree state and the same live mutation
   boundary were reverified on this branch.
@@ -239,10 +243,13 @@ same live write path:
 5. A readable manual-review artifact stays audit-only after drift, cannot
    authorize retry, and cannot widen into a different row, file,
    relationship-bearing record, or plugin-owned surface.
-6. Any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
+6. A plugin-owned surface that appears only after the first write is either
+   blocked or durably classified without widening the claim, and the retry
+   scope is rebuilt from fresh live hashes.
+7. Any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
    revision or worktree state and the exact live mutation boundary that was
    reverified here; otherwise it is historical context only.
-7. Route shape, package shape, fixture replay, and `finalMatchesLocal` stay
+8. Route shape, package shape, fixture replay, and `finalMatchesLocal` stay
    compatibility evidence only and never become production-safety proof.
 
 The protocol has useful lab properties: dry-run/apply separation, live-remote
