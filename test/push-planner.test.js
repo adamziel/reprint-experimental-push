@@ -7871,6 +7871,46 @@ test('apply boundary failures stay in old-remote and completed replay stays full
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('completed plan replay records a durable replay boundary without mutating the remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedWriter = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedWriter });
+  const completedSnapshot = JSON.stringify(completed.site);
+
+  const replayJournalPath = tempRecoveryJournalPath();
+  const replayWriter = openRecoveryJournal(replayJournalPath, { truncate: true, now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: replayWriter,
+  });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(JSON.stringify(completed.site), completedSnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  const persisted = readRecoveryJournal(replayJournalPath);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'journal-replayed' && record.state === 'fully-updated-remote'),
+    true,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'mutation-observed'),
+    false,
+  );
+});
+
 test('replaying a completed plan stays inert and never revives stale local inserts', () => {
   const base = baseSite();
   const local = baseSite();
