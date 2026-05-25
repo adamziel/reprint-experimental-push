@@ -2380,8 +2380,8 @@ Additional production-readiness blockers that still need explicit proof:
   remain readable after drift.
 - Ambiguous conflict policy must be removed. Every manual-resolution path
   must say whether the remote was preserved, whether the stale artifact was
-  rejected as authority, and what fresh live evidence rebuilt the retry
-  scope.
+  rejected as authority before mutation, and what fresh live evidence
+  rebuilt the retry scope from the preserved remote.
 - Plugin data traps must be proven safe or blocked with an explicit surface
   list. A single allowlisted option, row, generated file, or plugin route does
   not prove the rest of the plugin-owned graph is safe.
@@ -2391,5 +2391,5 @@ Additional production-readiness blockers that still need explicit proof:
   only.
 - Any comparison to Reprint, ZS-Sync, or ForkPress must stay conservative:
   it may describe design context, but it does not become current proof unless
-  the exact upstream revision or worktree state was reverified at the same
-  live mutation boundary.
+  the exact upstream revision or worktree state and the exact live mutation
+  boundary were both reverified for this repo's claim.

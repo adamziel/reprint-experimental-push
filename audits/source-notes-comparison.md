@@ -5,11 +5,12 @@ what they do not support for production push wording.
 
 These notes are snapshots of previously observed upstream behavior, not
 current upstream proof. They only become current proof if this branch
-reverified the exact cited revision or worktree at the same live mutation
-boundary. If either the exact upstream state or the exact live boundary is
-missing, the note is historical context only and cannot be used to claim that
-the live executor, retry path, or manual-review flow is safe. A route-shaped
-smoke, package mount, or live-looking hash does not fill that gap.
+reverified the exact cited revision or worktree and the exact live mutation
+boundary for the same claim. If either the exact upstream state or the exact
+live boundary is missing, the note is historical context only and cannot be
+used to claim that the live executor, retry path, or manual-review flow is
+safe. A route-shaped smoke, package mount, or live-looking hash does not fill
+that gap.
 In other words: a named feature family is not enough. The branch must be able
 to point to the exact upstream commit or worktree state and the exact live
 mutation boundary that was exercised here, or the comparison stays historical
@@ -147,7 +148,8 @@ stay in the same bucket: useful for lab review, but not retry authority and
 not proof that the cited upstream note maps to current production behavior.
 If a manual-review artifact is still readable after drift but has not been
 rejected before write, that readability is audit evidence only, not proof of a
-safe retry.
+safe retry. The retry proof must show the preserved remote, the stale artifact
+rejection point, and fresh live hashes used to rebuild scope.
 That also covers any live-looking hash emitted by a fixture-backed or
 copied-lab path behind a production-shaped mount: the hash may confirm the
 route answered, but it still does not prove the live mutation executor ran.
