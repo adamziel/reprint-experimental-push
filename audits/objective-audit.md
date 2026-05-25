@@ -234,5 +234,6 @@ proof gates:
    throughput, memory, retry, and recovery measurements.
 
 Until these gates exist, public documentation should keep the claim scoped to:
-**lab evidence for push safety invariants, not production-safe live WordPress
-push.**
+**lab evidence for push-safety invariants only; it does not prove a live
+production WordPress write path, remote-drift rejection, or durable recovery
+at the mutation boundary.**
