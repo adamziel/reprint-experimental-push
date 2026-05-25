@@ -275,7 +275,10 @@ run can still omit the exact proof the objective needs. This is a release
 blocker, not a documentation gap: until one required command exists, the
 project can keep producing passing lab runs without proving production safety.
 The strongest route smokes still report `labBacked: true`, which is a direct
-signal that route-shaped success is not production proof.
+signal that route-shaped success is not production proof. The benchmark suite
+is in the same category: it can refuse unsupported throughput claims, but it
+does not prove a production speed claim until that refusal gate is replaced or
+supplemented by a measured end-to-end release command.
 
 - `npm test` is the default automated suite, but it only covers the model and
   selected fixture logic.
