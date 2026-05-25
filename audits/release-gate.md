@@ -71,8 +71,9 @@ or comparison-only.
 - The claim includes the rejection reason for any unknown plugin-owned state
   and shows the blocked scope stayed auditable without becoming writable through
   fallback behavior.
-- Any comparison to Reprint, ZS-Sync, or ForkPress must say whether it was
-  re-verified against the current upstream commit or worktree state.
+- Any comparison to Reprint, ZS-Sync, or ForkPress must name the exact
+  upstream commit or worktree state and say whether that exact state was
+  re-verified.
 - If that comparison was not re-verified at the exact live write boundary, or
   the branch cannot name the exact upstream revision or worktree state, the
   comparison is historical context only.
@@ -106,9 +107,9 @@ or comparison-only.
   relationship-bearing record, or plugin-owned surface, the claim is not
   production-safe.
 - The claim includes the exact upstream revision or worktree state for any
-  Reprint, ZS-Sync, or ForkPress comparison, and says whether that state was
-  reverified at the same live write boundary. If not, the comparison is
-  historical context only.
+  Reprint, ZS-Sync, or ForkPress comparison, and says whether that exact
+  state was reverified at the same live write boundary. If not, the
+  comparison is historical context only.
 - The claim does not let a source-note comparison imply production safety
   unless the exact upstream revision or worktree state and the exact live
   mutation boundary are both named and reverified.
