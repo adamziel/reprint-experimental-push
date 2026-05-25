@@ -500,11 +500,11 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Last 12 hours: evidence progressed; release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `ec1c9952` is the newest release-surface evidence, adding `protocolExtension.stages` and `protocolExtension.pullToPushMapping`; `0c703230` still shows `remoteSnapshotHashes`; `7e0f27f2` still fails closed on apply-time revalidation; `35731b11` remains the lab release proof with `releaseProof.mode: "apply"` and `rows: 17`; `ee43e194` keeps the verifier bound to the supplied source URL. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending.</p>
-        <time class="update-stamp" datetime="2026-05-25T15:20:59+02:00">Last updated: May 25, 2026, 15:20:59 CEST</time>
+        <p class="lead">Last 12 hours: evidence progressed; release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `536015fb` is the newest release-surface evidence, adding the explicit `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` boundary verdict; `ec1c9952` still surfaces `protocolExtension.stages` and `protocolExtension.pullToPushMapping`; `0c703230` still shows `remoteSnapshotHashes`; `7e0f27f2` still fails closed on apply-time revalidation; `35731b11` remains the lab release proof with `releaseProof.mode: "apply"` and `rows: 17`; `ee43e194` keeps the verifier bound to the supplied source URL. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending.</p>
+        <time class="update-stamp" datetime="2026-05-25T15:27:22+02:00">Last updated: May 25, 2026, 15:27:22 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `ec1c9952`, `0c703230`, `95164c8a`, `7e0f27f2`, `35731b11`, `ee43e194`, `ee25a9b5`, `4096f3ac`, `692352d7`, `2c37497f`, `2e30a637`, `d6285b18`, `66830e6f`, `fa491fa6`, and `86acf294` remain visible lane progress</span>
+          <span class="pill">Trend: `536015fb`, `ec1c9952`, `0c703230`, `95164c8a`, `7e0f27f2`, `35731b11`, `ee43e194`, `ee25a9b5`, `4096f3ac`, `692352d7`, `2c37497f`, `2e30a637`, `d6285b18`, `66830e6f`, `fa491fa6`, and `86acf294` remain visible lane progress</span>
           <span class="pill">Top blocker: real WordPress executor/auth plus durable journal storage and lease/fencing still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-          <span>Latest lane evidence keeps the checked release boundary, the 528/528 no-data-loss planner proof, and the `protocolExtension.stages` / `protocolExtension.pullToPushMapping` release proof visible without changing the 0/4 release gates</span>
+          <span>Latest lane evidence keeps the checked release boundary, the explicit `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED` verdict, the 528/528 no-data-loss planner proof, and the `protocolExtension.stages` / `protocolExtension.pullToPushMapping` release proof visible without changing the 0/4 release gates</span>
       </div>
       <div class="metric">
         <strong>Pending</strong>
