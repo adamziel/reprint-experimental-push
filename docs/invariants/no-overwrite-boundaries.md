@@ -75,6 +75,9 @@ This note is the short form of the planner policy in
 - The planner can still stop on a plugin-owned mutation while preserving
   unrelated matching independent edits, deletions, and file type swaps as
   `already-in-sync`, and remote-only plugin drift remains `keep-remote`.
+- The planner can also stop a plugin-owned delete when ownership metadata is
+  missing, while preserving unrelated matching independent deletes, edits,
+  file type swaps, and remote-only plugin drift.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Remote-only plugin drift stays preserved when the local plan also contains
