@@ -1686,3 +1686,16 @@ identity across the staged proof:
 - journal inspect stays read-only.
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes still prove the branch safe.
+
+The production topology for this ladder is fixed as well:
+
+- one remote source site seeds the persisted pull base package
+- one imported local edit site carries the applied local changes
+- one later drift observation reuses the same remote identity after the
+  remote has changed
+- one runner owns preflight, remote snapshot hash listing, dry-run plan
+  upload, batched apply, journal inspect, and recovery
+- Docker and Playground both run that same three-site story
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+- local proxies stay local-only
+- remote tunnels are disallowed

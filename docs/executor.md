@@ -3,7 +3,9 @@
 This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote source site, one imported local edit
-site, and one later drift observation of the same remote identity.
+site, and one later drift observation of the same remote identity. The
+production harness keeps dry-run and apply separate, revalidates at apply
+time, and uses the same `8080`-visible topology in Docker and Playground.
 
 ## Test Topology
 
