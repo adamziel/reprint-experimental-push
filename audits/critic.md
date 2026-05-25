@@ -4884,6 +4884,15 @@ review vocabulary, but they do not prove live push safety, preserved-remote
 retention, or retry authority on this branch. Matching the same route family,
 package layout, or reviewer wording remains compatibility evidence only.
 
+One remaining false-reliability trap is the "preflight looked fine, so manual
+resolution later succeeded" story. If the remote drifted between preflight and
+apply, or if a plugin-owned surface only appeared after the first write, the
+branch still needs a separate preserve / reject / retry cycle for that exact
+boundary. Missing proof: the preserved remote stayed inspectable after
+rejection, the stale authority was rejected before mutation, and the later
+surface was either blocked or given its own live-hash retry scope on this
+worktree.
+
 Before the project can claim production-grade push support, the audit must be
 able to name all of the following for the exact same live boundary on this
 worktree:
