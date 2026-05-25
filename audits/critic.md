@@ -5666,6 +5666,12 @@ Proof-substitution fail-closed rule:
   transfer retry authority; the earlier artifact remains audit evidence only
   until this branch shows the later boundary's own preserved remote, stale
   rejection point, and fresh retry scope rebuilt from live hashes.
+- if the later boundary is a plugin-owned table, file, cron row, runtime
+  registry entry, generated asset, cache entry, serialized blob, or other
+  plugin-owned surface discovered after the first write, the earlier readable
+  artifact still cannot authorize it just because the route family or reviewer
+  wording matches; that later surface needs its own preserve / reject / retry
+  cycle on this branch or it remains blocked or audit-only.
 
 Source-note comparison rule:
 
