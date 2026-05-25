@@ -1155,6 +1155,9 @@ would reasonably read as equivalent.
   not by itself prove any live mutation boundary in this repo.
 - A route that only looks production-shaped is not evidence of production
   safety, reliability, or retry correctness.
+- A copied lab route that happens to share the production pathname is still
+  not production proof unless the same live write boundary was exercised on a
+  drifted remote and revalidated immediately before mutation.
 - A route-shape smoke, packaged-plugin mount, or `finalMatchesLocal` result
   must never be treated as proof of live remote safety, identity stability,
   plugin-owned side-effect safety, or durable recovery.
@@ -1174,6 +1177,9 @@ would reasonably read as equivalent.
 - A manual review artifact is only acceptable when the remote snapshot,
   reviewed scope, and hashes still match at apply time; otherwise the artifact
   must stay audit-only and be rejected before any write.
+- A manual-review artifact is not current authority if it omits the rejected
+  scope, the retry scope, or the exact live snapshot that invalidated it; the
+  missing proof makes the artifact audit context only.
 - If a manual-review artifact becomes stale after drift or after a partial
   apply, the next retry must fail closed before mutation, preserve the old
   artifact for audit, and re-plan from a fresh live snapshot rather than
