@@ -37,6 +37,10 @@ Release gate for any production wording:
 - Show the release claim is anchored in live-boundary evidence, not a copied
   lab route, packaged-plugin mount, or fixture replay that only matches the
   production URL shape.
+- Show the claim does not collapse a lab-shaped success path into production
+  safety just because the route name, response codes, or resource hashes look
+  compatible; the missing proof is the live drift case on the real mutation
+  boundary, not another fixture that happens to return the same shape.
 - Show that any success wording is not based on a readable review artifact,
   route-shaped smoke, or copied fixture mount that only looked current; the
   claim must prove the live executor rejected stale authority before
@@ -127,6 +131,11 @@ Source-note comparison summary:
   stays auditable but cannot authorize retry, widen scope, or silently widen
   into a new row, file, relationship-bearing record, or plugin-owned surface.
   A readable review note is not proof of safe retry authority.
+- None of the three source notes proves the production claim by itself. Reprint
+  is transport/protocol provenance, ZS-Sync is bounded discovery provenance,
+  and ForkPress is conflict/audit provenance. The missing repo proof remains
+  the same live mutation boundary on this branch, with drift rejection,
+  preserved remote evidence, and fresh retry scope recorded separately.
 
 Release-gate checklist for production-readiness wording:
 
