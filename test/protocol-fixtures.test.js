@@ -67,6 +67,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const remoteLivenessTopologyContract = readJson(
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
   );
+  const recoveryBoundaryContract = readJson('fixtures/protocol/push-recovery-boundary-contract.json');
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(contract.pull_pipeline.importer, 'persists the base package as immutable provenance');
@@ -612,6 +613,36 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     journalInspectContract.required_invariants.includes(
       'journal inspect is a separate boundary from recovery mutate',
+    ),
+  );
+  assert.equal(
+    recoveryBoundaryContract.contract_id,
+    'push-recovery-boundary-contract-one-remote-one-local',
+  );
+  assert.equal(
+    recoveryBoundaryContract.pull_pipeline.exporter,
+    'scans the merge base and coverage evidence',
+  );
+  assert.equal(
+    recoveryBoundaryContract.pull_pipeline.importer,
+    'persists the base package as immutable provenance',
+  );
+  assert.equal(recoveryBoundaryContract.recovery_sequence[0], 'push_journal');
+  assert.equal(recoveryBoundaryContract.recovery_boundary.inspect, 'classifies finish, rollback, retry, or block before any mutating repair');
+  assert.equal(
+    recoveryBoundaryContract.recovery_boundary.mutate,
+    'may run only after inspect and fresh live hashes prove the action safe',
+  );
+  assert.equal(
+    recoveryBoundaryContract.auth_boundary.floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(recoveryBoundaryContract.topology.browser_ingress_port, 8080);
+  assert.equal(recoveryBoundaryContract.topology.proxy_policy, 'local-only');
+  assert.equal(recoveryBoundaryContract.topology.tunnels, 'disallowed');
+  assert.ok(
+    recoveryBoundaryContract.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
     ),
   );
   assert.equal(protocolExtensionContract.topology.networking.ingress_port, 8080);
