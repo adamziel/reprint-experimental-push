@@ -1266,6 +1266,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   backpressure, because the receipts do not prove the queue stayed bounded or
   that durable acknowledgements survived a pause or crash.
 - A compressed remote index plus cached chunk digests cannot skip large-upload
+  backpressure after a pause, because the digests do not prove which
+  acknowledgements survived or that the queued work still has durable journal
+  evidence for recovery.
+- A compressed remote index plus cached chunk digests cannot skip large-upload
   chunk upload after a pause, because the digests do not prove which chunk
   acknowledgements survived, whether backpressure stayed bounded, or that the
   guarded publish barrier is still intact.

@@ -424,11 +424,21 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause')?.rejectedGate,
     'recovery',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-large-upload-backpressure-after-pause')?.rejectedGate,
+    'recovery',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause')?.violates.includes('chunk-receipts'),
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause')?.violates.includes('backpressure'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-large-upload-backpressure-after-pause')?.violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-large-upload-backpressure-after-pause')?.violates.includes('backpressure'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause')?.rejectedGate,
@@ -2635,6 +2645,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause').violates.includes('atomic-file-publish'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-digests-skips-large-upload-backpressure-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-digests-skips-large-upload-backpressure-after-pause').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-digests-skips-large-upload-backpressure-after-pause').violates.includes('backpressure'),
   );
   assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-ledger-skips-large-upload-backpressure').rejectedGate,

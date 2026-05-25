@@ -2775,6 +2775,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-chunk-digests-skips-large-upload-backpressure-after-pause',
+    proposal: 'use a compressed remote index plus cached chunk digests to skip large-upload backpressure after a pause',
+    rejectedBecause: 'planning evidence and cached chunk digests can reduce resend work, but they cannot prove which acknowledgements survived the pause or that the queued work still has the durable journal evidence needed to recover',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-resume-after-pause',
     proposal: 'use a compressed remote index plus a cached file fingerprint to skip large-upload resume after a pause',
     rejectedBecause: 'planning evidence and cached fingerprints can trim duplicate rehashing, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier',
