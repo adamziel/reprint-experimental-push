@@ -1146,6 +1146,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-plugin-install-writeback').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-plugin-install-writeback').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-plugin-install-writeback').violates.includes('durable-progress'));
+  assert.equal(rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback').rejectedGate, 'group');
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback').violates.includes('durable-progress'));
   assert.equal(rejectedById.get('compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback').rejectedGate, 'group');
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback').violates.includes('compression'));

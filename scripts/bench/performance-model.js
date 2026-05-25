@@ -1174,6 +1174,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback',
+    proposal: 'treat a compressed remote index plus a compressed upload queue as enough proof to skip plugin install writeback',
+    rejectedBecause: 'planning evidence and queue compression can reduce replay work, but they cannot prove dependency checks, staged files, or the atomic-group writeback survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback',
     proposal: 'treat a compressed remote index plus a cached manifest hash as enough proof to skip plugin install writeback',
     rejectedBecause: 'planning evidence and cached manifest hashes can reduce lookup work, but they cannot prove dependency checks, staged files, or the atomic-group writeback survived failure',

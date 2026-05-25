@@ -771,6 +771,10 @@ under load:
   is rejected because planning evidence and backpressure can pause work, but
   they cannot prove dependency checks, staged files, or the atomic-group
   commit survived failure.
+- compressed-remote-index-and-compressed-upload-queue-skips-plugin-install-writeback
+  is rejected because planning evidence and queue compression can reduce
+  replay work, but they cannot prove dependency checks, staged files, or the
+  atomic-group writeback survived failure.
 - compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback
   is rejected because planning evidence and cached manifest hashes can reduce
   lookup work, but they cannot prove dependency checks, staged files, or the
