@@ -184,6 +184,20 @@ The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
 site, and one live remote identity that must be revalidated at apply time.
 
+The reviewable bridge from pull to push is intentionally linear:
+
+| Pull provenance | Push stage | Why it exists |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base package to one live remote identity and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Use the imported package only as planning provenance for the live hash listing. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan as eligibility evidence, not write authority. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and again at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
+
+That table is the contract boundary: pull discovers and persists immutable
+provenance, and push consumes that provenance without ever rewriting it.
+
 ## Topology
 
 The canonical production proof uses one remote source site, one imported local

@@ -51,6 +51,19 @@ stage:
 - journal inspect is read-only
 - recovery starts with inspect before any mutating repair
 
+For reviewers, the shortest proof chain is:
+
+1. exporter discovers the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. preflight binds that persisted base to one live remote identity
+4. snapshot hash listing stays planning-only
+5. dry-run uploads the canonical plan and returns a receipt, not a lock
+6. apply revalidates fresh live evidence before every batch and at the
+   storage boundary
+7. journal inspect stays read-only
+8. recovery starts with inspect and only mutates when the journal plus fresh
+   live hashes prove the branch safe
+
 That means the executor is not a general remote write loop. It is the
 production write path for one imported base package, one edited local site,
 and one live remote identity that must be revalidated at apply time.
