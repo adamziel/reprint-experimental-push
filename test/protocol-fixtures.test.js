@@ -99,13 +99,13 @@ test('production topology fixture keeps the pull bridge, dry-run/apply split, an
   const topology = readJson('fixtures/protocol/push-production-topology-contract.json');
 
   assert.equal(topology.pull_to_push_mapping.push_preflight, 'binds the persisted pull base package to one live remote identity and one short-lived push session');
-  assert.equal(topology.pull_to_push_mapping.push_plan_dry_run, 'uploads the canonical plan as an eligibility receipt, not a lock');
+  assert.equal(topology.pull_to_push_mapping.push_plan_dry_run, 'uploads the canonical dry-run plan and returns an eligibility receipt, not a lock');
   assert.ok(topology.pull_to_push_mapping.push_batch_apply.includes('separate from dry-run'));
   assert.ok(topology.pull_to_push_mapping['push_recover inspect'].includes('classifies finish, rollback, retry, or block'));
   assert.ok(topology.pull_to_push_mapping['push_recover auto|finish|rollback'].includes('same auth floor as the write path'));
   assert.ok(topology.topology.docker.proof.includes('dry-run and apply remain separate remote calls'));
   assert.ok(topology.topology.docker.proof.includes('apply revalidates fresh live evidence before every batch and at the storage boundary'));
-  assert.ok(topology.topology.docker.proof.includes('journal inspect stays read-only before any mutating recovery branch'));
+  assert.ok(topology.topology.docker.proof.includes('journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch'));
   assert.ok(topology.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
   assert.deepEqual(topology.required_invariants, [
     'dry-run and apply are separate remote operations',
@@ -1333,6 +1333,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
     productionTopologyContract.pull_pipeline.persisted_base_package.remote_site_id,
     'remote-example',
   );
+  assert.equal(
+    productionTopologyContract.pull_to_push_mapping.persisted_pull_base_package,
+    'is immutable provenance, not a mutable snapshot cache',
+  );
   assert.deepEqual(productionTopologyContract.push_sequence, [
     'push_preflight',
     'push_snapshot_hashes',
@@ -1344,6 +1348,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   ]);
   assert.equal(productionTopologyContract.topology.same_remote_identity, true);
   assert.equal(productionTopologyContract.topology.networking.ingress_port, 8080);
+  assert.equal(
+    productionTopologyContract.push_guards.journal_inspect,
+    'reads durable evidence without authorizing mutation',
+  );
   assert.equal(
     productionTopologyContract.topology.docker.proof.includes(
       'dry-run and apply remain separate remote calls',
@@ -1359,6 +1367,16 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     productionTopologyContract.required_invariants.includes(
       'authentication must be at least as strict as current Reprint HMAC usage',
+    ),
+  );
+  assert.ok(
+    productionTopologyContract.topology.docker.proof.includes(
+      'journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch',
+    ),
+  );
+  assert.ok(
+    productionTopologyContract.topology.playground.proof.includes(
+      'journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch',
     ),
   );
   assert.equal(

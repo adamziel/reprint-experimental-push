@@ -99,6 +99,12 @@ The pull-to-push bridge is one-way:
 | Persisted provenance checksum | `push_journal` | Read durable evidence only. |
 | Coverage and lineage replay | `push_recover inspect` | Classify recovery before any mutating repair. |
 
+The production topology contract also names the immutable bridge explicitly:
+
+- `persisted_pull_base_package` is immutable provenance, not a mutable snapshot cache
+- `push_guards.journal_inspect` reads the journal, claim, lease, and recovery fence without authorizing mutation
+- Docker and Playground both keep journal inspect read-only before any mutating recovery branch
+
 The pull pipeline remains the source of immutable push provenance:
 
 - exporter discovers the merge base and coverage evidence
