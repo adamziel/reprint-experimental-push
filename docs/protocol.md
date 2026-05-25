@@ -135,6 +135,16 @@ The topology proof means:
 - Docker and Playground both model the same one-remote, one-local,
   one-drift production proof
 
+The machine-readable topology proof keeps those roles consistent:
+
+- `remote-base` is the source site that seeds the persisted pull base
+- `local-edited` is the imported local site with user edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only process allowed to preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or run recovery
+- browser-visible inspection always uses the sandbox-provided `8080`
+  ingress through a local-only proxy
+
 The canonical machine-readable bundle for that proof is
 `push-production-push-recovery-contract.json`. Use it when a review needs the
 full pull provenance, push ladder, and topology story in one place. When a
@@ -149,6 +159,9 @@ For the compact stage contract that names the production extension in order,
 use `push-protocol-extension-contract.json`. For the compact topology bridge
 from pull provenance into the push ladder and one-remote, one-local test
 shape, use `push-pull-to-topology-contract.json`.
+
+For the explicit Docker/Playground topology proof, use
+`push-deployment-topology-contract.json` or `push-topology-matrix.json`.
 
 ## Auth And Recovery
 

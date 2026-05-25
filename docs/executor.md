@@ -11,6 +11,14 @@ and one later observation of the same remote identity after drift. In both
 Docker and Playground, that proof keeps browser-visible inspection on the
 sandbox-provided `8080` ingress through a local-only proxy.
 
+The concrete lab roles are:
+
+- `remote-base`: the source site that seeds the persisted pull base package
+- `local-edited`: the imported local site that carries the candidate edits
+- `remote-changed`: the same remote identity observed later after drift
+- `runner`: the only actor allowed to preflight, list hashes, upload the dry-
+  run plan, apply batches, inspect the journal, or run recovery
+
 The executor follows the same ordered stages defined in the protocol:
 
 1. `push_preflight` binds the imported pull base package to one live remote
@@ -96,6 +104,17 @@ The pull pipeline remains the provenance source for every push stage:
 | Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
 | Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
 
+That mapping is intentionally one-way:
+
+- the exporter/importer pipeline discovers and persists immutable provenance
+- push consumes that provenance and never rewrites the pull base package
+- preflight is the first live binding after importer persistence
+- snapshot hashes are planning evidence only
+- dry-run is a receipt, not a lock
+- apply revalidates before every batch and again at the storage boundary
+- journal inspect stays read-only
+- mutating recovery only happens after inspect proves the branch safe
+
 The bridge is one-way and fixed:
 
 - exporter discovers the merge base and coverage evidence
@@ -132,6 +151,15 @@ The executor uses the same production topology in Docker and Playground:
 | Local edited site | `local-edited` | `local-edited` |
 | Drift witness | `remote-changed` | `remote-changed` |
 | Runner | `runner` | local test process |
+
+The test topology is the same in both harnesses:
+
+- one remote source site
+- one imported local edited site
+- one later drift witness of the same remote identity
+- one runner process that owns all push protocol calls
+- one browser-visible inspection path on the sandbox-provided `8080`
+  ingress via a local-only proxy
 
 That topology keeps the executor proof stable:
 

@@ -123,6 +123,10 @@ identity across `remote-base` and `remote-changed`:
   one-drift-witness topology in both Docker and Playground. The matrix is the
   canonical machine-readable topology proof, and the deployment contract now
   also carries the explicit Docker/Playground test topology block.
+- The test topology is the same in both harnesses: `remote-base` seeds the
+  persisted pull base, `local-edited` holds the imported local edits,
+  `remote-changed` is the same remote identity after drift, and `runner`
+  owns the push protocol calls.
 - `push-executor-topology-proof.json` is the shortest proof that the executor
   keeps the same remote identity, the same route names, and the
   sandbox-provided `8080` ingress rule aligned across Docker and Playground.
