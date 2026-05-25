@@ -15,3 +15,14 @@ The important distinction is between lab evidence and durable production storage
 - A completed replay must stay read-only. Replaying a completed plan against a fully updated remote can return `fully-updated-remote`, but it must not duplicate inserts or resurrect stale local data.
 
 If a retry cannot prove `old-remote` or `fully-updated-remote`, it must stay blocked rather than reapply mutations blindly.
+
+Failure boundaries covered by this contract:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+- replaying a completed plan
+
+The first three boundaries must stay `old-remote`. A completed replay must stay
+`fully-updated-remote`. If the remote drifts after completion, the replay must
+fall back to `blocked-recovery` with artifacts instead of silently retrying.
