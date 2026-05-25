@@ -150,6 +150,8 @@ The weakest claim is speed, and the audit should keep treating it as blocked unt
 
 The repository still has only refusal-only throughput evidence, no measured live-path result, and no enforced threshold that would let the project say anything positive about production speed. Until that changes, the only defensible statement is that unsupported throughput claims are rejected. The release gate should therefore require a positive live-path measurement or fail the run, rather than allowing a green benchmark refusal to masquerade as performance proof. A passing refusal benchmark is acceptable only if the required gate also emits the explicit `speed unclaimed` decision.
 
+Treat `speed unclaimed` as an explicit release verdict, not a soft omission. If the required command cannot print that verdict in the same run as the rest of the release checks, then the command has not actually made a production speed decision and should fail closed.
+
 ## Claim Status
 
 | Claim | Current status | What would be needed to release it |
