@@ -56,6 +56,13 @@ The test suite is still an audit harness, not a release harness.
 - It does not prove that any `npm run test:playground:*` command is release-safe; those scripts are still evidence collectors, not release approvers.
 - It does not yet prove the production graph identity, plugin-data-driver, or topology claims that the objective requires at release time.
 
+Current test audit, stripped down:
+
+- `test/push-planner.test.js` and `test/recovery-journal.test.js` prove model and file-backed behavior, not live-source durability.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove refusal discipline, not measured throughput.
+- The optional playground smokes prove route shape and failure classification, but they still run behind lab profiles or fixture-backed storage.
+- None of the tests are wired into a single required release decision, so green local output can still leave the production claim false.
+
 Minimal gate contract:
 
 1. One checked-in command, preferably `npm run verify:release`.
@@ -219,6 +226,7 @@ That distinction matters for the objective claims:
 - The authenticated push smokes are still labeled `labBacked: true`, so even a green run there is a lab pass, not release proof.
 - All of the optional smokes can pass at once and still leave the objective blocked, because none of them is mandatory, none of them is the single enforced decision point the release bar needs, and there is no checked-in CI workflow to force a default release path.
 - The tests are honest about their limits, but honesty is not sufficiency. They are currently proving "safe to explore" rather than "safe to release," and the absence of a required `verify:release`-style script means even a green run is still the wrong kind of success.
+- The missing release gate is the real test gap: until one command composes auth/session, durable journal, lease/fencing, graph identity, plugin-driver, topology, crash-boundary, and speed checks, no individual passing test can be treated as approval evidence.
 
 ## Actionable Gap
 
