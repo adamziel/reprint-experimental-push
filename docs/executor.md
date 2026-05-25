@@ -139,6 +139,22 @@ The remote liveness split stays explicit across the whole executor:
 - recovery must begin with inspect before any mutating repair
 - authentication must be at least as strict as current Reprint HMAC usage
 
+That split is strict enough that a stale dry-run receipt can never act like a
+lock:
+
+- `push_preflight` mints the short-lived session from immutable pull
+  provenance.
+- `push_snapshot_hashes` only exposes planning evidence and never gains write
+  authority.
+- `push_plan_dry_run` uploads the canonical plan and returns eligibility
+  evidence.
+- `push_batch_apply` revalidates the live remote again before each batch and
+  at the storage boundary.
+- `push_journal` stays read-only evidence.
+- `push_recover inspect` classifies the branch before any mutating repair.
+- `push_recover auto|finish|rollback` can only run after inspect and with the
+  same auth floor as the write path.
+
 The production proof uses one remote identity across both the base and drift
 observations, with the imported local edit site carrying the only local
 mutation surface:
@@ -224,6 +240,20 @@ The pull/export/import pipeline is the only immutable provenance source:
   mutating repair
 - `push_recover auto|finish|rollback` mutates only after inspect proves the
   branch safe with the same auth floor as the write path
+
+The production bridge is the same in both docs:
+
+1. exporter/importer establish immutable provenance
+2. `push_preflight` binds that provenance to one live remote identity and one
+   short-lived push session
+3. `push_snapshot_hashes` remains planning evidence only
+4. `push_plan_dry_run` uploads a receipt, not a lock
+5. `push_batch_apply` revalidates before every batch and at the storage
+   boundary
+6. `push_journal` records durable evidence without authorizing mutation
+7. `push_recover inspect` reads the journal and live hashes before mutation
+8. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe
 
 The test topology is the same in Docker and Playground:
 

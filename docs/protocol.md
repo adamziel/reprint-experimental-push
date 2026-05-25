@@ -51,6 +51,16 @@ detail:
 | `push_recover inspect` | Reads the journal and fresh live hashes before any mutating repair. |
 | `push_recover auto|finish|rollback` | Mutates only after inspect proves the branch safe with the same auth floor as the write path. |
 
+The liveness split is strict:
+
+- `push_plan_dry_run` is only a receipt for a canonical plan upload and never
+  becomes a lock.
+- `push_batch_apply` must revalidate live evidence again at apply time, so a
+  stale dry-run receipt cannot authorize mutation.
+- `push_journal` is inspectable evidence, not write authority.
+- `push_recover inspect` is read-only, must happen first, and classifies
+  finish, rollback, retry, or block before any mutating repair.
+
 ## Pull Bridge
 
 The pull/export/import pipeline is the immutable source of push provenance:
@@ -123,6 +133,22 @@ The bridge also maps to the persisted pull package that the importer stores:
 | durable pull provenance | `push_journal` records read-only evidence for recovery. |
 | immutable provenance plus fresh live hashes | `push_recover inspect` classifies finish, rollback, retry, or block before any mutating repair. |
 | importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` mutates only when the inspect branch and auth floor still agree. |
+
+This is the exact bridge into the executor runbook:
+
+- exporter/importer create the immutable handoff object once
+- `push_preflight` consumes that persisted handoff and binds it to the live
+  remote identity
+- `push_snapshot_hashes` only surfaces comparison evidence for planning
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
+  lock
+- `push_batch_apply` revalidates before every batch and at the storage
+  boundary
+- `push_journal` preserves recovery evidence
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` can only mutate after inspect proves
+  the branch safe
 
 ## Auth Floor
 
