@@ -8828,6 +8828,7 @@ test('no-data-loss recovery boundaries remain old remote, fully updated remote, 
   assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
   assert.equal(completed.recoveryState.artifacts.remote, undefined);
   assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(completed.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
@@ -8835,6 +8836,7 @@ test('no-data-loss recovery boundaries remain old remote, fully updated remote, 
 
   assert.equal(JSON.stringify(replayRemote), replaySnapshot);
   assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assertAcceptableRecoveryState(replay.recoveryState);
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
