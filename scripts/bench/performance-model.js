@@ -2899,6 +2899,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+    proposal: 'use a compressed remote index plus batched receipt flushes to skip plugin-install finalize after a pause',
+    rejectedBecause: 'planning evidence and batched receipt flushes can trim fsync work, but they cannot prove the plugin dependency checks, staged rows, or the atomic-group finalize barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
