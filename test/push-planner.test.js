@@ -6122,6 +6122,41 @@ test('the no-data-loss contract keeps every failure boundary either old remote, 
   assert.ok(staleReplayError.details.recovery.artifacts.remote);
 });
 
+test('the no-data-loss recovery matrix keeps pre-commit failures old and completed replay inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true }],
+    ['after staging', { failAfterStaging: true }],
+    ['after dependency validation', { failAfterDependencyValidation: true }],
+  ]) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.ok(error.details.recovery.artifacts.journal, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.ok(replay.recoveryState.artifacts.journal);
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('replaying a completed plan stays inert, does not duplicate inserts, and blocks stale drift with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
