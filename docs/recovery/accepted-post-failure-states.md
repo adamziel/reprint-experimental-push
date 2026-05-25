@@ -17,6 +17,7 @@ plan:
    - The remote and journal disagree in a way that cannot be treated as safe.
    - The recovery artifacts must be preserved so inspection can explain the
      partial state.
+   - A partial remote mutation without recovery artifacts is a release blocker.
 
 Anything else is a contract violation. In particular, a partial remote mutation
 without a durable recovery artifact is a release blocker.
@@ -26,3 +27,6 @@ validation are only acceptable when they still report `old-remote`. A completed
 replay is only acceptable when it reports `fully-updated-remote`. If the remote
 drifts after completion, retrying must land in `blocked-recovery` rather than
 silently reapplying stale local data.
+
+Retrying a completed replay must stay read-only. It must not duplicate inserts
+or resurrect stale local data.

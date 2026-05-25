@@ -9343,6 +9343,10 @@ test('durable recovery contract keeps every boundary in the accepted states and 
     completedPersisted.records.filter((record) => record.type === 'journal-replayed').length + 1,
   );
   assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'recovery-state').length,
+    completedPersisted.records.filter((record) => record.type === 'recovery-state').length,
+  );
+  assert.equal(
     replayPersisted.records.filter((record) => record.type === 'apply-staged').length,
     completedPersisted.records.filter((record) => record.type === 'apply-staged').length,
   );
