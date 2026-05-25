@@ -28,6 +28,6 @@ The missing proof is structural:
 
 A passing suite here supports a cautious lab narrative. It does not support a production release narrative, and it should not be read as proof that the live push path is lossless, durable, or fast enough.
 
-If the repository wants to claim no data loss, reliability, or speed, those claims need a required live-source gate in addition to the current tests. Until then, the tests are evidence of guardrails, not release readiness.
+If the repository wants to claim no data loss, reliability, or speed, those claims need a required live-source gate in addition to the current tests. Until then, the tests are evidence of guardrails, not release readiness. They can reject bad states in a lab, but they do not prove the live push path preserves data, survives failures, or meets a production speed threshold.
 
 The actionable next step is therefore not to expand the current refusal checks in place. It is to add one mandatory command that reaches the live-source boundary and makes the release decision explicit. If throughput remains unmeasured, that command must still surface an enforced `speed unclaimed` verdict and fail closed; otherwise the suite is only refusing claims in a lab, not making a release decision. The missing command is the blocker, and the tests should be read as support evidence only until that command exists. Optional smokes and refusal-only benchmarks are still useful, but they remain non-gating evidence until the mandatory verdict exists.
