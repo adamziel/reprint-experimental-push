@@ -272,6 +272,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize')?.rejectedGate,
     'group',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-finalize')?.rejectedGate,
+    'group',
+  );
 });
 
 test('file hashing and compression decisions preserve canonical hashes', () => {
@@ -499,6 +503,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-large-upload-publish').violates.includes('durable-progress'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-finalize').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-finalize').violates.includes('durable-progress'),
   );
   assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks').rejectedGate,
