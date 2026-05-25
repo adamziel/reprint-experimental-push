@@ -100,6 +100,8 @@ The user-facing claims fail for the same reason: the suite stops at guarded mode
 
 The weakest claim remains speed, and it is currently weaker than the rest of the release story because the repo has no measured live-path number, no release threshold, and no enforced gate that fails closed on the missing measurement. That means even a perfect lab auth/journal story would still leave the production speed claim blocked. The audit should treat any future throughput language as release-blocked until it is tied to the live-source boundary, an explicit threshold, and a required command that fails when `productionThroughput` is still `not-claimed`. If the project intends to keep speed unclaimed, the audit should say that plainly rather than letting the absence of a number read like a deferred approval. The important distinction is that `speed unclaimed` is a release decision, while `speed not measured` would still be incomplete.
 
+The actionable rule is simple: add one default release command, wire it into CI, and make it print either a measured live-path throughput result or a deliberate `speed unclaimed` verdict. Anything softer than that still leaves the release language ambiguous, because optional smokes and refusal-only benchmarks can prove the project is cautious without proving the live push path is ready.
+
 ## Release Blockers
 
 The objective stays blocked for five concrete reasons:
@@ -135,7 +137,7 @@ Add a required release entrypoint that fails closed unless it can prove, in one 
 1. a measured live-path throughput result plus an explicit release threshold, or
 2. an intentional refusal to make any production speed claim.
 
-If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command such as `npm run verify:release`. Until that command exists, `speed unclaimed` is not a deferment; it is the current release verdict.
+If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command such as `npm run verify:release`. That command should exit non-zero unless it can surface the live-path measurement or the deliberate `speed unclaimed` verdict in the same run. Until that command exists, `speed unclaimed` is not a deferment; it is the current release verdict.
 
 ## Audit Rule
 
