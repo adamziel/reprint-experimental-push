@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, and the newer `2bdf01a8` proof-contract clarification. That is real progress, but it is still lab evidence. The missing proof is still one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation.
+The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, and the newer `2bdf01a8` proof-contract clarification. That is real progress, but it is still lab evidence. The missing proof is still one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Until that exact boundary exists, the best available status is "lab-verified, production-unproven."
 
 ## What still blocks the claim
 
@@ -64,7 +64,7 @@ The production claim also fails closed if any of these are only shown on a lab f
 - plugin-driver behavior without a rerunnable boundary on a real source URL that can reclassify late plugin-owned writes; or
 - preserved-remote wording without the rejected remote still being inspectable after rejection.
 
-Manual resolution is not success unless the remote is preserved after rejection, the retry is auditable against fresh live hashes, and the exact boundary can be replayed safely.
+Manual resolution is not success unless the remote is preserved after rejection, the retry is auditable against fresh live hashes, and the exact boundary can be replayed safely. A reviewer note or retained-source verdict without that preserved remote is not retry authority.
 
 ## Must-happen proof
 
