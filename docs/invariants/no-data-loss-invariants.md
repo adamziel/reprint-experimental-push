@@ -12,6 +12,10 @@ This note captures the planner boundary in plain language.
   remote hash check.
 - Remote-only plugin metadata, plugin files, activation state, and removals
   stay preserved as `keep-remote` when the local side does not touch them.
+- A live-preconditioned file delete may still coexist with a matching
+  independent file type swap and any unrelated matching row edit, with the
+  safe resources remaining `already-in-sync` and remote-only plugin drift
+  remaining `keep-remote`.
 
 ## Must Preserve
 
