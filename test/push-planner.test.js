@@ -10494,6 +10494,10 @@ test('durable completed replay stays read-only and does not append fresh mutatio
     persistedAfterReplay.records.filter((record) => record.type === 'mutation-observed').length,
     persistedBeforeReplay.records.filter((record) => record.type === 'mutation-observed').length,
   );
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
+  );
 });
 
 test('durable recovery boundary states stay limited to old remote, fully updated remote, or blocked recovery with artifacts', () => {
