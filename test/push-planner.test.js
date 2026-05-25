@@ -16009,3 +16009,39 @@ test('completed recovery replay stays inert on repeated retries and preserves th
   assert.equal(retryRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(Object.keys(retryRemote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
+
+test('completed replay blocks drifted remotes and keeps the durable recovery artifacts inspectable', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const before = JSON.stringify(driftedRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const blocked = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      durableJournal: replayJournal,
+      journal: completed.journal,
+    }),
+  );
+  replayJournal.close();
+
+  assert.ok(blocked instanceof PushPlanError);
+  assert.equal(blocked.code, 'RECOVERY_BLOCKED');
+  assert.equal(JSON.stringify(driftedRemote), before);
+  assertFailureRecoveryState(blocked.details.recovery, 'blocked-recovery');
+  assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(
+    Object.keys(blocked.details.recovery.artifacts.remote.db.wp_posts).filter((key) => key === 'ID:2').length,
+    1,
+  );
+});
