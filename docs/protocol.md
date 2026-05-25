@@ -203,13 +203,9 @@ remote-drift witness, and the live protocol evidence.
 The supervisor-facing release entrypoint is `npm run verify:release`.
 It is the same checked command as the live-source verify path, so the release
 proof remains a single executable surface even when the command is invoked
-through the shorter alias.
-The command is checked in this lane and must either print the live preflight
-and release-proof evidence or fail closed with the exact
-`REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or `REPRINT_PUSH_SECRET_REQUIRED` gate
-before preflight, dry-run, or apply starts.
-When the live source or real push secret is missing, that supervisor command
-now fails closed with the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
+through the shorter alias. This lane treats that command as the checked
+boundary proof: it must either print the live preflight evidence or fail
+closed with the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
 `REPRINT_PUSH_SECRET_REQUIRED` gate before any preflight, dry-run, or apply
 attempt.
 
@@ -243,7 +239,8 @@ Docker and Playground:
   proxy
 - no remote tunnels
 
-The live release command stays separate from the protocol prose:
+The live release command stays separate from the protocol prose and is the
+checked proof a supervisor should run:
 
 ```sh
 npm run verify:release

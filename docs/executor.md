@@ -136,33 +136,30 @@ dry-run, apply, journal, and recovery inspect evidence in the release proof.
 
 The supervisor-facing shortcut is `npm run verify:release`.
 It resolves to the same retained-source proof, so the checked command and the
-release alias stay aligned.
-In this lane, that alias is the checked supervisor command for the production
-boundary: it must either reach the live Playground preflight path or fail
-closed at the explicit live-source or secret gate before any dry-run or apply
-mutation begins.
+release alias stay aligned. In this lane, that alias is the checked supervisor
+command for the production boundary: it must either reach the live Playground
+preflight path or fail closed at the explicit live-source or secret gate
+before any dry-run or apply mutation begins.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.
 It pins `npm run verify:release` as the supervisor entrypoint, the one-remote,
 one-local, one-drift topology, and the first remaining production boundary:
-`auth/session lifecycle and durable journal semantics`.
-The same contract now carries the push-ladder mapping back to the pull/export/
-import provenance so the checked release proof stays aligned with the executor
-order rather than only the prose.
-The same checked boundary object also names the unproven durable-journal
+`auth/session lifecycle and durable journal semantics`. The same contract also
+carries the push-ladder mapping back to the pull/export/import provenance so
+the checked release proof stays aligned with the executor order rather than
+only the prose.
+
+That checked boundary object names the unproven durable-journal
 storage/lease/fence gap with `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
-That checked command now fails if the live preflight does not mint the
+The release proof fails closed if the live preflight does not mint the
 expected session types or if the journal readback does not preserve durable
-apply-committed evidence after apply and recovery inspect.
-The checked proof also asserts the durable journal summary fields directly:
-`rows`, `applyCommitted`, `mutationApplied`, and `idempotencyOpened`.
-It also emits the exact boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`
-so the supervisor output distinguishes the lab-shaped proof from the missing
+apply-committed evidence after apply and recovery inspect. The checked proof
+also asserts the durable journal summary fields directly: `rows`,
+`applyCommitted`, `mutationApplied`, and `idempotencyOpened`. It emits the
+exact boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` so the
+supervisor output distinguishes the lab-shaped proof from the missing
 production boundary.
-The same release path also names the durable storage gap explicitly with
-`PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`, which keeps the auth/session
-lifecycle boundary separate from the storage/lease/fence boundary.
 
 The production topology used by Docker and Playground is fixed:
 
