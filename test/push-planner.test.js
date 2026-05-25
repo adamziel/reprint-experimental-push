@@ -6107,6 +6107,90 @@ test('completed-plan replay blocks stale drift and keeps the remote inspectable'
   );
 });
 
+test('stale recovery claims stay blocked with artifacts and do not become a safe retry', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const workerAClaim = 'worker-a-stale-claim-proof';
+  const workerBClaim = 'worker-b-stale-claim-proof';
+  const durableJournal = openRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId: workerAClaim,
+  });
+  const remote = baseSite();
+  const remoteBefore = JSON.stringify(remote);
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId: workerAClaim,
+    staleThresholdMs: 1000,
+  });
+
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      mutateRemote: true,
+      beforeMutation({ mutationIndex }) {
+        assert.equal(mutationIndex, 1);
+        const competingWriter = openRecoveryJournal(journalPath, {
+          now: new Date(fixedNow.getTime() + 5000),
+          claimId: workerBClaim,
+        });
+        appendStaleClaimAdvanced(competingWriter, {
+          plan,
+          current: remote,
+          previousClaimId: workerAClaim,
+          claimId: workerBClaim,
+          staleThresholdMs: 1000,
+          previousClaimAgeMs: 5000,
+        });
+        competingWriter.close();
+      },
+    }),
+  );
+
+  assert.ok(firstError instanceof PushPlanError);
+  assert.equal(firstError.code, 'RECOVERY_CLAIM_STALE');
+  assert.equal(firstError.details.recovery.status, 'blocked-recovery');
+  assert.ok(firstError.details.recovery.artifacts.journal);
+  assert.ok(firstError.details.recovery.artifacts.remote);
+  assert.equal(firstError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "base";');
+  assert.equal(firstError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+  assert.equal(remote.files['index.php'], '<?php echo "base";');
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+
+  const blockedJournal = firstError.details.recovery.artifacts.journal;
+  const retrySnapshot = JSON.stringify(remote);
+  const retryError = captureError(() =>
+    applyPlan(JSON.parse(JSON.stringify(remote)), plan, {
+      journal: blockedJournal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(retryError instanceof PushPlanError);
+  assert.equal(retryError.code, 'RECOVERY_CLAIM_STALE');
+  assert.equal(JSON.stringify(remote), retrySnapshot);
+  assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+  assert.ok(retryError.details.recovery.artifacts.journal);
+  assert.ok(retryError.details.recovery.artifacts.remote);
+  assert.equal(retryError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "base";');
+  assert.equal(retryError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'mutation-observed').length,
+    0,
+  );
+});
+
 test('mid-apply failure only leaves blocked recovery with artifacts, never a silent partial remote', () => {
   const base = baseSite();
   const local = baseSite();
