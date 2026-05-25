@@ -10520,6 +10520,73 @@ test('recovery state contract stays limited to old remote, fully updated remote,
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('durable no-data-loss recovery keeps each failure boundary explainable and replay inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const failureCases = [
+    ['before mutation', { failBeforeMutation: true }, 'opened', 'old-remote'],
+    ['after staging', { failAfterStaging: true }, 'staged', 'old-remote'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated', 'old-remote'],
+  ];
+
+  for (const [label, options, expectedJournalStatus, expectedRecoveryStatus] of failureCases) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+
+    durableJournal.close();
+    const persisted = readRecoveryJournal(journalPath);
+    const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assert.equal(error.code.startsWith('INJECTED_FAILURE_'), true, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, expectedRecoveryStatus);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(inspection.status, expectedRecoveryStatus, label);
+  }
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+
+  durableJournal.close();
+  const persisted = readRecoveryJournal(completedJournalPath);
+  const inspection = inspectRecoveryJournal({
+    journal: persisted,
+    plan,
+    current: replayRemote,
+  });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(inspection.status, 'fully-updated-remote');
+});
+
 test('stale completed replay on a durable journal blocks recovery instead of duplicating inserts or reviving stale local data', () => {
   const base = baseSite();
   const local = baseSite();
