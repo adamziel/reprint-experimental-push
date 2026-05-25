@@ -1,0 +1,57 @@
+{
+  "contract_id": "push-recovery-revalidation-contract-one-remote-one-local",
+  "purpose": "proves dry-run stays separate from apply and inspect-first recovery still depends on fresh live hashes",
+  "pull_handoff": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "snapshot_hashes": "lists live remote hashes for planning only and never acts as write authority",
+    "dry_run": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
+    "apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "journal": "reads durable evidence without authorizing mutation",
+    "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair"
+  },
+  "stale_to_live_flow": {
+    "dry_run_receipt": {
+      "accepted": true,
+      "mutates": false,
+      "not_a_lock": true
+    },
+    "remote_drift": {
+      "same_remote_identity": true,
+      "happens_after_dry_run": true,
+      "forces_revalidation": true
+    },
+    "apply_revalidation": {
+      "before_each_batch": "fresh live hashes",
+      "at_storage_boundary": "fresh live hashes plus storage-guard proof",
+      "rejects_without_fresh_live_evidence": true
+    },
+    "recovery": {
+      "inspect_mode": "inspect",
+      "mutates": false,
+      "requires": [
+        "read journal",
+        "inspect live hashes",
+        "classify finish|rollback|retry|block"
+      ]
+    }
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "browser_ingress_port": 8080,
+    "proxy_policy": "local-only",
+    "tunnels": "disallowed"
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "dry-run is a receipt, not a lock",
+    "the remote may drift between dry-run and apply",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "inspect is read-only and must happen before any mutating recovery",
+    "auth must be at least as strict as current Reprint HMAC usage"
+  ]
+}

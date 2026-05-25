@@ -361,6 +361,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const dryRunApplyContract = readJson('fixtures/protocol/push-dry-run-apply-revalidation-contract.json');
   const productionLadderContract = readJson('fixtures/protocol/push-production-ladder-contract.json');
   const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
+  const recoveryRevalidationContract = readJson('fixtures/protocol/push-recovery-revalidation-contract.json');
 
   assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightRequest.remote_site_id, 'remote-example');
@@ -488,6 +489,20 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(dryRunApplyContract.topology.proxy_policy, 'local-only');
   assert.equal(dryRunApplyContract.topology.tunnels, 'disallowed');
   assert.ok(dryRunApplyContract.required_invariants.includes('the dry-run receipt never becomes a lock'));
+  assert.equal(recoveryRevalidationContract.contract_id, 'push-recovery-revalidation-contract-one-remote-one-local');
+  assert.equal(recoveryRevalidationContract.pull_handoff.dry_run, 'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock');
+  assert.equal(recoveryRevalidationContract.stale_to_live_flow.dry_run_receipt.not_a_lock, true);
+  assert.equal(recoveryRevalidationContract.stale_to_live_flow.remote_drift.same_remote_identity, true);
+  assert.equal(recoveryRevalidationContract.stale_to_live_flow.remote_drift.forces_revalidation, true);
+  assert.equal(recoveryRevalidationContract.stale_to_live_flow.apply_revalidation.before_each_batch, 'fresh live hashes');
+  assert.equal(recoveryRevalidationContract.stale_to_live_flow.apply_revalidation.at_storage_boundary, 'fresh live hashes plus storage-guard proof');
+  assert.equal(recoveryRevalidationContract.stale_to_live_flow.recovery.inspect_mode, 'inspect');
+  assert.equal(recoveryRevalidationContract.stale_to_live_flow.recovery.mutates, false);
+  assert.ok(
+    recoveryRevalidationContract.required_invariants.includes(
+      'apply must revalidate the live remote before every batch and at the storage boundary',
+    ),
+  );
   assert.equal(productionLadderContract.contract_id, 'push-production-ladder-one-remote-one-local');
   assert.equal(
     productionLadderContract.pull_pipeline.persisted_base_package.remote_site_id,

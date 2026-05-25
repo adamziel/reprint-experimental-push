@@ -117,6 +117,9 @@ Failure and recovery examples:
   snapshot planning, dry-run eligibility, apply-time revalidation, and
   storage-boundary guards stay separate even when the remote drifts between
   dry-run and apply.
+- `push-recovery-revalidation-contract.json` gives the compact proof that the
+  same drift case still requires fresh live hashes before each apply batch and
+  before any mutating recovery path.
 - `push-production-ladder-contract.json` gives the compact end-to-end proof
   that preflight, snapshot listing, dry-run, apply, journal inspect, and
   recovery all stay on the production push ladder while Docker and Playground

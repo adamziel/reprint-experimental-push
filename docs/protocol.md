@@ -17,6 +17,13 @@ The production extension has one non-negotiable shape:
 - recovery must begin with inspect before any mutating finish or rollback
 - authentication must be at least as strict as current Reprint HMAC usage
 
+The live remote is trusted in two different ways and those ways must stay
+separate:
+
+- snapshot hashes are planning evidence only and never authorize mutation
+- apply-time revalidation is the first write-side liveness check and must
+  run again before every batch and at the storage boundary
+
 ## Contract
 
 Push is allowed only when the executor can prove that the persisted pull base,
@@ -174,6 +181,13 @@ That ladder is the production contract in miniature:
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh live hashes prove the action
 
+The inspect-first recovery path is always the same:
+
+1. inspect the journal and live hashes
+2. classify the attempt as `old`, `new`, `open`, or `blocked`
+3. stop immediately when the journal or fresh live hashes cannot prove safety
+4. allow `finish`, `rollback`, or `auto` only after inspect proves the mutating path is safe
+
 The same provenance rule is what keeps the one-remote, one-local test topology
 honest:
 
@@ -183,6 +197,14 @@ honest:
 - the runner is the only process allowed to compare, upload, inspect, or recover.
 - browser-visible inspection, when needed, must use the sandbox-provided `8080`
   ingress and a local-only proxy, never a remote tunnel.
+
+The same proof shape is what Docker and Playground must both preserve:
+
+- `remote-base` seeds the persisted pull base
+- `local-edited` is the imported local site that produces the candidate plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor allowed to preflight, plan, upload, inspect, and recover
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 
 ## Authentication
 

@@ -42,6 +42,16 @@ The production sequence is fixed:
    recovery only proceeds when journal rows plus fresh live hashes prove the
    action.
 
+The executor must keep the live remote split explicit:
+
+- snapshot hashes are planning evidence only
+- dry-run is a receipt, not a lock
+- apply is the first write stage and must revalidate before every batch and at
+  the storage boundary
+- journal inspect is read-only
+- recovery is inspect-first and cannot mutate until fresh live evidence proves
+  the path is safe
+
 Recovery classifies the attempt into the same four states used by the protocol
 contract:
 
@@ -248,6 +258,14 @@ uses:
 - push dry-run uploads the canonical plan as eligibility evidence only
 - push apply revalidates fresh live evidence before every batch and again at the storage boundary
 - push journal and push recover inspect read durable evidence before any mutating repair
+
+The pull-to-push mapping is the same in Docker and Playground:
+
+- `remote-base` seeds the persisted pull base
+- `local-edited` is the imported local clone after user edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only process that may compare, upload, inspect, or recover
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 
 The executor must not mutate the remote during planning. It may fetch remote
 content for conflict display, but mutation starts only at `push_batch_apply`.
