@@ -1,6 +1,10 @@
 {
   "contract_id": "push-production-release-boundary-contract-one-remote-one-local",
   "checked_command": "npm run verify:release",
+  "checked_commands": [
+    "npm run verify:release",
+    "npm run test:recovery:file-journal"
+  ],
   "purpose": "checked supervisor boundary for the production-shaped retained-source proof that must fail closed at the explicit live-source gate before any preflight, dry-run, or apply mutation, while keeping the first remaining production-only boundary visible",
   "boundary": {
     "live_source_gate": {
@@ -23,8 +27,10 @@
     "exporter": "discovers the merge base and coverage evidence before any push request exists",
     "importer": "persists the immutable pull base package as the only origin push may consume",
     "push_preflight": "binds the persisted pull base package to one live remote identity and one short-lived push session",
+    "push_remote_snapshot_hash_listing": "reads the live remote comparison surface for planning only and never becomes write authority",
     "push_plan_dry_run": "uploads the canonical plan as a receipt, not a lock",
     "push_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "push_journal_inspect": "records durable evidence without authorizing mutation",
     "push_journal": "records durable evidence without authorizing mutation",
     "push_recover inspect": "reads the journal and fresh live hashes before any mutating repair"
   },

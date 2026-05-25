@@ -167,9 +167,21 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   assert.equal(journalLeaseRecoveryInspect.recovery_inspect.classifies.includes('block'), true);
   assert.ok(journalLeaseRecoveryInspect.required_invariants.includes('journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable'));
   assert.equal(releaseBoundary.contract_id, 'push-production-release-boundary-contract-one-remote-one-local');
+  assert.deepEqual(releaseBoundary.checked_commands, [
+    'npm run verify:release',
+    'npm run test:recovery:file-journal',
+  ]);
   assert.equal(releaseBoundary.boundary.live_source_gate.code, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.equal(releaseBoundary.boundary.first_remaining_production_boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
   assert.equal(releaseBoundary.boundary.first_remaining_production_boundary.durable_journal.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
+  assert.equal(
+    releaseBoundary.pull_to_push_bridge.push_remote_snapshot_hash_listing,
+    'reads the live remote comparison surface for planning only and never becomes write authority',
+  );
+  assert.equal(
+    releaseBoundary.pull_to_push_bridge.push_journal_inspect,
+    'records durable evidence without authorizing mutation',
+  );
   assert.equal(releaseBoundary.topology.networking.ingress_port, 8080);
   assert.equal(releaseBoundary.topology.networking.proxy_policy, 'local-only');
   assert.equal(releaseBoundary.topology.networking.tunnels, 'disallowed');
