@@ -9,6 +9,9 @@ This is the short operational version of the planner invariant policy.
   remote ancestor or descendant.
 - Matching independent edits, including matching deletions, file edits, and
   file type swaps.
+- Matching independent deletions, edits, and file type swaps may coexist with a
+  live-preconditioned delete in the same plan while remote-only plugin drift is
+  preserved through apply.
 - Matching independent edits may coexist with a live-preconditioned deletion
   while remote-only plugin drift remains preserved in the same plan.
 - Local mutations on unrelated resources while remote-only plugin metadata,
@@ -25,6 +28,9 @@ This is the short operational version of the planner invariant policy.
 - Remote descendants that would be hidden by a local delete or type swap.
 - Conflict and blocker evidence without raw file bodies, row contents, or
   plugin payload values.
+- Preserve matched independent resources in `already-in-sync` state rather than
+  converting them into mutations when a separate live-preconditioned delete is
+  present.
 
 ## Must Stop
 
