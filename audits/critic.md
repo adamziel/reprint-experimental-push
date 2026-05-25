@@ -18,6 +18,40 @@ smoke or review artifact. Until the branch has a named real-site release
 command with preserved-remote evidence, route shape and review wording remain
 compatibility evidence only.
 
+## 2026-05-25 Source-Note Comparisons Stay Historical
+
+Comparison notes for Reprint, ZS-Sync, and ForkPress are still useful as
+design context, but they are not live retry authority on this branch. The
+missing proof is not just an upstream citation; it is the branch-local rerun
+of the same live mutation boundary with the preserved remote, rejection point,
+and fresh live hashes still inspectable after rejection.
+
+Scenario: a reviewer sees a source-note comparison that looks close enough to
+the current route family or reviewer wording and assumes the branch now has
+production-grade push evidence. Missing proof: the comparison does not say
+that this branch reran the same live boundary, so it still cannot prove
+stale-drift rejection before the first write, create-time identity remap
+handling at apply time, plugin-owned surface enumeration, or partial side-
+effect classification before retry.
+
+What each note proves, and what it does not:
+
+- Reprint proves staged pull sequencing and resumability vocabulary; it does
+  not prove live push safety, preserved-remote retention after rejection, or
+  stale remote drift rejection on this branch.
+- ZS-Sync proves bounded scanning and resource-discovery ideas; it does not
+  prove source mutation safety, plugin-owned allowlist coverage, or late
+  plugin-data-trap handling before write.
+- ForkPress proves audit and crash-consistency vocabulary; it does not prove
+  that a readable review artifact can authorize a later boundary, preserve
+  the rejected remote, or become retry authority for a remapped create target
+  or plugin-owned surface.
+
+Any production wording that cites these notes must also name the exact cited
+upstream state, the exact live boundary rerun on this branch, the preserved
+remote, and the retry scope rebuilt from live hashes. If it cannot do that,
+the comparison stays historical context only.
+
 ## 2026-05-25 Production Push Readiness Re-Audit
 
 Verdict: the design still cannot claim production-grade push support.
