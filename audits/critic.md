@@ -9,16 +9,21 @@ and preserve the rejected remote for audit. A command like `npm run
 verify:release` would only matter if it actually existed in `package.json` and
 proved the live boundary instead of just the route topology; in this worktree it
 is not present, so the critique still fails closed on the missing executable
-boundary.
+boundary. The current `test:playground:production-shaped-release-verify` path is
+still only live preflight unless it is rerun against a real remote and proves
+preserved remote drift, dry-run receipt, apply-time revalidation,
+journal/recovery inspect, production auth/session lifecycle, graph identity, and
+plugin-owned surfaces in one run.
 
 Scenario: someone upgrades a green Playground run or a polished script name into
 "production-ready push". Missing proof: the repo still lacks a live release
-command that prints the exact executor/auth boundary before the first write, the
-preserved remote that remained inspectable after rejection, the exact rejection
-point, the apply-time revalidation result, and the journal/recovery inspection
-used to rebuild retry scope. Without those facts from one rerun, the claim is
-compatibility evidence only, even if `verify:release` now proves more of the
-release topology than the older smoke wrappers did.
+command that prints the exact executor/auth boundary before the first write,
+the preserved remote that remained inspectable after rejection, the exact
+rejection point, the apply-time revalidation result, the journal/recovery
+inspection used to rebuild retry scope, and the plugin-owned surface
+classification. Without those facts from one rerun, the claim is compatibility
+evidence only, even if a release-shaped wrapper now proves more of the release
+topology than the older smoke scripts did.
 
 Scenario: a reviewer treats a source-note comparison as current retry authority.
 Missing proof: Reprint, ZS-Sync, and ForkPress notes are still historical input
@@ -38,7 +43,9 @@ that records all of the following in the same run:
 - the apply-time revalidation result on the live boundary;
 - the journal/recovery inspection used to define retry scope; and
 - the classification of any plugin-owned surface, including late-discovered
-  ones and remapped create targets.
+  ones and remapped create targets;
+- preserved remote drift evidence for the rejected remote; and
+- dry-run receipt evidence that is auditable before any write is finalized.
 
 Until that rerun exists, production wording must fail closed. Route shape,
 fixture replay, manual review notes, and source-note comparisons remain
@@ -49,6 +56,7 @@ Release-gate checklist for production wording:
 - exact branch-local command string, runnable without prose edits;
 - exact live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
 - preserved remote that stays inspectable after rejection;
+- dry-run receipt that can be audited before any write is finalized;
 - apply-time revalidation on the same boundary before the first write;
 - journal and recovery inspection that defines retry scope;
 - executor identity plus auth/session boundary before the first write;
@@ -73,6 +81,32 @@ worktree state, the exact live boundary rerun on this branch, and an explicit
 statement of what the note proves here and what it does not prove here. Without
 those facts, the comparison remains historical context only and cannot support
 production wording.
+
+## 2026-05-25 Commit `08edc2e4` Still Needs Live-Rerun Proof
+
+Commit `08edc2e4` may now prove release topology, but topology is not
+production-grade push proof by itself. The branch still needs one rerunnable
+real-site command that proves the preserved remote survived rejection, the dry-
+run receipt is auditable, apply-time revalidation happened on the same live
+boundary, journal and recovery state were inspected, production auth/session
+lifecycle was exercised, graph identity was preserved, and plugin-owned
+surfaces were classified before retry.
+
+Scenario: a reviewer upgrades `npm run verify:release` into production proof
+because the command shape sounds final. Missing proof: on this branch the same
+release claim still has to show live preserved-remote drift, dry-run receipt,
+apply-time revalidation, journal/recovery inspection, production auth/session
+lifecycle, graph identity, and plugin-owned surfaces on one live source. If
+the command only proves topology or local routing, it is still compatibility
+evidence only.
+
+The next exact proof required from `08edc2e4` is a rerunnable command against a
+live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that prints, in one
+run, the executor identity, the auth/session boundary, the rejected remote that
+remained inspectable after rejection, the dry-run receipt, the apply-time
+revalidation result, the journal/recovery inspection, the graph-identity
+evidence, and the plugin-owned surface classification. Until that rerun
+exists, production wording must fail closed.
 
 ## 2026-05-25 Commit `25c4ef54` Is Live Preflight Only, Not Production Proof
 
@@ -104,11 +138,11 @@ The next exact proof reliable-executor must produce is a rerun of
 `npm run test:playground:production-shaped-release-verify` against a live
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that prints, in one
 run, the preserved remote that stayed inspectable after rejection, the exact
-rejection point before the first write, the apply-time revalidation result,
-the journal/recovery inspection used to rebuild retry scope, the production
-auth/session boundary, the graph-identity evidence, and the classification of
-all plugin-owned surfaces. Until that exact rerun exists, `LIVE_PREFLIGHT_OK`
-remains preflight evidence only.
+rejection point before the first write, the dry-run receipt, the apply-time
+revalidation result, the journal/recovery inspection used to rebuild retry
+scope, the production auth/session boundary, the graph-identity evidence, and
+the classification of all plugin-owned surfaces. Until that exact rerun
+exists, `LIVE_PREFLIGHT_OK` remains preflight evidence only.
 
 Scenario: a reviewer reads `LIVE_PREFLIGHT_OK` as if it already covers the
 source-note comparisons to Reprint, ZS-Sync, or ForkPress. Missing proof: the
