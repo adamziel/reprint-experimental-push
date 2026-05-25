@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 01:21:51
+
+<a id="2026-05-26-public-status-audit-012151"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the public view aligned
+  with the newest reliable-executor head at `0c4fd10f` while keeping the gate
+  state flat. The page now says the lane is still in the release-proof retry
+  loop, so the public claim stays conservative.
+- `0c4fd10f` is now the newest reliable-executor head, but it is not release
+  proof by itself. `c99b19d0` remains the newest release-surface proof,
+  `b725b2d3` remains the explicit production auth/session boundary, and
+  `b9aebe71` plus `47b675c0` still cover the supporting no-data-loss and
+  recovery evidence.
+- The release gate remains `0/4`. Production WordPress auth/session lifecycle
+  and durable journal storage with lease/fencing remain pending.
+
 # 2026-05-26 - Public Status Audit 01:18:21
 
 <a id="2026-05-26-public-status-audit-011821"></a>
@@ -18,7 +34,8 @@ linked implementation artifacts.
 - Gate 2 now names the missing dependency plainly: publish the durable storage
   result or the exact lease/fencing primitive that still blocks recovery.
 - The evidence set did not change, so the release gate stays `0/4` and the
-  older proof trail remains frozen.
+  older proof trail remains frozen. The public header now points at this entry
+  and its trend pill matches the current critic tip.
 
 # 2026-05-26 - Public Status Audit 01:16:03
 
