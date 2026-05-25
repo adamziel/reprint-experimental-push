@@ -12294,6 +12294,95 @@ test('durable recovery boundary matrix keeps pre-commit failures old-remote and 
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('durable recovery contract keeps pre-mutation, post-staging, post-validation, and completed replay within the accepted states', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const cases = [
+    {
+      label: 'failure before mutation',
+      options: { failBeforeMutation: true },
+      expectedJournalStatus: 'opened',
+      expectedRecoveryStatus: 'old-remote',
+    },
+    {
+      label: 'failure after staging',
+      options: { failAfterStaging: true },
+      expectedJournalStatus: 'staged',
+      expectedRecoveryStatus: 'old-remote',
+    },
+    {
+      label: 'failure after dependency validation',
+      options: { failAfterDependencyValidation: true },
+      expectedJournalStatus: 'dependencies-validated',
+      expectedRecoveryStatus: 'old-remote',
+    },
+  ];
+
+  for (const testCase of cases) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const remoteSnapshot = JSON.stringify(remote);
+
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...testCase.options,
+      }),
+    );
+
+    durableJournal.close();
+
+    assert.ok(error instanceof PushPlanError, testCase.label);
+    assert.equal(JSON.stringify(remote), remoteSnapshot, testCase.label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assert.equal(error.details.recovery.status, testCase.expectedRecoveryStatus, testCase.label);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+    assert.equal(error.details.recovery.artifacts.journal.status, testCase.expectedJournalStatus, testCase.label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, testCase.label);
+
+    const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+    const retry = applyPlan(remote, plan, {
+      durableJournal: retryJournal,
+      journal: error.details.recovery.artifacts.journal,
+    });
+    retryJournal.close();
+
+    assert.equal(retry.appliedMutations, plan.mutations.length, testCase.label);
+    assertAcceptableRecoveryState(retry.recoveryState);
+    assertRecoveryStateArtifacts(retry.recoveryState, 'fully-updated-remote');
+    assert.equal(retry.recoveryState.artifacts.remote, undefined, testCase.label);
+    assert.equal(retry.recoveryState.artifacts.journal.status, 'completed', testCase.label);
+    assert.equal(retry.site.files['index.php'], '<?php echo "local";', testCase.label);
+    assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally', testCase.label);
+  }
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('pre-mutation durable recovery stays old-remote and completed replay remains inert', () => {
   const base = baseSite();
   const local = baseSite();
