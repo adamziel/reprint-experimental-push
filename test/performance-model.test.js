@@ -503,6 +503,28 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-upload-queue-completes-large-upload').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('index-and-compressed-upload-queue-completes-large-upload').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-upload-queue-completes-large-upload').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-upload-queue-completes-large-upload').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-upload-queue-completes-large-upload').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-upload-queue-completes-large-upload').violates.includes('live-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-upload-queue-completes-large-upload').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-upload-queue-completes-large-upload').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('compressed-upload-queue-skips-backpressure').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-upload-queue-skips-backpressure').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-upload-queue-after-pause-skips-chunk-receipts').violates.includes('compression'));
