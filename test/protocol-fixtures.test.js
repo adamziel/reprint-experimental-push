@@ -216,6 +216,9 @@ test('push production contracts pin the ladder, pull bridge, and one-remote-one-
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
   );
   const productionTopologyContract = readJson('fixtures/protocol/push-production-topology-contract.json');
+  const productionRevalidationContract = readJson(
+    'fixtures/protocol/push-production-revalidation-contract.json',
+  );
 
   assert.equal(extensionContract.contract_id, 'push-protocol-extension-production-contract');
   assert.equal(
@@ -321,6 +324,34 @@ test('push production contracts pin the ladder, pull bridge, and one-remote-one-
   );
   assert.ok(
     productionTopologyContract.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
+    ),
+  );
+
+  assert.equal(
+    productionRevalidationContract.contract_id,
+    'push-production-revalidation-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionRevalidationContract.purpose,
+    'binds preflight, planning-only snapshot hashes, dry-run eligibility, apply-time revalidation, journal evidence, and inspect-first recovery into one production proof',
+  );
+  assert.equal(productionRevalidationContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(productionRevalidationContract.session.remote_site_id, 'remote-example');
+  assert.equal(productionRevalidationContract.live_evidence.same_remote_identity, true);
+  assert.equal(productionRevalidationContract.topology.runner, 'runner');
+  assert.ok(
+    productionRevalidationContract.required_invariants.includes(
+      'dry-run and apply are separate remote operations',
+    ),
+  );
+  assert.ok(
+    productionRevalidationContract.required_invariants.includes(
+      'apply must revalidate the live remote before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    productionRevalidationContract.required_invariants.includes(
       'recovery must begin with inspect before any mutating repair',
     ),
   );
