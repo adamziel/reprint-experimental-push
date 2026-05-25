@@ -6,12 +6,11 @@ still local Playground lab evidence and not live retry authority unless the
 branch also proves the live production WordPress auth/session boundary,
 durable journal semantics, graph identity, and plugin-driver coverage on a
 real-site rerun. The old "no `verify:release` exists" critique is retired;
-the blocker now is that the retained-source command still does not move the
-proof onto a rerunnable live boundary with preserved-remote audit evidence.
-Do not reintroduce the retired missing-command critique; the current failure
-mode is that the branch still lacks a live rerun on a real local, Playground,
-or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote for
-audit and retry.
+the blocker now is the missing rerunnable live boundary with preserved-remote
+audit evidence on a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL`. Do not reintroduce the retired missing-command
+critique; the current failure mode is that the branch still lacks that live
+rerun on the real boundary.
 Any claim that `verify:release` is "production-shaped" or "production-ready"
 must fail closed until that live rerun exists on a real local, Playground, or
 Docker `REPRINT_PUSH_SOURCE_URL`.
@@ -64,9 +63,9 @@ What still must be proved before production wording is allowed:
 - later-discovered plugin-owned surfaces and remapped create targets each get
   their own preserve / reject / retry cycle instead of inheriting the first
   approval; and
-- Reprint, ZS-Sync, and ForkPress are treated as provenance only unless the
-  branch names the exact upstream state, states what each note proves here,
-  states what it does not prove here, and reruns the same live boundary.
+- Reprint, ZS-Sync, and ForkPress stay provenance only unless the branch
+  names the exact upstream state, states what each note proves here, states
+  what it does not prove here, and reruns the same live boundary.
 
 Source-note comparison stays provenance only:
 
