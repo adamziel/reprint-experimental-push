@@ -5661,6 +5661,7 @@ Source-note comparison rule:
 - ZS-Sync `d9334a0` only supports bounded discovery, cursoring, and batched resource selection; it does not prove source mutation safety, retry authority, or recovery from partial side effects on this branch.
 - ForkPress `55f9879` only supports merge-audit vocabulary and crash-consistency intent; it does not prove that a readable review artifact can authorize a later row, file, remapped create target, or plugin-owned surface on this branch.
 - any comparison that does not explicitly say what the note proves here and what it does not prove here is ambiguous and must fail closed; a source note that only names a similar route family, package mount, or reviewer vocabulary is still compatibility context, not production proof.
+- a note that reuses the same route family, package mount, reviewer wording, or upstream anchor still does not prove the same live boundary was rerun here; if the preserved remote was not shown, the stale authority rejection point was not shown, and the fresh retry scope was not rebuilt from live hashes on this branch, then the comparison remains historical context only.
 
 Evidence-classification rule:
 
