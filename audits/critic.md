@@ -171,7 +171,8 @@ Concrete failure scenarios that still block production wording:
   upstream state plus a rerun of the same live boundary on this branch, not
   route shape, package layout, reviewer wording, fixture replay, or a
   readable review artifact reused as authority; if the comparison does not
-  name what the note proves here and what it does not prove here, it stays
+  name what the note proves here and what it does not prove here, or it only
+  repeats the upstream anchor without a branch-local rerun, it stays
   historical context only and cannot authorize a retry boundary.
 
 Missing repo proof for the comparisons is still the same live boundary on
