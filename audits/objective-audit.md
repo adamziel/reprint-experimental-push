@@ -75,6 +75,7 @@ The test suite is doing the right kind of negative work, but it is still not pos
 - `npm test` being green at `89/89` is therefore regression evidence, not release evidence.
 - The strongest production-shaped smokes still report `labBacked: true`, so they remain lab proof even when they look operationally close to release.
 - Any audit language that treats fixture, refusal, or lab-backed passes as proof of no data loss, reliability, or speed would be overstated.
+- None of the current tests is a required release gate. They are useful proof fragments, but they do not compose into a live-source verdict in a single enforced command.
 
 Claim summary:
 
@@ -152,6 +153,7 @@ The audit rule here is strict:
 | No data loss | Local journal sequencing, replay classification, and planner refusal tests | Live-source apply-time mutation that preserves every touched WordPress data shape end to end |
 | Reliability | Recovery classification, stale-claim refusal, and lab auth/session scaffolding | One mandatory live-source gate covering auth/session, durable journal, leases/fencing, graph identity, plugin-driver, and crash-boundary behavior |
 | Speed | Refusal-only benchmark logic and `productionThroughput: 'not-claimed'` | Measured live-path throughput with an explicit threshold, or a required `speed unclaimed` verdict from the release gate |
+| Release verdict | Green regression runs and lab smokes | A checked-in command that fails closed when the live-source boundary, apply-time recheck, or machine-checkable throughput verdict is absent |
 
 ## Test Coverage Verdict
 
@@ -187,6 +189,13 @@ Concrete read:
 | Release blocker | There is no mandatory `verify`, `verify:release`, or `release` command that can fail closed when any of those proofs are absent, and no checked-in workflow entrypoint closes that gap. |
 
 Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict. The blocker is structural: no required command owns the live-source verdict, so every green result still depends on optional evidence rather than a mandatory release gate. If the release decision is not forced through the live-source path, the repository still cannot claim no data loss, reliability, or speed.
+
+The practical test conclusion is narrower than the release conclusion:
+
+- the tests can prove the repository knows how to refuse unsafe states
+- the tests cannot prove the repository can safely complete the live-source push
+- the tests cannot prove no data loss, reliability under crash/retry, or speed on the real source boundary
+- the tests cannot substitute for a required release command, even when they are all green
 
 Actionable release criterion:
 
