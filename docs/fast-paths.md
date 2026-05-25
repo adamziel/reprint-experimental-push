@@ -567,6 +567,10 @@ under load:
   rejected because planning evidence and cached row receipts can reduce replay
   work, but they cannot prove the dependency checks, metadata writes, or
   atomic-group commit survived failure.
+- compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize is
+  rejected because planning evidence and cached hashes can skip duplicate
+  lookup and rehash work, but they cannot prove dependency checks, staged rows,
+  or the atomic-group commit survived failure.
 - compressed-row-batch-skips-batch-receipts is rejected because compression
   can lower queue pressure, but it cannot replace per-row receipts or the
   recovery record needed to classify a partial batch.
