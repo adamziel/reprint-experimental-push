@@ -1194,6 +1194,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+    proposal: 'treat a compressed remote index plus a cached dependency graph as enough proof to skip plugin-update activation after pause and backpressure',
+    rejectedBecause: 'planning evidence and a cached dependency graph can reduce lookup work, but they cannot prove the activation change, live row compares, or atomic-group barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
     proposal: 'treat a compressed remote index plus a cached dependency graph as enough proof to skip plugin-update dependency checks',
     rejectedBecause: 'planning evidence and a cached dependency graph can reduce lookup work, but they cannot prove live dependency checks, row preconditions, or the atomic-group barrier survived failure',

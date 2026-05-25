@@ -2185,6 +2185,31 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback').violates.includes('durable-progress'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure').violates.includes('durable-progress'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-writeback-after-pause').rejectedGate,
     'recovery',
   );

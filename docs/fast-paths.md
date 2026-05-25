@@ -852,6 +852,11 @@ under load:
   finalize is rejected because planning evidence and a cached dependency
   graph can reduce lookup work, but they cannot prove staged metadata,
   dependency checks, or the atomic-group finalize survived failure.
+- compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-
+  activation-after-pause-and-backpressure is rejected because planning
+  evidence and a cached dependency graph can reduce lookup work, but they
+  cannot prove the activation change, live row compares, or atomic-group
+  barrier survived the pause.
 - compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation
   is rejected because planning evidence and cached package hashes can reduce
   planning and lookup work, but they cannot prove dependency checks,
