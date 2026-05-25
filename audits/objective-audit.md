@@ -224,4 +224,5 @@ Minimum acceptance rule for the gate:
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` only prove that unsupported throughput claims are refused; they do not time an end-to-end production push, establish a release threshold, or prove the live source topology is fast. That makes them useful blocker tests, but they remain refusal proof rather than speed proof, and they cannot clear release while the strongest authenticated route still advertises `labBacked: true`.
 - `npm test` is therefore a valid sanity check, not a release approver.
 - `npm run test:playground` is a useful lab smoke, not a proof of production safety.
+- No current test in this checkout proves no data loss, reliability, or speed at the live source boundary. The suite can reject unsafe claims, but it still cannot certify the positive release claims the objective needs.
 - The suite is evidence that release remains blocked, not evidence that release is safe.
