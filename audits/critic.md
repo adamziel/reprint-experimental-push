@@ -16,6 +16,16 @@ What still has to change before any production-grade claim is credible:
 - any "manual resolution" or "comparison passed" wording must stay audit-only unless it names the preserved remote, the upstream source-note state, and the same live boundary rerun on this branch; and
 - route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` remain compatibility evidence only; if those are the only proof, the missing evidence is still the live executor boundary itself, plus the rejected remote and fresh retry scope rebuilt from live hashes.
 
+Release-gate checklist for production-grade wording:
+
+- name the exact live boundary and exact stale-drift case, not just the route family or product path;
+- keep the rejected remote inspectable after rejection so the user can audit the drift and retry from fresh live hashes;
+- reject stale approval or manual-review artifacts before the first write, and do not let them widen to later rows, files, relationship-bearing records, remapped create targets, or plugin-owned surfaces;
+- treat any later-discovered plugin-owned surface as a new boundary unless it was enumerated before write or separately blocked with its own preserve / reject / retry cycle;
+- classify every touched file, DB row, relationship-bearing record, and plugin-owned surface as old, new, or blocked before retry starts, including mixed file/DB/plugin side effects;
+- name the exact upstream state for any Reprint, ZS-Sync, or ForkPress comparison, say what it proves here, say what it does not prove here, and rerun the same live boundary on this branch before treating it as more than historical context; and
+- keep route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` downgraded to compatibility evidence unless the same live boundary also shows preserved-remote evidence and a fresh live-hash retry scope.
+
 Source-note comparison audit:
 
 - Reprint (`docs/source-notes.md`, observed commit `27c5f25`) proves staged
@@ -55,7 +65,9 @@ Comparison gap summary:
   historical context. That similarity does not prove live retry authority for a
   later boundary, does not prove the remote stayed preserved after rejection,
   and does not prove a late-discovered plugin-owned surface was enumerated or
-  blocked before the first write.
+  blocked before the first write. A note can describe provenance; it cannot
+  become retry authority unless this branch reran the same live boundary and
+  kept the rejected remote inspectable for audit.
 
 Scope note: this audit only accepts production wording when the same live
 boundary on this worktree shows preserved-remote evidence, stale authority
