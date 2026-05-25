@@ -1991,6 +1991,11 @@ evidence must be attached or directly referenced:
     approved scope. A readable stale artifact is audit evidence only; it is
     not retry authority after drift, partial recovery, or plugin-owned state
     remapping.
+14. The claim does not treat a correct upstream commit citation as current
+    proof unless the branch reverified that exact upstream state at the same
+    live mutation boundary. If the branch only matched route shape, package
+    shape, fixture replay, or `finalMatchesLocal`, the comparison remains
+    historical context only.
 
 ## Minimum Production Claim Gates
 
@@ -2463,6 +2468,10 @@ Additional production-readiness blockers that still need explicit proof:
   mutation executor.
 - Any comparison that lacks those two specifics is historical context only,
   even if the route shape, mount shape, or hash output looks current.
+- A claim that only says the upstream citation is "correct" is still not
+  production proof unless it also shows the branch-local recheck at the same
+  live boundary. A correct citation without a same-boundary recheck is just a
+  better historical reference, not current evidence.
 - Production-ready wording also needs a release gate that fails closed on the
   following concrete cases:
   - live remote drift that appears after dry-run but before the first write;
