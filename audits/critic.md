@@ -67,6 +67,18 @@ If a source-note comparison cannot name the exact upstream state, the same
 live boundary, and the proof gap it leaves here, it is historical context and
 not a release gate.
 
+One additional false-reliability trap is worth stating explicitly: a
+"manual-resolution succeeded" note is still not production proof if it only
+covers the first visible conflict and leaves later-discovered plugin-owned
+state, generated files, cron rows, serialized blobs, caches, or remapped
+create targets unclassified. Scenario: the first retry passes, then a hidden
+plugin-owned surface appears after the first write and is quietly treated as
+part of the same approval. Missing proof: the branch never showed a separate
+preserve / reject / retry cycle for that later surface, never preserved the
+remote for audit on that later boundary, and never proved the user can
+safely inspect or retry the original remote without losing the late-found
+state. In that case the note is audit context only, not release evidence.
+
 ## 2026-05-25 Current Verdict
 
 The branch still cannot claim production-grade push support until one exact,
