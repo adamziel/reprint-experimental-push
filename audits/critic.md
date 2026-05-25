@@ -204,6 +204,15 @@ this worktree, rerun against the exact drift case, with:
 - old/new/blocked classification for every touched surface, including any
   later-discovered plugin-owned surface.
 
+One more production-gate failure mode still needs explicit wording: a
+production-shaped `/wp-json/reprint/v1/push/*` smoke can only prove that the
+route is reachable, not that the rejected remote stayed inspectable after
+stale drift or that a later-discovered plugin-owned surface was either
+enumerated or blocked before write. If the evidence does not name the exact
+preserved remote, the exact rejection point, and the later surface boundary,
+the smoke remains compatibility evidence and the manual note remains audit
+evidence only.
+
 What must change before any production-grade push claim:
 
 - the branch must show a live write boundary that rejects stale remote drift
