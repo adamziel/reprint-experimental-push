@@ -1321,6 +1321,50 @@ test('keeps the durable replay contract intact when failure happens after depend
   assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote');
 });
 
+test('atomic apply keeps the documented recovery states across failure boundaries and completed replay', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const failureScenarios = [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote'],
+    ['after staging', { failAfterStaging: true }, 'old-remote'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote'],
+  ];
+
+  for (const [label, options, expectedStatus] of failureScenarios) {
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, expectedStatus);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+  }
+
+  const completed = applyPlan(remote, plan);
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('accepts only old remote, fully updated remote, or blocked recovery across the atomic apply boundary', () => {
   const base = baseSite();
   const local = baseSite();
