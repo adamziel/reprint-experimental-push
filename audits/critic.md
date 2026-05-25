@@ -2074,6 +2074,9 @@ worktree was reverified and the same live write boundary was exercised in this
 repo. If the claim omits that revalidation, the comparison stays historical
 context and cannot fill any gap in drift rejection, create remap handling,
 plugin-owned allowlist coverage, or partial side-effect classification.
+Do not let a correct upstream commit citation read as present-tense proof by
+itself; without a branch-local recheck at the same live mutation boundary, the
+citation is still only historical context.
 Treat any comparison citation as frozen evidence until the cited upstream
 state is reverified at the same live mutation boundary; a matching route shape
 or package layout does not upgrade the citation into proof, and a stale manual
