@@ -38,6 +38,21 @@ broader contract breaks that make the proposal unsafe. That keeps "fast but
 ambiguous after failure" proposals out of the safe list even when they improve
 a throughput metric.
 
+Current executable gate:
+
+- `timeout 40s node scripts/bench/guarded-executor-benchmark.js --profile=ci`
+- Current result: `productionThroughput.status === "blocked"`
+- Latest measured lab throughput:
+  - `labStagedMiBPerSecond: 65.21`
+  - `labApplyMutationsPerSecond: 63.9`
+- Current blockers:
+  - `production-atomic-group-commit-not-measured`
+  - `production-storage-receipts-not-measured`
+  - `production-row-batch-executor-not-measured`
+- Status meaning: the lane still has no production proof for atomic-group commit,
+  storage receipts, or row-batch executor behavior, so the release gate stays
+  closed.
+
 ## Safe Speedups
 
 | Area | Safe fast path | Required guardrail |
