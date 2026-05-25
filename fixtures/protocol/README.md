@@ -60,8 +60,9 @@ The production proof bundle is intentionally layered:
   the recovery fence together when a test wants to prove the claim is still
   fenced at recovery time.
 - `push-recovery-inspect-contract.json` is the compact inspect-first proof to
-  cite when a test needs the minted session, the journal row, the fresh-live
-  hash classification, and the read-only recovery boundary in one object.
+  cite when a test needs the minted session, the journal row, the claim fence,
+  the fresh-live hash classification, and the read-only recovery boundary in
+  one object.
 - `push-topology.json`, `push-topology-matrix.json`, and
   `push-deployment-topology-contract.json` prove the one-remote, one-local,
   one-drift-witness topology in both Docker and Playground.

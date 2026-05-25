@@ -725,12 +725,22 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(inspectContract.journal_row.before_hash, 'sha256:base-index');
   assert.equal(inspectContract.journal_row.staged_hash, 'sha256:local-index');
   assert.equal(inspectContract.live_evidence.same_remote_identity, true);
+  assert.equal(inspectContract.journal_fence.claim_owner, 'worker-17');
+  assert.equal(inspectContract.journal_fence.claim_generation, 4);
+  assert.equal(inspectContract.journal_fence.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(inspectContract.journal_fence.storage_guard, 'filesystem-compare-rename');
+  assert.equal(inspectContract.live_classification.blocked, 1);
   assert.equal(inspectContract.recovery.inspect_mode, 'inspect');
   assert.equal(inspectContract.recovery.mutates, false);
   assert.ok(inspectContract.required_invariants.includes('inspect is read-only'));
   assert.ok(
     inspectContract.required_invariants.includes(
       'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
+  assert.ok(
+    inspectContract.required_invariants.includes(
+      'inspect reads the journal row and live hashes before classifying finish, rollback, retry, or block',
     ),
   );
   assert.equal(snapshotPageContract.contract_id, 'push-snapshot-hashes-page-contract-one-remote-one-local');

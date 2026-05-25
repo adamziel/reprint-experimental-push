@@ -190,6 +190,9 @@ The same proof shape is captured in
 [`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json)
 where `remote-example` and `local-dev-site` act as the concrete lab sites for
 the remote-base, local-edited, and remote-changed roles.
+For the inspect-first recovery proof with the journal row, claim fence, and
+fresh-live classification in one object, cite
+[`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json).
 
 The production test topology can be written as a short matrix:
 
