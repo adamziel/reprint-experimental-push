@@ -33,6 +33,11 @@ good negative evidence, but it is still not direct proof for the objective:
 pushing local edits back to a live source WordPress site without losing
 concurrent source changes, while remaining reliable and fast.
 
+A fresh repo scan on 2026-05-25 also found no checked-in `.github` workflow
+directory and no enforced CI entrypoint that could serve as a required release
+gate. That absence matters because a release claim needs a single path that
+fails closed, not a collection of opt-in scripts.
+
 The weakest current claim is speed, but the actual release blocker is broader:
 the repository still lacks one enforced release gate that runs the
 auth/session, durable journal, storage, graph identity, plugin-data-driver,
@@ -255,7 +260,7 @@ fall into five buckets:
 | Executable proof | `npm test`, `test/push-planner.test.js`, `test/recovery-journal.test.js`, `test/performance-model.test.js`, `test/guarded-executor-benchmark.test.js` | Planner invariants, recovery classifications, redaction rules, refusal logic, and model-level safety constraints | Live source mutation, production topology, or measured speed on the release path |
 | Lab/fixture proof | `npm run test:playground`, `test:playground:authenticated-http-push`, `test:playground:db-journal-idempotency`, `test:playground:storage-guarded-db-write`, `test:playground:storage-guarded-file-write`, `test:playground:production-shaped-push`, `test:playground:production-plugin-package` | Useful end-to-end slices through local Playground, route shape, journal behavior, and fixture storage guards | Production WordPress semantics, durable production storage, or release-safe auth/session and lease/fencing enforcement |
 | Docs-only proof | `progress.html`, `docs/fast-paths.md`, `docs/supervised-lanes.md`, `supervision/README.md`, script names and comments | The intended release bar, data-loss concerns, and the desired check ordering are described | No executable proof that the described release bar is actually enforced |
-| Missing proof | No required `verify:release`-style command in `package.json`; no checked-in CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks | Nothing by itself; this bucket marks the gap | The objective still lacks a single required release gate that fails closed when any safety proof remains optional |
+| Missing proof | No required `verify:release`-style command in `package.json`; no checked-in `.github` workflow or equivalent CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks | Nothing by itself; this bucket marks the gap | The objective still lacks a single required release gate that fails closed when any safety proof remains optional |
 | Release blocker | The best evidence still says `labBacked: true` for the production-shaped route/package smokes, the benchmark path remains refusal-only, and no required release gate exists to force the stronger checks together | Honest refusal to overclaim release readiness | Production no-data-loss, reliability, and speed remain unproven until the missing gate and live-source evidence exist |
 
 That split matters because a green default run still does not mean the release
