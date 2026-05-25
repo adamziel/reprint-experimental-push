@@ -2899,7 +2899,11 @@ False reliability claims to avoid:
 - "Manual resolution later" when the only new evidence is a still-readable
   stale review note. Readability is audit value only unless the claim also
   shows the preserved remote, the stale rejection point, and a separately
-  recorded fresh retry artifact rebuilt from current live hashes.
+  recorded fresh retry artifact rebuilt from current live hashes. A readable
+  stale review note is not retry authority for any late-discovered
+  plugin-owned surface, including a cache entry, cron row, runtime registry,
+  generated file, custom table, or other hidden side effect that was not
+  classified on the first pass.
 - "The route is production-safe" when the evidence only shows route shape,
   a packaged mount, a fixture replay, or `finalMatchesLocal`. Those are
   compatibility checks, not proof that the live executor rejected stale
