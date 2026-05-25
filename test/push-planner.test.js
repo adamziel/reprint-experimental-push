@@ -13569,6 +13569,7 @@ test('durable mid-apply failures stay blocked with recovery artifacts and never 
   assert.equal(partialError.details.recovery.status, 'blocked-recovery');
   assert.ok(partialError.details.recovery.artifacts.journal, 'partial commit must keep journal artifacts');
   assert.ok(partialError.details.recovery.artifacts.remote, 'partial commit must keep remote artifacts');
+  assert.equal(partialError.details.recovery.artifacts.journal.status, 'blocked');
   assert.equal(partialError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
   assert.equal(partialError.details.recovery.artifacts.remote.db.wp_posts['ID:1'].post_title, 'Base post');
   assert.equal(partialError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
@@ -13583,14 +13584,26 @@ test('durable mid-apply failures stay blocked with recovery artifacts and never 
 
   durableJournal.close();
   const persisted = readRecoveryJournal(journalPath);
+  const inspection = inspectRecoveryJournal({
+    journal: persisted,
+    plan,
+    current: partialError.details.recovery.artifacts.remote,
+  });
 
   assert.ok(retryError instanceof PushPlanError);
   assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+  assert.equal(retryError.details.recovery.artifacts.journal.status, 'blocked');
   assert.ok(retryError.details.recovery.artifacts.remote, 'retry must remain blocked with remote artifacts');
   assert.equal(retryError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.ok(inspection.journal, 'inspection must preserve journal artifacts');
   assert.equal(
     persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
     true,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote'),
+    false,
   );
 });
 
