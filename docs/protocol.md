@@ -51,6 +51,21 @@ provenance:
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating recovery branch
 
+The pull pipeline is the provenance source for each push stage:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is read-only planning evidence and may page large
+  sites, but it never becomes write authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` is a separate remote operation that revalidates fresh
+  live evidence before every batch and again at the storage boundary
+- `push_journal` is durable evidence only and never authorizes mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating recovery branch
+
 The write path is deliberately one-way:
 
 - pull discovers and persists the immutable base package
@@ -108,6 +123,8 @@ The same topology is mirrored in the fixtures:
   the dry-run/apply split so liveness stays separate from write authority
 - `push-topology-matrix.json` keeps the Docker and Playground stage matrix in
   machine-readable form
+- `push-executor-topology-proof.json` keeps the pull provenance, push ladder,
+  and 8080 topology aligned in one compact production-shaped fixture
 
 The machine-readable bridge is split across the fixtures:
 
@@ -157,6 +174,9 @@ The machine-readable bridge is split across the fixtures:
 - `push-production-topology-contract.json` is the compact production topology
   proof for the same one-remote, one-local, one-drift harness and keeps the
   full push stage sequence in one compact production object.
+- `push-executor-topology-proof.json` is the compact executor proof that ties
+  the pull provenance, push ladder, and topology together for the same
+  one-remote, one-local, one-drift harness.
 - `push-production-push-recovery-contract.json` and
   `push-production-recovery-inspect-contract.json` are the production-shaped
   proof pair for auth, session minting, journal rows, lease fencing, apply

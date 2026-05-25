@@ -153,6 +153,19 @@ The same pull-to-push bridge applies here:
 - inspect-first recovery is the only safe starting point for mutating
   recovery.
 
+The pull pipeline is the provenance source for the executor ladder:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight is the first live binding after importer persistence
+- snapshot hash listing is planning evidence only
+- dry-run uploads the canonical plan and returns a receipt, not a lock
+- apply is a separate remote call that revalidates fresh live evidence before
+  every batch and again at the storage boundary
+- journal inspect reads durable evidence without authorizing mutation
+- inspect-first recovery may mutate only when the journal row, lease fence,
+  and fresh live hashes still prove the action safe
+
 That mapping is the executor contract, not just an implementation note:
 
 - `push_preflight` is the first live binding after importer provenance exists.
@@ -173,6 +186,21 @@ The same mapping is what the Docker and Playground proofs must exercise:
 - one imported local edited site, `local-edited`
 - one later drift observation of the same remote identity, `remote-changed`
 - one runner that owns the protocol calls
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+
+The production proof topology is intentionally minimal and repeated across
+both harnesses:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- both harnesses keep the same route names for preflight, dry-run, apply,
+  journal inspect, and recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 
