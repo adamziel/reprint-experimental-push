@@ -249,6 +249,17 @@ Current test verdict:
 - Weak at proving live-source no-data-loss, production reliability, and measured speed.
 - Insufficient as a release approval surface because it can still be bypassed by command choice.
 
+Command verdict:
+
+| Command | Status | Why it is not enough for release |
+| --- | --- | --- |
+| `npm test` | Executable proof of local model and fixture consistency | It never reaches the live-source boundary, so it cannot prove no data loss, reliability, or speed for production. |
+| `npm run test:playground` | Lab/fixture proof | It chains lab routes only and still leaves the strongest authenticated route labeled `labBacked: true`. |
+| `npm run test:playground:authenticated-http-push` | Lab/fixture proof | It is useful route-shape evidence, but the route profile still self-identifies as lab-backed. |
+| `npm run test:playground:production-shaped-push` | Lab/fixture proof | It looks production-shaped but still does not enforce the missing live-source release gate. |
+| `npm run test:playground:production-plugin-package` | Lab/fixture proof | It exercises packaging and route shape, not the production storage and topology claims needed for release. |
+| `npm run verify:release` | Missing proof | This is the required shape of the missing gate, but it does not exist yet. |
+
 ## Release Priority
 
 The weakest current claim is the release gate, and that weakness propagates to every other claim. Until the repository has one mandatory command that composes the safety matrix, the suite can still produce green results without proving production readiness.
