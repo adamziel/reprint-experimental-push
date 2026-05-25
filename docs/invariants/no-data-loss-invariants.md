@@ -22,6 +22,9 @@ This note summarizes the planner's no-overwrite contract.
 - Remote-only plugin metadata, plugin files, activation state, and removals
   stay preserved even when a live-preconditioned file delete is mixed with a
   matching independent row edit and a matching file type swap.
+- Matching independent deletes, edits, file type swaps, and restores may
+  still be applied automatically when each emitted mutation has its own
+  live remote precondition and remote-only plugin drift remains preserved.
 - Matching independent file deletions, edits, and file type swaps may also
   coexist with a live-preconditioned delete while remote-only plugin drift or
   removals stay preserved.
@@ -69,3 +72,5 @@ This note summarizes the planner's no-overwrite contract.
   matching driver policy or ownership proof for the live resource.
 - Any mutation that lacks a live remote precondition bound to the mutation id,
   resource key, and remote hash observed during planning.
+- Any local change that would overwrite remote-only plugin drift instead of
+  preserving it as `keep-remote` or a blocked stale context.
