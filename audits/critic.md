@@ -14,10 +14,9 @@ audit branch is the missing rerunnable live boundary with preserved-remote
 audit evidence on a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL`. The lack of a branch-local real-site release
 command is a separate gap, but it is not the main blocker and must not be
-mistaken for the supervised lane's retained-source evidence. Keep the
-supervised lane and this branch separate: retained-source lab evidence can
-support design review, but it cannot stand in for this worktree's own live
-retry proof.
+mistaken for the supervised lane's retained-source evidence. Retained-source
+lab evidence can support design review, but it cannot stand in for this
+worktree's own live retry proof.
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
@@ -38,7 +37,7 @@ remote audit evidence on a real local, Playground, or Docker
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
-Branch-local release gate, stated narrowly:
+Branch-local release gate, stated narrowly and separately from the supervised lane:
 
 - this worktree still has not produced a rerunnable real-site release command
   against a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
