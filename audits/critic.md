@@ -42,8 +42,8 @@ preserved-remote retention after rejection, apply-time revalidation from
 fresh live hashes, production auth/session lifecycle, durable journal storage
 with lease/fencing, graph identity, and plugin-driver coverage on the same
 mutation. Until one command can be rerun here and still show the rejected
-remote preserved for audit and retry, the rest of the evidence remains lab
-progress.
+remote preserved for audit, retry, and later inspection, the rest of the
+evidence remains lab progress.
 
 Next proof required: one rerunnable live command on a real local, Playground,
 or Docker `REPRINT_PUSH_SOURCE_URL` that rejects stale drift before the first
