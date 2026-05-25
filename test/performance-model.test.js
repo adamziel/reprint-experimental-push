@@ -37,6 +37,15 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'large upload models compression decisions',
   );
   assert.ok(
+    largeUpload.actions.some(
+      (action) =>
+        action.type === 'compression-decision' &&
+        action.transportEncoding === 'zstd' &&
+        action.canonicalHashEncoding === 'uncompressed-resource-value',
+    ),
+    'large upload models transport-only compression for compressible content',
+  );
+  assert.ok(
     largeUpload.actions.some((action) => action.type === 'backpressure-pause'),
     'large upload models backpressure pauses',
   );
@@ -178,6 +187,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.failureEvidence,
     'planning cursor plus cached digest and guarded file-publish record',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-chunk-transit-frames-with-canonical-chunk-digests')?.visibilityBoundary,
+    'transport-only',
   );
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'parallelize-independent-owner-index-scans-within-site-budgets')?.visibilityBoundary,
