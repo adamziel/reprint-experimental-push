@@ -10647,6 +10647,39 @@ test('a partial durable commit stays blocked on retry and does not duplicate sta
     persistedAfterFailure.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
     true,
   );
+
+  const retryRemote = JSON.parse(JSON.stringify(partialError.details.recovery.artifacts.remote));
+  const retrySnapshot = JSON.stringify(retryRemote);
+  const retryError = captureError(() =>
+    applyPlan(retryRemote, plan, {
+      durableJournal,
+      journal: partialError.details.recovery.artifacts.journal,
+    }),
+  );
+  durableJournal.close();
+  const persistedAfterRetry = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(retryRemote), retrySnapshot);
+  assert.ok(retryError instanceof PushPlanError);
+  assert.equal(retryError.code, 'RECOVERY_BLOCKED');
+  assertAcceptableRecoveryState(retryError.details.recovery);
+  assertRecoveryStateArtifacts(retryError.details.recovery, 'blocked-recovery');
+  assert.ok(retryError.details.recovery.artifacts.remote, 'retry must keep the partial remote artifacts');
+  assert.ok(retryError.details.recovery.artifacts.journal, 'retry must keep the journal artifacts');
+  assert.equal(
+    retryError.details.recovery.artifacts.remote.files['index.php'] === '<?php echo "local";'
+      || retryError.details.recovery.artifacts.remote.db.wp_posts['ID:2']?.post_title === 'Inserted locally',
+    true,
+    'retry must keep the partial committed mutation set stable',
+  );
+  assert.equal(
+    persistedAfterRetry.records.filter((record) => record.type === 'journal-replayed').length,
+    persistedAfterFailure.records.filter((record) => record.type === 'journal-replayed').length,
+  );
+  assert.equal(
+    persistedAfterRetry.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    true,
+  );
 });
 
 test('durable no-data-loss recovery boundaries stay limited to old remote, fully updated remote, or blocked recovery with artifacts', () => {
