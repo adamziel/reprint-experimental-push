@@ -31,8 +31,8 @@ Those requirements are the minimum release bar, not aspirational extras.
 
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| Executable proof | `npm test` passes 89/89 tests and covers planner, recovery-journal, benchmark-model, and guarded-benchmark checks; the suite is honest about refusal and redaction but stays model/fixture scoped | No live-source boundary, no production storage path, no enforced release decision | Yes |
-| Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, and plugin packaging | These smokes never become release proof because they still run against local or fixture-backed storage, not the live source boundary | Yes |
+| Executable proof | `npm test` passes 89/89 tests; the strongest assertions cover planner invariants, recovery-journal replay shape, benchmark-model guardrails, and guarded-benchmark refusal behavior | No test in this bucket touches live-source storage, live transport, or a required release decision; no test proves no-loss on a production mutation path | Yes |
+| Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, and plugin packaging | These smokes still run against local or fixture-backed storage, so they cannot prove the live source boundary or the real remote/local topology | Yes |
 | Docs-only proof | `docs/`, `progress.html`, and audit notes describe the intended release flow | Prose can describe the matrix, but it does not enforce the matrix or prove the live path | Yes |
 | Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L34); no checked-in `.github/workflows/*`; no measured live-path benchmark threshold; no required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and speed proof | The repo still lacks the single mandatory decision point that could make the live-source claim releasable, and the default automation path is still opt-in by command choice | Yes |
 | Release blockers | `labBacked: true`, fixture-only scope, benchmark-only evidence, missing live-source proof, missing enforced gate | None of these are acceptable as release proof, and each one keeps the production claim false | Yes |
@@ -228,15 +228,23 @@ The current tests are strongest where they reject unsafe claims, and weakest whe
 The practical consequence is simple:
 
 - The suite can prove that the project knows what it still cannot claim.
-- The suite cannot yet prove that a live-source push is safe to release.
-- A green run is therefore evidence of local consistency, not release readiness.
+- The suite cannot yet prove that a live-source push is safe to release, because it does not assert the full live-source storage and transport path under an enforced release command.
+- A green run is therefore evidence of local consistency, not no-data-loss or production reliability.
+- The benchmark tests can refuse unsupported speed claims, but they do not measure a live push path, so they do not support a production speed claim.
 
 That distinction is visible in the benchmark coverage:
 
-- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js#L12-L254) proves the benchmark model keeps durable receipts, gate proofs, and backpressure rules intact, but it still only checks the model object. It does not time the live push path, touch a live source, or establish a measured release threshold.
-- [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js#L35-L112) proves the benchmark refuses unsupported throughput claims and fails closed on tampering, but it still reports `productionThroughput: 'not-claimed'` and blocks the production claim because the production gaps are not measured.
+- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js#L1-L157) proves the benchmark model keeps durable receipts, gate proofs, and backpressure rules intact, but it still only checks the model object. It does not time the live push path, touch a live source, or establish a measured release threshold.
+- [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js#L1-L90) proves the benchmark refuses unsupported throughput claims and fails closed on tampering, but it still reports `productionThroughput: 'not-claimed'` and blocks the production claim because the production gaps are not measured.
 - [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js#L1-L200) proves append/restart behavior and recovery classification on local temporary files, but it does not exercise the live storage and transport path that a release would need.
-- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js#L1-L220) proves planning and conflict handling on the local model, but it does not establish live-source apply-time rechecks or no-loss behavior on production data.
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js#L1-L220) proves planning and conflict handling on the local model, but it does not establish live-source apply-time rechecks, lease/fence enforcement, or no-loss behavior on production data.
+
+Bottom line on the tests:
+
+- No current test proves no data loss on the live source boundary.
+- No current test proves production reliability across crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart on the real storage path.
+- No current test proves a production speed claim.
+- The suite is still valuable, but mainly as refusal evidence and local invariant evidence, not as release approval evidence.
 
 Those tests are necessary, and they are good refusal evidence, but they still leave the release claims unproved:
 
