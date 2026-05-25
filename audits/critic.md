@@ -4345,3 +4345,17 @@ False reliability claims to reject:
 - "comparison passed" when a Reprint, ZS-Sync, or ForkPress note does not
   name the exact upstream revision or worktree state and does not say what
   the note proves here versus what it does not prove.
+
+Production wording must also satisfy the release gate in
+[`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md).
+That checklist is the claim gate, not a supplemental note. If any item is
+missing, the wording stays lab-backed, comparison-only, or audit-only.
+
+One more false-reliability trap to reject explicitly:
+
+- a matching route family, package mount, fixture replay, readable review
+  artifact, or `finalMatchesLocal` result can still come from a copied or
+  fixture-backed executor behind the same URL shape, so none of those
+  outcomes prove the live write path rejected stale authority before the
+  first mutation, preserved the remote, or rebuilt retry authority from fresh
+  live hashes.
