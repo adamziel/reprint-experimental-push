@@ -8,6 +8,17 @@ The no-data-loss recovery model now distinguishes three acceptable post-failure 
 
 That contract is useful, but it is still only a model until the apply path is backed by a crash-safe journal and replay command that survive process loss.
 
+## Production gate
+
+This lane still fails the production gate until the recovery trail is backed by a durable journal primitive such as a real DB row set or file-backed append log that can survive restart.
+
+The missing production guarantees are:
+
+- persistent journal rows or files, not in-memory JSON
+- `fsync` or backend-equivalent flush semantics on the journal path
+- lease or fencing ownership for the active writer
+- restart-readable recovery inspection data that can classify `old-remote`, `fully-updated-remote`, or `blocked-recovery`
+
 ## What must be executable before release
 
 - Durable journal rows must be written to real storage, not lab-only JSON objects.
