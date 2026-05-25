@@ -17,7 +17,10 @@ citation remains historical only.
 That warning also covers route-shaped smokes that happen to return live-looking
 hashes or inspectable review output: a matching surface can still mask a stale
 remote, a remapped create target, or a late plugin-owned surface that only
-appears after the first write.
+appears after the first write. A readable approval that covered the first write
+does not prove the second boundary is safe; if a later plugin-owned surface or
+remapped identity appears after that first success, the old artifact remains
+audit-only and cannot be widened into retry authority for the new boundary.
 
 One weak claim still worth tightening explicitly: a production-shaped route,
 package mount, or fixture can still be a copied-lab executor behind the same
