@@ -474,11 +474,11 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Verified signal: 89 Node tests pass. Open gate: production auth plus durable journaling. Top blocker: production executor plus auth proof.</p>
-        <time class="update-stamp" datetime="2026-05-25T02:10:47+02:00">Last updated: May 25, 2026, 02:10:47 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T02:11:16+02:00">Last updated: May 25, 2026, 02:11:16 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Current gate: production auth + durable journaling</span>
           <span class="pill">89 Node tests passing</span>
-          <span class="pill">Trend flat; evidence stays lab-scoped</span>
+          <span class="pill">Trend flat; lab evidence only</span>
           <span class="pill">Release gates proven: 0/4</span>
           <span class="pill">Top blocker: production executor plus auth proof</span>
           <span class="pill">Pending proof: executor/auth, recovery journal, Docker/Playground, graph identity, plugin drivers</span>
@@ -486,7 +486,7 @@
       </div>
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>Current state, trend, blockers, and links fit on one screen; dated history stays below.</p>
+        <p>One screen shows the current gate, trend, blocker, and links; dated history stays below.</p>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a> · <a href="docs/executor.md">executor</a> · <a href="docs/recovery/apply-journal.md">recovery</a> · <a href="docs/playground-topology.md">playground</a> · <a href="docs/protocol.md">protocol</a> · <a href="docs/supervisor-feedback.md">feedback</a>.</p>
       </div>
     </header>
@@ -552,10 +552,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>89 Node tests pass, and the linked planner, recovery, fast-path, protocol, critic, and audit evidence stays current.</span></li>
+            <li><strong>Going well</strong><span>89 Node tests pass, and the linked executor, recovery, playground, protocol, and feedback evidence stays current.</span></li>
             <li><strong>Top risk</strong><span>Production auth and durable journaling stay first in line before any push-safety claim.</span></li>
             <li><strong>Still pending</strong><span>Executor/auth, recovery journal, graph identity, Docker/Playground, and plugin-driver evidence remain unverified.</span></li>
-            <li><strong>Audit note</strong><span>The page keeps one screen of status, blockers, and evidence links; the log carries dated history.</span></li>
+            <li><strong>Audit note</strong><span>Current status fits on one screen; dated history and linked evidence stay below.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -595,11 +595,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Lab snapshots prove guarded plans and fixture apply/refusal paths. Production mutation/auth, durable storage, and graph safety remain pending.</p>
+              <p>Lab snapshots prove guarded plans and fixture apply/refusal paths. Production mutation/auth, durable storage, Docker integration, and graph safety remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, Docker integration, and WordPress graph identity are still pending.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, Docker integration, WordPress graph identity, and plugin drivers are still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>
