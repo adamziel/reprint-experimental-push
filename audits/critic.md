@@ -65,6 +65,10 @@ Must-fix blockers before any production wording:
 - A readable stale manual-review artifact must not be described as durable
   retry authority, even when it remains inspectable; if a retry consumed it as
   authority, the proof failed to preserve a clean remote-audit separation.
+- A readable stale manual-review artifact must not be mistaken for branch-
+  local revalidation. If the live write boundary, preserved remote, and fresh
+  retry scope were not rechecked on this branch, the artifact stays
+  inspection-only even when it is still readable.
 - If a plugin-owned surface is discovered only after the first write, the
   claim must show the remote stayed preserved, the late discovery was blocked
   or durably classified, and the retry rebuilt scope from fresh live hashes;
@@ -433,6 +437,9 @@ has not shown remote preservation or fresh-scope revalidation. "Manual
 resolution later" only becomes acceptable after the remote-preserving audit
 trail, the stale-artifact rejection point, and the fresh retry scope are all
 observable on the same live write boundary.
+- Readability also does not prove branch-local revalidation. If the audit does
+  not separately name the live boundary recheck on this branch, the artifact
+  remains provenance, not current proof.
 
 The missing evidence for each one is concrete:
 
