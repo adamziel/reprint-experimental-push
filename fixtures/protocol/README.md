@@ -123,6 +123,12 @@ That checked command is also the release-facing proof entry point for the
 explicit missing-secret gate: when the real push secret is unavailable, the
 harness must fail fast before preflight, dry-run, or apply can proceed.
 
+If you want the production-shaped missing-secret proof directly, run:
+
+```sh
+npm run test:playground:production-shaped-missing-secret
+```
+
 The direct smoke for the gate is:
 
 ```sh

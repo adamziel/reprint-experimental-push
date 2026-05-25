@@ -238,6 +238,23 @@ That split keeps remote liveness strict: dry-run and apply are separate remote
 operations, and apply must revalidate the live remote before every batch and
 again at the storage boundary.
 
+The checked command that exercises this protocol shape in the repo is:
+
+```sh
+node --test test/protocol-fixtures.test.js
+```
+
+The direct production-shaped missing-secret gate is:
+
+```sh
+npm run test:playground:production-shaped-missing-secret
+```
+
+It fails fast with `REPRINT_PUSH_SECRET_REQUIRED` when neither
+`REPRINT_PUSH_SIGNING_SECRET` nor `REPRINT_PUSH_APPLICATION_PASSWORD` is set,
+which keeps the preflight/dry-run/apply boundary explicit even when a real
+remote credential is unavailable.
+
 ## Canonical Proof Set
 
 Use this order when reviewing the production push extension end to end:

@@ -88,6 +88,16 @@ npm run test:playground:production-shaped-missing-secret
 It emits `REPRINT_PUSH_SECRET_REQUIRED` unless
 `REPRINT_PUSH_SIGNING_SECRET` or `REPRINT_PUSH_APPLICATION_PASSWORD` is set.
 
+For the full production-shaped topology proof, the checked command is:
+
+```sh
+node --test test/protocol-fixtures.test.js
+```
+
+That command pins the one-remote, one-local, one-drift harness, the shared
+Docker and Playground route matrix, the pull-to-push bridge, and the strict
+remote liveness split between dry-run and apply.
+
 ## Canonical Proof Set
 
 The executor should cite the same proof chain as the protocol document:
