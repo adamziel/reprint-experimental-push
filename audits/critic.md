@@ -35,6 +35,23 @@ Must change before any production-grade push claim:
   point, and fresh retry scope are all recorded on this branch for the exact
   same boundary.
 
+Operational release gate:
+
+- before any production wording, the branch must show the exact live write
+  boundary, the preserved remote after reject, the stale rejection point, and
+  the fresh retry artifact rebuilt from live hashes on this worktree;
+- the branch must separately classify any late-discovered plugin-owned
+  surface, because a hidden table, generated file, cron row, cache entry, or
+  runtime registry that appears after the first write is a new boundary, not
+  proof that the earlier approval was safe;
+- a readable manual-review artifact stays audit evidence only until the
+  branch proves it cannot become authority for a different row, file,
+  relationship-bearing record, remapped create target, or plugin-owned
+  surface after drift; and
+- route shape, package mount shape, fixture replay, readable review output,
+  and `finalMatchesLocal` remain compatibility evidence only unless the same
+  live boundary was revalidated on this branch with preserved-remote proof.
+
 Source-note comparison rule:
 
 - Reprint, ZS-Sync, and ForkPress notes are historical context unless the
