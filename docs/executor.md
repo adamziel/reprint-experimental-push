@@ -110,6 +110,25 @@ The packaging topology is identical in both Docker and Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 - no remote tunnel is allowed in either mode
 
+## Test Topology
+
+The production test shape is always the same:
+
+| Role | Meaning |
+| --- | --- |
+| `remote-base` | The remote source site that produced the persisted pull base. |
+| `local-edited` | The imported local clone after user edits. |
+| `remote-changed` | The same remote site observed later after independent drift. |
+| `runner` | The only process allowed to preflight, plan, upload, inspect, and recover. |
+
+That shape must hold in both packaging modes:
+
+- Docker keeps all roles on one private network and exposes browser-visible inspection only through the sandbox-provided `8080` ingress with a local-only proxy.
+- Playground uses separate disposable blueprints, but the same one-remote, one-local, one-drift-witness proof.
+- `remote-base` and `remote-changed` are the same remote identity observed at different times, not two different sites.
+- `push_snapshot_hashes` is planning evidence only, `push_plan_dry_run` is an eligibility receipt only, and `push_batch_apply` must revalidate live state before every batch and at the storage boundary.
+- `push_journal` and `push_recover inspect` are read-only evidence readers; mutating recovery only starts after inspect proves the action against journal rows plus fresh live hashes.
+
 ## Executor Responsibilities
 
 The executor is the client-side orchestrator. It runs after a site was pulled,
@@ -126,6 +145,16 @@ Responsibilities:
 - Apply ready plans in bounded `push_batch_apply` calls.
 - Inspect `push_journal` after any timeout, process crash, or ambiguous error.
 - Run `push_recover` in `inspect` mode first, then in a mutating mode only when the journal says recovery is required and the live remote can prove the action.
+
+The executor must treat the pull pipeline as immutable provenance and the push pipeline as a write protocol layered on top of it:
+
+1. Exporter scans the merge base and coverage evidence.
+2. Importer persists the base package as immutable provenance.
+3. Preflight binds that persisted package to the live remote identity and a short-lived session.
+4. Snapshot hashes list live comparison evidence for planning only.
+5. Dry-run uploads the canonical plan as eligibility evidence only.
+6. Apply revalidates the live remote before every batch and again at the storage boundary.
+7. Journal inspect and recovery inspect read durable evidence first, then allow mutation only when fresh live proof exists.
 
 The executor must not mutate the remote during planning. It may fetch remote
 content for conflict display, but mutation starts only at `push_batch_apply`.
