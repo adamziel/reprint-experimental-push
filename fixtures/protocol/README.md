@@ -123,7 +123,11 @@ Failure and recovery examples:
   use the same one-remote, one-local topology.
 - `push-executor-topology-proof.json` gives the shortest proof that the
   executor keeps the pull provenance, push staging, and browser ingress on one
-  production-shaped topology.
+  production-shaped topology. It is the canonical fixture to cite when a test
+  needs to prove that Docker and Playground both reuse the same remote identity
+  twice, keep `remote-base` and `remote-changed` as two observations of that
+  one site, and keep browser-visible inspection on the sandbox-provided `8080`
+  ingress with a local-only proxy.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
