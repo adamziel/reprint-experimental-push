@@ -12,6 +12,10 @@ The named failure boundaries in this lane are expected to stay in `old-remote`:
 - failure after staging
 - failure after dependency validation
 
+Those checkpoints are all pre-commit boundaries. Even if the journal has
+recorded staging or dependency validation, the remote itself must still be
+classifiable as unchanged.
+
 Completed-plan replay is only acceptable when it returns `fully-updated-remote` and stays inert.
 If the replayed remote has drifted since completion, the result must be `blocked-recovery`
 with journal and remote artifacts, not a silent retry.
