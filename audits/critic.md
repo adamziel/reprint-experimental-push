@@ -6389,6 +6389,10 @@ Comparison rule:
   live hashes, the earlier Reprint, ZS-Sync, or ForkPress comparison stays
   historical context for the earlier boundary only, even when the route or
   reviewer wording is identical.
+- a later-discovered plugin-owned surface or remapped create target is a new
+  boundary even if the route family, package mount, reviewer wording, or
+  fixture shape matches a prior boundary; without its own preserved remote
+  and rejection point, the prior note cannot be widened into retry authority.
 
 Production-grade wording still needs explicit proof for these failure modes:
 
