@@ -37,6 +37,11 @@ or `production-plugin-package` is still not proof of a live release boundary
 unless it reruns the exact remote mutation path on an actual remote and leaves
 the rejected remote inspectable for audit and retry.
 
+If a release claim is only a wrapper around missing inputs, that is still setup
+work, not proof. The branch needs one exact rerunnable command string, one live
+`REPRINT_PUSH_SOURCE_URL`, and one preserved remote that stayed auditable after
+rejection before any production wording can be defended.
+
 The next missing proof is concrete: the branch still has not produced a named
 command string that was run against a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` and recorded the executor identity, the preserved
