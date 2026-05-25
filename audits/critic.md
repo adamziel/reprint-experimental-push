@@ -215,6 +215,29 @@ Blocked production claims:
   reverified at the same live mutation boundary and the comparison names the
   live write path, not just the feature family.
 
+Production-grade push support still needs all of the following proofs on the
+same live write path:
+
+1. Live remote drift between dry-run and apply fails closed before the first
+   mutation, and the preserved remote remains auditable after reject.
+2. Create-time identity remapping, aliasing, or renumbering is either durably
+   proven safe or hard-blocked before mutation, with no silent target swap.
+3. Plugin-owned state outside the allowlist is enumerated or blocked at apply
+   time, including late-discovered custom tables, generated files, cron rows,
+   cache entries, runtime registries, serialized blobs, and external side
+   effects.
+4. Partial file, DB, or plugin side effects are durably classified as old,
+   new, or blocked, and the next retry rebuilds scope from fresh live hashes
+   rather than inherited approval.
+5. A readable manual-review artifact stays audit-only after drift, cannot
+   authorize retry, and cannot widen into a different row, file,
+   relationship-bearing record, or plugin-owned surface.
+6. Any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
+   revision or worktree state and the exact live mutation boundary that was
+   reverified here; otherwise it is historical context only.
+7. Route shape, package shape, fixture replay, and `finalMatchesLocal` stay
+   compatibility evidence only and never become production-safety proof.
+
 The protocol has useful lab properties: dry-run/apply separation, live-remote
 revalidation, idempotency keys, a recovery vocabulary, and hash-only evidence
 for several lab slices. None of that is production proof. The missing proofs
