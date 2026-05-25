@@ -100,6 +100,14 @@ Minimal gate contract:
 4. A checked-in workflow or equivalent default entrypoint that runs the same command, not a weaker substitute.
 5. No release claim unless the same command also covers auth/session, durable journal, lease/fencing, graph identity, plugin-data-driver, topology, crash-boundary, and speed proof.
 
+Current test verdict, tightened:
+
+- Passing tests are necessary, but they are not approval evidence for the live-source claim.
+- `npm test` remains internal consistency proof only; it does not validate no data loss, reliability, or speed at the production boundary.
+- The Playground and recovery smokes are useful because they exercise failure modes, but they still stop at local or fixture-backed storage.
+- Benchmark refusal tests are valuable because they reject unsupported throughput claims, but they do not establish a live-path threshold.
+- Until one enforced gate consumes all required proof buckets together, every green run remains bypassable by command choice.
+
 The weakest current claim is still the release gate itself. That is the claim most worth tightening because it is the one that converts every existing proof fragment into an enforceable decision. Until the repo has a required `verify:release`-style command and a checked-in automation path that runs it, every other proof bucket remains optional and therefore bypassable. The immediate actionable requirement is not more lab coverage; it is a fail-closed release command that prints the first missing proof bucket, rejects `labBacked: true` and fixture-only evidence, and is the default path in CI or equivalent automation.
 
 One important distinction for this audit: refusal tests are still useful, but they are not release approval. A test can be honest about missing proof, and still be insufficient to prove the positive claim. In this checkout, the benchmark and recovery suites are credible blockers because they refuse unsupported claims and model some failure modes, but they do not certify the live-source boundary the objective requires.
