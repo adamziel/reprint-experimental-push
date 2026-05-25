@@ -1,17 +1,20 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:59:20 CEST
+Last updated: 2026-05-25 10:01:38 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 09:59:20 CEST
+## 2026-05-25 10:01:38 CEST
 
-- Going well: the visible surface stays compact and the checked gate remains explicit.
+- Going well: the visible surface stays compact and the last-updated stamp is still explicit.
 - Not going well: `reliable-executor` still lacks a real live URL/topology, and `integration` still has not run the real-site release command.
 - Progress change: none; this is a supervisor decision update, not a release-state change.
 - Next nudge: `integration` owns the next real-site release command and must return retained live source/auth/recovery output; `reliable-executor` is drifting until the gate binds to a real endpoint, and `invariants`/`recovery` should align to that same command.
 - Note: `progress.html` and `docs/progress-log.md` stay lane-local until merge to `main`; the deployed copy updates only after that merge.
+
+<details>
+<summary>Earlier feedback</summary>
 
 ## 2026-05-25 09:57:54 CEST
 
@@ -20,6 +23,8 @@ changed, what is helping, what is not helping, and the next nudge.
 - Progress change: none; this is a supervisor decision update, not a release-state change.
 - Next nudge: `integration` owns the next real-site release command and must return retained live source/auth/recovery output; `reliable-executor` is drifting until the gate binds to a real endpoint, and `invariants`/`recovery` should align to that same command.
 - Note: `progress.html` and `docs/progress-log.md` stay lane-local until merge to `main`; the deployed copy updates only after that merge.
+
+</details>
 
 ## 2026-05-25 09:54:52 CEST
 
