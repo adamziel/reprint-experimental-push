@@ -10,6 +10,7 @@ This note is intentionally narrow: it records the current blockers that keep the
 4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary.
 5. There is no checked-in CI workflow in this checkout, so there is no visible enforced entrypoint that could make the release gate mandatory.
 6. `package.json` still exposes `test`, `plan`, `apply`, and optional playground helpers only. That surface can support release work, but it does not itself define an enforced release verdict.
+7. The current tests are valid regression and refusal evidence, but they stop short of the live-source boundary, so they cannot prove no data loss, reliability under crash/replay, or measured speed on the production path.
 
 ## Required proof before release
 
