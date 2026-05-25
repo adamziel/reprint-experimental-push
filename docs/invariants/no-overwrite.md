@@ -24,6 +24,10 @@ the live remote immediately before apply.
 - When a plan mixes a live-preconditioned deletion with matching independent
   edits or type swaps, the matching resources stay `already-in-sync` and the
   deletion remains the only automatic mutation.
+- When a plan mixes a live-preconditioned deletion with a matching
+  independent edit and a matching file type swap, the matching resources stay
+  `already-in-sync` and unrelated remote-only plugin drift still stays
+  `keep-remote`.
 - When a plan mixes a live-preconditioned type swap with matching independent
   deletions or edits, the matching resources stay `already-in-sync` and the
   type swap remains the only automatic mutation.
@@ -108,6 +112,9 @@ the resource key, the live remote hash observed during planning, and the
   plugin drift is present elsewhere in the plan; the plugin drift remains
   `keep-remote` and does not relax the live precondition for the actual
   mutation.
+- Safe preservation of unrelated remote-only plugin drift does not relax the
+  live-precondition rule for a deletion, edit, or type swap. The mutation is
+  still only eligible if its own live remote hash check is present.
 - If local still touches a plugin's files or plugin-owned data after that plugin
   was removed remotely, the planner must stop rather than infer harmless drift.
 
