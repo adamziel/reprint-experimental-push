@@ -1202,10 +1202,14 @@ listing is a planning snapshot only, and the dry-run receipt is a receipt of
 eligibility only. Apply must fetch fresh live evidence again before every
 batch.
 
-The machine-readable fixture [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
-captures the same one-remote, one-local, one-drift-witness split for test code, and
-[`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
+The machine-readable topology fixture
+[`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
+captures the same one-remote, one-local, one-drift-witness split for focused
+test code, and [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
 captures the pull-to-push handoff that the executor must preserve.
+[`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
+is the compact executor proof that ties the pull pipeline, the production
+push ladder, and the sandbox ingress rules together.
 [`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
 ties the production ladder together: preflight, snapshot listing, dry-run,
 batch apply, journal inspect, and inspect-first recovery all stay separate.
@@ -1223,6 +1227,8 @@ The fixtures are intentionally narrow:
   read-only provenance.
 - `push-topology.json` asserts the one-remote, one-local, one-drift-witness
   shape for Docker and Playground, plus the sandbox-only 8080 ingress rule.
+- `push-executor-topology-proof.json` compresses the same proof into the
+  executor-facing contract that also names the push ladder.
 
 Minimal Compose shape:
 
