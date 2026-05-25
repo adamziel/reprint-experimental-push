@@ -5830,6 +5830,43 @@ test('recovery boundaries stay within the accepted no-data-loss states', () => {
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('the no-data-loss contract keeps every failure boundary either old remote, fully updated, or blocked with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options, expectedStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote'],
+    ['after staging', { failAfterStaging: true }, 'old-remote'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote'],
+  ]) {
+    const error = captureError(() => applyPlan(baseSite(), plan, options));
+    assert.equal(error.details.recovery.status, expectedStatus, label);
+    assert.ok(error.details.recovery.artifacts.journal, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  assert.equal(completed.recoveryState.status, 'fully-updated-remote');
+  assert.ok(completed.recoveryState.artifacts.journal);
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.ok(replay.recoveryState.artifacts.journal);
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+
+  const staleReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  staleReplayRemote.files['index.php'] = '<?php echo "drifted";';
+  const staleReplayError = captureError(() => applyPlan(staleReplayRemote, plan, { journal: completed.journal }));
+  assert.equal(staleReplayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(staleReplayError.details.recovery.artifacts.journal);
+  assert.ok(staleReplayError.details.recovery.artifacts.remote);
+});
+
 test('mid-apply failure only leaves blocked recovery with artifacts, never a silent partial remote', () => {
   const base = baseSite();
   const local = baseSite();
