@@ -8,20 +8,21 @@ Must change before any production-grade push claim:
 
 - prove the live mutation boundary rejects stale authority before the first
   write, preserves the remote for audit, and rebuilds retry scope from fresh
-  live hashes on this branch;
+  live hashes on this branch; without that, "manual resolution" is only a
+  post-hoc label, not retry proof;
 - prove the claim is rerun on the same live drift case here; a matching
   route family, package mount, fixture replay, readable review artifact, or
   `finalMatchesLocal` result is compatibility evidence only and cannot
   substitute for the branch-local live rerun;
 - prove a stale approval or readable review artifact cannot be widened into
-  a different row, file, relationship-bearing record, or plugin-owned
-  surface after drift;
+  a different row, file, relationship-bearing record, remapped create target,
+  or plugin-owned surface after drift;
 - prove a readable manual-review artifact is audit-only unless the preserved
   remote, rejection point, and fresh retry scope are all recorded on this
   branch for the same live boundary;
 - enumerate or hard-block late-discovered plugin-owned state, including
   custom tables, generated files, cron rows, runtime registries, serialized
-  blobs, and other hidden side effects; and
+  blobs, cache entries, and other hidden side effects; and
 - classify partial file, DB, and plugin side effects as old, new, or blocked
   before retry so a mixed write cannot be relabeled as success.
 
@@ -87,6 +88,9 @@ part of the original live boundary, that later surface is a new boundary. It
 is not acceptable to fold that surface into the earlier "manual resolution"
 story unless the preserve/reject/retry proof is repeated for that later
 surface on this branch.
+Manual resolution is therefore an audit trail, not a release gate, unless the
+branch can show the preserved remote, the rejection point, and the fresh
+retry artifact for the exact same boundary.
 
 Source-note comparisons are still only historical context unless this branch
 names the exact upstream revision or worktree state and reruns the same live
