@@ -32,10 +32,10 @@ Those requirements are the minimum release bar, not aspirational extras.
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
 | Executable proof | `npm test` passes and covers planner, recovery-journal, benchmark-model, and guarded-benchmark checks; the suite is honest about refusal and redaction but stays model/fixture scoped | No live-source boundary, no production storage path, no enforced release decision | Yes |
-| Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, and plugin packaging | No production transport/storage proof and no claim that these smokes run against the live source | Yes |
-| Docs-only proof | `docs/`, `progress.html`, and audit notes describe the intended release flow | No enforcement and no default automation path | Yes |
+| Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, and plugin packaging | These smokes never become release proof because they still run against local or fixture-backed storage, not the live source boundary | Yes |
+| Docs-only proof | `docs/`, `progress.html`, and audit notes describe the intended release flow | Prose can describe the matrix, but it does not enforce the matrix or prove the live path | Yes |
 | Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L34); no checked-in `.github/workflows/*`; no measured live-path benchmark threshold; no required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and speed proof | The repo still lacks the single mandatory decision point that could make the live-source claim releasable | Yes |
-| Release blockers | `labBacked: true`, fixture-only scope, benchmark-only evidence, missing live-source proof, missing enforced gate | None of these are acceptable as release proof | Yes |
+| Release blockers | `labBacked: true`, fixture-only scope, benchmark-only evidence, missing live-source proof, missing enforced gate | None of these are acceptable as release proof, and each one keeps the production claim false | Yes |
 
 The current checkout does not yet satisfy those requirements at the release boundary. The closest evidence remains split across fixture tests, lab smokes, and refusal-oriented benchmark models. That means the audit must treat any positive claim as provisional unless it is backed by executable proof on the live-source release path, not by a green default test command or a production-shaped label alone.
 
@@ -75,13 +75,13 @@ Gate shape still missing from this checkout:
 
 The test suite is still an audit harness, not a release harness.
 
-- It proves local invariants and refusal logic. `npm test` currently passes 89 tests, but that count is still just internal consistency evidence.
-- It does not prove no data loss on the live source boundary.
-- It does not prove real-world reliability against crash, retry, duplicate request, lease expiry, or mid-apply restart on production storage.
-- It does not prove speed because the benchmark code refuses unsupported claims instead of timing the live push path.
+- It proves local invariants and refusal logic. `npm test` currently passes 89 tests, but that count is still only internal consistency evidence.
+- It does not prove no data loss on the live source boundary. The planner and recovery tests show conflict handling, replay classifying, redaction, and fixture persistence, but they never observe a real live-source push path.
+- It does not prove real-world reliability. Crash, retry, duplicate request, lease expiry, stale claim, and mid-apply restart behavior are modeled or fixture-backed, not proven against production storage and transport.
+- It does not prove speed. The benchmark code refuses unsupported claims instead of timing the live push path, so it can only block false speed claims, not establish a speed claim.
 - It does not prove a release-safe default because no checked-in command forces the whole proof matrix.
 - It does not prove a default release path because all stronger checks remain opt-in scripts.
-- It does not prove that any `npm run test:playground:*` command is release-safe; those scripts are still evidence collectors, not release approvers.
+- It does not prove that any `npm run test:playground:*` command is release-safe; those scripts are evidence collectors, not release approvers.
 - It does not yet prove the production graph identity, plugin-data-driver, or topology claims that the objective requires at release time.
 - It does not prove that `labBacked: true` evidence has been eliminated anywhere the release decision would depend on it.
 
