@@ -15,13 +15,19 @@ The latest lab evidence is real. The reliable lane now adds a missing-secret pro
 The push design should borrow those pieces, but it still needs its own mutation-grade proof. Transport shape and scanner coverage are not enough.
 
 Latest supervision evidence narrows the remaining gap, but does not close it:
-the branch now carries explicit release-boundary wording, a missing-secret gate,
-a timeout-protected release verifier, and a replay-idempotency proof, yet
+`origin/lane/reliable-executor` is still at `0c4fd10f`, `origin/lane/no-data-loss-invariants`
+is still at `29bfcd55`, `origin/lane/no-data-loss-recovery` is still at
+`47b675c0`, `origin/lane/fast-paths` is now at `7f7f9b6c`,
+`origin/lane/independent-auditor` is now at `33b839f0`,
+`origin/lane/feedback-supervisor` is now at `f386dfa6`,
+`origin/lane/progress-publisher` is now at `7695e1f9`, and
+`origin/lane/same-plan-wordpress-graph-create` remains at `70925d88`, while
+the critic branch still matches `origin/lane/critic` at `c036004c`. These
+moves refresh the audit snapshot but do not change the underlying verdict:
 production auth/session lifecycle, durable journal ownership with
 lease/fencing/replay wiring, and exact replay output equivalence are still not
-proven on a real WordPress source site. The recovery lane also remains dirty
-with an unresolved `UU progress.html` conflict, so the recovery story is still
-an active risk rather than settled evidence.
+proven on a real WordPress source site. The recovery lane also remains a risk
+rather than settled evidence.
 
 ## Blocking Gaps
 
@@ -81,4 +87,10 @@ These are the missing proofs that must land before the project can claim product
 
 ## Current Bottom Line
 
-The project has credible lab evidence for staged transport, stale-claim handling, replay idempotency, and some guarded writes. It still does not prove production auth/session lifecycle, durable journal ownership with lease/fencing/replay, preserved-remote retry, full graph identity safety, or general plugin driver coverage. The recovery lane conflict is also still active evidence, so the honest claim remains: fixture-scoped and lab-backed push evidence, blocked for production.
+The project has credible lab evidence for staged transport, stale-claim
+handling, replay idempotency, and some guarded writes. It still does not prove
+production auth/session lifecycle, durable journal ownership with
+lease/fencing/replay, preserved-remote retry, full graph identity safety, or
+general plugin driver coverage. The current lane heads have moved, but the
+honest claim remains unchanged: fixture-scoped and lab-backed push evidence,
+blocked for production.
