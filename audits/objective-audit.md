@@ -13,7 +13,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `c036004c`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/same-plan-wordpress-graph-create` -> `70925d88`
+- `origin/lane/same-plan-wordpress-graph-create` -> `732e1251`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f0b2fcde`
 - `origin/main` -> `4b7b47a6`
@@ -27,8 +27,8 @@ but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now retries the release-proof port handling
   at `0c4fd10f`.
-- `origin/lane/no-data-loss-invariants` now adds an atomic plugin bundle
-  invariant proof at `fa0ce3ea`.
+- `origin/lane/no-data-loss-invariants` now adds a taxonomy identity invariant
+  proof at `fa0ce3ea`.
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `7f7f9b6c`.
@@ -36,7 +36,7 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a stale term
-  taxonomy identity proof at `70925d88`, so the same-plan path still stops short of release-
+  taxonomy identity proof at `732e1251`, so the same-plan path still stops short of release-
   grade proof.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
@@ -83,8 +83,8 @@ The release requirements implied by that objective are:
 | Requirement | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
 | R1 base manifest | The JSON model carries base/local/remote snapshots with stable resource keys and hashes. Playground exporters produce fixture snapshots for posts, options, files, postmeta, a forms lab table, and narrow plugin metadata. | No production Reprint pull-base manifest contract. No proof for complete WordPress identity mapping, table schemas, generated data, object cache state, media metadata, taxonomies, users, multisite, or arbitrary plugin ownership. | Yes |
-| R2 three-way planning | `createPushPlan()` compares base/local/remote hashes. `npm test` covers local-only changes, remote-only changes, matching independent edits, direct conflicts, deletes, file topology conflicts, graph-identity blockers, plugin state, and atomic dependency metadata. The production-shaped CLI smoke plans from exported fixture snapshots and targets `/wp-json/reprint/v1/push/*`. `origin/lane/no-data-loss-invariants` now adds a plugin-owned delete blocker proof at `f37ffc94`. | No production remote hash listing contract. No test starts from a real Reprint pull and then pushes back through production-backed source mutation internals. | Yes |
-| R3 preserve remote changes | Unit tests keep remote-only row and plugin changes, block local deletion versus remote update, stop local directory deletion that would hide a remote-only descendant, and stop file type swaps that would hide remote-only descendants. Playground stale apply smokes preserve fixture drift. `origin/lane/no-data-loss-invariants` now adds a plugin-owned delete blocker proof at `f37ffc94`. | No proof for semantic graph preservation across posts/postmeta/attachments/terms/menus/options/plugin tables. No proof for remote changes to resources that are not directly mutated but are semantically coupled to local changes. | Yes |
+| R2 three-way planning | `createPushPlan()` compares base/local/remote hashes. `npm test` covers local-only changes, remote-only changes, matching independent edits, direct conflicts, deletes, file topology conflicts, graph-identity blockers, plugin state, and atomic dependency metadata. The production-shaped CLI smoke plans from exported fixture snapshots and targets `/wp-json/reprint/v1/push/*`. `origin/lane/no-data-loss-invariants` now adds a taxonomy identity invariant proof at `fa0ce3ea`. | No production remote hash listing contract. No test starts from a real Reprint pull and then pushes back through production-backed source mutation internals. | Yes |
+| R3 preserve remote changes | Unit tests keep remote-only row and plugin changes, block local deletion versus remote update, stop local directory deletion that would hide a remote-only descendant, and stop file type swaps that would hide remote-only descendants. Playground stale apply smokes preserve fixture drift. `origin/lane/no-data-loss-invariants` now adds a taxonomy identity invariant proof at `fa0ce3ea`. | No proof for semantic graph preservation across posts/postmeta/attachments/terms/menus/options/plugin tables. No proof for remote changes to resources that are not directly mutated but are semantically coupled to local changes. | Yes |
 | R4 conflict stop and evidence | Conflicts, blockers, hashes, change kinds, and plugin-owned conflict classes are represented. Raw fixture values are checked out of selected conflict/journal/recovery paths. | No durable production conflict artifact, operator workflow, reviewed resolution path, complete redaction schema, or production audit report. | Yes |
 | R5 immediate preconditions | `applyPlan()` validates preconditions before model apply. Playground smokes verify stale dry-run/apply refusal and just-in-time pre-write hash rejection for selected fixtures. Production-shaped route smoke applies the same ready fixture plan through `/wp-json/reprint/v1/push/*`. | The production-shaped write path is still lab-backed. No proof that every production mutation rechecks liveness immediately before its write under real source-site concurrency. | Yes |
 | R6 storage-boundary guards | `test:playground:storage-guarded-db-write` proves guarded single-statement `UPDATE` behavior for existing fixture `wp_posts`, allowlisted `wp_options`, allowlisted single-row `wp_postmeta`, and exact forms lab rows. `test:playground:storage-guarded-file-write` proves guarded update/create/delete for accepted fixture upload files. Production-shaped route smoke carries those fixture internals behind the `/reprint/v1` route shape. | No production MySQL/InnoDB CAS proof, transactions, locks, rollback, filesystem `fsync`, filesystem lock/CAS proof, arbitrary file guarding, arbitrary create/delete DB guarding, schema changes, plugin activation guarding, or production-backed Reprint HTTP mutation. | Yes |
