@@ -2872,7 +2872,9 @@ export function buildFastPathFixture(overrides = {}) {
   const model = buildBenchmarkModel(overrides);
   const scheduleByKind = new Map(model.schedules.map((schedule) => [schedule.kind, schedule]));
   const fixtureKinds = ['large-upload', 'plugin-install', 'plugin-update', 'release-bundle'];
+  const recoveryFixtureKinds = ['large-upload', 'plugin-install'];
   const schedules = fixtureKinds.map((kind) => scheduleByKind.get(kind)).filter(Boolean);
+  const recoverySchedules = recoveryFixtureKinds.map((kind) => scheduleByKind.get(kind)).filter(Boolean);
 
   return {
     schemaVersion: model.schemaVersion,
@@ -2884,6 +2886,12 @@ export function buildFastPathFixture(overrides = {}) {
       workloads: model.workloads.filter((workload) => fixtureKinds.includes(workload.kind)),
       schedules,
       totals: summarizeSchedules(schedules),
+    },
+    recoveryFixture: {
+      purpose: 'large-upload-and-plugin-install-recovery-evidence',
+      workloads: model.workloads.filter((workload) => recoveryFixtureKinds.includes(workload.kind)),
+      schedules: recoverySchedules,
+      totals: summarizeSchedules(recoverySchedules),
     },
     rejectedFastPaths: model.rejectedFastPaths.filter((fastPath) =>
       fastPath.violates.includes('atomic-groups') ||

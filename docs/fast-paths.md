@@ -1212,6 +1212,11 @@ The model exposes three contract lists that tests should keep current:
   canonical hashes with transport encoding, or lose durable progress evidence.
   Each rejection names the broken gate so precondition bypasses and atomic group
   splits stay visible in benchmark review.
+- The bench fixture now ships a narrower `large-upload-and-plugin-install-recovery-evidence`
+  subset alongside the broader release-safety fixture. That smaller shape keeps
+  the large upload and plugin install recovery paths visible without relying on
+  the release bundle to stand in for them, and it still exercises chunk
+  receipts, row receipts, durable flushing, and the guarded commit barriers.
 - Safe chunk-upload speedups can compress transit frames and reuse plan-scoped
   receipts, but only when the receipts remain durable and the final publish
   still performs the live compare.

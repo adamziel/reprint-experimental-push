@@ -1102,16 +1102,24 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
 test('fast-path fixture isolates the release-safety benchmark shape', () => {
   const fixture = buildFastPathFixture();
   const workloadKinds = fixture.fixture.workloads.map((workload) => workload.kind);
+  const recoveryWorkloadKinds = fixture.recoveryFixture.workloads.map((workload) => workload.kind);
   const rejectedAreas = new Set(fixture.rejectedFastPaths.map((fastPath) => fastPath.violates).flat());
 
   assert.equal(fixture.fixture.purpose, 'large-upload-and-plugin-apply-safety-evidence');
   assert.deepEqual(workloadKinds.sort(), ['large-upload', 'plugin-install', 'plugin-update', 'release-bundle']);
+  assert.equal(fixture.recoveryFixture.purpose, 'large-upload-and-plugin-install-recovery-evidence');
+  assert.deepEqual(recoveryWorkloadKinds.sort(), ['large-upload', 'plugin-install']);
   assert.ok(fixture.fixture.totals.uploadBytes >= 1024 * MIB);
   assert.ok(fixture.fixture.totals.dbRows >= 10_000);
+  assert.ok(fixture.recoveryFixture.totals.uploadBytes >= 1024 * MIB);
+  assert.ok(fixture.recoveryFixture.totals.dbRows >= 10_000);
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'remote-index-probe')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'compression-decision')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'atomic-group-commit')));
+  assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'chunk-upload')));
+  assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'db-row-batch')));
+  assert.ok(fixture.recoveryFixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'durable-receipt-flush')));
   assert.ok(
     fixture.rejectedFastPaths.some((fastPath) =>
       fastPath.id === 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit' &&
@@ -1139,6 +1147,14 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
       fastPath.rejectedGate === 'group' &&
       fastPath.violates.includes('chunk-receipts') &&
       fastPath.violates.includes('row-preconditions')
+    ),
+  );
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-batched-db-receipts-skips-plugin-install-row-preconditions-after-pause' &&
+      fastPath.rejectedGate === 'group' &&
+      fastPath.violates.includes('row-preconditions') &&
+      fastPath.violates.includes('atomic-groups')
     ),
   );
   for (const area of [
