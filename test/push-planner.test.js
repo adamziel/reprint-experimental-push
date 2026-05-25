@@ -12914,6 +12914,7 @@ test('replaying a completed plan keeps the remote unchanged and preserves the co
   const completedDurableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
   completedDurableJournal.close();
+  const persistedBeforeReplay = readRecoveryJournal(journalPath);
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
@@ -12930,6 +12931,17 @@ test('replaying a completed plan keeps the remote unchanged and preserves the co
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  const persistedAfterReplay = readRecoveryJournal(journalPath);
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'apply-committed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'apply-committed').length,
+    'completed replay should not append mutation commit records',
+  );
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'mutation-observed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'mutation-observed').length,
+    'completed replay should not append fresh mutation observations',
+  );
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
