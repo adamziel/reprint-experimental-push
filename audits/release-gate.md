@@ -16,6 +16,9 @@ support.
   path.
 - The claim shows a live remote drift case between dry-run and apply, and the
   stale attempt fails closed before any mutation.
+- The claim shows the stale manual-review artifact remains readable for audit
+  but is unusable for apply after drift, and the next retry starts from fresh
+  live hashes rather than inherited approval.
 - The claim shows create-time identity remapping is either safely represented
   or hard-blocked before write.
 - The claim shows plugin-owned state outside the allowlist is either
@@ -28,6 +31,9 @@ support.
   cannot authorize a widened retry after the live snapshot changes.
 - The claim includes the exact live hashes, the rejected stale approval, the
   retry scope, and the proof that the remote was preserved for audit.
+- The claim includes the exact live snapshot or hash set that invalidated the
+  old approval, not just a route-shaped smoke result or a package mount that
+  happened to look current.
 - The claim identifies the exact reverified upstream revision or worktree for
   any Reprint, ZS-Sync, or ForkPress comparison; otherwise the comparison is
   context only.
@@ -40,6 +46,9 @@ support.
 - The claim does not treat manual resolution as success unless the remote is
   preserved, the stale artifact stays auditable but unusable, and the retry
   rebuilds scope from fresh live hashes before any write.
+- The claim does not treat a stale review artifact as current authority even
+  if it is still readable, because readability alone does not preserve the
+  remote or prove the write path failed closed.
 
 If any item is missing, the wording must stay explicitly lab-backed or
 comparison-only.
