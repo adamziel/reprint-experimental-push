@@ -2103,12 +2103,14 @@ test('durable retry after dependency validation preserves the recovery artifact 
   retryWriter.close();
 
   const persisted = readRecoveryJournal(journalPath);
+  const targetRecords = persisted.records.filter((record) => record.type === 'target-planned');
 
   assert.equal(retry.appliedMutations, 2);
   assert.equal(retry.recoveryState.status, 'fully-updated-remote');
   assert.equal(remote.files['index.php'], '<?php echo "local";');
   assert.equal(remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(Object.keys(remote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assert.equal(targetRecords.length, plan.mutations.length);
   assert.equal(persisted.integrity.status, 'ok');
   assert.ok(persisted.records.some((record) => record.type === 'journal-retry-opened'));
   assert.ok(
