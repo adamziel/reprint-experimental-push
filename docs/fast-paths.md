@@ -803,6 +803,10 @@ under load:
   is rejected because planning evidence and cached hashes can reduce lookup and
   rehash work, but they cannot prove dependency checks, staged metadata, or the
   atomic-group activation barrier survived failure.
+- compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-finalize
+  is rejected because planning evidence and cached chunk receipts can reduce
+  replay work, but they cannot prove dependency checks, row preconditions, or
+  the plugin update barrier survived failure.
 - compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback
   is rejected because planning evidence and cached package hashes can reduce
   lookup work, but they cannot prove dependency checks, metadata writes, or
