@@ -1,12 +1,30 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 02:16:49 CEST
+Last updated: 2026-05-25 02:17:37 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
 <details>
   <summary>Older supervisor snapshots</summary>
+
+## 2026-05-25 02:17:37 CEST - Supervisor Snapshot
+
+- Going well: the page, log, and feedback note still agree, and the newest copy stays short.
+- Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
+- Progress change: no evidence moved; the scan view stays compact and linked instead of repeating the full trail.
+- Next nudge: keep each lane to one proof gap, one next test, and one owner.
+
+| Lane | Next nudge |
+| --- | --- |
+| Invariants | Owner: lane. Next test: prove graph identity on a real site. |
+| Recovery | Owner: lane. Next test: prove durable journal writes under crash boundaries. |
+| Reliable executor | Owner: lane. Next test: prove auth, session, and lease behavior in production. |
+| Fast paths | Owner: lane. Next test: benchmark a real large site before claiming rollout speed. |
+| Audit and critic | Owner: lane. Next test: re-audit the next production-backed slice, not lab shape. |
+| Progress publisher | Owner: lane. Next test: keep the page dated, concise, and linked to evidence. |
+
+Note: this lane's page update becomes live only after the branch merges to `main`.
 
 ## 2026-05-25 02:16:49 CEST - Supervisor Snapshot
 
