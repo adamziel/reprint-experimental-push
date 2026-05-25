@@ -4824,6 +4824,12 @@ One more false-reliability trap to reject explicitly:
   point and a fresh retry artifact rebuilt from live hashes for the same
   boundary, the preserved remote is only audit evidence and cannot justify a
   second write.
+- a later-discovered plugin-owned table, file, cron row, runtime registry,
+  generated asset, cache entry, or serialized blob is a new boundary until
+  this branch records its own preserve / reject / retry cycle; the first
+  route-shaped smoke or manual-review artifact cannot certify that later
+  surface, even if the route family, package mount, or reviewer wording is
+  unchanged.
 
 Production-readiness language checklist:
 
@@ -5073,6 +5079,18 @@ Current blocking scenarios still needing branch-local proof:
 - stale manual-review artifacts, where a readable note survives drift but has
   not been separately rejected, preserved, and rebuilt into a fresh retry
   scope for a later boundary.
+
+Release-readiness wording must also fail closed if it:
+
+- implies that a later-discovered plugin-owned surface inherits the first
+  boundary's retry authority;
+- treats a route-shaped smoke or `finalMatchesLocal` result as proof that a
+  copied or fixture-backed executor was not involved;
+- collapses partial file, DB, or plugin side effects into success without
+  naming the old/new/blocked classification for every touched surface; or
+- cites Reprint, ZS-Sync, or ForkPress as current proof without naming the
+  exact upstream revision or worktree state and stating what the note does
+  not prove here.
 
 Specific false-reliability trap to reject:
 
