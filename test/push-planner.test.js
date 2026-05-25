@@ -6209,6 +6209,32 @@ test('the no-data-loss recovery matrix keeps pre-commit failures old and complet
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('pre-mutation failures keep the remote old even when durable recovery-state writes fail', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const durableJournal = failingDurableJournal('recovery-state');
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      failBeforeMutation: true,
+      durableJournal,
+    }),
+  );
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.ok(error.details.recovery.artifacts.journal);
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(error.details.durableRecoveryStateWriteFailed, true);
+  assert.equal(error.details.durableJournalError.eventType, 'recovery-state');
+});
+
 test('replaying a completed plan stays inert, does not duplicate inserts, and blocks stale drift with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
