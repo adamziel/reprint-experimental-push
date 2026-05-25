@@ -185,6 +185,11 @@ try {
             remoteChanged: remoteChangedServer.baseUrl,
             localEdited: localServer.baseUrl,
           },
+          remoteSnapshotHashes: {
+            sameRemoteIdentity: true,
+            baseHash: liveDrift.baseHash,
+            changedHash: liveDrift.changedHash,
+          },
           drift: labDriftAfterSnapshot ? {
             mode: labDriftAfterSnapshot,
             sameRemoteIdentity: true,

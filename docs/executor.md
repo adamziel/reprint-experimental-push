@@ -182,6 +182,9 @@ supervisor output distinguishes the lab-shaped proof from the missing
 production boundary.
 The same checked output now includes the live remote snapshot hash listing so
 the runner proves the planning-only hash boundary before dry-run and apply.
+The supervisor-facing JSON also exposes a `remoteSnapshotHashes` block with
+the base and changed hashes from the same remote identity, which keeps the
+planning-only hash listing visible in the checked release output.
 
 The production topology used by Docker and Playground is fixed:
 
