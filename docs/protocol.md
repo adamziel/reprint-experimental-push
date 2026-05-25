@@ -72,6 +72,24 @@ provenance, and push consumes that provenance as immutable input:
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating recovery branch
 
+The same pull-to-push bridge is exercised in Docker and Playground:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` binds that persisted package to one live remote identity
+  and one short-lived push session
+- `push_snapshot_hashes` stays planning-only and never becomes write
+  authority
+- `push_plan_dry_run` uploads the canonical dry-run plan and returns a
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` stays read-only
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` may mutate only after inspect proves
+  the branch safe with the same auth floor as the write path
+
 Put differently, the exporter/importer handoff stays authoritative for the
 base package, and push only consumes that immutable package in the order
 above:
@@ -511,6 +529,10 @@ The deployment test topology is the same in Docker and Playground:
 - one runner that owns all push protocol calls
 - browser-visible inspection only through the sandbox-provided `8080`
   ingress and a local-only proxy
+- Docker uses one private network; Playground uses separate disposable
+  blueprints.
+- both harnesses keep the same route names and the same dry-run/apply split.
+- remote tunnels are disallowed.
 
 The topology is captured in these fixtures:
 
@@ -520,6 +542,17 @@ The topology is captured in these fixtures:
   that proves liveness stays separate from write authority
 - `push-production-topology-contract.json` for the compact production bundle
   that includes the pull provenance, push stage sequence, and topology proof
+
+Those fixtures map the bridge in one direction only:
+
+- exporter/importer discover and persist immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- remote snapshot hash listing is planning-only evidence
+- dry-run returns a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect is read-only
+- recovery starts with inspect before any mutating repair
 
 Docker and Playground use the same topology labels and the same ingress
 policy:

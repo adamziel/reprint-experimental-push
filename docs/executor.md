@@ -676,6 +676,7 @@ That topology keeps the executor proof stable:
 - Docker uses one private network; Playground uses separate disposable
   blueprints
 - both harnesses use the same route names and the same dry-run/apply split
+- remote tunnels are disallowed
 - both harnesses keep `remote-base` and `remote-changed` as two observations
   of the same remote identity, not two different sites
 - both harnesses require journal inspection before any mutating recovery
@@ -685,6 +686,20 @@ Both harnesses also enforce the same ingress rule:
 - no remote tunnels
 - local-only proxying for browser-visible inspection
 - the only exposed port is sandbox-provided `8080`
+
+The bridge from pull to push stays one-way:
+
+- exporter/importer establish the immutable base package before push
+- `push_preflight` binds that package to one live remote identity and one
+  short-lived push session
+- `push_snapshot_hashes` stays planning-only and never becomes write
+  authority
+- `push_plan_dry_run` returns a receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary
+- `push_journal` stays read-only
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
 
 ## Canonical Proofs
 
