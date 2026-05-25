@@ -249,6 +249,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('file-hashing'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-install').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-install').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-install').violates.includes('row-preconditions'));
@@ -323,6 +329,12 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
     model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys' &&
       fastPath.gateProofs.recovery.includes('stable receipt keys')
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'compress-chunk-transit-frames-with-canonical-chunk-digests' &&
+      fastPath.gateProofs.recovery.includes('durable chunk receipts')
     ),
   );
   assert.ok(
