@@ -475,7 +475,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Lab/model evidence still holds, but production proof is still missing. The detailed logs are linked below.</p>
-        <time class="update-stamp" datetime="2026-05-25T02:01:02+02:00">Last updated: May 25, 2026, 02:01:02 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T02:01:38+02:00">Last updated: May 25, 2026, 02:01:38 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Lab/model evidence still holds</span>
           <span class="pill">Production proof still missing</span>
@@ -515,7 +515,7 @@
         <span>Short, dated, linked</span>
       </div>
       <div class="panel">
-        <p>Going well: the page, log, and feedback note still agree, and the evidence trail stays one click away. Not going well: production proof is still missing for auth, durable journals, leases, graph identity, integration, and plugin drivers. Progress change: no evidence moved; the newer note is still short. Next nudge: keep each lane to one proof gap, one next test, and one owner.</p>
+        <p>Going well: the page, log, and feedback note still agree, and the evidence trail stays one click away. Not going well: production proof is still missing for auth, durable journals, leases, graph identity, integration, and plugin drivers. Progress change: no evidence moved; the newer note is still short and the lane counters were trimmed back to avoid implying precision. Next nudge: keep each lane to one proof gap, one next test, and one owner.</p>
         <ul class="compact-list" aria-label="Lane nudges">
           <li><strong>Invariants</strong><span>Prove graph identity on a real site.</span></li>
           <li><strong>Recovery</strong><span>Prove durable journal writes under crash boundaries.</span></li>
@@ -535,32 +535,32 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">45%</span></div>
-          <div class="bar" aria-label="No data loss merge invariants 45 percent"><div class="fill green" style="width:45%"></div></div>
+          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">Open</span></div>
+          <div class="bar" aria-label="No data loss merge invariants open"><div class="fill green" style="width:45%"></div></div>
           <p class="note">Lab delete/edit cases still match. Gap: prove graph identity mapping on a real site.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">29%</span></div>
-          <div class="bar" aria-label="No data loss recovery boundaries 29 percent"><div class="fill green" style="width:29%"></div></div>
+          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">Open</span></div>
+          <div class="bar" aria-label="No data loss recovery boundaries open"><div class="fill green" style="width:29%"></div></div>
           <p class="note">Replay and failure-state coverage is model-only. Gap: durable journal writes under crash boundaries.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">42%</span></div>
-          <div class="bar" aria-label="Reliable executor and protocol 42 percent"><div class="fill amber" style="width:42%"></div></div>
+          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">Open</span></div>
+          <div class="bar" aria-label="Reliable executor and protocol open"><div class="fill amber" style="width:42%"></div></div>
           <p class="note">Protocol docs name the flow, but the proof is still local. Gap: production auth, session, and lease behavior.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">19%</span></div>
-          <div class="bar" aria-label="Fast path and chunking 19 percent"><div class="fill" style="width:19%"></div></div>
+          <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">Open</span></div>
+          <div class="bar" aria-label="Fast path and chunking open"><div class="fill" style="width:19%"></div></div>
           <p class="note">Rejected fast paths now name the safety gate. Gap: benchmark a real large site before rollout claims.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">30%</span></div>
-          <div class="bar" aria-label="Independent evidence and critique 30 percent"><div class="fill red" style="width:30%"></div></div>
+          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">Open</span></div>
+          <div class="bar" aria-label="Independent evidence and critique open"><div class="fill red" style="width:30%"></div></div>
           <p class="note">Objective and critic audits match the current evidence. Gap: re-audit the next production-backed slice.</p>
         </div>
       </section>
@@ -571,7 +571,7 @@
           <ul class="compact-list">
             <li><strong>Going well</strong><span>The page, log, and feedback note still agree, and the evidence trail stays one click away.</span></li>
             <li><strong>Not going well</strong><span>Production auth, journal durability, leases, graph identity, integration, and plugin drivers still lack proof.</span></li>
-            <li><strong>Progress change</strong><span>No new evidence landed; the newest note stays short and the older history stays folded away.</span></li>
+            <li><strong>Progress change</strong><span>No new evidence landed; the newest note stays short and the lane counters were trimmed back to avoid implying precision.</span></li>
             <li><strong>Next nudge</strong><span>Give each lane one proof gap, one next test, and one owner.</span></li>
           </ul>
           <p class="note">Open the full feedback log for dated evidence changes and lane history: <a href="docs/supervisor-feedback.md">docs/supervisor-feedback.md</a>.</p>
