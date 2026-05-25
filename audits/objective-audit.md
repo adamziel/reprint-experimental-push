@@ -240,12 +240,15 @@ Without that command, every passing test remains support evidence only.
 
 The weakest claim is any implication that the current suite can certify the live-source release boundary. That claim is unsupported for one simple reason: there is still no required command that must touch live source storage and then emit a release verdict in the same run, so the repo can still go green while the release decision remains unmade.
 
+That makes the current green status a regression signal, not a release signal. The audit should treat every fixture, lab, refusal, or benchmark result as supporting evidence only until one enforced command proves the live-source apply boundary in the same invocation.
+
 - No required command exists that must reach the live-source boundary and emit a machine-checkable release decision.
 - The suite can still go green without proving live-source mutation, crash survival, replay safety, or throughput on the real path.
 - `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
 - A green `node --test` run and green Playground smokes still do not prove no data loss, reliable crash recovery, or measured speed on the live-source path.
 - The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added and wired into the default release path.
+- The objective's positive claim remains blocked even if the repo keeps passing `89/89`, because those passes do not yet include a required live-source verdict.
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
 - The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness, or that optional smokes are equivalent to a required release gate.
 - Said differently: the strongest present tests prove that the repository knows how to refuse unsafe claims, not that it can make the objective's positive claims on a live source.
