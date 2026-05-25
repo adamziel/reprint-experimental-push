@@ -188,6 +188,15 @@ False reliability traps that must fail closed:
   relationship-bearing record than the planner originally approved. Missing
   proof: the branch does not show live apply-time revalidation for the remap,
   so the first approval may have written the wrong target.
+- Scenario: a later-discovered plugin-owned table, cron row, runtime
+  registry, generated file, cache entry, serialized blob, or plugin-owned
+  file appears after the first write. Missing proof: the branch did not name
+  that surface before retry, so the earlier approval cannot be widened to
+  cover it.
+- Scenario: the live rerun shows partial file, DB, or plugin writes but the
+  audit only calls the remainder "manual resolution". Missing proof: the
+  surviving surfaces were not classified old, new, or blocked before retry,
+  so the user still cannot safely audit or retry the mixed write.
 - Scenario: a plugin-owned option, custom table, registry entry, or generated
   file falls outside the allowlist but still shares the same route shape as a
   covered fixture. Missing proof: the branch never enumerated or blocked the

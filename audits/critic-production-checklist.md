@@ -16,6 +16,14 @@ this branch.
   aliasing, renumbering, partial file writes, partial DB writes, partial
   plugin writes, and late-discovered plugin-owned surfaces cannot be
   backfilled into an earlier approval.
+- The proof shows the exact boundary between known plugin-owned surfaces and
+  blocked surfaces, including hidden tables, cron rows, runtime registries,
+  generated files, caches, serialized blobs, and plugin-owned files that are
+  outside the allowlist.
+- If a later-discovered plugin-owned surface, remapped create target, or
+  mixed file/DB/plugin side effect appears after the first write, the branch
+  records it as a new live boundary with its own preserve / reject / retry
+  cycle rather than treating manual resolution as success.
 - Every touched row, file, relationship-bearing record, and plugin-owned
   surface is classified old, new, or blocked before retry starts.
 - Every plugin-owned surface outside the allowlist is enumerated or blocked

@@ -20,7 +20,9 @@ way it does, but none of them prove the live WordPress auth/session boundary,
 the preserved remote, the named real-site release command, or the fresh retry
 scope on this branch. Production-grade wording still needs a branch-local
 rerun that names the exact command, the exact live `REPRINT_PUSH_SOURCE_URL`,
-and the exact boundary that was rejected before the first write.
+the exact boundary that was rejected before the first write, and the exact
+set of plugin-owned surfaces that were either enumerated or blocked before
+retry.
 
 ## Reprint
 
@@ -33,7 +35,8 @@ and the exact boundary that was rejected before the first write.
 - Missing repo proof: a rerunnable live boundary on a real local,
   Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected
   remote, shows apply-time revalidation, and classifies every touched surface
-  old, new, or blocked.
+  old, new, or blocked, including any late-discovered plugin-owned surface or
+  remapped create target.
 
 ## ZS-Sync
 
@@ -43,8 +46,9 @@ and the exact boundary that was rejected before the first write.
   identity, late-discovered surface handling, or any live retry authority on
   this branch.
 - Missing repo proof: the same live boundary rerun here with preserved-
-  remote evidence, dry-run receipt, journal/recovery inspection, and plugin-
-  driver coverage on the live write boundary.
+  remote evidence, dry-run receipt, journal/recovery inspection, plugin-
+  driver coverage, and explicit classification of hidden plugin-owned data
+  traps outside the allowlist on the live write boundary.
 
 ## ForkPress
 
@@ -56,8 +60,9 @@ and the exact boundary that was rejected before the first write.
   rerun on this worktree.
 - Missing repo proof: one real-site release command on this branch that proves
   the rejected remote stayed inspectable, the first write was blocked until
-  stale authority was rejected, and later-discovered plugin-owned surfaces
-  got their own preserve / reject / retry cycle.
+  stale authority was rejected, and later-discovered plugin-owned surfaces or
+  mixed file/DB/plugin side effects got their own preserve / reject / retry
+  cycle.
 
 ## Branch-local rule
 
