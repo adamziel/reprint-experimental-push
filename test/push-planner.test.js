@@ -1059,6 +1059,62 @@ test('blocks a term taxonomy parent reference to stale remote-created term ident
   assert.equal(remote.db.wp_terms['term_id:7'].name, 'remote-private-term-name');
 });
 
+test('blocks local termmeta references to stale remote-created term identity', () => {
+  const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'local-private-term-name',
+      slug: 'local-private-term-slug',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-termmeta-value',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'remote-private-term-name',
+      slug: 'remote-private-term-slug',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.resourceKey, targetResourceKey);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remoteChange, 'create');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(planJson.includes('local-private-termmeta-value'), false);
+  assert.equal(planJson.includes('remote-private-term-name'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.db.wp_terms['term_id:7'].name, 'remote-private-term-name');
+});
+
 test('allows local postmeta references to a post created by the same plan', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
