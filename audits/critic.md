@@ -133,6 +133,13 @@ has a concrete failure scenario:
   the proof has to keep the preserved remote, the blocked or classified late
   surface, and the fresh retry scope separate, or the second write is a new
   boundary with no production safety evidence;
+- a source-note comparison for the first write must not be treated as partial
+  evidence for a late-discovered plugin-owned surface; if a hidden cron row,
+  custom table, generated asset, runtime registry entry, or serialized blob
+  appears after the first write, the earlier comparison stays historical only
+  and cannot authorize that later boundary unless this branch separately
+  preserved the remote, rejected the stale authority, and rebuilt retry scope
+  from fresh live hashes on that new surface;
 - a later-discovered plugin-owned surface must not be treated as a harmless
   continuation of the same success path after the first write; if it appears
   after the first mutation, the branch needs a separate rejection or
