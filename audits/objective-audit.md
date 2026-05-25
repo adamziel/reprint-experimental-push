@@ -60,10 +60,10 @@ Evidence buckets:
 Direct command-surface recheck on `origin/lane/reliable-executor` at `bd9ef3e8`:
 
 - `origin/lane/reliable-executor` at `bd9ef3e8` exposes `verify:release`, `test:playground:production-shaped-release-verify`, `test:playground:production-shaped-live-preflight`, `test:playground:production-shaped-missing-live-source`, and `test:playground:production-shaped-missing-secret`.
-- `verify:release` maps to `test:playground:production-shaped-release-verify` on that upstream tip.
+- `verify:release` maps to `test:playground:production-shaped-release-verify` on that upstream tip, so the upstream release gate is not hypothetical.
 - `scripts/playground/production-shaped-release-verify.mjs` fails closed when no live source or no secret is provided, and it emits the remaining boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` plus the durable-journal blocker `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
 - The same script reports live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback `rows: 17` when the release path succeeds.
-- This checkout does not yet carry that checked verdict in-tree, so the release gate is still closed here.
+- This checkout does not yet carry that checked verdict in-tree, so the release gate is still closed here until the same checked command runs from this worktree or an equivalent default entrypoint produces the same machine-checkable result here.
 
 ## Release Gate Definition
 
@@ -75,7 +75,7 @@ Minimum properties of the gate:
 2. It must revalidate apply-time live state before mutation.
 3. It must fail closed if auth/session lifecycle, durable journal semantics, leases/fencing, graph identity, plugin-driver behavior, or topology proof is still lab-backed.
 4. It must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists.
-5. It must be the command CI or another default entrypoint actually invokes.
+5. It must be the command CI or another default entrypoint actually invokes in this checkout, not only in `origin/lane/reliable-executor`.
 
 ## Conclusion
 
