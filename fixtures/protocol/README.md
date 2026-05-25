@@ -109,6 +109,10 @@ It exercises the production executor flow contract, the route matrix, the pull
 bridge, the live revalidation contract, and the inspect-first recovery boundary
 as a single production-shaped proof.
 
+That checked command is also the release-facing proof entry point for the
+explicit missing-secret gate: when the real push secret is unavailable, the
+harness must fail fast before preflight, dry-run, or apply can proceed.
+
 When you need the exact one-remote, one-local topology proof, start with:
 
 1. `push-production-topology-contract.json`

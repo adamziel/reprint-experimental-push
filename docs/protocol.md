@@ -229,6 +229,11 @@ boundaries:
 - `push_recover auto|finish|rollback` may mutate only after inspect proves the
   branch safe and the auth floor still holds.
 
+If the real push secret is unavailable, the production harness must stop at an
+explicit missing-secret error before any preflight, dry-run, or apply work
+can begin. The missing-secret path must not silently fall back to lab-only
+authentication or to local-only executor behavior.
+
 That split keeps remote liveness strict: dry-run and apply are separate remote
 operations, and apply must revalidate the live remote before every batch and
 again at the storage boundary.

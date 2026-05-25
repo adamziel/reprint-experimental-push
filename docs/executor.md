@@ -70,6 +70,15 @@ the production handshake from preflight through inspect-first recovery, and
 the explicit missing-secret failure contract that blocks preflight, dry-run,
 and apply when the real push secret is unavailable.
 
+The release-facing proof command is the same checked Node test:
+
+```sh
+node --test test/protocol-fixtures.test.js
+```
+
+If the real push secret is missing, the harness must fail fast with
+`REPRINT_PUSH_SECRET_REQUIRED` before preflight, dry-run, or apply can run.
+
 ## Canonical Proof Set
 
 The executor should cite the same proof chain as the protocol document:
