@@ -1824,6 +1824,12 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   partial file, DB, or plugin side effects are classified and retried; the
   hash alone never proves the write executor, the plugin-owned boundary, or
   that the route is anything more than a fixture-backed stand-in.
+- A production claim must name the exact failure scenario it survived:
+  live remote drift between dry-run and apply, create-time identity remap or
+  aliasing, plugin-owned state outside the allowlist, partial file/DB/plugin
+  side effects, or stale manual-review artifacts. If the claim cannot name
+  the scenario, it does not prove the boundary and cannot count as
+  production support.
 - Manual resolution is not a success state unless the remote is preserved for
   audit, the stale artifact is rejected before write, and the retry starts
   from fresh live evidence with no scope widening.
@@ -1956,6 +1962,9 @@ Production-readiness release gate for wording:
 - Show that any comparison note from Reprint, ZS-Sync, or ForkPress was
   reverified at the same live mutation boundary, or treat it as historical
   context only.
+- Show the exact upstream revision or worktree that was reverified, or the
+  comparison stays historical even if the route name, package shape, or
+  fixture replay looks production-shaped.
 - Treat route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` results as compatibility evidence only unless the same
   evidence set also includes live remote revalidation and preserved remote
