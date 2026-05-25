@@ -38,6 +38,8 @@ Only executable evidence at the boundary being claimed counts as proof. Fixture 
 
 Design docs, model tests, and fixture smokes are useful, but they are indirect for production claims unless they exercise the same authentication, storage, journal, crash, concurrency, and WordPress data semantics that production will depend on.
 
+A test that only proves refusal, redaction, or route shape is still indirect for affirmative claims about no data loss, reliability, or speed.
+
 For this audit:
 
 - `Executable proof` means the test or command exercises the claimed behavior directly at the claimed boundary.
@@ -76,6 +78,7 @@ That distinction matters for the objective claims:
 - `test/push-planner.test.js` and `test/recovery-journal.test.js` prove planner invariants, redaction, sequence monotonicity, and restart classifications in fixtures. They do not prove a live WordPress source site survives a failed push, a restart, or a duplicated request without data loss.
 - `test/playground-snapshot-lib.test.js` proves the PHP helper rejects unsupported fixture resources and table names. That is useful input validation, not release evidence for production plugin data drivers or live graph identity.
 - `test/performance-model.test.js` proves the benchmark model keeps proof obligations attached to the proposed fast paths and that unsupported throughput claims are blocked. `test/guarded-executor-benchmark.test.js` proves the refusal path on tampered evidence. Together they prove refusal discipline, not speed. They do not measure a production push path, set an actual runtime or memory threshold, or prove that the live source topology is fast.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` are therefore blocker tests, not release-speed evidence. They can tell you when a throughput claim is unsupported, but they cannot tell you that the live push path is actually fast enough to ship.
 - The authenticated push smokes are still labeled `labBacked: true`, so even a green run there is a lab pass, not release proof.
 - All of the optional smokes can pass at once and still leave the objective blocked, because none of them is mandatory, none of them is the single enforced decision point the release bar needs, and there is no checked-in CI workflow to force a default release path.
 - The current test surface is therefore honest about risk, but honesty is not enough: it proves that the suite can refuse unsafe claims, not that the live release path is safe.
