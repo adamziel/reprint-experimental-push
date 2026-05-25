@@ -100,6 +100,37 @@ test('production-shaped live preflight smoke fails fast when the live source or 
   );
 });
 
+test('production-shaped release verify command fails closed when production durable journal ownership is explicitly required', () => {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+      REPRINT_PUSH_SIGNING_SECRET: '',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(
+    proof.stdout,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}\s*\}/,
+  );
+  assert.match(
+    proof.stdout,
+    /"releaseProof": \{\s*"ok": false,\s*"status": 501,\s*"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}/,
+  );
+});
+
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
     cwd: repoRoot,

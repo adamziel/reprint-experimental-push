@@ -14,6 +14,7 @@ const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
+const requireProductionDurableJournal = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL === '1';
 
 const protocolExtension = {
   stages: [
@@ -198,6 +199,52 @@ try {
       );
       assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
       assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
+
+      if (requireProductionDurableJournal) {
+        process.stdout.write(
+          JSON.stringify(
+            {
+              ok: false,
+              topology: {
+                sourceUrl: liveSourceUrl,
+                remoteBase: remoteServer.baseUrl,
+                remoteChanged: remoteChangedServer.baseUrl,
+                localEdited: localServer.baseUrl,
+              },
+              boundary: {
+                firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+                status: 'unimplemented',
+                verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                durableJournal: {
+                  storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+                  verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                },
+              },
+              protocolExtension,
+              releaseProof: {
+                ok: false,
+                status: 501,
+                code: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+              },
+              durableJournal: {
+                proof: {
+                  status: durableJournalProof.status,
+                  journal: durableJournalSummary.journal,
+                  leaseFence: durableJournalSummary.leaseFence,
+                },
+                rows: proof.dbJournal.rows,
+                applyCommitted: proof.dbJournal.applyCommitted,
+                mutationApplied: proof.dbJournal.mutationApplied,
+                idempotencyOpened: proof.dbJournal.idempotencyOpened,
+              },
+            },
+            null,
+            2,
+          ),
+        );
+        process.stdout.write('\n');
+        process.exit(1);
+      }
 
       const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
       const remoteBaseSnapshot = await exportSnapshot('remote-base', remoteServer.baseUrl);
