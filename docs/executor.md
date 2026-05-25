@@ -156,6 +156,14 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it preserves the one-way mapping from immutable pull provenance to mutable push execution
 - it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`, which are the compact one-remote, one-local, one-drift harness proofs for Docker and Playground
 
+The executor reviews the compact proofs in this order:
+
+1. `push-production-pull-bridge-contract.json` for immutable pull-to-push provenance
+2. `push-production-revalidation-contract.json` for the preflight, dry-run, apply-time revalidation, journal, and recovery ladder
+3. `push-production-auth-session-journal-recovery-inspect-contract.json` for auth/session/journal/inspect recovery proof
+4. `push-production-topology-contract.json` for the one-remote, one-local, one-drift topology
+5. `push-remote-liveness-topology-contract.json` for the dry-run/apply separation on that topology
+
 The executor can be implemented as a strict request ladder:
 
 1. `push_preflight` mints the short-lived push session after the importer has persisted the immutable pull base package.

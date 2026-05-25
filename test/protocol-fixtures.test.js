@@ -127,6 +127,44 @@ test('production topology fixture keeps the pull bridge, dry-run/apply split, an
   ]);
 });
 
+test('production bridge and revalidation fixtures keep the pull handoff and live revalidation proof aligned', () => {
+  const bridge = readJson('fixtures/protocol/push-production-pull-bridge-contract.json');
+  const revalidation = readJson('fixtures/protocol/push-production-revalidation-contract.json');
+
+  assert.equal(
+    bridge.pull_to_push_mapping.push_preflight,
+    'binds the persisted pull base package to one live remote identity and one short-lived push session',
+  );
+  assert.equal(
+    bridge.pull_to_push_mapping['push_batch_apply'],
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.ok(bridge.pull_to_push_mapping['push_recover inspect'].includes('fresh live hashes'));
+  assert.ok(bridge.required_invariants.includes('authentication must be at least as strict as current Reprint HMAC usage'));
+
+  assert.equal(
+    revalidation.push_phases.snapshot_hash_listing,
+    'reads the live remote comparison surface for planning only and never becomes write authority',
+  );
+  assert.ok(revalidation.push_phases.batch_apply.includes('revalidates fresh live evidence before every batch'));
+  assert.ok(revalidation.push_phases.recovery_inspect.includes('classifies finish, rollback, retry, or block'));
+  assert.equal(revalidation.topology.networking.ingress_port, 8080);
+  assert.equal(revalidation.topology.networking.proxy_policy, 'local-only');
+  assert.equal(revalidation.topology.networking.tunnels, 'disallowed');
+  assert.deepEqual(revalidation.required_invariants, [
+    'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run is a receipt, not a lock',
+    'dry-run and apply are separate remote operations',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'claim generation and lease expiry fence stale workers before mutation',
+    'fresh live hashes must still be checked before finish, rollback, or auto',
+  ]);
+});
+
 test('push protocol docs keep the production ladder, pull bridge, and topology contract aligned', () => {
   assert.ok(
     protocolDocs.includes(
