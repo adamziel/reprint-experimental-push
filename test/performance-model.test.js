@@ -305,6 +305,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
 });
 
@@ -345,6 +347,12 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
     model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'reuse-planned-dependency-graph-for-plugin-update-with-live-finalize' &&
       fastPath.gateProofs.group.includes('atomic-group commit barrier')
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'batch-durable-receipt-flushes-within-bounded-journal-lag' &&
+      fastPath.gateProofs.group.includes('atomic group owns the visibility boundary')
     ),
   );
   assert.ok(

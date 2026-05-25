@@ -347,6 +347,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['fsync-count', 'idle-time', 'duplicate-recovery-writes'],
+    allowedShortcut: 'batch-durable-receipt-flushes-within-bounded-journal-lag',
+    guardrails: [
+      'journal-batches-retain-raw-receipts',
+      'flush-never-crosses-an-atomic-group-commit',
+    ],
+    gateProofs: {
+      skip: 'receipt writes can be batched when each batch still preserves the raw chunk, row, or group receipts that were already produced',
+      live: 'the underlying storage-boundary write still keeps the same live preconditions for each chunk, row, or group member',
+      group: 'receipt batching only changes when journal data is flushed, not which atomic group owns the visibility boundary',
+      recovery: 'batched journal records still keep the exact receipt keys needed to classify a crash, retry, or pause',
+    },
+    visibilityBoundary: 'journal-flush-only',
+    failureEvidence: 'batched journal record plus raw durable receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'storage-footprint-for-recovery-evidence'],
     allowedShortcut: 'compress-durable-receipt-logs-with-stable-receipt-keys',
@@ -626,6 +646,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'compression can reduce queued bytes, but it cannot prove the missing chunk receipts or guarded publish record survived failure',
     rejectedGate: 'recovery',
     violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
+    id: 'batched-receipt-journal-flush',
+    proposal: 'batch durable chunk, row, or group receipts into fewer journal fsyncs while keeping the raw receipts intact',
+    rejectedBecause: 'journaling can be batched for speed, but it cannot replace the raw receipt records needed to classify recovery after a pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'durable-progress'],
   },
   {
     id: 'compressed-receipts-replace-durable-progress',

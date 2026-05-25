@@ -50,6 +50,7 @@ the safe list even when they improve a throughput metric.
 | Compression | Compress durable receipt logs after they have been recorded so large-upload and plugin-recovery evidence uses fewer bytes without changing receipt keys. | Receipt compression is storage-only. It does not replace the original durable receipt keys, the live precondition, or the commit boundary. |
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
+| Backpressure | Batch durable chunk, row, or group receipt flushes within a bounded journal lag so fsync work amortizes without changing the raw receipt set. | Batching may delay flushes, but it cannot drop raw receipts, cross an atomic-group boundary, or claim completion before durable evidence exists. |
 
 Concrete failure modes stay rejected even when the throughput gain looks tempting:
 
@@ -65,6 +66,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Compressing buffered evidence can save memory, but it cannot stand in for a receipt or commit record.
 - A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
 - A compressed receipt log can reduce storage, but it still cannot stand in for the original receipt keys or the guarded recovery record.
+- A batched journal flush can reduce fsync overhead, but it still cannot replace the raw chunk, row, or group receipts needed for recovery.
 - A fresh remote index plus a cached plugin package hash still cannot skip dependency checks, metadata writes, or the atomic-group barrier.
 - A compressed package cache still cannot skip plugin dependency checks or the atomic-group barrier, because package identity and transport compression do not prove group commit completion.
 - A compressed row batch still cannot replace the atomic-group commit barrier, because the coupled files, rows, metadata, and activation state must become visible together.
@@ -178,6 +180,9 @@ fails in a different way:
   visible together, because recovery would lose the owner of a partial result.
 - Backpressure cannot drop evidence, because the missing receipts are what make
   recovery unambiguous after pause or crash.
+- Backpressure cannot collapse journal flushes into a summary that loses the raw
+  chunk, row, or group receipts, because recovery still needs the original
+  evidence to classify a partial failure.
 
 The safe version of a fast path is usually a "skip duplicate staging work" or
 "stage earlier" optimization, not a "commit earlier" optimization. The commit
