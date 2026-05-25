@@ -239,6 +239,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'model rejects treating a fresh remote index plus a compressed manifest hash as large-upload completion',
   );
   assert.ok(
+    model.rejectedFastPaths.some((rejection) => rejection.id === 'chunk-ledger-completes-large-upload'),
+    'model rejects treating a cached chunk ledger as large-upload completion',
+  );
+  assert.ok(
     model.rejectedFastPaths.some((rejection) => rejection.id === 'compressed-index-completes-apply'),
     'model rejects treating a compressed remote index response as apply completion',
   );
@@ -270,13 +274,24 @@ test('safe fast paths include compressed remote index planning only', () => {
       fastPath.area === 'remote-indexes' &&
       fastPath.allowedShortcut === 'compress-index-listings-without-changing-planning-semantics',
   );
+  const resumableFileHashPath = model.safeFastPaths.find(
+    (fastPath) =>
+      fastPath.area === 'file-hashing' &&
+      fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-digests-for-large-file-resume',
+  );
 
   assert.ok(compressedIndexPath, 'compressed remote index planning path exists');
+  assert.ok(resumableFileHashPath, 'resumable file-hash planning path exists');
   assert.equal(compressedIndexPath.visibilityBoundary, 'transport-only');
   assert.equal(compressedIndexPath.bypassesLivePreconditions, false);
   assert.ok(
     compressedIndexPath.gateProofs.live.includes('cannot authorize writes'),
     'compressed index path still requires live revalidation',
+  );
+  assert.equal(resumableFileHashPath.visibilityBoundary, 'plan-staging-reuse-only');
+  assert.ok(
+    resumableFileHashPath.gateProofs.skip.includes('cached chunk digest'),
+    'resumable file hashing path keeps chunk digest reuse explicit',
   );
 });
 
@@ -353,6 +368,22 @@ test('safe fast path proposals retain proof obligations', () => {
   assert.equal(
     fastPathByArea.get('parallelism-limits').visibilityBoundary,
     'atomic-group-commit-barrier',
+  );
+  assert.equal(
+    model.safeFastPaths.find(
+      (fastPath) =>
+        fastPath.area === 'file-hashing' &&
+        fastPath.allowedShortcut === 'skip-local-rehash-on-fingerprint-plus-previous-strong-digest',
+    )?.visibilityBoundary,
+    'compare-and-swap-file-publish',
+  );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'file-hashing' &&
+        fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-digests-for-large-file-resume',
+    ),
+    'file hashing should include resumable chunk digest reuse',
   );
 });
 

@@ -36,6 +36,7 @@ the safe list even when they improve a throughput metric.
 | Area | Safe fast path | Required guardrail |
 | --- | --- | --- |
 | File hashing | Cache strong file hashes behind a local fingerprint such as size, mtime, inode, mode, and the previous digest. Stream only uncached or fingerprint-changed files, and keep per-chunk hashes for large files so resume can skip work safely. | Size, mtime, or inode can only skip a rehash when they match a cached strong digest. The apply precondition remains the live remote resource hash. |
+| File hashing | Reuse plan-scoped chunk digests for large-file resume so the sender can skip recomputing chunk hashes that already have durable receipts. | Cached chunk digests are only resume evidence. They do not replace the live publish compare or the guarded file-publish record. |
 | Chunk upload | Upload large file bodies to plan-scoped staging objects in digest-addressed chunks, then assemble or publish the file with one compare-and-swap finalize step. | Chunk writes must not mutate the live path. Each chunk needs a checksum, idempotency key, and durable journal entry before the sender advances. |
 | Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order with one precondition per row. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
 | Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, strong hash, and owner so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
@@ -85,6 +86,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed file-hash cache still cannot prove a plugin update finished, because dependency checks, staged files, row receipts, and the atomic-group commit still need durable evidence.
 - A compressed file-hash cache still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
 - A compressed file-hash cache still cannot skip missing chunk receipts during large-upload resume, because hash compression cannot prove which acknowledgements survived a crash or restore the guarded publish barrier.
+- A cached chunk ledger still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
 - A compressed manifest hash still cannot skip the live file compare before a large upload publish, because compression can shrink recovery data but cannot prove the live object still matches the publish precondition after a crash or retry.
 - Compressed chunk receipts still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
 - A fresh remote index plus compressed chunk receipts still cannot prove a plugin update finished, because chunk acknowledgements do not replace dependency checks, row receipts, or the atomic-group commit.
@@ -120,6 +122,8 @@ fails in a different way:
   when that would skip a live remote hash check.
 - File hashing cannot treat a local fingerprint as apply authority when the
   live remote compare is still required.
+- File hashing cannot treat a cached chunk ledger as publish authority when the
+  live compare and guarded publish record are still required.
 - Chunk upload cannot treat a visible staging object or a matching digest as a
   substitute for the durable receipt and guarded finalize step.
 - Chunk upload for large archives cannot treat a cached manifest or archive hash

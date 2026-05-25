@@ -67,6 +67,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'file-hashing',
+    reduces: ['duplicate-chunk-rehash-work', 'resume-recompute-time'],
+    allowedShortcut: 'reuse-plan-scoped-chunk-digests-for-large-file-resume',
+    guardrails: [
+      'chunk-digests-are-plan-scoped',
+      'live-publish-still-compares-remote-resource-hash',
+    ],
+    gateProofs: {
+      skip: 'resumed large files can skip duplicate chunk rehashing only when every cached chunk digest matches the plan-scoped receipt ledger',
+      live: 'the final publish still compares the live remote resource hash against the expected file precondition',
+      group: 'chunk reuse only narrows recomputation inside the same file boundary and never widens an atomic group',
+      recovery: 'chunk digest receipts and the publish record classify whether the upload stopped before or after guarded visibility',
+    },
+    visibilityBoundary: 'plan-staging-reuse-only',
+    failureEvidence: 'plan-scoped chunk digest ledger plus guarded file-publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'chunk-upload',
     reduces: ['duplicate-body-transfer', 'lost-response-retries'],
     allowedShortcut: 'resume-plan-scoped-chunks-with-matching-receipts',
@@ -795,6 +815,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'a fingerprint can skip duplicate rehashing, but it cannot prove chunk receipts or the guarded publish record survived failure',
     rejectedGate: 'recovery',
     violates: ['file-hashing', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
+  },
+  {
+    id: 'chunk-ledger-completes-large-upload',
+    proposal: 'treat a cached chunk ledger as proof that a large upload already finished',
+    rejectedBecause: 'chunk-ledger reuse can skip duplicate hashing, but it cannot prove the live compare, guarded publish, or every chunk acknowledgement survived failure',
+    rejectedGate: 'recovery',
+    violates: ['file-hashing', 'chunk-receipts', 'live-preconditions', 'durable-progress', 'atomic-file-publish'],
   },
   {
     id: 'compressed-chunk-receipts-complete-large-upload',
