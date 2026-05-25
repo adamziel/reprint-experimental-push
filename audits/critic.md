@@ -6879,13 +6879,14 @@ Production-ready wording gate:
 The design still has not closed the following production-grade gaps:
 
 - there is still no single executable real-site preflight/release command on
-  this branch; `plan`, `apply`, and the `test:playground:*` smoke scripts are
-  compatibility and lab-verification entry points only, so they cannot by
-  themselves prove the live executor boundary, the auth boundary, the
-  preserved remote, the stale rejection point, or the fresh retry scope on an
-  actual remote; until that command exists, names the live executor and auth
-  path, and can be rerun against a real remote with preserved-remote
-  evidence, every production-grade push claim must fail closed;
+  this branch; `npm run verify:release` is retained-source evidence on the
+  current baseline, but it is still local lab evidence until the branch also
+  proves the live WordPress auth/session boundary, the preserved remote, the
+  stale rejection point, and the fresh retry scope on a real local,
+  Playground, or Docker `REPRINT_PUSH_SOURCE_URL`; `plan`, `apply`, and the
+  `test:playground:*` smoke scripts remain compatibility and lab-verification
+  entry points only, so they cannot by themselves prove production-grade push
+  support on an actual remote;
 - conflict policy is still ambiguous when the remote drifts between dry-run
   and apply; missing proof is a branch-local rejection point before the first
   write, plus an auditable preserved remote that the user can inspect and
@@ -6941,6 +6942,11 @@ The design still has not closed the following production-grade gaps:
   stale-rejection, and fresh-retry evidence; route shape, package layout,
   reviewer wording, and fixture replay stay compatibility evidence only even
   when the note is precise; and
+- a source-note comparison can only support production wording if it names the
+  exact upstream revision or worktree state, says what it proves here, says
+  what it does not prove here, and is backed by a branch-local rerun of the
+  same live boundary; otherwise it stays provenance only, even when the same
+  route family or package shape appears again;
 - a route-shaped smoke or production-shaped URL still does not prove the live
   executor if the boundary was not rerun here with preserved-remote evidence
   and a fresh live-hash retry scope; the same URL can still hide a copied or
