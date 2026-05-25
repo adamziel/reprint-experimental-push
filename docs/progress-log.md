@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 10:36:28
+
+<a id="2026-05-25-public-status-audit-103628"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 10:36:28 CEST`) and updated the public first screen to name
+  commit `2550951e` plus the `live drift witness` release-verify evidence.
+- The public summary stays conservative: it now calls out the remaining
+  `auth/session lifecycle and durable journal semantics` boundary, while the
+  real WordPress executor/auth, recovery journal, Docker/Playground
+  integration, and plugin driver gates remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 10:29:55
 
 <a id="2026-05-25-public-status-audit-102955"></a>
