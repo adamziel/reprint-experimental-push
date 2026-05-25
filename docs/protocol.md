@@ -90,6 +90,13 @@ remote identity is observed again after drift so the topology proves one
 remote site, one local edited site, and one runner without introducing a
 second remote authority.
 
+That identity mapping is fixed:
+
+- `remote-base` and `remote-changed` both represent `remote-example`
+- `local-edited` represents `local-dev-site`
+- `runner` is the only actor that may preflight, list hashes, upload the dry
+  run plan, apply mutation batches, inspect the journal, or start recovery
+
 | Role | Docker | Playground |
 | --- | --- | --- |
 | `remote-base` | `remote-base` | `remote-base` |

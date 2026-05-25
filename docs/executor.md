@@ -185,6 +185,15 @@ Both harnesses preserve the same remote identity across the base and drift
 observations, and both keep browser-visible inspection on the sandbox-provided
 `8080` ingress through a local-only proxy.
 
+The lab identities are fixed to the same proof map used by the protocol
+contract:
+
+- `remote-base` and `remote-changed` are the Docker and Playground aliases
+  for `remote-example`
+- `local-edited` is the Docker and Playground alias for `local-dev-site`
+- the runner owns preflight, snapshot listing, dry-run upload, batched apply,
+  journal inspect, and recovery
+
 Use the same shape in both harnesses:
 
 | Role | Docker | Playground |
