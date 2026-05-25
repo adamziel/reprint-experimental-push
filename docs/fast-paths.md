@@ -963,6 +963,11 @@ The important rejection cases are modeled too:
 - compressed durable receipt logs are allowed only as recovery-evidence
   transport, with stable receipt keys preserved so the original live
   precondition and atomic-group barrier still decide success.
+- batched durable-receipt flushes are allowed only as journal-lag control, not
+  as proof that a pause or crash already survived the live compare.
+- compressed receipt logs cannot authorize apply after a pause, because the
+  flushed log still does not prove the live compare or atomic-group barrier
+  survived failure.
 
 `scripts/bench/guarded-executor-benchmark.js` moves one step past the static
 model. It generates real file chunk buffers, writes them into benchmark staging,

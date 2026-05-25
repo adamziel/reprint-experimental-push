@@ -1881,6 +1881,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'live-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-receipt-log-authorizes-apply-after-pause',
+    proposal: 'treat a compressed receipt log flushed within journal lag as enough proof to authorize apply after a pause',
+    rejectedBecause: 'journal batching can reduce fsync cost, but a flushed log still cannot prove the live compare or atomic-group barrier survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'backpressure', 'live-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'parallelize-atomic-group-commit',
     proposal: 'run atomic group commits in parallel so independent work can publish sooner',
     rejectedBecause: 'the commit barrier is part of the atomic group and must stay a single visibility point',
@@ -2240,6 +2247,31 @@ function scheduleWorkload(workload, limits) {
       ],
       canonicalVisible: false,
       durableEvidence: 'backpressure-pause-record',
+    });
+  }
+
+  const durableReceiptCount = actions.filter((action) =>
+    action.type === 'chunk-upload' ||
+    action.type === 'db-row-batch' ||
+    action.type === 'plugin-metadata-stage' ||
+    action.type === 'file-publish',
+  ).length;
+
+  if (durableReceiptCount > 0) {
+    actions.push({
+      type: 'durable-receipt-flush',
+      workloadId: workload.id,
+      planId: workload.planId,
+      receiptCount: durableReceiptCount,
+      maxJournalLagMs: limits.maxJournalLagMs,
+      canonicalVisible: false,
+      durableEvidence: 'batched-journal-record',
+      preservesRawReceipts: true,
+      flushMode: 'bounded-journal-lag',
+      resumeRequires: [
+        'raw-durable-receipts',
+        'journal-fsync-caught-up',
+      ],
     });
   }
 

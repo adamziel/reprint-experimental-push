@@ -51,6 +51,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'large upload models backpressure pauses',
   );
   assert.ok(
+    largeUpload.actions.some((action) => action.type === 'durable-receipt-flush' && action.preservesRawReceipts),
+    'large upload models bounded durable-receipt flushing',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'remote-index-probe'),
     'plugin install models remote-index planning',
   );
@@ -65,6 +69,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginUpdate.actions.some((action) => action.type === 'backpressure-pause'),
     'plugin update models backpressure pauses',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'durable-receipt-flush'),
+    'plugin update models bounded durable-receipt flushing',
   );
   assert.ok(
     largeUpload.actions.some((action) => action.type === 'chunk-upload' && action.durableEvidence),
@@ -97,6 +105,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'backpressure-pause'),
     'plugin install models backpressure pauses',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'durable-receipt-flush'),
+    'plugin install models bounded durable-receipt flushing',
   );
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'plugin-metadata-stage' && action.canonicalVisible === false),
@@ -412,6 +424,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply')?.violates.includes('live-preconditions'),
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply-after-pause')?.violates.includes('backpressure'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply-after-pause')?.violates.includes('atomic-groups'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize')?.rejectedGate,
