@@ -4404,6 +4404,23 @@ Source-note comparison boundary:
   manual-review artifact can safely authorize a later retry boundary on this
   branch.
 
+Missing repo proof before any production-grade push claim:
+
+- Reprint still needs a live source-site push boundary on this branch that
+  rejects stale remote drift before the first write, preserves the remote for
+  audit, and rebuilds retry scope from fresh live hashes.
+- ZS-Sync still needs proof that discovery and batching do not miss or
+  misclassify live plugin-owned surfaces, especially late-discovered tables,
+  files, cron rows, runtime registries, generated assets, or serialized
+  blobs.
+- ForkPress still needs proof that review vocabulary does not become retry
+  authority after drift, and that a readable manual-resolution artifact
+  cannot authorize a different row, file, relationship-bearing record,
+  remapped create target, or plugin-owned surface.
+- None of the three notes proves that route shape, package mount shape,
+  fixture replay, or `finalMatchesLocal` is safe enough to call production-
+  grade on this branch without the same live boundary rerun here.
+
 Release gate additions needed before production-grade push support:
 
 1. A live remote-drift case must fail closed before the first write and leave
