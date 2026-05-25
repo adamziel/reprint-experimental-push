@@ -9,6 +9,10 @@ That means the next acceptable proof must move off retained-source lab
 evidence and into a production WordPress auth/session lifecycle, with durable
 journal semantics plus explicit graph-identity and plugin-driver coverage on
 the live boundary.
+The older critique that no `verify:release` command exists is retired; the
+remaining issue is that the command still does not prove preserved-remote
+safety, apply-time revalidation, or production auth/session lifecycle on a
+real-site boundary.
 
 ## 2026-05-25 Current Verdict
 
@@ -81,11 +85,9 @@ plugin-owned surface coverage.
 The branch still cannot claim production-grade push support because there is
 still no branch-local, named real-site release command that can be rerun
 unchanged against a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
-and preserve the rejected remote for audit. A command like `npm run
-verify:release` would only matter if it actually existed in `package.json` and
-proved the live boundary instead of just the route topology; in this worktree it
-is not present, so the critique still fails closed on the missing executable
-boundary. If a later branch adds that command and it only proves a local
+and preserve the rejected remote for audit. `npm run verify:release` now
+exists as retained-source evidence, but it only matters if it proves the live
+boundary instead of just the route topology; if it only proves a local
 Playground protocol flow, the missing-proof finding still stands until it also
 shows preserved remote drift, dry-run receipt, apply-time revalidation,
 journal/recovery inspect, production auth/session lifecycle, graph identity,
