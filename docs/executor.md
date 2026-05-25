@@ -24,6 +24,15 @@ The auth and session boundary is part of the production shape:
   canonical push signature and idempotency key.
 - the push session scopes the write path, but it does not reserve remote state.
 
+That split is the production liveness rule:
+
+- dry-run and apply are separate remote operations
+- dry-run is a receipt, not a lock
+- apply must revalidate fresh live evidence before every batch and at the
+  storage boundary
+- journal inspection is read-only
+- recovery starts with inspect before any mutating repair
+
 Scope:
 
 - one persisted pull base package
@@ -93,6 +102,19 @@ The executor topology proof is intentionally narrow:
 - one runner process owns preflight, snapshot listing, dry-run, apply,
   journal inspect, and recovery
 
+Use the same shape in both harnesses:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| `remote-base` | `remote-base` | `remote-base` |
+| `local-edited` | `local-edited` | `local-edited` |
+| `remote-changed` | `remote-changed` | `remote-changed` |
+| `runner` | `runner` | local test process |
+
+The lab identities for that proof are `remote-example` and `local-dev-site`.
+They let the executor point at one remote source, one imported local edit
+site, and the same remote identity again after drift.
+
 The executor keeps the same security envelope in Docker and Playground:
 
 - the sandbox-provided `8080` ingress is the only browser-visible path
@@ -134,6 +156,17 @@ That mapping is one-way:
 - apply is the first write stage and must revalidate fresh live evidence before every batch and at the storage boundary
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh live hashes prove the action
+
+Read left-to-right, the pull handoff is:
+
+| Pull stage | Push consumer | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base to one live remote identity and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Treat the listing as planning evidence only. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan and return a receipt, not a lock. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
 
 The machine-readable bridge and deployment topology live in:
 

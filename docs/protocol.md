@@ -48,6 +48,15 @@ separate:
 - apply-time revalidation is the first write-side liveness check and must
   run again before every batch and at the storage boundary
 
+That split is the production liveness rule:
+
+- dry-run and apply are separate remote operations
+- dry-run is an eligibility receipt, not a lock
+- apply must revalidate fresh live evidence before every batch and at the
+  storage boundary
+- journal inspection is read-only
+- recovery begins with inspect before any mutating repair
+
 ## Contract
 
 Push is allowed only when the executor can prove that the persisted pull base,
@@ -128,6 +137,17 @@ The pull/export/import pipeline is the provenance source for that ladder:
 - journal inspect is read-only
 - recovery must begin with inspect before any mutating repair
 
+Read left-to-right, the mapping is:
+
+| Pull stage | Push consumer | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the stored base package to one live remote identity and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live hash listing. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan, but do not reserve a lock. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and again at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
+
 The one-remote, one-local, one-drift-witness test shape is the same in Docker
 and Playground:
 
@@ -137,6 +157,19 @@ and Playground:
 - `remote-changed` is the same remote identity observed later after drift.
 - `runner` is the only process allowed to compare, upload, inspect, revalidate,
   and recover.
+
+Use the same shape in both harnesses:
+
+| Role | Docker | Playground |
+| --- | --- | --- |
+| `remote-base` | `remote-base` | `remote-base` |
+| `local-edited` | `local-edited` | `local-edited` |
+| `remote-changed` | `remote-changed` | `remote-changed` |
+| `runner` | `runner` | local test process |
+
+The lab identities for that proof are `remote-example` and `local-dev-site`.
+They let the tests assert one remote source, one imported local edit site, and
+the same remote identity again after drift.
 
 That is the compact end-to-end proof that dry-run and apply are separate
 remote operations, apply revalidates live evidence before every batch and at
