@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: this checkout still lacks executable proof that the live push boundary is safe. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology are still only lab-shaped. The precise blocker is missing live-boundary proof for production auth/session lifecycle and durable journal semantics; the command-surface gap remains real, but it is enforcement debt rather than the primary release blocker.
+Current top blocker, rechecked on 2026-05-25: this checkout still lacks executable proof that the live push boundary is safe. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. That missing live-boundary proof is the primary release blocker. Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain secondary release gaps, but they do not replace the main blocker.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -20,7 +20,7 @@ The release gate therefore remains closed until there is executable proof for al
 
 The key point is that these are not separate lab facts. They need one mandatory, checked command that reaches the retained source, revalidates before apply, performs or refuses the live mutation, and emits a machine-checkable release verdict. Without that, helper success still cannot be promoted to release proof.
 
-If any of those remain only lab-backed, fixture-backed, or docs-backed, the release claim is still blocked. The current repo state still leaves the gate closed because the required live-boundary proof does not exist here yet. The next concrete acceptance test is a single checked command that reaches the retained source, revalidates immediately before apply, and emits a machine-checkable failure if any of the listed claims still lack production evidence.
+If any of those remain only lab-backed, fixture-backed, or docs-backed, the release claim is still blocked. The current repo state still leaves the gate closed because the required live-boundary proof does not exist here yet. The next concrete acceptance test is a single checked command that reaches the retained source, revalidates immediately before apply, and emits a machine-checkable failure if production auth/session lifecycle or durable journal semantics are still only lab-backed.
 
 ## Explicit Requirements
 
@@ -95,7 +95,7 @@ Minimum properties of that gate:
 4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
 5. it must be the command CI or another default entrypoint actually invokes
 
-Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle and durable journal semantics. Graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift are still only lab-backed, but they are secondary until the auth/session-plus-journal boundary is proven. The missing release gate is worth fixing, but it is not the decisive blocker.
+Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle and durable journal semantics. Graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift are still only lab-backed, but they are secondary until the auth/session-plus-journal boundary is proven. The missing release gate is worth fixing, but it is not the decisive blocker; it is enforcement debt around a still-unproven live boundary.
 
 ## Conclusion
 
