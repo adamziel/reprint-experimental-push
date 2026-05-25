@@ -91,6 +91,10 @@ This note captures the planner boundary in plain language.
 - A live-preconditioned file delete may still coexist with a matching
   independent row delete, edit, and file type swap while unrelated
   remote-only plugin metadata and files remain `keep-remote`.
+- At the live release boundary, a ready delete plan may still preserve
+  same-remote graph identity, matching independent deletes or edits, and
+  plugin-owned resources while remote-only plugin drift remains `keep-remote`
+  and late drift is refused on re-apply.
 - A live-preconditioned directory delete may still coexist with a matching
   descendant delete while unrelated remote-only plugin drift remains
   `keep-remote`.
