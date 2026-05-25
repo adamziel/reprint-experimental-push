@@ -31,6 +31,9 @@ This note captures the planner boundary in plain language.
 - A live-preconditioned file delete may still coexist with a matching
   independent restore while remote-only plugin removals remain `keep-remote`.
 - A live-preconditioned file delete may still coexist with a matching
+  independent restore and matching independent edit while remote-only plugin
+  removals remain `keep-remote`.
+- A live-preconditioned file delete may still coexist with a matching
   independent file type swap and matching independent row delete while
   unrelated remote-only plugin metadata and files remain `keep-remote`.
 - A live-preconditioned file delete may still coexist with a matching
