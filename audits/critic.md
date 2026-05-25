@@ -187,6 +187,11 @@ Must-fix blockers before any production wording:
   was still unclassified; that wording hides a mixed-write loss mode unless
   the remote was preserved, the late surface was blocked, and the retry scope
   was rebuilt from fresh live hashes.
+- A matching upstream commit plus a green route-shaped smoke must not be
+  described as current proof unless this branch re-ran the same live mutation
+  boundary on the drifted remote and separately recorded the preserved remote,
+  the stale rejection point, and the fresh retry scope; otherwise the pair is
+  provenance only, even if `finalMatchesLocal` also passed.
 - A late-discovered plugin-owned surface must not be described as a successful
   "manual resolution" when the remote was already drifted, because that hides
   a mixed-write failure mode; the proof must preserve the remote for audit,
