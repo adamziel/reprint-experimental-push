@@ -11,6 +11,13 @@ and old/new/blocked classification for every touched surface. Lab-shaped
 route matches, package-mount matches, fixture replay, readable manual-review
 artifacts, and `finalMatchesLocal` stay compatibility evidence only.
 
+Proof-classification rule: if a comparison note, manual-review artifact, or
+release comment does not explicitly say whether it is historical context,
+compatibility evidence, or live retry proof, it must fail closed. The same
+rule applies to later-discovered plugin-owned surfaces: the wording has to say
+whether that surface is in scope, excluded, or blocked before write, because
+a note that never names the boundary cannot authorize a later boundary.
+
 Concrete failure scenarios that still block production wording:
 
 - live remote drift after dry-run but before apply: missing proof is the
