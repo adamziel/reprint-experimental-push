@@ -74,6 +74,7 @@ Release command audit:
 - `test:playground:*` helpers are optional and lab-scoped
 - `test:recovery:file-journal` proves file-backed restart behavior only
 - there is no checked-in workflow or `.github` tree in this checkout that can upgrade regression evidence into a release gate
+- there is no checked-in `verify` wrapper that a human or CI can invoke as the required live-source preflight
 - the current green suite is regression evidence, not proof of no data loss, reliability, or measured speed on the live push path
 - the weakest current claim is not "the tests are incomplete" but "the real-site push preflight command already exists"; that claim is false in this checkout
 - the actionable gap is the missing enforced command, not more fixture-only coverage
