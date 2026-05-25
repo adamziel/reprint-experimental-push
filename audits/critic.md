@@ -3241,6 +3241,19 @@ Source-note proof boundary, restated:
 - Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress `55f9879` are
   historical design inputs here unless this branch rechecked the exact live
   mutation boundary on the same scenario and preserved the remote for audit.
+- Reprint source notes prove a resumable pull pipeline, protocol framing, and
+  bounded exporters. They do not prove live push mutation safety, stale
+  rejection before write, identity remapping on create, or durable recovery
+  on this branch.
+- ZS-Sync source notes prove continuous scanning, cursoring, and bounded
+  resource selection. They do not prove source-side mutation, conflict
+  resolution, plugin-owned surface coverage, or partial side-effect
+  classification here.
+- ForkPress source notes prove merge auditability, reviewed resolution,
+  plugin-validator boundaries, and crash-consistency goals. They do not prove
+  this branch's live executor rejected stale authority, preserved the remote
+  after reject, or handled the full WordPress/plugin surface without missing
+  side effects.
 - A correct upstream commit or worktree state is provenance, not current
   authority. If the branch did not re-run the same live drift, retry, or
   create-time identity case here, the comparison must stay historical.
