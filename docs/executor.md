@@ -252,7 +252,9 @@ The canonical proof stack for that executor story is the same one named in
 - `push-production-push-recovery-contract.json` for the canonical end-to-end
   proof that ties the pull provenance, the production push ladder, and the
   one-remote, one-local topology into one reviewable object while proving the
-  same remote identity before and after drift
+  same remote identity before and after drift, and keeps the shared
+  auth/session floor, journal rows, lease fencing, and inspect-first recovery
+  path explicit
 
 These are the same proof points the protocol contract uses:
 

@@ -104,7 +104,9 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-push-recovery-contract.json` is the canonical
   end-to-end production bundle for the pull provenance, push ladder, and
   one-remote, one-local topology story, including the same remote identity
-  before and after drift.
+  before and after drift. It also pins the shared auth/session floor, the
+  journal rows, lease fencing, and inspect-first recovery path so the same
+  proof covers dry-run, apply, and recovery.
 - `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
   listing clearly in the planning-only lane, including cursoring for larger

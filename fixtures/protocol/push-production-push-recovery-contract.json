@@ -37,7 +37,8 @@
     "inspect_requires": [
       "HMAC-authenticated request",
       "read-only recovery mode"
-    ]
+    ],
+    "recovery_mutation": "mutating recovery uses the same auth floor as apply and must present the minted push session, canonical push signature, and idempotency key"
   },
   "journal_and_recovery": {
     "journal_inspect": "reads durable claim, lease, fencing, and apply-boundary evidence without authorizing mutation",
@@ -74,6 +75,7 @@
     "dry-run and apply are separate remote operations",
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "authentication must be at least as strict as current Reprint HMAC usage",
+    "mutating recovery must use the same auth floor as apply",
     "mutating recovery still requires fresh live hashes plus journal evidence"
   ]
 }

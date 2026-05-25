@@ -550,6 +550,15 @@ test('push contract fixture binds the pull handoff to the production push sequen
     productionPushRecoveryContract.journal_and_recovery.revalidation,
     'mutating recovery still requires fresh live hashes plus journal evidence',
   );
+  assert.equal(
+    productionPushRecoveryContract.auth_and_session.recovery_mutation,
+    'mutating recovery uses the same auth floor as apply and must present the minted push session, canonical push signature, and idempotency key',
+  );
+  assert.ok(
+    productionPushRecoveryContract.required_invariants.includes(
+      'mutating recovery must use the same auth floor as apply',
+    ),
+  );
   assert.equal(productionPushRecoveryContract.topology.networking.ingress_port, 8080);
   assert.equal(productionPushRecoveryContract.topology.networking.proxy_policy, 'local-only');
   assert.equal(productionPushRecoveryContract.topology.networking.tunnels, 'disallowed');
