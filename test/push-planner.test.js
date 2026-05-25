@@ -18645,6 +18645,62 @@ test('keeps same-remote graph identity at the live release boundary while a read
   assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* late plugin removal drift */');
 });
 
+test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent row delete, a matching file type swap, and remote-only plugin removals after apply revalidation', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:31'] = {
+    ID: 31,
+    post_title: 'Base post 31',
+    post_status: 'draft',
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.db.wp_posts['ID:31'];
+  local.files['about.php'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['about.php'] = { type: 'directory' };
+  delete remote.db.wp_posts['ID:31'];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingRowDelete = decisionFor(plan, 'row:["wp_posts","ID:31"]');
+  const matchingTypeSwap = decisionFor(plan, 'file:about.php');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingRowDelete.decision, 'already-in-sync');
+  assert.equal(matchingRowDelete.change.localChange, 'delete');
+  assert.equal(matchingRowDelete.change.remoteChange, 'delete');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(completed.site.db.wp_posts, 'ID:31'), false);
+  assert.equal(completed.site.files['about.php'].type, 'directory');
+  assert.equal(Object.hasOwn(completed.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(completed.site.files, 'wp-content/plugins/forms/forms.php'), false);
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.files['wp-content/plugins/forms/forms.php'] = '<?php /* late plugin removal drift */';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* late plugin removal drift */');
+  assert.equal(Object.hasOwn(driftedRemote.plugins, 'forms'), false);
+});
+
 test('keeps remote-only plugin drift at the live release boundary while a ready delete plan preserves same-remote graph identity, a matching restore, and a matching independent file type swap', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
