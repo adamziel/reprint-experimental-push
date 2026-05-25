@@ -6046,6 +6046,11 @@ The design still has not closed the following production-grade gaps:
   that the artifact stays audit-only, the remote stayed inspectable after
   rejection, and the retry scope was rebuilt from fresh live hashes on this
   branch;
+- that same stale artifact is also not current proof if a later-discovered
+  plugin-owned surface or remapped create target appears after the first write
+  but before retry; the later boundary must be named separately and cannot
+  inherit the earlier preserved remote or review note just because the route
+  family, package mount, or reviewer wording matches;
 - comparisons to Reprint, ZS-Sync, or ForkPress still overclaim if they are
   used as proof instead of historical context; missing proof is the exact
   upstream state, what the note proves here, what it does not prove here, and
@@ -6053,6 +6058,13 @@ The design still has not closed the following production-grade gaps:
   stale-rejection, and fresh-retry evidence; route shape, package layout,
   reviewer wording, and fixture replay stay compatibility evidence only even
   when the note is precise; and
+- a precise upstream commit still does not become current proof if the later
+  live boundary is different from the one the note described; the branch must
+  rerun the same live drift case here, not merely cite the same upstream hash;
+- a "manual resolution later" label is also false reliability if the readable
+  artifact was preserved but the later boundary introduced a new plugin-owned
+  surface, because the new surface needs its own preserve / reject / retry
+  cycle before any success wording is allowed; and
 - the conservative comparison rule is:
   - Reprint notes can justify transport, staged delivery, or resumability
     vocabulary, but they do not prove a live push executor, preserved remote,

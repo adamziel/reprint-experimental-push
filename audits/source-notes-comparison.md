@@ -70,6 +70,9 @@ What it does not prove:
 - It does not prove a stale manual-review artifact can remain auditable while
   being unusable as authority after drift, or that a retry must rebuild scope
   from fresh live hashes instead of inheriting the old decision.
+- It does not prove a later-discovered plugin-owned surface or remapped create
+  target can inherit the earlier preserved remote or review note just because
+  the route family or package mount stayed the same.
 - It does not prove production auth, replay cleanup, TLS policy, or audit
   retention for push.
 
@@ -117,6 +120,9 @@ What it proves:
   vocabulary, route family, or package mount appears in a note; hidden plugin
   state discovered after the first write still needs its own preserve / reject
   / retry cycle.
+- It does not prove a later-discovered plugin-owned surface can be promoted to
+  success by reusing a prior review artifact; that later boundary needs its own
+  live decision and cannot inherit the earlier boundary's authority.
 
 What it does not prove:
 
@@ -198,7 +204,9 @@ That prohibition also covers "manual resolution" wording: a readable stale
 artifact, a matching route family, or a copied-lab mount does not become
 retry authority unless the preserved remote is auditable, the stale artifact
 was rejected before mutation, and a fresh retry artifact was recorded from
-current live hashes on this branch.
+current live hashes on this branch. A later-discovered plugin-owned surface or
+remapped create target cannot inherit that authority without its own preserve
+/ reject / retry cycle.
 Even when the exact upstream revision or worktree state is named, the note
 still stays historical unless this branch re-ran the same live drift case at
 the same live mutation boundary and preserved the remote for audit. Matching
