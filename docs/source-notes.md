@@ -8,7 +8,8 @@ surface coverage, or partial-side-effect classification on this branch.
 Even a precise upstream commit or worktree reference here is still historical
 context only unless this branch reran the same live mutation boundary with a
 preserved remote, stale-authority rejection before the first write, and fresh
-live hashes.
+live hashes. Route shape, package layout, reviewer wording, and fixture replay
+remain compatibility evidence only until that same live boundary is rerun here.
 
 ## Reprint
 
@@ -62,7 +63,8 @@ handling, create-time remap safety, plugin-owned surface enumeration,
 partial-side-effect classification, or a rerun of the same live boundary here
 with preserved-remote, rejection-point, and fresh live-hash retry evidence. A
 matching change-detection path is still only discovery evidence, not retry
-authority or production-readiness proof.
+authority or production-readiness proof, even if the route family or package
+shape matches.
 
 ## ForkPress
 
@@ -92,7 +94,7 @@ remote retention after rejection, stale-review rejection, manual-resolution
 safety for a later boundary on this branch, or a fresh retry scope rebuilt
 from live hashes on this branch. A readable review artifact from ForkPress is
 still audit evidence, not current retry authority or production-grade push
-support.
+support, even when the reviewer wording looks similar.
 
 ## Comparison Boundaries
 
