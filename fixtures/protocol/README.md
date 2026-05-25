@@ -115,6 +115,9 @@ identity across `remote-base` and `remote-changed`:
   recovery into one production-shaped contract, and is the canonical bridge
   when a review needs the auth floor, session mint, journal row, and recovery
   inspect proof together.
+- `push-recovery-boundary-contract.json` is the compact proof that keeps the
+  inspect-first recovery boundary, the auth floor, and the Docker/Playground
+  topology together in one object.
 - `push-auth-session-journal-recovery-inspect-contract.json` is the compact
   proof that folds live drift classification into that same auth, session,
   journal, lease, and inspect-first recovery chain.

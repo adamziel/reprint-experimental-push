@@ -76,6 +76,9 @@ The machine-readable bridge is split across the fixtures:
   `push-production-push-recovery-contract.json` bind the auth floor, minted
   push session, journal rows, lease fencing, and inspect-first recovery into
   one production-shaped proof.
+- `push-recovery-boundary-contract.json` captures the compact inspect-first
+  recovery boundary with the auth floor and Docker/Playground topology in one
+  place.
 - `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
   `push-remote-liveness-topology-contract.json` define the Docker and
   Playground test topology with one remote source, one imported local site,
