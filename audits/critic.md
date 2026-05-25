@@ -194,6 +194,10 @@ The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprin
   revalidation, durable recovery, remote-preserving retry after drift, stale
   manual-review artifact rejection, or a production write boundary in this
   repo.
+- Any claim that cites Reprint, ZS-Sync, or ForkPress must name the exact
+  upstream commit or worktree state that was reverified and the exact live
+  write boundary that was exercised. If either is missing, the citation is
+  historical context only and cannot support production wording.
 - The observed upstream commit or worktree state in the source notes is
   historical context only. It cannot be treated as current upstream proof
   unless this branch re-verifies the same behavior at the live mutation
@@ -214,6 +218,10 @@ The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprin
   mounted route that returns live-looking hashes still does not prove the
   production executor ran; it can still be a fixture-backed or copied-lab
   stand-in that happens to answer on the right path.
+- A stale review artifact tied to one live snapshot cannot become current
+  authority just because the route still looks healthy. The proof must show
+  the exact live snapshot that invalidated it, the remote-preserving audit
+  trail, and the fresh retry scope.
 - A release-gate proof that a stale review artifact remains readable for
   audit but cannot authorize apply after the remote changes, cannot be
   widened to a different row, file, or plugin-owned surface, and is
@@ -242,6 +250,10 @@ The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprin
 - A plugin-owned write outside the allowlist is only acceptable if the audit
   shows the exact owned surface, the live revalidation that checked it, and
   the failure path when that surface drifted or was discovered late.
+- A plugin-owned write justified only by route shape, package mount, or
+  `finalMatchesLocal` is not production proof. The audit still needs the live
+  owned surface, the revalidation point, and the failure path for late
+  discovery or remote drift.
 - A route that looks production-shaped, returns live hashes, or passes a
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
