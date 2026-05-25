@@ -10140,6 +10140,7 @@ test('durable completed replay stays read-only and does not append fresh mutatio
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
   assert.equal(
     persistedAfterReplay.records.filter((record) => record.type === 'target-planned').length,
     persistedBeforeReplay.records.filter((record) => record.type === 'target-planned').length,
