@@ -5,18 +5,18 @@ remote head `889bd37a`, with `63a3502f` as an earlier retained-source proof
 point and `68664884` as the prior boundary-verdict step. That lane's completed
 `npm run verify:release` result, including `authSessionType`, minted session
 shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
-retained-source lab evidence. The later boundary verdict at `889bd37a` is
-stronger retained-source evidence than the older route-shape claims, but it is
-still not branch-local retry authority or production proof.
+retained-source lab evidence. The newer boundary verdict at `889bd37a`
+retires the old "no verify:release exists" critique, but it does not convert
+retained-source evidence into branch-local retry authority or production
+proof.
 The remote lane now also exposes `verify:release` in `package.json`, so any
 remaining absence of that command on this checkout is only a branch-local
-merge gap, not a project-wide absence or a reason to re-open the retired
-"no verify:release exists" critique.
+merge gap, not a project-wide absence.
 
 Exact evidence that improved in the supervised lane: the retained-source run
-now names executor/session/journal details and the boundary verdict is explicit
-instead of route-shape-only. Exact next proof still required here: one rerun of
-the same live boundary on a real local, Playground, or Docker
+now names executor/session/journal details and the boundary verdict is
+explicit instead of route-shape-only. Exact next proof still required here: one
+rerun of the same live boundary on a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
 apply time, and proves production WordPress auth/session lifecycle, durable
 journal semantics, graph identity, plugin-driver coverage, and leases/fencing
@@ -32,7 +32,7 @@ explicit old/new/blocked classification for every touched row, file,
 relationship-bearing record, and plugin-owned surface.
 
 What improved in the supervised lane is narrow but real: the retained-source
-handoff now names executor/session/journal details instead of only route
+harness now names executor/session/journal details instead of only route
 shape. What it does not prove here is the next required proof: a rerunnable
 live release command against a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
@@ -52,14 +52,12 @@ mutation.
 
 Source-note comparisons stay in the provenance class only:
 
-- Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress `55f9879` explain why
-  staged delivery, bounded discovery, and crash-consistency vocabulary are
-  relevant design inputs here, but they do not prove live push safety on this
-  branch.
-- Those notes do not prove preserved-remote auditability, stale-authority
-  rejection before the first write, create-time remap safety, plugin-owned
-  surface coverage, or a rerunnable live boundary with fresh live hashes on
-  this worktree.
+- Reprint `27c5f25` explains staged delivery and resumability vocabulary,
+  ZS-Sync `d9334a0` explains bounded discovery and cursoring, and ForkPress
+  `55f9879` explains crash-consistency and review-artifact vocabulary; none of
+  them proves preserved-remote auditability, stale-authority rejection before
+  the first write, create-time remap safety, plugin-owned surface coverage, or
+  a rerunnable live boundary with fresh live hashes on this worktree.
 
 That is the current blocker, and it is the one that matters for production
 language: without a rerunnable live boundary on this branch, every claim about
