@@ -13,7 +13,8 @@ Release-gate checklist for production-readiness wording:
   readable for audit, and could not be reused as authority for any other
   row, file, relationship-bearing record, plugin-owned surface, or hidden
   side effect such as a cron row, cache entry, registry entry, generated
-  asset, or custom table write.
+  asset, custom table write, or plugin-owned file that only surfaced after
+  the first write.
 - Show that the retry rebuilt scope from fresh live hashes after drift,
   instead of inheriting the old decision or a stale manual-review artifact.
 - Show the create-time identity decision explicitly: either a durable remap
@@ -24,7 +25,8 @@ Release-gate checklist for production-readiness wording:
   effect, and hard-block anything outside it.
 - Show durable classification for partial file, DB, or plugin side effects,
   including what was written, what was blocked, what remains safe to retry,
-  and what must not be widened on retry because the live remote drifted.
+  and what must not be widened on retry because the live remote drifted or
+  because a hidden plugin-owned store still has unreconciled state.
 - If Reprint, ZS-Sync, or ForkPress are cited, name the exact upstream
   revision or worktree state and say whether it was reverified at the same
   live mutation boundary; otherwise the comparison is historical context
