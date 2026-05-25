@@ -259,6 +259,29 @@ Blocked production claims:
 Production-grade push support still needs all of the following proofs on the
 same live write path:
 
+- Live remote drift after dry-run must fail closed on the real write path,
+  with the preserved remote still auditable and the stale approval unusable
+  for retry.
+- Create-time identity remap, alias, or renumber cases must be proven safe or
+  hard-blocked before mutation; a matching local ID does not prove the live
+  target stayed stable.
+- Plugin-owned state outside the allowlist must be enumerated or blocked at
+  apply time, including late-discovered cron rows, cache entries, runtime
+  registries, generated assets, custom tables, serialized blobs, and other
+  hidden side effects.
+- Partial file, DB, or plugin side effects must be durably classified old,
+  new, or blocked, and retry must rebuild scope from fresh live hashes instead
+  of inheriting stale approval.
+- A readable stale manual-review artifact must stay audit-only after drift and
+  must not widen into another row, file, relationship-bearing record, or
+  plugin-owned surface.
+- Any Reprint, ZS-Sync, or ForkPress comparison must name the exact upstream
+  commit or worktree state and say whether this branch reverified the same
+  live mutation boundary; otherwise the comparison is historical context only.
+- Route shape, package mount shape, and `finalMatchesLocal` stay compatibility
+  evidence only; they do not prove production durability, production auth, or
+  production write safety.
+
 1. Live remote drift between dry-run and apply fails closed before the first
    mutation, and the preserved remote remains auditable after reject.
 2. Create-time identity remapping, aliasing, or renumbering is either durably
