@@ -319,18 +319,17 @@ it stays non-production regardless of route shape, package mount, or
 
 Release-grade checklist:
 
-- The exercised path was the live mutation executor, not a lab-backed route
-  shape, fixture replay, or copied package mount.
-- The proof did not come from a fixture-backed or copied-lab mount that only
-  looked production-shaped.
-- The live remote drifted between dry-run and apply, and the write failed
-  closed before mutation.
-- The stale manual-review artifact was audit-visible after drift but could not
-  authorize a retry, widen to a different row/file/relationship-bearing
-  record/plugin-owned surface, or substitute for fresh live hashes on the same
-  live write boundary.
-- Any stale manual-review artifact stayed audit-only after drift, and the
-  retry rebuilt scope from fresh live hashes instead of reusing the old
+- The exercised path was the live mutation executor, not a lab route shape,
+  fixture replay, or copied package mount that only looked production-shaped.
+- The proof showed live remote drift between dry-run and apply, and the write
+  failed closed before any mutation on the exact live path.
+- The proof preserved the remote for audit and recorded the stale hash set,
+  rejected approval, and fresh retry scope on the same live boundary.
+- The stale manual-review artifact stayed readable for inspection but could
+  not authorize a retry, widen to a different row/file/relationship-bearing
+  record/plugin-owned surface, or substitute for fresh live hashes after
+  drift.
+- The retry rebuilt scope from fresh live evidence instead of reusing the old
   approval against a different row, file, relationship-bearing record, or
   plugin-owned surface.
 - Any Reprint, ZS-Sync, or ForkPress comparison named the exact upstream
