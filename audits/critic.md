@@ -1644,6 +1644,12 @@ Before any production-grade push claim, the project needs all of these:
     or plugin side effects durably; "manual resolution later" is not success if
     the old approval can still be widened to unrelated rows, files, or
     plugin-owned surfaces.
+15. A production claim must name the exact failure scenario it survived:
+    live remote drift between dry-run and apply, create-time identity remap or
+    aliasing, plugin-owned state outside the allowlist, partial file/DB/plugin
+    side effects, or stale manual-review artifacts. If the claim cannot name
+    the scenario, it does not prove the boundary and cannot count as
+    production support.
 
 Addendum: each of these conditions must be independently testable in the
 release suite. A passing route-shape smoke is not sufficient if any one of the
@@ -1654,6 +1660,18 @@ following still lacks proof:
 - plugin-owned state outside the allowlist that remains writable;
 - partial file, DB, or plugin side effects that cannot be fenced or audited;
 - stale manual-review artifacts that can be replayed as current authority.
+
+If a claim says "manual resolution," it must also show the preserved remote,
+the stale artifact rejection, and the fresh-hash retry; otherwise the phrase
+is only a label for an unresolved conflict.
+
+Source-note comparison rule: Reprint, ZS-Sync, and ForkPress remain
+comparison inputs only. Their notes can support a design discussion, but they
+do not prove production push support unless the exact upstream revision or
+worktree was reverified and the same live write boundary was exercised in this
+repo. If the claim omits that revalidation, the comparison stays historical
+context and cannot fill any gap in drift rejection, create remap handling,
+plugin-owned allowlist coverage, or partial side-effect classification.
 
 The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
