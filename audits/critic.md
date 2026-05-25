@@ -3,10 +3,9 @@
 ## 2026-05-25 Production Wording Still Fails Without a Real-Site Release Command
 
 The branch still cannot claim production-grade push support because `package.json`
-exposes only lab and Playground entry points. There is no branch-local, named
-real-site preflight or release command that can be rerun unchanged against a live
-local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` and preserve the rejected
-remote for audit.
+now exposes a live preflight wrapper, but not a branch-local, named real-site
+release command that can be rerun unchanged against a live local, Playground, or
+Docker `REPRINT_PUSH_SOURCE_URL` and preserve the rejected remote for audit.
 
 Scenario: someone upgrades a green Playground run or a polished script name into
 "production-ready push". Missing proof: the repo still lacks a live release
@@ -112,15 +111,13 @@ remote, commit `2b00b189` stays a compatibility wrapper only.
 ## 2026-05-25 Real-Site Command Still Missing
 
 Primary finding: this branch still does not expose a single named real-site
-preflight/release command. `package.json` still only offers `plan`, `apply`,
-and `test:playground:*`, and the claimed `npm run
-test:playground:production-shaped-release-proof` command does not exist in the
-repo surface. That means every production-shaped smoke remains lab or
-compatibility evidence only. A script name like `authenticated`,
-`authenticated-cli-push`, `authenticated-http-push`, `production-shaped-push`,
-or `production-plugin-package` is still not proof of a live release boundary
-unless it reruns the exact remote mutation path on an actual remote and leaves
-the rejected remote inspectable for audit and retry.
+preflight/release command. `package.json` now offers `plan`, `apply`,
+`test:playground:*`, and `test:playground:production-shaped-release-verify`,
+but the new wrapper still only proves a live preflight against a local
+Playground source. That means every production-shaped smoke remains lab or
+compatibility evidence only unless it reruns the exact remote mutation path on
+an actual remote and leaves the rejected remote inspectable for audit and
+retry.
 
 If a release claim is only a wrapper around missing inputs, that is still setup
 work, not proof. The branch needs one exact rerunnable command string, one live
@@ -152,7 +149,8 @@ This is still the current answer to the loop focus: there is no branch-local
 command that has been run against a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` and recorded the first executor/auth/preserved-
 remote boundary. Until that boundary exists, comparison notes, route-shape
-smokes, and manual-review artifacts stay audit context only.
+smokes, the live preflight wrapper, and manual-review artifacts stay audit
+context only.
 
 Scenario: someone points to `test:playground:authenticated-http-push`,
 `test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`,
@@ -181,7 +179,8 @@ What still has to be shown before production wording is credible:
 
 - the exact live preflight command must be rerun against a real
   `REPRINT_PUSH_SOURCE_URL`, not only a local Playground source;
-- the exact real-site command name, not just a Playground or lab smoke;
+- the exact real-site command name, not just a Playground or lab smoke or a
+  wrapper around one;
 - the exact command string must be rerunnable without prose changes, and it
   must name the live `REPRINT_PUSH_SOURCE_URL` it was run against;
 - the exact live boundary and exact stale-drift case that was rerun here;
