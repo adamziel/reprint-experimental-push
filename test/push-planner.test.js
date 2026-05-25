@@ -1853,6 +1853,31 @@ test('replaying a completed plan stays inert and does not duplicate inserted res
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('replaying a completed plan blocks stale remote drift and preserves recovery artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.db.wp_posts['ID:2'].post_title = 'Remote drift after completion';
+  const replayBefore = JSON.stringify(replayRemote);
+  const error = captureError(() =>
+    applyPlan(replayRemote, plan, { journal: completed.journal }),
+  );
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts?.journal);
+  assert.ok(error.details.recovery.artifacts?.remote);
+  assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Remote drift after completion');
+});
+
 test('atomic recovery boundaries keep the old remote contract before mutation, after staging, after validation, and on completed replay', () => {
   const base = baseSite();
   const local = baseSite();
