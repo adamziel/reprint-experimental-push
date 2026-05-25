@@ -23,3 +23,11 @@ This lane treats recovery as a strict three-state contract:
 
 The durable journal is the operational evidence trail. JSON test fixtures are useful for model coverage, but production recovery needs durable writes, claim fencing, and inspectable artifacts that survive process failure.
 
+Production recovery needs more than in-memory or lab JSON state:
+
+- DB rows or files must be written durably, not just modeled in test fixtures.
+- Journal and recovery writes need explicit flush or fsync semantics where the storage layer requires them.
+- Plugin activation or ownership claims need fencing so stale workers cannot write after a newer claim wins.
+- Recovery inspect must be able to classify the final state from persisted artifacts alone.
+
+The contract stays the same: if a partial mutation cannot produce inspectable recovery artifacts, it is a blocker.
