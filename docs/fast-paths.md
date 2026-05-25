@@ -948,6 +948,10 @@ under load:
 - batched-receipt-journal-flush is rejected because journal batching can reduce
   fsync work, but it cannot replace the raw chunk, row, or group receipts
   needed to classify a crash, retry, or pause.
+- compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-
+  backpressure is rejected because planning evidence and receipt batching can
+  reduce journal cost, but they cannot prove which row acknowledgements
+  survived the pause or restore the atomic-group barrier.
 
 ## Benchmark Shape
 

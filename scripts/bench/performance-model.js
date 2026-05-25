@@ -2170,6 +2170,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
+  {
+    id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure',
+    proposal: 'use a compressed remote index and batched row receipts to skip plugin-update backpressure during resume',
+    rejectedBecause: 'planning evidence and receipt batching can reduce journal cost, but they cannot prove which row acknowledgements survived the pause or restore the atomic-group barrier',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

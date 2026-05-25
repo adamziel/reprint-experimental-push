@@ -420,6 +420,31 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-receipt-flush-skips-large-upload-backpressure')?.violates.includes('atomic-file-publish'),
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure')?.violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure')?.violates.includes('compression'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure')?.violates.includes('backpressure'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure')?.violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure')?.violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure')?.violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-update-backpressure')?.violates.includes('durable-progress'),
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers')?.rejectedGate,
     'group',
   );
