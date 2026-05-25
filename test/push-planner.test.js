@@ -4492,6 +4492,52 @@ test('completed replay durable write failure still classifies as fully updated r
   assert.equal(replayRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('completed replay journaling failure stays inert and retries without duplicating inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const failingReplayJournal = failingDurableJournal('journal-replayed');
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+
+  const error = captureError(() =>
+    applyPlan(replayRemote, plan, {
+      journal: completed.journal,
+      durableJournal: failingReplayJournal,
+    }),
+  );
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'JOURNAL_WRITE_FAILED');
+  assert.equal(error.details.boundary, 'journal-replayed');
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'fully-updated-remote');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+
+  const retryJournal = openRecoveryJournal(tempRecoveryJournalPath(), { now: fixedNow });
+  const retry = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: retryJournal,
+  });
+  retryJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(retry.appliedMutations, 0);
+  assert.equal(
+    Object.values(retry.site.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length,
+    1,
+  );
+  assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assertRecoveryStateArtifacts(retry.recoveryState, 'fully-updated-remote');
+  assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(retry.recoveryState.artifacts.remote, undefined);
+});
+
 test('stale completed replay on durable journal blocks with journal and remote artifacts', () => {
   const base = baseSite();
   const local = baseSite();
