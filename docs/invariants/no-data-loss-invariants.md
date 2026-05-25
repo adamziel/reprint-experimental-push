@@ -15,7 +15,8 @@ This note captures the planner boundary in plain language.
 
 ## Must Preserve
 
-- Any remote-only change the local side does not touch.
+- Any remote-only change the local side does not touch, including plugin
+  removals.
 - Remote descendants that would be hidden by a local delete or file type
   swap.
 - Conflict and blocker evidence without raw file bodies, row contents, option
@@ -37,4 +38,3 @@ This note captures the planner boundary in plain language.
 - Plugin-owned deletions when the owner context is stale or missing.
 - Any mutation that lacks a live remote precondition bound to the mutation id,
   resource key, and remote hash observed during planning.
-
