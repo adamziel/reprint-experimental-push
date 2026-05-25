@@ -5559,6 +5559,51 @@ test('accepted recovery states cover pre-mutation failure, post-staging failure,
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('no-data-loss recovery only accepts old remote, fully updated remote, or blocked recovery states', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options, expectedJournalStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assert.equal(completed.recoveryState.status, 'fully-updated-remote');
+  assert.ok(completed.recoveryState.artifacts.journal);
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('durable no-data-loss recovery boundaries stay in the accepted post-failure states', () => {
   const base = baseSite();
   const local = baseSite();
