@@ -14,7 +14,7 @@ linked implementation artifacts.
 - Pending proof gates: auth/session lifecycle, durable journal writes, leases/fencing, graph identity, real-endpoint proof, and plugin drivers.
 - Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the public page terse and linked; `critic` and `auditor` should reject wording-only proof.
 - Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages only after merge to `main`.
-- Audit note: [audits/supervisor-note-20260525-124531.md](../audits/supervisor-note-20260525-124531.md) captures the newest decision; the release state still does not move.
+- Evidence note: [docs/supervisor-feedback.md](supervisor-feedback.md) captures the newest decision; the release state still does not move.
 
 ## 2026-05-25 - Supervisor Follow-up
 
