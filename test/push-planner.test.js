@@ -10881,6 +10881,47 @@ test('durable no-data-loss recovery boundaries stay limited to old remote, fully
   );
 });
 
+test('failure after staging a single mutation but before commit keeps the remote old and records a staging journal', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failBeforeCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+  const persisted = readRecoveryJournal(journalPath);
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_COMMIT');
+  assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(error.details.recovery.artifacts.journal.status, 'staging');
+  assert.equal(
+    persisted.records.some((record) => record.type === 'mutation-observed'),
+    false,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state'),
+    false,
+  );
+  assert.equal(inspection.status, 'old-remote');
+});
+
 test('durable journal replay stays inert after old-remote failures and a completed plan still classifies as fully updated remote', () => {
   const base = baseSite();
   const local = baseSite();
