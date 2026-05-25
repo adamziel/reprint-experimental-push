@@ -6295,7 +6295,9 @@ The design still has not closed the following production-grade gaps:
   this branch; `plan`, `apply`, and the `test:playground:*` smoke scripts are
   compatibility and lab-verification entry points only, so they cannot by
   themselves prove the live boundary, preserved remote, stale rejection point,
-  or fresh retry scope on an actual remote;
+  or fresh retry scope on an actual remote; until that command exists and can
+  be rerun against a real remote with preserved-remote evidence, every
+  production-grade push claim must fail closed;
 - conflict policy is still ambiguous when the remote drifts between dry-run
   and apply; missing proof is a branch-local rejection point before the first
   write, plus an auditable preserved remote that the user can inspect and
