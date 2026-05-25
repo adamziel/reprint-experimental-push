@@ -402,6 +402,14 @@ test('safe fast path proposals retain proof obligations', () => {
     ),
     'file hashing should include resumable chunk digest reuse',
   );
+  assert.ok(
+    model.safeFastPaths.some(
+      (fastPath) =>
+        fastPath.area === 'database-row-batching' &&
+        fastPath.allowedShortcut === 'reuse-one-prepared-statement-per-table-and-batch-shape-within-an-atomic-group',
+    ),
+    'database batching should include prepared-statement reuse within the same atomic group',
+  );
 });
 
 test('file hashing and compression decisions preserve canonical hashes', () => {
@@ -839,6 +847,20 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(
     rejectedById.get('compressed-row-batch-skips-batch-receipts').rejectedGate,
     'recovery',
+  );
+  assert.ok(
+    rejectedById
+      .get('compressed-row-summary-skips-live-batch-preconditions')
+      .violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById
+      .get('compressed-row-summary-skips-live-batch-preconditions')
+      .violates.includes('live-preconditions'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-row-summary-skips-live-batch-preconditions').rejectedGate,
+    'live',
   );
   assert.ok(
     rejectedById

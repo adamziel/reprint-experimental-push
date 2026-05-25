@@ -147,6 +147,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['round-trips', 'parse-work', 'bind-work'],
+    allowedShortcut: 'reuse-one-prepared-statement-per-table-and-batch-shape-within-an-atomic-group',
+    guardrails: [
+      'prepared-statements-do-not-override-row-preconditions',
+      'atomic-group-barrier-stays-fixed',
+    ],
+    gateProofs: {
+      skip: 'prepared SQL lowers duplicate parse and bind work without skipping any live row predicate',
+      live: 'each batched mutation still carries its own expected remote hash at the storage boundary',
+      group: 'the prepared statement is scoped to one atomic group and cannot widen visibility across owners',
+      recovery: 'batch receipts and plan-scoped idempotency keys still classify partial failure unambiguously',
+    },
+    visibilityBoundary: 'batch-transaction-or-atomic-group-commit',
+    failureEvidence: 'prepared-statement scope plus batch receipts and idempotency keys',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',
@@ -695,6 +715,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'compression can lower queue pressure, but it cannot replace the per-row receipts and recovery record needed to classify partial batch failure',
     rejectedGate: 'recovery',
     violates: ['compression', 'row-preconditions', 'backpressure', 'durable-progress'],
+  },
+  {
+    id: 'compressed-row-summary-skips-live-batch-preconditions',
+    proposal: 'treat a compressed row summary as enough proof to skip live per-row preconditions in a database batch',
+    rejectedBecause: 'compression can shrink recovery data, but it cannot replace the compare-and-swap predicate required for each row at apply time',
+    rejectedGate: 'live',
+    violates: ['compression', 'row-preconditions', 'live-preconditions'],
   },
   {
     id: 'compressed-row-batch-skips-group-finalize',
