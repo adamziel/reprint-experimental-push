@@ -181,6 +181,19 @@ The pull/export/import pipeline maps to the push ladder one step at a time:
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe and the auth floor still holds
 
+That bridge is the production mapping the executor consumes:
+
+- one exported merge base becomes one persisted pull base package
+- one persisted pull base package becomes one live remote binding in preflight
+- one live remote binding becomes one planning-only hash listing surface
+- one planning-only hash listing becomes one dry-run receipt
+- one dry-run receipt becomes one batched apply path with fresh live
+  revalidation
+- one apply path becomes one durable journal row set
+- one durable journal row set becomes one read-only recovery inspect step
+- one recovery inspect step becomes one mutating repair only if fresh live
+  evidence and the auth floor still agree
+
 The machine-readable umbrella contract is `push-protocol-extension-contract.json`:
 
 - it captures the full production stage ladder in one object

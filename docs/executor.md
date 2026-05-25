@@ -102,6 +102,19 @@ The pull/export/import pipeline is the only immutable provenance source:
 - `push_recover auto|finish|rollback` mutates only after inspect proves the
   branch safe with the same auth floor as the write path
 
+In executor terms, that bridge is a one-remote, one-local, one-drift story:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits derived from that package
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 For executor review, the pull pipeline maps to the push stages like this:
 
 | Pull provenance | Push stage | Executor rule |
