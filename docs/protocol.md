@@ -80,6 +80,15 @@ The write path is deliberately one-way:
 - journal inspect is read-only evidence gathering
 - recovery starts with inspect before any mutating repair
 
+The recovery proof chain is also one-way:
+
+- journal rows carry claim ownership, generation, and lease expiry
+- inspect reads the journal row and fresh live hashes before any repair
+- finish, rollback, retry, and block are the only recovery classifications
+- mutating recovery may proceed only when the journal row and fresh live
+  hashes prove the branch safe
+- stale dry-run evidence never becomes recovery authority
+
 For implementation and review, the bridge should be read in the same order as
 the production executor:
 
@@ -154,6 +163,18 @@ local, one drift witness:
 - both harnesses keep browser-visible inspection on the sandbox-provided
   `8080` ingress through a local-only proxy
 - remote tunnels are disallowed
+
+For review, the canonical one-remote, one-local test topology is:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run upload, apply, journal
+  inspect, and recovery
+- the browser-visible path stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- the pull exporter/importer pipeline remains the provenance source for all
+  push stages
 
 The same topology is reused in both harnesses:
 

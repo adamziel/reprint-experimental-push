@@ -177,6 +177,16 @@ That means the executor can rely on the imported pull base package, but it
 must still rebind the live remote identity before any mutating stage and must
 revalidate the live remote again at apply time.
 
+The recovery/journal/session chain is equally strict:
+
+- the imported pull base package is provenance only, never a reusable lock
+- journal rows carry claim ownership, generation, and lease expiry
+- `push_recover inspect` must read the journal before any mutating repair
+- inspect classifies finish, rollback, retry, or block and may still refuse
+  to mutate when the live remote no longer matches the persisted proof
+- stale dry-run evidence never becomes recovery authority
+- the same auth floor applies to apply, journal inspection, and recovery
+
 For reviewers, the shortest proof chain is:
 
 1. exporter discovers the merge base and coverage evidence
