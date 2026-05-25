@@ -187,16 +187,19 @@ Release-gate addendum for the next production claim:
 Source-note comparison boundary:
 
 - Reprint at `27c5f25` proves a staged transport rhythm and resumable
-  delivery shape; it does not prove that this repo has a live remote write
-  boundary that rejects stale authority before mutation or preserves remote
-  drift evidence for retry.
-- ZS-Sync at `d9334a0` proves bounded discovery and scoped scanning; it does
-  not prove create-time identity reservation, remote-preserving retry, or
-  plugin-owned write safety at apply time.
-- ForkPress at `55f9879` proves review and conflict vocabulary; it does not
-  prove that a stale review artifact cannot be reused as write authority after
-  the remote drifts, that remote-preserving retry is implemented here, or that
-  the remote is preserved for audit after reject.
+  delivery shape in the upstream pull pipeline; it does not prove that this
+  repo has a live remote write boundary that rejects stale authority before
+  mutation, preserves the remote for audit, or rebuilds retry scope from fresh
+  live hashes after drift.
+- ZS-Sync at `d9334a0` proves bounded discovery and scoped scanning in the
+  upstream scanner/resource layer; it does not prove create-time identity
+  reservation, remote-preserving retry, plugin-owned write safety at apply
+  time, or durable old/new/blocked classification for partial side effects.
+- ForkPress at `55f9879` proves review and conflict vocabulary plus a
+  reliability target for crash consistency; it does not prove that a stale
+  review artifact cannot be reused as write authority after the remote drifts,
+  that remote-preserving retry is implemented here, or that the remote is
+  preserved for audit after reject.
 - None of those notes prove that a readable stale manual-review artifact is
   unusable as retry authority unless the remote stayed preserved and the next
   attempt rebuilt scope from fresh live evidence at the same live write
