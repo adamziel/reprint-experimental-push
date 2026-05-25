@@ -7043,3 +7043,17 @@ are true on this worktree:
 - each Reprint, ZS-Sync, and ForkPress citation names the exact upstream
   state, says what it proves here, says what it does not prove here, and is
   backed by a branch-local rerun of the same live boundary.
+
+Lead finding for the current release-proof claim:
+
+- `npm run test:playground:production-shaped-release-proof` is still a proof
+  wrapper unless a real-site command exists in `package.json` and is rerun
+  against a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`; the
+  next acceptable evidence must be one exact command string, one exact live
+  source URL, one preserved remote that stayed inspectable after rejection,
+  one apply-time revalidation on that same boundary, one journal/recovery
+  inspect step that justifies retry scope, and one auth/session boundary
+  record before the first write.
+- if that rerun cannot print the exact executor identity and the rejected
+  remote in the same run, then the claim is still setup-only and production
+  wording must fail closed.
