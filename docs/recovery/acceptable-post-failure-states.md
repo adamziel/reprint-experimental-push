@@ -20,3 +20,7 @@ The atomic apply model only allows three outcomes after a failure or retry:
    - Retry must inspect the artifacts instead of assuming the remote is safe.
 
 Any partial remote mutation without a recovery artifact is a release blocker.
+
+Completed-plan replay is not a fourth post-failure state. It is a
+`fully-updated-remote` replay that must stay inert, preserve the existing
+remote, and avoid duplicating inserts or resurrecting stale local data.
