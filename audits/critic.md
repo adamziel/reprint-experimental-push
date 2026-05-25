@@ -163,6 +163,29 @@ can claim production-grade push support:
   still widen the old approval to a new row, file, relationship, or
   plugin-owned surface, which is a false-success mode until disproven.
 
+## Release-Grade Rejection Cases
+
+These are the specific conditions that must fail closed before any production
+wording is allowed:
+
+- The route shape matches production, but the exercised write path is still a
+  lab-backed stand-in or fixture mount, so the remote was never preserved
+  through the actual mutation boundary.
+- The remote changes after review, but the stale approval is still treated as
+  current because the artifact remains readable.
+- The approval record can be replayed after drift without binding to the
+  fresh live hashes, which means the retry inherited authority instead of
+  rebuilding scope.
+- The same stale review can be widened to a different row, file,
+  relationship-bearing record, or plugin-owned surface, which turns audit
+  history into an unsafe capability.
+- The source-note comparison looks current, but the cited Reprint, ZS-Sync, or
+  ForkPress revision was not reverified at the exact live write boundary, so
+  the note is historical context only.
+- Plugin-owned state exists outside the allowlist, but the planner still
+  treats the unknown surface as safe because the route or fixture path matched
+  expectations.
+
 ## What Reprint, ZS-Sync, And ForkPress Actually Contribute
 
 | Source note | What it proves | What it does not prove | Missing repo proof |
