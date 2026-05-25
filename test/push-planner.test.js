@@ -11248,6 +11248,63 @@ test('durable recovery boundaries classify failures as old remote and completed 
   );
 });
 
+test('durable recovery stays within the approved state envelope across failure boundaries and completed replay', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+
+  for (const options of [
+    { failBeforeMutation: true },
+    { failAfterStaging: true },
+    { failAfterDependencyValidation: true },
+  ]) {
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+
+    assert.ok(error instanceof PushPlanError);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+    assert.equal(error.details.recovery.artifacts.remote, undefined);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id);
+  }
+
+  const completed = applyPlan(remote, plan, { durableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal,
+    journal: completed.journal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'mutation-observed').length,
+    plan.mutations.length,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
+});
+
 test('reopened durable journals keep the replay boundary inert after a dependency-validation failure boundary', () => {
   const base = baseSite();
   const local = baseSite();
