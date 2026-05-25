@@ -34,6 +34,9 @@ It must preserve:
   not own
 - matching independent edits, deletes, restores, and file type swaps that land
   on the same hash on both sides
+- a live-preconditioned delete can still stop cleanly when another resource
+  conflicts, while unrelated matching edits and file type swaps remain
+  preserved
 - remote-only plugin drift while a plugin-owned delete is safely preconditioned
 - matching independent deletes, edits, restores, and file type swaps even when
   a separate mutation is rejected for a live remote conflict
