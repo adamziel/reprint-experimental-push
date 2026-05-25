@@ -20,6 +20,10 @@ this branch.
   blocked surfaces, including hidden tables, cron rows, runtime registries,
   generated files, caches, serialized blobs, and plugin-owned files that are
   outside the allowlist.
+- If the repo still lacks a named real-site release command that can be
+  rerun unchanged against a live local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`, then every `plan`, `apply`, `test`, and
+  `test:playground:*` script stays compatibility evidence only.
 - If a later-discovered plugin-owned surface, remapped create target, or
   mixed file/DB/plugin side effect appears after the first write, the branch
   records it as a new live boundary with its own preserve / reject / retry

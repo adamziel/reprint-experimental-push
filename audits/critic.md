@@ -7918,6 +7918,10 @@ Must-happen-before-production-grade-push-support checklist:
   successful smoke;
 - the branch must show the exact real-site release command, not just a
   retained-source `verify:release` run or another compatibility wrapper;
+- if the repo still lacks a named real-site release command that can be
+  rerun unchanged against a live local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`, then `plan`, `apply`, `test`, and every
+  `test:playground:*` script remain compatibility evidence only;
 - the branch must show production WordPress auth/session lifecycle on that
   same live boundary, or auth remains lab-only evidence;
 - the branch must distinguish provenance from proof for each Reprint,

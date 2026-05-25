@@ -23,6 +23,9 @@ rerun that names the exact command, the exact live `REPRINT_PUSH_SOURCE_URL`,
 the exact boundary that was rejected before the first write, and the exact
 set of plugin-owned surfaces that were either enumerated or blocked before
 retry.
+If the repo does not yet expose a named real-site release command, then the
+current `plan`, `apply`, `test`, and `test:playground:*` scripts are still
+compatibility evidence, not release proof.
 
 ## Reprint
 
