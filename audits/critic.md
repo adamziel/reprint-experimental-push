@@ -28,7 +28,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - Reprint source notes contribute staged transport and resumable-delivery lineage, but not live mutation safety, preserved-remote retry, or WordPress auth/session lifecycle proof on this branch.
 - ZS-Sync source notes contribute discovery and batching lineage, but not source-mutation safety, create-time remap safety, or plugin-owned surface coverage on this branch.
 - ForkPress source notes contribute audit and crash-consistency vocabulary, but not a live WordPress boundary with preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
-- Any comparison to those notes must name the exact upstream revision or worktree state, say what the note proves here, and say what it does not prove here. If it only supports historical vocabulary, it stays provenance only.
+- Any comparison to those notes must name the exact upstream revision or worktree state, say what the note proves here, and say what it does not prove here. If it only supports historical vocabulary, it stays provenance only and cannot be used as production proof by analogy.
 
 ## Changes required before production wording is defensible
 
