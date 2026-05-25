@@ -134,6 +134,11 @@ Must-fix blockers before any production wording:
   second write against a late-discovered plugin-owned surface; the proof has
   to show that the late surface was blocked or separately classified before
   any retry continued.
+- A late-discovered plugin-owned surface must not be described as a successful
+  "manual resolution" when the remote was already drifted, because that hides
+  a mixed-write failure mode; the proof must preserve the remote for audit,
+  mark the late surface blocked or old/new explicitly, and record a fresh
+  retry scope before any second write.
 - A blocked late-discovered plugin-owned surface must not be relabeled as a
   successful manual resolution, a compatibility pass, or a harmless second
   phase unless the proof names the preserved remote, the blocked surface, and
