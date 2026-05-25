@@ -99,6 +99,6 @@ If any one of those bullets is missing, the wording must stay in the lab/prototy
 
 ## Strongest blocker
 
-This worktree still lacks one named, rerunnable live release command on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at apply time, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing, graph identity, and plugin-driver coverage on the same mutation.
+The strongest blocker is still one named, rerunnable live release boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing, graph identity, and plugin-driver coverage on the same mutation.
 
 Until that boundary exists, any production-grade push wording is false reliability, even though the supervised lane now has better retained-source evidence and an explicit auth/session lifecycle verdict. The current evidence still stops short of production proof because it does not show a preserved remote surviving rejection, a lease/fenced journal on production-like storage, or a rerunnable apply-time retry that can reject stale manual resolution and late plugin-owned surfaces on the same live source URL.
