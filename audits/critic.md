@@ -21,6 +21,22 @@ Must change before any production-grade push claim:
 - classify partial file, DB, and plugin side effects as old, new, or blocked
   before retry so a mixed write cannot be relabeled as success.
 
+Additional proof gaps that still need to be closed:
+
+- prove create-time identity remapping is either blocked before write or
+  recorded with live identity evidence, not just a fixture that preserves the
+  same ID while the live remote could still renumber or alias the target;
+- prove plugin-owned state outside the allowlist is discovered live or
+  rejected live, including hidden tables, generated files, cron rows, runtime
+  registries, serialized blobs, cache entries, and activation-sensitive
+  side effects;
+- prove the stale review artifact cannot become retry authority for a new
+  boundary after drift, including a different row, file, relationship-bearing
+  record, remapped create target, or plugin-owned surface; and
+- prove the branch can preserve the remote, reject the stale boundary, and
+  rebuild fresh retry scope even when a late plugin-owned surface appears only
+  after the first write.
+
 Source-note comparisons are still only historical context unless this branch
 names the exact upstream revision or worktree state and reruns the same live
 mutation boundary here. A Reprint, ZS-Sync, or ForkPress note can justify
@@ -74,15 +90,17 @@ Conservative comparison summary:
 - Reprint proves staged transport rhythm, resumable delivery structure, and
   protocol framing. It does not prove live source mutation safety, remote
   preservation after drift, create-time remap handling, plugin-owned surface
-  coverage, or partial-write classification on this branch.
+  coverage, partial-write classification, or any live write-boundary proof on
+  this branch.
 - ZS-Sync proves bounded discovery, cursoring, and resource listing. It does
-  not prove write permission, late plugin-owned surface detection, identity
-  remapping safety, or any retry authority on a live mutation boundary.
+  not prove write permission, live remote drift rejection, late plugin-owned
+  surface detection, identity remapping safety, or any retry authority on a
+  live mutation boundary.
 - ForkPress proves reviewed-resolution vocabulary, crash-consistency intent,
   and plugin-aware merge modeling. It does not prove that a readable manual
   review artifact stays audit-only after drift, that stale approval cannot be
   reused for a later boundary, or that this branch preserved the remote while
-  rebuilding retry scope from fresh live hashes.
+  rebuilding retry scope from fresh live hashes on the actual write path.
 
 Most important unresolved trap:
 

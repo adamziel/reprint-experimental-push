@@ -22,6 +22,10 @@ or comparison-only.
 - The claim names the exact stale remote hash set, the rejected approval, the
   retry scope, the fresh retry artifact, and the proof that the remote was
   preserved for audit.
+- The claim names the exact create-time identity remap case, or it proves the
+  remap is blocked before write; a fixture that keeps the same ID is not
+  enough to prove the live remote cannot renumber, alias, or reassign the
+  target.
 - The claim shows the stale manual-review artifact remains readable for audit
   but is unusable for apply after drift, and server-side rejection forces the
   next retry to start from fresh live hashes rather than inherited approval.
@@ -76,6 +80,10 @@ or comparison-only.
 - The claim shows plugin-owned state outside the allowlist is either enumerated
   live or blocked, including hidden custom tables, generated files, cron rows,
   runtime registries, serialized blobs, and other plugin-owned side effects.
+- The claim names any late-discovered plugin-owned surface and shows it was
+  separately classified or blocked before retry; a first write on an
+  allowlisted row does not prove a hidden table, generated file, cron row,
+  runtime registry entry, or serialized blob is safe.
 - The claim does not treat one allowlisted plugin row, option, or fixture
   record as proof that the rest of the plugin-owned graph is safe; the exact
   live plugin-owned surface list must still be named and revalidated.
@@ -136,6 +144,9 @@ or comparison-only.
   plugin side effect and shows recovery cannot silently widen the old approval
   to unrelated rows, files, relationship-bearing records, or plugin-owned
   surfaces.
+- The claim does not let a mixed write be described as success if file, DB, or
+  plugin effects diverged and the audit cannot still separate old, new, or
+  blocked evidence for every touched surface.
 - The claim includes the rejection reason for any unknown plugin-owned state
   and shows the blocked scope stayed auditable without becoming writable through
   fallback behavior.
