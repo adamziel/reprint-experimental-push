@@ -107,6 +107,9 @@ This note captures the planner boundary in plain language.
   matching independent edit and remote-only plugin removals while late
   removal drift is refused on re-apply.
 - A ready delete plan at the live release boundary may still preserve a
+  matching independent create and a matching file type swap while
+  remote-only plugin changes remain `keep-remote`.
+- A ready delete plan at the live release boundary may still preserve a
   matching independent edit, a matching plugin-owned resource, and
   remote-only plugin removals while late removal drift is refused on
   re-apply.
