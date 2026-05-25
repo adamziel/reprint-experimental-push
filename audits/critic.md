@@ -63,8 +63,27 @@ Release-gate checklist:
   output, and `finalMatchesLocal` as compatibility evidence only unless the
   branch also records the live rejection point and fresh retry hashes; and
 - require any Reprint, ZS-Sync, or ForkPress comparison to name the exact
-  upstream revision or worktree state and say what it proves here and what it
-  does not prove.
+  upstream revision or worktree state, the exact live boundary rerun here,
+  and the exact proof boundary it does and does not cover.
+
+The following wording must fail closed unless the branch shows the same live
+boundary, preserved remote, and fresh retry scope on this worktree:
+
+- "manual resolution succeeded" when the preserved remote is missing, the
+  stale artifact can still be reused, or the fresh retry artifact was not
+  rebuilt from live hashes;
+- "plugin-safe push" when the allowlist misses hidden tables, cron rows,
+  runtime registries, generated files, serialized blobs, caches, or
+  plugin-owned files that only appear after the first write;
+- "comparison passed" when the comparison is only a Reprint, ZS-Sync, or
+  ForkPress note with no exact upstream revision/worktree state and no live
+  rerun on this branch;
+- "production-grade" when any late-discovered plugin-owned surface is folded
+  into an earlier success story without its own preserve/reject/retry cycle;
+  and
+- "retry-safe" when a readable review artifact, route-shaped smoke, package
+  mount, fixture replay, or `finalMatchesLocal` result is being used as
+  retry authority instead of compatibility evidence.
 
 The missing proof is not just "the route works" or "the reviewer can
 manually inspect the result." The branch still needs live evidence that the
