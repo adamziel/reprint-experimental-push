@@ -1398,11 +1398,19 @@ test('guarded executor report keeps the large-upload and plugin-install evidence
 
 test('guarded executor large profile still preserves receipts and stays blocked for production throughput', () => {
   const report = runGuardedExecutorBenchmark({ profile: 'guardedLarge' });
+  const model = buildBenchmarkModel();
   const blockers = new Set(report.claims.productionThroughput.blockers);
 
   assert.equal(report.profile, 'guardedLarge');
   assert.ok(report.shape.fileBytes >= 384 * MIB);
   assert.ok(report.shape.rowCount >= 2_000);
+  assert.ok(model.workloads.some((workload) => workload.kind === 'large-upload'));
+  assert.ok(model.workloads.some((workload) => workload.kind === 'plugin-install'));
+  assert.ok(model.workloads.some((workload) => workload.kind === 'plugin-update'));
+  assert.ok(model.schedules.some((schedule) => schedule.totals.uploadChunks > 0));
+  assert.ok(model.schedules.some((schedule) => schedule.totals.dbRows > 0));
+  assert.ok(model.totals.uploadBytes >= 2 * 1024 * MIB);
+  assert.ok(model.totals.dbRows >= 10_000);
   assert.ok(report.evidence.chunkReceipts.expected > 0);
   assert.equal(report.evidence.chunkReceipts.recorded, report.evidence.chunkReceipts.expected);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
