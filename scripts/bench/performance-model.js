@@ -2479,7 +2479,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     proposal: 'use a compressed remote index plus a cached dependency graph to skip plugin-install finalize after a pause',
     rejectedBecause: 'planning evidence and dependency shape can reduce duplicate lookup work, but they cannot prove the live row compares, staged metadata writes, or the atomic-group finalize survived failure',
     rejectedGate: 'group',
-    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
     id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
@@ -2501,6 +2501,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and bounded chunk fan-out can reduce duplicate work, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier',
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause',
+    proposal: 'use a compressed remote index plus bounded chunk parallelism to publish a large upload immediately after a pause',
+    rejectedBecause: 'a paused upload still needs durable chunk receipts and the live publish compare; planning compression does not prove the staged bytes are safe to expose',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
     id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',

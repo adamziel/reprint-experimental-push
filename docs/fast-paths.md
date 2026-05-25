@@ -993,6 +993,11 @@ under load:
   rejected because planning evidence and hash fan-out can reduce lookup time,
   but they cannot prove bounded queue order, durable hash receipts, or the
   recovery evidence needed after a pause or crash.
+- compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-
+  publish-after-pause is rejected because planning evidence and bounded chunk
+  fan-out can reduce duplicate work, but they cannot prove the live publish
+  compare or the durable chunk receipts needed to expose staged bytes safely
+  after a pause.
 - batched-receipt-journal-flush is rejected because journal batching can reduce
   fsync work, but it cannot replace the raw chunk, row, or group receipts
   needed to classify a crash, retry, or pause.

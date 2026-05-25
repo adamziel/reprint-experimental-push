@@ -236,6 +236,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause')?.rejectedGate,
+    'live',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-digest-skips-large-upload-publish')?.rejectedGate,
     'recovery',
   );
@@ -1492,6 +1496,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause').violates.includes('live-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause').violates.includes('backpressure'));
   assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').rejectedGate,
     'recovery',
@@ -2081,16 +2087,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-chunk-upload-after-pause').violates.includes('atomic-file-publish'),
   );
-  assert.equal(
-    rejectedById.get('treat-drained-upload-buffer-as-publish-ready').rejectedGate,
-    'recovery',
+  const drainedBufferFastPath = model.safeFastPaths.find(
+    (fastPath) => fastPath.allowedShortcut === 'treat-drained-upload-buffer-as-publish-ready',
   );
-  assert.ok(
-    rejectedById.get('treat-drained-upload-buffer-as-publish-ready').violates.includes('backpressure'),
-  );
-  assert.ok(
-    rejectedById.get('treat-drained-upload-buffer-as-publish-ready').violates.includes('atomic-file-publish'),
-  );
+  assert.ok(drainedBufferFastPath, 'drained upload buffer fast path exists');
+  assert.equal(drainedBufferFastPath.bypassesLivePreconditions, false);
+  assert.equal(drainedBufferFastPath.splitsAtomicGroup, false);
+  assert.ok(drainedBufferFastPath.gateProofs.recovery.includes('durable chunk receipts'));
   assert.equal(
     rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation').rejectedGate,
     'group',
