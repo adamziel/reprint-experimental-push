@@ -157,6 +157,9 @@ If the only apparent match is the same route family, package layout, or
 reviewer wording, that is still historical context only; shape similarity
 does not prove the live executor, preserved remote, or retry authority on
 this branch.
+If the claim only reuses a lab-shaped route, fixture mount, or compatibility
+URL, that is still not current proof, because the same shape can be served by
+a copied or fixture-backed executor instead of the live write path.
 If the comparison note leaves any plugin-owned surface implicit instead of
 enumerated, or if it depends on a lab-shaped route to infer live ownership, it
 still fails as proof for production push wording.
