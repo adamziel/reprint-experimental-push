@@ -52,7 +52,7 @@ Treat indirect evidence as insufficient:
 
 ## Test Audit
 
-The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. In this checkout, `npm test` passes 89 tests, which makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary.
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. A green `npm test` run makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary.
 
 | Test surface | What it really proves | What it does not prove |
 | --- | --- | --- |
@@ -63,6 +63,14 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 | `npm run test:playground:*` helpers | Auth/session scaffolding, route shape, journal sequencing, stale-claim rejection, and production-shaped plugin packaging in sandboxed Playground instances | Real live-source mutation, production storage durability, or real remote/local topology | A Playground helper can be convincing and still fail to prove the release path, even when it reports `labBacked: true`. |
 
 The sharpest test verdict is negative: the current tests are good at proving what the repo must refuse, but they do not prove the live-source path succeeds under the release boundary. That means the suite is suitable as guardrail evidence and regression evidence only until a mandatory release command exists. If someone cites `node --test` alone as a production release argument, that would overstate the evidence, because the suite does not prove no data loss, reliable crash recovery, or measured speed on the live path. Indirect proof is not enough here: fixture, lab, refusal, and docs evidence can narrow the risk surface, but they do not close the live-source release claim.
+
+The important distinction is that several tests do exercise real code paths:
+
+- `test/push-planner.test.js` proves the planner and applier can reject conflicts and preserve local intent inside controlled fixtures.
+- `test/recovery-journal.test.js` proves file-backed journaling and restart inspection work in temp storage.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the suite can refuse unsupported speed claims and keep `productionThroughput` at `not-claimed`.
+
+None of those tests reach the live-source storage boundary, validate production durability, or make a release decision. They are real executable evidence, but they are still not proof of no data loss, reliability under crash/retry/replay, or measured production speed.
 
 The current green run also does not change the release reading of the benchmark: `productionThroughput` remains `not-claimed`, and the guarded benchmark keeps refusing to upgrade that into a measured production statement. Green tests plus a refusal-only benchmark still do not equal a release gate.
 
