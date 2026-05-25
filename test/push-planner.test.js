@@ -8899,4 +8899,16 @@ test('no-data-loss recovery boundaries remain old remote, fully updated remote, 
   assert.ok(staleReplay.details.recovery.artifacts.journal, 'stale completed replay must keep journal artifacts');
   assert.equal(staleReplay.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
   assert.equal(staleReplayRemote.files['index.php'], '<?php echo "stale local";');
+  assert.equal(
+    Object.values(staleReplay.details.recovery.artifacts.remote.db.wp_posts).filter(
+      (row) => row.post_title === 'Inserted locally',
+    ).length,
+    1,
+    'stale completed replay must not duplicate inserts in recovery artifacts',
+  );
+  assert.equal(
+    staleReplay.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+    'stale completed replay must not resurrect stale local rows',
+  );
 });
