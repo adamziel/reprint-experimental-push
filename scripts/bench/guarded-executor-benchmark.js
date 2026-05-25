@@ -655,6 +655,12 @@ function buildReport({
     results: {
       appliedMutations: applyResult.appliedMutations,
       successJournalPath: successPersisted.filePath,
+      successInspection: {
+        status: successInspection.status,
+        reason: successInspection.reason,
+        counts: successInspection.counts,
+        claim: successInspection.claim,
+      },
       preCommitFailure: failureProbeDetails(preCommitFailure),
       partialFailure: failureProbeDetails(partialFailure),
     },

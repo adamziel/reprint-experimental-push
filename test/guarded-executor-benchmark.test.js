@@ -138,6 +138,9 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);
+  assert.equal(report.results.successInspection.status, 'fully-updated-remote');
+  assert.equal(report.results.successInspection.reason, 'Every planned target currently matches its journaled after hash.');
+  assert.equal(report.results.successInspection.counts.new, report.shape.mutations);
   assert.equal(report.results.preCommitFailure.inspectionStatus, 'old-remote');
   assert.equal(report.results.partialFailure.inspectionStatus, 'blocked-recovery');
   assert.ok(Array.isArray(report.results.preCommitFailure.journalRecordTypes));
