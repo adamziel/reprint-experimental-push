@@ -4499,3 +4499,8 @@ Production-readiness language checklist:
 - name the exact upstream revision or worktree state for any Reprint,
   ZS-Sync, or ForkPress comparison, plus what that note proves here and what
   it does not prove.
+
+A stale manual-review artifact is also not success by itself: if it remains
+readable after drift, the note still has to show the preserved remote, the
+stale authority rejection point, and a fresh retry artifact rebuilt from live
+hashes on this branch.
