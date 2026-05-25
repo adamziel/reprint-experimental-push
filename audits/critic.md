@@ -15,7 +15,8 @@ Release-gate checklist for production-readiness wording:
   only.
 - Name the exact upstream revision or worktree state for any Reprint,
   ZS-Sync, or ForkPress comparison, plus the exact live write boundary that
-  was reverified here; otherwise the comparison is historical context only.
+  was reverified here and the exact branch-local drift or retry case that was
+  exercised against it; otherwise the comparison is historical context only.
 - Name the exact failure case that was rechecked on this branch as well; a
   matching upstream revision without the same branch-local drift or retry
   case is still historical context, not current proof.
@@ -55,6 +56,8 @@ Release-gate checklist for production-readiness wording:
   reverify that exact upstream state at the same live write boundary, the
   citation stays historical context only. A correct commit id without a fresh
   live-boundary recheck is still not current proof.
+  If the branch-local drift or retry case differs from the upstream note's
+  scenario, the citation stays historical context only.
 
 Source-note claim gate:
 
