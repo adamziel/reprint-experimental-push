@@ -1126,6 +1126,56 @@ test('allows a local post to reference a parent post created by the same plan', 
   assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
 });
 
+test('allows a local thumbnail reference to an attachment created by the same plan', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:2"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local attachment',
+    post_content: 'local-private-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 2,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const reference = postmetaMutation.wordpressGraphReferences[0];
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(attachmentMutation) < plan.mutations.indexOf(postmetaMutation),
+    'attachment create must be ordered before dependent thumbnail metadata',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [attachmentMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, attachmentResourceKey);
+  assert.equal(reference.dependency.targetMutationId, attachmentMutation.id);
+  assert.equal(reference.dependency.targetLocalHash, attachmentMutation.localHash);
+  assert.equal(referenceJson.includes('local-private-attachment-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_type, 'attachment');
+  assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_value, 2);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
