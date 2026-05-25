@@ -303,6 +303,28 @@ test('executor rejects forged mixed ready delete and type swap plans when the de
   assert.equal(error.details.preconditionCount, 1);
 });
 
+test('executor refuses a ready delete plan when the live remote changes after dry run while unrelated plugin drift is preserved', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  remote.files['index.php'] = '<?php echo "remote drift";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('keeps remote-only changes and does not overwrite them', () => {
   const base = baseSite();
   const remote = baseSite();
