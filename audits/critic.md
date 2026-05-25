@@ -1412,6 +1412,9 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   copied-lab route wiring must fail the release gate unless the same live
   remote mutation path was reproduced with a drifted remote and the stale
   approval was rejected before any write.
+- A mounted route that returns live-looking hashes still has to prove how
+  partial file, DB, or plugin side effects are classified and retried; the
+  hash alone never proves the write executor or plugin-owned boundary.
 - Manual resolution is not a success state unless the remote is preserved for
   audit, the stale artifact is rejected before write, and the retry starts
   from fresh live evidence with no scope widening.
