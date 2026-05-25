@@ -186,6 +186,22 @@ them out of production wording until the live write path is proven:
   not prove that the remote was preserved, the write failed closed, or the
   retry rebuilt scope from fresh evidence.
 
+False-reliability claims that also need to stay out of production wording:
+
+- "Manual resolution succeeded" is false unless the preserved remote, the
+  rejected stale approval, and the fresh retry scope are all named on the same
+  live boundary; readable audit artifacts alone do not prove retry authority.
+- "The plugin is handled" is false unless the proof covers every declared
+  plugin-owned surface in scope or hard-blocks unknown surfaces, including
+  custom tables, generated files, roles/caps, activation hooks, cron rows,
+  caches, runtime registries, and external side effects.
+- "The comparison proves it" is false unless the cited Reprint, ZS-Sync, or
+  ForkPress note was reverified at the same live mutation boundary and against
+  the exact upstream revision or worktree state named in the claim.
+- "Recovery succeeded" is false whenever one store committed and the rest were
+  merely classified; mixed file, DB, or plugin writes still need old/new/
+  blocked evidence and a retry rebuilt from fresh live hashes.
+
 Additional hard blocker for this lane: any proof that comes from a
 fixture-backed or copied-lab write path behind a production-shaped mount is
 compatibility evidence only, even if it returns live-looking hashes. That
