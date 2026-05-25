@@ -6195,6 +6195,11 @@ The design still has not closed the following production-grade gaps:
   but before retry; the later boundary must be named separately and cannot
   inherit the earlier preserved remote or review note just because the route
   family, package mount, or reviewer wording matches;
+- "manual resolution later" is especially false reliability when the later
+  boundary is a remapped create target, relationship-bearing record, or
+  plugin-owned surface that was not enumerated before the first write; the
+  earlier note may remain audit evidence, but it cannot become retry authority
+  for a boundary that was only discovered after the write;
 - a readable stale manual-review artifact is still not retry authority even
   when it survives drift intact; if the first write already committed and a
   later boundary appears, the artifact can remain audit evidence only, while
@@ -6255,6 +6260,9 @@ Release gate for this branch:
 - no production-grade push claim unless any later-discovered plugin-owned
   surface is treated as a new boundary with its own preserve / reject /
   retry cycle and not backfilled into the earlier approval;
+- no production-grade push claim unless "manual resolution later" is treated
+  as audit-only wording for any boundary discovered after the first write,
+  including remapped create targets and plugin-owned surfaces;
 - no production-grade push claim unless any comparison to Reprint,
   ZS-Sync, or ForkPress says what the note proves here, what it does not
   prove here, and whether this branch reran the same live boundary; and
