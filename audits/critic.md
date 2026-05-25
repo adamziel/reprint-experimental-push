@@ -2484,3 +2484,38 @@ Additional production-readiness blockers that still need explicit proof:
   `finalMatchesLocal` is not a production gate. It must show the preserved
   remote, the stale rejection point, and the fresh retry scope for each failed
   case above.
+
+Before this project can claim production-grade push support, it still needs
+these explicit proofs:
+
+1. Live remote drift between dry-run and apply fails closed on the real write
+   path, not just on a lab route, and the preserved remote remains auditable.
+2. Create-time identity remap or aliasing is either durably proven safe or
+   hard-blocked before mutation, including rename and renumber cases.
+3. Plugin-owned state outside the allowlist is enumerated or blocked at apply
+   time, including late-discovered custom tables, generated files, cron rows,
+   caches, runtime registries, serialized blobs, and external side effects.
+4. Partial file, DB, or plugin side effects are durably classified as old,
+   new, or blocked, and retry must rebuild scope from fresh live hashes rather
+   than reusing stale approval.
+5. A stale manual-review artifact remains audit-only after drift and cannot
+   widen into a different row, file, relationship-bearing record, or
+   plugin-owned surface.
+6. Any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
+   commit or worktree state and is reverified at the same live mutation
+   boundary; otherwise it is historical context only.
+
+Source-note comparison summary:
+
+- Reprint proves staged transport and resumable delivery rhythm. It does not
+  prove a live source overwrite boundary, stale remote rejection, or partial
+  side-effect classification here.
+- ZS-Sync proves bounded discovery and change scanning. It does not prove
+  create-time identity remapping, plugin-owned allowlist coverage, or live
+  apply-time write safety here.
+- ForkPress proves merge review vocabulary and crash-consistency intent. It
+  does not prove that stale review artifacts stay audit-only after drift or
+  that the remote is preserved for audit on reject.
+- None of the three become current proof unless this branch also shows the
+  exact live mutation boundary, the preserved remote, the stale rejection
+  point, and the fresh retry scope on the same path.
