@@ -17356,7 +17356,7 @@ test('durable recovery inspect blocks live drift after a completed replay and ke
   );
 });
 
-test('the durable recovery boundary remains fail-closed until the release gate wires in durable recovery proof', () => {
+test('the durable recovery boundary remains fail-closed until the release gate wires in durable journal replay proof', () => {
   const packageJson = JSON.parse(
     execFileSync('git', ['show', 'origin/lane/reliable-executor:package.json'], { encoding: 'utf8' }),
   );
@@ -17364,7 +17364,7 @@ test('the durable recovery boundary remains fail-closed until the release gate w
   assert.equal(
     packageJson.scripts['verify:release'],
     'npm run test:playground:production-shaped-release-verify',
-    'release verification exists, but it still does not prove durable recovery storage or replay inspection',
+    'release verification exists, but it still does not prove durable recovery storage, journal replay, or recovery inspection',
   );
   assert.equal(
     packageJson.scripts['verify:release'].includes('test:recovery:file-journal'),
