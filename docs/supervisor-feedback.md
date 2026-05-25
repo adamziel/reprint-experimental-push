@@ -21,7 +21,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Audit and critic | Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim. |
 | Progress publisher | Owner: lane. Gap: keep the page dated, concise, and linked to evidence. Next test: keep the page and log aligned after each refresh. |
 
-Note: this lane-local page update becomes live only after merge to `main`; GitHub Pages lags until then.
+Note: the lane-local page becomes live only after merge to `main`; GitHub Pages lags until then.
 
 Audit note: [audits/supervisor-note-20260525-073717.md](../audits/supervisor-note-20260525-073717.md) captures the latest alignment pass in one screen.
 
