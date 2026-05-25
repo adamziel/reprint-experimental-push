@@ -15,6 +15,12 @@ The boundary matters more than the failure label:
 
 Durable recovery artifacts are required for recovery inspection. JSON or lab-only evidence is useful for tests, but it is not a substitute for a persisted journal that can be reopened after a crash or retry.
 
+Artifact expectations by state:
+
+- `old-remote`: journal artifacts only; remote artifacts must stay absent.
+- `fully-updated-remote`: journal artifacts only; remote artifacts must stay absent.
+- `blocked-recovery`: both journal and remote artifacts must be preserved for inspection.
+
 Retry rules:
 
 - Retrying an `old-remote` recovery must not duplicate inserts or resurrect stale local data.
