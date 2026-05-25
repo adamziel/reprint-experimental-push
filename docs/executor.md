@@ -24,6 +24,13 @@ The topology rules are fixed:
 - The local inspection proxy stays local-only.
 - Remote tunnels are disallowed.
 
+That is the production topology in compact form:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns the push protocol calls
+
 Docker and Playground prove the same three-site story with different harness
 shapes:
 
@@ -43,6 +50,18 @@ environments:
 - `remote-changed` is the same remote identity observed later after drift.
 - `runner` is the only actor that may preflight, list hashes, dry-run, apply,
   inspect the journal, or recover.
+
+The executor treats each write-path step as a separate remote boundary:
+
+| Stage | Boundary |
+| --- | --- |
+| `push_preflight` | First live binding after importer persistence; mints the short-lived push session. |
+| `push_snapshot_hashes` | Planning-only remote comparison surface; never write authority. |
+| `push_plan_dry_run` | Eligibility receipt only; never a lock. |
+| `push_batch_apply` | Separate mutation path; revalidates fresh live evidence before every batch and at the storage boundary. |
+| `push_journal` | Durable evidence only; never authorizes mutation. |
+| `push_recover inspect` | Read-only recovery inspection; must happen before any mutating repair. |
+| `push_recover auto|finish|rollback` | Mutating recovery only after inspect proves the branch safe and the auth floor still holds. |
 
 The production proof uses one remote identity across both the base and drift
 observations, with the imported local edit site carrying the only local

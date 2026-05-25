@@ -637,6 +637,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     executorDocs.includes(
+      'The executor treats each write-path step as a separate remote boundary:',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
       'push-production-auth-session-journal-recovery-inspect-contract.json` is the compact proof for the auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect',
     ),
   );
