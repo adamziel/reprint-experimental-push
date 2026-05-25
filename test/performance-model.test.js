@@ -287,6 +287,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'planning cursor plus cached digest and guarded file-publish record',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-index-listings-without-changing-planning-semantics')?.visibilityBoundary,
+    'transport-only',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-chunk-transit-frames-with-canonical-chunk-digests')?.visibilityBoundary,
     'transport-only',
   );
@@ -311,8 +315,15 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'none-pause-only',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'pause-upstream-producers-when-ack-or-journal-budgets-are-hit')?.failureEvidence,
+    'durable queue and journal entries with affected resource identifiers',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches')?.failureEvidence,
     'index cursor, dependency graph, and batch idempotency key',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-row-batch-replaces-atomic-group')?.violates.includes('atomic-groups'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize')?.rejectedGate,
