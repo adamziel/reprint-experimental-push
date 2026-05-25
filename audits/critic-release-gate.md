@@ -9,6 +9,7 @@ Do not use production wording unless the branch has all of the following for the
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
 - any stale manual-review artifact remains audit-only after drift and cannot be reused against a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
 - any stale manual-review artifact cannot become retry authority for a later-discovered plugin-owned surface that appears only after the first write, even if the later surface looks like the earlier one;
+- any stale manual-review artifact cannot become retry authority for a remapped create target or later-discovered plugin-owned surface that appears only after the first write, even if the later boundary reuses the same route family, package mount, or reviewer wording;
 - the fresh retry artifact is rebuilt from live hashes on this branch, not inherited from the earlier approval;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified as old, new, or blocked before retry starts;
 - any late-discovered plugin-owned surface is separately blocked or classified, not folded into the earlier success story;
@@ -18,6 +19,7 @@ Do not use production wording unless the branch has all of the following for the
 - any source-note comparison that merely matches the same route family, package layout, reviewer wording, or production-shaped route name is still historical context only and cannot be treated as live proof of retry authority, preserved-remote safety, stale-authority rejection, or live write coverage; and
 - any claim of "production-grade push support" is rejected unless the same live boundary shows preserved-remote evidence, stale-authority rejection, fresh retry scope rebuilt from live hashes, and per-surface old/new/blocked classification; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
+- any remapped create target discovered during retry is treated as a new boundary until it is separately preserved, rejected, and retried with fresh live hashes; and
 - proof for one live boundary does not transfer to a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface, even if the route family, package mount, fixture replay, or reviewer wording is the same; and
 - any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success; and
 - any claim that "manual resolution" succeeded without the preserved remote, the rejection point, and a fresh retry artifact rebuilt from live hashes for the same live boundary is false reliability, not success.
@@ -33,6 +35,9 @@ False success to reject:
 - "manual resolution later" is not success if the readable artifact is still
   being reused as authority after drift, or if the later boundary never got
   its own preserve/reject/retry cycle on this worktree;
+- "manual resolution later" is also not success if a remapped create target or
+  late-discovered plugin-owned surface was silently folded into the first
+  approval instead of getting its own preserve/reject/retry cycle;
 - "comparison passed" is not success if the source note lacks the exact
   upstream revision or worktree state, the same live boundary, and an explicit
   statement of what it does not prove here;

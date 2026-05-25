@@ -5012,6 +5012,9 @@ worktree:
 - the separate classification or block for any late-discovered plugin-owned
   surface that appeared only after the first write, plus a fresh preserve /
   reject / retry cycle if that surface is writable; and
+- the separate classification or block for any remapped create target that
+  only became visible during retry, plus a fresh preserve / reject / retry
+  cycle if that target is writable; and
 - the exact upstream revision or worktree state for any Reprint, ZS-Sync, or
   ForkPress comparison, plus an explicit statement of what that note proves
   here and what it does not prove, including whether it says anything about a
@@ -5067,7 +5070,8 @@ Minimum evidence still missing for production wording:
 - live proof that stale authority fails before the first mutation and that
   the rejected remote remains inspectable after reject;
 - live proof that any create-time remap case is either preserved safely or
-  hard-blocked before write;
+  hard-blocked before write, and that a remapped target discovered during
+  retry cannot inherit the first approval;
 - live enumeration or explicit blocking for every plugin-owned surface
   outside the allowlist, including late-discovered surfaces that appear after
   the first write;
