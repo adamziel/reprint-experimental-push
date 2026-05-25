@@ -126,6 +126,10 @@ The machine-readable bridge is split across the fixtures:
   evidence before every batch and at the storage boundary.
 - `push-production-topology-contract.json` keeps the same topology and the
   full push stage sequence in one compact production object.
+- `push-protocol-extension-contract.json` is the canonical production ladder
+  bundle. It ties the persisted pull base to preflight, remote snapshot hash
+  listing, dry-run plan upload, batched apply, journal inspect, and
+  inspect-first recovery in one object.
 
 The compact production proof stack is:
 
@@ -136,7 +140,8 @@ The compact production proof stack is:
 - `push-remote-liveness-topology-contract.json` for the liveness split that
   keeps dry-run and apply separate while apply revalidates fresh live hashes
 - `push-protocol-extension-contract.json` for the full production ladder from
-  preflight through inspect-first recovery
+  preflight through inspect-first recovery, including the pull/export/import
+  bridge and the one-remote-one-local test topology
 
 The pull-to-push bridge is one-way:
 
@@ -147,6 +152,21 @@ The pull-to-push bridge is one-way:
   storage boundary
 - journal inspect stays read-only
 - recovery starts with inspect before any mutating repair
+
+The production proof order is also one-way:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to one live remote identity and one
+  short-lived session
+- remote snapshot hash listing stays planning-only and never becomes write
+  authority
+- dry-run uploads the canonical plan and returns an eligibility receipt
+- apply revalidates fresh live evidence before every batch and again at the
+  storage boundary
+- journal inspect remains read-only
+- recovery starts with inspect and only mutates when the journal plus fresh
+  live hashes prove the action safe
 
 That bridge also defines the recovery floor:
 

@@ -170,6 +170,10 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-topology-contract.json` is the compact production bundle
   that keeps the same one-remote, one-local, one-drift topology and the
   push-stage sequence in a single object.
+- `push-protocol-extension-contract.json` is the canonical production ladder
+  bundle. It ties the persisted pull base to preflight, remote snapshot hash
+  listing, dry-run plan upload, batched apply, journal inspect, and
+  inspect-first recovery in one object.
 - The test topology is the same in both harnesses: `remote-base` seeds the
   persisted pull base, `local-edited` holds the imported local edits,
   `remote-changed` is the same remote identity after drift, and `runner`

@@ -156,6 +156,7 @@
     "one remote source site, one imported local site, and one drift witness are enough to prove the production topology",
     "remote snapshot hash listing may page large sites but never becomes write authority",
     "dry-run and apply stay separate even when the same runner executes both",
-    "recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair"
+    "recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair",
+    "the pull exporter/importer pipeline remains the only source of immutable push provenance"
   ]
 }
