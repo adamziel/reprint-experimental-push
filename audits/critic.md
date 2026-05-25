@@ -4,13 +4,13 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, and release-verification binding to the supplied source URL. That is concrete progress, but it is still lab evidence. It does not yet prove a live WordPress auth/session lifecycle, preserved-remote retention after rejection, lease/fenced durable journal storage on production-like storage, graph identity, or plugin-driver coverage on one rerunnable mutation boundary. Reprint, ZS-Sync, and ForkPress only supply provenance for transport, discovery, and crash-consistency vocabulary; their source notes are input, not proof, and none replace a rerunnable live push boundary on this branch.
+The supervised reliable-executor lane now has material retained-source evidence: a remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, a production-shaped apply-revalidation proof, and release-verification binding to the supplied source URL. That is concrete progress, but it is still lab evidence. It does not yet prove a live WordPress auth/session lifecycle, preserved-remote retention after rejection, lease/fenced durable journal storage on production-like storage, graph identity, or plugin-driver coverage on one rerunnable mutation boundary. Reprint, ZS-Sync, and ForkPress only supply provenance for transport, discovery, and crash-consistency vocabulary; their source notes are input, not proof, and none replace a rerunnable live push boundary on this branch.
 
 The next production proof must be one rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`: preserve the rejected remote, reject stale authority before the first write, rebuild authority from fresh live hashes at apply time, and keep the same live mutation boundary rerunnable while real WordPress auth/session state, lease-fenced journal storage, graph identity, and plugin-driver coverage are all proven on that same boundary.
 
 ## What still blocks the claim
 
-1. Production WordPress auth/session lifecycle is not proven on a live mutation boundary.
+1. Production WordPress auth/session lifecycle is not proven on a live mutation boundary, including expiry, refresh, and operator re-entry after rejection.
 2. Preserved-remote retention after rejection is not proven, so manual resolution is not auditable retry authority.
 3. Apply-time revalidation from fresh live hashes is not proven on the same mutation that produced the rejection, so stale approval can still masquerade as retry authority.
 4. Durable journal storage with lease/fencing is only proven in retained-source or lab harness form, not on production-like storage that survives rejection and retry.
@@ -19,7 +19,7 @@ The next production proof must be one rerunnable live boundary on a real local, 
 7. Partial file, DB, cache, cron, and plugin side effects can still mix without a recovery artifact that says what committed, what was blocked, what stayed preserved, and what must be retried.
 8. There is still no single rerunnable live boundary that proves preserved-remote retention, stale-authority rejection before the first write, apply-time revalidation from fresh hashes, graph identity, and late plugin-owned surface coverage together.
 9. The journal has not been proven to survive a real lease/fencing handoff on durable storage while the same boundary remains rerunnable after rejection.
-10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation, including credential expiry, refresh, and operator re-entry on the same rerunnable source URL.
+10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts plus a production-shaped apply-revalidation proof; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation, including credential expiry, refresh, and operator re-entry on the same rerunnable source URL.
 11. No retained-source verdict should be treated as production-grade if it does not survive a rerunnable live mutation on the same source URL with the rejected remote still inspectable.
 
 ## Hidden-loss scenarios
