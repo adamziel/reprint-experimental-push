@@ -1,22 +1,22 @@
-Narrowed diagnosis for test/performance-model.test.js hang
-
 Focused command:
-node --test --test-name-pattern='guarded executor report keeps the large-upload and plugin-install evidence visible' test/performance-model.test.js
+`timeout 20s node --test --test-name-pattern='guarded executor report keeps the large-upload and plugin-install evidence visible' test/performance-model.test.js`
 
 Result:
-passed in about 4.5 seconds.
+Passed in about 4.5 seconds.
 
-Additional focused command:
-node --test --test-name-pattern='safe fast paths retain all gate proofs and stay non-rejectable' test/performance-model.test.js
-
-Result:
-passed in under 1 second.
-
-Conclusion:
-The full-file timeout appears pre-existing and not caused by the newest fast-path additions in the guarded-executor test area. The focused guarded-executor test completes, so the hang is not reproducible at that test boundary.
-
-Current iteration full-file check:
-timeout 60s node --test test/performance-model.test.js
+Neighboring regression check:
+`timeout 20s node --test --test-name-pattern='safe fast paths retain all gate proofs and stay non-rejectable' test/performance-model.test.js`
 
 Result:
-timed out after printing only `TAP version 13`.
+Passed in about 0.2 seconds.
+
+Full-file command:
+`timeout 60s node --test test/performance-model.test.js`
+
+Result:
+Timed out after printing only `TAP version 13`.
+
+Diagnosis:
+- The timeout appears pre-existing, not introduced by the newest fast-path coverage.
+- The rejected shortcut proof remains safe to keep.
+- `node --test test/performance-model.test.js` still cannot complete within 60 seconds.
