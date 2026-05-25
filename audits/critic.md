@@ -22,7 +22,10 @@ On this audit branch, the local script inventory still shows only `plan`,
 `apply`, `test`, and playground/recovery compatibility helpers in
 `package.json`; there is no named real-site release command on this branch
 yet. That is a branch-local gap, not a contradiction of the supervised
-reliable-executor lane, and it is not the main production blocker by itself.
+reliable-executor lane, and it is not the main production blocker by itself;
+the main blocker remains the missing rerunnable live boundary with preserved-
+remote audit evidence on a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL`.
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
