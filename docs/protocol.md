@@ -158,6 +158,10 @@ The end-to-end companion at
 [`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
 ties the pull provenance, push ladder, and Docker/Playground topology into a
 single production contract that spans preflight through inspect-first recovery.
+Its `remote_liveness` block makes the live-remote boundary explicit: snapshot
+hashes are planning evidence only, dry-run is an eligibility receipt only,
+apply revalidates before every batch and at the storage boundary, and
+mutating recovery still requires fresh live hashes plus journal evidence.
 
 For machine-readable verification, the compact contract fixture at
 [`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
@@ -167,6 +171,19 @@ binds the pull base to one remote identity and one short-lived session,
 snapshot listing is planning evidence only, dry-run is a receipt not a lock,
 apply revalidates fresh live evidence at every batch and storage boundary, and
 recovery inspect must happen before any mutating repair.
+
+The pull/export/import pipeline remains the provenance source of truth:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- push preflight binds that base package to one live remote identity and one
+  short-lived push session
+- push snapshot hashes list the live comparison set for planning only
+- push dry-run uploads the canonical plan as eligibility evidence only
+- push batch apply revalidates the live remote before every batch and at the
+  storage boundary
+- push journal and push recover inspect read durable evidence before any
+  mutating recovery mode
 
 ## Read/Write Split
 

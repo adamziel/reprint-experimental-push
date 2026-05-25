@@ -178,6 +178,18 @@ observed twice, one local edited clone, and one runner that owns the full
 push lifecycle. The proof is about identity stability plus fresh live
 revalidation, not about container count.
 
+For implementation and test writing, treat the topology as:
+
+- `remote-base` seeds the persisted pull base and the first live snapshot
+- `local-edited` holds the user changes that become the canonical plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, upload a dry-run
+  plan, apply batches, inspect the journal, and run inspect-first recovery
+- Docker and Playground must both keep browser-visible inspection on the
+  sandbox-provided `8080` ingress through a local-only proxy
+- the snapshot listing is planning evidence only and must never be treated as
+  a lock or reservation
+
 That proof must hold in both Docker and Playground:
 
 - Docker keeps the roles on one private network and uses the sandbox-provided

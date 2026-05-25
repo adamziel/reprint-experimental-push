@@ -44,6 +44,13 @@
       "proof": "mutates only when the journal and fresh live hashes prove the action"
     }
   ],
+  "remote_liveness": {
+    "dry_run": "uploads an eligibility receipt only and never reserves remote state",
+    "apply": "revalidates the live remote before every batch and again at the storage boundary",
+    "journal": "reads durable evidence without authorizing mutation",
+    "recovery_inspect": "must happen before any mutating recovery mode",
+    "recovery_mutate": "requires fresh live hashes plus journal evidence"
+  },
   "journal_and_recovery": {
     "journal_inspect": "reads durable evidence without authorizing mutation",
     "recover_inspect": "must happen before any mutating recovery mode",
@@ -62,7 +69,13 @@
       "remote_changed": "remote-changed",
       "proof": [
         "one private network",
-        "remote-base and remote-changed are the same remote identity at different times"
+        "remote-base and remote-changed are the same remote identity at different times",
+        "push snapshot hashes are planning evidence only",
+        "push dry-run returns a receipt, not a lock",
+        "push batch apply revalidates live evidence before every batch and at the storage boundary",
+        "push journal stays read-only",
+        "push recovery inspect happens before any mutating repair",
+        "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     },
     "playground": {
@@ -71,7 +84,13 @@
       "remote_changed": "remote-changed",
       "proof": [
         "separate disposable blueprints",
-        "remote-base and remote-changed are the same remote identity at different times"
+        "remote-base and remote-changed are the same remote identity at different times",
+        "push snapshot hashes are planning evidence only",
+        "push dry-run returns a receipt, not a lock",
+        "push batch apply revalidates live evidence before every batch and at the storage boundary",
+        "push journal stays read-only",
+        "push recovery inspect happens before any mutating repair",
+        "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     }
   },
@@ -80,6 +99,8 @@
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
+    "push snapshot hashes are planning evidence only and never become write authority",
+    "push dry-run is an eligibility receipt, not a lock",
     "authentication must be at least as strict as current Reprint HMAC usage"
   ]
 }

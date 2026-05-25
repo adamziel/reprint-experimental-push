@@ -225,6 +225,18 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'pull exporter/importer establish the immutable base package before push',
     ),
   );
+  assert.equal(
+    readJson('fixtures/protocol/push-production-ladder-contract.json').remote_liveness.dry_run,
+    'uploads an eligibility receipt only and never reserves remote state',
+  );
+  assert.equal(
+    readJson('fixtures/protocol/push-production-ladder-contract.json').remote_liveness.apply,
+    'revalidates the live remote before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    readJson('fixtures/protocol/push-production-ladder-contract.json').remote_liveness.recovery_mutate,
+    'requires fresh live hashes plus journal evidence',
+  );
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
   assert.equal(
     contract.proofs.auth_session_journal,
