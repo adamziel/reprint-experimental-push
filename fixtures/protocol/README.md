@@ -86,9 +86,10 @@ For the canonical production ladder and topology handoff, cite:
 2. `push-production-push-recovery-contract.json`
 3. `push-production-topology-contract.json`
 4. `push-production-pull-bridge-contract.json`
-5. `push-production-auth-session-journal-recovery-inspect-contract.json`
-6. `push-production-journal-lease-recovery-inspect-contract.json`
-7. `push-production-executor-flow-contract.json`
+5. `push-production-route-matrix-contract.json`
+6. `push-production-auth-session-journal-recovery-inspect-contract.json`
+7. `push-production-journal-lease-recovery-inspect-contract.json`
+8. `push-production-executor-flow-contract.json`
 
 The seven protocol surfaces are the ones the executor must treat as distinct
 remote boundaries:
