@@ -30,16 +30,20 @@ Primary critic finding:
 
 - the branch still has no named real-site release command that reruns the same
   live boundary against a real local, Playground, or Docker
-  `REPRINT_PUSH_SOURCE_URL` and preserves the rejected remote for audit; until
-  that exists, any "production-grade push support" claim is false reliability,
-  even if the executor, route shape, and retained-source replay all look
-  correct.
+  `REPRINT_PUSH_SOURCE_URL`, rejects stale authority before the first write,
+  and preserves the rejected remote for audit and retry; until that exact
+  boundary exists, any "production-grade push support" claim is false
+  reliability, even if the executor, route shape, and retained-source replay
+  all look correct.
 
 What still blocks production-grade wording:
 
 - a live rerun must print the exact command string, executor identity, live
   auth/session boundary, preserved remote, rejection point, dry-run receipt,
   apply-time revalidation, and journal/recovery inspect for the same boundary;
+- the same rerun must prove that any drift discovered after dry-run but before
+  apply is rejected without losing the original remote state, and that retry
+  scope is rebuilt from fresh live hashes rather than manual judgment;
 - the evidence must classify every touched row, file, relationship-bearing
   record, and plugin-owned surface old, new, or blocked before retry starts,
   including hidden tables, cron rows, runtime registries, generated files,
@@ -63,6 +67,9 @@ What must change before production-grade wording is defensible:
   string, executor identity, live auth/session boundary, preserved remote,
   exact rejection point, dry-run receipt, apply-time revalidation, and
   journal/recovery inspection for the same boundary;
+- that command must also show the preserved remote is still inspectable after
+  rejection, so audit and retry can both be verified instead of only asserted
+  in review prose;
 - the branch must prove live old/new/blocked classification for every touched
   row, file, relationship-bearing record, and plugin-owned surface before
   retry starts, including any hidden table, cron row, runtime registry,
@@ -138,8 +145,6 @@ What still must be proved before production wording is allowed:
   write boundary, not just login or request authorization;
 - the same command proves durable journal semantics outside the retained-
   source Playground lab path, not just a local `verify:release` replay;
-- the preserved remote stays inspectable after rejection, so audit and retry
-  are both possible without losing the original remote state;
 - every touched row, file, relationship-bearing record, and plugin-owned
   surface is classified old, new, or blocked before retry starts, including
   partial file, DB, and plugin side effects;
