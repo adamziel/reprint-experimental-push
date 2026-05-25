@@ -963,6 +963,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-finalize',
+    proposal: 'treat a compressed remote index plus a cached manifest hash as enough proof to skip plugin-install finalization',
+    rejectedBecause: 'planning evidence and cached manifest hashes can reduce lookup work, but they cannot prove dependency checks, staged rows, or the atomic-group commit survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize',
     proposal: 'treat a compressed remote index plus a cached package hash as enough proof to skip plugin-install finalization',
     rejectedBecause: 'planning evidence and cached package hashes can reduce planning and lookup work, but they cannot prove dependency checks, metadata writes, staged files, or the atomic-group commit survived failure',
