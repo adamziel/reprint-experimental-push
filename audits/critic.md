@@ -1132,7 +1132,8 @@ design still needs proof for each of these failure classes:
   states were not reverified, the notes are context only.
 - Route-shape, packaged-plugin mounting, fixture replay, and `finalMatchesLocal`
   remain lab evidence only; none of them prove live mutation safety on their
-  own.
+  own, even when they return plausible live-looking hashes or accept a
+  production-shaped path.
 
 ## Comparison Summary
 

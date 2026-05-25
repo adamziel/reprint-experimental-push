@@ -7,9 +7,10 @@ support.
 - The claim cites a live write-path proof on the actual request path, not
   only route shape, packaged-plugin mounting, fixture replay, or
   `finalMatchesLocal`.
-- A lab-shaped route that only matches ingress, endpoint name, or package
-  layout is compatibility evidence only; it does not prove the production
-  executor ran, the remote was preserved, or stale authority failed closed.
+- A lab-shaped route that only matches ingress, endpoint name, package
+  layout, or a live-looking hash is compatibility evidence only; it does
+  not prove the production executor ran, the remote was preserved, or stale
+  authority failed closed.
 - A green lab smoke is never enough unless the same request path was re-run
   against a live remote after drift and the stale attempt failed before any
   mutation.
