@@ -372,12 +372,12 @@ The objective is to push local changes back to the original WordPress source sit
 
 The test suite is useful, but it does not yet prove the release claims it is most often associated with:
 
-- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) proves planner behavior, live-remote precondition modeling, and refusal on conflicts. It does not prove the actual production push boundary or a live remote mutation path, so it is not release proof for no data loss.
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) proves planner behavior, live-remote precondition modeling, and refusal on conflicts. It is indirect proof only: it does not execute a live remote mutation or recheck the source immediately before apply.
 - [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) proves file-backed journal monotonicity, redaction, and restart classification in fixtures. It does not prove production storage durability, lease handling, fencing, or process death recovery on the live source.
 - [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) proves benchmark shape and guardrail modeling. It does not time the real push path, measure memory, or establish a release threshold, so it is refusal scaffolding rather than throughput proof.
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the repo refuses unsupported throughput claims and blocks tampered benchmark evidence. It does not prove a positive speed claim, so it cannot justify a "fast" release claim or stand in for a production benchmark.
-- [`npm test`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a sanity check, not a release gate, and even a passing run is still only blocker evidence because it cannot prove no data loss, reliability, or speed on the live source boundary.
-- [`npm run test:playground`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a lab smoke chain, not a production approval path, and its strongest authenticated route still reports `labBacked: true`.
+- [`npm test`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a sanity check, not a release gate. Even when it passes, it is still blocker evidence because it cannot prove no data loss, reliability, or speed on the live source boundary.
+- [`npm run test:playground`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a lab smoke chain, not a production approval path. Its strongest authenticated route still reports `labBacked: true`, so it remains lab evidence even when green.
 
 The important distinction is that the suite can reliably prove failure modes and boundary refusals, but it still does not provide one executable success path at the live-source release boundary. That means the strongest current tests are blockers, not approvers: they can tell you when a claim is unsafe, but they cannot yet certify that the claim is safe enough to ship.
 
@@ -387,6 +387,7 @@ Current test verdict:
 - Weak at proving live-source no-data-loss, production reliability, and measured speed.
 - Insufficient as a release approval surface because it can still be bypassed by command choice.
 - Specifically, the current suite proves local consistency and lab-scoped failure handling, but it does not prove a real live mutation boundary, a production durability path, or a measured production speed threshold.
+- The green `npm test` result, even at 89 passing tests, remains blocker evidence only because it never becomes the single enforced release decision point.
 
 Command verdict:
 
