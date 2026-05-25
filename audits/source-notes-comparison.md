@@ -67,6 +67,9 @@ What it does not prove:
 A production-grade push claim may cite these notes only as historical or
 design context unless the exact upstream revision or worktree state was
 reverified and the same live write boundary was exercised in this repo.
+If the claim only shows a route-shaped smoke, package mount, or
+`finalMatchesLocal` result, the note stays historical context and cannot
+stand in for live proof.
 Without that revalidation, the notes cannot backfill missing proof for:
 
 - live remote drift rejection,
@@ -85,6 +88,9 @@ remains context only.
 Manual-review artifacts, route-shape smokes, and `finalMatchesLocal` results
 stay in the same bucket: useful for lab review, but not retry authority and
 not proof that the cited upstream note maps to current production behavior.
+If a manual-review artifact is still readable after drift but has not been
+rejected before write, that readability is audit evidence only, not proof of a
+safe retry.
 That also covers any live-looking hash emitted by a fixture-backed or
 copied-lab path behind a production-shaped mount: the hash may confirm the
 route answered, but it still does not prove the live mutation executor ran.
