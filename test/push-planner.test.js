@@ -13290,6 +13290,12 @@ test('atomic recovery boundaries only land in approved states and completed repl
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  const replayInspection = inspectRecoveryJournal({
+    journal: readRecoveryJournal(completedJournalPath),
+    plan,
+    current: replayRemote,
+  });
+  assert.equal(replayInspection.status, 'fully-updated-remote');
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
