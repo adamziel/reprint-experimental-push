@@ -2231,7 +2231,8 @@ present in the proof:
   cron rows, cache entries, runtime registries, or other side effects.
 - "The comparison proves it" when the Reprint, ZS-Sync, or ForkPress note was
   not reverified against the exact upstream revision or worktree state at the
-  same live mutation boundary.
+  same live mutation boundary, even if the route name, package mount, or hash
+  looks current.
 - "Recovery succeeded" when one store committed and the rest were only
   classified, because mixed file, DB, or plugin writes still need durable
   old/new/blocked evidence and a retry that starts from fresh live evidence.
@@ -2256,7 +2257,8 @@ Production-readiness checklist:
   write boundary is reverified in this repo.
 - Show that any Reprint, ZS-Sync, or ForkPress comparison was reverified at
   the cited upstream revision or worktree, at the same live mutation
-  boundary; otherwise the note remains historical context only.
+  boundary; otherwise the note remains historical context only and cannot
+  support any production wording.
 - Show a release gate that fails closed when any of the above is missing and
   that records the exact rejection reason for audit and retry.
 
