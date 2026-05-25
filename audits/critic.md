@@ -2828,3 +2828,23 @@ False reliability claims to avoid:
   remote drifted, that artifact stays audit-only and cannot authorize a retry
   against any different row, file, relationship-bearing record, or
   plugin-owned surface.
+
+Production claim bar:
+
+Do not call the design production-grade push support unless the claim names
+all of these in the same branch-local proof:
+
+- the exact live write path that failed closed after drift, before mutation;
+- the preserved remote snapshot that remained auditable after reject;
+- the fresh retry artifact that was recorded separately from the stale review
+  artifact;
+- the create-time identity decision, including any rename, alias, or renumber
+  case, or the hard block that prevented mutation;
+- the full plugin-owned surface inventory for the exercised claim, with
+  anything unknown or outside the allowlist hard-blocked at apply time; and
+- the durable old/new/blocked classification for every touched file, DB, or
+  plugin side effect.
+
+If any one of those is missing, the claim is still lab-backed or historical
+context, even if the route shape, packaged mount, fixture replay, or
+`finalMatchesLocal` hash looks production-shaped.
