@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:41:01
+
+<a id="2026-05-25-public-status-audit-094101"></a>
+
+- Published a small shipping-step update in [progress.html](../progress.html):
+  the production-shaped proof gate now calls out missing live-source evidence
+  explicitly, while the overall release gate status stays at 0/4 verified.
+- Kept the public summary conservative: lab-only evidence, flat release
+  status, and the same four pending gates remain in view.
+- Evidence trail: [progress.html](../progress.html),
+  [live-source smoke](../scripts/playground/production-shaped-live-source-gate-smoke.mjs),
+  [production-shaped proof](../scripts/playground/production-shaped-proof.mjs),
+  [newest audit](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 09:38:55
 
 <a id="2026-05-25-public-status-audit-093855"></a>
