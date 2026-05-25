@@ -36,6 +36,15 @@ specific missing proofs:
   retry cannot widen the old approval or turn recovery evidence into current
   authority.
 
+One more claim needs to stay blocked even when the route, mount, or hash looks
+healthy: a stale manual-review artifact is not a success path just because it
+remains readable. If that artifact can still authorize a retry against a new
+row, file, relationship-bearing record, or plugin-owned surface, the design
+has not shown remote preservation or fresh-scope revalidation. "Manual
+resolution later" only becomes acceptable after the remote-preserving audit
+trail, the stale-artifact rejection point, and the fresh retry scope are all
+observable on the same live write boundary.
+
 The missing evidence for each one is concrete:
 
 - For live drift, the audit needs the actual stale hash set and the exact
