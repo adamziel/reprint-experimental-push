@@ -218,6 +218,21 @@ stages:
 | Immutable provenance plus fresh live hashes | `push_recover inspect` | Read the journal and fresh live hashes before any mutating repair. |
 | Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe with the same auth floor as the write path. |
 
+The proof set stays split across focused production contracts:
+
+- `push-production-topology-contract.json` proves the one-remote, one-local,
+  one-drift harness in Docker and Playground.
+- `push-production-pull-bridge-contract.json` proves the exporter/importer
+  handoff into push.
+- `push-production-auth-session-journal-recovery-inspect-contract.json`
+  proves auth, push-session minting, journal rows, lease fencing, and
+  apply-time revalidation.
+- `push-production-journal-lease-recovery-inspect-contract.json` proves the
+  journal row, lease fence, and inspect-first recovery branch after dry-run
+  and apply have already split.
+- `push-production-executor-flow-contract.json` proves the compact end-to-end
+  route order from preflight through inspect-first recovery.
+
 That mapping keeps the pull pipeline separate from the push mutation path:
 
 - exporter discovers the merge base and coverage evidence

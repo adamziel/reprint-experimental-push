@@ -74,8 +74,24 @@ with the executor topology:
   proves the auth floor, short-lived push session, journal rows, lease fence,
   apply-time revalidation, and inspect-first recovery branch on the same
   remote identity.
+- `push-production-journal-lease-recovery-inspect-contract.json` isolates the
+  journal row, lease fence, and inspect-first recovery evidence after dry-run
+  and apply have already split.
 - `push-production-executor-flow-contract.json` proves the full preflight
   through inspect-first recovery flow in one compact object.
+
+The production proof inventory is intentionally redundant across those
+contracts so each risk has a dedicated object:
+
+| Risk area | Primary proof |
+| --- | --- |
+| Auth floor and session minting | `push-production-auth-session-journal-recovery-inspect-contract.json` |
+| Remote snapshot hash listing | `push-production-executor-flow-contract.json` |
+| Dry-run plan upload | `push-production-executor-flow-contract.json` |
+| Batched apply revalidation | `push-production-auth-session-journal-recovery-inspect-contract.json` |
+| Journal rows and lease fencing | `push-production-journal-lease-recovery-inspect-contract.json` |
+| Recovery inspect | `push-production-journal-lease-recovery-inspect-contract.json` |
+| Docker and Playground topology | `push-production-topology-contract.json` |
 
 The same proof set also defines the pull-to-push bridge in production terms:
 
