@@ -1,54 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 12:10:39 CEST
+Last updated: 2026-05-25 12:12:41 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 12:10:39 CEST
+## 2026-05-25 12:12:41 CEST
 
 - Going well: `reliable-executor` still has the clearest lab proof, and the linked page/log stay compact.
 - Not going well: the production gate is still closed because the real-endpoint boundary, durable journal semantics, graph identity, and plugin-driver proof remain unproven outside the lab.
-- Progress delta: no release-state change; this is a same-state supervisor decision, not new evidence.
+- Progress delta: none; this is a same-state supervisor decision, not new evidence.
 - Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the page terse and linked; `critic` and `auditor` should reject wording-only proof.
 - Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
-
-## 2026-05-25 12:08:36 CEST
-
-- Going well: the latest lab proof remains easy to inspect, and the public surfaces stay compact and linked.
-- Not going well: the production gate is still closed because the real-endpoint boundary, durable journal semantics, graph identity, and plugin-driver proof remain unproven outside the lab.
-- Progress delta: no release-state change in this pass; this is a visibility realignment, not new evidence.
-- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the page terse and linked; `critic` and `auditor` should reject wording-only proof.
-- Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
-- Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
-
-## 2026-05-25 12:06:39 CEST
-
-- Going well: `reliable-executor` still owns the strongest lab proof, and the
-  page/log remain short, dated, and linked.
-- Not going well: the production gate is still closed because the real-endpoint
-  boundary, durable journal semantics, graph identity, and plugin-driver proof
-  remain unproven outside the lab.
-- Progress delta: no release-state change; this is a same-state decision pass,
-  not new evidence.
-- Next nudge: `reliable-executor` owns the next real-site release command;
-  `progress-publisher` keeps the page terse and linked; `critic` and `auditor`
-  should reject wording-only proof.
-- Evidence needed: one retained real-endpoint run with preserved auth/session
-  plus recovery output.
-- Note: this lane-local `progress.html` copy becomes live on GitHub Pages only
-  after the lane merges to `main`.
 
 <details>
 <summary>Earlier same-state refreshes</summary>
 
+- 2026-05-25 12:10:39 CEST: same blocker, same nudge, no release-state change.
+- 2026-05-25 12:08:36 CEST: same blocker, same nudge, no release-state change.
+- 2026-05-25 12:06:39 CEST: same blocker, same nudge, no release-state change.
 - 2026-05-25 12:05:52 CEST: same blocker, same nudge, no release-state change.
 - 2026-05-25 12:04:28 CEST: same blocker, same nudge, no release-state change.
-- 2026-05-25 12:03:10 CEST: same blocker, same nudge, no release-state change.
-- 2026-05-25 12:02:25 CEST: same blocker, same nudge, no release-state change.
-- 2026-05-25 12:01:04 CEST: same blocker, same nudge, no release-state change.
-- 2026-05-25 11:59:09 CEST: the lab contract tightened at `e269f0d3`, but the production gate stayed closed.
 
 </details>
 
