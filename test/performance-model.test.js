@@ -179,6 +179,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.failureEvidence,
     'planning cursor plus cached digest and guarded file-publish record',
   );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'parallelize-independent-owner-index-scans-within-site-budgets')?.visibilityBoundary,
+    'planning-only-with-site-budgets',
+  );
 });
 
 test('file hashing and compression decisions preserve canonical hashes', () => {

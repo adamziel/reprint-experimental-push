@@ -327,6 +327,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'remote-indexes',
+    reduces: ['planning-round-trips', 'idle-time', 'owner-isolation-overhead'],
+    allowedShortcut: 'parallelize-independent-owner-index-scans-within-site-budgets',
+    guardrails: [
+      'index-scan-stays-planning-only',
+      'owner-partitions-stay-within-per-site-concurrency-budgets',
+    ],
+    gateProofs: {
+      skip: 'independent owner partitions can scan in parallel so long as each scan only produces planning evidence for the next live compare',
+      live: 'each later mutation still rechecks its own live resource precondition at the storage boundary',
+      group: 'parallel index scans do not widen the atomic-group barrier for any plugin-owned file, row batch, or activation state',
+      recovery: 'the planning cursors, owner partitions, and later receipts still classify pause or crash without guessing which owner advanced',
+    },
+    visibilityBoundary: 'planning-only-with-site-budgets',
+    failureEvidence: 'owner-partitioned planning cursor plus per-owner durable receipts',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'database-row-batching',
     reduces: ['round-trips', 'rescan-work', 'batch-shape-recomputation'],
     allowedShortcut: 'reuse-planned-dependency-graph-to-presize-bounded-plugin-update-batches',
