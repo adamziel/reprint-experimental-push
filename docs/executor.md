@@ -33,6 +33,16 @@ environments:
 - `runner` is the only actor that may preflight, list hashes, dry-run, apply,
   inspect the journal, or recover.
 
+The production proof uses one remote identity across both the base and drift
+observations, with the imported local edit site carrying the only local
+mutation surface:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` is the imported local edit site derived from that package.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover.
+
 ## Canonical Execution
 
 The executor follows the production ladder in `protocol.md` without changing
@@ -70,6 +80,26 @@ The pull/export/import pipeline is the only immutable provenance source:
 - `push_recover auto|finish|rollback` mutates only after inspect proves the
   branch safe with the same auth floor as the write path
 
+That mapping is the direct bridge from the exporter/importer pipeline into the
+push executor:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the only pull-derived input the executor
+  may consume
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` stays planning-only and never becomes write
+  authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary
+- `push_journal` records durable evidence, but never authorizes mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe with the same auth floor as the write path
+
 The production topology is fixed:
 
 - one remote source site, `remote-base`
@@ -81,6 +111,15 @@ The production topology is fixed:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+
+The executor and the protocol both require the same liveness split:
+
+- dry-run is a receipt, not a lock
+- apply is a separate remote operation
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- recovery inspect is read-only and must happen before any mutating repair
+- recovery mutation still requires the same auth floor as the write path
 
 ## Canonical Execution Ladder
 
