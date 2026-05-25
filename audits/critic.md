@@ -1523,6 +1523,9 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   remote mutation path was reproduced with a drifted remote, the stale
   approval was rejected before any write, and the preserved remote snapshot
   can still be audited and retried safely.
+- The release claim must name the exact request path, auth mode, and storage
+  boundary used for that drifted-remote proof; matching route shape or
+  package layout alone is compatibility evidence, not production proof.
 - A mounted route that returns live-looking hashes still has to prove how
   partial file, DB, or plugin side effects are classified and retried; the
   hash alone never proves the write executor, the plugin-owned boundary, or
@@ -1541,6 +1544,10 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
 - A claim that cites those notes must say whether the upstream revision or
   worktree was reverified. If it was not, the note is historical context only
   and cannot support production wording.
+- Any unverified Reprint, ZS-Sync, or ForkPress note remains historical
+  context even if the route name, package mount, or expected hash looks
+  production-shaped; it is not current upstream proof without the exact live
+  mutation boundary being rechecked.
 - Status comments, branch notes, and release notes must not cite source-note
   comparisons or live-looking hashes as substitutes for current production
   proof.
