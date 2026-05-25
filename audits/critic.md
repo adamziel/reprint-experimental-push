@@ -6631,6 +6631,12 @@ Release gate for production-grade wording:
 - the claim says what each source note proves here and what it does not prove
   here, so Reprint, ZS-Sync, and ForkPress stay provenance unless this branch
   reran the same live boundary with fresh live hashes; and
+- the claim rejects any `finalMatchesLocal`, route-shaped smoke, production-
+  shaped URL, or readable manual-resolution note as production proof unless
+  it is paired with the same live boundary, the preserved remote that stayed
+  inspectable after rejection, the exact rejection point before the first
+  write, and the fresh retry scope rebuilt from live hashes on this branch;
+  and
 - the claim rejects "manual resolution", "comparison passed", and
   "production-ready" as success labels unless the live rerun, preserved remote,
   rejection point, and per-surface classification are all present together.
