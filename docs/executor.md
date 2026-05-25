@@ -1266,7 +1266,8 @@ test code, and [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint
 captures the pull-to-push handoff that the executor must preserve.
 [`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
 is the compact executor proof that ties the pull pipeline, the production
-push ladder, and the sandbox ingress rules together.
+push ladder, auth/session fencing, inspect-first recovery, and the sandbox
+ingress rules together.
 [`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
 ties the production ladder together: preflight, snapshot listing, dry-run,
 batch apply, journal inspect, and inspect-first recovery all stay separate.
@@ -1285,7 +1286,8 @@ The fixtures are intentionally narrow:
 - `push-topology.json` asserts the one-remote, one-local, one-drift-witness
   shape for Docker and Playground, plus the sandbox-only 8080 ingress rule.
 - `push-executor-topology-proof.json` compresses the same proof into the
-  executor-facing contract that also names the push ladder.
+  executor-facing contract that also names the push ladder, preflight session
+  fencing, and inspect-first recovery boundary.
 
 Minimal Compose shape:
 

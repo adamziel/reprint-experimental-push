@@ -157,6 +157,29 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.roles.local_edited, 'one imported local site with user edits');
   assert.equal(topologyMatrix.roles.remote_changed, 'the same remote site observed later after independent drift');
   assert.equal(topologyMatrix.roles.runner, 'the only process allowed to preflight, plan, upload, inspect, revalidate, and recover');
+  assert.equal(topologyMatrix.networking.ingress_port, 8080);
+  assert.equal(topologyMatrix.networking.proxy_policy, 'local-only');
+  assert.equal(topologyMatrix.networking.tunnels, 'disallowed');
+  assert.ok(
+    topologyMatrix.docker.proof.includes(
+      'push preflight mints one short-lived session bound to the persisted base and live remote identity',
+    ),
+  );
+  assert.ok(
+    topologyMatrix.docker.proof.includes(
+      'recovery inspect happens before any mutating repair',
+    ),
+  );
+  assert.ok(
+    topologyMatrix.playground.proof.includes(
+      'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
+  assert.ok(
+    topologyMatrix.required_invariants.includes(
+      'push preflight must mint a short-lived session bound to one remote identity and one persisted pull base',
+    ),
+  );
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
   assert.equal(
     contract.proofs.auth_session_journal,
@@ -413,7 +436,10 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
       'remote-base and remote-changed are the same remote identity at different times',
     ),
   );
-  assert.equal(executorTopologyProof.push_pipeline.recovery, 'starts with inspect and allows mutating repair only when the journal and live hashes prove the action');
+  assert.equal(
+    executorTopologyProof.push_pipeline.recovery,
+    'allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action',
+  );
   assert.equal(executorTopologyProof.topology.networking.ingress_port, 8080);
   assert.equal(executorTopologyProof.topology.networking.proxy_policy, 'local-only');
   assert.equal(executorTopologyProof.topology.networking.tunnels, 'disallowed');

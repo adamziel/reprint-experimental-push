@@ -127,9 +127,10 @@ boundary and the same stage order.
 
 The executor-topology companion at
 [`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
-binds the pull pipeline, push stages, and ingress policy into one compact proof
-object. It is the shortest machine-readable summary of the production push
-contract and the one-remote/one-local test topology.
+binds the pull pipeline, push stages, auth/session fencing, recovery inspect,
+and ingress policy into one compact proof object. It is the shortest
+machine-readable summary of the production push contract and the
+one-remote/one-local test topology.
 
 ## Topology
 

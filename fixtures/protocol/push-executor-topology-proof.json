@@ -17,7 +17,8 @@
     "dry_run": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
     "apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
     "journal": "reads durable evidence without authorizing mutation",
-    "recovery": "starts with inspect and allows mutating repair only when the journal and live hashes prove the action"
+    "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block without mutation",
+    "recovery": "allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action"
   },
   "topology": {
     "networking": {
@@ -35,6 +36,8 @@
         "remote-base and remote-changed are the same remote identity at different times",
         "dry-run and apply are separate remote operations",
         "journal inspection remains read-only before mutating recovery",
+        "push preflight mints one short-lived session bound to the persisted base and live remote identity",
+        "recovery inspect happens before any mutating repair",
         "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     },
@@ -46,6 +49,7 @@
       "proof": [
         "separate disposable blueprints",
         "remote-base and remote-changed are the same remote identity at different times",
+        "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
         "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     }
@@ -57,6 +61,7 @@
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
+    "push preflight must mint a short-lived session bound to one remote identity and one persisted pull base",
     "authentication must be at least as strict as current Reprint HMAC usage"
   ]
 }
