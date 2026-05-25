@@ -3961,9 +3961,9 @@ Do not let success wording outrun the evidence:
   for the same live boundary, and any late-discovered plugin-owned surface
   was classified separately rather than folded into the first write;
 - "production-ready push support" is not acceptable if the only supporting
-  evidence is a route-shaped smoke, fixture replay, readable review
-  artifact, `finalMatchesLocal`, or a matching upstream note without branch-
-  local live revalidation; and
+  evidence is a route-shaped smoke, lab-shaped route, fixture replay,
+  readable review artifact, `finalMatchesLocal`, or a matching upstream note
+  without branch-local live revalidation; and
 - "safe retry" is not acceptable unless every touched surface is explicitly
   classified as old, new, or blocked and any late-discovered plugin-owned
   surface is handled as a separate boundary, not folded into the earlier
@@ -3990,8 +3990,8 @@ show the following with branch-local live evidence, not lab shape:
 - any "manual resolution" claim preserved the remote for audit, recorded the
   stale rejection point, and produced a fresh retry artifact on this branch;
 - any route-shape smoke, packaged-plugin mount, fixture replay, readable
-  review artifact, or `finalMatchesLocal` result is treated as compatibility
-  evidence only; and
+  review artifact, `finalMatchesLocal` result, or lab-shaped route is
+  treated as compatibility evidence only; and
 - any Reprint, ZS-Sync, or ForkPress citation names the exact upstream
   revision or worktree state, states what that note proves, and explicitly
   states what it does not prove for this branch.
