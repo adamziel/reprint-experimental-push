@@ -915,6 +915,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   check at mutation time.
 - Compression cannot make encoded bytes the canonical resource value.
 - Parallelism cannot bypass the atomic group commit barrier.
+- Unbounded upload parallelism cannot skip backpressure just because chunk
+  receipts exist or the remote index was compressed.
+- Unbounded database parallelism cannot skip atomic group barriers just because
+  the plugin update planner already has a dependency graph.
 - Backpressure cannot drop receipts or summarize evidence so recovery loses the
   ability to classify the remote state.
 - A drained queue cannot prove that the remote acknowledged every staged chunk

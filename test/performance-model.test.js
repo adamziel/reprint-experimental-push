@@ -449,6 +449,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     'group',
   );
   assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').violates.includes('compression'),
+  );
+  assert.ok(
     rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').violates.includes('atomic-groups'),
   );
   assert.ok(
