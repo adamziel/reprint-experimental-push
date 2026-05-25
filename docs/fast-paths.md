@@ -683,6 +683,10 @@ under load:
   is rejected because planning evidence and cached batch receipts can reduce
   replay work, but they cannot prove dependency checks, per-row preconditions,
   or the atomic-group finalize survived failure.
+- compressed-remote-index-and-parallel-row-batch-skips-plugin-install-barrier
+  is rejected because parallel row batches can reduce wait time, but they
+  cannot prove which owner owns a partial row result or that the atomic-group
+  barrier survived failure.
 - compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation
   is rejected because planning evidence and cached batch receipts can reduce
   replay work, but they cannot prove activation validators passed, the live
