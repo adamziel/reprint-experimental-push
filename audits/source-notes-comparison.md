@@ -9,6 +9,10 @@ reverified the exact cited revision or worktree at the same live mutation
 boundary. If either the exact upstream state or the exact live boundary is
 missing, the note is historical context only and cannot be used to claim that
 the live executor, retry path, or manual-review flow is safe.
+In other words: a named feature family is not enough. The branch must be able
+to point to the exact upstream commit or worktree state and the exact live
+mutation boundary that was exercised here, or the comparison stays historical
+context even if it sounds current.
 
 ## Reprint
 
@@ -110,6 +114,8 @@ lab route, fixture replay, or package mount is the real production executor.
 If the claim cannot show the exact live request path, preserved remote state,
 and stale-authority rejection at the current write boundary, the comparison
 remains context only.
+If the claim cannot also show the exact upstream revision or worktree state
+that was reverified, the note cannot be promoted from context to proof.
 It also cannot be used to claim production safety for a manual-resolution
 flow unless the remote was preserved for audit, the stale approval was
 rejected before mutation, and the retry rebuilt scope from fresh live hashes

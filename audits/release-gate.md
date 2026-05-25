@@ -57,6 +57,9 @@ or comparison-only.
 - The claim shows a stale manual-review artifact cannot be widened into a
   different row, file, relationship-bearing record, or plugin-owned surface
   after drift; if it can be reused that way, the push is not production-safe.
+- The claim shows the stale review artifact is audit-only after drift and is
+  not treated as current write authority, retry permission, or a substitute
+  for a fresh live snapshot.
 - The claim shows the same live write path rejected stale authority before
   mutation, and that a route-shaped smoke or packaged-plugin mount only counts
   as compatibility evidence if it exercised that exact boundary on a drifted
@@ -106,6 +109,9 @@ or comparison-only.
   Reprint, ZS-Sync, or ForkPress comparison, and says whether that state was
   reverified at the same live write boundary. If not, the comparison is
   historical context only.
+- The claim does not let a source-note comparison imply production safety
+  unless the exact upstream revision or worktree state and the exact live
+  mutation boundary are both named and reverified.
 - The claim does not let Reprint, ZS-Sync, or ForkPress notes imply current
   upstream reliability unless the exact upstream revision or worktree state was
   reverified and the live mutation boundary was exercised in this repo.
