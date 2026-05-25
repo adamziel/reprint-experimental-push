@@ -27,6 +27,12 @@ Those requirements are the minimum release bar, not aspirational extras.
 
 The current checkout does not yet satisfy those requirements at the release boundary. The closest evidence remains split across fixture tests, lab smokes, and refusal-oriented benchmark models. That means the audit must treat any positive claim as provisional unless it is backed by executable proof on the live-source release path, not by a green default test command or a production-shaped label alone.
 
+Latest scan result:
+
+- `package.json` still has no `verify`, `release`, or `verify:release` entrypoint.
+- There is still no checked-in `.github/workflows/*` file in this checkout.
+- The strongest authenticated push route still self-identifies as `labBacked: true`, so the best current success path still labels itself as lab evidence rather than release evidence.
+
 Short version:
 
 - `npm test` is still a safety harness, not a release harness.
