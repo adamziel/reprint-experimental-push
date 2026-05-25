@@ -215,6 +215,7 @@ What the current tests actually prove:
 - `test/performance-model.test.js` proves the benchmark model encodes the intended gates, refusal states, and safe-speedup guardrails.
 - `test/guarded-executor-benchmark.test.js` proves unsupported throughput claims are refused when the model reports missing durable evidence.
 - The `npm run test:playground:*` scripts prove several lab-shaped route and storage slices, but they remain optional and do not collapse into one enforced release decision.
+- `npm test` is therefore a blocker check, not a release approver: it proves local invariants and refusal discipline, but it does not touch the live-source mutation boundary named by the objective.
 
 What they do not prove:
 
