@@ -173,6 +173,7 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.match(proof.stdout, /"apply": \{/);
   assert.match(proof.stdout, /"recoveryInspect": \{/);
   assert.match(proof.stdout, /"after": \{/);
+  assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
 });
 
 test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {

@@ -122,6 +122,10 @@ That wrapper starts a local Playground remote source and a local edited site,
 injects production-shaped auth, and prints the live preflight branch plus the
 dry-run, apply, journal, and recovery inspect evidence in the release proof.
 
+The supervisor-facing shortcut is `npm run verify:release`.
+It resolves to the same retained-source proof, so the checked command and the
+release alias stay aligned.
+
 The narrow live-preflight command for a real remote source is:
 
 ```sh

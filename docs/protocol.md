@@ -200,6 +200,11 @@ remote into the live protocol proof with production-shaped auth, and prints
 the exact live preflight result plus the release-proof status, the later
 remote-drift witness, and the live protocol evidence.
 
+The supervisor-facing release entrypoint is `npm run verify:release`.
+It is the same checked command as the live-source verify path, so the release
+proof remains a single executable surface even when the command is invoked
+through the shorter alias.
+
 When a live source URL and production-shaped credentials are present, that
 same wrapper switches to `npm run test:playground:production-shaped-live-preflight`
 and exercises the real preflight handshake instead of only the gate checks.
