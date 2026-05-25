@@ -9,13 +9,13 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `668f886c`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
-- `origin/lane/fast-paths` -> `b54f1b34`
-- `origin/lane/independent-auditor` -> `49000625`
-- `origin/lane/critic` -> `3041eae6`
+- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/independent-auditor` -> `33b839f0`
+- `origin/lane/critic` -> `d781f3d2`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `839cd611`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `4cbb022d`
 - `origin/main` -> `4b7b47a6`
 
 The current remote state still adds no production-backed auth/session
@@ -31,14 +31,14 @@ but it did not change the release conclusion:
   proof at `668f886c`.
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
-- `origin/lane/fast-paths` now refreshes benchmark evidence at `b54f1b34`.
-- `origin/lane/critic` now refreshes the critic head snapshot at `3041eae6`.
+- `origin/lane/fast-paths` now refreshes benchmark evidence at `9be664b2`.
+- `origin/lane/critic` now refreshes the critic head snapshot at `d781f3d2`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `49000625`.
+  `33b839f0`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `839cd611`.
+  refreshes the supervisor evidence snapshot at `4cbb022d`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a stale term
   taxonomy identity proof at `24c58564`, so the same-plan path still stops short of release-
   grade proof.
