@@ -6930,6 +6930,10 @@ are true on this worktree:
   scope end to end; if the only available commands are `plan`, `apply`, or
   `test:playground:*`, the branch is still lab-only and cannot claim
   production-grade push support;
+- that command must be a real-site entry point, not just a production-
+  sounding wrapper around `plan`, `apply`, or a playground smoke; command
+  naming alone never proves the live executor boundary, preserved remote, or
+  retry authority;
 - that command must itself perform the live preflight/release path on an
   actual remote; a thin wrapper around `plan`, `apply`, or a smoke script is
   still compatibility evidence unless it records the first executor/auth/
