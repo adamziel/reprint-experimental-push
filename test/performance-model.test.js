@@ -495,6 +495,9 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-barrier')?.violates.includes('parallelism-limits'),
+  );
+  assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause')?.violates.includes('remote-index-planning-only'),
   );
   assert.ok(
