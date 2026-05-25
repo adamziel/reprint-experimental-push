@@ -3208,7 +3208,12 @@ write is a new boundary, not a production-safe continuation of the first one.
 That rule also applies when the first write succeeded cleanly: a later write
 against a newly discovered plugin-owned surface is not covered by the earlier
 success unless the proof separately preserves the remote, blocks or
-classifies the late surface, and records a fresh retry scope.
+classifies the late surface, and records a fresh retry scope. A "manual
+resolution succeeded" label is false if it only proves the first write on the
+smaller surface and never shows the late-discovered surface's own rejection
+point, preserved remote, and fresh retry scope. The missing proof is a
+durable classification or block for the late surface before the retry starts,
+not a broader success label for the earlier boundary.
 
 Source-note proof boundary, restated:
 
