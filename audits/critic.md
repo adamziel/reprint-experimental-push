@@ -4463,11 +4463,15 @@ False reliability claims to reject:
 - "manual resolution later" when the stale artifact is still being reused as
   authority for a different row, file, relationship-bearing record, remapped
   create target, or plugin-owned surface instead of being treated as audit-
-  only after drift;
+  only after drift; once the later surface is discovered, the old artifact is
+  stale by definition unless this branch records a separate preserve / reject
+  / retry cycle for that exact later boundary;
 - "plugin-safe push" when any plugin-owned surface outside the allowlist,
   including a late-discovered table, file, registry entry, generated asset,
   cache entry, cron row, or serialized blob, is still only implied rather
-  than enumerated or blocked live; and
+  than enumerated or blocked live, or when a later-discovered plugin-owned
+  surface is folded into the first success story without its own preserved
+  remote, rejection point, and fresh retry artifact; and
 - "comparison passed" when a Reprint, ZS-Sync, or ForkPress note does not
   name the exact upstream revision or worktree state and does not say what
   the note proves here versus what it does not prove.
