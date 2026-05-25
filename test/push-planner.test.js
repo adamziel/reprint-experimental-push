@@ -14,6 +14,7 @@ import {
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { resourceHash } from '../src/resources.js';
+import { deepClone } from '../src/stable-json.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -5728,6 +5729,34 @@ test('keeps remote-only plugin changes while a live-preconditioned row delete an
     result.site.files['wp-content/plugins/forms/forms.php'],
     '<?php /* remote-private-forms-code v1.6 */',
   );
+});
+
+test('refuses a forged ready delete plan when its live precondition is stripped after planning', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms = { version: '1.8.0', active: true };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const strippedPlan = deepClone(plan);
+  strippedPlan.preconditions = [];
+  const error = captureError(() => applyPlan(remote, strippedPlan));
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.preconditions.length, 1);
+  assert.equal(plan.preconditions[0].resourceKey, 'file:index.php');
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(remote.files['index.php'], '<?php echo "base";');
+  assert.equal(remote.files['about.php'], '<?php echo "shared about";');
+  assert.equal(remote.plugins.forms.version, '1.8.0');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('blocks local plugin metadata changes when remote plugin files changed', () => {
