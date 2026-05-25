@@ -1482,6 +1482,27 @@ test('completed replay stays inert and does not duplicate inserts or stale local
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
 });
 
+test('blocks a completed replay when the remote drifts and preserves recovery artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "drifted";';
+  const before = JSON.stringify(replayRemote);
+
+  const error = captureError(() => applyPlan(replayRemote, plan, { journal: completed.journal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assert.equal(JSON.stringify(replayRemote), before);
+  assertRecoveryStateArtifacts(error.details.recovery, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked recovery must keep remote artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+});
+
 test('replays a completed plan without reapplying mutations', () => {
   const base = baseSite();
   const local = baseSite();
