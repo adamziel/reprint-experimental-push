@@ -229,16 +229,17 @@ was rejected before write, that wording is false reliability and must fail
 closed.
 
 Current weakest claim to reject: a production-shaped `/wp-json/reprint/v1/push/*`
-smoke or a readable "manual resolution" note can look like live retry proof
-after drift. Missing proof is still the same live boundary rerun on this
-branch, the exact stale-drift case, the preserved remote that stayed
-inspectable after rejection, the rejection point before the first write, and
-old/new/blocked classification for every touched surface. Without all of that,
-the smoke and the note remain compatibility evidence or audit evidence only,
-even when the route family, package layout, or reviewer wording match the
-production path. A later-discovered plugin-owned surface or remapped create
-target still needs its own preserve / reject / retry cycle; shape similarity
-does not widen the earlier boundary.
+smoke, a readable "manual resolution" note, or a Reprint/ZS-Sync/ForkPress
+comparison can look like live retry proof after drift. Missing proof is still
+the same live boundary rerun on this branch, the exact stale-drift case, the
+preserved remote that stayed inspectable after rejection, the rejection point
+before the first write, and old/new/blocked classification for every touched
+surface. Without all of that, the smoke, note, and comparison remain
+compatibility evidence or audit evidence only, even when the route family,
+package layout, reviewer wording, or upstream anchor match the production
+path. A later-discovered plugin-owned surface or remapped create target still
+needs its own preserve / reject / retry cycle; shape similarity does not
+widen the earlier boundary.
 
 Current highest-value blocker: the branch still does not expose a real-site
 preflight/release command that proves the same live boundary on an actual
