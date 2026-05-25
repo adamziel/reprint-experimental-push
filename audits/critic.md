@@ -224,7 +224,8 @@ remote evidence from this branch.
 Source-note comparisons stay provenance only unless they name the exact
 upstream state, state what each note proves here, state what it does not
 prove here, and are backed by a rerun of the same live boundary on this
-worktree.
+worktree. The observed anchors in `docs/source-notes.md` remain historical
+context only:
 
 - Reprint `27c5f25` explains staged transport and resumable-delivery framing;
   it does not prove preserved-remote safety, stale-drift rejection, or
@@ -240,7 +241,8 @@ worktree.
 
 The upstream anchors recorded in `docs/source-notes.md` remain provenance
 only until this branch reruns the same live boundary and states what each note
-proves here and what it does not prove here.
+proves here and what it does not prove here. Until then, they are useful for
+design lineage, not for release claims.
 
 ## Release-gate checklist
 
