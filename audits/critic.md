@@ -6972,11 +6972,12 @@ are true on this worktree:
   wording must fail closed regardless of route shape, smoke naming, or
   review-artifact polish;
 - the branch names one real-site preflight/release command that can be rerun
-  against an actual remote and whose output alone proves the rejected remote
-  stayed inspectable, the rejection point happened before the first write,
-  and the retry scope was rebuilt from live hashes; if the proof still comes
-  only from `plan`, `apply`, `test:playground:*`, route-smoke output, or
-  source-note comparison, the claim is still lab-only;
+  against an actual remote and whose output alone proves the exact command
+  string, the rejected remote stayed inspectable, the rejection point
+  happened before the first write, and the retry scope was rebuilt from live
+  hashes; if the proof still comes only from `plan`, `apply`,
+  `test:playground:*`, route-smoke output, or source-note comparison, the
+  claim is still lab-only;
 - a command name that sounds real-site but still resolves to the playground
   or lab executor cannot be promoted into release proof, even if it reaches a
   remote-like URL or matches the expected route family; the executor identity
