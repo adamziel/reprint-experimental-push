@@ -45,6 +45,10 @@ This note is the short form of the planner policy in
   `already-in-sync`, the delete keeps its own live remote precondition, and
   unrelated remote-only plugin drift stays `keep-remote`.
 - A live-preconditioned file delete may still apply alongside a matching
+  independent edit and unrelated remote-only plugin drift; the matching
+  resource stays `already-in-sync`, the delete keeps its own live remote
+  precondition, and the plugin drift stays `keep-remote` through apply.
+- A live-preconditioned file delete may still apply alongside a matching
   independent row edit and file type swap; the matching resources stay
   `already-in-sync`, the delete keeps its own live remote precondition, and
   unrelated remote-only plugin drift stays `keep-remote`.

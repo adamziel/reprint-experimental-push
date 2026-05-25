@@ -4112,6 +4112,39 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and ma
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent edit apply safely', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared independent title';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const before = JSON.stringify(remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.ok(mutationFor(plan, 'file:index.php'));
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.files['index.php'], undefined);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Shared independent title');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+  assert.equal(JSON.stringify(remote), before);
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete, matching independent edit, and file type swap stay safe', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
