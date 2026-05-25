@@ -28,6 +28,9 @@ Production-grade push support checklist:
   inspection from the same rerun;
 - live old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface before retry starts;
+- explicit proof that any later-discovered plugin-owned surface, remapped
+  create target, or stale review artifact was handled on its own live
+  preserve / reject / retry cycle, not folded into the first approval;
 - explicit enumeration or blocking of hidden plugin-owned data traps outside
   the allowlist, including cron rows, runtime registries, generated files,
   caches, serialized blobs, and plugin-owned files;
@@ -61,6 +64,13 @@ Must-change-before-production-grade wording:
   names the exact upstream state, states what each note proves here, states
   what it does not prove here, and reruns the same live boundary on this
   worktree.
+
+If the branch cannot yet name a single live release command and a real
+`REPRINT_PUSH_SOURCE_URL`, then the next acceptable proof is not another
+comparative note or lab-shaped smoke; it is a rerun that prints the executor
+identity, preserved remote, rejection point, dry-run receipt, apply-time
+revalidation, journal/recovery inspection, and per-surface classification on
+that live boundary.
 
 False reliability traps that must fail closed:
 
