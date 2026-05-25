@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Refresh 02:37:17
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:37:17 CEST`) and kept the visible last-updated stamp current.
+- Tightened the public wording so the pending-proof set is named once and the
+  top blocker stays visible without repeating the same caveat.
+- Public status remains conservative: 89 Node tests pass, production auth plus
+  durable journaling is still the gate, and WordPress executor/auth, recovery
+  journal, Docker/Playground integration, graph identity, and plugin-driver
+  evidence remain pending.
+- Evidence trail: [progress.html](../progress.html), [docs/executor.md](executor.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
+  [docs/supervisor-feedback.md](supervisor-feedback.md), and this log.
+
 ## 2026-05-25 - Public Status Refresh 02:36:55
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
