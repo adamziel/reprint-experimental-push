@@ -172,6 +172,11 @@ The same topology proof stays fixed in both Docker and Playground:
 - `remote-changed` is the same remote identity observed later after drift.
 - `runner` owns preflight, snapshot listing, dry-run upload, apply, journal
   inspect, and recovery.
+- `push-production-topology-contract.json` pairs the pull bridge with the
+  one-remote, one-local, one-drift harness proof.
+- `push-deployment-topology-contract.json` is the smaller Docker and
+  Playground topology-only proof when you only need the one-remote,
+  one-local shape.
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy.
 - remote tunnels are disallowed.

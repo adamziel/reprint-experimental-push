@@ -69,6 +69,11 @@ identity across `remote-base` and `remote-changed`:
   at the storage boundary.
 - It is the canonical machine-readable bridge from the exporter/importer pull
   pipeline into the push write path.
+- `push-production-topology-contract.json` pairs the pull bridge with the
+  one-remote, one-local, one-drift topology for the production harness.
+- `push-deployment-topology-contract.json` is the smaller topology-only proof
+  for Docker and Playground when you only need the one-remote, one-local
+  harness shape.
 - `push-production-revalidation-contract.json` is the compact proof that
   keeps preflight, planning-only snapshot hashes, dry-run eligibility,
   apply-time revalidation, journal evidence, and inspect-first recovery
