@@ -6213,3 +6213,41 @@ Comparison rule:
   fresh retry scope rebuilt from live hashes; matching route family,
   package mount, or reviewer wording is not enough to promote the note to
   current proof.
+
+Production-grade wording still needs explicit proof for these failure modes:
+
+- live remote drift between dry-run and apply: the evidence must show the
+  exact rejection point before the first write, the preserved remote that
+  stayed inspectable after rejection, and the fresh retry scope rebuilt from
+  live hashes on this branch;
+- create-time identity remap or aliasing: the evidence must show live
+  identity at the write boundary, or the remap must be hard-blocked before
+  mutation; route shape, package mount, and fixture shape are compatibility
+  signals only;
+- plugin-owned data traps outside the allowlist: the evidence must enumerate
+  or block hidden tables, cron rows, runtime registries, generated files,
+  caches, serialized blobs, and plugin-owned files before write, including
+  surfaces discovered only after the first write;
+- partial file, DB, or plugin side effects: the whole touched set must be
+  classified old, new, or blocked before retry starts, so a mixed write
+  cannot be relabeled as success after only the committed subset; and
+- stale manual-review artifacts: any readable artifact stays audit evidence
+  only unless the same live boundary preserved the remote, rejected stale
+  authority before the first write, and rebuilt retry scope from live hashes;
+  a later-discovered row, file, relationship-bearing record, remapped create
+  target, or plugin-owned surface must get its own preserve / reject / retry
+  cycle and cannot inherit the earlier note.
+
+Release-gate wording also needs to stay explicit about what is not proof:
+
+- route shape, package layout, fixture replay, readable review output, and
+  `finalMatchesLocal` are compatibility evidence only, even when they look
+  production-shaped;
+- a source-note comparison is historical context unless it names the exact
+  upstream revision or worktree state, says what the note proves here, says
+  what it does not prove here, and is rerun against the same live boundary on
+  this branch; and
+- "manual resolution" is not success unless the preserved remote stayed
+  inspectable after rejection, the stale artifact was rejected before the
+  first write, the fresh retry scope was rebuilt from live hashes, and every
+  touched surface was classified old, new, or blocked.

@@ -7,6 +7,7 @@ Do not use production wording unless the branch has all of the following for the
 - the exact stale-drift case is named;
 - the remote that drifted is preserved and still inspectable after rejection, and that preserved remote stays audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
+- the exact rejection point before the first write is named, so a reviewer can see where stale authority stopped and live retry began;
 - any stale manual-review artifact remains audit-only after drift and cannot be reused against a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
 - any manual-resolution note remains audit-only after drift unless the same live boundary on this worktree preserved an inspectable remote, rejected stale authority before the first write, and rebuilt retry scope from live hashes so the user can safely audit and retry; the note is not success by itself and cannot widen to a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface without a separate preserve / reject / retry cycle;
 - any wording that says "comparison passed", "manual resolution succeeded", or "production-ready" without naming the preserved remote and the boundary that was rejected before write is false reliability and must fail closed;
@@ -14,6 +15,7 @@ Do not use production wording unless the branch has all of the following for the
 - any stale manual-review artifact cannot become retry authority for a remapped create target or later-discovered plugin-owned surface that appears only after the first write, even if the later boundary reuses the same route family, package mount, or reviewer wording;
 - any stale manual-review artifact cannot be widened to a later boundary just because the route family, package mount, or reviewer wording stayed the same;
 - any later boundary that reuses the same route family, package mount, or reviewer wording is still a fresh live boundary and must have its own preserved remote, stale-artifact rejection, and retry scope rebuilt from live hashes;
+- any later-discovered plugin-owned surface or remapped create target that appears after the first write must be named as a new boundary, not as a continuation of the earlier approval;
 - the fresh retry artifact is rebuilt from live hashes on this branch, not inherited from the earlier approval;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified as old, new, or blocked before retry starts;
 - any surviving partial file, DB, or plugin side effect remains separately auditable and cannot be treated as success until the next retry scope is rebuilt from live hashes;
@@ -42,6 +44,7 @@ Do not use production wording unless the branch has all of the following for the
 - proof for one live boundary does not transfer to a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface, even if the route family, package mount, fixture replay, or reviewer wording is the same; and
 - any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success; and
 - any claim that "manual resolution" succeeded without the preserved remote, the rejection point, and a fresh retry artifact rebuilt from live hashes for the same live boundary is false reliability, not success; the phrase is audit-only until the branch can show the exact stale-drift case, the preserved remote that stayed inspectable, and the same boundary retried from fresh live hashes;
+- any claim that sounds like success but does not name the rejection point, preserved remote, fresh retry scope, and old/new/blocked surface classification must fail closed;
 - any claim that "manual resolution" succeeded is also false reliability if the first write committed but a later plugin-owned surface was discovered afterwards and never got its own preserve/reject/retry cycle for that later boundary, even if the earlier readable artifact still looks valid;
 - any claim that "manual resolution" succeeded is also false reliability if the first write committed but a later remapped create target, row, file, or relationship-bearing record was discovered afterwards and never got its own preserve/reject/retry cycle for that later boundary, even if the earlier readable artifact still looks valid;
 - proof for one live boundary is not transferable to a later boundary, even if
