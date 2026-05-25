@@ -5235,6 +5235,47 @@ test('durable completed replay stays inert when local source has stale inserts a
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
 
+test('durable completed replay stays inert across repeated replays and never resurrects stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+
+  local.files['index.php'] = '<?php echo "stale-local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Stale local insert', post_status: 'draft' };
+
+  const firstReplay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  const secondReplay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(firstReplay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(secondReplay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(firstReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(firstReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(persisted.records.filter((record) => record.type === 'journal-replayed').length, 2);
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
+});
+
 test('acceptable recovery outcomes are old remote, fully updated remote, or blocked with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
