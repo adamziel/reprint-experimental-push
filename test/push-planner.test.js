@@ -9519,3 +9519,35 @@ test('explicit recovery matrix stays limited to old remote, fully updated remote
   assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
   assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
 });
+
+test('completed replay remains idempotent across repeated recovery journal replays', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  const firstReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  const firstReplaySnapshot = JSON.stringify(firstReplayRemote);
+  const firstReplay = applyPlan(firstReplayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(firstReplayRemote), firstReplaySnapshot);
+  assert.equal(firstReplay.appliedMutations, 0);
+  assertAcceptableRecoveryState(firstReplay.recoveryState);
+  assertRecoveryStateArtifacts(firstReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(firstReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(firstReplay.recoveryState.artifacts.journal.status, 'completed');
+
+  const secondReplayRemote = JSON.parse(JSON.stringify(firstReplay.site));
+  const secondReplaySnapshot = JSON.stringify(secondReplayRemote);
+  const secondReplay = applyPlan(secondReplayRemote, plan, { journal: firstReplay.journal });
+
+  assert.equal(JSON.stringify(secondReplayRemote), secondReplaySnapshot);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
+});
