@@ -1358,6 +1358,26 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
 });
 
+test('unsafe shortcuts stay rejected when they would bypass live preconditions or atomic groups', () => {
+  const model = buildBenchmarkModel();
+  const skipFinalize = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-update-finalize-after-pause',
+  );
+  const skipReleaseCommit = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+  );
+
+  assert.ok(skipFinalize, 'plugin-update finalize shortcut is modeled as a rejected fast path');
+  assert.equal(skipFinalize.rejectedGate, 'group');
+  assert.ok(skipFinalize.violates.includes('atomic-groups'));
+  assert.ok(skipFinalize.violates.includes('row-preconditions'));
+
+  assert.ok(skipReleaseCommit, 'release-bundle commit shortcut is modeled as a rejected fast path');
+  assert.equal(skipReleaseCommit.rejectedGate, 'group');
+  assert.ok(skipReleaseCommit.violates.includes('atomic-groups'));
+  assert.ok(skipReleaseCommit.violates.includes('database-row-batching'));
+});
+
 test('fast-path fixture isolates the release-safety benchmark shape', () => {
   const fixture = buildFastPathFixture();
   const workloadKinds = fixture.fixture.workloads.map((workload) => workload.kind);
