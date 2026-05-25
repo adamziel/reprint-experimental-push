@@ -4,6 +4,357 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 01:29:00
+
+<a id="2026-05-26-public-status-audit-012900"></a>
+
+- Refreshed [progress.html](../progress.html) after the adjacent lanes narrowed
+  their next executable gaps. `reliable-executor` now has bounded fetches in the
+  live release-verify path, but the proof still needs a concrete response body
+  or stderr from the snapshot/auth route before the verdict can move.
+- `no-data-loss-recovery` now pins the production durability boundary to the
+  exact missing dependency: fenced journal ownership plus restart-readable
+  artifacts, or an explicit closeout at the current local-storage proof limit.
+- The public release posture remains `0/4`; this update only sharpens the
+  blocker text so the page stays conservative without hiding the latest proof
+  gaps.
+
+# 2026-05-26 - Public Status Audit 01:27:20
+
+<a id="2026-05-26-public-status-audit-012720"></a>
+
+- Refreshed [progress.html](../progress.html) after the no-data-loss-invariants
+  integration head advanced to `e717f61c`. The first screen stays
+  conservative: evidence progressed, release gates remain `0/4`, and
+  production WordPress auth/session lifecycle plus durable journal storage with
+  lease/fencing remain pending.
+- `0c4fd10f` remains the newest reliable-executor head, but it is not release
+  proof by itself. `c99b19d0` remains the newest release-surface proof,
+  `b725b2d3` remains the explicit production auth/session boundary, and
+  `b9aebe71` and `47b675c0` still cover supporting no-data-loss and recovery
+  evidence. `592c949e`, `9be664b2`, `33b839f0`, `f386dfa6`, `24c58564`,
+  `5b25867b`, `7695e1f9`, and `e717f61c` now mark the latest critique,
+  fast-path, audit refresh, supervision, same-plan, no-data-loss-invariants,
+  public progress, and no-data-loss-invariants integration evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 01:21:51
+
+<a id="2026-05-26-public-status-audit-012151"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the public view aligned
+  with the newest reliable-executor head at `0c4fd10f` while keeping the gate
+  state flat. The page now says the lane is still in the release-proof retry
+  loop, so the public claim stays conservative.
+- `0c4fd10f` is now the newest reliable-executor head, but it is not release
+  proof by itself. `c99b19d0` remains the newest release-surface proof,
+  `b725b2d3` remains the explicit production auth/session boundary, and
+  `b9aebe71` plus `47b675c0` still cover the supporting no-data-loss and
+  recovery evidence.
+- The release gate remains `0/4`. Production WordPress auth/session lifecycle
+  and durable journal storage with lease/fencing remain pending.
+
+# 2026-05-26 - Public Status Audit 01:18:21
+
+<a id="2026-05-26-public-status-audit-011821"></a>
+
+- Tightened the public copy in [progress.html](../progress.html) so the flat
+  gate is explicit: production WordPress auth/session lifecycle and durable
+  journal storage with lease/fencing remain the blocker.
+- Gate 1 now names the next executable proof directly: make
+  [release-verify runner](../scripts/playground/production-shaped-release-verify.mjs)
+  fail closed if the packaged route is lab-backed or if the source gate is not
+  production-shaped.
+- Gate 2 now names the missing dependency plainly: publish the durable storage
+  result or the exact lease/fencing primitive that still blocks recovery.
+- The evidence set did not change, so the release gate stays `0/4` and the
+  older proof trail remains frozen. The public header now points at this entry
+  and its trend pill matches the current critic tip.
+
+# 2026-05-26 - Public Status Audit 01:16:03
+
+<a id="2026-05-26-public-status-audit-011603"></a>
+
+- Refreshed [progress.html](../progress.html) after the critic lane advanced its
+  remote tip to `598729f1` and the no-data-loss-invariants lane advanced its
+  remote tip to `5b25867b`. The first screen stays conservative: evidence
+  progressed, release gates remain `0/4`, and production WordPress
+  auth/session lifecycle plus durable journal storage with lease/fencing remain
+  pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `598729f1`, `9be664b2`,
+  `33b839f0`, `f386dfa6`, `24c58564`, `5b25867b`, and `7695e1f9` now mark the
+  latest critique, fast-path, audit refresh, supervision, same-plan,
+  no-data-loss-invariants, and public progress evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 01:11:56
+
+<a id="2026-05-26-public-status-audit-011156"></a>
+
+- Refreshed [progress.html](../progress.html) after the fast-path lane
+  advanced its remote tip to `9be664b2`. The first screen stays conservative:
+  evidence progressed, release gates remain `0/4`, and production WordPress
+  auth/session lifecycle plus durable journal storage with lease/fencing remain
+  pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `9be664b2`,
+  `33b839f0`, `a0abc3db`, `f386dfa6`, `24c58564`, `668f886c`, and `7695e1f9`
+  now mark the latest critique, fast-path, audit refresh, critic, supervision,
+  same-plan, no-data-loss-invariants, and public progress evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 01:09:31
+
+<a id="2026-05-26-public-status-audit-010931"></a>
+
+- Refreshed [progress.html](../progress.html) after the no-data-loss-invariants
+  lane advanced its remote tip to `668f886c`. The first screen stays
+  conservative: evidence progressed, release gates remain `0/4`, and
+  production WordPress auth/session lifecycle plus durable journal storage with
+  lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `b54f1b34`,
+  `33b839f0`, `a0abc3db`, `f386dfa6`, `24c58564`, `668f886c`, and `7695e1f9`
+  now mark the latest critique, fast-path, audit refresh, critic, supervision,
+  same-plan, no-data-loss-invariants, and public progress evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 01:05:23
+
+<a id="2026-05-26-public-status-audit-010523"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  after the independent-auditor lane advanced its remote tip to `33b839f0`.
+  The first screen stays concise: evidence progressed, release gates remain
+  `0/4`, and production WordPress auth/session lifecycle plus durable journal
+  storage with lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `b54f1b34`,
+  `33b839f0`, `a0abc3db`, `f386dfa6`, `24c58564`, `fa0ce3ea`, and `7695e1f9`
+  now mark the latest critique, fast-path, audit refresh, critic, supervision,
+  same-plan, no-data-loss-invariants, and public progress evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 01:02:47
+
+<a id="2026-05-26-public-status-audit-010247"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 01:02:47 CEST`) after the progress-publisher lane advanced its
+  remote tip to `7695e1f9`. The first screen stays concise: evidence
+  progressed, release gates remain `0/4`, and production WordPress auth/session
+  lifecycle plus durable journal storage with lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `b54f1b34`,
+  `33b839f0`, `4e487df4`, `f386dfa6`, `d1994422`, `fa0ce3ea`, and `7695e1f9`
+  now mark the latest critique, fast-path, audit refresh, critic, supervision,
+  same-plan, no-data-loss-invariants, and public progress evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 01:01:53
+
+<a id="2026-05-26-public-status-audit-010153"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 01:01:53 CEST`) after the critic, fast-path, and same-plan
+  lanes advanced their remote tips to `4e487df4`, `b54f1b34`, and
+  `d1994422`. The first screen stays concise: evidence progressed, release
+  gates remain `0/4`, and production WordPress auth/session lifecycle plus
+  durable journal storage with lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `b54f1b34`,
+  `33b839f0`, `4e487df4`, `f386dfa6`, `d1994422`, and `fa0ce3ea` now mark
+  the latest critique, fast-path, audit refresh, critic, supervision, same-
+  plan, and no-data-loss-invariants evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 01:00:46
+
+<a id="2026-05-26-public-status-audit-010046"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 01:00:46 CEST`) after the fast-path lane advanced its remote tip
+  to `b54f1b34`. The first screen stays concise: evidence progressed, release
+  gates remain `0/4`, and production WordPress auth/session lifecycle plus
+  durable journal storage with lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `b54f1b34`,
+  `33b839f0`, `c036004c`, `f386dfa6`, `732e1251`, and `fa0ce3ea` now mark the
+  latest critique, fast-path, audit refresh, critic, supervision, same-plan,
+  and no-data-loss-invariants evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 00:59:41
+
+<a id="2026-05-26-public-status-audit-005941"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 00:59:41 CEST`) after the no-data-loss-invariants lane advanced
+  its remote tip to `fa0ce3ea`. The first screen stays concise: evidence
+  progressed, release gates remain `0/4`, and production WordPress
+  auth/session lifecycle plus durable journal storage with lease/fencing
+  remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `7f7f9b6c`,
+  `33b839f0`, `c036004c`, `f386dfa6`, `732e1251`, and `fa0ce3ea` now mark the
+  latest critique, fast-path, audit refresh, critic, supervision, same-plan,
+  and no-data-loss-invariants evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 00:58:34
+
+<a id="2026-05-26-public-status-audit-005834"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 00:58:34 CEST`) after the same-plan graph lane advanced its
+  remote tip to `732e1251`. The first screen stays concise: evidence
+  progressed, release gates remain `0/4`, and production WordPress
+  auth/session lifecycle plus durable journal storage with lease/fencing
+  remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `7f7f9b6c`,
+  `33b839f0`, `c036004c`, `f386dfa6`, and `732e1251` now mark the latest
+  critique, fast-path, audit refresh, critic, supervision, and same-plan
+  blocker evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 00:57:50
+
+<a id="2026-05-26-public-status-audit-005750"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 00:57:50 CEST`) after the fast-path and critic lanes advanced
+  their remote tips to `7f7f9b6c` and `c036004c`. The first screen stays
+  concise: evidence progressed, release gates remain `0/4`, and production
+  WordPress auth/session lifecycle plus durable journal storage with
+  lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `7f7f9b6c`,
+  `33b839f0`, `c036004c`, `f386dfa6`, and `70925d88` now mark the latest
+  critique, fast-path, audit refresh, critic, supervision, and same-plan
+  blocker evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-26 - Public Status Audit 00:55:33
+
+<a id="2026-05-26-public-status-audit-005533"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 00:55:33 CEST`) after the independent-auditor, fast-paths, and
+  feedback-supervisor lanes advanced their remote tips. The first screen stays
+  concise: evidence progressed, release gates remain `0/4`, and production
+  WordPress auth/session lifecycle plus durable journal storage with
+  lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `acbab7fd`,
+  `33b839f0`, `f386dfa6`, and `70925d88` now mark the latest critique,
+  fast-path, audit refresh, supervision, and same-plan blocker evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-26 - Public Status Audit 00:53:23
+
+<a id="2026-05-26-public-status-audit-005323"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 00:53:23 CEST`) after the same-plan graph lane advanced to
+  `70925d88`. The first screen stays concise: evidence progressed, release
+  gates remain `0/4`, and production WordPress auth/session lifecycle plus
+  durable journal storage with lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `63dd27cc`,
+  and `9208c2da` remain the latest critique, fast-path, and audit freshness
+  support. `70925d88` now adds the same-plan smoke-blocker evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-26 - Public Status Audit 00:48:36
+
+<a id="2026-05-26-public-status-audit-004836"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 00:48:36 CEST`) after the recovery lane advanced to
+  `47b675c0`. The first screen stays concise: evidence progressed, release
+  gates remain `0/4`, and production WordPress auth/session lifecycle plus
+  durable journal storage with lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` now cover
+  supporting no-data-loss and recovery proof; `4e13d882`, `63dd27cc`, and
+  `9208c2da` remain the latest critique, fast-path, and audit freshness
+  support.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-26 - Public Status Audit 00:25:18
+
+<a id="2026-05-26-public-status-audit-002518"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 00:25:18 CEST`) after the reliable executor lane moved to
+  `c99b19d0`. The first screen stays concise: evidence progressed, release
+  gates remain `0/4`, and production WordPress auth/session lifecycle plus
+  durable journal storage with lease/fencing remain pending.
+- `c99b19d0` is the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `134d0401` still
+  cover supporting no-data-loss and recovery proof; `4e13d882`, `63dd27cc`,
+  and `9208c2da` remain the latest critique, fast-path, and audit freshness
+  support.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 23:44:06
 
 <a id="2026-05-25-public-status-audit-234406"></a>
