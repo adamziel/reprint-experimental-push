@@ -30,6 +30,14 @@ test('benchmark model covers large uploads and plugin installs', () => {
     pluginUpdate.actions.some((action) => action.type === 'db-row-batch'),
     'plugin update includes row batching',
   );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'db-batch-parallelism'),
+    'plugin install includes bounded row-batch parallelism',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'db-batch-parallelism'),
+    'plugin update includes bounded row-batch parallelism',
+  );
   assert.ok(pluginUpdate.atomicGroupId, 'plugin update has an atomic group id');
   assert.notEqual(pluginUpdate.atomicGroupId, pluginInstall.atomicGroupId);
 
@@ -125,6 +133,15 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'group-staging-finalize' && action.finalizeMode === 'receipts-plus-live-preconditions'),
     'plugin install keeps the group barrier intact during finalize',
+  );
+  assert.ok(
+    pluginInstall.actions.some(
+      (action) =>
+        action.type === 'db-batch-parallelism' &&
+        action.boundedByAtomicGroup === true &&
+        action.perTableLimit === DEFAULT_LIMITS.maxDbConcurrencyPerTable,
+    ),
+    'plugin install keeps row-batch parallelism inside the atomic-group boundary',
   );
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'atomic-group-commit' && action.commitPolicy === 'all-or-nothing'),
@@ -255,6 +272,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause')?.rejectedGate,
     'group',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-barrier')?.rejectedGate,
+    'group',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause')?.violates.includes('remote-index-planning-only'),
   );
@@ -272,6 +293,9 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause')?.violates.includes('durable-progress'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-barrier')?.violates.includes('row-preconditions'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'index-and-compressed-row-batch-completes-plugin-install')?.rejectedGate,

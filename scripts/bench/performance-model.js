@@ -328,6 +328,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'database-row-batching',
+    reduces: ['idle-time', 'head-of-line-blocking', 'statement-setup-cost'],
+    allowedShortcut: 'run-bounded-row-batch-parallelism-within-an-atomic-group-and-per-table-budget',
+    guardrails: [
+      'parallel-row-batches-stay-within-per-table-and-per-site-budgets',
+      'atomic-group-barrier-stays-fixed',
+    ],
+    gateProofs: {
+      skip: 'independent row batches may overlap inside one group when each batch keeps its own row preconditions, idempotency key, and table budget',
+      live: 'each row in every batch still rechecks its live compare at the storage boundary',
+      group: 'bounded row-batch parallelism never widens the atomic-group barrier or merges ownership across plugin groups',
+      recovery: 'batch receipts and the group staging record still classify pause, retry, or crash without guessing which rows advanced',
+    },
+    visibilityBoundary: 'bounded-parallel-batch-staging-only',
+    failureEvidence: 'per-table batch receipts plus group staging record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'remote-indexes',
     reduces: ['remote-body-fetches', 'planning-round-trips'],
     allowedShortcut: 'plan-from-indexed-strong-hash-listing',
@@ -2295,6 +2315,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-barrier',
+    proposal: 'use a compressed remote index to justify unbounded row-batch parallelism for plugin updates once staging has begun',
+    rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded row-batch parallelism can still erase the per-row preconditions and update barrier needed to recover a partial failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-row-preconditions',
     proposal: 'use a compressed remote index plus cached row-batch receipts to skip plugin-install row preconditions',
     rejectedBecause: 'planning evidence and cached batch receipts can trim duplicate lookup work, but they cannot prove the live row compares or the plugin-install barrier survived a pause, retry, or partial failure',
@@ -2848,6 +2875,21 @@ function scheduleFile(file, planId, limits) {
 function scheduleRowGroup(rowGroupEntry, planId, limits) {
   const actions = [];
   const batchCount = Math.ceil(rowGroupEntry.rowCount / limits.maxDbBatchRows);
+  if (batchCount > 1) {
+    actions.push({
+      type: 'db-batch-parallelism',
+      table: rowGroupEntry.table,
+      atomicGroupId: rowGroupEntry.atomicGroupId || null,
+      batchCount,
+      perTableLimit: limits.maxDbConcurrencyPerTable,
+      perSiteLimit: limits.maxDbConcurrencyPerTable,
+      boundedByReceiptBudget: true,
+      boundedByAtomicGroup: Boolean(rowGroupEntry.atomicGroupId),
+      canonicalVisible: false,
+      durableEvidence: 'per-table-parallel-batch-plan-record',
+      idempotencyKey: `${planId}:${rowGroupEntry.atomicGroupId || 'independent'}:${rowGroupEntry.table}:parallelism`,
+    });
+  }
 
   for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
     const firstRow = batchIndex * limits.maxDbBatchRows;
