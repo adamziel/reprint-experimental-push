@@ -473,18 +473,18 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current state: lab evidence only. Production WordPress executor/auth remains unproven, so the trend stays flat and the release gates below remain open.</p>
-        <time class="update-stamp" datetime="2026-05-25T07:20:52+02:00">Last updated: May 25, 2026, 07:20:52 CEST</time>
+        <p class="lead">Current state: lab evidence only. The top blocker is still production WordPress executor/auth, so the trend stays flat and the release gates remain open.</p>
+        <time class="update-stamp" datetime="2026-05-25T07:21:33+02:00">Last updated: May 25, 2026, 07:21:33 CEST</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">Top risk: production WordPress executor/auth remains unproven</span>
+          <span class="pill">Top risk: production WordPress executor/auth still unproven</span>
           <span class="pill">Trend: flat until production proof lands</span>
           <span class="pill">Release gates verified by evidence: 0/4</span>
           <span class="pill">Pending gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
-          <span class="pill">Newest audit entry: <a href="docs/progress-log.md#2026-05-25-public-status-audit-072052">2026-05-25 07:20:52</a></span>
+          <span class="pill">Newest audit entry: <a href="docs/progress-log.md#2026-05-25-public-status-audit-072133">2026-05-25 07:21:33</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-072052">Open newest audit: 2026-05-25 07:20:52</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-072133">Open newest audit: 2026-05-25 07:21:33</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/executor.md">executor</a>, <a href="docs/recovery/apply-journal.md">recovery</a>, <a href="docs/playground-topology.md">playground</a>, <a href="docs/protocol.md">protocol</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -519,7 +519,7 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">45%</span></div>
           <div class="bar" aria-label="No data loss merge invariants 45 percent"><div class="fill green" style="width:45%"></div></div>
-          <p class="note">Matching independent delete/edit cases are covered in lab evidence; stale graph references still block. Gap: real graph identity mapping.</p>
+          <p class="note">Matching independent delete/edit cases are covered in lab evidence. Gap: real graph identity mapping.</p>
         </div>
 
         <div class="lane">
@@ -531,7 +531,7 @@
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">42%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 42 percent"><div class="fill amber" style="width:42%"></div></div>
-          <p class="note">Protocol/executor docs name the production push flow, but the proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
+          <p class="note">Docs name the production push flow, but the proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
         </div>
 
         <div class="lane">
@@ -543,7 +543,7 @@
         <div class="lane">
           <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">30%</span></div>
           <div class="bar" aria-label="Independent evidence and critique 30 percent"><div class="fill red" style="width:30%"></div></div>
-          <p class="note">Objective and critic audits reflect the latest lab evidence. Gap: re-audit production-backed internals and graph/plugin proof.</p>
+          <p class="note">Current audits reflect lab evidence only. Gap: production-backed internals plus graph and plugin driver proof.</p>
         </div>
       </section>
 
@@ -551,7 +551,7 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>What is proven</strong><span>89 Node tests pass in lab evidence; see <a href="audits/objective-audit.md">objective audit</a> and the linked executor, recovery, playground, protocol, and feedback docs.</span></li>
+            <li><strong>What is proven</strong><span>89 Node tests pass in lab evidence; see the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs.</span></li>
             <li><strong>Top risk</strong><span>Real WordPress executor/auth still blocks any production push-safety claim.</span></li>
             <li><strong>Release gates</strong><span>Detailed pending buckets are listed in the release-gate checklist below.</span></li>
             <li><strong>Audit note</strong><span>The newest dated entry is linked above and the fuller trail stays below.</span></li>
