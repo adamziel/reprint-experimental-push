@@ -28,6 +28,10 @@ Release gate for any production wording:
   a late-discovered plugin-owned surface just because the first write already
   succeeded on a narrower surface set; the proof must keep the preserved
   remote, blocked late surface, and fresh retry scope separate.
+- Show that a source-note comparison cannot become retry authority for the
+  live write path just because it names the right upstream commit or route
+  family; if this branch did not rerun the same drifted remote and the same
+  plugin-owned surface set, the note remains provenance only.
 - Show that a late-discovered plugin-owned surface cannot be widened into a
   second successful write just because the first write already happened; the
   proof must separate the preserved remote, the blocked late surface, and the
@@ -95,6 +99,10 @@ Must-fix blockers before any production wording:
   safety just because it is inspectable, archived, or linked from the audit;
   if the same live boundary was not rerun here, the artifact is evidence of
   history, not current authority.
+- A source-note comparison must not be treated as current retry authority
+  just because the upstream commit, route family, or worktree state matches;
+  without a branch-local live drift rerun, it stays provenance and cannot
+  rule out hidden plugin-owned side effects on the real executor.
 - A readable stale manual-review artifact must not be described as durable
   retry authority, even when it remains inspectable; if a retry consumed it as
   authority, the proof failed to preserve a clean remote-audit separation.
