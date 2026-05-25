@@ -8446,6 +8446,56 @@ test('durable no-data-loss recovery keeps the allowed failure states and complet
   );
 });
 
+test('durable completed replay stays append-only when the journal already has prior records', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  const plan = planFor(base, local, baseSite());
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedWriter = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedWriter });
+  completedWriter.close();
+
+  const replayJournalPath = tempRecoveryJournalPath();
+  const replayWriter = openRecoveryJournal(replayJournalPath, { truncate: true, now: fixedNow });
+  replayWriter.appendEvent('seed-record', {
+    planId: plan.id,
+    state: 'seeded-prior-record',
+    observedHash: 'seeded-prior-record',
+    artifactRefs: {},
+  });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: replayWriter,
+  });
+  replayWriter.close();
+
+  const persistedReplay = readRecoveryJournal(replayJournalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    persistedReplay.records.some((record) => record.type === 'journal-opened'),
+    false,
+  );
+  assert.equal(
+    persistedReplay.records.some((record) => record.type === 'target-planned'),
+    false,
+  );
+  assert.equal(
+    persistedReplay.records.some((record) => record.type === 'journal-replayed' && record.state === 'fully-updated-remote'),
+    true,
+  );
+});
+
 test('durable mid-apply failures remain blocked with artifacts and replaying the completed journal stays inert', () => {
   const base = baseSite();
   const local = baseSite();
