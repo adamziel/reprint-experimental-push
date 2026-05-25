@@ -13,6 +13,7 @@ The important distinction is between lab evidence and durable production storage
 - The durable journal, not the in-memory replay fixture, must be able to explain why the remote is `old-remote`, `fully-updated-remote`, or `blocked-recovery` after restart.
 - A partial remote mutation without a recovery artifact is a release blocker. If the code cannot prove one of the safe outcomes, it must stay blocked and expose inspectable artifacts instead of retrying blindly.
 - A completed replay must stay read-only. Replaying a completed plan against a fully updated remote can return `fully-updated-remote`, but it must not duplicate inserts or resurrect stale local data.
+- The replay boundary is idempotent: a completed plan replay may only confirm the current remote state, never create a second copy of an inserted row or restore a stale local edit.
 
 If a retry cannot prove `old-remote` or `fully-updated-remote`, it must stay blocked rather than reapply mutations blindly.
 
