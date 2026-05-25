@@ -34,6 +34,14 @@ journal records, fsync or equivalent flush semantics, writer fencing or lease
 ownership, and restart-readable inspection data. The JSON model proves the
 state machine only; it does not supply that storage primitive yet.
 
+The exact missing production primitive is a durable journal that survives
+process death and restart, not just a lab fixture:
+
+- append-only DB rows or file-backed journal records
+- fsync or backend-equivalent flush semantics before the write is considered durable
+- writer fencing, lease ownership, or equivalent exclusion so stale retries cannot advance recovery
+- restart-readable recovery inspection that can explain partial writes after a crash
+
 ## Production recovery requirements
 
 Production recovery needs durable artifacts that survive process failure:
