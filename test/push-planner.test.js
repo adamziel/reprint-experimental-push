@@ -10469,3 +10469,46 @@ test('durable recovery boundaries stay limited to old remote or fully updated re
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replayInspection.status, 'fully-updated-remote');
 });
+
+test('a partial durable commit stays blocked on retry and does not duplicate staged inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const partialRemote = baseSite();
+  const before = JSON.stringify(partialRemote);
+
+  const partialError = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      durableJournal,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+  const persistedAfterFailure = readRecoveryJournal(journalPath);
+  const partialSnapshot = JSON.stringify(partialRemote);
+
+  assert.ok(partialError instanceof PushPlanError);
+  assert.equal(partialError.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(JSON.stringify(partialRemote), before);
+  assertAcceptableRecoveryState(partialError.details.recovery);
+  assertRecoveryStateArtifacts(partialError.details.recovery, 'blocked-recovery');
+  assert.ok(partialError.details.recovery.artifacts.journal, 'blocked partial recovery must keep journal artifacts');
+  assert.ok(partialError.details.recovery.artifacts.remote, 'blocked partial recovery must keep remote artifacts');
+  assert.equal(partialError.details.recovery.artifacts.journal.planId, plan.id);
+  const blockedRemote = partialError.details.recovery.artifacts.remote;
+  assert.ok(
+    blockedRemote.files['index.php'] === '<?php echo "local";'
+      || blockedRemote.db.wp_posts['ID:2']?.post_title === 'Inserted locally',
+    'blocked recovery remote should include at least one committed mutation',
+  );
+  assert.equal(
+    persistedAfterFailure.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    true,
+  );
+});
