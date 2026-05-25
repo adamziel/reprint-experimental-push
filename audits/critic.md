@@ -3054,6 +3054,11 @@ False reliability claims to avoid:
   plugin-owned surface, including a cache entry, cron row, runtime registry,
   generated file, custom table, or other hidden side effect that was not
   classified on the first pass.
+- "Manual resolution later" is also not a safe label when the proof only
+  shows the stale note could still be opened, copied, or matched against a
+  route-shaped replay. The missing proof is the live reject-before-write
+  boundary on this branch, plus a preserved remote and a fresh retry record
+  that did not inherit the stale note as authority.
 - "The route is production-safe" when the evidence only shows route shape,
   a packaged mount, a fixture replay, or `finalMatchesLocal`. Those are
   compatibility checks, not proof that the live executor rejected stale
