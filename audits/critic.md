@@ -1621,6 +1621,8 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   context even if the route name, package mount, or expected hash looks
   production-shaped; it is not current upstream proof without the exact live
   mutation boundary being rechecked.
+- See `audits/source-notes-comparison.md` for a conservative breakdown of
+  what each note proves and what it does not prove.
 - Status comments, branch notes, and release notes must not cite source-note
   comparisons or live-looking hashes as substitutes for current production
   proof.
