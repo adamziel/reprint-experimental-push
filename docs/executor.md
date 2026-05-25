@@ -44,6 +44,19 @@ The shared test topology is fixed:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 - remote tunnels are disallowed
 
+The executor maps the pull pipeline into push without ever collapsing the
+boundary:
+
+1. exporter discovers the merge base and coverage evidence
+2. importer persists the immutable pull base package
+3. `preflight` is the first live bind after importer persistence
+4. `snapshot-hashes` is planning-only evidence
+5. `dry-run` is a receipt, not a lock
+6. `apply` is a separate remote mutation and revalidates fresh live evidence before every batch and again at the storage boundary
+7. `journal` stays read-only
+8. `recovery-inspect` must happen before any mutating repair
+9. `recovery-mutate` uses the same HMAC floor as apply and must not bypass inspect
+
 ## Canonical Executor Contract
 
 The executor should treat the production push extension as a fixed ladder:
@@ -71,6 +84,18 @@ Those boundaries are not interchangeable:
   mutating repair.
 - `recovery-mutate` only proceeds when inspect proves the branch safe and the
   auth floor still holds.
+
+The production route surface is intentionally split:
+
+| Stage | Route | What it proves |
+| --- | --- | --- |
+| `preflight` | `preflight` | The imported pull base is bound to one live remote identity and one short-lived session. |
+| `snapshot-hashes` | `snapshot-hashes` | Remote hashes are visible for planning only. |
+| `dry-run` | `dry-run` | The canonical plan uploads as a receipt, not a lock. |
+| `apply` | `apply` | Live evidence is revalidated before each batch and again at the storage boundary. |
+| `journal` | `journal` | Journal rows are durable but read-only. |
+| `recovery-inspect` | `recovery-inspect` | Recovery is classified before any mutation. |
+| `recovery-mutate` | `recovery-mutate` | Mutation is allowed only after inspect and the HMAC floor still hold. |
 
 The executor maps those stages to the pull pipeline directly:
 

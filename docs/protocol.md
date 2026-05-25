@@ -33,6 +33,16 @@ The contract is intentionally production-shaped:
   hashes still prove the branch safe
 - authentication must be at least as strict as current Reprint HMAC usage
 
+The runtime sequence is fixed and non-overlapping:
+
+1. `push_preflight` binds the persisted pull base package to one live remote identity and one short-lived push session.
+2. `push_snapshot_hashes` lists remote hashes for planning only.
+3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility receipt, not a lock.
+4. `push_batch_apply` revalidates fresh live evidence before every batch and again at the storage boundary.
+5. `push_journal` records durable evidence without authorizing mutation.
+6. `push_recover inspect` reads the journal and fresh live hashes before any mutating repair.
+7. `push_recover auto|finish|rollback` may mutate only after inspect proves the branch safe and the auth floor still holds.
+
 That ladder maps directly onto the pull/export/import pipeline:
 
 | Pull pipeline object | Push consumer | Why the boundary stays separate |
@@ -99,6 +109,13 @@ The pull-to-push bridge is one-way:
 - `push_journal` is read-only evidence
 - `push_recover inspect` is read-only and must happen first
 - mutating recovery uses the same HMAC floor as apply and must not bypass inspect
+
+In production terms, the bridge is the same three-step handoff repeated in
+both Docker and Playground:
+
+1. exporter/importer create the immutable pull base package
+2. push consumes that package through preflight, planning-only hash listing, and dry-run receipt generation
+3. apply, journal, and recovery stay fenced by fresh live evidence and inspect-first recovery rules
 
 The production proof inventory is intentionally layered:
 

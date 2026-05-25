@@ -102,6 +102,16 @@ remote boundaries:
 - recovery inspect
 - recovery mutate
 
+The runtime sequence is fixed and non-overlapping:
+
+1. `push_preflight` binds the persisted pull base package to one live remote identity and one short-lived push session.
+2. `push_snapshot_hashes` lists remote hashes for planning only.
+3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility receipt, not a lock.
+4. `push_batch_apply` revalidates fresh live evidence before every batch and again at the storage boundary.
+5. `push_journal` records durable evidence without authorizing mutation.
+6. `push_recover inspect` reads the journal and fresh live hashes before any mutating repair.
+7. `push_recover auto|finish|rollback` may mutate only after inspect proves the branch safe and the auth floor still holds.
+
 The production topology proof is one remote source site, one imported local
 edit site, one later drift observation of the same remote identity, and one
 runner:

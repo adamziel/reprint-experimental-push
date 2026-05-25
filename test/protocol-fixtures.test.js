@@ -175,6 +175,19 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'The runtime sequence is fixed and non-overlapping',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'The executor maps the pull pipeline into the push ladder without turning the',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes('The production route surface is intentionally split'),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'push-remote-liveness-topology-contract.json` is the smallest topology plus',
     ),
   );
