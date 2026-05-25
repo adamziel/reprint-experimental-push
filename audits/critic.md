@@ -11,11 +11,16 @@ That means the next acceptable proof must move off retained-source lab
 evidence and into a production WordPress auth/session lifecycle, with durable
 journal semantics plus explicit graph-identity, plugin-driver, and plugin-
 owned surface coverage on the live boundary. The older critique that no
-`verify:release` command exists is retired; the remaining issue is that the
+`verify:release` command exists is retired; the current blocker is that the
 command still does not prove preserved-remote safety, apply-time
 revalidation, production auth/session lifecycle, graph identity, or
 plugin-driver coverage on a real-site boundary. A wrapper, comparison note,
 or polished smoke name never replaces that proof.
+Do not let any wording imply that route shape, fixture replay, or a green
+Playground preflight proves production readiness. Production wording only
+becomes defensible after one rerun shows the preserved remote, the exact
+rejection point, fresh live hashes, old/new/blocked classification, and the
+live WordPress auth/session boundary on the same command.
 Any Reprint, ZS-Sync, or ForkPress note is only provenance until this branch
 names the exact upstream commit or worktree state, states what the note proves
 here, states what it does not prove here, and reruns the same live boundary on
@@ -213,6 +218,10 @@ Release-gate checklist for production wording:
   bearing record, and plugin-owned surface before retry starts; and
 - separate preserve / reject / retry cycle for any later-discovered plugin-
   owned surface or remapped create target.
+- reject any phrasing that upgrades `verify:release`, a source-note comparison,
+  or a production-shaped smoke into release proof unless the same rerun also
+  shows preserved-remote auditability, apply-time revalidation, and live
+  WordPress auth/session evidence.
 
 If any one of those items is missing, the claim is compatibility evidence
 only, not production-grade push support. That includes lab-shaped route
