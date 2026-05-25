@@ -4,6 +4,26 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 10:07:26
+
+<a id="2026-05-25-public-status-audit-100726"></a>
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 10:07:26 CEST`) and kept the visible last-updated stamp current.
+- Reconciled the first screen with the newest supervised evidence path: the
+  live protocol proof now names snapshot planning, dry-run receipt upload,
+  apply, and journal readback, but production WordPress executor/auth is still
+  the blocker.
+- No material shipping progress landed in this interval; the same open blockers
+  remain: recovery journal durability, Docker/Playground topology, graph
+  identity, and plugin drivers.
+- Evidence trail: [progress.html](../progress.html),
+  [audits/objective-audit.md](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates),
+  [newest audit](../progress.html#recent-public-audits),
+  [reliable executor handoff](../../cycle-20260525-keep-busy-loop-1/reliable-executor/.lane-output/final-last.md),
+  [supervisor note](../../cycle-20260525-keep-busy-loop-1/feedback-supervisor/.lane-output/final-last.md).
+
 ## 2026-05-25 - Public Status Audit 09:58:47
 
 <a id="2026-05-25-public-status-audit-095847"></a>
