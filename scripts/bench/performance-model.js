@@ -2608,6 +2608,27 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
+    proposal: 'use a compressed remote index plus a cached release manifest to skip release-bundle planning rescans',
+    rejectedBecause: 'planning evidence and a cached manifest can reduce planning work, but they cannot turn a remote index into apply authorization or prove the dependent files and rows survived failure',
+    rejectedGate: 'skip',
+    violates: ['remote-indexes', 'remote-index-planning-only', 'compression', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+    proposal: 'use a compressed remote index plus batched row receipts to skip the release-bundle commit barrier',
+    rejectedBecause: 'planning evidence and batched row receipts can reduce replay cost, but they cannot prove the dependent plugin files, row batches, and atomic-group commit survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
+    proposal: 'use a compressed remote index plus compressed database batches to skip the release-bundle commit barrier',
+    rejectedBecause: 'planning evidence and batch compression can reduce fsync cost, but they cannot prove the dependent plugin files, database row batches, and atomic-group commit survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'database-row-batching', 'atomic-groups', 'plugin-preconditions', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure',
     proposal: 'use a compressed remote index to justify unbounded hash fanout and skip large-upload backpressure during a resume',
     rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded hashing can still outrun the bounded queue order and journal evidence needed to recover after a pause or crash',
