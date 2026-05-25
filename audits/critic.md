@@ -5231,3 +5231,23 @@ Failure scenarios and missing proof:
   relationship-bearing record, remapped create target, or plugin-owned
   surface, and was replaced by a fresh retry artifact rebuilt from live
   hashes.
+
+Production-grade release gate:
+
+- show the exact live boundary rerun on this branch, not just a matching
+  route family, package mount, fixture replay, or `finalMatchesLocal` result;
+- show the remote preserved for audit after rejection, plus the stale
+  rejection point that made the first approval unusable for retry;
+- show live identity evidence or an explicit hard block for any create-time
+  remap, alias, or renumbered target;
+- show every touched file, DB row, relationship-bearing record, and
+  plugin-owned surface classified as old, new, or blocked before retry;
+- show any late-discovered plugin-owned surface was treated as a new boundary
+  with its own preserve / reject / retry cycle, not folded into the earlier
+  approval;
+- show any readable manual-review artifact stayed audit-only after drift and
+  could not authorize a later row, file, remapped create target, or plugin-
+  owned surface; and
+- show each Reprint, ZS-Sync, or ForkPress comparison names the exact
+  upstream state, states what the note proves here, and states what it does
+  not prove here.
