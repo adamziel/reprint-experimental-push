@@ -12151,6 +12151,80 @@ test('blocks local post-parent references to a missing live remote post identity
   assert.equal(Object.hasOwn(remote.db.wp_posts, 'ID:99'), false);
 });
 
+test('blocks local term-relationship references when the live remote taxonomy identity disappears', () => {
+  const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Base relationship post',
+    post_content: 'Base relationship body',
+    post_status: 'publish',
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'base taxonomy',
+      parent: 0,
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 0,
+      note: 'base relationship note',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  remote.db.wp_term_taxonomy = {};
+  remote.db.wp_term_relationships = JSON.parse(JSON.stringify(base.db.wp_term_relationships));
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(planJson.includes('local relationship note'), false);
+  assert.equal(planJson.includes('base taxonomy'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.db.wp_term_taxonomy['term_taxonomy_id:5'], undefined);
+});
+
 test('blocks a file type swap that would hide a live remote descendant while preserving remote-only plugin drift', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = 'base gallery file';

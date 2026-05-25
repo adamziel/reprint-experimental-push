@@ -132,6 +132,9 @@ This note captures the planner boundary in plain language.
   same-remote graph identity, matching independent deletes or edits, and
   plugin-owned resources while remote-only plugin drift remains `keep-remote`
   and late drift is refused on re-apply.
+- Local `wp_term_relationships` rows may still be blocked when the live remote
+  `term_taxonomy_id` identity disappears; the planner must stop instead of
+  guessing a rewrite.
 - A live-preconditioned directory delete may still coexist with a matching
   descendant delete while unrelated remote-only plugin drift remains
   `keep-remote`.
