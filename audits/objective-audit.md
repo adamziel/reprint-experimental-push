@@ -215,11 +215,16 @@ The table below is strict by design:
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is refusal evidence, not approval evidence.
 
+That distinction is visible in the benchmark coverage:
+
+- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js#L12-L254) proves the benchmark model keeps durable receipts, gate proofs, and backpressure rules intact, but it still only checks the model object. It does not time the live push path, touch a live source, or establish a measured release threshold.
+- [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js#L35-L112) proves the benchmark refuses unsupported throughput claims and fails closed on tampering, but it still reports `productionThroughput: 'not-claimed'` and blocks the production claim because the production gaps are not measured.
+
 That distinction matters for the objective itself:
 
 - No data loss is still unproven because the suite never exercises a real live-source mutation boundary and then verifies every affected WordPress shape after an apply-time recheck.
 - Reliability is still unproven because the crash, retry, replay, duplicate-request, stale-claim, lease-expiry, and restart scenarios are only shown in fixtures or lab routes, not on the production storage and transport path.
-- Speed is still unproven because the benchmark surface refuses unsupported throughput claims instead of timing the live push path against a release threshold.
+- Speed is still unproven because the benchmark surface and model tests refuse unsupported throughput claims instead of timing the live push path against a release threshold.
 
 For the objective's headline claims, the evidence is still negative proof only:
 
