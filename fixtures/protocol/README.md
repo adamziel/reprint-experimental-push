@@ -127,6 +127,36 @@ identity across `remote-base` and `remote-changed`:
   journal rows, lease fencing, and inspect-first recovery path so the same
   proof covers dry-run, apply, and recovery.
 
+The operational model is the same in every production proof:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning-only evidence for the live remote
+  comparison surface
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` is a separate remote operation that revalidates fresh
+  live evidence before every batch and again at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating recovery branch
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe and the auth floor still holds
+
+The test topology is also fixed:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 The protocol extension itself is intentionally stage-ordered:
 
 1. `push_preflight` binds the persisted pull base package to one live remote
