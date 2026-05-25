@@ -35,7 +35,8 @@
     "push_plan_dry_run": "uploads the canonical plan as an eligibility receipt, not a lock",
     "push_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run",
     "push_journal": "reads durable evidence without authorizing mutation",
-    "push_recover inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair"
+    "push_recover inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair",
+    "push_recover auto|finish|rollback": "may mutate only after inspect proves the branch safe with the same auth floor as the write path"
   },
   "topology": {
     "remote_base": "remote-base",
@@ -56,6 +57,7 @@
         "runner is the only actor that may preflight, list hashes, upload the dry-run plan, apply batches, inspect the journal, or start recovery",
         "dry-run and apply remain separate remote calls",
         "apply revalidates fresh live evidence before every batch and at the storage boundary",
+        "journal inspect stays read-only before any mutating recovery branch",
         "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
       ]
     },
@@ -65,6 +67,7 @@
         "remote-base and remote-changed are the same remote identity at different times",
         "local-edited is the imported local site derived from the persisted pull base package",
         "runner uses the same route names as Docker",
+        "journal inspect stays read-only before any mutating recovery branch",
         "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy",
         "dry-run and apply remain separate remote calls",
         "apply revalidates fresh live evidence before every batch and at the storage boundary"
