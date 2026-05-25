@@ -157,6 +157,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed upload buffer still cannot stand in for per-chunk receipts or the guarded publish step.
 - A matching manifest or archive hash still cannot stand in for missing chunk receipts or the guarded publish finalize record.
 - A fresh remote index plus a drained compressed queue still cannot prove apply is complete or that the live precondition survived failure.
+- A compressed remote index plus cached row-batch receipts still cannot skip plugin-update dependency checks, because live row compares and the atomic-group barrier still have to survive failure.
 - A compressed remote index plus a cached manifest hash still cannot skip the guarded publish step for a large upload, because the live compare and every chunk acknowledgement still need durable proof.
 - A cached manifest hash still cannot skip the guarded publish step for a large upload, because duplicate lookup and hashing do not prove the live compare, chunk acknowledgements, or publish barrier survived failure.
 - File hashing cannot treat the previous digest alone as authority, because the local fingerprint only skips duplicate rehash work and the live remote compare still guards apply.
@@ -196,6 +197,9 @@ fails in a different way:
 - Database row batching cannot treat a compressed batch as durable proof that
   every row reached the remote, because the missing per-row receipts are what
   make recovery unambiguous.
+- Database row batching for plugin updates cannot treat cached row-batch
+  receipts as proof that dependency checks survived failure, because the live
+  row compares and atomic-group barrier still have to run.
 - Remote indexes cannot authorize mutation because the listing may be stale by
   the time apply runs.
 - Remote indexes cannot become authoritative just because the listing is
