@@ -5,6 +5,45 @@ the existing exporter/importer pull pipeline with a remote mutation protocol
 that keeps pull provenance immutable, separates planning from mutation, and
 revalidates the live remote identity at apply time.
 
+The production push extension is the same ladder the fixtures prove:
+
+1. exporter/importer create the immutable pull base package.
+2. `push_preflight` binds that package to one live remote identity and one
+   short-lived push session.
+3. `push_snapshot_hashes` lists the live remote comparison surface for
+   planning only.
+4. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and
+   at the storage boundary.
+6. `push_journal` records durable evidence without authorizing mutation.
+7. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+8. `push_recover auto|finish|rollback` may mutate only after inspect proves
+   the branch safe.
+
+That ladder is one-way:
+
+- pull exporter/importer remain the only source of immutable push provenance
+- dry-run and apply are separate remote operations
+- remote snapshot hash listing is planning evidence only
+- journal inspect is read-only
+- mutating recovery keeps the same auth floor as the write path
+- push auth must be at least as strict as current Reprint HMAC usage
+
+The canonical test topology is also fixed:
+
+- one remote source site, `remote-base`
+- one imported local edited site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner that owns preflight, hash listing, dry-run, apply, journal
+  inspect, and recovery
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 ## Production Contract
 
 The push executor may mutate only after it proves a safe three-way plan from

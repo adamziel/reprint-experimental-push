@@ -4,6 +4,39 @@ This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
+The executor follows the same production ladder the protocol defines:
+
+1. pull exporter/importer create the immutable base package.
+2. `push_preflight` binds that package to one live remote identity and one
+   short-lived push session.
+3. `push_snapshot_hashes` stays planning-only.
+4. `push_plan_dry_run` returns an eligibility receipt, not a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and
+   at the storage boundary.
+6. `push_journal` stays read-only.
+7. `push_recover inspect` classifies finish, rollback, retry, or block before
+   any mutating repair.
+8. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe.
+
+The executor is therefore not a general remote write loop:
+
+- dry-run and apply remain separate remote operations
+- remote snapshot hash listing is planning evidence only
+- recovery starts with inspect
+- journal inspection never authorizes mutation by itself
+- push auth must be at least as strict as current Reprint HMAC usage
+
+The topology is fixed for both Docker and Playground:
+
+- one remote source site, `remote-base`
+- one imported local edited site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner process that owns the push protocol calls
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 ## Production Shape
 
 The production proof is one remote source site, one imported local edit site,
