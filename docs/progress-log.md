@@ -7,27 +7,23 @@ linked implementation artifacts.
 Newest public summary stays concise by design; details belong in the linked
 evidence trail below.
 
-## 2026-05-25 - Public Status Audit 07:14:17
+## 2026-05-25 - Public Status Audit 07:18:59
 
-<a id="2026-05-25-public-status-audit-071417"></a>
+<a id="2026-05-25-public-status-audit-071859"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 07:14:17 CEST`) and kept the visible last-updated stamp current.
-- Kept the first screen concise and evidence-first: the top blocker stays
-  pinned to production WordPress executor/auth, the trend stays flat, and the
-  newest audit link remains one click away.
-- The latest lane handoffs still show active supporting work: progress-publisher
-  updated again, supervisor feedback stayed aligned, reliable-executor tightened
-  the proof order, and recovery/auditor/critic lanes continued their evidence trail.
+  (`2026-05-25 07:18:59 CEST`) and kept the visible last-updated stamp current.
+- Kept the first screen concise and conservative: lab evidence only, flat
+  trend, `0/4` verified gates, and the top blocker remain visible without
+  repeating the full evidence trail.
 - No new production proof was added; real WordPress executor/auth, durable
-  recovery journaling, Docker/Playground integration, graph identity, and
-  plugin drivers remain pending until proven.
+  recovery journaling, Docker/Playground integration, and plugin drivers remain
+  pending until proven.
 - Evidence trail: [progress.html](../progress.html),
-  [docs/progress-log.md](progress-log.md), [audits/objective-audit.md](../audits/objective-audit.md),
-  [docs/approach-scorecard.md](approach-scorecard.md), [docs/executor.md](executor.md),
-  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [audits/objective-audit.md](../audits/objective-audit.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
   [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
-  [docs/supervisor-feedback.md](supervisor-feedback.md), [release-gate checklist](../progress.html#proof-gates).
+  [release-gate checklist](../progress.html#proof-gates).
 
 ## 2026-05-25 - Public Status Audit 07:09:42
 
