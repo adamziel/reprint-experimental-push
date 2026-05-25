@@ -163,6 +163,8 @@ export function productionThroughputBlockers(report) {
     || report.evidence.chunkReceipts.resumeCursor.sizeBytes > report.shape.chunkSizeBytes
     || report.evidence.chunkReceipts.resumeCursor.resourceKey !== report.shape.largeUploadResourceKey
     || report.evidence.chunkReceipts.resumeCursor.offsetBytes !== (report.shape.fileBytes - report.evidence.chunkReceipts.resumeCursor.sizeBytes)
+    || typeof report.evidence.chunkReceipts.resumeCursor.receiptKey !== 'string'
+    || report.evidence.chunkReceipts.resumeCursor.receiptKey.length === 0
     || report.evidence.chunkReceipts.cursorConsistency?.matchesRecordedReceiptCount !== true
     || report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor !== true
   ) {

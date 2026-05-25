@@ -219,6 +219,12 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(wrongOffsetReceiptCursor).includes('missing-valid-receipt-cursor'),
   );
 
+  const missingReceiptKeyCursor = clone(report);
+  delete missingReceiptKeyCursor.evidence.chunkReceipts.resumeCursor.receiptKey;
+  assert.ok(
+    productionThroughputBlockers(missingReceiptKeyCursor).includes('missing-valid-receipt-cursor'),
+  );
+
   const invalidSizeReceiptCursor = clone(report);
   invalidSizeReceiptCursor.evidence.chunkReceipts.resumeCursor = {
     ...invalidSizeReceiptCursor.evidence.chunkReceipts.resumeCursor,
