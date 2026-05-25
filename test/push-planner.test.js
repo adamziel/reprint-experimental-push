@@ -5899,3 +5899,49 @@ test('mid-apply failure only leaves blocked recovery with artifacts, never a sil
   assert.equal(remote.files['index.php'], '<?php echo "local";');
   assert.equal(remote.db.wp_posts['ID:2'], undefined);
 });
+
+test('durable mid-apply failure remains blocked on retry and preserves the partial-commit artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+      durableJournal,
+    }));
+
+  assert.ok(firstError instanceof PushPlanError);
+  assert.equal(firstError.details.recovery.status, 'blocked-recovery');
+  assert.ok(firstError.details.recovery.artifacts.journal, 'blocked recovery must keep journal artifacts');
+  assert.ok(firstError.details.recovery.artifacts.remote, 'blocked recovery must keep remote artifacts');
+  assert.equal(firstError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(firstError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+
+  const partialRemote = JSON.parse(JSON.stringify(remote));
+  const retryError = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      journal: firstError.details.recovery.artifacts.journal,
+      durableJournal,
+    }));
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(retryError instanceof PushPlanError);
+  assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+  assert.ok(retryError.details.recovery.artifacts.journal, 'retry must keep journal artifacts');
+  assert.ok(retryError.details.recovery.artifacts.remote, 'retry must keep remote artifacts');
+  assert.equal(retryError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(retryError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(remote.files['index.php'], '<?php echo "local";');
+  assert.equal(remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'), true);
+});
