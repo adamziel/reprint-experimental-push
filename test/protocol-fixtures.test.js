@@ -296,6 +296,51 @@ test('umbrella production contract keeps the pull bridge, apply revalidation, re
   ]);
 });
 
+test('production executor flow contract keeps the pull handoff, ladder, and topology in one production-shaped proof', () => {
+  const flow = readJson('fixtures/protocol/push-production-executor-flow-contract.json');
+
+  assert.equal(
+    flow.purpose,
+    'compact production proof that combines the exporter/importer handoff, preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery on one remote source site, one imported local site, and one later drift observation of the same remote identity',
+  );
+  assert.equal(flow.pull_pipeline.persisted_pull_base_package.remote_site_id, 'remote-example');
+  assert.deepEqual(flow.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    flow.pull_to_push_mapping.push_preflight,
+    'binds the persisted pull base package to one live remote identity and one short-lived push session',
+  );
+  assert.ok(
+    flow.pull_to_push_mapping.push_batch_apply.includes('revalidates fresh live evidence before every batch and again at the storage boundary'),
+  );
+  assert.equal(flow.production_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(flow.topology.same_remote_identity, true);
+  assert.equal(flow.topology.networking.ingress_port, 8080);
+  assert.equal(flow.topology.networking.proxy_policy, 'local-only');
+  assert.equal(flow.topology.networking.tunnels, 'disallowed');
+  assert.ok(flow.topology.docker.proof.includes('dry-run and apply remain separate remote calls'));
+  assert.ok(flow.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.deepEqual(flow.required_invariants, [
+    'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run is a receipt, not a lock',
+    'dry-run and apply are separate remote operations',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'pull exporter/importer establish the immutable base package before push',
+    'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+  ]);
+});
+
 test('remote snapshot listing fixture keeps planning-only hash discovery separate from write authority', () => {
   const snapshotListing = readJson('fixtures/protocol/push-remote-snapshot-listing-contract.json');
 

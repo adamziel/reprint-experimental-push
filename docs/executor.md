@@ -74,6 +74,17 @@ its ordering or auth floor:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
+The compact end-to-end production proof is
+`push-production-executor-flow-contract.json`:
+
+- it combines the pull handoff, preflight, planning-only hash listing,
+  dry-run receipt, batched apply, journal inspect, and inspect-first
+  recovery in one production-shaped object
+- it keeps the one remote source site, one imported local site, and one later
+  drift observation of the same remote identity explicit
+- it preserves the same auth floor as the write path and the same dry-run
+  versus apply liveness split
+
 The pull/export/import pipeline is the only immutable provenance source:
 
 - exporter discovers the merge base and coverage evidence

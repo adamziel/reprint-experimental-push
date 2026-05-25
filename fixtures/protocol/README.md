@@ -57,6 +57,7 @@ The normal sequence is:
 49. `push-production-topology-contract.json`
 50. `push-production-auth-session-journal-recovery-inspect-contract.json`
 51. `push-production-pull-bridge-contract.json`
+52. `push-production-executor-flow-contract.json`
 
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
@@ -134,6 +135,9 @@ identity across `remote-base` and `remote-changed`:
   `push-production-topology-contract.json` when you need the immutable pull
   provenance bridge and the production-shaped one-remote, one-local, one-drift
   harness in a single review path.
+- `push-production-executor-flow-contract.json` is the compact end-to-end
+  proof for the pull handoff, preflight, planning-only hash listing, dry-run
+  receipt, batched apply, journal inspect, and inspect-first recovery.
 - `push-preflight-contract.json` and `push-remote-snapshot-listing-contract.json`
   are the short-form proofs for the first live binding and the planning-only
   remote hash listing step.

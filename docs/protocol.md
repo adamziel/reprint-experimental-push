@@ -97,6 +97,10 @@ The machine-readable proof bundle is layered around that same ladder:
   the auth/session/journal/recovery floor
 - `push-production-push-recovery-contract.json` proves the full preflight
   through mutating recovery ladder
+- `push-production-executor-flow-contract.json` proves the complete
+  production executor flow in one object, from pull provenance through
+  preflight, planning hashes, dry-run receipt, batched apply, journal
+  inspect, and inspect-first recovery
 - `push-production-recovery-inspect-contract.json` proves inspect-first
   recovery stays aligned with the journal row, lease fence, and fresh live
   hashes
@@ -223,6 +227,10 @@ The production proof bundle is intentionally layered around that contract:
 - `push-protocol-extension-contract.json` is the umbrella ladder proof
 - `push-production-pull-bridge-contract.json` is the immutable pull-to-push
   bridge proof
+- `push-production-executor-flow-contract.json` is the compact end-to-end
+  executor proof that combines the pull handoff, preflight, planning-only
+  hash listing, dry-run receipt, batched apply, journal inspect, and
+  inspect-first recovery
 - `push-remote-snapshot-listing-contract.json` proves planning-only remote
   hash listing
 - `push-production-revalidation-contract.json` proves dry-run separation and
