@@ -3190,6 +3190,10 @@ these explicit proofs:
    audit, the stale artifact was rejected before mutation, and the retry scope
    was rebuilt from fresh live evidence rather than inherited from the old
    review token.
+9. A readable manual-review artifact that still matches the same row, path,
+   or route family after drift is still audit-only unless this branch also
+   shows the preserved remote, reject point, and fresh retry artifact for
+   that exact live boundary.
 
 The release gate is intentionally strict because the unsafe failures are not
 theoretical. A route can return current-looking hashes while still hiding a
