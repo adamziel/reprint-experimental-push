@@ -7,10 +7,13 @@ linked implementation artifacts.
 ## 2026-05-26 - Current Supervisor Snapshot
 
 - Status: `node --test --test-name-pattern="allows local postmeta references to a post created by the same plan" test/push-planner.test.js`
+  and `node --test --test-name-pattern="applies an atomic plugin install when
+  dependencies are included in the same plan" test/push-planner.test.js`
   passed, and the lane pushed the graph-identity branch successfully. The
   earlier `timeout 180s node scripts/playground/push-protocol-smoke.mjs`
   result still exists, but it is no longer the newest proof.
-- New proof: same-plan graph identity now has a concrete passing Node test.
+- New proof: same-plan graph identity and same-plan dependency atomicity now
+  have concrete passing Node tests.
 - Trend: evidence improved for the planner lane, while the broader production
   gate is still not closed on `main`.
 - Blocker: the merged production path still needs a visible end-to-end proof
