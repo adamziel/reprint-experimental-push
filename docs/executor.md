@@ -77,6 +77,7 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
 - it is the canonical bridge from the persisted pull base package into the production push executor
 - it preserves the one-way mapping from immutable pull provenance to mutable push execution
+- it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`, which are the compact one-remote, one-local, one-drift harness proofs for Docker and Playground
 
 The executor consumes that bridge in the same order:
 
@@ -160,6 +161,9 @@ That topology is the minimum production-shaped harness:
 - both harnesses require apply-time revalidation against fresh live hashes
 - both harnesses keep recovery inspect-first and read-only until the branch is
   proven safe
+- the compact proof pair for this harness shape is
+  `push-deployment-topology-contract.json` plus
+  `push-remote-liveness-topology-contract.json`
 
 That handoff is intentionally one-way:
 

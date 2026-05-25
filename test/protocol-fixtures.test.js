@@ -102,6 +102,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
     ),
   );
   assert.ok(
+    protocolDocs.includes(
+      'push-protocol-extension-contract.json` is the most complete production',
+    ),
+  );
+  assert.ok(
     executorDocs.includes(
       'The canonical production proof bundle is `push-protocol-extension-contract.json`',
     ),
@@ -114,6 +119,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.replace(/\s+/g, ' ').includes(
       'Recovery stays inspect-first even when the journal is present',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`',
     ),
   );
   assert.ok(

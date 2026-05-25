@@ -171,6 +171,7 @@ The canonical production ladder bundle is `push-protocol-extension-contract.json
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
 - it is the canonical machine-readable bridge from the exporter/importer pull pipeline into the push write path
 - it preserves the one-way rule that pull provenance is immutable push input, not a mutable snapshot cache
+- it is the umbrella contract that pairs with `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json` so the one remote source, one imported local edit site, and one later drift observation stay explicit in both harnesses
 
 The bridge is exactly:
 
@@ -255,6 +256,10 @@ The same topology is mirrored in the fixtures:
   the dry-run/apply split so liveness stays separate from write authority
 - `push-topology-matrix.json` keeps the Docker and Playground stage matrix in
   machine-readable form
+- `push-protocol-extension-contract.json` is the most complete production
+  bridge because it combines the pull provenance mapping, the push stage
+  ladder, the recovery chain, and the one-remote, one-local, one-drift test
+  topology in one contract
 - `push-executor-topology-proof.json` keeps the pull provenance, push ladder,
   and 8080 topology aligned in one compact production-shaped fixture
 
