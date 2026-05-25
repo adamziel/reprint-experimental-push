@@ -95,6 +95,29 @@ them out of production wording until the live write path is proven:
   not prove that the remote was preserved, the write failed closed, or the
   retry rebuilt scope from fresh evidence.
 
+Release-grade wording has a hard checklist too. If any item is missing, the
+claim must stay lab-backed or comparison-only:
+
+- Name the exact live write boundary that was exercised, not just the route
+  shape or package mount.
+- Name the stale remote hash set that caused the rejection, and show the
+  rejected approval stayed auditable but unusable.
+- Name the retry scope and show it was rebuilt from fresh live hashes rather
+  than inherited from the old approval.
+- Name the create-time identity decision, including whether the remote
+  reserved the identity, remapped it, or hard-blocked the write.
+- Name every plugin-owned surface in scope, including options, custom tables,
+  generated files, activation hooks, cron rows, cache entries, and runtime
+  registries.
+- Show that unknown plugin-owned state failed closed before mutation instead
+  of becoming writable through fallback behavior.
+- Show that partial file, DB, or plugin side effects are durably classified and
+  cannot widen the old approval to a different row, file, relationship, or
+  plugin-owned surface on retry.
+- If Reprint, ZS-Sync, or ForkPress are cited, name the exact upstream
+  revision or worktree state that was reverified at the same live mutation
+  boundary. Otherwise the comparison is historical context only.
+
 The current design also still has five unproven failure classes that matter for
 production push safety: live remote drift between dry-run and apply, create-time
 identity remapping, plugin-owned state outside the allowlist, partial file/DB/
@@ -201,6 +224,14 @@ wording is allowed:
 - Plugin-owned state exists outside the allowlist, but the planner still
   treats the unknown surface as safe because the route or fixture path matched
   expectations.
+- A create path renumbers or aliases identity after pull, but the proof never
+  shows the reservation rule, the remap decision, or the hard failure that
+  prevented stale identity reuse.
+- A partial file, DB, or plugin apply succeeds on one boundary and fails on
+  another, but the next retry can still inherit the old approval or widen it
+  to a different surface.
+- A manual-review artifact stays readable after drift, but the system cannot
+  prove it became unusable as write authority before the next apply.
 
 ## What Reprint, ZS-Sync, And ForkPress Actually Contribute
 
