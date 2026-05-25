@@ -43,6 +43,7 @@ the safe list even when they improve a throughput metric.
 | Database row batching | Reuse one prepared statement per table and batch shape inside a single atomic group so large plugin installs and updates avoid repeated parse and bind work. | Prepared statements only remove duplicate SQL setup. Each row still needs its live compare, the batch still needs durable receipts, and the atomic-group barrier stays fixed. |
 | Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, strong hash, and owner so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
 | Remote indexes | Compress index responses and cache the planning cursor so repeated scans move fewer bytes without changing planning semantics. | Compression stays transport-only, and a compressed index response still cannot authorize apply or widen the atomic-group barrier. |
+| Remote indexes | Reuse a recorded planning cursor with a strong-hash listing to avoid rescanning unchanged resources during incremental planning. | The cursor is planning evidence only. It does not become an apply lock, and the live compare still guards mutation. |
 | Compression | Compress transport frames for JSON, SQL batches, manifests, and text files. Skip already-compressed file types and keep the canonical hash over the uncompressed resource value. | Content encoding is transport metadata. It must not change the hash used for conflict detection or compare-and-swap. |
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
@@ -62,6 +63,9 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed queue that has drained is still not proof that the remote acknowledged every staged chunk or row.
 - A fresh remote index plus a cached plugin package hash still cannot skip dependency checks, metadata writes, or the atomic-group barrier.
 - A compressed package cache still cannot skip plugin dependency checks or the atomic-group barrier, because package identity and transport compression do not prove group commit completion.
+- A compressed row batch still cannot replace the atomic-group commit barrier, because the coupled files, rows, metadata, and activation state must become visible together.
+- Finalizing multiple atomic groups together is still rejected, because one combined finalize hides which group owns a partial crash or retry.
+- Backpressure still cannot drop queued receipts, because the missing receipts are what make recovery unambiguous after pause or crash.
 - A fresh remote index plus a cached digest still cannot skip per-row preconditions for a database batch.
 - A fresh remote index plus a table checksum still cannot skip per-row preconditions or plugin metadata checks.
 - A fresh remote index plus a compressed upload queue still cannot prove a plugin update finished, because dependency checks, staged files, and the atomic-group commit still need durable evidence.
@@ -228,6 +232,8 @@ The rejected examples are not abstract lint. They are concrete failure modes:
 - Parallel finalization across atomic groups cannot be treated as completion,
   because the receipt and commit records still need to identify each group's
   own failure boundary after a crash or lost response.
+- A compressed row batch cannot replace the atomic-group commit, because
+  compression changes storage footprint, not visibility boundaries.
 - Chunk uploads cannot become visible across atomic groups as soon as receipts
   arrive, because the owning group barrier still has to keep the upload set
   classifiable after crash or retry.

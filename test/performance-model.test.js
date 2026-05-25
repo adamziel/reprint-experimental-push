@@ -122,6 +122,23 @@ test('plugin install remains invisible until the atomic group commit', () => {
   assert.equal(commit.preconditions, 'recheck-all-member-resource-hashes');
 });
 
+test('plugin update keeps staged work behind the same recovery barriers', () => {
+  const model = buildBenchmarkModel();
+  const pluginUpdate = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
+  const finalize = pluginUpdate.actions.find((action) => action.type === 'group-staging-finalize');
+  const commit = pluginUpdate.actions.find((action) => action.type === 'atomic-group-commit');
+  const visibleBeforeCommit = pluginUpdate.actions.filter(
+    (action) => action.atomicGroupId === pluginUpdate.atomicGroupId && action.type !== 'atomic-group-commit' && action.canonicalVisible === true,
+  );
+
+  assert.ok(finalize, 'plugin update should include a staging finalize record');
+  assert.equal(finalize.atomicGroupId, pluginUpdate.atomicGroupId);
+  assert.equal(finalize.finalizeMode, 'receipts-plus-live-preconditions');
+  assert.equal(commit.atomicGroupId, pluginUpdate.atomicGroupId);
+  assert.equal(commit.commitPolicy, 'all-or-nothing');
+  assert.equal(visibleBeforeCommit.length, 0);
+});
+
 test('parallelism limits and backpressure budgets are explicit', () => {
   const model = buildBenchmarkModel();
 
@@ -150,6 +167,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('split-plugin-install').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('live-chunk-publish').violates.includes('known-terminal-state'));
   assert.ok(rejectedById.get('blind-sql-replace').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('compressed-row-batch-replaces-atomic-group').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('parallel-finalize-merged-across-groups').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('backpressure-drops-queued-receipts').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
 });
 
