@@ -7,6 +7,14 @@
     "remote_changed": "the same remote site observed later after independent drift",
     "runner": "the only process allowed to preflight, plan, upload, inspect, and recover"
   },
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "persisted_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "remote_site_id": "remote-example"
+    }
+  },
   "networking": {
     "ingress_port": 8080,
     "proxy_policy": "local-only",

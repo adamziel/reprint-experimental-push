@@ -341,6 +341,10 @@ test('push topology matrix fixture captures the minimal docker and playground pr
   const matrix = readJson('fixtures/protocol/push-topology-matrix.json');
 
   assert.equal(matrix.topology_matrix_id, 'push-topology-docker-playground-matrix');
+  assert.equal(matrix.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(matrix.pull_pipeline.importer, 'persists the base package as immutable provenance');
+  assert.equal(matrix.pull_pipeline.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(matrix.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
   assert.equal(matrix.networking.ingress_port, 8080);
   assert.equal(matrix.networking.proxy_policy, 'local-only');
   assert.equal(matrix.networking.tunnels, 'disallowed');

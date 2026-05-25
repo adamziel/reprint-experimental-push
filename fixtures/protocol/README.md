@@ -97,7 +97,8 @@ Failure and recovery examples:
   Docker/Playground topology into a single fixture.
 - `push-topology-matrix.json` gives the shortest machine-readable proof of the
   one-remote, one-local, one-drift-witness topology used by both Docker and
-  Playground test harnesses.
+  Playground test harnesses, and it now carries the persisted pull base
+  package so the topology proof stays tied to exporter/importer provenance.
 - `push-snapshot-hashes-page-contract.json` gives the compact cursoring proof
   for large remote sites and keeps partial snapshot listings clearly in the
   planning-only lane.
