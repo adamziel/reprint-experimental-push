@@ -25,6 +25,16 @@ The same rule applies to comparison notes: unless the exact upstream revision
 or worktree state is named and this branch reran the same live boundary, the
 note is provenance only and cannot become current retry authority.
 
+One concrete failure mode still needs to be named more sharply: if the first
+write succeeds and a late plugin-owned surface appears on the next live
+snapshot, then any earlier approval, review artifact, or source-note
+comparison is stale by definition. The branch must prove that this second
+surface is either blocked or separately classified before retry, and the
+proof must show the preserved remote, the rejection point for the late
+surface, and the fresh retry scope on this branch. Without that, a clean first
+write can still hide a second-write data-loss path behind "manual resolution"
+language.
+
 Production-readiness language checklist:
 
 1. Name the exact live mutation boundary, the exact drifted remote, and the
@@ -49,6 +59,9 @@ Production-readiness language checklist:
 9. Treat "manual resolution" as audit-only unless the preserved remote stays
    inspectable, the stale rejection point is recorded, and the retry artifact
    is fresh on this branch for the same boundary.
+10. Treat any later-discovered plugin-owned surface as a new boundary unless
+    the branch proves it was blocked or separately classified before retry;
+    do not fold it into the first write's success story.
 
 Source-note comparison policy:
 
