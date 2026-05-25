@@ -6,6 +6,8 @@ The project is **not releasable as a production WordPress push path**.
 
 The blocker is structural: there is still no mandatory command that proves the one-way pull base plus one-way push back to the live source on the real storage and transport path. `node --test` passes, but the passing subtests are still fixture-, model-, refusal-, or lab-backed, and `npm test` is now green at `89/89` without changing that boundary. `package.json` exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers. There is no checked-in `verify`, `verify:release`, or `release` command, and there is no `.github/workflows/` entrypoint in this checkout to compensate. The strongest production-shaped smokes still self-identify as `labBacked: true`, so they remain lab proof rather than live-source proof. The benchmark surface is also explicit: it reports `productionThroughput: 'not-claimed'`, and the guarded benchmark tests refuse to upgrade that into a claim. That is refusal evidence, not release proof. Until a required gate reaches the live-source boundary, rechecks apply-time state, and emits a machine-checkable verdict, `speed unclaimed` is the only defensible production-facing wording. No current green run can legitimately be read as proof that writes are lossless, that the live push path is reliable under crash/retry/replay, or that production speed has been measured. The existing [`audits/release-proof-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-proof-matrix.md) repeats that same gap in tabular form; it is supporting audit evidence, not a release gate. The evidence deficit is categorical, not incremental: nothing currently on the command surface owns the live-source verdict, and every helper path still stops short of proving crash survival or lossless mutation on the live boundary.
 
+That is why the audit stays strict: the current suite can reject unsafe states, but it still cannot certify no data loss, reliability, or speed on the live source.
+
 That means the current green suite is useful only as regression evidence. It is not enough to justify a production claim, and it should not be read as proof that no data loss, reliability, or speed has been demonstrated on the live source boundary.
 
 Boundary note: `npm test` is only a green regression signal unless the same invocation also reaches the live-source apply boundary and fails closed on missing release proof. Without that, the pass rate cannot be promoted to a durability, reliability, or throughput claim.
@@ -23,6 +25,12 @@ The objective implies these minimum release requirements:
 7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one.
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
 9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
+
+Release translation:
+
+- prose about a gate is not the gate
+- fixture, Playground, and model success are not live-source proof
+- if a required run does not touch the live-source boundary in the same invocation, it is still support evidence only
 
 Current command-surface gap:
 
