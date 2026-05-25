@@ -537,6 +537,9 @@ under load:
 - compressed-upload-queue-completes-large-upload is rejected because a drained
   compressed queue can still hide missing chunk receipts or the guarded
   publish record.
+- compressed-upload-queue-replaces-chunk-receipts is rejected because queue
+  compression can lower pressure, but it cannot replace the durable per-chunk
+  acknowledgements needed to classify partial failure or resume safely.
 - fingerprint-and-compressed-upload-queue-completes-large-upload is rejected
   because a local fingerprint and queue compression can reduce work, but they
   cannot prove chunk acknowledgements or the guarded publish survived failure.
