@@ -186,6 +186,17 @@ consumes it in order:
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating repair
 
+The handoff from pull to push is fixed:
+
+| Pull pipeline artifact | Push stage |
+| --- | --- |
+| Merge base discovery | `push_preflight` |
+| Coverage evidence | `push_snapshot_hashes` |
+| Persisted base package | `push_plan_dry_run` |
+| Persisted provenance checksum | `push_batch_apply` |
+| Durable pull provenance | `push_journal` |
+| Imported pull base package | `push_recover inspect` |
+
 The pull/export/import pipeline becomes the executor's concrete runbook in
 the same order:
 

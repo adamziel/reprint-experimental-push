@@ -200,6 +200,17 @@ provenance, and push consumes that provenance as immutable input:
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating recovery branch
 
+The pull pipeline maps to push like this:
+
+| Pull artifact | Push use |
+| --- | --- |
+| Merge base discovery | `push_preflight` binds the persisted pull base package to one live remote identity and one short-lived push session. |
+| Coverage evidence | `push_snapshot_hashes` lists live remote hashes for planning only. |
+| Persisted base package | `push_plan_dry_run` uploads the canonical plan and returns an eligibility receipt, not a lock. |
+| Persisted provenance checksum | `push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary. |
+| Durable pull provenance | `push_journal` records evidence without authorizing mutation. |
+| Imported pull base package | `push_recover inspect` reads the journal and fresh live hashes before any mutating repair. |
+
 The same pull-to-push bridge is exercised in Docker and Playground:
 
 - exporter scans the merge base and coverage evidence
