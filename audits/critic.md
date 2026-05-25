@@ -147,6 +147,11 @@ Release-gate checklist for production-grade wording:
 - the exact live boundary is named, and the drift case is shown with live
   hashes from this branch rather than inferred from route shape or fixture
   replay;
+- any "manual resolution" wording is audit-only unless the same live boundary
+  on this branch shows the preserved remote, the stale rejection point, a
+  fresh retry scope rebuilt from live hashes, and old/new/blocked
+  classification for every touched surface, including any later-discovered
+  plugin-owned surface;
 - the rejected remote stays inspectable after the first failed write, so the
   user can audit the drift and retry safely from fresh live hashes;
 - the stale approval, readable review artifact, or manual-resolution note is
