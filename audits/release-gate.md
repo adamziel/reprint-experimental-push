@@ -13,6 +13,10 @@ or comparison-only.
 - The claim does not treat a readable review artifact or source-note
   comparison as current proof unless the same live boundary was revalidated on
   this branch.
+- The claim does not treat a matching route family, package mount, fixture
+  replay, or `finalMatchesLocal` result as production evidence unless the audit
+  also names the live executor, the stale remote-drift case, the preserved
+  remote, and the fresh retry scope on this branch.
 - The same request path was re-run against a live remote after drift, and the
   stale attempt failed before any mutation.
 - The claim names the exact stale remote hash set, the rejected approval, the
@@ -67,6 +71,10 @@ or comparison-only.
 - The claim shows plugin-owned state outside the allowlist is either enumerated
   live or blocked, including hidden custom tables, generated files, cron rows,
   runtime registries, serialized blobs, and other plugin-owned side effects.
+- The claim shows any late-discovered plugin-owned surface is classified as
+  blocked, old, or new before retry can continue, and it is not folded into a
+  successful second phase without a separate rejection point and preserved
+  remote.
 - The claim shows plugin data traps are not being mistaken for success just
   because a fixture-owned option or table row matches the expected shape while
   the real plugin also owns custom tables, serialized counters, cron rows,
@@ -167,6 +175,10 @@ or comparison-only.
   side-effect classification, or stale approval expiry unless the same live
   write boundary was reverified at the exact upstream revision or worktree
   state.
+- The claim does not let a source-note comparison become current retry
+  authority unless it also records the same live mutation boundary, the
+  preserved remote, the rejection point, and the fresh retry scope; otherwise
+  it is historical context only.
 - The claim does not let a source-note comparison or readable review artifact
   become retry authority for any new object after drift.
 - The claim does not let a stale manual-review artifact become retry authority
