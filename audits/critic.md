@@ -8,17 +8,18 @@ shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
 retained-source lab evidence. It is a real improvement over the earlier
 route-shape-only claims, but it is still not branch-local retry authority.
 The remote lane now also exposes `verify:release` in `package.json`, so any
-remaining absence of that command on this checkout must be read as a
-branch-local merge gap, not a project-wide absence.
+remaining absence of that command on this checkout is only a branch-local
+merge gap, not a project-wide absence or a reason to re-open the retired
+"no verify:release exists" critique.
 
 Single strongest blocker: this worktree still has no rerunnable live release
 command that proves the first executor/auth/preserved-remote boundary on a
 real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. Until that exact
 boundary exists here, production-grade push wording stays false reliability.
-The next acceptable proof must move beyond retained-source lab evidence to
-production WordPress auth/session lifecycle, durable journal semantics, graph
-identity, plugin-driver coverage, and preserved-remote drift handling on a
-real rerun.
+The next acceptable proof must move beyond retained-source lab evidence to a
+real rerun that shows production WordPress auth/session lifecycle, durable
+journal semantics, graph identity, plugin-driver coverage, and preserved-
+remote drift handling on the same live boundary.
 
 What improved in the supervised lane is narrow but real: the retained-source
 handoff now names executor/session/journal details instead of only route
