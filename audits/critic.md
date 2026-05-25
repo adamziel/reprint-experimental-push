@@ -5617,6 +5617,8 @@ Missing-proof matrix for the current design:
 - stale manual-review artifacts: missing proof is that the artifact stayed audit-only after drift, could not authorize a different row/file/remapped target/plugin surface, and was replaced by a fresh retry scope rebuilt from live hashes;
 - Reprint, ZS-Sync, and ForkPress comparisons: missing proof is the exact upstream state plus a rerun of the same live boundary here, with an explicit statement of what the note proves here and what it does not prove here; matching route shape, package layout, or reviewer wording only proves historical context; and
 - production-grade wording: missing proof is the same live boundary on this worktree showing preserved-remote evidence, stale-authority rejection before the first write, fresh retry scope rebuilt from live hashes, and per-surface old/new/blocked classification.
+- late-discovered surfaces: missing proof is that a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface was treated as a new live boundary with its own preserve / reject / retry cycle; route shape, package mount, reviewer wording, or a readable earlier artifact do not carry retry authority across that boundary.
+- proof reuse: missing proof is that the preserved remote, rejection point, and retry scope were rebuilt for the later boundary from live hashes on this branch instead of copied from the earlier boundary; if that later surface was not independently named old, new, or blocked before retry, the earlier artifact is still only compatibility evidence.
 
 False-reliability trap to keep naming explicitly:
 
