@@ -8064,6 +8064,19 @@ Reprint, ZS-Sync, and ForkPress notes remain provenance for transport,
 discovery, and review vocabulary; they are not current proof of production
 push safety on this branch.
 
+The supervised reliable-executor lane is a stronger retained-source baseline
+than this branch alone: it reports a completed `npm run verify:release`
+handoff with `authSessionType`, a minted session shape, `applyCommitted`,
+and `durableJournal.rows: 17`. That is material lab-harness progress, but it
+still does not prove production WordPress auth/session lifecycle, durable
+journal semantics outside Playground, graph identity, plugin-driver
+coverage, leases/fencing, or preserved-remote drift on a real local,
+Playground, or Docker source. The next acceptable proof must move from that
+retained-source baseline to a live WordPress auth/session lifecycle boundary
+with the rejected remote still inspectable, exact preserved-remote evidence,
+apply-time revalidation, journal/recovery inspection, and explicit graph
+identity plus plugin-driver coverage in the same rerun.
+
 The canonical production-readiness checklist for this branch lives in
 [`audits/critic-production-checklist.md`](./critic-production-checklist.md).
 
