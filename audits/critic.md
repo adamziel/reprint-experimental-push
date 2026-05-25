@@ -233,6 +233,10 @@ Release gate for production wording:
   audit after reject, if the stale approval can be reused as retry authority,
   or if the retry artifact is not fresh on this branch and rebuilt from live
   hashes.
+- A production-grade push claim must fail if "manual resolution" is used
+  without the preserved remote, the rejection point, and the fresh retry
+  artifact for the same live boundary, because that label can otherwise hide
+  a widened second boundary.
 - A production-grade push claim must fail if any touched row, file, relation-
   bearing record, or plugin-owned surface is left unclassified before retry
   scope is rebuilt.
