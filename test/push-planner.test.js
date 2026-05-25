@@ -17791,6 +17791,82 @@ test('durable recovery keeps the accepted post-failure states and replaying a co
   );
 });
 
+test('accepted recovery-state shapes stay limited to old remote, fully updated remote, and blocked recovery with artifacts', () => {
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'old-remote',
+      artifacts: {
+        journal: { status: 'opened' },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'fully-updated-remote',
+      artifacts: {
+        journal: { status: 'completed' },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: { status: 'blocked' },
+        remote: { files: {} },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: { status: 'blocked' },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'old-remote',
+      artifacts: {
+        journal: { status: 'opened' },
+        remote: { files: {} },
+      },
+    }),
+    false,
+  );
+
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(JSON.stringify(replay.site), JSON.stringify(completed.site));
+});
+
 test('durable recovery writes the recovery-state boundary before journal-replayed for a completed plan and keeps pre-mutation failures old-remote', () => {
   const base = baseSite();
   const local = baseSite();
