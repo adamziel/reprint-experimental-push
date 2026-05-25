@@ -7,6 +7,15 @@ pipeline, and how to test one remote site and one local site.
 The pull-to-push mapping is one-way: exporter/importer establish immutable
 provenance, and push consumes it without rewriting it.
 
+The production proof for that mapping is a one-remote, one-local topology:
+
+- `remote-example` is the remote source identity
+- `local-dev-site` is the imported local edit site
+- `remote-base` and `remote-changed` are the same remote identity observed at
+  different times
+- `runner` is the only actor that may preflight, list hashes, upload the dry
+  run plan, apply batches, inspect the journal, or start recovery
+
 ## Executor Contract
 
 The executor has one production shape:
@@ -174,6 +183,13 @@ Playground both prove the same remote identity twice, once as the seeded base
 site and again as the drift witness, so the executor never needs to infer a
 second remote from the test topology.
 
+The harness shape is fixed:
+
+- Docker uses one private network with the three site roles and the runner
+- Playground uses separate disposable blueprints with the same route names
+- both harnesses keep browser-visible inspection on the sandbox-provided
+  `8080` ingress through a local-only proxy
+
 The intended one-remote, one-local topology is:
 
 | Environment | Remote source | Local edited site | Drift witness | Runner |
@@ -219,6 +235,19 @@ The pull-to-push handoff stays one-way:
 - push dry-run uploads a receipt, not a lock
 - push batch apply revalidates before every batch and at the storage boundary
 - push journal and push recover inspect read durable evidence first
+
+This is the operational bridge to the existing pull pipeline:
+
+1. exporter scans the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. push preflight binds that provenance to one live remote identity and one
+   short-lived push session
+4. push snapshot hashes remain planning-only
+5. push dry-run uploads the canonical plan as a receipt
+6. push batch apply revalidates before every batch and at the storage boundary
+7. push journal stays read-only
+8. push recovery starts with inspect and only mutates when the journal plus
+   fresh live hashes still prove the action safe
 
 The proof stack is the canonical review order:
 

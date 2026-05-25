@@ -27,6 +27,10 @@ The production ladder is fixed and ordered:
 7. `push_recover auto|finish|rollback` may mutate only after inspect proves the
    action safe with fresh live evidence.
 
+The push protocol extension is therefore not a general remote write API. It is
+the production write path for one imported base package, one edited local
+site, and one live remote identity that must be revalidated at apply time.
+
 ## Pull To Push Mapping
 
 Push consumes immutable provenance from the existing pull pipeline:
@@ -39,6 +43,19 @@ Push consumes immutable provenance from the existing pull pipeline:
 | Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
 | Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
 | Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
+
+The pull pipeline remains the source of truth for immutable provenance:
+
+- exporter discovers the merge-base and coverage evidence
+- importer stores the pull base package as immutable provenance
+- preflight binds that persisted package to the live remote identity and a
+  short-lived push session
+- snapshot listing reads only the live remote comparison surface for planning
+- dry-run uploads the canonical plan as a receipt, not a lock
+- batch apply revalidates before every batch and at the storage boundary
+- journal inspect stays read-only
+- recovery begins with inspect and only mutates when the journal plus fresh
+  live hashes still prove the action safe
 
 The boundary rules are one-way:
 
@@ -89,6 +106,15 @@ remote source site and `local-dev-site` for the imported local site. The same
 remote identity is observed again after drift so the topology proves one
 remote site, one local edited site, and one runner without introducing a
 second remote authority.
+
+The test topology is intentionally identical in Docker and Playground:
+
+- Docker runs the remote source, local edited site, and drift witness on one
+  private network behind the runner
+- Playground uses disposable blueprints, but the same route names and the same
+  remote identity mapping
+- both harnesses rely on the sandbox-provided `8080` ingress for browser
+  inspection through a local-only proxy
 
 That identity mapping is fixed:
 

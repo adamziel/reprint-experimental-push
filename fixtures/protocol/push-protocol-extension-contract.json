@@ -65,6 +65,7 @@
       "apply revalidates fresh live evidence before every batch and at the storage boundary",
       "journal inspect is read-only",
       "recovery inspect happens before any mutating repair",
+      "Docker and Playground both keep the same remote identity mapping and route names",
       "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
     ],
     "docker": {
