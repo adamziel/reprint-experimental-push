@@ -44,6 +44,9 @@ This note is the short form of the planner policy in
   independent edit and file type swap; the matching resources stay
   `already-in-sync`, the delete keeps its own live remote precondition, and
   unrelated remote-only plugin drift stays `keep-remote`.
+- A file delete that would hide a live remote descendant must stop even when
+  matching independent delete, edit, and file type swap resources are already
+  safe in the same plan.
 - The same file-delete rule still holds when the remote side also changed
   unrelated plugin metadata and plugin files: the matching edit and file type
   swap stay `already-in-sync`, the delete keeps its own live remote
@@ -92,6 +95,8 @@ mutation id, the resource key, the remote hash observed during planning, and
 - Any remote-only change the local side does not touch.
 - Remote-only plugin metadata, plugin files, activation state, and removals.
 - Remote descendants that would be hidden by a local delete or type swap.
+- Bounded descendant conflict evidence that names the related path without
+  leaking file bodies.
 - Conflict and blocker evidence without raw file bodies, row contents, option
   values, or plugin payloads.
 
