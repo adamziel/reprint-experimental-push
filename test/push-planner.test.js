@@ -271,6 +271,38 @@ test('executor rejects forged mixed ready plans when any live remote preconditio
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('executor rejects forged mixed ready delete and type swap plans when the delete precondition is missing', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery'] = 'base gallery bytes';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/gallery'] = 'base gallery bytes';
+
+  const ready = planFor(base, local, remote);
+  const deleteMutation = mutationFor(ready, 'file:index.php');
+  const typeSwapMutation = mutationFor(ready, 'file:wp-content/uploads/gallery');
+  const forged = tamperReadyPlan(ready, (plan) => {
+    plan.preconditions = plan.preconditions.filter((entry) => entry.mutationId !== deleteMutation.id);
+    assert.equal(plan.preconditions.some((entry) => entry.mutationId === typeSwapMutation.id), true);
+  });
+
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(error.details.mutationCount, 2);
+  assert.equal(error.details.preconditionCount, 1);
+});
+
 test('keeps remote-only changes and does not overwrite them', () => {
   const base = baseSite();
   const remote = baseSite();

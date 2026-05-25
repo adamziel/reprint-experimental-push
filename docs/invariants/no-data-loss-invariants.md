@@ -64,6 +64,10 @@ This note captures the planner boundary in plain language.
   when an unrelated matching edit and remote-only plugin drift are present;
   the matching edit stays `already-in-sync`, the plugin drift stays
   `keep-remote`, and the conflict evidence stays bounded.
+- A mixed ready plan must still fail closed when one mutation loses its live
+  remote precondition, even if a matching independent edit and a file type
+  swap remain safe in the same plan; the remote stays unchanged and the
+  missing precondition evidence stays bounded.
 - The same file type swap stop rule also holds when the remote side removed
   the unrelated plugin entirely and a matching independent edit stays
   `already-in-sync`.
