@@ -10,7 +10,7 @@ lands in one of these states:
 
 Anything else is a release blocker.
 
-## What the Lab Proves
+## What The Lab Proves
 
 The current tests prove the recovery envelope with in-memory sites and
 append-only JSON journal records:
@@ -30,13 +30,15 @@ durability.
 
 Production recovery needs the same state machine, plus durable evidence:
 
-- journal rows or files that survive process death
+- database rows or files that survive process death
 - fsync or equivalent flush guarantees for the journal medium
 - plugin activation or ownership checks that remain valid on retry
 - fencing or lease checks that prevent stale writers from appending recovery
   evidence after a newer claim exists
-- inspectable artifacts for blocked recovery so operators can classify the
-  remote as old, fully updated, or blocked with proof
+- inspectable recovery artifacts so operators can classify the remote as old,
+  fully updated, or blocked with proof
+- a recovery inspect path that can explain why a replay is inert, blocked, or
+  still requires operator intervention
 
 If a mutation reaches the remote but there is no recovery artifact to explain
 the outcome, the push is unsafe.
@@ -48,6 +50,7 @@ the outcome, the push is unsafe.
 - No remote mutation has been committed.
 - The recovery journal may contain opened or staged evidence, but no committed
   mutation evidence.
+- Retrying must not invent inserts or stale local data.
 
 `fully-updated-remote`
 
@@ -55,6 +58,7 @@ the outcome, the push is unsafe.
 - The journal must already show the completed plan.
 - Replaying the same completed plan must remain read-only and must not append
   fresh mutation evidence.
+- Stale local state must not be resurrected during replay.
 
 `blocked-recovery`
 
@@ -62,6 +66,8 @@ the outcome, the push is unsafe.
   fully updated.
 - The journal must keep the evidence needed to inspect the failure.
 - The blocked state must retain remote and journal artifacts.
+- A blocked recovery is the only acceptable answer when the remote changed and
+  the journal cannot prove a safe replay or rollback.
 
 ## Release Blocker
 
