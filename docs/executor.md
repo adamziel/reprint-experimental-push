@@ -148,6 +148,12 @@ The review path is intentionally layered:
 - `push-production-topology-contract.json` is the production harness proof for one remote source, one imported local edit site, and one later drift observation of the same remote identity.
 - `push-remote-liveness-topology-contract.json` is the smallest proof for the dry-run/apply separation plus live revalidation boundary.
 
+The inspect-first recovery proof path is intentionally explicit:
+
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is the compact production proof for auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect.
+- `push-production-recovery-inspect-contract.json` is the production-shaped proof for the same inspect-first boundary when you need the journal row, lease fence, and live drift classification to stay aligned with the write path.
+- `push-production-recovery-drift-contract.json` is the production-shaped proof for recovery inspect after the remote has drifted and the same remote identity still has to be revalidated before mutation.
+
 For quick navigation, use this proof order:
 
 1. `push-protocol-extension-contract.json` for the full executor ladder.

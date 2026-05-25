@@ -143,6 +143,17 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
     ),
   );
   assert.ok(
+    protocolDocs.includes(
+      'recovery inspect is read-only and never substitutes for a push session',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'the recovery fence must still match the same remote identity and the same',
+    ),
+  );
+  assert.ok(protocolDocs.includes('persisted pull base package'));
+  assert.ok(
     executorDocs.includes(
       'The canonical production proof bundle is `push-protocol-extension-contract.json`',
     ),
@@ -160,6 +171,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      '`push-production-auth-session-journal-recovery-inspect-contract.json` is the compact production proof for auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect',
     ),
   );
   assert.ok(
@@ -190,6 +206,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'The pull-to-push bridge is one-way',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'The inspect-first recovery proof path is intentionally explicit:',
     ),
   );
   assert.ok(

@@ -156,6 +156,17 @@ The recovery proof chain is also one-way:
   and fresh live hashes prove the branch safe
 - stale dry-run evidence never becomes recovery authority
 
+The inspect-first recovery path is intentionally stricter than planning:
+
+- recovery inspect is read-only and never substitutes for a push session
+- journal rows must prove the claim owner, claim generation, and lease
+  expiry before any mutating branch starts
+- the recovery fence must still match the same remote identity and the same
+  persisted pull base package
+- finish, rollback, retry, and block are the only allowed recovery outcomes
+- mutating recovery must still recheck fresh live hashes after inspect and
+  before any repair writes
+
 For implementation and review, the bridge should be read in the same order as
 the production executor:
 

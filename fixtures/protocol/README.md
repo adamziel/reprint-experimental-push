@@ -78,6 +78,10 @@ identity across `remote-base` and `remote-changed`:
   the compact production proof that keeps auth, session minting, journal rows,
   lease fencing, and inspect-first recovery aligned on the same remote
   identity and local edit site.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is
+  the proof to cite when you need the minimum production evidence for auth
+  floor, push session minting, journal rows, lease fencing, and read-only
+  recovery inspect on the same remote identity.
 - `push-production-revalidation-contract.json` is the compact proof that
   keeps preflight, planning-only snapshot hashes, dry-run eligibility,
   apply-time revalidation, journal evidence, and inspect-first recovery
