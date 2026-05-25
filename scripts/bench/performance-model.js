@@ -1853,6 +1853,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-parallel-chunk-sends-skips-backpressure',
+    proposal: 'use a compressed remote index plus parallel chunk sends to skip backpressure pauses during a large upload',
+    rejectedBecause: 'planning evidence and parallel chunk sends can reduce wait time, but they cannot prove the sender kept bounded queue order, complete chunk receipts, and journal evidence across a pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure',
     proposal: 'use a compressed remote index plus cached chunk receipts to skip backpressure pauses during large-upload resume',
     rejectedBecause: 'planning evidence and cached receipts can trim replay work, but they cannot prove the sender still has the bounded queue order and journal evidence needed to recover after pause or crash',

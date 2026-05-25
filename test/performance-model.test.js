@@ -267,6 +267,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-chunk-sends-skips-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers')?.rejectedGate,
     'group',
   );
@@ -512,6 +516,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-unbounded-upload-parallelism-skips-backpressure').violates.includes('durable-progress'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('parallelism-limits'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('backpressure'),
   );
   assert.equal(
     rejectedById.get('compressed-remote-index-and-compressed-upload-queue-skips-backpressure').rejectedGate,
