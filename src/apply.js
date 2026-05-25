@@ -61,7 +61,14 @@ export function applyPlan(remote, plan, options = {}) {
         recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, error.details.recovery);
         throw error;
       }
-      throw journalWriteFailureFullyUpdated(error, remote, plan, replayResult?.journal || journal, 'journal-replayed');
+      throw journalWriteFailureFullyUpdated(
+        error,
+        remote,
+        plan,
+        replayResult?.journal || journal,
+        'journal-replayed',
+        recoveryStateDurableWriteDetails(error?.details),
+      );
     }
   }
   if (hasPreviousJournal) {
@@ -928,7 +935,7 @@ function journalWriteFailureOldRemote(error, remote, plan, journal, boundary) {
   );
 }
 
-function journalWriteFailureFullyUpdated(error, remote, plan, journal, boundary) {
+function journalWriteFailureFullyUpdated(error, remote, plan, journal, boundary, recoveryDetails = {}) {
   const details = durableJournalFailureDetails(error);
   const reason = `Durable recovery journal write failed while recording completed replay at ${boundary}.`;
   return new PushPlanError(
@@ -937,6 +944,7 @@ function journalWriteFailureFullyUpdated(error, remote, plan, journal, boundary)
     {
       boundary,
       ...details,
+      ...recoveryDetails,
       recovery: fullyUpdatedRecoveryState(remote, plan, journal, reason),
     },
   );

@@ -13417,6 +13417,9 @@ test('durable completed replay stays fully-updated when replay journaling fails'
   assert.equal(replayError.code, 'JOURNAL_WRITE_FAILED');
   assertAcceptableRecoveryState(replayError.details.recovery);
   assertRecoveryStateArtifacts(replayError.details.recovery, 'fully-updated-remote');
+  assert.equal(replayError.details.durableRecoveryStateWriteFailed, true);
+  assert.ok(replayError.details.durableJournalError);
+  assert.equal(replayError.details.durableJournalError.eventType, 'journal-replayed');
   assert.equal(replayError.details.recovery.artifacts.remote, undefined);
   assert.equal(replayError.details.recovery.artifacts.journal.status, 'completed');
 });
