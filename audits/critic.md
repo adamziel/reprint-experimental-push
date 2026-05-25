@@ -139,7 +139,8 @@ them proves a live push executor on this branch that rejects stale drift
 before the first write, preserves the remote for audit, blocks create-time
 identity remap, or classifies late-discovered plugin-owned surfaces before
 retry. If the branch cannot show those live-boundary proofs here, the source
-note remains design context only.
+note remains design context only, even when the upstream state is named
+precisely or the route/package/reviewer wording matches.
 
 Must change before the project can claim production-grade push support:
 
