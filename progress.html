@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Lab evidence holds; production proof is still missing. The detailed trail is linked below.</p>
-        <time class="update-stamp" datetime="2026-05-25T02:56:55+02:00">Last updated: May 25, 2026, 02:56:55 CEST</time>
+        <p class="lead">Lab evidence holds. Production proof is still missing, and the detailed trail is linked below.</p>
+        <time class="update-stamp" datetime="2026-05-25T02:57:35+02:00">Last updated: May 25, 2026, 02:57:35 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Lab evidence still holds</span>
           <span class="pill">Production proof still missing</span>
@@ -492,7 +492,7 @@
 
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
-        <strong>Verified</strong>
+        <strong>Lab-backed</strong>
         <span>Node tests remain green in lab/model coverage</span>
       </div>
       <div class="metric">
@@ -505,7 +505,7 @@
       </div>
       <div class="metric">
         <strong>Open gaps</strong>
-        <span>auth, journal, leases, graph identity, integration, and plugin proof</span>
+        <span>auth/session, journal durability, leases/fencing, graph identity, integration, and plugin proof</span>
       </div>
     </section>
 
@@ -515,7 +515,7 @@
         <span>Short, dated, linked</span>
       </div>
       <div class="panel">
-        <p>Going well: the page, log, and feedback note still line up, and the scan view stays short. Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity mapping, integration, and plugin drivers. Progress change: no new evidence landed; the public page was tightened to keep the detailed trail linked instead of repeated. Next nudge: keep each lane to one proof gap, one test, and one owner.</p>
+        <p>Going well: the page, log, and feedback note still line up, and the scan view stays short. Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity mapping, integration, and plugin drivers. Progress change: no new evidence landed; the page now keeps the detailed trail linked instead of repeated. Next nudge: keep each lane to one proof gap, one test, and one owner.</p>
         <ul class="compact-list" aria-label="Lane nudges">
           <li><strong>Invariants</strong><span>Owner: lane. Next test: prove graph identity mapping on a real site.</span></li>
           <li><strong>Recovery</strong><span>Owner: lane. Next test: prove durable journal writes under crash boundaries.</span></li>
@@ -601,8 +601,8 @@
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
             <div class="proof-item"><span class="status">Lab evidence</span><p>Packaged route requires scoped credentials, rejects unprovisioned and unscoped credentials, and applies seven graph-safe mutations in local lab runs.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Production auth and authorization.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Durable journal, crash, lease, and fencing tests.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Production auth, authorization, and session scope.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Durable journal, crash, lease, and fencing coverage.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Docker/full Playground integration beyond fixture labs.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>WordPress graph identity mapping, plugin drivers, and rollback.</p></div>
           </div>
