@@ -149,6 +149,12 @@ The table below is strict by design:
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is refusal evidence, not approval evidence.
 
+For the objective's headline claims, the evidence is still negative proof only:
+
+- No data loss is not proven by planner, replay, or journal-model tests unless they reach the live source boundary and verify every affected WordPress shape survives apply-time rechecks.
+- Reliability is not proven by crash, replay, stale-claim, or process-kill fixtures unless they run against the real storage and transport path with durable fencing.
+- Speed is not proven by benchmark-model or guarded-executor tests unless they time the live push path against a stated runtime and memory threshold.
+
 That is not a wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push. The green `npm test` result only proves the current model and fixture suite are internally consistent; it does not prove release readiness, no data loss, reliability, or live-path speed.
 
 The specific claims the tests do not yet prove are the ones the objective cares about most:
