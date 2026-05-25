@@ -54,6 +54,10 @@ Release gate for any production wording:
   state, rechecks the same live boundary here, and records the same drift or
   retry case against the current worktree; a matching note without that
   branch-local rerun is not production evidence.
+- Show that branch-local revalidation exists for the exact same stale-remote,
+  create-time remap, plugin-owned surface, or partial-write case being
+  described; otherwise even a correct upstream note, matching route family,
+  or readable review artifact stays historical context only.
 - Show the claim does not collapse a lab-shaped success path into production
   safety just because the route name, response codes, or resource hashes look
   compatible; the missing proof is the live drift case on the real mutation
