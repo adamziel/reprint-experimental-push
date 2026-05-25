@@ -903,7 +903,8 @@ loss, and the repository still lacks the live write-boundary evidence needed to
 support that claim. Speed remains blocked too, but it is subordinate to the
 same missing release boundary: if the repo cannot prove the guarded write
 matrix on the live path, it also cannot justify a production speed claim for
-that path.
+that path. In other words, the repo is not just missing a fast benchmark; it is
+missing the release boundary that would make any benchmark relevant to release.
 
 Right now the repo only proves that selected fixtures survive selected lab
 paths, and those paths do not yet cover the same auth, storage, journal, lease,
@@ -943,7 +944,8 @@ should do so in one required command rather than by manual script assembly:
 The current suite is therefore good at rejecting regressions, but it is not
 yet good enough to justify the live-source production claims. The most
 actionable next step is not more wording; it is live evidence for each guarded
-write class, retained with hashes and crash state.
+write class, retained with hashes and crash state. Until that exists, the
+suite can only support a blocked-release statement, not a release-ready one.
 
 Practical release blocker summary:
 
