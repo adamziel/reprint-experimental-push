@@ -276,7 +276,10 @@ language. Those are source-note lessons from other repos, not proof that this
 repo has the same mutation guarantees. None of them prove that this repository
 has matched those semantics at the mutation boundary, and none of them prove
 that a positive lab result survives a fresh live snapshot, a drifted remote,
-or a narrowed retry scope.
+or a narrowed retry scope. If the branch has not rechecked the exact cited
+upstream revision or worktree state against the same live write boundary, the
+comparison is historical context only, even when the route, package mount, or
+hash looks current.
 
 The project must treat the following as false-reliability claims and keep
 them out of production wording until the live write path is proven:
@@ -312,6 +315,9 @@ False-reliability claims that also need to stay out of production wording:
 - "The comparison proves it" is false unless the cited Reprint, ZS-Sync, or
   ForkPress note was reverified at the same live mutation boundary and against
   the exact upstream revision or worktree state named in the claim.
+- "The comparison is current" is false unless the branch rechecked the exact
+  cited upstream revision or worktree state against the same live write
+  boundary; otherwise the note is historical context only.
 - "Recovery succeeded" is false whenever one store committed and the rest were
   merely classified; mixed file, DB, or plugin writes still need old/new/
   blocked evidence and a retry rebuilt from fresh live hashes.
