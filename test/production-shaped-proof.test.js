@@ -170,6 +170,9 @@ maybeTest('production-shaped release verify command runs the live protocol branc
 
     assert.equal(proof.status, 0, proof.stderr);
     assert.match(proof.stdout, /"ok": true/);
+    assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
+    assert.match(proof.stdout, /"remoteChanged": "http:\/\/127\.0\.0\.1:\d+"/);
+    assert.match(proof.stdout, /"localEdited": "http:\/\/127\.0\.0\.1:\d+"/);
     assert.match(proof.stdout, /"boundary": \{/);
     assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
     assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
