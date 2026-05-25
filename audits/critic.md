@@ -29,6 +29,8 @@ same mutation. The supervised reliable-executor lane can provide material
 retained-source evidence for those shapes, but that evidence is not enough to
 claim production-grade push support here unless the same live boundary is
 runnable on this branch and the rejected remote remains auditable and retryable.
+If the only available proof is a retained-source or fixture replay, the claim
+must stay at "lab progress" rather than "production-ready."
 
 ## Single strongest blocker
 
@@ -90,7 +92,8 @@ the following on the same live boundary:
 - explicit old/new/blocked classification for touched rows, files,
   relationship-bearing records, and plugin-owned surfaces; and
 - plugin-driver coverage for late-discovered plugin-owned data traps outside
-  the allowlist; and
+  the allowlist, with explicit handling for plugin-owned state that is not
+  visible in the initial plan; and
 - a preserved-remote receipt that is still inspectable after rejection and
   lets a reviewer audit, retry, and compare the exact boundary without
   depending on manual resolution.
