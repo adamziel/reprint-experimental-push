@@ -127,6 +127,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'remote-indexes',
+    reduces: ['remote-body-fetches', 'planning-round-trips', 'wire-bytes-for-index-scans'],
+    allowedShortcut: 'compress-index-listings-without-changing-planning-semantics',
+    guardrails: [
+      'index-remains-planning-evidence-only',
+      'apply-still-revalidates-live-state',
+    ],
+    gateProofs: {
+      skip: 'index response bodies can be compressed because the planning listing is not the mutation authority',
+      live: 'the compressed listing still cannot authorize writes; apply rechecks the live resource hash',
+      group: 'index metadata may help partition by owner, but it never widens or shortens the atomic-group barrier',
+      recovery: 'the plan keeps the index cursor for planning while recovery relies on later receipts and commit records',
+    },
+    visibilityBoundary: 'transport-only',
+    failureEvidence: 'compressed index response with the recorded planning cursor',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'staging-io-for-text-payloads'],
     allowedShortcut: 'compress-transport-frames-with-canonical-uncompressed-digest',
@@ -425,6 +445,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and queue compression can reduce work, but they cannot prove the live mutation or its receipts survived failure',
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'live-preconditions', 'durable-progress'],
+  },
+  {
+    id: 'compressed-index-completes-apply',
+    proposal: 'treat a compressed remote index response as proof that apply is complete',
+    rejectedBecause: 'compression can shrink the planning listing, but it cannot authorize mutation or prove the live resource state survived failure',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'compression', 'live-preconditions', 'durable-progress'],
   },
   {
     id: 'compressed-buffer-acknowledges-chunks',

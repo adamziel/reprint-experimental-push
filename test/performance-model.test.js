@@ -238,6 +238,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     ),
     'model rejects treating a fresh remote index plus a compressed manifest hash as large-upload completion',
   );
+  assert.ok(
+    model.rejectedFastPaths.some((rejection) => rejection.id === 'compressed-index-completes-apply'),
+    'model rejects treating a compressed remote index response as apply completion',
+  );
   assert.equal(pluginInstall.parallelism.atomicGroupCommit, 1);
   assert.equal(largeUpload.backpressure.onPressure, 'pause-upstream-producers');
   assert.ok(
@@ -257,6 +261,23 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin update backpressure should model remote latency as a stop condition',
   );
   assert.equal(pluginUpdate.backpressure.forbiddenResponse, 'drop-evidence-or-mark-unacknowledged-work-complete');
+});
+
+test('safe fast paths include compressed remote index planning only', () => {
+  const model = buildBenchmarkModel();
+  const compressedIndexPath = model.safeFastPaths.find(
+    (fastPath) =>
+      fastPath.area === 'remote-indexes' &&
+      fastPath.allowedShortcut === 'compress-index-listings-without-changing-planning-semantics',
+  );
+
+  assert.ok(compressedIndexPath, 'compressed remote index planning path exists');
+  assert.equal(compressedIndexPath.visibilityBoundary, 'transport-only');
+  assert.equal(compressedIndexPath.bypassesLivePreconditions, false);
+  assert.ok(
+    compressedIndexPath.gateProofs.live.includes('cannot authorize writes'),
+    'compressed index path still requires live revalidation',
+  );
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
@@ -290,7 +311,6 @@ test('safe fast path proposals retain proof obligations', () => {
   const fastPathByArea = new Map(
     model.safeFastPaths.map((fastPath) => [fastPath.area, fastPath]),
   );
-
   for (const area of model.safeSpeedupAreas) {
     assert.ok(fastPathByArea.has(area), `missing safe fast path proposal for ${area}`);
   }
@@ -315,10 +335,21 @@ test('safe fast path proposals retain proof obligations', () => {
     assert.equal(fastPath.publishesStagedDataEarly, false);
   }
 
-  assert.ok(
-    fastPathByArea.get('remote-indexes').guardrails.includes('apply-revalidates-live-resource-hash'),
+  const planningIndexPath = model.safeFastPaths.find(
+    (fastPath) =>
+      fastPath.area === 'remote-indexes' &&
+      fastPath.allowedShortcut === 'plan-from-indexed-strong-hash-listing',
   );
-  assert.equal(fastPathByArea.get('remote-indexes').visibilityBoundary, 'none-planning-only');
+
+  assert.ok(
+    planningIndexPath.guardrails.includes('apply-revalidates-live-resource-hash'),
+    'remote index planning path keeps apply revalidation explicit',
+  );
+  assert.ok(
+    planningIndexPath.gateProofs.live.includes('apply revalidates live storage state'),
+    'remote index planning path keeps the live gate explicit',
+  );
+  assert.equal(planningIndexPath.visibilityBoundary, 'none-planning-only');
   assert.equal(
     fastPathByArea.get('parallelism-limits').visibilityBoundary,
     'atomic-group-commit-barrier',

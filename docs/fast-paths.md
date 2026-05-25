@@ -39,6 +39,7 @@ the safe list even when they improve a throughput metric.
 | Chunk upload | Upload large file bodies to plan-scoped staging objects in digest-addressed chunks, then assemble or publish the file with one compare-and-swap finalize step. | Chunk writes must not mutate the live path. Each chunk needs a checksum, idempotency key, and durable journal entry before the sender advances. |
 | Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order with one precondition per row. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
 | Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, strong hash, and owner so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
+| Remote indexes | Compress index responses and cache the planning cursor so repeated scans move fewer bytes without changing planning semantics. | Compression stays transport-only, and a compressed index response still cannot authorize apply or widen the atomic-group barrier. |
 | Compression | Compress transport frames for JSON, SQL batches, manifests, and text files. Skip already-compressed file types and keep the canonical hash over the uncompressed resource value. | Content encoding is transport metadata. It must not change the hash used for conflict detection or compare-and-swap. |
 | Parallelism limits | Run independent hash, index, file chunk, and database batch work concurrently within per-site and per-kind budgets. | Atomic groups define dependency barriers. Parallel work can stage data, but cannot publish outside the group's commit boundary. |
 | Backpressure | Use bounded producer queues for hashing, chunk upload, and database batching. Pause earlier stages when upload acks, journal fsyncs, memory, disk, or remote latency exceed budget. | A paused or failed sender must have enough durable state to resume or abort without guessing which bytes or rows reached the remote. |
@@ -50,6 +51,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A plugin install that has finished file staging but not validator, metadata, and row receipts is still not visible.
 - A compressed payload can reduce wire bytes, but it cannot stand in for the canonical uncompressed hash.
 - A remote index cursor can guide planning, but it cannot authorize a live write.
+- A compressed remote index response can reduce planning traffic, but it still cannot authorize a live write.
 - Extra parallelism is only safe while it preserves the same preconditions, receipts, and atomic barrier.
 - Backpressure must pause producers; it cannot claim success by draining evidence into memory.
 - A backpressure pause cannot mean completion, because the paused work still needs chunk receipts, row receipts, and the atomic-group commit record to survive failure.
@@ -131,6 +133,9 @@ fails in a different way:
   make recovery unambiguous.
 - Remote indexes cannot authorize mutation because the listing may be stale by
   the time apply runs.
+- Remote indexes cannot become authoritative just because the listing is
+  compressed, because transport encoding does not change the planning-only
+  boundary.
 - Compression cannot change the canonical hash or replace the compare-and-swap
   precondition on the uncompressed value.
 - Parallelism cannot bypass the atomic group commit barrier.
