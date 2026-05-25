@@ -26,5 +26,7 @@ The tests assert that:
 - blocked recovery carries journal and remote artifacts
 - retries do not duplicate inserts
 - retries do not resurrect stale local data
+- the only acceptable post-failure states are `old-remote`, `fully-updated-remote`, or `blocked-recovery`
+- any partial remote mutation without recovery artifacts remains a release blocker
 
 If any failure leaves the remote partially mutated without a recovery artifact, that is a release blocker.

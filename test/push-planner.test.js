@@ -14658,6 +14658,45 @@ test('no-data-loss recovery contract only accepts old-remote, fully-updated-remo
   assert.ok(partialFailure.details.recovery.artifacts.journal);
 });
 
+test('no-data-loss recovery matrix keeps pre-mutation failures old-remote, replayed journals fully-updated, and retries idempotent', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const failureJournalPath = tempRecoveryJournalPath();
+  const failureJournal = openRecoveryJournal(failureJournalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: failureJournal,
+      failAfterStaging: true,
+    }),
+  );
+  failureJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assertFailureRecoveryState(failure.details.recovery, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'staged');
+
+  const replayJournal = openRecoveryJournal(failureJournalPath, { now: fixedNow });
+  const replay = applyPlan(baseSite(), plan, {
+    durableJournal: replayJournal,
+    journal: failure.details.recovery.artifacts.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(replay.appliedMutations, plan.mutations.length);
+  assertFailureRecoveryState(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('no-data-loss recovery contract keeps pre-mutation boundaries old-remote and completed replay inert', () => {
   const base = baseSite();
   const local = baseSite();
