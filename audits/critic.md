@@ -23,7 +23,8 @@ Must-fix blockers before any production wording:
   exact upstream revision or worktree state and the same live mutation
   boundary were reverified on this branch.
 - Route-shape smokes, packaged-plugin mounts, fixture replay, and
-  `finalMatchesLocal` remain compatibility evidence only.
+  `finalMatchesLocal` remain compatibility evidence only; they do not prove
+  production durability, production auth, or production write safety.
 
 Source-note comparison summary:
 
@@ -31,15 +32,18 @@ Source-note comparison summary:
   the upstream pull pipeline. Missing repo proof: this branch has not shown a
   live source mutation boundary that rejects stale authority before write,
   preserves the remote for audit, and rebuilds retry scope from fresh live
-  hashes after drift.
+  hashes after drift. A matching route family or packaged mount is still not
+  production proof.
 - ZS-Sync `d9334a0` proves bounded discovery and scoped scanning. Missing
   repo proof: create-time identity reservation or remap safety, remote-
   preserving retry, and durable old/new/blocked classification for partial
-  side effects on the live write path.
+  side effects on the live write path. A bounded scan is not evidence that a
+  live write cannot alias, remap, or lose state.
 - ForkPress `55f9879` proves review and conflict vocabulary plus a crash-
   consistency target. Missing repo proof: a stale review artifact that stays
   auditable but cannot authorize retry, widen scope, or silently widen into
-  a new row, file, relationship-bearing record, or plugin-owned surface.
+  a new row, file, relationship-bearing record, or plugin-owned surface. A
+  readable review note is not proof of safe retry authority.
 
 Release-gate checklist for production-readiness wording:
 
@@ -63,6 +67,9 @@ Release-gate checklist for production-readiness wording:
   side effect such as a cron row, cache entry, registry entry, generated
   asset, custom table write, or plugin-owned file that only surfaced after
   the first write.
+- Show that any lab route, fixture replay, or packaged-plugin mount is only
+  compatibility evidence unless the exact live mutation boundary on a drifted
+  remote also failed closed before write and preserved the remote for audit.
 - Show that the retry rebuilt scope from fresh live hashes after drift, and
   that the fresh retry artifact is recorded separately from the stale review
   artifact instead of inheriting the old decision or a stale manual-review
