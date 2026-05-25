@@ -2,8 +2,9 @@
 
 This document defines the production push extension for Reprint. Push extends
 the existing exporter/importer pull pipeline with a remote mutation protocol
-that keeps pull provenance immutable, separates planning from mutation, and
-revalidates the live remote identity at apply time.
+that keeps pull provenance immutable, separates planning from mutation,
+revalidates the live remote identity at apply time, and keeps the dry-run and
+apply liveness split explicit.
 
 The production push extension is the same ladder the fixtures prove:
 

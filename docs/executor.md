@@ -2,7 +2,8 @@
 
 This document describes how a production Reprint push executor should run the
 protocol in [protocol.md](protocol.md), how it maps onto the existing pull
-pipeline, and how to test one remote site and one local site.
+pipeline, and how to test one remote source site, one imported local edit
+site, and one later drift observation of the same remote identity.
 
 The concrete production proof shape is fixed:
 
