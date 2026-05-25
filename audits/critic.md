@@ -203,6 +203,34 @@ hidden table, file, cron row, runtime registry entry, generated asset, cache
 entry, or serialized blob that appears after the first write is a new live
 boundary and needs its own preserve / reject / retry cycle.
 
+Production-grade claim checklist:
+
+- name the exact stale-drift case, then show the remote was preserved and
+  remained inspectable after rejection;
+- show the stale approval or manual-review artifact was rejected before the
+  first write and cannot widen to a later row, file, relationship-bearing
+  record, remapped create target, or plugin-owned surface;
+- show any create-time identity remap, aliasing, or renumbering was either
+  blocked up front or proven safe with live evidence on this branch;
+- classify every touched file, DB row, relationship-bearing record, and
+  plugin-owned surface as old, new, or blocked before retry starts, including
+  any partial side effects left behind by a failed apply;
+- enumerate or block every plugin-owned surface outside the allowlist before
+  mutation, including hidden tables, cron rows, runtime registries, generated
+  files, caches, serialized blobs, and plugin-owned files that are only found
+  after the first write;
+- treat any later-discovered plugin-owned surface as a new live boundary with
+  its own preserve / reject / retry cycle, not as inherited success from the
+  earlier write;
+- treat route-shape matches, packaged mounts, fixture replay, readable review
+  notes, and `finalMatchesLocal` as compatibility evidence only unless they
+  are paired with the same live boundary and the fresh retry artifact rebuilt
+  from live hashes; and
+- when comparing Reprint, ZS-Sync, or ForkPress, name the exact observed
+  upstream state, say what the note proves here, say what it does not prove
+  here, and do not treat the comparison as retry authority unless this branch
+  reran the same live boundary.
+
 Source-note bottom line: Reprint, ZS-Sync, and ForkPress notes are useful
 comparative context, but they do not prove the live executor, the preserved
 remote, stale-drift rejection, create-time remap safety, or late-discovered
