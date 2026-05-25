@@ -178,6 +178,18 @@ Release-gate checklist:
   be widened into authority for a new table, file, registry entry, generated
   asset, cache entry, or serialized blob;
 
+Minimal production proof pack:
+
+- exact live boundary, drifted remote, and rejection point for the stale
+  attempt;
+- preserved remote evidence that remains auditable but does not itself confer
+  retry authority;
+- fresh retry artifact rebuilt from live hashes on this branch;
+- old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface; and
+- one explicit scope statement for any later-discovered plugin-owned surface,
+  including whether it is separately blocked or separately rerun.
+
 False reliability claims to reject:
 
 - "production-grade push support" when the branch only shows compatibility
