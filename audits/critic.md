@@ -21,6 +21,15 @@ plugin-owned table, file, registry entry, generated asset, cache entry, or
 serialized blob appears after the first write, that later surface is a new
 boundary and needs its own preserve / reject / retry proof.
 
+False reliability rule: a readable review artifact, route-shaped smoke,
+packaged-plugin mount, fixture replay, or `finalMatchesLocal` result can only
+support compatibility wording. None of them may be promoted to production
+reliability unless this branch separately shows the exact live boundary, the
+preserved remote after reject, the stale rejection point, and the fresh retry
+scope rebuilt from live hashes. If any of those proof points is missing, the
+claim must stay audit-only even when the artifact is readable and the route
+looks production-shaped.
+
 Must change before any production-grade push claim:
 
 - prove the live mutation boundary rejects stale authority before the first
