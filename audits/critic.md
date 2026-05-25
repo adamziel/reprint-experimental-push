@@ -28,13 +28,13 @@ The canonical release-gate checklist lives in
 
 Primary critic finding:
 
-- the branch still has no named real-site release command that reruns the same
+- this branch still has no named real-site release command that reruns the same
   live boundary against a real local, Playground, or Docker
   `REPRINT_PUSH_SOURCE_URL`, rejects stale authority before the first write,
   and preserves the rejected remote for audit and retry; until that exact
-  boundary exists, any "production-grade push support" claim is false
-  reliability, even if the executor, route shape, and retained-source replay
-  all look correct.
+  boundary exists here, any "production-grade push support" claim on this
+  worktree is false reliability, even if the supervised reliable-executor lane
+  already has retained-source replay, executor, and route-shape progress.
 
 What still blocks production-grade wording:
 
