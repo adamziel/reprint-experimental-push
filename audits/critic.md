@@ -106,6 +106,9 @@ Any hidden-loss mode that is not proven there remains a blocker:
   only if the branch shows lease/fencing behavior; a preflight-minted session
   or refreshed credential that can still authorize a later apply against a
   changed remote is a replay-risk bug, not production proof;
+- concurrent writer overlap, lease expiry, or fencing failure must be shown
+  to fail closed before any irreversible write; otherwise a preserved remote
+  can still be corrupted by two valid-looking writers racing the same target;
 - create-time identity remaps must be proven at apply time, not assumed from
   route shape, fixture replay, or review wording;
 - later-discovered plugin-owned surfaces, remapped create targets, and mixed
@@ -116,6 +119,10 @@ Any hidden-loss mode that is not proven there remains a blocker:
   discovered after the note was written; the reviewer must be able to inspect
   the preserved remote and rerun the same live boundary, not trust the old
   approval text;
+- graph identity must remain stable across dry-run, rejection, and retry;
+  if the system cannot prove that the same logical object is still the same
+  row, file, or relationship-bearing record after remap, the "retry" is a
+  new mutation, not a safe continuation; and
 - partial file, DB, and plugin side effects must never be reported as success
   without a preserved-remote receipt that lets a reviewer audit and retry the
   exact rejected boundary.
