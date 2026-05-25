@@ -1,22 +1,22 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-current remote head `91ef2b06`, with earlier retained-source proof steps `2ac32891`,
+remote head `91ef2b06`, with earlier retained-source proof steps `2ac32891`,
 `889bd37a`, and `63a3502f` still useful as history, not as release proof.
 The latest explicit verdict on that lane is
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the lane's completed
-`npm run verify:release` result, including
-`authSessionType`, minted session shape, `applyCommitted`, and
-`durableJournal.rows: 17`, is material retained-source lab evidence. That is
-real progress, and `2ac32891` tightens the release-proof contract, but it
-still does not prove a live production boundary because the retained-source
-run does not show preserved-remote retention across rejection, live WordPress
-auth/session lifecycle, apply-time revalidation against a fresh real-site
-source, durable journal storage and lease/fencing semantics outside the
-Playground harness, graph identity under remap, or plugin-driver coverage for
-late-discovered plugin-owned surfaces. The supervised lane may now be the best
-available lab evidence, but this branch still lacks a rerunnable live boundary
-that preserves the rejected remote and revalidates from fresh live hashes.
+`npm run verify:release` result, including `authSessionType`, minted session
+shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
+retained-source lab evidence. That is real progress, and `2ac32891` tightens
+the release-proof contract, but it still does not prove a live production
+boundary because the retained-source run does not show preserved-remote
+retention across rejection, live WordPress auth/session lifecycle,
+apply-time revalidation against a fresh real-site source, durable journal
+storage and lease/fencing semantics outside the Playground harness, graph
+identity under remap, or plugin-driver coverage for late-discovered
+plugin-owned surfaces. The supervised lane may now be the best available lab
+evidence, but this branch still lacks a rerunnable live boundary that
+preserves the rejected remote and revalidates from fresh live hashes.
 Production-grade wording is still false if it relies on lab-session shape,
 retained-source journal rows, or route compatibility as a stand-in for live
 WordPress auth/session durability.
@@ -88,7 +88,7 @@ branch. A retained-source replay is not the same as a live rerun that preserves
 the rejected remote and revalidates apply-time behavior from fresh live hashes
 on production WordPress auth/session state.
 
-## What must change before production-grade wording is defensible
+## Release Gate Checklist
 
 Production-grade push support can only be claimed after the project has all of
 the following on the same live boundary:
@@ -114,6 +114,8 @@ the following on the same live boundary:
 - a preserved-remote receipt that is still inspectable after rejection and
   lets a reviewer audit, retry, and compare the exact boundary without
   depending on manual resolution or stale review text.
+
+## What must change before production-grade wording is defensible
 
 Until those proofs exist on the same live boundary, any wording that says the
 system is production-ready is a claim without audit-grade support.
@@ -214,6 +216,15 @@ The reliable-executor lane's retained-source `verify:release` run is still
 useful lab evidence, but it is not production proof for this branch until the
 same live boundary is rerun here and the preserved remote remains auditable
 and retryable.
+
+## Current verdict
+
+The strongest blocker is still the missing rerunnable live boundary on this
+branch. The supervised reliable-executor lane now gives stronger retained-
+source evidence, but that evidence only upgrades the lab harness, not the
+release claim. Until this branch can show preserved-remote auditability plus
+live auth/session, journal, graph, and plugin-driver proof on the same
+mutation, production-grade push support is not a defensible statement.
 
 If a claim cites one of those notes as if it were production proof, it must be
 rejected unless the claim also names the exact live boundary and the preserved
