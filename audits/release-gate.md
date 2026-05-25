@@ -44,6 +44,10 @@ or comparison-only.
 - The claim does not rely on route shape, packaged-plugin mounting,
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
   production proof.
+- The claim does not let a route-shape smoke, packaged-plugin mount, or
+  `finalMatchesLocal` result stand in for live remote drift rejection, stale
+  approval expiry, create-time remap handling, plugin-owned allowlist
+  coverage, or partial side-effect classification.
 - The claim does not let source-note comparisons backfill missing live proof
   for drift rejection, create-time remap, plugin ownership, partial
   side-effect classification, or stale approval expiry unless the same live

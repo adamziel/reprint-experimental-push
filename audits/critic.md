@@ -1493,6 +1493,10 @@ evidence must be attached or directly referenced:
    new, or blocked classification.
 10. The claim does not use `finalMatchesLocal`, fixture replay, route shape,
     or packaging shape as proof of production safety by themselves.
+   It also does not let a route-shape smoke, packaged-plugin mount, or
+   `finalMatchesLocal` result stand in for live drift rejection, stale
+   approval expiry, create-time remap handling, plugin-owned allowlist
+   coverage, or partial side-effect classification.
 11. The claim does not treat Reprint, ZS-Sync, or ForkPress source notes as
     current upstream proof unless the same upstream revision or worktree state
     was reverified and the live write boundary was exercised in this repo.
