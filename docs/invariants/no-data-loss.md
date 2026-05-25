@@ -12,6 +12,9 @@ What it may apply automatically:
   live remote descendants.
 - Independent changes that already match between local and remote, which are
   recorded as `already-in-sync` rather than rewritten.
+- Ready delete plans may still include matching independent edits, deletes,
+  restores, type swaps, and plugin-owned resources, provided the delete keeps
+  its own live remote precondition.
 
 What it must preserve:
 
@@ -20,6 +23,8 @@ What it must preserve:
 - Any live remote descendant that would be hidden by a local delete or type
   swap.
 - Any resource with ambiguous or unsupported ownership evidence.
+- Remote-only plugin removals, metadata, and files when an unrelated local
+  delete still has a valid live remote precondition.
 
 What it must stop on:
 
@@ -28,3 +33,5 @@ What it must stop on:
 - Plugin-owned data when the planner cannot prove the owner, driver, or live
   remote plugin evidence is safe.
 - Any proposed mutation that cannot be paired with a live remote precondition.
+- Any mutation that would hide a descendant or weaken the no-overwrite
+  boundary by guessing at stale plugin ownership.
