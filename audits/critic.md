@@ -5150,6 +5150,11 @@ Production-readiness language checklist:
   bearing record, remapped create target, or plugin-owned surface;
 - show the fresh retry artifact was rebuilt from live hashes on this branch,
   not inherited from earlier approval or copied from a note;
+- show the preserved remote, rejection point, and retry scope do not transfer
+  to a later row, file, relationship-bearing record, remapped create target,
+  or plugin-owned surface just because the route family, package mount, or
+  reviewer wording matches; the later boundary still needs its own live proof
+  or hard block;
 - classify every touched surface as old, new, or blocked before retry starts;
 - enumerate or block every plugin-owned surface outside the allowlist,
   including late-discovered tables, files, cron rows, runtime registries,
