@@ -6896,6 +6896,11 @@ are true on this worktree:
   scope end to end; if the only available commands are `plan`, `apply`, or
   `test:playground:*`, the branch is still lab-only and cannot claim
   production-grade push support;
+- that command must itself perform the live preflight/release path on an
+  actual remote; a thin wrapper around `plan`, `apply`, or a smoke script is
+  still compatibility evidence unless it records the first executor/auth/
+  preserved-remote boundary and leaves the rejected remote inspectable for
+  audit and retry;
 - the exact stale-drift case has been rerun here, with the rejected remote
   still inspectable after rejection and the rejection point named before the
   first write;
