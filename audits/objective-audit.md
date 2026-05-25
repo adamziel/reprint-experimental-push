@@ -32,8 +32,8 @@ Those requirements are the minimum release bar, not aspirational extras.
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
 | Executable proof | `npm test` passes and covers planner, recovery-journal, benchmark-model, and guarded-benchmark checks; the suite is honest about refusal and redaction but stays model/fixture scoped | No live-source boundary, no production storage path, no enforced release decision | Yes |
-| Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, and plugin packaging | No production transport/storage proof | Yes |
-| Docs-only proof | `docs/`, `progress.html`, and audit notes describe the intended release flow | No enforcement | Yes |
+| Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, and plugin packaging | No production transport/storage proof and no claim that these smokes run against the live source | Yes |
+| Docs-only proof | `docs/`, `progress.html`, and audit notes describe the intended release flow | No enforcement and no default automation path | Yes |
 | Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L34); no checked-in `.github/workflows/*`; no measured live-path benchmark threshold; no required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and speed proof | The repo still lacks the single mandatory decision point that could make the live-source claim releasable | Yes |
 | Release blockers | `labBacked: true`, fixture-only scope, benchmark-only evidence, missing live-source proof, missing enforced gate | None of these are acceptable as release proof | Yes |
 
@@ -83,6 +83,7 @@ The test suite is still an audit harness, not a release harness.
 - It does not prove a default release path because all stronger checks remain opt-in scripts.
 - It does not prove that any `npm run test:playground:*` command is release-safe; those scripts are still evidence collectors, not release approvers.
 - It does not yet prove the production graph identity, plugin-data-driver, or topology claims that the objective requires at release time.
+- It does not prove that `labBacked: true` evidence has been eliminated anywhere the release decision would depend on it.
 
 Current test audit, stripped down:
 
@@ -219,12 +220,15 @@ That distinction is visible in the benchmark coverage:
 
 - [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js#L12-L254) proves the benchmark model keeps durable receipts, gate proofs, and backpressure rules intact, but it still only checks the model object. It does not time the live push path, touch a live source, or establish a measured release threshold.
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js#L35-L112) proves the benchmark refuses unsupported throughput claims and fails closed on tampering, but it still reports `productionThroughput: 'not-claimed'` and blocks the production claim because the production gaps are not measured.
+- [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js#L1-L200) proves append/restart behavior and recovery classification on local temporary files, but it does not exercise the live storage and transport path that a release would need.
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js#L1-L220) proves planning and conflict handling on the local model, but it does not establish live-source apply-time rechecks or no-loss behavior on production data.
 
 That distinction matters for the objective itself:
 
 - No data loss is still unproven because the suite never exercises a real live-source mutation boundary and then verifies every affected WordPress shape after an apply-time recheck.
 - Reliability is still unproven because the crash, retry, replay, duplicate-request, stale-claim, lease-expiry, and restart scenarios are only shown in fixtures or lab routes, not on the production storage and transport path.
 - Speed is still unproven because the benchmark surface and model tests refuse unsupported throughput claims instead of timing the live push path against a release threshold.
+- The release gate itself is still unproven because nothing in this checkout forces the same decision point for every green run.
 
 For the objective's headline claims, the evidence is still negative proof only:
 
