@@ -21,7 +21,8 @@ Source-note comparison audit:
   pull delivery, resumability vocabulary, and transport framing. It does not
   prove live push safety here, preserved-remote retention after rejection,
   stale-drift rejection before the first write, create-time identity remap
-  handling, or late plugin-owned surface handling on this branch.
+  handling, hidden plugin-owned state outside the allowlist, or late
+  plugin-owned surface handling on this branch.
 - ZS-Sync (`docs/source-notes.md`, observed commit `d9334a0`) proves bounded
   scanning, resource discovery, and batching ideas. It does not prove source
   mutation safety, plugin-owned allowlist coverage, stale-authority rejection,
@@ -32,6 +33,19 @@ Source-note comparison audit:
   does not prove that a readable manual-review artifact can authorize a later
   boundary, preserve the rejected remote for audit, or become retry authority
   for a remapped create target or plugin-owned surface on this branch.
+
+Comparison gap summary:
+
+- Reprint helps with sequencing language, not with proving the pushed remote
+  stayed inspectable after rejection or that a later-discovered plugin-owned
+  table, cron row, runtime registry, generated file, cache, or serialized blob
+  was blocked before write.
+- ZS-Sync helps with discovering changes in bounded batches, not with proving
+  that every discovered row, file, relationship-bearing record, or plugin-owned
+  surface was classified old, new, or blocked before retry started.
+- ForkPress helps with audit and crash-consistency vocabulary, not with proving
+  that a readable review artifact cannot be widened to a remapped create
+  target, hidden plugin state, or second live boundary after drift.
 
 Scope note: this audit only accepts production wording when the same live
 boundary on this worktree shows preserved-remote evidence, stale authority
@@ -62,6 +76,9 @@ What must happen before any production-grade push claim:
 - every touched file, DB row, relationship-bearing record, and plugin-owned
   surface must be classified old, new, or blocked before retry starts,
   including mixed file/DB/plugin side effects;
+- any create-time identity remap must be proven safe at the apply boundary or
+  blocked before the first write; a fixture that preserves the original ID is
+  not enough;
 - any comparison to Reprint, ZS-Sync, or ForkPress must name the exact
   upstream state, state what the note proves here, state what it does not
   prove here, and be rerun against the same live boundary on this branch; and
