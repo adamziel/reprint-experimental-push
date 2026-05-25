@@ -5176,3 +5176,27 @@ Release-gate checklist for production-grade wording:
   above.
 If any box is unchecked, the branch must not claim production-grade push
 support.
+
+Failure scenarios and missing proof:
+
+- live remote drift after preflight but before apply: missing proof is a
+  branch-local live rerun that fails closed before the first write, preserves
+  the rejected remote for audit, and rebuilds retry scope from fresh live
+  hashes on this worktree;
+- create-time identity remap, aliasing, or renumbering: missing proof is live
+  identity evidence for the exact target that was written or an explicit hard
+  block before write, plus proof that a remapped target discovered later does
+  not inherit the first approval;
+- plugin-owned state outside the allowlist: missing proof is live
+  enumeration or explicit blocking for every hidden table, file, cron row,
+  runtime registry entry, generated asset, cache entry, and serialized blob,
+  including surfaces discovered only after the first write;
+- partial file, DB, or plugin side effects: missing proof is old/new/blocked
+  classification for every touched surface before retry, so a mixed commit
+  cannot be relabeled as success after only the surviving subparts are
+  visible; and
+- stale manual-review artifacts: missing proof is that the readable artifact
+  stayed audit-only after drift, could not authorize a different row, file,
+  relationship-bearing record, remapped create target, or plugin-owned
+  surface, and was replaced by a fresh retry artifact rebuilt from live
+  hashes.
