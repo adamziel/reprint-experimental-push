@@ -230,6 +230,10 @@ Its `push_guards` fields mirror the executor rules: preflight binds the
 persisted base, snapshot listing is planning-only, dry-run is a receipt, apply
 revalidates before each batch and at the storage boundary, and inspect-first
 recovery is mandatory before any mutating repair.
+The compact recovery companion at
+[`fixtures/protocol/push-recovery-inspect-contract.json`](../fixtures/protocol/push-recovery-inspect-contract.json)
+adds the session, journal row, live-drift evidence, and read-only inspect
+decision that the executor must preserve before any mutating recovery mode.
 
 The important part of the topology is not the container count. It is the
 proof boundary: `remote-base` and `remote-changed` must be the same remote

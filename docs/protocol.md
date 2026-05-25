@@ -62,6 +62,10 @@ The machine-readable companion at
 captures that one-way handoff in compact form. Tests can use it to prove the
 base package stays immutable provenance while push adds session, snapshot,
 dry-run, journal, and recovery evidence on top.
+The compact inspect-first recovery companion at
+[`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json)
+ties the minted session, journal row, live drift evidence, and blocked-or-safe
+recovery decision into one proof object.
 The compact topology fixture at
 [`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
 captures the same one-remote, one-local, one-drift-witness test shape for

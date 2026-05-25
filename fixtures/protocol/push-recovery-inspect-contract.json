@@ -1,0 +1,44 @@
+{
+  "contract_id": "push-recovery-inspect-contract-one-remote-one-local",
+  "purpose": "ties the minted session, journal row, and inspect-first recovery rules into one compact proof",
+  "session": {
+    "push_session": "psh_01j00000000000000000000000",
+    "remote_site_id": "remote-example",
+    "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+    "identity_hash": "sha256:remote-identity",
+    "expires_at": "2026-05-24T00:10:00Z"
+  },
+  "journal_row": {
+    "journal_cursor": "journal:dry_01j00000000000000000000000:1",
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "before_hash": "sha256:base-index",
+    "staged_hash": "sha256:local-index",
+    "after_hash": "sha256:remote-index"
+  },
+  "live_evidence": {
+    "snapshot_id": "snap_01j00000000000000000000000",
+    "remote_changed_snapshot_id": "snap_01j00000000000000000000001",
+    "same_remote_identity": true,
+    "coverage_hash": "sha256:remote-coverage"
+  },
+  "recovery": {
+    "inspect_mode": "inspect",
+    "mutates": false,
+    "proof": "journal-and-live-hashes-reviewed",
+    "next": "finish|rollback|retry|block",
+    "blocked_when": [
+      "fresh live hashes do not match the journaled target",
+      "the journal cannot prove a safe finish or rollback",
+      "the claim lease has expired and the worker is fenced"
+    ]
+  },
+  "required_invariants": [
+    "inspect is read-only",
+    "journal inspection is read-only and must happen before any mutating recovery",
+    "claim generation and lease expiry fence stale workers before mutation",
+    "fresh live hashes are required before mutating recovery",
+    "stale dry-run evidence must not be promoted into recovery authority"
+  ]
+}

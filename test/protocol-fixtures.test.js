@@ -157,6 +157,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const sessionJournalProof = readJson('fixtures/protocol/push-session-journal-proof.json');
   const recoveryPath = readJson('fixtures/protocol/push-recovery-path.json');
   const recoveryBlocked = readJson('fixtures/protocol/push-recovery-blocked-response.json');
+  const inspectContract = readJson('fixtures/protocol/push-recovery-inspect-contract.json');
 
   assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightRequest.remote_site_id, 'remote-example');
@@ -224,6 +225,21 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(recoveryBlocked.code, 'RECOVERY_BLOCKED');
   assert.equal(recoveryBlocked.details.batch_id, 'batch-1');
   assert.equal(recoveryBlocked.details.target_state_counts.blocked, 1);
+  assert.equal(inspectContract.contract_id, 'push-recovery-inspect-contract-one-remote-one-local');
+  assert.equal(inspectContract.session.push_session, 'psh_01j00000000000000000000000');
+  assert.equal(inspectContract.journal_row.claim_generation, 4);
+  assert.equal(inspectContract.journal_row.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(inspectContract.journal_row.before_hash, 'sha256:base-index');
+  assert.equal(inspectContract.journal_row.staged_hash, 'sha256:local-index');
+  assert.equal(inspectContract.live_evidence.same_remote_identity, true);
+  assert.equal(inspectContract.recovery.inspect_mode, 'inspect');
+  assert.equal(inspectContract.recovery.mutates, false);
+  assert.ok(inspectContract.required_invariants.includes('inspect is read-only'));
+  assert.ok(
+    inspectContract.required_invariants.includes(
+      'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
 });
 
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {

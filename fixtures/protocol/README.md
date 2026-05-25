@@ -31,6 +31,7 @@ The normal sequence is:
 23. `push-pull-mapping.json`
 24. `push-contract.json`
 25. `push-topology-matrix.json`
+26. `push-recovery-inspect-contract.json`
 
 Failure and recovery examples:
 
@@ -79,6 +80,9 @@ Failure and recovery examples:
   classification used when a batch response is ambiguous and the executor must
   distinguish old, new, blocked, and open outcomes from journal plus live
   evidence.
+- `push-recovery-inspect-contract.json` ties the minted session, journal row,
+  live drift evidence, and inspect-first recovery rules into one compact
+  contract for recovery proofs.
 - `push-recovery-blocked-response.json` shows the inspect-first blocked case
   when the remote cannot prove a safe finish or rollback and returns
   `RECOVERY_BLOCKED` instead of mutating.
