@@ -17933,3 +17933,67 @@ test('keeps remote-only plugin removals while a live-preconditioned file delete 
   assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
+
+test('keeps remote-only plugin drift and removals while a live-preconditioned file delete preserves a matching independent restore, edit, and type swap', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+  base.db.wp_posts['ID:6'] = { ID: 6, post_title: 'Base row 6', post_status: 'draft' };
+  base.plugins.seo = { version: '1.0.0', active: false };
+  base.files['wp-content/plugins/seo/seo.php'] = '<?php /* seo 1.0 */';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  local.db.wp_posts['ID:6'] = { ID: 6, post_title: 'Restored row 6', post_status: 'publish' };
+  local.plugins.seo = { version: '1.0.0', active: false };
+  local.files['wp-content/plugins/seo/seo.php'] = '<?php /* seo 1.0 */';
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  remote.db.wp_posts['ID:6'] = { ID: 6, post_title: 'Restored row 6', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+  delete remote.plugins.seo;
+  delete remote.files['wp-content/plugins/seo/seo.php'];
+
+  const plan = planFor(base, local, remote);
+  const fileDelete = mutationFor(plan, 'file:index.php');
+  const matchingRestore = decisionFor(plan, 'row:["wp_posts","ID:6"]');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const removedPluginDecision = decisionFor(plan, 'plugin:seo');
+  const removedPluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(fileDelete.action, 'delete');
+  assert.equal(fileDelete.changeKind, 'delete');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(removedPluginDecision.decision, 'keep-remote');
+  assert.equal(removedPluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.db.wp_posts['ID:6'].post_title, 'Restored row 6');
+  assert.equal(result.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(result.site.files['wp-content/uploads/cover'].type, 'directory');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+  assert.equal(Object.hasOwn(result.site.plugins, 'seo'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/seo/seo.php'), false);
+});
