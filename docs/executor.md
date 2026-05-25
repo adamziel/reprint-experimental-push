@@ -54,21 +54,6 @@ The same pull-to-push bridge applies here:
 - inspect-first recovery is the only safe starting point for mutating
   recovery
 
-The executor should treat the mapped pull pipeline as immutable provenance and
-keep the same remote identity across planning, apply, and recovery:
-
-- exporter discovers the merge base and coverage evidence
-- importer persists the base package as immutable provenance
-- preflight binds that package to one live remote identity and one short-lived
-  push session
-- snapshot hash listing reads the live remote comparison surface only for
-  planning and may paginate large sites
-- dry-run uploads the canonical plan and returns a receipt
-- apply revalidates before every batch and again at the storage boundary
-- journal inspect reads durable evidence without authorizing mutation
-- recovery starts with inspect and only mutates when the journal and fresh
-  live hashes still prove the branch safe
-
 ## Stage Semantics
 
 The executor needs the same boundary discipline as the protocol:
@@ -115,32 +100,6 @@ That mapping is intentionally one-way:
 - journal inspect stays read-only
 - mutating recovery only happens after inspect proves the branch safe
 
-The bridge is one-way and fixed:
-
-- exporter discovers the merge base and coverage evidence
-- importer persists the base package as immutable provenance
-- preflight binds that persisted package to one live remote identity and one
-  short-lived push session
-- snapshot hash listing stays planning-only
-- dry-run returns a receipt, not a lock
-- batch apply revalidates before every batch and at the storage boundary
-- journal inspect stays read-only
-- recovery starts with inspect and only mutates when the journal and fresh
-  live hashes still prove the action safe
-
-In other words:
-
-- exporter discovers the merge base and coverage evidence
-- importer persists the base package as immutable provenance
-- preflight binds that persisted package to one live remote identity and one
-  short-lived push session
-- snapshot listing reads the live remote comparison surface only for planning
-- dry-run uploads the canonical plan as a receipt
-- apply revalidates before each batch and again at the storage boundary
-- journal inspection reads durable evidence without authorizing mutation
-- recovery inspection reads the journal and fresh live hashes before any
-  mutating repair
-
 ## Topology
 
 The executor uses the same production topology in Docker and Playground:
@@ -181,10 +140,10 @@ That topology keeps the executor proof stable:
 The canonical proof stack for that executor story is the same one named in
 [protocol.md](protocol.md):
 
-- `push-production-ladder-contract.json` for the canonical machine-readable
+- `push-protocol-extension-contract.json` for the canonical machine-readable
   production ladder from preflight through inspect-first recovery
-- `push-protocol-extension-contract.json` for the compact end-to-end
-  production story and pull provenance mapping
+- `push-pull-to-topology-contract.json` for the compact bridge from pull
+  provenance into the production push topology
 - `push-production-revalidation-contract.json` for the compact proof that
   keeps preflight, planning-only snapshot hashes, dry-run eligibility,
   apply-time revalidation, journal evidence, and inspect-first recovery
@@ -205,39 +164,17 @@ The canonical proof stack for that executor story is the same one named in
 - `push-auth-session-journal-recovery-inspect-contract.json` for the compact
   proof that binds auth, session minting, journal rows, lease fencing, live
   drift, and inspect-first recovery into one object
-- `push-pull-to-topology-contract.json` for the pull-to-push bridge
 - `push-deployment-topology-contract.json` for the smallest topology-only
   contract that still proves the same remote identity twice, the imported
   local site, and the sandbox-provided `8080` ingress rule
 - `push-journal-inspect-contract.json` for the read-only journal boundary
 - `push-auth-session-journal-recovery-contract.json` for the compact auth,
   session, journal-row, lease-fence, and inspect-first recovery proof
-- `push-executor-topology-proof.json` for the shortest Docker/Playground
-  executor proof
 - `push-remote-liveness-topology-contract.json` for the compact liveness plus
   one-remote, one-local, one-drift harness proof
 - `push-topology-matrix.json` for the canonical Docker/Playground stage
   matrix proving one remote source, one local edited site, and one drift
   witness
-- `push-protocol-extension-contract.json` for the ordered production ladder
-  from preflight through inspect-first recovery
-- `push-pull-to-topology-contract.json` for the compact pull-provenance to
-  push-topology bridge
-- `push-preflight-contract.json` for the first live binding between imported
-  provenance, scope, and session
-- `push-recovery-inspect-contract.json` for the read-only recovery classifier
-- `push-auth-session-journal-recovery-inspect-contract.json` for the combined
-  auth, session, journal, lease, live drift, and inspect-first recovery proof
-- `push-recovery-revalidation-contract.json` for mutating recovery after
-  inspect proves the branch safe
-- `push-deployment-topology-contract.json` for the exact one-remote,
-  one-local, one-drift Docker and Playground harness shape
-- `push-protocol-extension-contract.json` for the ordered stage contract that
-  includes preflight, remote snapshot hash listing, dry-run receipt, batched
-  apply, journal inspect, and inspect-first recovery
-- `push-recovery-boundary-contract.json` for the compact inspect-first
-  recovery boundary proof with the auth floor and topology in one object
-
 - `push-production-push-recovery-contract.json` for the canonical end-to-end
   proof that ties the pull provenance, the production push ladder, and the
   one-remote, one-local topology into one reviewable object while proving the
