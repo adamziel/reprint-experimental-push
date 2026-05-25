@@ -86,7 +86,7 @@ Concrete release-gate evidence today:
 
 - `npm test` is only `node --test`; it does not compose the release matrix.
 - `npm run test:playground` only chains `plan`, `apply`, and `push-protocol`; it does not require auth/session, journal durability, leases/fencing, graph identity, plugin-driver, real topology, crash-boundary, or benchmark proof.
-- The stronger checks are individually callable, but nothing forces them to run together before a release claim.
+- The stronger checks are individually callable, but nothing forces them to run together before a release claim. That includes the optional auth and route smokes, the database and file journal smokes, the process-kill and stale-claim recovery smokes, the plugin-atomic-install smoke, and the storage-guard smokes.
 - No checked-in workflow file exists in this checkout, so there is no default CI path to enforce the missing gate.
 - The strongest authenticated route still self-identifies as `labBacked: true`, so even a successful smoke is labeled as lab evidence rather than release evidence.
 
@@ -282,6 +282,8 @@ The uncomfortable but useful reading is that the suite is more trustworthy as a 
 | `npm test` | Executable proof | Useful as a blocker check, but it does not prove the live-source boundary, so it cannot approve release. |
 | `npm run test:playground` | Lab/fixture proof | Useful for local route and storage evidence, but it still leaves the strongest authenticated path labeled `labBacked: true`. |
 | `npm run test:playground:authenticated-http-push` | Lab/fixture proof | Auth and session evidence only; the route profile is still explicitly lab-backed. |
+| `npm run test:playground:db-journal-process-kill` | Lab/fixture proof | Crash/restart evidence only; it still runs in Playground scope rather than production storage. |
+| `npm run test:playground:storage-guarded-file-write` | Lab/fixture proof | Storage guard evidence only; it still uses fixture-backed file drivers rather than a live source boundary. |
 | `npm run test:playground:production-shaped-push` | Lab/fixture proof | Production-shaped is not production-proven when the release gate itself is missing. |
 | `npm run test:playground:production-plugin-package` | Lab/fixture proof | Packaging and route-shape evidence only; not a release decision. |
 | `npm run verify:release` | Missing proof | This is the required shape of the missing gate, but it does not exist in this checkout and there is no CI workflow tree to enforce it. |
