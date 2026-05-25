@@ -79,7 +79,7 @@ Direct command-surface recheck on 2026-05-25:
 - This checkout exposes helper and Playground scripts, but no checked-in `verify`, `verify:release`, or `release` script.
 - There is no checked-in `test:playground:production-shaped-release-proof` entry here, and the existing `production-shaped` helper remains a lab-shaped route smoke rather than a release gate.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
-- The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation.
+- The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, but it remains regression-only evidence rather than a live-boundary release verdict.
 
 ## Release Gate Definition
 
