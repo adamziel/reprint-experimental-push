@@ -464,6 +464,18 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
     ),
   );
   assert.equal(productionLadderContract.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(
+    productionLadderContract.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(
+    productionLadderContract.auth_and_session.preflight_binding,
+    'mints one short-lived push session bound to one remote identity and one persisted pull base',
+  );
+  assert.equal(
+    productionLadderContract.auth_and_session.mutating_calls,
+    'dry-run, apply, and mutating recovery require the push session, canonical push signature, and idempotency key',
+  );
   assert.deepEqual(
     productionLadderContract.push_ladder.map((stage) => stage.stage),
     [
@@ -480,6 +492,22 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
     productionLadderContract.topology.docker.proof.includes(
       'remote-base and remote-changed are the same remote identity at different times',
     ),
+  );
+  assert.equal(
+    productionLadderContract.journal_and_recovery.journal_inspect,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    productionLadderContract.journal_and_recovery.recover_inspect,
+    'must happen before any mutating recovery mode',
+  );
+  assert.equal(
+    productionLadderContract.journal_and_recovery.lease_fence,
+    'claim generation and lease expiry fence stale workers before mutation',
+  );
+  assert.equal(
+    productionLadderContract.journal_and_recovery.revalidation,
+    'mutating recovery still requires fresh live hashes plus journal evidence',
   );
   assert.equal(
     executorTopologyProof.push_pipeline.recovery,

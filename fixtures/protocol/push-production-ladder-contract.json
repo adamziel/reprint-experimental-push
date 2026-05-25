@@ -9,6 +9,11 @@
       "base_coverage_hash": "sha256:pull-base-coverage"
     }
   },
+  "auth_and_session": {
+    "required_floor": "at least as strict as current Reprint HMAC usage",
+    "preflight_binding": "mints one short-lived push session bound to one remote identity and one persisted pull base",
+    "mutating_calls": "dry-run, apply, and mutating recovery require the push session, canonical push signature, and idempotency key"
+  },
   "push_ladder": [
     {
       "stage": "push_preflight",
@@ -39,6 +44,12 @@
       "proof": "mutates only when the journal and fresh live hashes prove the action"
     }
   ],
+  "journal_and_recovery": {
+    "journal_inspect": "reads durable evidence without authorizing mutation",
+    "recover_inspect": "must happen before any mutating recovery mode",
+    "lease_fence": "claim generation and lease expiry fence stale workers before mutation",
+    "revalidation": "mutating recovery still requires fresh live hashes plus journal evidence"
+  },
   "topology": {
     "networking": {
       "ingress_port": 8080,
