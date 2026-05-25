@@ -1,24 +1,20 @@
 # Recovery states
 
-The atomic apply path is only allowed to end in one of three states after a failure or replay:
+The atomic apply path should only ever end in one of these post-failure states:
 
-- `old-remote`: no remote mutation was committed.
-- `fully-updated-remote`: every planned mutation was committed and the journal reflects completion.
-- `blocked-recovery`: the remote may be partially updated, but the journal and remote artifacts must remain inspectable so recovery can be audited.
+- `old-remote`: no mutation reached the remote state.
+- `fully-updated-remote`: every planned mutation is already present and a replay is safe.
+- `blocked-recovery`: a partial or drifted remote was observed and recovery artifacts must be preserved.
 
-Release-blocking rule:
+Rules:
 
-- A partial remote mutation without a recovery artifact is not acceptable.
-- `old-remote` and `fully-updated-remote` carry journal evidence only.
-- `blocked-recovery` must carry both journal evidence and inspectable remote artifacts.
+- A partial remote mutation without recovery artifacts is a release blocker.
+- Retry must not duplicate inserts or resurrect stale local data.
+- A replay of a completed plan is only safe when the remote still matches the completed journal.
+- If the remote has drifted, replay must stay blocked and keep inspectable journal and remote artifacts.
 
-Retry rule:
+Artifact expectations:
 
-- Replaying a completed plan must stay inert.
-- Retry must not duplicate inserts.
-- Retry must not resurrect stale local data after the remote is already fully updated.
-
-Durable journal rule:
-
-- JSON lab output is not enough on its own.
-- Production recovery needs durable journal records that survive failure boundaries and can be inspected after the process exits.
+- `old-remote` and `fully-updated-remote` must carry journal evidence.
+- `blocked-recovery` must carry both journal and remote artifacts.
+- Durable journal records should be enough to distinguish the boundary that failed, but not replace production durability checks.
