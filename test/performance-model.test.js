@@ -384,6 +384,13 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-row-preconditions')?.violates.includes('atomic-groups'),
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure')?.violates.includes('backpressure'),
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'fingerprint-skips-live-publish-compare')?.rejectedGate,
     'live',
   );

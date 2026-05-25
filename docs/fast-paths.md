@@ -1137,6 +1137,9 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - A batched receipt flush can save fsyncs, but it cannot replace the raw
   receipts or move the commit boundary that keeps a plugin install or large
   upload recoverable.
+- A compressed remote index plus cached row-batch receipts cannot skip
+  plugin-install backpressure, because the receipts do not prove bounded queue
+  order or journal evidence across a pause or crash.
 - A compressed receipt log can reduce recovery storage, but it cannot authorize
   apply or collapse the atomic-group boundary that still guards plugin writes.
 - Cached row receipts cannot skip plugin-install writeback, because the

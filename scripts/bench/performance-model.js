@@ -1835,6 +1835,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+    proposal: 'use a compressed remote index plus cached row-batch receipts to skip plugin-install backpressure during resume',
+    rejectedBecause: 'planning evidence and cached batch receipts can reduce replay work, but they cannot prove the install still has bounded queue order or the journal evidence needed to recover a partial failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-parallel-row-batch-skips-plugin-install-barrier',
     proposal: 'treat a compressed remote index plus parallel row batches as enough proof to skip the plugin-install atomic-group barrier',
     rejectedBecause: 'parallel row batches can reduce wait time, but they cannot prove which owner owns a partial row result or that the atomic-group barrier survived failure',
