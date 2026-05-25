@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:54:02 CEST
+Last updated: 2026-05-25 09:54:52 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 09:54:02 CEST
+## 2026-05-25 09:54:52 CEST
 
 - Going well: the evidence trail is still compact and the checked gate remains explicit.
 - Not going well: `reliable-executor` still has no real live URL/topology, and `integration` still has not run the real-site release command.
