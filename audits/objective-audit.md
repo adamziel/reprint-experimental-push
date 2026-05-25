@@ -238,11 +238,11 @@ Without that command, every passing test remains support evidence only.
 
 ## Weakest Current Claim
 
-The weakest claim is any sentence that treats the current green suite as proof of release readiness. That claim fails because no required command must touch live source storage and emit a machine-checkable verdict in the same run, so the repository can still go green while the release decision remains unmade.
+The weakest claim is any sentence that treats the current green suite as proof of release readiness. That claim fails because the checked-in command surface still stops at `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers, and none of those commands must touch live source storage and emit a machine-checkable verdict in the same run. The repository can therefore still go green while the release decision remains unmade.
 
 That makes the current green status a regression signal, not a release signal. Treat every fixture, lab, refusal, or benchmark result as support evidence only until one enforced command proves the live-source apply boundary in the same invocation and fails closed when proof is missing.
 
-- No required command exists that must reach the live-source boundary and emit a release decision.
+- No required command exists that must reach the live-source boundary and emit a release decision from the same invocation.
 - The suite can still go green without proving live-source mutation, crash survival, replay safety, or throughput on the real path.
 - `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
@@ -259,7 +259,7 @@ Actionable next step:
 - require that command to fail closed unless it rechecks apply-time state, reaches the live-source boundary, and emits either a measured throughput result or `speed unclaimed`
 - treat every other green path as support evidence only, even if it exercises auth, journal, recovery, or benchmark helpers
 
-Actionably: the next release gate must be a checked-in command that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims." Any future claim of no data loss, reliability, or speed must point at that gate, not at `node --test` or the lab smokes, because those runs can still succeed without proving the live-source boundary.
+Actionably: the next release gate must be a checked-in command, not just a helper script, that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims." Any future claim of no data loss, reliability, or speed must point at that gate, not at `node --test` or the lab smokes, because those runs can still succeed without proving the live-source boundary.
 
 ## Proof Boundary
 
