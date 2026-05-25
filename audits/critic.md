@@ -4454,6 +4454,12 @@ Release gate additions needed before production-grade push support:
    retry scope. A proof for the first write does not authorize that later
    surface, even if the route shape, package mount, or `finalMatchesLocal`
    result is unchanged.
+10. Proof for one live boundary is non-transferable: if the first boundary
+    was preserved, rejected, and retried correctly, that proof still cannot
+    be recycled for a later row, file, relationship-bearing record, remapped
+    create target, or plugin-owned surface. A matching route family, mount,
+    reviewer note, or hash shape is compatibility evidence only, not a new
+    authority grant.
 
 Release-readiness checklist:
 
@@ -4564,3 +4570,6 @@ true on this branch:
 - any Reprint, ZS-Sync, or ForkPress note that merely matches the same route
   family, package layout, or reviewer wording is still historical context
   only and cannot be recast as live proof.
+- the proof for the first boundary is not being recycled for a later
+  boundary just because the route family, package mount, fixture replay, or
+  reviewer wording still looks the same.

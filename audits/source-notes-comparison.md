@@ -218,6 +218,11 @@ appears afterward, that later surface is a new boundary, not a continuation of
 the earlier success story. The comparison stays historical unless it shows a
 preserved remote, a separate rejection or classification point for the later
 surface, and a fresh retry scope for that later boundary.
+Proof does not transfer from the first boundary to the later one: a matching
+route family, package layout, or reviewer phrase cannot authorize a later
+row, file, relationship-bearing record, remapped create target, or
+plugin-owned surface. The later boundary needs its own live evidence on this
+branch.
 That also covers any live-looking hash emitted by a fixture-backed or
 copied-lab path behind a production-shaped mount: the hash may confirm the
 route answered, but it still does not prove the live mutation executor ran.

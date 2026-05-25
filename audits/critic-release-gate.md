@@ -17,6 +17,11 @@ Do not use production wording unless the branch has all of the following for the
 - any claim of "production-grade push support" is rejected unless the same live boundary shows preserved-remote evidence, stale-authority rejection, fresh retry scope, and per-surface old/new/blocked classification; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
 - any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success.
+- proof for one live boundary is not transferable to a later boundary, even if
+  the route family, package mount, fixture replay, or reviewer wording is the
+  same; the later row, file, relationship-bearing record, remapped create
+  target, or plugin-owned surface still needs its own preserved remote,
+  rejection point, and fresh retry artifact.
 
 Source-note comparisons are historical context unless the exact upstream revision or worktree state is named and this branch reran the same live boundary against the same drift case. A named Reprint, ZS-Sync, or ForkPress note can justify historical transport, discovery, or review vocabulary, but it does not prove the live executor, the preserved remote, or retry safety on this branch.
 
