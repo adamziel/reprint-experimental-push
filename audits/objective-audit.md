@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The repo still lacks one enforced command that proves the live-source boundary on the real storage and transport path. `npm test` passes, but it only proves the suite is internally consistent. It does not prove the live-source boundary, so the release claim is still false.
+The repo still lacks one enforced command that proves the live-source boundary on the real storage and transport path. `npm test` passes, but it only proves the suite is internally consistent and model-safe. It does not prove no data loss, reliability, or speed on the live-source boundary, so the release claim is still false.
 
 ## Explicit Requirements
 
@@ -25,7 +25,7 @@ The objective implies these minimum release requirements:
 
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| Executable proof | `npm test` passes 89 Node subtests; the strongest assertions cover planner refusal, recovery-journal replay shape, benchmark-model guardrails, and guarded-benchmark refusal behavior | No executable test touches the live-source mutation boundary, exercises a real remote-to-local-to-remote release path, or proves no-loss on a production mutation path | Yes |
+| Executable proof | `npm test` passes 89 Node subtests; the strongest assertions cover planner refusal, recovery-journal replay shape, benchmark-model guardrails, and guarded-benchmark refusal behavior | No executable test touches the live-source mutation boundary, exercises a real remote-to-local-to-remote release path, proves no data loss on production storage, or measures the live push path speed claim | Yes |
 | Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, plugin packaging, and other local failure modes | These checks still run against local or fixture-backed storage, and the authenticated push path still reports `labBacked: true`, so they cannot prove the real remote/local topology or live-source release boundary | Yes |
 | Docs-only proof | `docs/`, `progress.html`, and the audit notes describe the intended release flow and safety matrix | Prose does not enforce the matrix or prove the live path | Yes |
 | Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json); no checked-in `.github/workflows/*`; no required command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and a measured live-path speed check | The repo still lacks the single mandatory decision point that could make the live-source claim releasable; the current command set can still succeed without proving production release safety | Yes |
@@ -37,10 +37,10 @@ The current tests are useful, but they are not proof of no data loss, reliabilit
 
 | Test surface | What it proves | What it does not prove | Release value |
 | --- | --- | --- | --- |
-| `npm test` / planner tests | Planner refusal, remote-change protection, local deletion blocking, and fixture-level conflict handling | No live-source mutation, no production storage boundary, no end-to-end no-loss proof, no measurable release threshold | Blocker evidence only |
-| `test/recovery-journal.test.js` | File-backed journal monotonicity, redaction, restart classification, and blocked recovery states | No durable production journal, no lease/fencing regime, no real crash recovery on the source boundary, no duplicate/write-loss proof on live storage | Blocker evidence only |
-| `test/performance-model.test.js` | Benchmark shape, guardrails, refusal discipline, and safe-fast-path modeling | No measured throughput, no memory ceiling, no runtime threshold on a live push path, no production timing evidence | Blocker evidence only |
-| `test/guarded-executor-benchmark.test.js` | Explicit refusal of unsupported throughput claims and tamper detection for benchmark evidence | No positive speed claim, no production-shaped timing result, no live-path benchmark threshold, no real live-source throughput measurement | Blocker evidence only |
+| `npm test` / planner tests | Planner refusal, remote-change protection, local deletion blocking, and fixture-level conflict handling | No live-source mutation, no production storage boundary, no end-to-end no-loss proof, no measurable release threshold, no evidence that production writes survive retries or crashes | Blocker evidence only |
+| `test/recovery-journal.test.js` | File-backed journal monotonicity, redaction, restart classification, and blocked recovery states | No durable production journal, no lease/fencing regime, no real crash recovery on the source boundary, no duplicate/write-loss proof on live storage, no evidence that a live apply is replay-safe | Blocker evidence only |
+| `test/performance-model.test.js` | Benchmark shape, guardrails, refusal discipline, and safe-fast-path modeling | No measured throughput, no memory ceiling, no runtime threshold on a live push path, no production timing evidence, no proof that the speed story is anything more than a model | Blocker evidence only |
+| `test/guarded-executor-benchmark.test.js` | Explicit refusal of unsupported throughput claims and tamper detection for benchmark evidence | No positive speed claim, no production-shaped timing result, no live-path benchmark threshold, no real live-source throughput measurement, no proof that a production release is fast enough | Blocker evidence only |
 | `npm run test:playground:*` | Lab/fixture route shape, auth/session scaffolding, storage guard behavior, stale-claim classification, and journal smoke paths | No real remote/local topology, no production storage path, no enforced release gate | Lab evidence only |
 
 ## Release Blockers
@@ -49,9 +49,9 @@ The objective stays blocked for five concrete reasons:
 
 1. There is no single required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, real remote/local topology, crash boundary, recovery, and a measured live-path speed check.
 2. The strongest authenticated push route still self-identifies as `labBacked: true`, so the best visible push evidence is still lab-scoped.
-3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path or establish a release threshold.
+3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path or establish a release threshold for a production release.
 4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary, and they do not exercise a real remote-to-local-to-remote release path or no-loss behavior under the production storage semantics named by the objective.
-5. There is no checked-in CI workflow in this checkout, so there is no visible enforced entrypoint that could make the release gate mandatory.
+5. There is no checked-in CI workflow in this checkout, so there is no visible enforced entrypoint that could make the release gate mandatory, and no release command that closes the loop from proof to deployable gate.
 
 ## Audit Rule
 
