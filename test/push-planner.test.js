@@ -9827,3 +9827,42 @@ test('pins the accepted post-failure states for no-data-loss recovery', () => {
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
+
+test('durable completed replay stays inert and preserves the completed recovery journal contract', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const persistedBeforeReplay = readRecoveryJournal(journalPath);
+
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal,
+    journal: completed.journal,
+  });
+
+  durableJournal.close();
+  const persistedAfterReplay = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'journal-replayed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'journal-replayed').length + 1,
+  );
+  assert.equal(
+    persistedAfterReplay.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
+});
