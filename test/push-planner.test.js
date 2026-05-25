@@ -8950,3 +8950,43 @@ test('mid-apply partial writes stay blocked with artifacts and completed replay 
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
+
+test('replaying a completed durable plan stays inert and records only the completed replay boundary', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const persistedAfterApply = readRecoveryJournal(journalPath);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal });
+  const persistedAfterReplay = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'journal-replayed').length,
+    persistedAfterApply.records.filter((record) => record.type === 'journal-replayed').length + 1,
+  );
+  assert.equal(
+    persistedAfterReplay.records.some((record) => record.type === 'apply-committing'),
+    true,
+    'durable replay should preserve the original apply trail',
+  );
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'apply-committing').length,
+    persistedAfterApply.records.filter((record) => record.type === 'apply-committing').length,
+    'replaying a completed plan must not append a new commit trail',
+  );
+});
