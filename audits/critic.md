@@ -5477,6 +5477,13 @@ Proof-substitution fail-closed rule:
   that later boundary; otherwise the later surface remains blocked or audit-
   only, regardless of how similar it looks to the earlier boundary.
 
+Source-note comparison rule:
+
+- Reprint `27c5f25` only supports staged transport, resumability vocabulary, and chunked delivery framing; it does not prove stale remote drift rejection, preserved-remote auditability, create-time remap safety, or late plugin-surface classification on this branch.
+- ZS-Sync `d9334a0` only supports bounded discovery, cursoring, and batched resource selection; it does not prove source mutation safety, retry authority, or recovery from partial side effects on this branch.
+- ForkPress `55f9879` only supports merge-audit vocabulary and crash-consistency intent; it does not prove that a readable review artifact can authorize a later row, file, remapped create target, or plugin-owned surface on this branch.
+- any comparison that does not explicitly say what the note proves here and what it does not prove here is ambiguous and must fail closed.
+
 Evidence-classification rule:
 
 - if a note, artifact, or smoke does not explicitly say whether it is historical context, compatibility evidence, or live retry proof, the wording is ambiguous and must fail closed;
