@@ -32,6 +32,12 @@ The retained-source `verify:release` run, minted session shape, and apply-revali
 
 Reprint, ZS-Sync, and ForkPress remain provenance, not retry authority. Reprint explains staged transport and resumability; ZS-Sync explains bounded discovery and cursoring; ForkPress explains merge-audit and crash-consistency vocabulary. None of them prove the missing branch-local live boundary, and none of them justify production wording here unless the same live mutation was rerun on this worktree with the rejected remote preserved.
 
+If the upstream notes are cited, they must be framed as source notes for vocabulary only:
+
+- Reprint can justify staged transport and resumability language, but not a live WordPress auth/session lifecycle, preserved-remote retention, or apply-time revalidation on this branch.
+- ZS-Sync can justify bounded discovery and cursoring language, but not create-time remap safety, graph identity, or plugin-owned surface coverage on this branch.
+- ForkPress can justify audit and crash-consistency language, but not lease/fenced durability, preserved-remote auditability, or retry authority on this branch.
+
 ## Immediate blocker for release wording
 
 The only acceptable transition to production wording is one rerunnable live WordPress boundary that proves all of these together:
