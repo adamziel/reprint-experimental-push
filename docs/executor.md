@@ -112,14 +112,15 @@ The release-facing wrapper that a supervisor should run is:
 npm run test:playground:production-shaped-proof
 ```
 
-For a supervisor-run live-source proof, use:
+For a supervisor-run retained-source proof, use:
 
 ```sh
 npm run test:playground:production-shaped-release-verify
 ```
 
-That wrapper starts a local Playground remote source, injects production-shaped
-auth, and prints the exact live preflight branch plus the release-proof status.
+That wrapper starts a local Playground remote source and a local edited site,
+injects production-shaped auth, and prints the live preflight branch plus the
+dry-run, apply, journal, and recovery inspect evidence in the release proof.
 
 The narrow live-preflight command for a real remote source is:
 
@@ -128,9 +129,10 @@ npm run test:playground:production-shaped-live-preflight
 ```
 
 When `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_USERNAME`, and
-`REPRINT_PUSH_APPLICATION_PASSWORD` are present, that command exercises the
-real production-shaped preflight handshake. When the source URL or auth is
-missing, it fails with the exact gate the supervisor should check:
+`REPRINT_PUSH_APPLICATION_PASSWORD` are present, the narrower live-preflight
+command exercises the real production-shaped preflight handshake. When the
+source URL or auth is missing, it fails with the exact gate the supervisor
+should check:
 
 - `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`
 - `REPRINT_PUSH_SECRET_REQUIRED`

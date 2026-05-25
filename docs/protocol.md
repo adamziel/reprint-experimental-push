@@ -195,9 +195,10 @@ that either exercises a supplied live source preflight or emits the explicit
 missing-secret and missing-live-source gates with exact output.
 
 The live-source verify command is `npm run test:playground:production-shaped-release-verify`.
-It starts a local Playground remote source, feeds it into the release proof
-with production-shaped auth, and prints the exact live preflight result plus
-the release-proof status.
+It starts a local Playground remote source and a local edited site, feeds the
+remote into the live protocol proof with production-shaped auth, and prints
+the exact live preflight result plus the release-proof status and live
+protocol evidence.
 
 When a live source URL and production-shaped credentials are present, that
 same wrapper switches to `npm run test:playground:production-shaped-live-preflight`

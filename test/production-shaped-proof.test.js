@@ -147,7 +147,7 @@ test('production-shaped release proof runs the live preflight branch against a l
   });
 });
 
-test('production-shaped release verify command runs the live preflight branch with a local Playground source and reports the checked wrapper summary', () => {
+test('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
     env: {
@@ -160,9 +160,14 @@ test('production-shaped release verify command runs the live preflight branch wi
 
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
-  assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(proof.stdout, /"releaseProofOutput": "/);
-  assert.match(proof.stdout, /LIVE_PREFLIGHT_OK/);
+  assert.match(proof.stdout, /"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
+  assert.match(proof.stdout, /"localEdited": "http:\/\/127\.0\.0\.1:\d+"/);
+  assert.match(proof.stdout, /"releaseProof": \{/);
+  assert.match(proof.stdout, /"mode": "apply"/);
+  assert.match(proof.stdout, /"dryRun": \{/);
+  assert.match(proof.stdout, /"apply": \{/);
+  assert.match(proof.stdout, /"recoveryInspect": \{/);
+  assert.match(proof.stdout, /"after": \{/);
 });
 
 test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {

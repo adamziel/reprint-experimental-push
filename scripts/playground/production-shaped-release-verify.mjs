@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -18,38 +19,68 @@ const remoteServer = await startPlaygroundServer(
   path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'),
 );
 try {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
-    env: {
-      ...process.env,
-      REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
-      NODE_NO_WARNINGS: '1',
-    },
-  });
-
-  assert.equal(proof.status, 0, proof.stderr || proof.stdout);
-  assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0,\s*"code": "LIVE_PREFLIGHT_OK"\s*\}/);
-  assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(proof.stdout, /"routeProfile": \{\s*"profile": "production-shaped"/);
-  assert.match(proof.stdout, /"session": \{\s*"id": "[A-Za-z0-9_-]{32,160}"/);
-
-  process.stdout.write(
-    JSON.stringify(
-      {
-        ok: true,
-        sourceUrl: remoteServer.baseUrl,
-        releaseProofOutput: proof.stdout.trim(),
-      },
-      null,
-      2,
-    ),
+  const localServer = await startPlaygroundServer(
+    'local-edited',
+    path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'),
   );
-  process.stdout.write('\n');
+  try {
+    const client = authenticatedHttpClient({
+      sourceUrl: remoteServer.baseUrl,
+      credential: credentials,
+      routeProfile: 'production-shaped',
+    });
+
+    const preflight = await client.signedGet('/preflight');
+    assert.equal(preflight.status, 200, `production-shaped release verify preflight HTTP ${preflight.status}`);
+    assert.equal(preflight.body.ok, true);
+
+    const proof = await runAuthenticatedHttpPush({
+      sourceUrl: remoteServer.baseUrl,
+      base: await exportSnapshot('remote-base', remoteServer.baseUrl),
+      local: withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl)),
+      username: credentials.username,
+      applicationPassword: credentials.password,
+      idempotencyKey: 'production-shaped-release-verify-001',
+      routeProfile: 'production-shaped',
+      dryRunOnly: false,
+      labDriftAfterSnapshot: '',
+      now: new Date('2026-05-25T10:12:00.000Z'),
+    });
+
+    assert.equal(proof.ok, true, JSON.stringify(proof, null, 2));
+    assert.equal(proof.preflight.status, 200);
+    assert.equal(proof.dryRun.status, 200);
+    assert.equal(proof.apply.status, 200);
+    assert.equal(proof.recoveryInspect.status, 200);
+    assert.equal(proof.after.status, 200);
+    assert.equal(proof.after.finalMatchesLocal, true);
+
+    process.stdout.write(
+      JSON.stringify(
+        {
+          ok: true,
+          topology: {
+            remoteBase: remoteServer.baseUrl,
+            localEdited: localServer.baseUrl,
+          },
+          preflight: {
+            status: preflight.status,
+            routeProfile: preflight.body.routeProfile,
+            session: {
+              id: preflight.body.session.id,
+              type: preflight.body.session.type,
+            },
+          },
+          releaseProof: proof,
+        },
+        null,
+        2,
+      ),
+    );
+    process.stdout.write('\n');
+  } finally {
+    await stopPlaygroundServer(localServer);
+  }
 } finally {
   await stopPlaygroundServer(remoteServer);
 }
@@ -101,6 +132,27 @@ async function stopPlaygroundServer(server) {
   }
   server.child.kill('SIGTERM');
   await waitForExit(server.child, 12_000);
+}
+
+async function exportSnapshot(name, baseUrl) {
+  const response = await fetch(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+    },
+  });
+  assert.equal(response.status, 200, `${name} snapshot HTTP ${response.status}`);
+  const body = await response.json();
+  assert.equal(body.ok, true, `${name} snapshot body not ok`);
+  return body.snapshot;
+}
+
+function withoutUnmappedGraphPostmeta(snapshot) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
+    delete next.db.wp_postmeta;
+  }
+  return next;
 }
 
 async function waitForServer(child, baseUrl, getLogs) {
