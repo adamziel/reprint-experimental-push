@@ -104,6 +104,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed package cache still cannot skip plugin validators or the atomic-group barrier, because planning evidence and compressed storage do not prove dependency readiness or metadata writes.
 - A fresh remote index plus a compressed package cache still cannot skip plugin activation or the atomic-group barrier, because planning evidence and compressed storage do not prove the activation state or group commit completion.
 - A fresh remote index plus a compressed package cache still cannot make plugin activation visible early, because the activation state, dependency checks, and atomic-group barrier still need durable evidence.
+- A compressed remote index plus parallel row batches still cannot skip plugin update activation, because planning concurrency does not prove the activation change, per-row compares, or the atomic-group barrier survived failure.
 - A fresh remote index plus a cached package hash still cannot skip plugin dependency checks, because lookup evidence and cached identity do not prove the dependency checks, metadata writes, or atomic-group commit survived failure.
 - A fresh remote index plus a compressed package cache still cannot prove a plugin install finished, because dependency checks, metadata writes, file receipts, and the atomic-group commit still need durable evidence.
 - A compressed remote index plus a cached package cache still cannot skip plugin install finalize, because planning evidence and cached package storage do not prove dependency checks, staged files, or the atomic-group finalize survived failure.
@@ -727,6 +728,10 @@ under load:
 - compressed-remote-index-and-parallel-row-batch-skips-plugin-install-barrier
   is rejected because parallel row batches can reduce wait time, but they
   cannot prove which owner owns a partial row result or that the atomic-group
+  barrier survived failure.
+- compressed-remote-index-and-parallel-row-batch-skips-plugin-update-activation
+  is rejected because parallel row batches can reduce wait time, but they
+  cannot prove the activation change, per-row compares, or the atomic-group
   barrier survived failure.
 - compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation
   is rejected because planning evidence and cached batch receipts can reduce

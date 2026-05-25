@@ -385,6 +385,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-row-batch-skips-plugin-update-activation')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.failureEvidence,
     'planning cursor plus cached digest and guarded file-publish record',
   );
@@ -828,6 +832,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-parallel-row-batch-skips-plugin-install-barrier').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batch-skips-plugin-update-activation').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batch-skips-plugin-update-activation').violates.includes('atomic-groups'),
   );
   assert.equal(
     rejectedById.get('compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers').rejectedGate,
