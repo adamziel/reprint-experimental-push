@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: this checkout still lacks executable proof that the live push boundary is safe. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping, plugin-driver coverage, and preserved-remote drift are still only lab-shaped. The missing checked-in `verify`, `verify:release`, or `release` script is a release-engineering gap, but it is not the decisive blocker here. The decisive blocker is the missing live-boundary proof for production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, and preserved-remote drift at apply time.
+Current top blocker, rechecked on 2026-05-25: this checkout still lacks executable proof that the live push boundary is safe. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping, plugin-driver coverage, and preserved-remote drift are still only lab-shaped. This checkout also still lacks a checked-in `verify:release`-style command, but the decisive blocker is not the missing script name. The decisive blocker is the missing live-boundary proof for production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, and preserved-remote drift at apply time.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -18,7 +18,7 @@ The release gate therefore remains closed until there is executable proof for al
 - plugin-driver coverage
 - CI/default enforcement of the gate
 
-If any of those remain only lab-backed, fixture-backed, or docs-backed, the release claim is still blocked.
+If any of those remain only lab-backed, fixture-backed, or docs-backed, the release claim is still blocked. The current repo state still leaves the gate closed because the required live-boundary proof does not exist here yet.
 
 ## Explicit Requirements
 
