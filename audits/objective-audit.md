@@ -7,10 +7,10 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `fa0ce3ea`
+- `origin/lane/no-data-loss-invariants` -> `668f886c`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `b54f1b34`
-- `origin/lane/independent-auditor` -> `33b839f0`
+- `origin/lane/independent-auditor` -> `21a273dd`
 - `origin/lane/critic` -> `3041eae6`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
@@ -28,7 +28,7 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now retries the release-proof port handling
   at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` now adds a taxonomy identity invariant
-  proof at `fa0ce3ea`.
+  proof at `668f886c`.
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `b54f1b34`.
@@ -36,7 +36,7 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `1d1d5812`.
+  `21a273dd`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `a37a7261`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a stale term
