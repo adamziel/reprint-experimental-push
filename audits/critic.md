@@ -4641,6 +4641,11 @@ False reliability claims to reject:
   the same live boundary and keeps the remote auditable.
 - "manual resolution succeeded" when the preserved remote, rejection point,
   and fresh retry artifact are not all recorded for the same live boundary.
+- "manual resolution succeeded" when a later-discovered plugin-owned table,
+  file, cron row, runtime registry entry, generated asset, cache record, or
+  serialized blob appears after the first write but never gets its own
+  preserve / reject / retry cycle; the earlier note stays audit-only and
+  cannot cover the new surface by route-shape similarity alone.
 
 Production wording must also satisfy the release gate in
 [`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md).
