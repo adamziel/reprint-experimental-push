@@ -30,16 +30,16 @@ good negative evidence, but it is still not direct proof for the objective:
 pushing local edits back to a live source WordPress site without losing
 concurrent source changes, while remaining reliable and fast.
 
-The weakest current claim is still speed, but the more important release
-blocker is structural: the repository still lacks one enforced release gate
-that runs the auth/session, durable journal, storage, graph identity,
-plugin-data-driver, real remote/local topology, crash-boundary, recovery, and
-benchmark checks in a single required command and fails closed when any of
-them are still fixture-scoped or lab-backed. The benchmark code already
-refuses an unsupported throughput claim by listing blockers such as missing
-durable chunk receipts, missing live remote preconditions, missing durable
-journal integrity, missing graph-identity evidence, missing recovery evidence,
-and non-production storage or row-apply capabilities. That is useful refusal
+The weakest current claim is still speed. The more important release blocker
+is structural: the repository still lacks one enforced release gate that runs
+the auth/session, durable journal, storage, graph identity, plugin-data-
+driver, real remote/local topology, crash-boundary, recovery, and benchmark
+checks in a single required command and fails closed when any of them are
+still fixture-scoped or lab-backed. The benchmark code already refuses an
+unsupported throughput claim by listing blockers such as missing durable
+chunk receipts, missing live remote preconditions, missing durable journal
+integrity, missing graph-identity evidence, missing recovery evidence, and
+non-production storage or row-apply capabilities. That is useful refusal
 logic, but it is still only refusal logic: it does not measure a production-
 shaped runtime or memory ceiling, and it cannot substitute for a required
 release command. `npm test` and `npm run test:playground` remain green even
@@ -635,12 +635,12 @@ invocation and can be skipped while `npm test` remains green.
     prove production credentials, TLS, secret scoping, nonce cleanup, replay
     retention, or source-site authorization.
 
-13. **Plugin safety is intentionally hard-coded.** The tests prove that the lab
+15. **Plugin safety is intentionally hard-coded.** The tests prove that the lab
    blocks arbitrary plugin data and allows exact fixtures. That is the right
    conservative behavior, but it means production plugin-owned data remains a
    release blocker until validator contracts and real plugin fixtures exist.
 
-14. **Speed has no measured evidence at the production boundary.** The
+16. **Speed has no measured evidence at the production boundary.** The
    performance tests prove a model, claim gates, and guardrails. They do not
    move bytes, mutate a source site, measure memory, measure throughput, or
    pin those numbers to a documented benchmark environment with a release
@@ -648,7 +648,7 @@ invocation and can be skipped while `npm test` remains green.
    not to justify a "fast" release claim. If the release path cannot run this
    measurement automatically, the speed claim stays blocked.
 
-15. **The release surface is real but fragmented.** The repository already
+17. **The release surface is real but fragmented.** The repository already
     exposes high-value smokes for auth, journal durability, storage guards,
     and production-shaped routing, but they are not collected under one
     enforced gate. That means the current proof set is larger than `npm test`
@@ -661,7 +661,7 @@ invocation and can be skipped while `npm test` remains green.
     the existing ones into release-proof order and fails closed if any step is
     skipped or downgraded to lab-only proof.
 
-16. **The highest-value missing edge case is a real crash matrix on the live
+18. **The highest-value missing edge case is a real crash matrix on the live
     write boundaries.** The current smoke suite can show one process-kill path
     and one stale-claim path, but it does not kill the executor at each
     production-grade boundary for DB writes, filesystem writes, plugin
@@ -670,7 +670,7 @@ invocation and can be skipped while `npm test` remains green.
     exact places the source site can lose or duplicate work. That is still a
     blocker for any live-source no-data-loss claim.
 
-17. **The release suite is fragmented and unenforced.** The highest-value
+19. **The release suite is fragmented and unenforced.** The highest-value
    evidence is split across manually invoked scripts. A green default test run
    still leaves the strongest claims unproven unless the full matrix is run
    deliberately, and nothing in the repository currently enforces that matrix
@@ -681,7 +681,7 @@ invocation and can be skipped while `npm test` remains green.
    the repo. The actionable fix is a single release gate command plus CI that
    runs it in order and fails closed on any skipped mandatory smoke.
 
-18. **The live-source no-data-loss claim is still blocked by missing crash
+20. **The live-source no-data-loss claim is still blocked by missing crash
     coverage at the actual write boundaries.** The current smoke suite can
     show one process-kill path and one stale-claim path, but it does not kill
     the executor at each production-grade boundary for DB writes, filesystem
@@ -689,7 +689,7 @@ invocation and can be skipped while `npm test` remains green.
     the claim still rests on selective fixtures and model state, not on the
     exact places the source site can lose or duplicate work.
 
-19. **The speed claim is still only a model.** The benchmark tests verify
+21. **The speed claim is still only a model.** The benchmark tests verify
     evidence structure, guardrail placement, and failure gates, but they do
     not measure a real push path against a live WordPress site, do not report
     a throughput target, do not establish a memory ceiling under load, and do
