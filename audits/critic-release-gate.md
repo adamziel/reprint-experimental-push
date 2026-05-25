@@ -5,10 +5,10 @@ This note is a compact checklist for any wording that might claim production-gra
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
 
 - the exact stale-drift case is named;
-- the remote that drifted is preserved and still inspectable after rejection;
+- the remote that drifted is preserved and still inspectable after rejection, and that preserved remote is audit evidence only until a fresh retry scope is rebuilt from live hashes;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority;
 - any stale manual-review artifact remains audit-only after drift and cannot be reused against a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
-- any stale manual-review artifact cannot become retry authority for a later-discovered plugin-owned surface that appears only after the first write;
+- any stale manual-review artifact cannot become retry authority for a later-discovered plugin-owned surface that appears only after the first write, even if the later surface looks like the earlier one;
 - the fresh retry artifact is rebuilt from live hashes on this branch, not inherited from the earlier approval;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified as old, new, or blocked before retry starts;
 - any late-discovered plugin-owned surface is separately blocked or classified, not folded into the earlier success story;
@@ -18,7 +18,7 @@ Do not use production wording unless the branch has all of the following for the
 - any source-note comparison that merely matches the same route family, package layout, or reviewer wording is still historical context only and cannot be treated as live proof of retry authority, preserved-remote safety, or stale-authority rejection; and
 - any claim of "production-grade push support" is rejected unless the same live boundary shows preserved-remote evidence, stale-authority rejection, fresh retry scope rebuilt from live hashes, and per-surface old/new/blocked classification; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
-- any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success.
+- any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success; and
 - any claim that "manual resolution" succeeded without the preserved remote, the rejection point, and a fresh retry artifact rebuilt from live hashes for the same live boundary is false reliability, not success.
 - any claim that "manual resolution" succeeded is also false reliability if the first write committed but a later plugin-owned surface was discovered afterwards and never got its own preserve/reject/retry cycle.
 - proof for one live boundary is not transferable to a later boundary, even if
