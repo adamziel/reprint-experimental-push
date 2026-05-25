@@ -826,6 +826,10 @@ under load:
   is rejected because planning evidence and cached database receipts can trim
   replay work, but they cannot prove dependency checks, staged files, or the
   atomic-group finalize survived failure.
+- compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize-after-pause
+  is rejected because planning evidence and cached database receipts can trim
+  replay work, but they cannot prove the paused dependency checks, staged
+  files, or the atomic-group finalize survived the pause.
 - compressed-remote-index-and-parallel-row-batch-skips-plugin-install-barrier
   is rejected because parallel row batches can reduce wait time, but they
   cannot prove which owner owns a partial row result or that the atomic-group

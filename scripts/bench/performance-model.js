@@ -2165,6 +2165,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize-after-pause',
+    proposal: 'treat a compressed remote index plus cached database batch receipts as enough proof to skip plugin install finalize after a pause',
+    rejectedBecause: 'planning evidence and cached database receipts can trim replay work, but they cannot prove the paused dependency checks, staged files, or the atomic-group finalize survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
     proposal: 'use a compressed remote index plus cached row-batch receipts to skip plugin-install backpressure during resume',
     rejectedBecause: 'planning evidence and cached batch receipts can reduce replay work, but they cannot prove the install still has bounded queue order or the journal evidence needed to recover a partial failure',
