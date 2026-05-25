@@ -16,6 +16,29 @@ boundary. That proof still has to preserve the rejected remote, show apply-time
 revalidation, and keep later-discovered plugin-owned surfaces on their own
 preserve / reject / retry cycle.
 
+Before this project can claim production-grade push support, all of the
+following must be true on the same rerunnable live boundary:
+
+- a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` must be used
+  by one executable release command, not a wrapper label or compatibility
+  smoke;
+- that command must print the exact executor identity, auth/session boundary,
+  dry-run receipt, apply-time revalidation result, and journal/recovery
+  inspection that defines retry scope;
+- the rejected remote must stay inspectable after rejection, so the user can
+  audit or retry without losing the original remote state;
+- every touched row, file, relationship-bearing record, and plugin-owned
+  surface must be classified old, new, or blocked before retry starts, with
+  partial file, DB, and plugin side effects called out explicitly;
+- create-time identity remaps must either be proven live at apply time or
+  hard-blocked before mutation;
+- hidden plugin-owned data traps outside the allowlist, including cron rows,
+  runtime registries, generated files, caches, serialized blobs, and plugin-
+  owned files, must be enumerated or blocked before write; and
+- any later-discovered plugin-owned surface or remapped create target must
+  get its own preserve / reject / retry cycle instead of inheriting the
+  earlier approval.
+
 The old critique that no `verify:release` command exists is retired; the
 current blocker is the lack of a rerunnable live boundary on a real local,
 Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected
