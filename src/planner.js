@@ -1648,6 +1648,9 @@ function enforceMutationPreconditionInvariant(plan) {
         mutationId: mutation.id,
         resourceKey: mutation.resourceKey,
         reason: 'Mutation is missing a matching live remote precondition.',
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteHash: mutation.remoteBeforeHash,
       });
     }
   }

@@ -179,6 +179,25 @@ test('executor rejects forged ready plans with mismatched live remote preconditi
   assert.equal(JSON.stringify(remote), before);
 });
 
+test('planner keeps every live mutation behind a live remote precondition while preserving remote-only plugin drift and matching independent edits', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+
+  const remote = baseSite();
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(plan.decisions.some((decision) => decision.decision === 'keep-remote'), true);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('executor rejects forged ready delete plans missing live remote preconditions', () => {
   const base = baseSite();
   const local = baseSite();

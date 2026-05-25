@@ -43,6 +43,8 @@ This note captures the planner boundary in plain language.
   plugin removals are present.
 - Conflict and blocker evidence without raw file bodies, row contents, option
   values, or plugin payloads.
+- If the planner ever flags a missing live-remote precondition, the blocker
+  should still expose only resource keys and hashes, not raw resource values.
 - Matched independent resources in `already-in-sync` state rather than
   converting them into mutations when another resource in the same plan needs
   a live remote precondition.
