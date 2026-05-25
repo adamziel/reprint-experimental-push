@@ -6,13 +6,13 @@ linked implementation artifacts.
 
 ## 2026-05-26 - Current Supervisor Snapshot
 
-- Status: `node --test --test-name-pattern="allows local termmeta references to a term created by the same plan" test/push-planner.test.js`
-  passed, adding a sixth same-plan graph proof to the existing postmeta,
-  parent-post, thumbnail, taxonomy, and term-taxonomy-parent cases. The
-  earlier planner proofs still stand, but the broader production gate remains
-  closed on `main`.
-- New proof: same-plan termmeta rows now have concrete passing Node coverage
-  through `wp_termmeta.term_id`.
+- Status: `node --test --test-name-pattern="allows a term taxonomy term reference to a term created by the same plan" test/push-planner.test.js`
+  passed, adding a seventh same-plan graph proof to the existing postmeta,
+  parent-post, thumbnail, taxonomy, term-taxonomy-parent, and termmeta cases.
+  The earlier planner proofs still stand, but the broader production gate
+  remains closed on `main`.
+- New proof: same-plan term taxonomy rows now have concrete passing Node
+  coverage through `wp_term_taxonomy.term_id`.
 - Trend: evidence improved again for the planner lane, while the broader
   production gate is still not closed on `main`.
 - Blocker: the merged production path still needs a visible end-to-end proof

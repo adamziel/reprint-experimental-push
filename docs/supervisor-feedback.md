@@ -1,9 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 00:46 CEST
+Last updated: 2026-05-26 00:53 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 00:53 CEST - Same-Plan Term Taxonomy Term Proof Added
+
+- Going well: `node --test --test-name-pattern="allows a term taxonomy term reference to a term created by the same plan" test/push-planner.test.js` passed, adding a seventh same-plan graph proof alongside the existing postmeta, parent-post, thumbnail, taxonomy, term-taxonomy-parent, and termmeta cases.
+- Not going well: the merged production gate is still closed on `main`, so the release gate should stay conservative until the merged evidence catches up.
+- Progress change: the executable evidence now covers the `wp_term_taxonomy.term_id` edge directly, narrowing one more same-plan graph gap without changing the closed production gate.
+- Next nudge: keep the page brief, dated, and explicit that lane proofs are widening while the merged production gate remains closed.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep the merged gate closed while same-plan graph proofs widen. |
+| Recovery | Keep the recovery proof bounded to executable evidence only. |
+| Reliable executor | Do not widen production claims past the merged evidence set. |
+| Fast paths | Leave benchmark claims blocked until the source smoke or a merged proof lands. |
+| Audit and critic | Re-check only after the timeout yields fresh evidence. |
+| Progress publisher | Keep the page dated, brief, and explicit about the proof split. |
 
 ## 2026-05-26 00:46 CEST - Same-Plan Termmeta Proof Added
 
