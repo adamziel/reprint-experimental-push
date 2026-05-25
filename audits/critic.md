@@ -4979,7 +4979,9 @@ boundary-specific, not wording-specific:
   and
 - Reprint, ZS-Sync, and ForkPress notes still need to be treated as source-note
   provenance only unless the exact upstream state is named and this branch
-  reran the same live boundary with preserved-remote evidence.
+  reran the same live boundary with preserved-remote evidence; even then, the
+  note proves only the cited boundary and does not transfer retry authority to
+  a later row, file, remapped create target, or plugin-owned surface.
 - The approach scorecard in `docs/approach-scorecard.md` is only a design
   heuristic. Even the highest reliability score there does not prove stale
   authority was rejected before mutation, the remote was preserved for audit,
