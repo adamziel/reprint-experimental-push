@@ -17,13 +17,14 @@ live boundary is missing, the note is historical context only and cannot be
 used to claim that the live executor, retry path, or manual-review flow is
 safe.
 
-A route-shaped smoke, package mount, live-looking hash, or matching
-`finalMatchesLocal` result does not fill that gap. Neither does a later
-manual-resolution label unless the preserved remote stayed auditable, the
-stale rejection point is recorded, the fresh retry scope was rebuilt from
-live hashes on this branch for that same boundary, and any later-discovered
-plugin-owned surface got its own preserve / reject / retry cycle instead of
-being folded into the earlier approval.
+A route-shaped smoke, package mount, live-looking hash, lab-shaped route
+smoke, copied executor output, or matching `finalMatchesLocal` result does
+not fill that gap. Neither does a later manual-resolution label unless the
+preserved remote stayed auditable, the stale rejection point is recorded,
+the fresh retry scope was rebuilt from live hashes on this branch for that
+same boundary, and any later-discovered plugin-owned surface got its own
+preserve / reject / retry cycle instead of being folded into the earlier
+approval.
 That also means a stale manual-review artifact stays audit evidence only
 unless the remote was preserved for audit, the stale approval was rejected
 before mutation, the retry rebuilt scope from fresh live hashes, and any

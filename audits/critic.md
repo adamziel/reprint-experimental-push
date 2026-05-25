@@ -6228,8 +6228,8 @@ Release gate for this branch:
   ZS-Sync, or ForkPress says what the note proves here, what it does not
   prove here, and whether this branch reran the same live boundary; and
 - no production-grade push claim unless the evidence is live-boundary proof,
-  not route shape, package mount, fixture replay, readable review output, or
-  `finalMatchesLocal`.
+  not route shape, package mount, fixture replay, readable review output,
+  lab-shaped route smoke, copied executor output, or `finalMatchesLocal`.
 - if any item above is missing, the wording stays audit-only and cannot be
   promoted to production-grade push support.
 
@@ -6261,6 +6261,9 @@ Concise release-gate summary:
   show the exact stale-drift case, the preserved remote that remained
   inspectable after rejection, and a fresh retry scope rebuilt from live
   hashes on this worktree;
+- any lab-shaped route or production-shaped URL still counts only as
+  compatibility evidence, because the same shape can be served by a copied
+  or fixture-backed executor instead of the live write path;
 - any create-time identity remap still needs live identity evidence or a hard
   block before write, because route shape, package mount shape, and fixture
   shape are compatibility signals only;
@@ -6271,6 +6274,10 @@ Concise release-gate summary:
 - any partial file, DB, or plugin side effect still needs old/new/blocked
   classification for the full touched set before retry starts, so a mixed
   outcome cannot be relabeled as success.
+- a stale manual-review artifact is never retry authority for a later-
+  discovered plugin-owned surface or remapped create target unless that later
+  boundary separately preserved the remote, rejected stale authority, and
+  rebuilt retry scope from live hashes on this branch.
 
 Comparison rule:
 
