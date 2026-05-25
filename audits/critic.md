@@ -4,6 +4,17 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+Do not let lab-shaped success stand in for live proof. A production-shaped
+route, package mount, fixture replay, or `finalMatchesLocal` result can still
+come from a copied executor behind the same URL family; that is compatibility
+evidence, not proof that the live write path rejected stale authority before
+mutation, preserved the remote for audit, or rebuilt retry scope from fresh
+live hashes. The same limit applies to any readable manual-review artifact
+and any Reprint, ZS-Sync, or ForkPress citation: unless this branch reran the
+same live mutation boundary against the same drift case and recorded the
+preserved remote, rejection point, and fresh retry scope, the artifact or
+citation remains historical only.
+
 One weak claim still worth tightening explicitly: a production-shaped route,
 package mount, or fixture can still be a copied-lab executor behind the same
 URL family. That means a green smoke, `finalMatchesLocal`, matching mount
@@ -91,6 +102,9 @@ Release gate for any production wording:
   cannot authorize a second write, and cannot be widened into a different
   row, file, relationship-bearing record, or plugin-owned surface without a
   fresh live retry scope.
+- Show that a lab-shaped smoke, fixture replay, or package mount is not
+  treated as production proof unless the live executor on this branch was
+  rechecked at the same boundary and the stale rejection was observed here.
 - Show that a stale manual-review artifact cannot become retry authority for
   a late-discovered plugin-owned surface just because the first write already
   succeeded on a narrower surface set; the proof must keep the preserved
