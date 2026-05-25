@@ -19,6 +19,11 @@ The objective implies the following minimum release requirements:
 
 Those requirements are the minimum release bar, not aspirational extras.
 
+The weakest current requirement is the enforced release gate itself. The repo
+has many useful opt-in checks, but the objective is still blocked until one
+required command composes the safety matrix and fails closed when any claim is
+only lab-backed, fixture-scoped, or otherwise indirect.
+
 Release interpretation:
 
 - The objective requires proof at the live-source push boundary, not just proof that the planner or lab smokes are conservative.
@@ -53,6 +58,7 @@ entrypoint that composes the strongest checks and fails closed.
 | Real remote/local topology | Playground blueprints and local HTTP route smokes approximate the topology. | Evidence from the actual remote/local production topology. | Yes: topology proof remains lab-only. |
 | Speed claim | Benchmark refusal tests block unsupported throughput claims. | A measured runtime or memory result from the production-shaped push path. | Yes: speed is unproven. |
 | Required release command | Optional npm scripts and opt-in smokes exist. | One mandatory `verify:release`-style entrypoint that fails closed. | Yes: no mandatory gate or CI workflow. |
+| Enforced release entrypoint | `npm test` and `npm run test:playground` prove some local invariants and lab flows. | A single required release path that includes auth/session, durable journal, lease/fencing, graph identity, plugin-driver, real topology, crash-boundary, and benchmark checks. | Yes: the strongest checks are still opt-in scripts. |
 
 Executable proof is concentrated in `npm test`, `test/recovery-journal.test.js`, and the Playground smokes. The default suite still passes at 89/89 on 2026-05-25. Those tests do prove useful local properties: monotonic journal sequences, no raw-value leakage in journal records, crash/restart classification, idempotency replay refusal, storage-boundary CAS failures, and guarded file/database mutations. They do **not** prove that the live-source push boundary preserves all WordPress data during production auth/session, journal, lease/fencing, graph-identity, and plugin-driver execution.
 
@@ -60,6 +66,10 @@ A fresh repo scan on 2026-05-25 also found no checked-in `.github` workflow
 directory and no enforced CI entrypoint that could serve as a required release
 gate. That absence matters because a release claim needs a single path that
 fails closed, not a collection of opt-in scripts.
+
+This is the most actionable blocker because it is the only change that would
+turn the current evidence set into a release decision. Until that exists, the
+suite can only justify "still blocked", not "safe to ship".
 
 The weakest current claim is not merely speed. The actual release blocker is
 the live-source no-data-loss boundary: the repository still lacks one
