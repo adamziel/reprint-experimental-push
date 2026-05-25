@@ -9,6 +9,20 @@ provenance, and push consumes it without rewriting it. The imported pull base
 package is the only starting point for push planning, and preflight binds that
 package to one live remote identity plus one short-lived session.
 
+That handoff is the same one defined in [protocol.md](protocol.md):
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted base package to the live remote identity and
+  requested scope
+- snapshot hash listing is planning-only
+- dry-run uploads a receipt, not a lock
+- batch apply revalidates fresh live evidence before every batch and at the
+  storage boundary
+- journal inspect stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes still prove the action safe
+
 The production proof for that mapping is a one-remote, one-local topology:
 
 - `remote-example` is the remote source identity
@@ -28,7 +42,8 @@ the dry-run receipt exists.
 The executor has one production shape:
 
 - it starts from a persisted pull base package
-- it binds that package to one live remote identity in `push_preflight`
+- it binds that package to one live remote identity and requested scope in
+  `push_preflight`
 - it treats `push_snapshot_hashes` as the remote snapshot hash listing for
   planning only
 - it uploads a canonical dry-run plan as eligibility evidence only
@@ -39,8 +54,8 @@ The executor has one production shape:
 
 The production ladder is fixed and the executor follows it exactly:
 
-1. `push_preflight` binds the persisted pull base to one live remote identity
-   and one short-lived push session.
+1. `push_preflight` binds the persisted pull base to one live remote identity,
+   one requested scope, and one short-lived push session.
 2. `push_snapshot_hashes` performs the remote snapshot hash listing for
    planning only and never becomes write authority.
 3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
@@ -58,7 +73,7 @@ The production ladder is fixed and the executor follows it exactly:
 The auth and session boundary is part of the production shape:
 
 - preflight must mint one short-lived push session bound to the persisted pull
-  base and live remote identity.
+  base, live remote identity, and requested scope.
 - read-only inspection may stay on the existing HMAC family.
 - dry-run, apply, and mutating recovery must use the push session plus the
   canonical push signature and idempotency key.

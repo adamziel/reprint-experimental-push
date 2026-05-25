@@ -167,8 +167,8 @@ Failure and recovery examples:
   provenance into preflight, snapshot listing, dry-run upload, batched apply,
   journal inspection, and inspect-first recovery while keeping the one-remote,
   one-local, one-drift topology explicit. It also points at the narrower
-  auth/session fencing and recovery-inspect proofs so the production bundle
-  stays easy to navigate.
+  auth/session fencing, recovery-inspect, and liveness proofs so the
+  production bundle stays easy to navigate.
 - `push-pull-to-topology-contract.json` gives the smallest composite proof that
   links the persisted pull base package to the production push ladder and the
   Docker/Playground topology in one object. Use it when a review wants the
@@ -197,6 +197,9 @@ Failure and recovery examples:
   receipt, apply revalidates before every batch and at the storage boundary,
   journal inspect stays read-only, and recovery must start with inspect before
   any mutating repair.
+- `push-preflight-contract.json` gives the compact first-binding proof that the
+  persisted pull base, requested scope, live remote identity, and short-lived
+  session all line up before snapshot listing begins.
 
 The recovery proof fixtures are intentionally split so the auth fence and the
 inspect fence can be asserted independently or together:

@@ -11,10 +11,24 @@ the persisted pull base package, the edited local site, and the live remote
 site. The persisted pull base package is immutable provenance from the pull
 pipeline, not a mutable snapshot cache.
 
+The production shape is fixed:
+
+- exporter/importer establish the immutable pull base package
+- preflight binds that package to one live remote identity and one short-lived
+  push session
+- snapshot hash listing reads the live remote comparison surface for planning
+  only
+- dry-run uploads the canonical plan as an eligibility receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect is read-only
+- recovery starts with inspect and only mutates when fresh live evidence and
+  journal evidence still prove the repair safe
+
 The production ladder is fixed and ordered:
 
 1. `push_preflight` binds the persisted pull base package to one live remote
-   identity and one short-lived push session.
+   identity, one requested scope, and one short-lived push session.
 2. `push_snapshot_hashes` performs the remote snapshot hash listing for
    planning only and never upgrades into write authority.
 3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
@@ -26,9 +40,9 @@ The production ladder is fixed and ordered:
 5. `push_journal` is read-only durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair.
-7. `push_recover auto|finish|rollback` may mutate only after inspect proves the
-   action safe with fresh live evidence and the same auth floor as the write
-   path.
+7. `push_recover auto|finish|rollback` may mutate only after inspect proves
+   the action safe with fresh live evidence and the same auth floor as the
+   write path.
 
 The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
@@ -51,8 +65,8 @@ The pull pipeline remains the source of truth for immutable provenance:
 
 - exporter discovers the merge-base and coverage evidence
 - importer stores the pull base package as immutable provenance
-- preflight binds that persisted package to the live remote identity and a
-  short-lived push session
+- preflight binds that persisted package to the live remote identity, the
+  requested scope, and a short-lived push session
 - snapshot listing reads only the live remote comparison surface for planning
 - dry-run uploads the canonical plan as a receipt, not a lock
 - batch apply revalidates before every batch and at the storage boundary
