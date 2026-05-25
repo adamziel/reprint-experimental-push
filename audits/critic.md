@@ -894,6 +894,10 @@ classifies every boundary write.
 A smoke that only ends in `finalMatchesLocal: true` still does not show that
 the remote stayed preserved, that a fresh live snapshot was taken before the
 first write, or that stale review artifacts were rejected.
+This comparison is based on the source notes in `docs/source-notes.md`, which
+anchor Reprint to observed commit `27c5f25` and are historical context only.
+If the current upstream revision or worktree was not independently reverified,
+the comparison cannot be promoted to current proof for this repo.
 
 What Reprint source notes do prove:
 
@@ -960,6 +964,10 @@ object class and still miss that create-time IDs, aliases, or cross-table
 references changed after the inventory was recorded.
 Unknown plugin-owned state outside the allowlist must therefore stop the push
 unless a semantic driver proves the exact ownership surface and side effects.
+This comparison is based on the source notes in `docs/source-notes.md`, which
+anchor ZS-Sync to observed commit `d9334a0`. Without a current upstream
+reverification, it remains planning context only and cannot establish write
+permission in this repo.
 
 Required change: use ZS-Sync-style scanning as planning input only. A ready
 push must block on unknown or incomplete coverage.
@@ -1019,6 +1027,10 @@ ForkPress-grade claims. Manual resolution is acceptable only when the remote
 is preserved for audit, retries start from fresh evidence, and partial side
 effects are classified without reusing stale manual permission or stale
 approval artifacts.
+This comparison is based on the source notes in `docs/source-notes.md`, which
+anchor ForkPress to observed local worktree `55f9879`. Unless that upstream
+state is reverified against the current code under test, it is comparison
+evidence only and not current production proof.
 
 ## Must-Happen Before Production Claims
 
@@ -1044,6 +1056,9 @@ design still needs proof for each of these failure classes:
   Without that reverification, a status note can sound current while still
   inheriting stale upstream assumptions about transport, scanning, or crash
   language that this repo has not proven at the mutation boundary.
+  The current source notes anchor those comparisons to Reprint commit `27c5f25`,
+  ZS-Sync commit `d9334a0`, and ForkPress local worktree `55f9879`; if those
+  states were not reverified, the notes are context only.
 - Route-shape, packaged-plugin mounting, fixture replay, and `finalMatchesLocal`
   remain lab evidence only; none of them prove live mutation safety on their
   own.
@@ -1123,6 +1138,8 @@ would reasonably read as equivalent.
   stale-artifact rejection, or remote-preserving retry behavior, and they
   cannot be read as current upstream proof unless the cited upstream revision
   or worktree was reverified at the same state.
+  Their source-note provenance is limited to `docs/source-notes.md` and does
+  not by itself prove any live mutation boundary in this repo.
 - A route that only looks production-shaped is not evidence of production
   safety, reliability, or retry correctness.
 - A route-shape smoke, packaged-plugin mount, or `finalMatchesLocal` result
