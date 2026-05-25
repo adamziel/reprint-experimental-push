@@ -19,7 +19,7 @@ The objective implies the following minimum release requirements:
 
 Those requirements are the minimum release bar, not aspirational extras.
 
-The weakest current requirement is the enforced release gate itself. The repo has many useful opt-in checks, but the objective is still blocked until one required command composes the safety matrix and fails closed when any claim is only lab-backed, fixture-scoped, or otherwise indirect. Right now `package.json` only exposes `test`, `test:playground`, and separate opt-in smokes, so a green default run can still stop short of the production release bar.
+The weakest current requirement is the enforced release gate itself. The repo has many useful opt-in checks, but the objective is still blocked until one required command composes the safety matrix and fails closed when any claim is only lab-backed, fixture-scoped, or otherwise indirect. Right now `package.json` only exposes `test`, `test:playground`, and separate opt-in smokes, so a green default run can still stop short of the production release bar. That means the strongest available evidence can still be bypassed by choosing the wrong command.
 
 ## Evidence Standard
 
@@ -122,15 +122,16 @@ The objective is to push local changes back to the original WordPress source sit
 
 ## Release Gate Gap
 
-The repository currently has optional proof commands, not an enforced release gate. `package.json` confirms the split: the default suite is `npm test`, the bundled lab chain is `npm run test:playground`, and the stronger auth, journal, storage, recovery, plugin, and benchmark checks are only available as separate opt-ins. There is no `npm run release`, `npm run verify`, or `npm run verify:release`, and this checkout has no checked-in `.github` workflow directory that could be audited as a release gate.
+The repository currently has optional proof commands, not an enforced release gate. `package.json` confirms the split: the default suite is `npm test`, the bundled lab chain is `npm run test:playground`, and the stronger auth, journal, storage, recovery, plugin, and benchmark checks are only available as separate opt-ins. There is no `npm run release`, `npm run verify`, or `npm run verify:release`, and this checkout has no checked-in `.github` workflow directory that could be audited as a release gate or default CI entrypoint.
 
-A green run can therefore omit the exact proof the objective needs, even though the strongest route smokes still report `labBacked: true` and the benchmark suite only refuses unsupported throughput claims. This is a release blocker, not a documentation gap: until one required command exists, the project can keep producing passing lab runs without proving production safety at the live remote/local boundary or a measured speed claim on the real push path. The weak claim is not that the tests are false; it is that they are not yet strong enough to clear release.
+A green run can therefore omit the exact proof the objective needs, even though the strongest route smokes still report `labBacked: true` and the benchmark suite only refuses unsupported throughput claims instead of timing a real push path. This is a release blocker, not a documentation gap: until one required command exists, the project can keep producing passing lab runs without proving production safety at the live remote/local boundary or a measured speed claim on the real push path. The weak claim is not that the tests are false; it is that they are not yet strong enough to clear release.
 
 Actionable release gate requirement:
 
 1. Add one required command, such as `npm run verify:release`, that runs the auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, real topology, crash-boundary, and benchmark checks in a fixed order.
 2. Make that command exit non-zero if any step reports `labBacked: true`, fixture-only scope, skipped live-source proof, or an unsupported throughput claim.
 3. Wire that command into CI or the release pipeline as the only accepted release entrypoint, and keep the optional smokes as contributors to that gate rather than as substitute release evidence.
+4. Add a checked-in workflow or equivalent automation target that invokes the gate by default so a green CI result cannot come from `npm test` alone.
 
 Minimum acceptance rule for the gate:
 
