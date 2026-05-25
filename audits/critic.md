@@ -6876,6 +6876,12 @@ Release gate for production-grade wording:
   or ForkPress citation: the upstream anchor may explain why the design
   exists, but it never authorizes this branch unless the same live boundary
   reran here with preserved-remote evidence and a fresh retry scope; and
+- any route or smoke that reports `labBacked: true` remains compatibility
+  evidence even when the command or script name is `authenticated`,
+  `production-shaped`, or `production-plugin-package`; that flag means the
+  executor still resolves to lab-backed Playground internals, so it cannot be
+  used as proof of production auth/session lifecycle, preserved-remote
+  safety, or release-ready push support; and
 - the claim says what each source note proves here and what it does not prove
   here, so Reprint, ZS-Sync, and ForkPress stay provenance unless this branch
   reran the same live boundary with fresh live hashes; and
