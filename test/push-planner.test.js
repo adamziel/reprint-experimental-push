@@ -4364,6 +4364,29 @@ test('replaying a completed plan stays inert and reports fully updated recovery'
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
 
+test('replaying a completed plan twice remains inert and does not duplicate inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const firstReplay = applyPlan(replayRemote, plan, { journal: completed.journal });
+  const secondReplay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(firstReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(firstReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replayRemote.files['index.php'], '<?php echo "local";');
+  assert.equal(replayRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('durable no-data-loss recovery keeps completed replay inert and stale completed replay blocked', () => {
   const base = baseSite();
   const local = baseSite();
