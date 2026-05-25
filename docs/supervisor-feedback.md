@@ -7,7 +7,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-26 00:46 CEST - Same-Plan Termmeta Proof Added
 
-- Going well: `node --test --test-name-pattern="allows local termmeta references to a term created by the same plan" test/push-planner.test.js` passed, adding a fifth same-plan graph proof on top of the existing postmeta, parent-post, thumbnail, and taxonomy cases.
+- Going well: `node --test --test-name-pattern="allows local termmeta references to a term created by the same plan" test/push-planner.test.js` passed, adding a sixth same-plan graph proof on top of the existing postmeta, parent-post, thumbnail, taxonomy, and term-taxonomy-parent cases.
 - Not going well: the broader production gate is still not closed on `main`, so the release gate should stay conservative until the merged proof is visible there.
 - Progress change: the executable evidence now covers the `wp_termmeta.term_id` edge, widening the planner proof without changing the closed production gate.
 - Next nudge: keep the page brief, dated, and explicit that lane proofs are widening while the merged production gate remains closed.

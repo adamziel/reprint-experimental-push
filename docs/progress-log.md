@@ -7,9 +7,10 @@ linked implementation artifacts.
 ## 2026-05-26 - Current Supervisor Snapshot
 
 - Status: `node --test --test-name-pattern="allows local termmeta references to a term created by the same plan" test/push-planner.test.js`
-  passed, adding a fifth same-plan graph proof to the existing postmeta,
-  parent-post, thumbnail, and taxonomy cases. The earlier planner proofs still
-  stand, but the broader production gate remains closed on `main`.
+  passed, adding a sixth same-plan graph proof to the existing postmeta,
+  parent-post, thumbnail, taxonomy, and term-taxonomy-parent cases. The
+  earlier planner proofs still stand, but the broader production gate remains
+  closed on `main`.
 - New proof: same-plan termmeta rows now have concrete passing Node coverage
   through `wp_termmeta.term_id`.
 - Trend: evidence improved again for the planner lane, while the broader

@@ -1275,6 +1275,60 @@ test('allows term taxonomy and relationships to reference same-plan terms and po
   assert.equal(result.site.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'].term_taxonomy_id, 9);
 });
 
+test('allows a term taxonomy parent to reference a term created by the same plan', () => {
+  const parentTermResourceKey = 'row:["wp_terms","term_id:7"]';
+  const childTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local parent term',
+      slug: 'local-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, parentTermResourceKey);
+  const taxonomyMutation = mutationFor(plan, childTaxonomyResourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-taxonomy-parent');
+  const referenceJson = JSON.stringify(reference);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(taxonomyMutation),
+    'parent term create must be ordered before dependent term taxonomy',
+  );
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_taxonomy.parent');
+  assert.equal(reference.relationshipType, 'term-taxonomy-parent');
+  assert.equal(reference.targetResourceKey, parentTermResourceKey);
+  assert.equal(referenceJson.includes('local-parent-term'), false);
+  assert.equal(
+    taxonomyMutation.wordpressGraphReferences.some((entry) => entry.relationshipType === 'term-taxonomy-parent'),
+    true,
+  );
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local parent term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].parent, 7);
+});
+
 test('allows local termmeta references to a term created by the same plan', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
