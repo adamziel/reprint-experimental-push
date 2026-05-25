@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Refresh 02:45:34
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:45:34 CEST`) and kept the visible last-updated stamp current.
+- Tightened the top signal so the release-gate metric names the four pending
+  proof areas instead of leaving `0/4` implicit.
+- Public status remains conservative: 89 Node tests pass, production auth plus
+  durable journaling still block the push-safety claim, and the WordPress
+  executor/auth, recovery journal, Docker/Playground integration, graph
+  identity, and plugin drivers remain pending.
+- Evidence trail: [progress.html](../progress.html), [docs/executor.md](executor.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
+  [docs/supervisor-feedback.md](supervisor-feedback.md), and this log.
+
 ## 2026-05-25 - Public Status Refresh 02:44:45
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
