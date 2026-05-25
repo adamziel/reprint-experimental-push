@@ -120,6 +120,24 @@ retained-source lab evidence:
   point to the same preserved remote and not authorize a new mutation; no proof
   shows manual resolution is safe when the remote has drifted.
 
+## Must-change proof gaps
+
+Before production-grade push support can be claimed, the project still needs:
+
+- one rerunnable live boundary against a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`, not just retained-source replay;
+- production WordPress auth/session lifecycle proof on that same boundary;
+- preserved-remote retention that stays inspectable after rejection and can be
+  reused for audit and retry;
+- apply-time revalidation on the same mutation after dry-run receipt, using
+  fresh live hashes instead of manual resolution text;
+- durable journal storage with lease/fencing semantics outside the Playground
+  harness;
+- graph identity proof for create-time remaps and late-discovered
+  relationship-bearing records; and
+- plugin-driver coverage for late-discovered plugin-owned surfaces outside the
+  initial allowlist.
+
 ## Single strongest blocker
 
 This worktree still has no rerunnable live boundary on a real local,
