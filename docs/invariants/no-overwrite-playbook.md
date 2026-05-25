@@ -12,6 +12,9 @@ This is the short operational version of the planner invariant policy.
 - Matching independent deletions, edits, and file type swaps may coexist with a
   live-preconditioned delete in the same plan while remote-only plugin drift is
   preserved through apply.
+- The same rule still holds when the remote side has removed the plugin
+  entirely; the planner keeps that removal preserved and does not weaken the
+  unrelated delete precondition.
 - Matching independent edits may coexist with a live-preconditioned deletion
   while remote-only plugin drift remains preserved in the same plan.
 - A live-preconditioned delete may still apply alongside a matching

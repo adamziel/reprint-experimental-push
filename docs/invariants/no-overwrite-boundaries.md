@@ -30,6 +30,9 @@ This note is the short form of the planner policy in
   appear alongside a live-preconditioned file deletion; they still stay
   `already-in-sync`, and the remote plugin drift stays preserved through
   apply.
+- The same mixed delete/edit/type-swap boundary still holds when the remote
+  side has removed the plugin entirely; the planner keeps that plugin
+  removal preserved and does not widen the unrelated deletion precondition.
 - The same rule holds when the plan also includes a matching independent edit
   or file type swap plus unrelated remote-only plugin drift: the safe
   resources stay `already-in-sync`, the plugin drift stays `keep-remote`, and
