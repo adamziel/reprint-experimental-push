@@ -25,6 +25,18 @@ Must change before any production-grade push claim:
 - classify partial file, DB, and plugin side effects as old, new, or blocked
   before retry so a mixed write cannot be relabeled as success.
 
+Source-note comparison rule:
+
+- Reprint, ZS-Sync, and ForkPress notes are historical context unless the
+  exact upstream commit or worktree state is named and this branch reran the
+  same live mutation boundary;
+- route-shape smokes, package mounts, fixture replays, readable review
+  artifacts, and `finalMatchesLocal` remain compatibility evidence only even
+  when they look production-shaped; and
+- a comparison cannot become retry authority unless the preserved remote, the
+  rejection point, and the fresh retry scope are recorded on this branch for
+  the same boundary.
+
 The missing proof is not just "the route works" or "the reviewer can
 manually inspect the result." The branch still needs live evidence that the
 preserved remote survives reject, that stale approval cannot be widened into a
