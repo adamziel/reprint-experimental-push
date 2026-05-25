@@ -137,10 +137,13 @@ The topology proof means:
 
 The canonical machine-readable bundle for that proof is
 `push-production-push-recovery-contract.json`. Use it when a review needs the
-full pull provenance, push ladder, and topology story in one place. In that
-bundle, `remote-base` and `remote-changed` are two observations of the same
-remote identity, not two different sites, and `local-edited` is the imported
-clone that carries the local edits used to build the canonical plan.
+full pull provenance, push ladder, and topology story in one place. When a
+review needs the auth, session minting, journal rows, lease fencing, live
+drift, and inspect-first recovery boundary in one object, use
+`push-auth-session-journal-recovery-inspect-contract.json`. In both bundles,
+`remote-base` and `remote-changed` are two observations of the same remote
+identity, not two different sites, and `local-edited` is the imported clone
+that carries the local edits used to build the canonical plan.
 
 ## Auth And Recovery
 
@@ -342,8 +345,8 @@ Use these fixtures as the canonical proof bundle:
 - `push-deployment-topology-contract.json` is the smallest topology-only
   contract that still proves the remote identity split, the local edit site,
   the drift witness, and the sandbox-provided `8080` ingress rule.
-- `push-topology-matrix.json` is the machine-readable one-remote,
-  one-local, one-drift matrix.
+- `push-topology-matrix.json` is the canonical Docker/Playground stage matrix
+  for one remote source, one local edited site, and one drift witness.
 - `push-recovery-boundary-contract.json` is the compact proof that keeps
   inspect-first recovery, the auth floor, and the Docker/Playground topology
   in one object.

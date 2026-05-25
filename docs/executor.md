@@ -174,6 +174,9 @@ The canonical proof stack for that executor story is the same one named in
   first recovery into one reviewable object, with `remote-base` and
   `remote-changed` proving the same remote identity before and after drift
   and with apply-time revalidation kept separate from dry-run
+- `push-auth-session-journal-recovery-inspect-contract.json` for the compact
+  proof that binds auth, session minting, journal rows, lease fencing, live
+  drift, and inspect-first recovery into one object
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge
 - `push-deployment-topology-contract.json` for the smallest topology-only
   contract that still proves the same remote identity twice, the imported
@@ -185,7 +188,9 @@ The canonical proof stack for that executor story is the same one named in
   executor proof
 - `push-remote-liveness-topology-contract.json` for the compact liveness plus
   one-remote, one-local, one-drift harness proof
-- `push-topology-matrix.json` for the stage-level Docker/Playground matrix
+- `push-topology-matrix.json` for the canonical Docker/Playground stage
+  matrix proving one remote source, one local edited site, and one drift
+  witness
 - `push-preflight-contract.json` for the first live binding between imported
   provenance, scope, and session
 - `push-recovery-inspect-contract.json` for the read-only recovery classifier

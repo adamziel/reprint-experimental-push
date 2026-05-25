@@ -103,6 +103,8 @@ identity across `remote-base` and `remote-changed`:
 - `push-auth-session-journal-recovery-inspect-contract.json` is the compact
   proof that folds live drift classification into that same auth, session,
   journal, lease, and inspect-first recovery chain.
+- `push-topology-matrix.json` is the canonical Docker/Playground stage matrix
+  for one remote source, one local edited site, and one drift witness.
 - `push-production-revalidation-contract.json` is the compact proof that
   keeps the same auth floor, the minted push session, the journal row, the
   lease fence, and the inspect-first recovery path in one place while still
