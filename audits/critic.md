@@ -3533,3 +3533,31 @@ Production release gate checklist:
   `finalMatchesLocal` must fail closed until it also shows branch-local live
   drift rejection and a preserved remote that can still be audited after
   reject.
+
+Production-grade push wording remains blocked until the same live boundary
+proves all of the following:
+
+- live remote drift after dry-run was rejected before mutation, with the
+  preserved remote still auditable after reject and the stale approval unable
+  to authorize retry;
+- create-time identity remapping, aliasing, or renumbering was either proven
+  safe with live identity evidence or hard-blocked before write;
+- plugin-owned state outside the allowlist was enumerated live or blocked at
+  apply time, including late custom tables, generated assets, cron rows,
+  runtime registries, serialized blobs, caches, and plugin-owned files;
+- any partial file, DB, or plugin side effect was durably classified as old,
+  new, or blocked, and the next retry rebuilt scope from fresh live hashes
+  instead of inheriting stale approval;
+- any readable stale manual-review artifact stayed audit-only after drift,
+  could not widen into another row, file, relationship-bearing record, or
+  plugin-owned surface, and could not become retry authority for a later
+  discovered surface;
+- any source-note comparison to Reprint, ZS-Sync, or ForkPress named the
+  exact upstream revision or worktree state and was reverified here against
+  the same live mutation boundary; and
+- any claim that says "manual resolution" also records the preserved remote,
+  the stale rejection point, and a separately recorded fresh retry artifact.
+
+If any one of those proof points is missing, the wording is still
+compatibility-only or historical-context-only, not production-grade push
+support.
