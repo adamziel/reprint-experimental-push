@@ -116,6 +116,19 @@ False reliability traps that must fail closed:
   or remapped create target appears after the first write. Missing proof: the
   later surface never got its own preserve / reject / retry cycle, so the
   note is audit context only.
+- Scenario: a create-time identity remap points at a different row, file, or
+  relationship-bearing record than the planner originally approved. Missing
+  proof: the branch does not show live apply-time revalidation for the remap,
+  so the first approval may have written the wrong target.
+- Scenario: a plugin-owned option, custom table, registry entry, or generated
+  file falls outside the allowlist but still shares the same route shape as a
+  covered fixture. Missing proof: the branch never enumerated or blocked the
+  hidden plugin-owned surface, so the route shape can mask real data loss.
+- Scenario: a stale review artifact says "manual resolution" after drift, but
+  the remote was not preserved and the retry scope was not rebuilt from fresh
+  live hashes. Missing proof: the artifact is only historical context, not
+  retry authority, and it can hide a partial write or a widened follow-up
+  mutation.
 - Scenario: a review cites Reprint, ZS-Sync, or ForkPress because the route
   family or wording looks similar. Missing proof: the exact upstream state,
   the exact live boundary on this branch, and a branch-local rerun that says
