@@ -450,6 +450,17 @@ storage-guard, process-kill, stale-claim, production-shaped route, plugin
 package, and benchmark checks remain separate commands. A passing default suite
 therefore leaves the release bar procedural instead of enforced.
 
+Practical reading of the current suite:
+
+- `npm test` proves model and fixture invariants, plus refusal logic.
+- `npm run test:playground` proves a bundled lab path, not a release path.
+- `npm run test:playground:production-shaped-push` proves a production-shaped
+  route wrapper with `labBacked: true`, which is still lab evidence.
+- `scripts/bench/guarded-executor-benchmark.js` proves the suite can refuse an
+  unsupported speed claim, but it does not measure the live push path.
+- None of those commands alone prove no data loss, reliability, or speed at
+  the live WordPress source boundary.
+
 Concrete limitation: the default suite can prove a planner rule such as "do not
 drop a remote-only descendant when a local directory disappears" in a model, but
 that is still not the same as proving arbitrary WordPress object graphs survive
