@@ -540,6 +540,9 @@ under load:
 - compressed-upload-queue-replaces-chunk-receipts is rejected because queue
   compression can lower pressure, but it cannot replace the durable per-chunk
   acknowledgements needed to classify partial failure or resume safely.
+- compressed-upload-queue-after-pause-skips-chunk-receipts is rejected because
+  pausing the queue only stops producers, and compression cannot prove which
+  chunk acknowledgements survived the pause or replace the recovery record.
 - fingerprint-and-compressed-upload-queue-completes-large-upload is rejected
   because a local fingerprint and queue compression can reduce work, but they
   cannot prove chunk acknowledgements or the guarded publish survived failure.
