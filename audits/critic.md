@@ -7879,6 +7879,10 @@ on the same live boundary:
 
 If any of those facts are missing, the proof is still compatibility evidence
 or historical context, not production-grade push support.
+At the moment, `package.json` still exposes only `plan`, `apply`, `test`,
+`test:playground:*`, and `test:recovery:*` entry points, so there is no named
+real-site release command on this branch yet; that missing command remains the
+primary blocker.
 
 Exact next proof required from `3089aee2`:
 
