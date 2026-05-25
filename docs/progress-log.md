@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 10:56:36 CEST.
+- Last update: 2026-05-25 10:58:09 CEST.
 - Status: blocked; the visible page, log, and latest audit note still agree.
-- Trend: no release-state change; the latest audit note now matches the visible page and keeps the gate explicit.
+- Trend: no release-state change; the newest audit note keeps the gate explicit without expanding the proof trail.
 - Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
 - Next nudge: `integration` owns the next real-site release command and must return retained live source/auth/recovery output; `invariants` and `recovery` should align to that same command, and `reliable-executor` should keep the gate tied to a real URL/topology.
 - Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages only after merge to `main`.
-- Audit note: [audits/supervisor-note-20260525-105543.md](../audits/supervisor-note-20260525-105543.md) captures the newest decision refresh; the release state still does not move.
+- Audit note: [audits/supervisor-note-20260525-105809.md](../audits/supervisor-note-20260525-105809.md) captures the newest decision refresh; the release state still does not move.
 
 ## 2026-05-25 - Supervisor Follow-up
 
