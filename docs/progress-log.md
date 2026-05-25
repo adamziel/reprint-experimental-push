@@ -17,6 +17,19 @@ linked implementation artifacts.
 - Public page: [progress.html](../progress.html) now carries the refreshed
   visible timestamp and keeps the first screen concise and conservative.
 
+## 2026-05-25 - Live Progress Refresh
+
+- Last update: 2026-05-25 02:19:15 CEST.
+- Status: `89` Node tests still pass after supervised lane merges, and the
+  swarm remains active.
+- Trend: fresh lane evidence stayed aligned on recovery, protocol, critic, and
+  objective-audit details, but production push remains blocked.
+- Blocker: production auth/session binding, durable journal storage, graph
+  identity, plugin drivers, live Docker/Playground topology, recovery
+  boundaries, and release gate evidence remain unproven.
+- Public page: [progress.html](../progress.html) now carries the refreshed
+  visible timestamp and keeps the first screen concise and conservative.
+
 ## 2026-05-25 - Current Supervisor Snapshot
 
 - Last update: 2026-05-25 01:58 CEST.
