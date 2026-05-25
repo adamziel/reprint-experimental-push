@@ -13953,6 +13953,32 @@ test('no-data-loss recovery boundary matrix only allows old-remote before commit
     assert.equal(inspection.status, 'old-remote', label);
   }
 
+  const midApplyJournalPath = tempRecoveryJournalPath();
+  const midApplyDurableJournal = openRecoveryJournal(midApplyJournalPath, { truncate: true, now: fixedNow });
+  const midApplyRemote = baseSite();
+  const midApplySnapshot = JSON.stringify(midApplyRemote);
+  const midApplyFailure = captureError(() =>
+    applyPlan(midApplyRemote, plan, {
+      durableJournal: midApplyDurableJournal,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+  midApplyDurableJournal.close();
+
+  assert.ok(midApplyFailure instanceof PushPlanError, 'mid-apply partial commit should fail');
+  assertFailureRecoveryState(midApplyFailure.details.recovery, 'blocked-recovery');
+  assert.ok(midApplyFailure.details.recovery.artifacts.remote, 'mid-apply partial commit must retain remote artifacts');
+  assert.equal(midApplyFailure.details.recovery.artifacts.journal.status, 'blocked');
+  assert.notEqual(JSON.stringify(midApplyRemote), midApplySnapshot, 'mid-apply failure mutates the live remote');
+
+  const midApplyInspection = inspectRecoveryJournal({
+    journal: readRecoveryJournal(midApplyJournalPath),
+    plan,
+    current: midApplyRemote,
+  });
+  assert.equal(midApplyInspection.status, 'blocked-recovery', 'mid-apply partial commit must remain blocked');
+
   const completedJournalPath = tempRecoveryJournalPath();
   const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
   const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
