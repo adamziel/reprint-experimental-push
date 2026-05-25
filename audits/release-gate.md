@@ -13,7 +13,8 @@ or comparison-only.
   retry scope, and the proof that the remote was preserved for audit.
 - The claim shows the stale manual-review artifact remains readable for audit
   but is unusable for apply after drift, and the next retry starts from fresh
-  live hashes rather than inherited approval.
+  live hashes rather than inherited approval. A readable stale artifact is not
+  a valid retry token.
 - The claim shows create-time identity remapping is either safely represented
   or hard-blocked before write.
 - The claim shows plugin-owned state outside the allowlist is either discovered

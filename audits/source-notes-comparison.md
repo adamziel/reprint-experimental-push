@@ -74,6 +74,8 @@ Without that revalidation, the notes cannot backfill missing proof for:
 - or remote-preserving retry behavior.
 
 A source-note comparison by itself is never enough to claim the live retry
-path is safe, auditable, or production-ready. If the claim cannot show the
-exact live request path, preserved remote state, and stale-authority rejection
-at the current write boundary, the comparison remains context only.
+path is safe, auditable, or production-ready. It cannot be used to prove a
+lab route, fixture replay, or package mount is the real production executor.
+If the claim cannot show the exact live request path, preserved remote state,
+and stale-authority rejection at the current write boundary, the comparison
+remains context only.
