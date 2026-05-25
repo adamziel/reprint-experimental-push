@@ -1583,6 +1583,47 @@ test('completed replay on a durable journal stays inert and does not resurrect s
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('durable completed replay keeps inserts stable and appends no new mutation evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const persistedBeforeReplay = readRecoveryJournal(journalPath);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal, durableJournal });
+  const persistedAfterReplay = readRecoveryJournal(journalPath);
+
+  durableJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'mutation-observed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'mutation-observed').length,
+  );
+  assert.equal(
+    persistedAfterReplay.records.filter((record) => record.type === 'journal-replayed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'journal-replayed').length + 1,
+  );
+  assert.equal(
+    persistedAfterReplay.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
+});
+
 test('accepts only old remote, fully updated remote, or blocked recovery across the atomic apply boundary', () => {
   const base = baseSite();
   const local = baseSite();
