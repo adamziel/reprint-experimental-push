@@ -1,11 +1,11 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `68664884` on `origin/lane/reliable-executor`, with the retained-
-source evidence anchored at `63a3502f`. The latest remote evidence includes a
-completed retained-source `npm run verify:release` lineage with
-`authSessionType`, minted session shape, `applyCommitted`, and
-`durableJournal.rows: 17`, plus the later explicit verdict
+remote head `6fc3ab64` on `origin/lane/reliable-executor`, with the retained-
+source evidence anchored at `63a3502f`. The latest remote evidence now includes
+the retained-source `npm run verify:release` lineage plus a durable-journal
+smoke, with `authSessionType`, minted session shape, `applyCommitted`, and
+`durableJournal.rows: 17`, and the later explicit verdict
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. That is material lab progress,
 and it is enough to retire any stale claim that there is no retained-source
 `verify:release` evidence at all. It still does not prove a live production
@@ -112,10 +112,11 @@ This worktree still has no rerunnable live boundary on a real local,
 Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that proves preserved-remote
 retention and fresh live-hash revalidation on the same mutation. That is a
 branch-local gap, not a project-wide absence: the supervised lane already has
-`verify:release` and retained-source evidence, but this checkout does not yet
-expose the same live boundary. Until that exact boundary exists here,
-production-grade push wording is false reliability, even if the supervised
-lane has stronger retained-source evidence and an explicit boundary verdict.
+`verify:release`, retained-source evidence, and now a durable-journal smoke,
+but this checkout does not yet expose the same live boundary. Until that exact
+boundary exists here, production-grade push wording is false reliability, even
+if the supervised lane has stronger retained-source evidence and an explicit
+boundary verdict.
 
 The next acceptable proof must be one rerunnable live command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
@@ -149,6 +150,9 @@ current remote head:
 - The lab evidence now names executor/session/journal details:
   `authSessionType`, minted session shape, `applyCommitted`, and
   `durableJournal.rows: 17`.
+- The remote lane also added a durable-journal smoke, which strengthens the
+  lab harness but still does not replace production storage, lease, or fencing
+  proof.
 - The boundary verdict is explicit instead of implicit, and the later remote
   head keeps that verdict current instead of stale.
 
