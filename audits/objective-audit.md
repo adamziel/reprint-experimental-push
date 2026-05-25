@@ -63,7 +63,7 @@ For this audit:
 ## Test Audit
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is as refusal evidence, not as release evidence. They demonstrate that the suite knows how to say "not yet"; they do not demonstrate that the production boundary is safe.
-That is not a small wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true` and the benchmark checks still stop at refusal rather than timing a real live-source push.
+That is not a small wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push.
 
 That distinction matters for the objective claims:
 
@@ -73,6 +73,7 @@ That distinction matters for the objective claims:
 
 - `npm test` proves the model and selected fixture logic are internally consistent. It does not prove live source mutation, production storage, or a live WordPress graph, so it cannot support the no-data-loss claim by itself.
 - `npm run test:playground` proves a bundled lab path through plan/apply/push protocol. It does not invoke the stronger auth, journal, storage, recovery, plugin, graph, or benchmark gates, so it cannot support the reliability claim by itself.
+- `test/recovery-journal.test.js` proves restart classification, monotonic sequencing, and raw-value redaction in a file-backed journal model. It does not prove durable production storage, lease/fencing behavior, or crash recovery on the live source boundary.
 - `npm run test:playground:authenticated-http-push`, `npm run test:playground:authenticated-cli-push`, `npm run test:playground:production-shaped-push`, and `npm run test:playground:production-plugin-package` are the closest release-shaped smokes, but they are still route-shape and packaging evidence. The code still marks the authenticated route profile as `labBacked: true`, so these checks remain explicit lab proof rather than live production proof.
 - The stronger scripts in `package.json` are all opt-in and still separate: auth, production-shaped route/package, db journal, storage guards, process-kill, missing-finalization, stale-claim, recovery, forms table, and file-journal checks can each pass independently while the release bar remains unmet.
 - `test/push-planner.test.js` and `test/recovery-journal.test.js` prove planner invariants, redaction, sequence monotonicity, and restart classifications in fixtures. They do not prove a live WordPress source site survives a failed push, a restart, or a duplicated request without data loss.
