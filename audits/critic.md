@@ -305,6 +305,11 @@ that this branch is release-ready:
   journal semantics outside the Playground harness; they are design inputs,
   not release evidence.
 
+Treat those notes as upstream context, not retry authority. If a later claim
+borrows their vocabulary to imply a production boundary, it must still name
+the branch-local live command, the preserved remote after rejection, and the
+fresh-hash apply revalidation that this worktree has not yet shown.
+
 Those notes are strongest when they are treated as input to the design, not as
 evidence that the current branch already satisfies release gating. Route shape
 similarity, package layout similarity, or a matching review phrase is not proof
@@ -425,6 +430,11 @@ push boundary on this branch with preserved-remote retention, production
 WordPress auth/session lifecycle, apply-time revalidation, durable journal
 semantics outside Playground, graph identity, and plugin-driver coverage for
 late-discovered plugin-owned surfaces on the same mutation.
+
+Until that boundary exists, any statement that the project is
+production-grade is overstating the evidence. The current evidence is still
+consistent with a lab-only executor that can fail closed while leaving the
+real remote and later plugin-owned surfaces unproven.
 
 ## Release-gate checklist
 
