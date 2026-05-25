@@ -243,17 +243,20 @@ Known data-loss traps still unresolved:
   remote remains auditable for retry;
 - create-time identity can be remapped, aliased, or renumbered, and the
   branch still needs proof that the create target is either preserved or
-  blocked before write;
+  blocked before write, not just that the local plan still names the same
+  logical resource;
 - plugin-owned state can exist outside any allowlist in late tables, files,
   cron rows, runtime registries, generated assets, caches, and serialized
   blobs, and the branch still needs live enumeration or an explicit block for
-  each surface;
+  each surface, including surfaces discovered only after the first write;
 - a write can touch files, DB rows, and plugin state in one run, and the
   branch still needs old/new/blocked classification for the full mixed write
   path instead of success for only the committed part; and
 - a readable review artifact, comparison note, or route-shaped smoke can look
   authoritative while still failing to prove current retry authority for the
-  exact live boundary on this branch.
+  exact live boundary on this branch, especially when it can be reused as
+  authority for a different row, file, relationship-bearing record, remapped
+  create target, or plugin-owned surface after drift.
 
 Release wording must treat the following as false reliability unless the
 branch also shows the preserved remote, the stale rejection point, and the
@@ -265,7 +268,8 @@ fresh retry scope rebuilt from live hashes on this worktree:
   package mount shape, fixture replay, or `finalMatchesLocal`;
 - "plugin-safe push" when hidden plugin-owned tables, files, cron rows,
   runtime registries, generated assets, caches, or serialized blobs are not
-  separately enumerated or blocked; and
+  separately enumerated or blocked, including late-discovered surfaces that
+  appear only after the first write; and
 - "comparison passed" when the comparison only matches upstream route family,
   package layout, or reviewer wording without a branch-local live rerun.
 
@@ -283,7 +287,8 @@ Release-gate checklist:
   reviewer wording;
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
-  target, or plugin-owned surface;
+  target, or plugin-owned surface, and cannot be widened just because the
+  later boundary looks like the earlier one;
 - show that a lab-shaped or fixture-backed route family still fails the gate
   unless the branch also proves the live executor, preserved remote, stale
   rejection point, and fresh retry scope on this worktree;
@@ -295,7 +300,8 @@ Release-gate checklist:
   cache entry, generated asset, or serialized blob;
 - require any Reprint, ZS-Sync, or ForkPress comparison to name the exact
   upstream revision or worktree state, the exact live boundary rerun here,
-  and the exact proof boundary it does and does not cover;
+  and the exact proof boundary it does and does not cover, including whether
+  a later-discovered plugin-owned surface is in scope or explicitly excluded;
 - require any Reprint, ZS-Sync, or ForkPress comparison to state whether it
   proves only historical compatibility or current retry authority on this
   branch;
