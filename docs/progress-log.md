@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 12:38:23
+
+<a id="2026-05-25-public-status-audit-123823"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 12:38:23 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- Added the newest retained-source proof from `e269f0d3`: the first screen now
+  calls out `releaseProof.apply.sessionType` and `freshMutationWork`, while
+  `63a3502f` and `68664884` keep `authSessionType`, `applyCommitted`, and the
+  durable-journal readback visible. Release gates remain `0/4`.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 12:37:27
 
 <a id="2026-05-25-public-status-audit-123727"></a>
