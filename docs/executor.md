@@ -117,15 +117,24 @@ push pipeline consumes it in order:
 7. journal inspect and recovery inspect read durable evidence before any
    mutating recovery step
 
-The test topology follows the same split:
+## Deployment Topology
+
+The test topology follows the same split in both Docker and Playground:
 
 - `remote-base` seeds the persisted pull base
 - `local-edited` is the user-edited imported clone
 - `remote-changed` is the same remote identity seen later after drift
 - `runner` is the only actor that may preflight, plan, upload, inspect, and recover
-- Docker and Playground must prove the same identity twice, not two different sites
-- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
-- remote tunnels are disallowed
+- Docker and Playground must prove the same identity twice, not two different sites.
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy.
+- remote tunnels are disallowed.
+
+The packaging rule is the same in both environments:
+
+- one remote source site seeds the persisted pull base
+- one local edited site produces the candidate plan
+- one later remote observation proves independent drift on the same identity
+- one runner process owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery
 
 The packaging topology is identical in both Docker and Playground:
 

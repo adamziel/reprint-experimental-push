@@ -149,6 +149,16 @@ The production push ladder maps directly to the pull pipeline:
 | Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
 | Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
 
+That ladder is the production contract in miniature:
+
+- exporter/importer establish immutable provenance
+- preflight binds that provenance to one live remote identity and one short-lived push session
+- snapshot hashes remain planning evidence only
+- dry-run uploads a canonical plan and returns an eligibility receipt, not a lock
+- apply is the first write stage and must revalidate fresh live evidence before every batch and at the storage boundary
+- journal inspection stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh live hashes prove the action
+
 The same provenance rule is what keeps the one-remote, one-local test topology
 honest:
 
