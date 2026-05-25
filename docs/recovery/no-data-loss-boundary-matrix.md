@@ -30,3 +30,10 @@ tests prove the boundary contract, but the production system needs durable
 journal rows or files, fsync-backed persistence, plugin activation state in the
 journal, leases or fencing, and inspectable recovery artifacts for blocked
 cases.
+
+In other words:
+
+- lab JSON evidence can prove the state machine
+- production durability must prove the same states after process exit
+- a partial remote mutation without a durable recovery artifact remains a
+  release blocker even if the lab model classifies it as recoverable
