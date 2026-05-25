@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. Newer lane evidence in `5de7ee40` and `981236d8` adds a durable-journal executable boundary and `447/447` planner tests; retained-source proof in `63a3502f`, `68664884`, and `e269f0d3` still stays lab-only with `authSessionType`, `applyCommitted`, `durableJournal.rows: 17`, `durableJournal.mutationApplied: 7`, `durableJournal.idempotencyOpened: 1`, `releaseProof.apply.sessionType`, and `freshMutationWork`. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
-        <time class="update-stamp" datetime="2026-05-25T12:28:57+02:00">Last updated: May 25, 2026, 12:28:57 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. Newer release evidence in `889bd37a` emits the exact boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`; `5de7ee40` and `981236d8` add a durable-journal executable boundary and `447/447` planner tests. Release gates stay at `0/4`; the blocker remains production WordPress `auth/session lifecycle` and durable journal semantics.</p>
+        <time class="update-stamp" datetime="2026-05-25T12:37:16+02:00">Last updated: May 25, 2026, 12:37:16 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: release-verify still anchors the runtime proof; `5de7ee40` and `981236d8` add a durable-journal boundary and `447/447` planner tests, while `63a3502f`, `68664884`, and `e269f0d3` remain lab-only</span>
+          <span class="pill">Trend: `889bd37a` sharpens the first remaining production boundary; it still proves a missing gate, not production readiness</span>
           <span class="pill">Top blocker: real WordPress executor/auth plus durable journal semantics still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-122857">2026-05-25 12:28:57</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-123716">2026-05-25 12:37:16</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-122857">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-123716">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
