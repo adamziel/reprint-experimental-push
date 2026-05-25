@@ -150,7 +150,7 @@ The uncomfortable conclusion is that the current tests are good enough to block 
 
 | Test surface | Current proof | Unproven release claim |
 | --- | --- | --- |
-| `test/push-planner.test.js` | Directionality, precondition checking, and stale-plan refusal | A live-source push boundary, no-data-loss release proof, and remote/local topology proof |
+| `test/push-planner.test.js` | Directionality, precondition checking, and stale-plan refusal in fixture scope | A live-source push boundary, no-data-loss release proof, and remote/local topology proof |
 | `test/recovery-journal.test.js` | Local journal sequencing, redaction, restart classification, and recovery inspection | Durable production storage, crash survival on live state, and live-boundary replay safety |
 | `test/performance-model.test.js` | Benchmark guardrails and refusal of unsupported throughput claims | Measured live-path throughput and any positive speed claim |
 | `test/guarded-executor-benchmark.test.js` | Tamper detection and refusal to upgrade unsupported benchmark claims | A release-grade performance verdict on the real push path |
@@ -176,5 +176,13 @@ Proof buckets used below:
 | Mandatory release gate | Optional smokes and `npm test` | A checked-in `verify`, `verify:release`, or `release` command, plus a checked-in workflow or other default entrypoint that invokes it | Optional runs can bypass the live-source verdict |
 
 Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path. A passing lab suite here is still compatible with a release that would lose writes, fail under a crash, or have no measured throughput at all.
+
+The current test mix is therefore best read as negative evidence:
+
+- it proves the planner refuses stale or conflicting states in local snapshots
+- it proves the journal code can serialize, redact, and restart local recovery records
+- it proves the benchmark model refuses unsupported throughput claims
+- it does not prove that the one-way pull base plus one-way push to live source path can safely mutate live storage
+- it does not prove that production durability, retry safety, or performance have been measured on the real boundary
 
 The practical audit conclusion is therefore narrower than "the tests are incomplete": the repo lacks a mandatory live-source release gate, so the existing tests cannot be upgraded into release proof by interpretation alone. Until one checked-in command owns the live-source mutation and the speed verdict in the same run, every passing test remains support evidence only.
