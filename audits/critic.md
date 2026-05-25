@@ -14,7 +14,9 @@ project-wide absence. That still does not prove a live production boundary,
 because the retained-source run does not show preserved-remote retention across
 rejection, live auth/session lifecycle on WordPress, apply-time revalidation
 against a fresh real-site source, or durable journal semantics outside the
-Playground harness.
+Playground harness. Production-grade wording also remains false if it relies
+on lab-session shape, retained-source journal rows, or route compatibility as a
+stand-in for live WordPress auth/session durability.
 
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker
@@ -157,6 +159,9 @@ Before any production wording, the project must show:
 - a comparison note says Reprint, ZS-Sync, or ForkPress "covers" the branch
   because the route family or package mount looks similar, but it does not
   name the exact upstream state or the exact live boundary on this worktree;
+- a claim treats the remote lane's retained-source `verify:release` rows or
+  minted session shape as proof of production auth/session lifecycle, durable
+  journal correctness, or preserved-remote retry safety;
 - a create-time identity remap points at a different row, file, or
   relationship-bearing record than the planner originally approved;
 - a plugin-owned option, custom table, registry entry, or generated file falls
