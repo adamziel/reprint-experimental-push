@@ -2597,3 +2597,28 @@ Source-note comparison summary:
 - None of the three become current proof unless this branch also shows the
   exact live mutation boundary, the preserved remote, the stale rejection
   point, and the fresh retry scope on the same path.
+
+Production-readiness release gate checklist:
+
+1. Name the exact live request path, live write boundary, and drifted remote
+   case that failed closed before the first write.
+2. Show the preserved remote snapshot, the stale rejection point, and the
+   fresh retry scope rebuilt from current live hashes.
+3. Show that a readable manual-review artifact stayed audit-only and could
+   not widen into a different row, file, relationship-bearing record, or
+   plugin-owned surface on retry.
+4. Show the create-time identity decision, including any alias, renumber, or
+   remap outcome, or show the hard block that prevented mutation.
+5. Enumerate the full plugin-owned surface list for the claim, and hard-block
+   any unknown or out-of-allowlist surface, including custom tables,
+   generated files, cron rows, runtime registries, serialized blobs, and
+   external side effects.
+6. Classify any partial file, DB, or plugin side effect durably as old, new,
+   or blocked, and prove the next retry rebuilt scope from fresh live hashes
+   rather than inheriting stale approval.
+7. Treat Reprint, ZS-Sync, and ForkPress notes as historical context unless
+   the exact upstream commit or worktree state was reverified at the same
+   live mutation boundary for this repo's claim.
+8. Fail closed if the wording only cites route shape, packaged-plugin mount,
+   fixture replay, or `finalMatchesLocal` without the live boundary proof
+   above.
