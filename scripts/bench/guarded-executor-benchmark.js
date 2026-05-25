@@ -158,6 +158,13 @@ export function productionThroughputBlockers(report) {
     !report.evidence.chunkReceipts.resumeCursor
     || report.evidence.chunkReceipts.resumeCursor.chunkIndex !== report.evidence.chunkReceipts.recorded - 1
     || report.evidence.chunkReceipts.resumeCursor.chunkCount !== report.evidence.chunkReceipts.expected
+    || !Number.isFinite(report.evidence.chunkReceipts.resumeCursor.sizeBytes)
+    || report.evidence.chunkReceipts.resumeCursor.sizeBytes <= 0
+    || report.evidence.chunkReceipts.resumeCursor.sizeBytes > report.shape.chunkSizeBytes
+    || report.evidence.chunkReceipts.resumeCursor.resourceKey !== report.shape.largeUploadResourceKey
+    || report.evidence.chunkReceipts.resumeCursor.offsetBytes !== (report.shape.fileBytes - report.evidence.chunkReceipts.resumeCursor.sizeBytes)
+    || report.evidence.chunkReceipts.cursorConsistency?.matchesRecordedReceiptCount !== true
+    || report.evidence.chunkReceipts.cursorConsistency?.canResumeFromCursor !== true
   ) {
     blockers.push('missing-valid-receipt-cursor');
   }
@@ -195,6 +202,7 @@ export function productionThroughputBlockers(report) {
     !Number.isFinite(report.resourceLimits?.maxBufferedUploadBytes)
     || report.resourceLimits.maxBufferedUploadBytes <= 0
     || report.shape.chunkSizeBytes > report.resourceLimits.maxBufferedUploadBytes
+    || report.evidence.resourceLimits?.chunkWindowWithinMemoryCeiling !== true
   ) {
     blockers.push('chunk-window-exceeds-memory-ceiling');
   }
@@ -221,6 +229,13 @@ export function productionThroughputClaim(report) {
 
 export function productionThroughputDetails(report) {
   return {
+    shape: {
+      fileBytes: report.shape.fileBytes,
+      chunkSizeBytes: report.shape.chunkSizeBytes,
+      chunkCount: report.shape.chunkCount,
+      rowCount: report.shape.rowCount,
+      atomicGroupMutationCount: report.shape.atomicGroupMutationCount,
+    },
     throughput: report.throughput,
     executorCapabilities: report.executorCapabilities,
     resourceLimits: report.resourceLimits,

@@ -78,6 +78,9 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(report.claims.productionThroughput.allowed, false);
   assert.equal(report.claims.productionThroughput.status, 'blocked');
   assert.equal(report.claims.productionThroughputDetails.throughput.productionThroughput, 'not-claimed');
+  assert.equal(report.claims.productionThroughputDetails.shape.fileBytes, 3 * 1024 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.shape.chunkSizeBytes, 512 * 1024);
+  assert.equal(report.claims.productionThroughputDetails.shape.rowCount, 16);
   assert.equal(
     report.claims.productionThroughputDetails.executorCapabilities.fileReceipts,
     'lab-file-journal-receipts',
@@ -198,10 +201,64 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
     productionThroughputBlockers(missingReceiptCursor).includes('missing-valid-receipt-cursor'),
   );
 
+  const wrongResourceReceiptCursor = clone(report);
+  wrongResourceReceiptCursor.evidence.chunkReceipts.resumeCursor = {
+    ...wrongResourceReceiptCursor.evidence.chunkReceipts.resumeCursor,
+    resourceKey: 'file:wp-content/uploads/2026/05/other.bin',
+  };
+  assert.ok(
+    productionThroughputBlockers(wrongResourceReceiptCursor).includes('missing-valid-receipt-cursor'),
+  );
+
+  const wrongOffsetReceiptCursor = clone(report);
+  wrongOffsetReceiptCursor.evidence.chunkReceipts.resumeCursor = {
+    ...wrongOffsetReceiptCursor.evidence.chunkReceipts.resumeCursor,
+    offsetBytes: 0,
+  };
+  assert.ok(
+    productionThroughputBlockers(wrongOffsetReceiptCursor).includes('missing-valid-receipt-cursor'),
+  );
+
+  const invalidSizeReceiptCursor = clone(report);
+  invalidSizeReceiptCursor.evidence.chunkReceipts.resumeCursor = {
+    ...invalidSizeReceiptCursor.evidence.chunkReceipts.resumeCursor,
+    sizeBytes: 0,
+  };
+  assert.ok(
+    productionThroughputBlockers(invalidSizeReceiptCursor).includes('missing-valid-receipt-cursor'),
+  );
+
+  const oversizedReceiptCursor = clone(report);
+  oversizedReceiptCursor.evidence.chunkReceipts.resumeCursor = {
+    ...oversizedReceiptCursor.evidence.chunkReceipts.resumeCursor,
+    sizeBytes: oversizedReceiptCursor.shape.chunkSizeBytes + 1,
+  };
+  assert.ok(
+    productionThroughputBlockers(oversizedReceiptCursor).includes('missing-valid-receipt-cursor'),
+  );
+
+  const nonResumableReceiptCursor = clone(report);
+  nonResumableReceiptCursor.evidence.chunkReceipts.cursorConsistency.canResumeFromCursor = false;
+  assert.ok(
+    productionThroughputBlockers(nonResumableReceiptCursor).includes('missing-valid-receipt-cursor'),
+  );
+
+  const mismatchedReceiptCountCursor = clone(report);
+  mismatchedReceiptCountCursor.evidence.chunkReceipts.cursorConsistency.matchesRecordedReceiptCount = false;
+  assert.ok(
+    productionThroughputBlockers(mismatchedReceiptCountCursor).includes('missing-valid-receipt-cursor'),
+  );
+
   const missingMemoryCeiling = clone(report);
   delete missingMemoryCeiling.resourceLimits.memoryCeilingBytes;
   assert.ok(
     productionThroughputBlockers(missingMemoryCeiling).includes('production-memory-ceiling-not-measured'),
+  );
+
+  const brokenWindowEvidence = clone(report);
+  brokenWindowEvidence.evidence.resourceLimits.chunkWindowWithinMemoryCeiling = false;
+  assert.ok(
+    productionThroughputBlockers(brokenWindowEvidence).includes('chunk-window-exceeds-memory-ceiling'),
   );
 
   const oversizedChunkWindow = clone(report);
