@@ -20,18 +20,18 @@ as a substitute for a rerunnable live mutation boundary.
 Source-note comparison, kept conservative and non-authoritative unless this branch reran the same live boundary:
 
 - Reprint proves the intended push surface, compare-and-swap framing, and
-  replayable protocol shape, but the current evidence still stops at lab or
-  retained-source boundaries rather than a live production WordPress
-  auth/session lifecycle with preserved-remote recovery on this branch.
+  replayable protocol shape, but it does not prove a live production
+  WordPress auth/session lifecycle, preserved-remote recovery, or durable
+  journal semantics on this branch.
 - ZS-Sync proves scanner and batching value, but not source mutation safety on
-  its own; it does not close the atomicity, identity remap, or plugin-owned
-  surface traps that this project must prove before push can be called
-  production-grade here.
+  its own; it does not close the atomicity, identity remap, lease/fencing, or
+  plugin-owned surface traps that this project must prove before push can be
+  called production-grade here.
 - ForkPress contributes the strongest audit and crash-recovery story, but the
   source notes still do not supply proof for this branch's required live
-  WordPress boundary, durable storage and lease/fencing semantics outside the
-  lab harness, or plugin-driver coverage for late-discovered plugin-owned
-  surfaces on a rerunnable live mutation.
+  WordPress boundary, durable storage, preserved-remote retry, or
+  plugin-driver coverage for late-discovered plugin-owned surfaces on a
+  rerunnable live mutation.
 
 The latest remote evidence is strong enough to retire stale "no
 `verify:release` exists" critiques on this audit branch. It is not strong
@@ -195,8 +195,9 @@ on production WordPress auth/session state.
 The Reprint, ZS-Sync, and ForkPress notes remain provenance only unless this
 branch reran the same live boundary here. The observed anchors in
 `docs/source-notes.md` are `27c5f25`, `d9334a0`, and `55f9879`; matching
-route family, package layout, or reviewer wording is not enough to promote
-those notes from design input to retry authority.
+route family, package layout, reviewer wording, or retained-source lab
+behavior is not enough to promote those notes from design input to retry
+authority.
 
 ## Release Gate Checklist
 
