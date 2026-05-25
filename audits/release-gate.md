@@ -23,9 +23,15 @@ support.
   cannot authorize a widened retry after the live snapshot changes.
 - The claim includes the exact live hashes, the rejected stale approval, the
   retry scope, and the proof that the remote was preserved for audit.
+- The claim identifies the exact reverified upstream revision or worktree for
+  any Reprint, ZS-Sync, or ForkPress comparison; otherwise the comparison is
+  context only.
 - The claim does not rely on route shape, packaged-plugin mounting,
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
   production proof.
+- The claim does not treat a lab route shape or fixture-shaped package mount
+  as proof of current production safety, even if the path name matches the
+  production route.
 
 If any item is missing, the wording must stay explicitly lab-backed or
 comparison-only.

@@ -862,6 +862,9 @@ readiness, and they do not convert route-shape, scanner, or merge notes into
 mutation safety proof. Treat the source notes as snapshots of observed
 upstream state, not as current proof of upstream behavior today unless this
 branch independently reverified the same revision or worktree state.
+If a comparison note is used in a claim, the claim must say whether the exact
+upstream revision or worktree was reverified. If it was not, the note is
+historical context only and cannot support production wording.
 
 ### Reprint
 
@@ -994,6 +997,9 @@ If the approval artifact cannot be tied to a fresh live snapshot, it must be
 treated as stale evidence, not as permission to continue.
 `finalMatchesLocal` does not change that rule; it is still only a fixture
 compatibility signal, not proof of a safe retry after drift.
+Manual resolution only counts when the stale artifact stays audit-only, the
+remote remains preserved for later audit, and the next retry is forced to
+re-plan from fresh live hashes before any mutation.
 
 Required change: adopt the ForkPress-grade lifecycle before making
 ForkPress-grade claims. Manual resolution is acceptable only when the remote
