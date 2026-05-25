@@ -1932,6 +1932,11 @@ of the following in the same evidence set:
   remote can still be audited, the stale artifact was rejected before write,
   and the retry rebuilt scope from fresh live hashes instead of reusing the
   old approval.
+- The claim does not say a manual-review artifact is still current authority
+  after drift. If the artifact is only readable, the missing proof is a
+  rejected-before-write boundary that preserves the remote and prevents the
+  same artifact from authorizing a different row, file, relationship-bearing
+  record, or plugin-owned surface on retry.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
@@ -1976,6 +1981,10 @@ Concrete failure scenarios that still need repo-local proof:
 - A manual-review artifact is still readable after drift. The missing proof is
   that the artifact remains audit-only, cannot widen scope, and cannot be used
   as current authority on retry.
+- A comparison note from Reprint, ZS-Sync, or ForkPress is treated as current
+  because the route shape looks similar. The missing proof is the exact
+  upstream revision or worktree state, plus a recheck at the same live write
+  boundary that rejected stale authority before mutation.
 - A Reprint, ZS-Sync, or ForkPress comparison sounds current because the route
   or package shape matches. The missing proof is the exact upstream revision or
   worktree state and a fresh recheck at the same live write boundary.
