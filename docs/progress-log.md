@@ -4,6 +4,19 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:38:55
+
+<a id="2026-05-25-public-status-audit-093855"></a>
+
+- Tightened the public first screen in [progress.html](../progress.html) so
+  the lead, feedback panel, and recent-audits note are less repetitive while
+  still pointing at the same newest audit.
+- Kept the public state conservative: lab-only evidence, flat trend, and the
+  same four pending gates remain unchanged.
+- Evidence trail: [progress.html](../progress.html),
+  [release-gate checklist](../progress.html#proof-gates),
+  [newest audit](../progress.html#recent-public-audits).
+
 ## 2026-05-25 - Public Status Audit 09:34:09
 
 <a id="2026-05-25-public-status-audit-093409"></a>
