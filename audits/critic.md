@@ -22,8 +22,10 @@ live boundary on a real local, Playground, or Docker
 apply time, and proves production WordPress auth/session lifecycle, durable
 journal storage and lease/fencing semantics outside the lab harness, graph
 identity, plugin-driver coverage, and preserved-remote drift handling on the
-same mutation. A retained-source command that only proves those behaviors in
-the supervised lane is not enough to claim production-grade push support here.
+same mutation. The supervised reliable-executor lane can provide material
+retained-source evidence for those shapes, but that evidence is not enough to
+claim production-grade push support here unless the same live boundary is
+runnable on this branch and the rejected remote remains auditable and retryable.
 
 ## Single strongest blocker
 
@@ -85,7 +87,10 @@ the following on the same live boundary:
 - explicit old/new/blocked classification for touched rows, files,
   relationship-bearing records, and plugin-owned surfaces; and
 - plugin-driver coverage for late-discovered plugin-owned data traps outside
-  the allowlist.
+  the allowlist; and
+- a preserved-remote receipt that is still inspectable after rejection and
+  lets a reviewer audit, retry, and compare the exact boundary without
+  depending on manual resolution.
 
 Until those proofs exist on the same live boundary, any wording that says the
 system is production-ready is a claim without audit-grade support.
