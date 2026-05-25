@@ -10,7 +10,7 @@ The repo still lacks one required command that proves the one-way pull base plus
 
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| Executable proof | `node --test` proves refusal behavior, recovery classification, and local integrity checks. | Nothing in the current executable set reaches the live-source boundary or emits a release verdict. | A passing local suite can still leave the production decision unresolved. |
+| Executable proof | `node --test` proves refusal behavior, recovery classification, and local integrity checks. | Nothing in the current executable set reaches the one-way pull base plus one-way push to live source boundary, or emits a release verdict. | A passing local suite can still leave the production decision unresolved. |
 | Lab / fixture proof | Playground and authenticated smokes exercise route shape, auth/session scaffolding, journaling, and stale-claim rejection. | They remain `labBacked: true`, fixture-backed, or model-backed. | Lab evidence cannot prove production no-loss, reliability, or speed. |
 | Docs-only proof | The audit and blocker notes describe the intended one-way pull base plus one-way push flow. | Documentation cannot recheck live state or mutate production storage. | Prose cannot close the release gate. |
 | Missing proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict or enforced `speed unclaimed` refusal. | These are still absent from the mandatory command surface and from `package.json`'s enforced scripts. | The repo has no enforced release verdict, so green local evidence can still bypass release. |
