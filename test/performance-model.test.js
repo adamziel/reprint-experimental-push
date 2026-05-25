@@ -386,6 +386,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.rejectedGate,
     'group',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause')?.rejectedGate,
+    'group',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.violates.includes('database-row-batching'),
     'cached row-batch receipts still cannot bypass release-bundle database batching preconditions',
@@ -393,6 +397,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.violates.includes('atomic-groups'),
     'cached row-batch receipts still cannot bypass the release-bundle atomic-group barrier',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause')?.violates.includes('plugin-preconditions'),
+    'cached dependency graphs still cannot bypass release-bundle plugin preconditions',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause')?.violates.includes('atomic-groups'),
+    'cached dependency graphs still cannot bypass the release-bundle atomic-group barrier',
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause')?.rejectedGate,
