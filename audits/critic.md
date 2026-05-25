@@ -8,6 +8,10 @@ durable journal semantics, graph identity, and plugin-driver coverage on a
 real-site rerun. The old "no `verify:release` exists" critique is retired;
 the blocker now is that the retained-source command still does not move the
 proof onto a rerunnable live boundary with preserved-remote audit evidence.
+Do not reintroduce the retired missing-command critique; the current failure
+mode is that the branch still lacks a live rerun on a real local, Playground,
+or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote for
+audit and retry.
 Any claim that `verify:release` is "production-shaped" or "production-ready"
 must fail closed until that live rerun exists on a real local, Playground, or
 Docker `REPRINT_PUSH_SOURCE_URL`.
