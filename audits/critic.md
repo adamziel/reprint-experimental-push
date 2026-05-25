@@ -10,7 +10,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 
 1. Production WordPress auth/session lifecycle is not proven on a live mutation boundary.
 2. Preserved-remote retention after rejection is not proven, so manual resolution is not auditable retry authority.
-3. Apply-time revalidation from fresh live hashes is not proven on the same mutation that produced the rejection.
+3. Apply-time revalidation from fresh live hashes is not proven on the same mutation that produced the rejection, so stale approval can still masquerade as retry authority.
 4. Durable journal storage with lease/fencing is only proven in retained-source or lab harness form, not on production storage.
 5. Graph identity under create-time remap is not proven for relationship-bearing WordPress rows and late-discovered records.
 6. Plugin-driver coverage is not proven for plugin-owned surfaces outside the initial allowlist.
