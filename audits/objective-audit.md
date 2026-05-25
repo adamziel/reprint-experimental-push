@@ -253,7 +253,7 @@ What the current tests actually prove:
 - None of those benchmark tests time the live push path, so they are refusal proof, not speed proof.
 - The `npm run test:playground:*` scripts prove several lab-shaped route and storage slices, but they remain optional and do not collapse into one enforced release decision.
 - `npm test` is therefore a blocker check, not a release approver: it proves local invariants and refusal discipline, but it does not touch the live-source mutation boundary named by the objective.
-- The benchmark suite is likewise a blocker check, not a speed approver: it protects against unsupported throughput claims, but it does not time the live push path or establish an acceptance threshold on production storage and transport.
+- The benchmark suite is likewise a blocker check, not a speed approver: it protects against unsupported throughput claims, but it does not time the live push path or establish an acceptance threshold on production storage and transport. There is still no measured production threshold in the repo, only refusal of unsupported claims.
 
 What they do not prove:
 
