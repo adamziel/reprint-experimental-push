@@ -281,7 +281,7 @@ Evidence rule:
 The strongest current runnable evidence still falls into four classes:
 
 - executable proof: none that reaches the live-source boundary; the strongest tests are [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js), [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js), [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js), and [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js), but every one of them remains fixture-, model-, or refusal-backed rather than live-source-backed
-- lab / fixture proof: `npm test` plus the optional file-backed and Playground smokes such as `test:playground:authenticated-http-push`, `test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`, `test:playground:db-journal-stale-claim-all-old`, and `test:playground:recovery`
+- lab / fixture proof: `npm test` at `89/89` plus the optional file-backed and Playground smokes such as `test:playground:authenticated-http-push`, `test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`, `test:playground:db-journal-stale-claim-all-old`, and `test:playground:recovery`
 - docs-only proof: prose in `README.md`, `progress.html`, `audits/release-blockers.md`, and the supervisor/audit notes
 - missing proof: live-source apply-time mutation, durable crash survival on production storage, measured live-path throughput, an enforced `speed unclaimed` verdict when measurement is absent, and a required release gate that can fail closed when those proofs are absent
 
@@ -305,7 +305,7 @@ The current tests are strong negative evidence and weak positive evidence:
 - `test/recovery-journal.test.js` proves the journal logic can serialize, redact, and restart from temporary JSONL files.
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the benchmark layer will not overclaim throughput.
 - None of them prove the one-way pull base plus one-way push to live source path can safely mutate production storage, survive a live crash, or support a positive speed claim.
-- Therefore `npm test` is a regression suite, not a release gate.
+- Therefore `npm test` is a regression suite, not a release gate, even when it is green at `89/89`.
 
 ## Requirement Map
 
@@ -349,4 +349,4 @@ The hard test verdict is:
 - `test/push-planner.test.js` proves the planner can model directionality, keep remote-only edits, and reject stale or conflicting local plans. It does not prove the live apply boundary preserves all production WordPress data shapes without loss.
 - `test/recovery-journal.test.js` proves local-file journal ordering, redaction, restart classification, and corruption detection. It does not prove crash durability on production storage or recovery across a live mutation.
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the repository refuses to overclaim speed. They do not measure real throughput on the live push path, so they cannot support a positive performance claim.
-- `npm test` therefore proves refusal discipline, not release readiness. It is compatible with a release that still lacks live-source durability, topology, or throughput proof.
+- `npm test` therefore proves refusal discipline, not release readiness. It is compatible with a release that still lacks live-source durability, topology, or throughput proof, so green regression results do not establish no data loss, reliability, or speed.
