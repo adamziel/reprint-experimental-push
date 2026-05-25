@@ -6,14 +6,14 @@ This design still cannot claim production-grade push support.
 
 The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but it is still retained-source lab evidence from the supervised lane, not this audit branch. It does not yet prove a live WordPress auth/session lifecycle, durable journal semantics on production-like storage, graph identity, plugin-driver coverage, or preserved-remote retention after rejection on one rerunnable live boundary. The local audit branch can only record the critique; it cannot substitute for the supervised remote lane plus one rerunnable live boundary on a real source URL.
 
-The missing production proof is now precise: one rerunnable live mutation boundary on one exact source URL must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence, even when the supervised lane has a passing `verify:release`, minted session shape, and release-boundary verdict. A wording change on this branch does not close the gap unless the remote lane shows the preserved rejected remote surviving refusal on that same live boundary.
+The missing production proof is now precise: one rerunnable live mutation boundary on one exact source URL must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence, even when the supervised lane has a passing `verify:release`, minted session shape, and release-boundary verdict. A wording change on this branch does not close the gap unless the remote lane shows the preserved rejected remote surviving refusal on that same live boundary, with the rejected source still inspectable after refusal.
 
 ## False reliability claims
 
 The following should not be described as production-grade until they are proven on the same rerunnable live boundary:
 
 - manual resolution text that does not leave the rejected remote preserved and inspectable;
-- auth/session minting without a live WordPress expiry, refresh, and operator re-entry cycle on the same source URL;
+- auth/session minting without a live WordPress expiry, refresh, nonce or credential renewal, and operator re-entry cycle on the same source URL;
 - durable journal row counts without lease/fencing on production-like storage;
 - graph identity claims without create-time remap coverage and late-discovered relationship-bearing records; and
 - plugin support claims without coverage for late plugin-owned surfaces that fall outside the initial allowlist.
@@ -89,9 +89,9 @@ The missing proof is still one rerunnable live mutation on one exact source URL 
 Before the project can claim production-grade push support, one rerunnable live boundary must show all of the following on the same mutation:
 
 - exact stale-drift rejection before the first write;
-- preserved remote still inspectable after rejection and usable for audit;
+- preserved remote still inspectable after rejection and usable for audit, with the rejected source URL remaining available for replay review;
 - dry-run receipt plus apply-time revalidation on fresh live hashes;
-- production WordPress auth/session lifecycle;
+- production WordPress auth/session lifecycle, including expiry, refresh, and operator re-entry on the same live source URL;
 - durable journal storage with lease/fencing semantics on production-like storage;
 - graph identity across create-time remaps and late-discovered relationship-bearing records;
 - plugin-driver coverage for late-discovered plugin-owned surfaces outside the initial allowlist; and
