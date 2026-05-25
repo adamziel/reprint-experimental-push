@@ -2627,7 +2627,6 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
 test('keeps remote-only plugin removals while a live-preconditioned delete, matching independent edit, and file type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
-  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
   const local = baseSite();
   delete local.files['index.php'];
   local.files['wp-content/uploads/gallery'] = 'shared replacement file';
@@ -2984,6 +2983,58 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   assert.equal(result.site.plugins.forms.version, '1.1.0');
   assert.equal(result.site.plugins.forms.active, false);
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
+test('keeps remote-only plugin removals while a live-preconditioned delete, matching independent restore, edit, and type swap stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
+  base.files['wp-content/uploads/cover'] = { type: 'directory' };
+  base.db.wp_posts['ID:3'] = { ID: 3, post_title: 'Base edited row', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery/cover.txt'];
+  local.files['wp-content/uploads/cover'] = 'shared replacement file';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared restored row', post_status: 'publish' };
+  local.db.wp_posts['ID:3'] = { ID: 3, post_title: 'Shared edited row', post_status: 'publish' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
+  remote.files['wp-content/uploads/cover'] = 'shared replacement file';
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared restored row', post_status: 'publish' };
+  remote.db.wp_posts['ID:3'] = { ID: 3, post_title: 'Shared edited row', post_status: 'publish' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const fileDelete = mutationFor(plan, 'file:wp-content/uploads/gallery/cover.txt');
+  const restoreDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:3"]');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(fileDelete.action, 'delete');
+  assert.equal(fileDelete.changeKind, 'delete');
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'create');
+  assert.equal(restoreDecision.change.remoteChange, 'create');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/cover.txt'), false);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Shared restored row');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_title, 'Shared edited row');
+  assert.equal(result.site.files['wp-content/uploads/cover'], 'shared replacement file');
 });
 
 test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent edit, and file type swap stay safe with apply verification', () => {
