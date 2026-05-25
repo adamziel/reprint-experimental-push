@@ -96,6 +96,9 @@ identity across `remote-base` and `remote-changed`:
   `push-production-recovery-drift-contract.json` are the production-shaped
   inspect-first recovery proofs that keep the auth floor, the journal row,
   and live drift classification aligned with the same remote identity.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is
+  the compact production auth/session/journal/lease/recovery-inspect proof
+  for the same remote identity and local edit site.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-preflight-contract.json` keeps the first live binding explicit: the
