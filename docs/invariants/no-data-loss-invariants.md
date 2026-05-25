@@ -52,6 +52,9 @@ This note summarizes the planner's no-overwrite contract.
   restore is already in sync and remote-only plugin drift is present elsewhere.
 - A plugin-owned delete must stop when the live plugin owner context drifted,
   even if unrelated matching edits and remote-only plugin drift are present.
+- A plugin-owned delete must stop when the owner plugin was removed remotely,
+  even if matching independent deletes, edits, type swaps, and other remote-
+  only plugin removals are already preserved.
 - Matching independent file type swaps stay `already-in-sync` when they end on
   the same hash as the live remote, even if a separate delete is the only
   emitted mutation.
