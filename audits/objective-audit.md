@@ -27,6 +27,12 @@ Those requirements are the minimum release bar, not aspirational extras.
 
 The current checkout does not yet satisfy those requirements at the release boundary. The closest evidence remains split across fixture tests, lab smokes, and refusal-oriented benchmark models. That means the audit must treat any positive claim as provisional unless it is backed by executable proof on the live-source release path, not by a green default test command or a production-shaped label alone.
 
+Short version:
+
+- `npm test` is still a safety harness, not a release harness.
+- `npm run test:playground:*` commands are still evidence collectors, not release approvers.
+- The missing release command is the strongest blocker because it is the only thing that can turn the existing proof fragments into a mandatory decision.
+
 | Bucket | Current evidence | What it proves | Why it is not release proof |
 | --- | --- | --- | --- |
 | Executable proof | `npm test` runs 89 Node tests, including planner, recovery-journal, benchmark-model, and guarded-benchmark checks | Local invariants, refusal discipline, redaction, monotonic journal shape, and benchmark guardrails | It still does not reach the live-source mutation boundary the release claim names, so it can only block bad claims, not approve the good ones |
@@ -224,7 +230,7 @@ The weakest current claim is still the release gate itself. The repo needs one r
 4. Is wired into CI or another default enforced path so a green casual run cannot bypass it.
 5. Treats live-source proof as mandatory, not optional, so a successful lab smoke cannot satisfy the release bar by itself.
 
-Without that single unskippable gate, the current proof remains split across optional lab commands and model checks, which is exactly the bypass the objective must eliminate.
+Without that single unskippable gate, the current proof remains split across optional lab commands and model checks, which is exactly the bypass the objective must eliminate. Until the gate exists, every positive claim remains conditional on operator command choice instead of enforced release policy.
 
 Until that exists, the strongest tests in this checkout remain useful audits of behavior, but they do not establish release readiness.
 - The current test surface is therefore honest about risk, but honesty is not enough: it proves that the suite can refuse unsafe claims, not that the live release path is safe. The separate [`audits/release-evidence-gap.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-evidence-gap.md) note captures the same split in a shorter form. Until one checked-in command composes the full safety matrix and fails closed on the first missing bucket, every passing test remains audit evidence rather than release approval.
