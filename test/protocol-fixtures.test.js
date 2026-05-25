@@ -602,6 +602,26 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     protocolDocs.includes(
+      'The extension is the composition of those stages, not a shortcut around them:',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'The same handoff can be read as a pull-stage to push-stage map:',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'The auth floor does not weaken the existing Reprint HMAC model:',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'The same routes are used in both Docker and Playground:',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
       'The pull-to-push handoff is explicit in the machine-readable proof:',
     ),
   );

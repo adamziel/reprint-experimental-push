@@ -25,6 +25,33 @@ The production push protocol is a fixed ladder:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
+The extension is the composition of those stages, not a shortcut around them:
+
+- exporter/importer create the immutable pull base package
+- `push_preflight` is the first live bind after importer persistence
+- `push_snapshot_hashes` is planning-only remote hash listing
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
+  lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` is read-only and must happen before any mutating
+  repair
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe and the auth floor still holds
+
+The same handoff can be read as a pull-stage to push-stage map:
+
+| Pull stage | Push stage | Why it stays separate |
+| --- | --- | --- |
+| Exporter merge-base and coverage scan | `push_preflight` | The first live bind after importer persistence. |
+| Importer persisted base package | `push_snapshot_hashes` | Planning-only remote comparison evidence. |
+| Immutable pull provenance | `push_plan_dry_run` | Canonical plan upload with an eligibility receipt, not a lock. |
+| Persisted pull base package plus live drift evidence | `push_batch_apply` | Fresh live revalidation before every batch and at the storage boundary. |
+| Durable pull provenance | `push_journal` | Read-only evidence for later recovery. |
+| Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before any mutation. |
+| Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only after inspect and auth-floor checks pass. |
+
 The seven protocol surfaces are the ones the executor must treat as distinct
 remote boundaries:
 
@@ -157,6 +184,14 @@ Recovery is inspect-first by design:
 - live drift between dry-run and apply is expected, so apply-time revalidation
   is mandatory and separate from dry-run
 
+The auth floor does not weaken the existing Reprint HMAC model:
+
+- preflight authenticates and mints, but never grants mutation authority
+- dry-run is a receipt for a canonical plan, not a write lock
+- apply uses the short-lived push session plus idempotency and revalidation
+- journal inspect is read-only
+- recovery is inspect-first and keeps the same auth floor as the write path
+
 The bridge also maps to the persisted pull package that the importer stores:
 
 | Pull artifact | Push use |
@@ -258,6 +293,19 @@ site, and one later drift observation of the same remote identity:
 - Playground uses separate disposable blueprints
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
+
+The same routes are used in both Docker and Playground:
+
+| Stage | Route name |
+| --- | --- |
+| Preflight | `preflight` |
+| Remote snapshot hash listing | `snapshot-hashes` |
+| Dry-run plan upload | `dry-run` |
+| Mutation batch apply | `apply` |
+| Journal inspect | `journal` |
+| Recovery inspect | `recovery-inspect` |
+| Recovery mutate | `recovery-mutate` |
+
 - remote tunnels are disallowed
 
 The topology proof is intentionally the same one-remote, one-local, one-drift
