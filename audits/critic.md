@@ -5118,6 +5118,10 @@ worktree:
 Historical source notes stay historical even when they match the same route
 family, package mount, or reviewer wording; they do not certify a later live
 retry boundary unless the branch separately reran that exact boundary here.
+Even an exact upstream anchor only proves the note's original historical
+context; it does not prove that a readable manual-review artifact can be
+reused as retry authority for a different row, file, relationship-bearing
+record, remapped create target, or plugin-owned surface on this branch.
 If the branch cannot name those items for the exact live boundary, then any
 "manual resolution succeeded" wording is still false reliability, even when the
 route shape, fixture replay, or review artifact looks production-shaped. The
