@@ -279,6 +279,21 @@ preserved remote, the exact rejection point, and the later surface boundary,
 the smoke remains compatibility evidence and the manual note remains audit
 evidence only.
 
+False reliability failure mode to reject:
+
+- a polished note, green smoke, or matching reviewer phrasing can make the
+  branch look current without proving the preserved remote, the exact stale-
+  drift boundary, or the live retry scope rebuilt from fresh hashes; that
+  wording must still fail closed unless it names the exact rejected boundary
+  and the exact remote that remained inspectable after rejection;
+- "comparison passed" is only production wording if it also says which exact
+  upstream state was compared, which exact live boundary was rerun on this
+  branch, and which preserved remote stayed auditable after drift; otherwise
+  it is historical context, not retry authority; and
+- a later-discovered plugin-owned surface, remapped create target, or
+  relationship-bearing record cannot inherit authority from an earlier
+  readable note just because the route family or package layout is unchanged.
+
 What must change before any production-grade push claim:
 
 - the branch must show a live write boundary that rejects stale remote drift
