@@ -9715,6 +9715,52 @@ test('durable blocked partial commit retries stay blocked and do not turn into a
   assert.equal(retry.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
 });
 
+test('durable completed replay against a stale remote stays blocked with inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const completedWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedWriter });
+  completedWriter.close();
+  const beforeReplayPersisted = readRecoveryJournal(journalPath);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "drifted";';
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replayError = captureError(() =>
+    applyPlan(replayRemote, plan, {
+      durableJournal: replayJournal,
+      journal: completed.journal,
+    }),
+  );
+  replayJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.journal);
+  assert.ok(replayError.details.recovery.artifacts.remote);
+  assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    true,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote'),
+    true,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'mutation-observed').length,
+    beforeReplayPersisted.records.filter((record) => record.type === 'mutation-observed').length,
+  );
+});
+
 test('durable pre-commit fence failures stay blocked and do not expose a partial remote', () => {
   const base = baseSite();
   const local = baseSite();
