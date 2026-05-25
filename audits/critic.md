@@ -14,6 +14,20 @@ rule applies to upstream citations: a matching Reprint, ZS-Sync, or ForkPress
 commit can justify the design direction, but without a branch-local live
 recheck it stays historical input only.
 
+The remaining production traps are still unproven in this branch:
+
+- live remote drift can still be detected too late unless the apply boundary
+  shows the preserved remote, the rejection point, and the unusable stale
+  approval separately;
+- create-time identity remapping can still alias or renumber a target unless
+  the branch proves the live remap path or hard-blocks it before write;
+- plugin-owned state can still hide outside the allowlist through cron rows,
+  cache entries, registries, generated assets, custom tables, or plugin-owned
+  files unless those surfaces are enumerated or blocked at apply time; and
+- partial file, DB, or plugin side effects can still leave a mixed-write
+  state unless each touched store is durably classified old, new, or blocked
+  and retry rebuilds scope from fresh live hashes.
+
 Release gate for any production wording:
 
 - Name the exact live mutation boundary, the exact stale-remote drift case,
@@ -52,6 +66,9 @@ Release gate for any production wording:
   unless this branch also reran the same live mutation boundary and the same
   drift or retry case here; route shape, package shape, fixture replay, and
   `finalMatchesLocal` still cannot upgrade that comparison into current proof.
+- Show that no historical source-note comparison is being upgraded into a
+  current reliability claim without branch-local proof for the exact live
+  boundary and failure case.
 - Show that any Reprint, ZS-Sync, or ForkPress citation stays historical
   context unless this branch names the exact upstream revision or worktree
   state, rechecks the same live boundary here, and records the same drift or
@@ -171,6 +188,12 @@ Source-note comparison summary:
   stays auditable but cannot authorize retry, widen scope, or silently widen
   into a new row, file, relationship-bearing record, or plugin-owned surface.
   A readable review note is not proof of safe retry authority.
+- None of the three source notes proves the full production claim set on its
+  own. Reprint is transport provenance, ZS-Sync is discovery provenance, and
+  ForkPress is audit/conflict provenance. What is still missing here is live
+  branch evidence for stale-drift rejection, create-time remap handling,
+  plugin-owned surface coverage, partial side-effect classification, and a
+  retry that rebuilt scope from fresh live hashes after the remote drifted.
 - None of the three source notes proves the production claim by itself. Reprint
   is transport/protocol provenance, ZS-Sync is bounded discovery provenance,
   and ForkPress is conflict/audit provenance. The missing repo proof remains
