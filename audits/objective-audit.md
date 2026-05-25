@@ -10,17 +10,17 @@ That is a release judgment, not a test-pass judgment: the repo still lacks one e
 
 The objective implies the following minimum release requirements:
 
-1. Pull the base one way, then push back to the live source one way, with the live source rechecked at apply time.
-2. Preserve every WordPress data shape a push can affect, including related rows, files, plugin-owned data, serialized payloads, and graph identity.
-3. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary, with the same behavior enforced on the real production storage and transport path.
+1. Use a one-way pull base, then a one-way push back to the live source, and recheck the live source at apply time before mutating it.
+2. Preserve every WordPress data shape the push can touch, including rows, files, plugin-owned data, serialized payloads, and graph identity.
+3. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary.
 4. Enforce auth, session, lease, fencing, durable journal, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes.
-5. Prove the real remote/local topology, not just a local lab route shape, local Playground route, or fixture mount with the same hostname and different backing storage.
+5. Prove the real remote/local topology, not just a local Playground route, local fixture mount, or hostname alias with different backing storage.
 6. Either publish a measured speed claim from the live push path or explicitly refuse to make one.
 7. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, missing live-source proof, or benchmark-only.
 8. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
 9. Keep the optional smokes available for local evidence collection, but do not let them stand in for release proof.
-10. Fail the release gate on any claim that remains lab-backed, fixture-scoped, benchmark-only, or otherwise indirect.
-11. Make the release gate print the last failing proof bucket so the missing release evidence is explicit.
+10. Make the release gate print the last failing proof bucket so the missing release evidence is explicit.
+11. Treat any claim that remains lab-backed, fixture-scoped, benchmark-only, or otherwise indirect as non-release evidence.
 12. Make the release gate the default enforced path in CI or equivalent automation so a green casual run cannot bypass it.
 
 The key release point is not merely "tests pass." The project objective only becomes releasable when the same checked-in command proves the live-source release path, not just the fixture path or the refusal path.
@@ -34,7 +34,7 @@ Those requirements are the minimum release bar, not aspirational extras.
 | Executable proof | `npm test` passes and covers planner, recovery-journal, benchmark-model, and guarded-benchmark checks; the suite is honest about refusal and redaction but stays model/fixture scoped | No live-source boundary, no production storage path, no enforced release decision | Yes |
 | Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, and plugin packaging | No production transport/storage proof | Yes |
 | Docs-only proof | `docs/`, `progress.html`, and audit notes describe the intended release flow | No enforcement | Yes |
-| Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L34); no checked-in `.github/workflows/*`; no measured live-path benchmark threshold | No mandatory gate that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and speed proof | Yes |
+| Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L34); no checked-in `.github/workflows/*`; no measured live-path benchmark threshold; no required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and speed proof | The repo still lacks the single mandatory decision point that could make the live-source claim releasable | Yes |
 | Release blockers | `labBacked: true`, fixture-only scope, benchmark-only evidence, missing live-source proof, missing enforced gate | None of these are acceptable as release proof | Yes |
 
 The current checkout does not yet satisfy those requirements at the release boundary. The closest evidence remains split across fixture tests, lab smokes, and refusal-oriented benchmark models. That means the audit must treat any positive claim as provisional unless it is backed by executable proof on the live-source release path, not by a green default test command or a production-shaped label alone.
