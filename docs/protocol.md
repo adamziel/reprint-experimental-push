@@ -201,13 +201,13 @@ the exact live preflight result plus the release-proof status, the later
 remote-drift witness, and the live protocol evidence.
 
 The supervisor-facing release entrypoint is `npm run verify:release`.
-It is the same checked command as the live-source verify path, so the release
-proof remains a single executable surface even when the command is invoked
-through the shorter alias. This lane treats that command as the checked
-boundary proof: it must either print the live preflight evidence or fail
-closed with the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
-`REPRINT_PUSH_SECRET_REQUIRED` gate before any preflight, dry-run, or apply
-attempt.
+It is the same checked command as the live-source verify path, and it also
+chains the file-journal restart smoke so the release proof keeps the
+durable-journal storage/lease/fence boundary visible. This lane treats that
+command as the checked boundary proof: it must either print the live
+preflight evidence or fail closed with the exact
+`REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or `REPRINT_PUSH_SECRET_REQUIRED` gate
+before any preflight, dry-run, or apply attempt.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.
@@ -248,7 +248,9 @@ npm run verify:release
 
 That command must either reach a real Playground source preflight or fail
 closed with the explicit `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
-`REPRINT_PUSH_SECRET_REQUIRED` gate before dry-run or apply starts.
+`REPRINT_PUSH_SECRET_REQUIRED` gate before dry-run or apply starts. The same
+command now also includes the file-journal restart smoke so the durable
+journal boundary remains part of the checked release surface.
 
 The release entrypoint has two exact checked outcomes:
 

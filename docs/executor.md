@@ -135,11 +135,12 @@ injects production-shaped auth, and prints the live preflight branch plus the
 dry-run, apply, journal, and recovery inspect evidence in the release proof.
 
 The supervisor-facing shortcut is `npm run verify:release`.
-It resolves to the same retained-source proof, so the checked command and the
-release alias stay aligned. In this lane, that alias is the checked supervisor
-command for the production boundary: it must either reach the live Playground
-preflight path or fail closed at the explicit live-source or secret gate
-before any dry-run or apply mutation begins.
+It resolves to the same retained-source proof and then runs the file-journal
+restart smoke, so the checked command and the release alias stay aligned with
+the durable-journal storage boundary as well. In this lane, that alias is the
+checked supervisor command for the production boundary: it must either reach
+the live Playground preflight path or fail closed at the explicit live-source
+or secret gate before any dry-run or apply mutation begins.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.
@@ -180,6 +181,8 @@ npm run verify:release
 
 It must either exercise the real Playground preflight branch or fail closed
 at the explicit live-source or secret gate before dry-run or apply begins.
+The command also runs the file-journal restart smoke, so the durable journal
+storage/lease/fence proof stays part of the same checked surface.
 
 That checked release entrypoint has two exact outputs:
 

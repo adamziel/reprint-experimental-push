@@ -4563,7 +4563,10 @@ test('verify:release stays pinned to the checked release entrypoint and exact li
     /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}\s*\}/,
   );
   assert.match(proof.stdout, /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/);
-  assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
+  assert.equal(
+    packageJson.scripts['verify:release'],
+    'npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
+  );
 });
 
 test('verify:release fails closed at the explicit missing-secret gate when a source URL is supplied', () => {
