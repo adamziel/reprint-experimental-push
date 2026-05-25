@@ -1326,6 +1326,7 @@ function addPluginOwnedResourceBlocker(plan, {
   const reason = support.reason || (className === 'missing-plugin-driver'
     ? `Plugin-owned resource ${resource.key} is missing explicit driver metadata for plugin ${owner}.`
     : `Plugin-owned resource ${resource.key} is not covered by a supported resource driver policy for plugin ${owner}.`);
+  const ownerContext = boundEvidenceList(support.ownerContext || [], 3);
 
   plan.blockers.push({
     id: `blocker-plugin-owned-resource-${plan.blockers.length + 1}`,
@@ -1335,7 +1336,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
-    ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
+    ...(ownerContext.length > 0 ? { ownerContext, ownerContextTruncated: Boolean((support.ownerContext || []).length > ownerContext.length) } : {}),
     reason,
     baseHash,
     localHash,
@@ -1363,13 +1364,15 @@ function addPluginContextBlocker(plan, {
   localHash,
   remoteHash,
 }) {
+  const ownerContext = boundEvidenceList(support.ownerContext || [], 3);
   plan.blockers.push({
     id: `blocker-plugin-context-${plan.blockers.length + 1}`,
     class: support.className || 'stale-plugin-owner-context',
     resource,
     resourceKey: resource.key,
     pluginOwner: owner,
-    ownerContext: support.ownerContext || [],
+    ownerContext,
+    ownerContextTruncated: Boolean((support.ownerContext || []).length > ownerContext.length),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,
@@ -1396,6 +1399,7 @@ function addWordPressGraphIdentityBlocker(plan, {
   localHash,
   remoteHash,
 }) {
+  const references = boundEvidenceList(support.references || [], 3);
   plan.blockers.push({
     id: `blocker-wordpress-graph-identity-${plan.blockers.length + 1}`,
     class: support.className || 'stale-wordpress-graph-identity',
@@ -1415,8 +1419,13 @@ function addWordPressGraphIdentityBlocker(plan, {
       localHash,
       remoteHash,
     ),
-    references: support.references || [],
+    references,
+    referencesTruncated: Boolean((support.references || []).length > references.length),
   });
+}
+
+function boundEvidenceList(items, limit) {
+  return items.slice(0, limit);
 }
 
 function addConflict(plan, {

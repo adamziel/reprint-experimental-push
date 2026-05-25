@@ -2839,6 +2839,42 @@ test('blocks plugin-owned option deletions when the live remote removed the owne
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('bounds stale plugin owner evidence when many owner-context resources are present', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+  remote.files['wp-content/plugins/forms/admin.php'] = '<?php /* remote-private-admin-code */';
+  remote.files['wp-content/plugins/forms/lib/helpers.php'] = '<?php /* remote-private-helper-code */';
+  remote.files['wp-content/plugins/forms/readme.txt'] = 'remote-private-readme';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.ownerContext.length, 3);
+  assert.equal(blocker.ownerContextTruncated, true);
+  assert.equal(
+    blocker.ownerContext.every((context) =>
+      context.resourceKey === 'plugin:forms'
+      || context.resourceKey.startsWith('file:wp-content/plugins/forms/')),
+    true,
+  );
+  assert.equal(blockerJson.includes('remote-private-forms-code'), false);
+  assert.equal(blockerJson.includes('remote-private-admin-code'), false);
+  assert.equal(blockerJson.includes('remote-private-helper-code'), false);
+});
+
 test('blocks plugin-owned option deletions while preserving unrelated remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();

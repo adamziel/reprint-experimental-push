@@ -25,6 +25,7 @@ The push planner must preserve remote-only state unless it has a live remote pre
 - Remote-only plugin metadata and plugin files.
 - Matching remote changes that the local branch did not author.
 - Evidence for conflicts and blockers without leaking resource contents.
+- Blocker evidence is bounded to a short owner-context or graph-reference slice, with a truncation marker when more context exists.
 - The live remote state for every resource that is not targeted by a validated mutation.
 - Any remote-only plugin drift that the local plan does not directly target.
 
@@ -36,3 +37,4 @@ The push planner must preserve remote-only state unless it has a live remote pre
 - Any mutation that lacks a live remote precondition.
 - Any plan that assumes remote plugin removal makes a stale plugin-context mutation safe.
 - Any plan that assumes remote plugin removal makes an unrelated local mutation safe without its own live-remote precondition.
+- Any plan that relies on unbounded blocker evidence instead of a bounded audit slice.
