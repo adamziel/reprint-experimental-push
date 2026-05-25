@@ -109,6 +109,7 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   const preflight = readJson('fixtures/protocol/push-preflight-contract.json');
   const snapshotListing = readJson('fixtures/protocol/push-remote-snapshot-listing-contract.json');
   const dryRunRevalidation = readJson('fixtures/protocol/push-dry-run-apply-revalidation-contract.json');
+  const productionTopology = readJson('fixtures/protocol/push-production-topology-contract.json');
 
   assert.equal(preflight.contract_id, 'push-preflight-contract-one-remote-one-local');
   assert.equal(preflight.pull_provenance.remote_site_id, 'remote-example');
@@ -134,6 +135,20 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   assert.equal(dryRunRevalidation.journal_and_recovery.inspect_is_read_only, true);
   assert.ok(dryRunRevalidation.required_invariants.includes('dry-run and apply are separate remote operations'));
   assert.ok(dryRunRevalidation.required_invariants.includes('inspect is read-only and must happen before any mutating recovery'));
+
+  assert.equal(productionTopology.contract_id, 'push-production-topology-contract-one-remote-one-local');
+  assert.equal(productionTopology.topology.remote_base, 'remote-base');
+  assert.equal(productionTopology.topology.local_edited, 'local-edited');
+  assert.equal(productionTopology.topology.remote_changed, 'remote-changed');
+  assert.equal(productionTopology.topology.runner, 'runner');
+  assert.equal(productionTopology.topology.same_remote_identity, true);
+  assert.equal(productionTopology.topology.networking.ingress_port, 8080);
+  assert.equal(productionTopology.topology.networking.proxy_policy, 'local-only');
+  assert.equal(productionTopology.topology.networking.tunnels, 'disallowed');
+  assert.ok(productionTopology.topology.docker.proof.includes('remote-base and remote-changed are the same remote identity at different times'));
+  assert.ok(productionTopology.topology.playground.proof.includes('runner uses the same route names as Docker'));
+  assert.ok(productionTopology.required_invariants.includes('one remote source site, one imported local site, and one drift witness are enough to prove the production topology'));
+  assert.ok(productionTopology.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
 });
 
 test('push protocol fixture readme keeps the production ladder and topology bridge aligned', () => {
