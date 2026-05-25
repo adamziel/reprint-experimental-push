@@ -216,6 +216,7 @@ The weakest current claim is still the release gate itself. The repo needs one r
 
 Until that exists, the strongest tests in this checkout remain useful audits of behavior, but they do not establish release readiness.
 - The current test surface is therefore honest about risk, but honesty is not enough: it proves that the suite can refuse unsafe claims, not that the live release path is safe. The separate [`audits/release-evidence-gap.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-evidence-gap.md) note captures the same split in a shorter form.
+- The concrete next proof gap is a mandatory release command that fails closed on the first unproven bucket and surfaces the bucket name in its output, so operators cannot miss whether the blocker is live-source proof, durability, topology, or speed.
 - In practical terms, the suite currently proves "we refuse to overclaim" much better than it proves "we can safely release."
 - Green output from the current suite can still coexist with an unproven live push path, so a passing test run is not evidence that the objective has been met.
 
