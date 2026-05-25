@@ -138,6 +138,11 @@ The lab identities for that proof are `remote-example` and `local-dev-site`.
 They let the executor point at one remote source, one imported local edit
 site, and the same remote identity again after drift.
 
+For the precise Docker/Playground harness shape, use
+[`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json).
+It keeps the `remote-base`, `local-edited`, `remote-changed`, and `runner`
+roles explicit and ties them to the sandbox-provided `8080` ingress rule.
+
 For the end-to-end protocol proof, use
 [`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json).
 It is the canonical object that binds preflight, remote snapshot hash

@@ -185,6 +185,11 @@ The lab identities for that proof are `remote-example` and `local-dev-site`.
 They let the tests assert one remote source, one imported local edit site, and
 the same remote identity again after drift.
 
+The machine-readable topology proof is
+[`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json).
+Use it when a test needs the exact Docker/Playground shape for one remote
+source, one local edited site, one drift witness, and one runner.
+
 That is the compact end-to-end proof that dry-run and apply are separate
 remote operations, apply revalidates live evidence before every batch and at
 the storage boundary, and recovery starts with inspect before any mutating
