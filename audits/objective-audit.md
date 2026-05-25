@@ -186,11 +186,21 @@ The uncomfortable conclusion is that the current tests are good enough to block 
 
 | Test surface | Current proof | Unproven release claim |
 | --- | --- | --- |
-| `test/push-planner.test.js` | Directionality, precondition checking, and stale-plan refusal in fixture scope | A live-source push boundary, no-data-loss proof across WordPress data shapes, and real remote/local topology proof |
-| `test/recovery-journal.test.js` | Local journal sequencing, redaction, restart classification, and recovery inspection | Durable production storage, crash survival on live state, and live-boundary replay safety |
+| `test/push-planner.test.js` | Directionality, precondition checking, local mutation ordering, and stale-plan refusal in fixture scope | A live-source push boundary, no-data-loss proof across WordPress data shapes, and real remote/local topology proof |
+| `test/recovery-journal.test.js` | Local journal sequencing, redaction, restart classification, and recovery inspection against temporary files | Durable production storage, crash survival on live state, and live-boundary replay safety |
 | `test/performance-model.test.js` | Benchmark guardrails and refusal of unsupported throughput claims | Measured live-path throughput and any positive speed claim |
-| `test/guarded-executor-benchmark.test.js` | Tamper detection, graph-identity bookkeeping, and refusal to upgrade unsupported benchmark claims | A release-grade performance verdict on the real push path |
-| `npm test` as a whole | The repository can reject unsafe claims in lab, fixture, and model scope | A mandatory live-source verdict that can certify no data loss, reliability, or speed |
+| `test/guarded-executor-benchmark.test.js` | Tamper detection, graph-identity bookkeeping, and refusal to upgrade unsupported benchmark claims without a live measurement | A release-grade performance verdict on the real push path |
+| `npm test` as a whole | The repository can reject unsafe claims in lab, fixture, and model scope; it does not assert live-source release readiness | A mandatory live-source verdict that can certify no data loss, reliability, or speed |
+
+## Test Verdict
+
+The current tests are strong negative evidence and weak positive evidence:
+
+- `test/push-planner.test.js` proves the planner can refuse stale or conflicting states and preserve remote-only edits in local snapshots.
+- `test/recovery-journal.test.js` proves the journal logic can serialize, redact, and restart from temporary JSONL files.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the benchmark layer will not overclaim throughput.
+- None of them prove the one-way pull base plus one-way push to live source path can safely mutate production storage, survive a live crash, or support a positive speed claim.
+- Therefore `npm test` is a regression suite, not a release gate.
 
 ## Requirement Map
 
