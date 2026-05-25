@@ -188,6 +188,10 @@ identity was observed twice.
 It also carries explicit apply-revalidation and inspect-first recovery proofs
 so the production boundary stays visible in one fixture instead of being
 inferred from prose.
+It now also names the journal fence itself: claim generation, lease expiry,
+and storage-guard proof are part of the same recovery contract, because a
+mutating recovery request is only safe when the executor can prove the worker
+is fenced before any repair runs.
 The end-to-end companion at
 [`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
 ties the pull provenance, push ladder, and Docker/Playground topology into a

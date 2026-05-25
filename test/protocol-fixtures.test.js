@@ -125,7 +125,8 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.push_pipeline.dry_run_plan_upload, 'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock');
   assert.equal(topologyMatrix.push_pipeline.mutation_batch_apply, 'revalidates fresh live evidence before every batch and again at the storage boundary');
   assert.equal(topologyMatrix.push_pipeline.journal_inspect, 'reads durable evidence without authorizing mutation');
-  assert.equal(topologyMatrix.push_pipeline.recovery, 'starts with inspect and allows mutating repair only when the journal and live hashes prove the action');
+  assert.equal(topologyMatrix.push_pipeline.recovery_inspect, 'starts with inspect and classifies finish, rollback, retry, or block without mutation');
+  assert.equal(topologyMatrix.push_pipeline.recovery, 'allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action');
   assert.equal(topologyMatrix.remote_snapshot_hash_listing, 'cursorable live hash evidence used for planning only and never treated as write authority');
   assert.equal(topologyMatrix.pull_to_push_mapping.exporter, 'scans the merge base and coverage evidence');
   assert.equal(
@@ -143,6 +144,14 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(
     topologyMatrix.recovery_inspect.authorization,
     'read-only evidence reader that never authorizes mutation by itself',
+  );
+  assert.equal(topologyMatrix.journal_fencing.claim_generation, 4);
+  assert.equal(topologyMatrix.journal_fencing.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(topologyMatrix.journal_fencing.storage_guard, 'filesystem-compare-rename');
+  assert.ok(
+    topologyMatrix.journal_fencing.proof.includes(
+      'mutating recovery is fenced until inspect reads the journal row and fresh live hashes',
+    ),
   );
   assert.equal(topologyMatrix.roles.remote_base, 'one remote source site that seeds the persisted pull base');
   assert.equal(topologyMatrix.roles.local_edited, 'one imported local site with user edits');

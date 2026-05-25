@@ -7,7 +7,8 @@
     "dry_run_plan_upload": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
     "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
     "journal_inspect": "reads durable evidence without authorizing mutation",
-    "recovery": "starts with inspect and allows mutating repair only when the journal and live hashes prove the action"
+    "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block without mutation",
+    "recovery": "allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action"
   },
   "test_topology": {
     "remote_base": "one source site that seeds the persisted pull base",
@@ -47,6 +48,16 @@
       "the snapshot listing is stale",
       "the remote changed after the dry-run receipt",
       "the journal cannot prove a safe finish, rollback, or block"
+    ]
+  },
+  "journal_fencing": {
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "storage_guard": "filesystem-compare-rename",
+    "proof": [
+      "journal rows carry claim ownership, generation, and lease expiry",
+      "mutating recovery is fenced until inspect reads the journal row and fresh live hashes",
+      "storage-boundary checks still run after the journal fence is satisfied"
     ]
   },
   "recovery_inspect": {
