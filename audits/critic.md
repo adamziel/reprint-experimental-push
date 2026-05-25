@@ -255,21 +255,22 @@ not just wording that sounds conservative:
   remapped create target, or plugin-owned surface unless that later boundary
   also has its own preserve / reject / retry cycle.
 
-Comparison bottom line: the Reprint, ZS-Sync, and ForkPress notes support
-historical transport, discovery, and review vocabulary only. None of them
-proves a live push executor on this branch that rejects stale drift before the
-first write, preserves the remote for audit, blocks create-time identity
-remap, or classifies late-discovered plugin-owned surfaces before retry. If
-the branch cannot show those live-boundary proofs here, the source note
-remains design context only, even when the upstream state is named precisely
-or the route/package/reviewer wording matches. A source note can explain why
-a design choice exists, but it cannot by itself prove that this worktree
-rejected the stale boundary, preserved the remote, and rebuilt retry scope
-from live hashes for the same live mutation boundary. A precise note also
-cannot become retry authority unless it names the exact upstream revision or
-worktree state, the exact live write boundary on this branch, the exact
-stale-drift case, and the exact preserved remote that stayed inspectable
-after rejection.
+Comparison bottom line: the Reprint note only supports staged transport and
+resumability vocabulary, the ZS-Sync note only supports bounded discovery and
+cursoring vocabulary, and the ForkPress note only supports audit and crash-
+consistency vocabulary. None of them proves a live push executor on this
+branch that rejects stale drift before the first write, preserves the remote
+for audit, blocks create-time identity remap, or classifies late-discovered
+plugin-owned surfaces before retry. If the branch cannot show those
+live-boundary proofs here, the source note remains design context only, even
+when the upstream state is named precisely or the route/package/reviewer
+wording matches. A source note can explain why a design choice exists, but it
+cannot by itself prove that this worktree rejected the stale boundary,
+preserved the remote, and rebuilt retry scope from live hashes for the same
+live mutation boundary. A precise note also cannot become retry authority
+unless it names the exact upstream revision or worktree state, the exact live
+write boundary on this branch, the exact stale-drift case, and the exact
+preserved remote that stayed inspectable after rejection.
 
 Source-note comparison matrix:
 
