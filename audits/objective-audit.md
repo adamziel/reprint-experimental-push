@@ -89,6 +89,8 @@ Minimal gate contract:
 
 The weakest current claim is still the release gate itself. That is the claim most worth tightening because it is the one that converts every existing proof fragment into an enforceable decision. Until the repo has a required `verify:release`-style command and a checked-in automation path that runs it, every other proof bucket remains optional and therefore bypassable. The immediate actionable requirement is not more lab coverage; it is a fail-closed release command that prints the first missing proof bucket, rejects `labBacked: true` and fixture-only evidence, and is the default path in CI or equivalent automation.
 
+One important distinction for this audit: refusal tests are still useful, but they are not release approval. A test can be honest about missing proof, and still be insufficient to prove the positive claim. In this checkout, the benchmark and recovery suites are credible blockers because they refuse unsupported claims and model some failure modes, but they do not certify the live-source boundary the objective requires.
+
 ## Release Gate Gap
 
 The release gate is the highest-value missing proof because it is the only thing that would turn the current evidence buckets into a mandatory release matrix.
