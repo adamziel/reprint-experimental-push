@@ -62,6 +62,18 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 7. `push_journal` and `push_recover` inspect durable evidence first, then
    allow mutating recovery only when fresh live hashes prove the action
 
+The production push ladder is the same handoff expressed as a runtime flow:
+
+1. preflight binds the persisted pull base to the live remote identity and
+   mints a short-lived session
+2. snapshot hash listing reads the live comparison set for planning only
+3. dry-run plan upload records eligibility and returns a receipt, not a lock
+4. mutation batch apply revalidates fresh live evidence before every batch and
+   again at the storage boundary
+5. journal inspect reads durable evidence without authorizing mutation
+6. recovery inspect comes first, and recovery may only mutate when the
+   journal and fresh live hashes prove the action
+
 The push extension therefore has five production stages that the executor
 must keep separate:
 
@@ -139,6 +151,12 @@ or roll back after fresh live proof.
   split and the same no-tunnel rule.
 - `remote-base` and `remote-changed` must be the same remote identity observed
   at two different times, not two different sites.
+
+The topology matrix is the canonical machine-readable representation of that
+deployment shape. It names the remote-base, local-edited, remote-changed, and
+runner roles directly, records the `8080` ingress rule, and keeps Docker and
+Playground on the same evidence boundaries so tests can prove the same
+identity was observed twice.
 
 For machine-readable verification, the compact contract fixture at
 [`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)

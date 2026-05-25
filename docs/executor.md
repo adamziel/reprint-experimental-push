@@ -31,6 +31,16 @@ The production sequence is fixed:
    recovery only proceeds when journal rows plus fresh live hashes prove the
    action.
 
+That sequence is the runtime form of the pull pipeline handoff:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that package to the live remote identity and session
+- snapshot hashes capture live comparison evidence for planning only
+- dry-run uploads the canonical plan as an eligibility receipt
+- apply revalidates fresh live evidence before every batch and at the storage boundary
+- journal inspect and recovery inspect read durable evidence before any mutating repair
+
 Dry-run and apply are therefore separate remote calls. A valid dry-run receipt
 is not a lock, and a later apply must still fail if the remote changed after
 the snapshot listing or after the plan was accepted.
@@ -142,6 +152,17 @@ The same shape is what the Docker and Playground proofs must implement:
 | `local-edited` | Imported edited-site container on the same private network | Separate loopback Playground instance | Holds the user edits that the planner will compare against the base. |
 | `remote-changed` | Same remote site observed later after drift | Same Playground site after a later mutation | Proves apply revalidates live state instead of replaying dry-run evidence. |
 | `runner` | Client container or host process | Client process | Signs requests, uploads plans, reads journals, and drives recovery. |
+
+This is the topology contract the executor must satisfy in both packaging
+modes:
+
+- `remote-base` and `remote-changed` are the same remote identity observed at
+  different times.
+- `local-edited` is a separate imported clone with user edits.
+- `runner` is the only actor that may compare, upload, inspect, or recover.
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy.
+- remote tunnels are disallowed in both Docker and Playground.
 
 ## Topology
 
