@@ -40,6 +40,9 @@ This note summarizes the planner's no-overwrite contract.
   restore, and file type swap resources when each matching resource
   independently reaches the live remote hash and remote-only plugin removals
   remain preserved.
+- Live-preconditioned file and row deletes may coexist when each emitted
+  mutation keeps its own live remote precondition and matching independent
+  edits and file type swaps already match the live remote.
 - A plugin-owned delete may coexist with a matching independent edit while
   remote-only plugin drift stays preserved and the delete keeps its own live
   remote precondition.
