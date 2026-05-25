@@ -5156,8 +5156,12 @@ Release-gate checklist for production-grade wording:
 - manual-review artifacts kept audit-only unless rebuilt from fresh live
   hashes on this branch;
 - any cited Reprint, ZS-Sync, or ForkPress note pinned to the exact upstream
-  revision or worktree state and annotated with what it does not prove here;
-  and
+  revision or worktree state, annotated with what it proves here, what it
+  does not prove here, and whether any later boundary is explicitly in scope
+  or explicitly excluded;
+- any source-note comparison that only matches route family, package mount,
+  or reviewer wording is rejected as compatibility evidence only, even if
+  the note is otherwise well formed; and
 - no route-shape smoke, package-mount match, `finalMatchesLocal`, or
   "manual resolution" phrase used as proof without the live boundary above.
 If any box is unchecked, the branch must not claim production-grade push
