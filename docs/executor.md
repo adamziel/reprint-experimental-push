@@ -270,12 +270,12 @@ profile with `--route-profile production-shaped`. This proves route shape and
 request binding over a real local Playground source site, including guarded
 DB/file mutations, same-key different-body conflict refusal, and unmodified
 cross-route receipt refusal before mutation. That is compatibility evidence for
-the route and request contract only. It remains lab-backed because the route is
-mounted by the Playground mu-plugin, uses the lab signing key derivation, and
-does not prove tamper-resistant production receipt security, credential
-lifecycle, production nonce/replay retention, durable production journal
-storage, leases/fencing, WordPress graph identity, or arbitrary plugin
-drivers.
+the route and request contract only, not proof of production push support. It
+remains lab-backed because the route is mounted by the Playground mu-plugin,
+uses the lab signing key derivation, and does not prove tamper-resistant
+production receipt security, credential lifecycle, production nonce/replay
+retention, durable production journal storage, leases/fencing, WordPress graph
+identity, or arbitrary plugin drivers.
 
 Current packaged-plugin note:
 `npm run test:playground:production-plugin-package` builds a temporary
