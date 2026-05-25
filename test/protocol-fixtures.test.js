@@ -47,6 +47,62 @@ test('push protocol fixture captures the production stage order and recovery rul
   ]);
 });
 
+test('push protocol extension contract pins the production ladder, bridge, auth floor, and topology', () => {
+  const extension = readJson('fixtures/protocol/push-protocol-extension-contract.json');
+
+  assert.equal(extension.contract_id, 'push-protocol-extension-production-contract');
+  assert.ok(extension.purpose.includes('preflight, remote snapshot hash listing, dry-run plan upload'));
+  assert.deepEqual(extension.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    extension.production_boundary.remote_snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    extension.pull_to_push_mapping.push_preflight,
+    'binds the persisted pull base package to one live remote identity and one short-lived push session',
+  );
+  assert.equal(
+    extension.pull_to_push_mapping['push_batch_apply'],
+    'revalidates fresh live evidence before every batch and again at the storage boundary, and never reuses the dry-run receipt as a lock',
+  );
+  assert.equal(
+    extension.auth.preflight,
+    'requires an HMAC-authenticated request, canonical push signature, and push session mint',
+  );
+  assert.equal(extension.session.remote_site_id, 'remote-example');
+  assert.equal(extension.session.identity_hash, 'sha256:remote-identity');
+  assert.equal(extension.topology.networking.ingress_port, 8080);
+  assert.equal(extension.topology.networking.proxy_policy, 'local-only');
+  assert.equal(extension.topology.networking.tunnels, 'disallowed');
+  assert.ok(extension.topology.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.deepEqual(extension.required_invariants, [
+    'dry-run and apply are separate remote operations',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run is a receipt, not a lock',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
+    'pull exporter/importer establish the immutable base package before push',
+    'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+    'remote snapshot hash listing may page large sites but never becomes write authority',
+    'dry-run and apply stay separate even when the same runner executes both',
+    'recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair',
+    'the pull exporter/importer pipeline remains the only source of immutable push provenance',
+    'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    'stale dry-run evidence never becomes recovery authority',
+  ]);
+});
+
 test('push protocol fixture readme keeps the production ladder and topology bridge aligned', () => {
   assert.ok(
     protocolReadme.includes(
