@@ -3453,6 +3453,12 @@ Source-note proof boundary, restated:
 - Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress `55f9879` are
   historical design inputs here unless this branch rechecked the exact live
   mutation boundary on the same scenario and preserved the remote for audit.
+- Reprint proves staged pull delivery and resumability, not live source push
+  safety or stale-authority rejection on this branch.
+- ZS-Sync proves bounded scanning and resource discovery, not source-side
+  mutation, conflict policy, or late plugin-owned surface handling.
+- ForkPress proves merge auditability and reviewed-resolution vocabulary,
+  not this branch's live remote-preserving write path or retry authority.
 - Those revisions are provenance, not current safety proof: if the branch did
   not rerun the same drifted-remote case here, a source-note citation plus a
   production-shaped route still cannot claim live push safety.
@@ -3562,6 +3568,9 @@ Production release gate checklist:
   later write must keep the stale note audit-only unless the branch shows the
   exact live boundary, preserved remote, rejection point, and fresh retry
   scope for that later surface on this worktree.
+- Any source-note comparison that mentions Reprint, ZS-Sync, or ForkPress
+  must also say what the cited upstream state does not prove for this branch,
+  so historical context cannot be mistaken for current reliability proof.
 - Any source-note comparison that only proves the same feature family, route
   shape, or package mount must stay historical unless it also shows the same
   drifted live boundary on this branch; matching vocabulary is not enough to
