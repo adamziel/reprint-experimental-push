@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:59:06
+
+<a id="2026-05-25-public-status-audit-095906"></a>
+
+- Corrected the public page's newest-audit and latest-log references in
+  [progress.html](../progress.html) so the first screen points at the current
+  2026-05-25 09:59:06 entry instead of the older 09:45 log.
+- Kept the public status unchanged in substance: the runnable live-topology
+  proof is still the current material step, and the real executor/auth,
+  recovery journal, Docker/Playground, and plugin driver gates remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [newest audit](../progress.html#recent-public-audits),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 09:57:57
 
 <a id="2026-05-25-public-status-audit-095757"></a>
