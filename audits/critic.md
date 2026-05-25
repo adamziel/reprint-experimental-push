@@ -195,7 +195,8 @@ Source-note comparison boundary:
   plugin-owned write safety at apply time.
 - ForkPress at `55f9879` proves review and conflict vocabulary; it does not
   prove that a stale review artifact cannot be reused as write authority after
-  the remote drifts or that the remote is preserved for audit after reject.
+  the remote drifts, that remote-preserving retry is implemented here, or that
+  the remote is preserved for audit after reject.
 - None of those notes prove that a readable stale manual-review artifact is
   unusable as retry authority unless the remote stayed preserved and the next
   attempt rebuilt scope from fresh live evidence at the same live write
@@ -498,6 +499,9 @@ False-reliability claims that also need to stay out of production wording:
 - "The comparison proves it" is false unless the cited Reprint, ZS-Sync, or
   ForkPress note was reverified at the same live mutation boundary and against
   the exact upstream revision or worktree state named in the claim.
+- "ForkPress-style review safety" is false unless the proof shows this branch's
+  live mutation executor preserved the remote, rejected stale authority before
+  mutation, and kept the stale review artifact audit-only after drift.
 - "The comparison is current" is false unless the branch rechecked the exact
   cited upstream revision or worktree state against the same live write
   boundary; otherwise the note is historical context only.
