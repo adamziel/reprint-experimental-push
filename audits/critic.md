@@ -6020,6 +6020,16 @@ The design still has not closed the following production-grade gaps:
   stale-rejection, and fresh-retry evidence; route shape, package layout,
   reviewer wording, and fixture replay stay compatibility evidence only even
   when the note is precise; and
+- the conservative comparison rule is:
+  - Reprint notes can justify transport, staged delivery, or resumability
+    vocabulary, but they do not prove a live push executor, preserved remote,
+    or stale-drift rejection on this branch;
+  - ZS-Sync notes can justify discovery or cursoring vocabulary, but they do
+    not prove source-mutation safety, create-time remap handling, or
+    plugin-owned surface coverage here; and
+  - ForkPress notes can justify review or durability vocabulary, but they do
+    not prove retry authority, preserved-remote auditability, or
+    old/new/blocked classification on this branch; and
 - any "production-ready" or "manual resolution" wording is false reliability
   unless it names the exact drift case, the preserved remote, the rejection
   point before the first write, the fresh live-hash retry scope, and the

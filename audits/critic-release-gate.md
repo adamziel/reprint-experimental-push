@@ -87,6 +87,11 @@ False success to reject:
 - "scorecard proof" is not success if the claim points to a high design score
   in `docs/approach-scorecard.md`; that table is a heuristic, not evidence of
   a live boundary rejecting stale authority before mutation.
+- "manual resolution" is false reliability unless the same live boundary also
+  shows the preserved remote stayed inspectable after rejection, the stale
+  approval was rejected before the first write, the retry scope was rebuilt
+  from fresh live hashes, and every touched surface was classified old, new,
+  or blocked; a readable note by itself is audit evidence only.
 
 Checklist before any production-grade wording:
 
@@ -138,6 +143,16 @@ Anti-trap wording:
 - a readable review artifact can prove auditability, but it does not prove the remote was preserved, that stale authority was rejected before mutation, or that retry scope was rebuilt from fresh live hashes on this branch;
 - a source-note comparison to Reprint, ZS-Sync, or ForkPress is historical context only unless the exact upstream revision or worktree state is named and the same live boundary was rerun here; and
 - any later-discovered plugin-owned surface is a new boundary, not a continuation of the first write, until this branch shows its own preserve / reject / retry cycle with its own preserved remote, rejection point, and fresh retry artifact.
+
+Source-note bottom line:
+
+- Reprint can justify transport vocabulary, but not live push safety;
+- ZS-Sync can justify discovery vocabulary, but not source-mutation safety;
+- ForkPress can justify review or durability vocabulary, but not retry
+  authority; and
+- none of the three becomes current proof unless the exact upstream revision
+  or worktree state is named and this branch reran the same live boundary with
+  preserved-remote evidence and a fresh retry scope.
 
 Production-readiness language checklist:
 
