@@ -1343,22 +1343,26 @@ not route shape, package shape, or a plausible `finalMatchesLocal` result.
 
 - A live remote drifts after dry-run, but the claim only shows the same route
   still responds with the expected path and hash. Missing proof: the stale
-  approval was rejected before the first write and the remote stayed auditable.
+  approval was rejected before the first write, the exact rejected remote hash
+  pair is preserved, and the remote stayed auditable for a later retry.
 - A create path renumbers, aliases, or remaps identity after pull, but the
   claim treats the old mapping as stable. Missing proof: the remap was either
   proven against a fresh live snapshot or the push failed closed before any
-  mutation.
+  mutation, and the retry scope did not silently inherit the old identity.
 - A plugin owns options, custom tables, generated files, cron rows, cache,
   activation hooks, or other side effects outside the allowlist, but the
   claim treats the planner's coverage as exhaustive. Missing proof: the
-  surface was either discovered and validated or hard-blocked before write.
+  surface was either discovered and validated or hard-blocked before write,
+  with the rejection reason recorded for audit.
 - A push leaves mixed file, DB, or plugin side effects, but the claim reports
   success because one store finished cleanly. Missing proof: the old/new/
-  blocked classification is durable and the next retry starts from fresh live
-  evidence.
+  blocked classification is durable, the partial write is fenced or rolled
+  back where possible, and the next retry starts from fresh live evidence.
 - A manual-review artifact is still readable, but the live hashes changed and
   the retry reused the old approval anyway. Missing proof: the artifact is
-  audit-only after drift and cannot widen scope or authorize a new target.
+  audit-only after drift, cannot widen scope or authorize a new target, and
+  the preserved remote can still be audited without reviving the stale
+  permission.
 - A comparison to Reprint, ZS-Sync, or ForkPress sounds current because the
   path or package shape matches, but the upstream revision was not reverified.
   Missing proof: the cited upstream state was rechecked at the same live
@@ -1450,6 +1454,10 @@ would reasonably read as equivalent.
 - A copied lab route that happens to share the production pathname is still
   not production proof unless the same live write boundary was exercised on a
   drifted remote and revalidated immediately before mutation.
+- A route-shaped smoke, packaged-plugin mount, or fixture replay cannot prove
+  the executor is production-backed unless the proof also names the live write
+  boundary, the stale remote hashes, the rejected approval, and the preserved
+  remote snapshot.
 - A route-shape smoke, packaged-plugin mount, or `finalMatchesLocal` result
   must never be treated as proof of live remote safety, identity stability,
   plugin-owned side-effect safety, or durable recovery.
