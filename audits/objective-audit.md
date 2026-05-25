@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked-in command yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is that the current evidence still stops short of live-source release proof.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked-in command yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is that the current evidence still stops short of live-source release proof, so the release gate must stay closed.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -61,11 +61,11 @@ Evidence buckets used below:
 
 The tests do the right kind of negative work, but they are not positive release proof.
 
-- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) proves directionality, stale-plan refusal, and local mutation ordering. It does not prove lossless mutation on live WordPress storage.
-- [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) proves local journal integrity, redaction, restart classification, and recovery inspection. It does not prove crash durability on production storage or recovery across the live apply boundary.
-- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) proves the benchmark model carries safety gates and refuses to claim production throughput. It does not measure the live push path.
+- [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) proves directionality, stale-plan refusal, and local mutation ordering against in-memory/local fixtures. It does not prove lossless mutation on live WordPress storage.
+- [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) proves local JSONL journal integrity, redaction, restart classification, and recovery inspection. It does not prove crash durability on production storage or recovery across the live apply boundary.
+- [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) proves the benchmark model carries safety gates and refuses to claim production throughput. It does not measure the live push path, and it is not a performance result.
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the guarded benchmark can move staged buffers and row payloads through durable evidence while refusing unsupported throughput claims. It does not prove the live push path is fast or release-ready.
-- Playground smokes prove helper- and lab-scoped behavior, including authenticated and production-shaped routes. They still do not prove the live-source boundary.
+- Playground smokes prove helper- and lab-scoped behavior, including authenticated and production-shaped routes. They still do not prove the live-source boundary or production storage durability.
 - `npm test -- --test-reporter=spec` being green at `89/89` is regression evidence only. It does not certify no data loss, reliability, or speed on the live source boundary.
 
 ## Current Command Surface
