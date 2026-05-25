@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, but no checked-in command yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The missing `verify` / `verify:release` / `release` command surface is still structural context, but it is no longer the headline blocker after the reliable-executor updates. The precise blocker is that the current evidence still stops short of live-source release proof.
+Current top blocker, rechecked on 2026-05-25: the live release boundary is still not proven. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked-in command yet proves production auth/session lifecycle, durable journal semantics, graph identity mapping, and plugin-driver coverage on the real push path in one fail-closed invocation. The precise blocker is that the current evidence still stops short of live-source release proof.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -31,8 +31,8 @@ The objective implies these minimum release requirements:
 5. Prove production auth/session lifecycle, durable journal semantics, leases/fencing, graph identity, and plugin-driver behavior at the release boundary, not only in helper scripts or optional smokes.
 6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or storage abstraction that can satisfy tests without touching live source storage.
 7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one.
-8. Expose one required release command that fails closed when any safety gate is still lab-backed, fixture-only, benchmark-only, or missing live-source proof.
-9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
+8. Expose one required release command that fails closed when any safety gate is still lab-backed, fixture-only, benchmark-only, or missing live-source proof. Optional helpers are not enough.
+9. Wire that release command into CI or another enforced default entrypoint so a green run cannot bypass the safety matrix.
 
 ## Evidence Table
 
