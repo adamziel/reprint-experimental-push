@@ -166,6 +166,26 @@ has a concrete failure scenario:
   old, new, or blocked before retry can rebuild scope from fresh live hashes,
   or a mixed-write can be relabeled as success after the fact.
 
+Two comparison traps still need to be called out explicitly:
+
+- Reprint source notes only support staged transport and resumable pull
+  structure; they do not prove this branch's live push executor rejected a
+  drifted remote before the first write, preserved the remote for audit, or
+  kept a stale review artifact from becoming retry authority for a later
+  boundary.
+- ZS-Sync source notes only support bounded discovery and change scanning; they
+  do not prove create-time identity remapping, plugin-owned allowlist coverage,
+  or partial side-effect classification on a live mutation boundary.
+- ForkPress source notes only support reviewed-resolution vocabulary and
+  crash-consistency intent; they do not prove that a readable manual-review
+  artifact stays audit-only after drift, that late plugin-owned surfaces are
+  separately classified, or that the remote-preserving retry path is safe on
+  this branch.
+- Any comparison note that omits the exact upstream revision or worktree state
+  remains historical context even when the feature family matches. If the note
+  also omits the preserved remote, the stale rejection point, or the fresh
+  retry scope on this branch, it cannot be promoted into current proof.
+
 Before this branch can claim production-grade push support, the design must
 also prove all of the following on the live mutation boundary:
 
