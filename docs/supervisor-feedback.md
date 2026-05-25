@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 00:24 CEST
+Last updated: 2026-05-26 00:31 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 00:31 CEST - Reliable Proof Delta
+
+- `reliable-executor` now has a real proof delta and a clean non-force push: `c99b19d0` updates the release verifier to fail closed on missing credentials, adds a fast-fail fetch timeout, and rewrites `test/protocol-fixtures.test.js` to expect the structured drift JSON.
+- The latest follow-up is still not fully green: the targeted fixture run hit the environment timeout before a final TAP summary, so the proof is improved but not yet end-to-end closed.
+- `progress-publisher` stayed conservative and unchanged; no public page update was needed from its lane because the evidence delta is in the release proof, not the public summary surface.
+- Next nudge: ask `reliable-executor` to rerun `node --test test/protocol-fixtures.test.js` in a less time-constrained environment and report the final TAP result before treating the lane as passed.
+- Gate status: still closed; the patch is material, but the end-to-end fixture confirmation is still missing.
 
 ## 2026-05-26 00:24 CEST - Keep-Busy Swarm Check
 

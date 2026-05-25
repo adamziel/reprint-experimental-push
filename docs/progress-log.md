@@ -4,6 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 00:31:00
+
+<a id="2026-05-26-public-status-audit-003100"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the visible last-updated date aligned with the latest reliable-executor proof delta at `c99b19d0`. The first screen still stays conservative: release gates remain `0/4`, and production WordPress auth/session lifecycle plus durable journal storage with lease/fencing remain pending.
+- `c99b19d0` is the newest release-proof evidence: it fails closed with structured JSON for missing credentials, adds a 10s fetch timeout, and updates `test/protocol-fixtures.test.js` to expect the structured drift result. The targeted fixture rerun still needs a full end-to-end summary before this can be treated as passed.
+- Evidence trail: [progress.html](../progress.html), [release-gate checklist](../progress.html#proof-gates), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-25 - Public Status Audit 23:44:06
 
 <a id="2026-05-25-public-status-audit-234406"></a>
