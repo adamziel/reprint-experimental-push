@@ -28,6 +28,13 @@ The objective implies these minimum release requirements:
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
 9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
 
+Requirement mapping rule:
+
+- if a requirement is only proven in fixtures, Playground, or model code, it is not release proof
+- if a requirement is only described in prose, it is not release proof
+- if a requirement does not touch the live-source boundary in the same required invocation, it is not release proof
+- only executable proof at the live-source boundary can move a requirement out of the missing-proof or blocker bucket
+
 Release translation:
 
 - prose about a gate is not the gate
