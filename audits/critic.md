@@ -274,6 +274,9 @@ Release-gate checklist for production-readiness wording:
 - Name the exact live write path and the exact stale-remote drift case it
   survived; route shape, package layout, and `finalMatchesLocal` stay
   compatibility evidence only.
+- Name the exact live mutation boundary and the exact late-discovered
+  plugin-owned surface, if any, and show that the surface stayed blocked or
+  separately classified before any retry reused preserved remote state.
 - Name the exact source-note revision or worktree state being compared, and
   say whether this branch reverified that exact upstream state at the same
   live mutation boundary; otherwise the comparison is historical context
@@ -302,6 +305,10 @@ Release-gate checklist for production-readiness wording:
   drift, could not authorize a retry, and could not be widened into a new
   row, file, relationship-bearing record, plugin-owned surface, or hidden
   side effect.
+- Show that a late-discovered plugin-owned surface cannot be retrofitted into
+  a clean manual-resolution story after the first write; the proof must keep
+  the preserved remote, the blocked late surface, and the fresh retry scope
+  separate.
 - Show that any Reprint, ZS-Sync, or ForkPress comparison names the exact
   upstream revision or worktree state and the exact live write boundary that
   was reverified here; otherwise the comparison is historical context only,
