@@ -15,9 +15,11 @@ that live rerun on the real boundary.
 Any claim that `verify:release` is "production-shaped" or "production-ready"
 must fail closed until that live rerun exists on a real local, Playground, or
 Docker `REPRINT_PUSH_SOURCE_URL`.
-Branch-local script inventory still shows only `plan`, `apply`, `test`, and
-playground/recovery compatibility helpers in `package.json`; there is no
-named real-site release command on this branch yet.
+On this audit branch, the local script inventory still shows only `plan`,
+`apply`, `test`, and playground/recovery compatibility helpers in
+`package.json`; there is no named real-site release command on this branch
+yet. That is a branch-local gap, not a contradiction of the supervised
+reliable-executor lane.
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
@@ -50,6 +52,19 @@ What must change before production-grade wording is defensible:
   provenance-only unless they name the exact upstream state, state what each
   note proves here, state what it does not prove here, and are backed by a
   rerun of the same live boundary on this worktree.
+
+Comparison with the source notes stays conservative:
+
+- Reprint gives transport and staged-pull vocabulary, but it does not prove
+  this branch can preserve a rejected remote, fence stale authority, or
+  rerun live push on a WordPress source boundary;
+- ZS-Sync gives bounded discovery and batching vocabulary, but it does not
+  prove plugin-owned surface coverage, identity remapping, or retry-safe
+  handling of partial file, DB, and plugin side effects; and
+- ForkPress gives audit and crash-consistency vocabulary, but it does not
+  prove live remote preservation, a durable journal on this branch, leases or
+  fencing, or that later-discovered plugin-owned surfaces cannot inherit an
+  earlier approval.
 
 Current critic bar for this baseline:
 
