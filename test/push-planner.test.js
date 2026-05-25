@@ -15168,6 +15168,12 @@ test('durable no-data-loss recovery rejects mid-apply partial commits and keeps 
     current: partialRemote,
   });
   assert.equal(partialInspection.status, 'blocked-recovery');
+  assert.match(partialInspection.reason, /partial|partially updated/i, 'blocked inspect reason should describe the partial commit');
+  assert.equal(partialInspection.claim.status, 'none', 'blocked partial recovery should not fabricate claim state');
+  assert.equal(partialInspection.journal.integrity.status, 'ok', 'blocked partial recovery should keep journal integrity inspectable');
+  assert.equal(partialInspection.counts.old, 1);
+  assert.equal(partialInspection.counts.new, 1);
+  assert.equal(partialInspection.counts.blockedUnknown, 0);
 
   const completedJournalPath = tempRecoveryJournalPath();
   const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
