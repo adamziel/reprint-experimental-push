@@ -43,6 +43,11 @@ has a concrete failure scenario:
   retry authority for a different row, file, relationship-bearing record, or
   plugin-owned surface after drift; otherwise the claim hides a second-write
   data-loss mode behind “manual resolution” language;
+- a later-discovered plugin-owned surface must not be folded into the same
+  success story as the first write, even if the first write committed cleanly;
+  the proof has to keep the preserved remote, the blocked or classified late
+  surface, and the fresh retry scope separate, or the second write is a new
+  boundary with no production safety evidence;
 - "manual resolution" only counts when the remote is preserved for audit,
   the retry is recorded as a fresh artifact on this branch, and the stale
   approval cannot be widened to another row, file, relationship-bearing
@@ -226,6 +231,9 @@ Must-fix blockers before any production wording:
   second write against a late-discovered plugin-owned surface; the proof has
   to show that the late surface was blocked or separately classified before
   any retry continued.
+- A late-discovered plugin-owned surface must not be described as a harmless
+  continuation of an earlier success if the proof does not show a separate
+  rejection point, preserved remote, and fresh retry scope for that surface.
 - A readable stale manual-review artifact must not be described as "manual
   resolution" success if the remote was already drifted or the late surface
   was still unclassified; that wording hides a mixed-write loss mode unless
@@ -3278,6 +3286,9 @@ Minimum proof artifacts before any production-grade push wording:
    preserved for audit, the stale artifact was rejected before mutation, and
    the fresh retry artifact was recorded separately from the stale review
    artifact.
+9. A later-discovered plugin-owned surface is not rolled into the earlier
+   success claim; it has its own rejection point, preserved remote, and fresh
+   retry scope, or the write boundary is still unproven.
 
 False reliability claims to avoid:
 
