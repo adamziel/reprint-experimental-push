@@ -11002,6 +11002,61 @@ test('applies plugin-owned deletes when a matching independent edit, file type s
   assert.equal(result.site.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('applies plugin-owned deletes when remote-only plugin removals are present alongside a matching independent edit', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.plugins.seo = { version: '1.0.0', active: true };
+  base.files['wp-content/plugins/seo/seo.php'] = '<?php /* base seo */';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+      driver: 'wp-option',
+      allowDelete: true,
+    }),
+  };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['about.php'] = '<?php echo "shared about";';
+  delete remote.plugins.seo;
+  delete remote.files['wp-content/plugins/seo/seo.php'];
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const removedPluginDecision = decisionFor(plan, 'plugin:seo');
+  const removedPluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.action, 'delete');
+  assert.equal(mutation.changeKind, 'delete');
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(removedPluginDecision.decision, 'already-in-sync');
+  assert.equal(removedPluginDecision.change.localChange, 'delete');
+  assert.equal(removedPluginDecision.change.remoteChange, 'delete');
+  assert.equal(removedPluginFileDecision.decision, 'already-in-sync');
+  assert.equal(removedPluginFileDecision.change.localChange, 'delete');
+  assert.equal(removedPluginFileDecision.change.remoteChange, 'delete');
+  assert.equal(Object.hasOwn(result.site.db.wp_options, 'option_name:forms_settings'), false);
+  assert.equal(result.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(Object.hasOwn(result.site.plugins, 'seo'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/seo/seo.php'), false);
+});
+
 test('blocks plugin-owned deletes when matching independent delete, restore, and file type swap are present', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();

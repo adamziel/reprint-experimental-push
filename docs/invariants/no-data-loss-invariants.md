@@ -16,6 +16,9 @@ This note captures the planner boundary in plain language.
   independent file type swap and any unrelated matching row edit, with the
   safe resources remaining `already-in-sync` and remote-only plugin drift
   remaining `keep-remote`.
+- A plugin-owned delete may still coexist with matching independent edits and
+  unrelated remote-only plugin removals, as long as the delete keeps its live
+  remote hash check and the removed plugin stays preserved as `keep-remote`.
 - A file type swap that would hide a live remote descendant must still stop
   even when the remote side removed an unrelated plugin; the unrelated plugin
   removal stays `keep-remote` and the file-topology evidence stays bounded.
