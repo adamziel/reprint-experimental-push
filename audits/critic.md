@@ -7213,7 +7213,9 @@ Lead finding for the current release-proof claim:
 Exact next proof required from `25c4ef54`:
 
 - rerun `npm run test:playground:production-shaped-release-verify` against one
-  live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+  live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, and treat that
+  rerun itself as the proof command rather than as a wrapper label or setup
+  placeholder;
 - print the executor identity and auth/session boundary before the first
   write;
 - preserve the rejected remote so it remains inspectable after rejection;
@@ -7224,3 +7226,7 @@ Exact next proof required from `25c4ef54`:
   plugin-owned surface old, new, or blocked before retry starts; and
 - separately preserve, reject, and retry any later-discovered plugin-owned
   surface or remapped create target instead of widening the earlier proof.
+
+If the rerun cannot produce those facts from one executable command on one
+live source URL, the claim stays compatibility-only and no production-grade
+wording is allowed.
