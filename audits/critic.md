@@ -8,6 +8,9 @@ durable journal semantics, graph identity, and plugin-driver coverage on a
 real-site rerun. The old "no `verify:release` exists" critique is retired;
 the blocker now is that the retained-source command still does not move the
 proof onto a rerunnable live boundary with preserved-remote audit evidence.
+Any claim that `verify:release` is "production-shaped" or "production-ready"
+must fail closed until that live rerun exists on a real local, Playground, or
+Docker `REPRINT_PUSH_SOURCE_URL`.
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
@@ -273,6 +276,10 @@ one rerunnable live boundary, all of the following:
 - old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface before retry starts.
 
+The same boundary also has to preserve the rejected remote for audit after the
+first rejection. If the remote is not still inspectable afterward, the branch
+has not demonstrated safe retry, only a transient local success.
+
 If any later-discovered plugin-owned surface or remapped create target is not
 individually named in that live boundary, it is a new boundary, not covered by
 the earlier approval.
@@ -503,6 +510,15 @@ returned green. Missing proof: the remote was not preserved and auditable, the
 retry scope was not rebuilt from fresh live hashes, and the touched surfaces
 were not classified old, new, or blocked on the actual live boundary. In that
 case the wording must fail closed.
+
+Manual review artifacts are only audit context unless they also show:
+
+- the rejected remote remained inspectable after the first rejection;
+- the later retry scope was rebuilt from live hashes on this branch;
+- any later-discovered plugin-owned surface or remapped create target got its
+  own preserve / reject / retry cycle; and
+- the final outcome names which surfaces stayed blocked instead of quietly
+  inheriting the first approval.
 
 The same run also needs an explicit conflict-policy decision for every touched
 surface. Scenario: a reviewer says "manual resolution" without saying whether a
