@@ -225,12 +225,25 @@ The table below is strict by design:
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is refusal evidence, not approval evidence. That means a passing test can still be the wrong kind of proof: useful for blocking a bad claim, but still insufficient to approve the live-source release claim the objective requires.
 
+The practical consequence is simple:
+
+- The suite can prove that the project knows what it still cannot claim.
+- The suite cannot yet prove that a live-source push is safe to release.
+- A green run is therefore evidence of local consistency, not release readiness.
+
 That distinction is visible in the benchmark coverage:
 
 - [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js#L12-L254) proves the benchmark model keeps durable receipts, gate proofs, and backpressure rules intact, but it still only checks the model object. It does not time the live push path, touch a live source, or establish a measured release threshold.
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js#L35-L112) proves the benchmark refuses unsupported throughput claims and fails closed on tampering, but it still reports `productionThroughput: 'not-claimed'` and blocks the production claim because the production gaps are not measured.
 - [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js#L1-L200) proves append/restart behavior and recovery classification on local temporary files, but it does not exercise the live storage and transport path that a release would need.
 - [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js#L1-L220) proves planning and conflict handling on the local model, but it does not establish live-source apply-time rechecks or no-loss behavior on production data.
+
+Those tests are necessary, and they are good refusal evidence, but they still leave the release claims unproved:
+
+- No data loss remains unproven because there is no end-to-end test on the live source boundary that mutates the real storage path and then verifies every affected WordPress shape after the apply-time recheck.
+- Reliability remains unproven because crash, retry, replay, duplicate-request, stale-claim, lease-expiry, and restart cases are only demonstrated in fixtures, models, or lab routes.
+- Speed remains unproven because the benchmark surface explicitly says `productionThroughput: 'not-claimed'` and the gate only blocks unsupported claims instead of timing the live push path.
+- The release gate remains unproven because no checked-in command forces all of the release prerequisites together on every green run.
 
 That distinction matters for the objective itself:
 
