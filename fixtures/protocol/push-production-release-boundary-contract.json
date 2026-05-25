@@ -45,5 +45,23 @@
       "proxy_policy": "local-only",
       "tunnels": "disallowed"
     }
+  },
+  "execution_topology": {
+    "docker": {
+      "network": "one private network",
+      "route_names": "runner uses the same route names as Playground",
+      "sites": [
+        "remote-base",
+        "local-edited",
+        "remote-changed",
+        "runner"
+      ]
+    },
+    "playground": {
+      "blueprints": "separate disposable blueprints",
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    }
   }
 }

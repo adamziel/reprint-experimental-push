@@ -174,6 +174,15 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   assert.equal(releaseBoundary.boundary.live_source_gate.code, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.equal(releaseBoundary.boundary.first_remaining_production_boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
   assert.equal(releaseBoundary.boundary.first_remaining_production_boundary.durable_journal.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
+  assert.deepEqual(releaseBoundary.execution_topology.docker.sites, [
+    'remote-base',
+    'local-edited',
+    'remote-changed',
+    'runner',
+  ]);
+  assert.equal(releaseBoundary.execution_topology.docker.network, 'one private network');
+  assert.equal(releaseBoundary.execution_topology.playground.ingress_port, 8080);
+  assert.equal(releaseBoundary.execution_topology.playground.proxy_policy, 'local-only');
   assert.equal(
     releaseBoundary.pull_to_push_bridge.push_remote_snapshot_hash_listing,
     'reads the live remote comparison surface for planning only and never becomes write authority',
