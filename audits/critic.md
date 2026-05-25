@@ -11,7 +11,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 1. Production WordPress auth/session lifecycle is not proven on a live mutation boundary.
 2. Preserved-remote retention after rejection is not proven, so manual resolution is not auditable retry authority.
 3. Apply-time revalidation from fresh live hashes is not proven on the same mutation that produced the rejection, so stale approval can still masquerade as retry authority.
-4. Durable journal storage with lease/fencing is only proven in retained-source or lab harness form, not on production storage.
+4. Durable journal storage with lease/fencing is only proven in retained-source or lab harness form, not on production-like storage that survives rejection and retry.
 5. Graph identity under create-time remap is not proven for relationship-bearing WordPress rows and late-discovered records.
 6. Plugin-driver coverage is not proven for plugin-owned surfaces outside the initial allowlist.
 7. The design still leaves hidden-loss modes where partial file, DB, cache, cron, and plugin side effects can mix without a production recovery artifact that cleanly classifies what committed, what was blocked, what must remain preserved for audit, and what must be retried.
@@ -38,7 +38,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - Reprint source notes contribute staged transport and resumable-delivery lineage, but not live mutation safety, preserved-remote retry, or WordPress auth/session lifecycle proof on this branch.
 - ZS-Sync source notes contribute discovery and batching lineage, but not source-mutation safety, create-time remap safety, or plugin-owned surface coverage on this branch.
 - ForkPress source notes contribute audit and crash-consistency vocabulary, but not a live WordPress boundary with preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
-- The observed anchors in `docs/source-notes.md` are `27c5f25`, `d9334a0`, and `55f9879`; they are historical context only unless this branch reran the same live boundary with preserved-remote evidence, stale-authority rejection before the first write, and fresh live hashes.
+- The observed anchors in `docs/source-notes.md` are `27c5f25`, `d9334a0`, and `55f9879`; they are historical context only unless this branch reran the same live boundary with preserved-remote evidence, stale-authority rejection before the first write, fresh live hashes, and the same late plugin-owned surfaces.
 - If a comparison does not name the exact upstream state, say what it proves here, and say what it does not prove here, it stays provenance only and cannot be used as production proof by analogy.
 
 ## Changes required before production wording is defensible
@@ -73,7 +73,7 @@ The next acceptable proof is not another wording pass. It is a rerunnable live m
 - preserved rejected remote, still inspectable after refusal;
 - apply-time revalidation from fresh live hashes;
 - live WordPress auth/session lifecycle on the same request flow;
-- durable journal storage with lease/fencing on production-like storage;
+- durable journal storage with lease/fencing on production-like storage that remains inspectable after rejection;
 - graph identity under create-time remap and late-discovered relationship-bearing records; and
 - plugin-driver coverage for late plugin-owned surfaces outside the initial allowlist.
 
@@ -90,7 +90,7 @@ Before any doc or status line says "production-grade" or "release-ready", it mus
 - WordPress auth/session lifecycle that survives the real boundary, not just a lab-shaped session mint;
 - durable journal storage with lease/fencing on production-like storage;
 - graph identity for create-time remaps and late-discovered relationship-bearing records; and
-- plugin-driver coverage for any plugin-owned surface that appears outside the initial allowlist.
+- plugin-driver coverage for any plugin-owned surface that appears outside the initial allowlist on the same mutation boundary.
 
 Any claim that skips the live boundary, or replaces it with a retained-source harness or lab fixture, is still not production-grade.
 Any claim that relies on manual resolution, cached approval text, or a retained-source verdict without a rerunnable live boundary is false reliability.
