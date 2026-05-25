@@ -31,6 +31,15 @@ What still has to be shown before production wording is credible:
 - the exact live boundary and exact stale-drift case that was rerun here;
 - the exact rejection point before the first write;
 - preserved-remote evidence that stays inspectable after rejection;
+- production auth and session lifecycle proof against that same live boundary,
+  not just a route-shaped credential check;
+- durable recovery-journal semantics for retries, not just readable notes or
+  fixture-backed replay;
+- graph identity handling at apply time, including remapped create targets and
+  later-discovered relationship-bearing records;
+- plugin-driver coverage for any plugin-owned surface outside the allowlist,
+  including hidden tables, cron rows, runtime registries, generated files,
+  caches, serialized blobs, and plugin-owned files;
 - old/new/blocked classification for every touched file, DB row,
   relationship-bearing record, and plugin-owned surface before retry starts;
 - a separate preserve/reject/retry cycle for any later-discovered plugin-owned
