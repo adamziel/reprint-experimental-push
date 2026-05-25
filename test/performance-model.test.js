@@ -355,6 +355,9 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-row-preconditions')?.violates.includes('row-preconditions'),
   );
   assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-row-preconditions')?.violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-row-preconditions')?.violates.includes('atomic-groups'),
   );
   assert.equal(
