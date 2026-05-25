@@ -17356,7 +17356,7 @@ test('durable recovery inspect blocks live drift after a completed replay and ke
   );
 });
 
-test('the durable recovery boundary remains fail-closed until the release gate wires durable journal replay and recovery inspect into the release path', () => {
+test('the durable recovery boundary remains fail-closed until the release gate wires durable journal storage, replay, and recovery inspect into the release path', () => {
   const packageJson = JSON.parse(
     execFileSync('git', ['show', 'origin/lane/reliable-executor:package.json'], { encoding: 'utf8' }),
   );
@@ -17364,17 +17364,17 @@ test('the durable recovery boundary remains fail-closed until the release gate w
   assert.equal(
     packageJson.scripts['verify:release'],
     'npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
-    'release verification exists upstream, but it still does not prove durable recovery inspection or release-path recovery replay wiring',
+    'release verification exists upstream, but it still does not prove durable journal storage, recovery inspection, or release-path replay wiring',
   );
   assert.equal(
     packageJson.scripts['test:recovery:file-journal'],
     'node ./scripts/recovery/file-journal-restart-smoke.mjs',
-    'file-backed recovery journal smoke remains the executable durability proof currently available in this repo',
+    'file-backed recovery journal restart smoke remains the executable durability proof currently available in this repo',
   );
   assert.equal(
     packageJson.scripts['verify:release'].includes('production-shaped-live-protocol-proof'),
     false,
-    'the release gate still does not prove the live protocol path that carries durable journal replay and recovery-inspect semantics',
+    'the release gate still does not prove the live protocol path that carries durable journal storage, replay, and recovery-inspect semantics',
   );
   assert.equal(
     packageJson.scripts['verify:release'].includes('production-shaped-live-preflight'),
@@ -17384,7 +17384,7 @@ test('the durable recovery boundary remains fail-closed until the release gate w
   assert.equal(
     packageJson.scripts['verify:release'].includes('recovery:file-journal'),
     true,
-    'the release gate still only proves restart smoke, not durable recovery inspect or replay classification',
+    'the release gate still only proves restart smoke, not durable recovery inspect, durable storage, or replay classification',
   );
 
   const base = baseSite();
