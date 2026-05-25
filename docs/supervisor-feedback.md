@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 08:26:42 CEST
+Last updated: 2026-05-25 08:28:57 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 08:26:42 CEST - Supervisor Snapshot
+## 2026-05-25 08:28:57 CEST - Supervisor Snapshot
 
 - Going well: page, log, and audit note still agree on the blocked state.
 - Not going well: proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no evidence delta; the visible surfaces are tighter and easier to scan.
+- Progress change: no evidence delta; the visible surfaces are tighter and now point at the latest short note.
 - Next nudge: keep each lane on one proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
@@ -23,7 +23,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 Note: this lane-local page becomes live only after merge to `main`; GitHub Pages lags until then.
 
-Audit note: [audits/supervisor-note-20260525-082642.md](../audits/supervisor-note-20260525-082642.md) captures the latest alignment pass in one screen.
+Audit note: [audits/supervisor-note-20260525-082857.md](../audits/supervisor-note-20260525-082857.md) captures the latest alignment pass in one screen.
 
 <details>
 <summary>Earlier entries</summary>
