@@ -39,7 +39,8 @@ verification on 2026-05-25:
 - `npm run test:playground:production-shaped-push` passed against
   `/wp-json/reprint/v1/push/*`, applied 8 fixture mutations, replayed with zero
   fresh mutation work, rejected cross-route receipts before mutation, and
-  classified recovery as `fully-updated-remote`.
+  classified recovery as `fully-updated-remote` for the fixture route profile
+  only.
 - `npm run test:playground:production-plugin-package` passed with the temporary
   `reprint-push` plugin mounted as a normal plugin, the public lab namespace
   disabled, 8 fixture mutations applied, and the final visible fixture surface
