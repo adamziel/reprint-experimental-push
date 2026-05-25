@@ -1,40 +1,43 @@
 # No Data Loss Recovery Contract
 
-This lane treats atomic apply as a recovery protocol, not just a mutation step.
+This lane treats recovery as a three-state contract:
 
-## Acceptable end states
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery` with preserved artifacts
 
-Every apply attempt must end in one of these states:
+## Failure boundaries
 
-- `old-remote`: nothing was committed to the remote, and the journal is the
-  recovery artifact.
-- `fully-updated-remote`: all planned mutations are present, and the journal is
-  the recovery artifact.
-- `blocked-recovery`: the remote may be partially updated, but the failure is
-  fenced by inspectable artifacts.
+The allowed failure boundaries are:
 
-## Release blockers
+- before mutation
+- after staging
+- after dependency validation
+- after a completed plan has already been replayed
 
-A partial remote mutation without a recovery artifact is a blocker.
+Across those boundaries, the system must never invent success. A failure may
+leave the remote unchanged, may reveal that the remote is already fully
+updated, or may block recovery with inspectable artifacts.
 
-Retry logic must not:
+A partial remote mutation without a recovery artifact is a release blocker.
 
-- duplicate inserts,
-- resurrect stale local data,
-- treat a partial write as if it were safe,
-- reopen a completed plan that already matched the remote.
+## Retry rules
 
-## Durable journal expectations
+Retries must not:
 
-JSON fixtures and lab traces are useful evidence, but production recovery needs
-durable journal records with inspectable state transitions.
+- duplicate inserts
+- resurrect stale local data
+- treat partial writes without artifacts as safe
 
-The durable journal should preserve:
+If a retry cannot explain the remote state from the durable journal and the
+observed artifacts, it must stay blocked.
 
-- the opened plan record,
-- per-target planning records,
-- boundary records for staging and validation,
-- a final recovery-state or replay marker,
-- inspectable artifacts for blocked recovery.
+## Production note
 
-When a retry observes a completed plan, it must remain append-only and inert.
+The test suite in this lane uses JSON and temporary-file fixtures to prove the
+state machine. Production recovery still needs durable journal storage, flushed
+or fsynced writes, restart-readable inspection, and fencing so one writer owns
+the journal advance.
+
+If a partial remote mutation cannot be explained after restart, that is a
+release blocker.
