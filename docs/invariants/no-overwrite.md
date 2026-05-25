@@ -149,6 +149,9 @@ the resource key, the live remote hash observed during planning, and the
   rest of the plan only contains unrelated remote-only plugin drift. The
   planner must preserve the remote plugin changes and stop on the stale
   plugin-owned delete.
+- Plugin-owned deletions remain blocked even with explicit delete opt-in when
+  the remote removed the owning plugin and the local plan still touches that
+  owner context. The stale owner context wins over the unrelated safe edit.
 - Unrelated remote-only plugin drift does not make a stale plugin-context
   mutation safe. If local touches the same plugin's files or plugin-owned data,
   stop.

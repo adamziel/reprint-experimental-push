@@ -6991,6 +6991,44 @@ test('blocks plugin-owned rows with missing driver metadata while preserving rem
   assert.equal(blockerJson.includes('local-advanced'), false);
 });
 
+test('blocks plugin-owned deletes when the owner plugin was removed remotely even with an unrelated safe edit', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local ordinary edit";';
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+      driver: 'wp-option',
+      allowDelete: true,
+    }),
+  };
+  const remote = baseSite();
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const fileMutation = mutationFor(plan, 'file:index.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(fileMutation.action, 'put');
+  assert.equal(fileMutation.changeKind, 'update');
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blockerJson.includes('local ordinary edit'), false);
+  assert.equal(blockerJson.includes('forms_settings'), true);
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['index.php'], '<?php echo "base";');
+  assert.equal(remote.plugins.forms, undefined);
+});
+
 test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();
