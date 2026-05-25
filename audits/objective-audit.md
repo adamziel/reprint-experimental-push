@@ -7,18 +7,17 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `778f4c35`
+- `origin/lane/no-data-loss-invariants` -> `e42fe4ad`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/independent-auditor` -> `bfc25c4d`
 - `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/same-plan-wordpress-graph-create` -> `12183774`
 - `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `534d941b`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `895a7025`
-- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `63ebcc84`
+- `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-invariants` -> `e42fe4ad`
 - `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` -> `37d1cd8d`
 - `origin/main` -> `4b7b47a6`
 
@@ -31,10 +30,10 @@ but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now retries the release-proof port handling
   at `0c4fd10f`.
-- `origin/lane/no-data-loss-invariants` now blocks unsupported special file
-  entries at `778f4c35`. A separate cycle-branch proof at `63ebcc84` extends
-  that blocker coverage to socket-like special files and hard-link special
-  files, but it is not the primary lane head.
+- `origin/lane/no-data-loss-invariants` now blocks nav menu item graph
+  resources at `e42fe4ad`. A separate cycle-branch proof at `98c0ce26`
+  extends that blocker coverage to missing graph identity references, but it
+  is not the primary lane head.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
   production gate at `47b675c0` while preserving the earlier recovery
   evidence.
@@ -54,7 +53,7 @@ but it did not change the release conclusion:
   records the latest progress handoff at `895a7025`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
   surfaces at `69f27361`, including revision posts, menu/navigation posts,
-  serialized blocks, and thumbnail parent references. That is a better
+  serialized blocks, and thumbnail parent references. That is a stronger
   fail-closed proof, but it still stops short of release-grade live mutation
   evidence.
 
