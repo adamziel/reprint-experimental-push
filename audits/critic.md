@@ -107,6 +107,10 @@ reused after drift is not a review trail, it is an unsafe capability leak. The
 audit must show the stale artifact remains readable for inspection, is rejected
 before write, and cannot be widened to a different row, file, or plugin-owned
 surface on retry.
+The strongest false-positive pattern to avoid is a lab route that returns the
+right endpoint shape and a live-looking hash while still using fixture-backed or
+copied-lab internals; that only proves the wrapper answered, not that the live
+mutation boundary was exercised or that remote drift was checked before write.
 The same warning applies to plugin data traps that are easy to miss in review:
 plugin-owned options, custom tables, generated files, activation hooks, cron,
 and cache entries can all mutate outside the main post/page row plan. If any
@@ -247,6 +251,10 @@ any production-grade wording is defensible:
 - Name the preserved remote snapshot or hash set that made the stale approval
   auditable but unusable for apply.
 - Name the retry scope rebuilt from fresh live evidence after drift.
+- Name the concrete boundary that proves the wrapper was not the proof: the
+  exact request path, auth mode, and storage boundary that were exercised
+  against a drifted remote, not just a matching endpoint name or package
+  layout.
 - Name the exact request path and repo state used for the drifted-remote proof;
   a lab-shaped route or package mount is only compatibility evidence unless it
   exercised that exact boundary.
