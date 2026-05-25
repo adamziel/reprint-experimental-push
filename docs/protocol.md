@@ -174,6 +174,13 @@ The canonical production ladder bundle is `push-protocol-extension-contract.json
 - it preserves the one-way rule that pull provenance is immutable push input, not a mutable snapshot cache
 - it is the umbrella contract that pairs with `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json` so the one remote source, one imported local edit site, and one later drift observation stay explicit in both harnesses
 
+For review and test planning, the production proof stack is:
+
+1. `push-protocol-extension-contract.json` for the full production ladder.
+2. `push-production-pull-bridge-contract.json` for the immutable pull-to-push provenance bridge.
+3. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology plus dry-run/apply separation.
+4. `push-production-topology-contract.json` for the compact topology and provenance bundle.
+
 The bridge is machine-readable and stage-ordered:
 
 1. `push_preflight` binds the imported pull base package to one live remote identity and one short-lived push session.

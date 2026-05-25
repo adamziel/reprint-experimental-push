@@ -79,6 +79,13 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it preserves the one-way mapping from immutable pull provenance to mutable push execution
 - it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`, which are the compact one-remote, one-local, one-drift harness proofs for Docker and Playground
 
+For quick navigation, use this proof order:
+
+1. `push-protocol-extension-contract.json` for the full executor ladder.
+2. `push-production-pull-bridge-contract.json` for the exporter/importer to push bridge.
+3. `push-remote-liveness-topology-contract.json` for the liveness split on the one-remote, one-local topology.
+4. `push-production-topology-contract.json` for the compact production topology bundle.
+
 The bridge is reviewed in a fixed order:
 
 1. exporter/importer create the immutable pull base package.
