@@ -181,6 +181,9 @@ The machine-readable bridge is split across the fixtures:
 - `push-executor-topology-proof.json` is the compact executor proof that ties
   the pull provenance, push ladder, and topology together for the same
   one-remote, one-local, one-drift harness.
+- `push-production-revalidation-contract.json` is the compact production proof
+  that binds auth, push sessions, journal rows, lease fencing, and inspect-
+  first recovery to the same one-remote, one-local topology.
 - `push-production-push-recovery-contract.json` and
   `push-production-recovery-inspect-contract.json` are the production-shaped
   proof pair for auth, session minting, journal rows, lease fencing, apply

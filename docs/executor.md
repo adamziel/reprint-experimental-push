@@ -238,6 +238,8 @@ The harness contracts that pin that shape are:
   dry-run/apply liveness split
 - `push-production-topology-contract.json` for the compact production bundle
   that keeps the pull provenance, push stage sequence, and topology aligned
+- `push-production-revalidation-contract.json` for the auth, session, journal,
+  lease, and fencing proof that still requires inspect-first recovery
 - `push-production-push-recovery-contract.json` and
   `push-production-recovery-inspect-contract.json` for the production auth,
   session, journal, lease, and inspect-first recovery pair
