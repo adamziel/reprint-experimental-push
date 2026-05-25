@@ -17381,6 +17381,11 @@ test('the durable recovery boundary remains fail-closed until the release gate w
     false,
     'the release gate still does not wire the durable journal replay or inspect boundary into release verification',
   );
+  assert.equal(
+    packageJson.scripts['verify:release'].includes('test:playground:production-shaped-live-protocol-proof'),
+    false,
+    'the release gate still does not prove the live protocol path that carries durable journal replay and recovery-inspect semantics',
+  );
 
   const base = baseSite();
   const local = baseSite();
