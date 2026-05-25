@@ -88,16 +88,17 @@ from live hashes on this branch.
 Use the source notes only as design input:
 
 - Reprint proves staged pull delivery, resumability vocabulary, and transport
-  framing in the observed upstream commit. It does not prove live push safety,
-  stale remote drift rejection, preserved-remote auditability, create-time
-  identity remapping, or same-boundary live rerun evidence on this branch.
+  framing in the observed upstream commit. It does not prove that a live push
+  boundary here rejects stale remote drift before the first write, preserves
+  the drifted remote for audit, blocks create-time identity remap, or reruns
+  the same live boundary on this branch with fresh live hashes.
 - ZS-Sync proves bounded scanning, resource discovery, and batching ideas in
-  the observed upstream commit. It does not prove source mutation safety,
-  late-discovered plugin-owned surface coverage, partial-write recovery, or
-  same-boundary live rerun evidence on this branch.
+  the observed upstream commit. It does not prove that this branch enumerates
+  every plugin-owned surface before mutation, blocks late-discovered plugin
+  data traps outside the allowlist, or classifies partial file, DB, and plugin
+  side effects before retry.
 - ForkPress proves audit vocabulary, merge-review framing, and crash
-  consistency intent in the observed upstream commit. It does not prove the
-  live executor, retry authority, same-boundary live rerun evidence, or that a
-  readable manual-review artifact can safely authorize a different row, file,
-  relationship-bearing record, remapped create target, or plugin-owned surface
-  on this branch.
+  consistency intent in the observed upstream commit. It does not prove that a
+  readable manual-review artifact can authorize a later row, file,
+  relationship-bearing record, remapped create target, or plugin-owned
+  surface on this branch, or that the remote stayed preserved after rejection.

@@ -5482,6 +5482,11 @@ Production-grade release gate:
 - show any late-discovered plugin-owned surface was treated as a new boundary
   with its own preserve / reject / retry cycle, not folded into the earlier
   approval;
+- show any plugin-owned data trap outside the allowlist, including hidden
+  tables, cron rows, runtime registries, generated files, caches, serialized
+  blobs, and plugin-owned files, was enumerated before write or blocked as a
+  new boundary; otherwise the later discovery is not proof of production
+  safety;
 - show any readable manual-review artifact stayed audit-only after drift and
   could not authorize a later row, file, remapped create target, or plugin-
   owned surface; and
