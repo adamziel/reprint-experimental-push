@@ -29,13 +29,13 @@ production-grade push support here unless the same live boundary is runnable on
 this branch and the rejected remote remains auditable and retryable. If the
 only available proof is a retained-source or fixture replay, the claim must
 stay at "lab progress" rather than "production-ready." On this audit branch
-specifically, the gap is the absence of the named real-site release command and
-rerunnable live boundary; do not generalize that branch-local gap into a claim
-that the supervised lane lacks the command. The next acceptable proof is not
-another replay of the retained-source lane; it must be a live WordPress
-auth/session boundary with preserved-remote retention, apply-time
-revalidation, journal/recovery inspection, and exact preserved-remote retry
-evidence that can be rerun and audited from this branch.
+specifically, the gap is the absence of an independently rerun live boundary on
+this branch; do not generalize that branch-local gap into a claim that the
+supervised lane lacks the command. The next acceptable proof is not another
+replay of the retained-source lane; it must be a live WordPress auth/session
+boundary with preserved-remote retention, apply-time revalidation,
+journal/recovery inspection, and exact preserved-remote retry evidence that
+can be rerun and audited from this branch.
 
 ## Single strongest blocker
 
@@ -229,3 +229,21 @@ Before any production wording, the project must show:
   evidence unless it also proves live preserved-remote retention, apply-time
   revalidation, graph identity, plugin-driver coverage, and production
   WordPress auth/session lifecycle on the same live boundary.
+
+## Audit boundary for this branch
+
+This branch can only claim progress if it independently reruns the live
+boundary that the supervised reliable-executor lane has already refined. The
+remote lane's `verify:release` handoff is useful lab evidence, but it is not a
+substitute for this branch showing:
+
+- a live source URL and exact executable command here;
+- the same rejection point before the first write;
+- preserved-remote inspection after rejection;
+- apply-time revalidation on a fresh live hash set;
+- journal/recovery inspection that survives retry; and
+- plugin-driver and graph-identity proof on the same mutation.
+
+Without that branch-local rerun, the audit should continue to say "lab
+progress" and not "production-ready," even if the remote lane has already
+shown a stronger retained-source contract.
