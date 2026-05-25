@@ -15,11 +15,14 @@ This lane treats every apply outcome as one of three acceptable states:
    - A partial commit or remote drift was observed.
    - The recovery payload must carry both journal and remote artifacts so inspection can continue.
    - This state is the only acceptable outcome for a partial remote mutation.
+   - A stale completed replay also lands here instead of silently reapplying stale local data.
 
 Release blocker rule:
 
 - Any partial remote mutation without a recovery artifact is a blocker.
 - Retry logic must not treat a partially written state as safe, and it must not duplicate inserts on replay.
+- A completed replay must stay append-only and inert. If the remote has drifted since completion,
+  the retry must become `blocked-recovery` with artifacts rather than a fresh apply.
 
 Durable journal expectation:
 
