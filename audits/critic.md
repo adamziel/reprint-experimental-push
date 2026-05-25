@@ -23,7 +23,7 @@ Latest supervision evidence narrows the remaining gap, but does not close it:
 `origin/lane/feedback-supervisor` is at `f386dfa6`,
 `origin/lane/progress-publisher` is at `7695e1f9`,
 and `origin/lane/same-plan-wordpress-graph-create` is at `24c58564`,
-while the critic branch now matches `HEAD` at `a1c9714b` and is aligned with
+while the critic branch now matches `HEAD` at `70747eb4` and is aligned with
 `origin/lane/critic`.
 These moves refresh the audit snapshot but do not change the underlying
 verdict: production auth/session lifecycle, durable journal ownership with
