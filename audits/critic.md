@@ -163,6 +163,14 @@ Release-gate checklist for production-grade wording:
   source note proves, what it does not prove, and why it is historical
   context rather than current push proof on this branch.
 
+Do not accept any release-note or review wording as production-grade unless it
+also states whether the latest boundary is the same boundary as the earlier
+manual resolution, or a new one. If it is a new boundary, the earlier artifact
+is audit-only and cannot authorize apply, retry, or comparison success for the
+new row, file, relationship-bearing record, remapped create target, or
+plugin-owned surface until that later boundary also has its own preserved
+remote, stale rejection point, and fresh live-hash retry scope.
+
 Conservative comparison matrix:
 
 - Reprint `27c5f25` proves staged pull delivery, resumable transport, and
