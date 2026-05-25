@@ -103,6 +103,37 @@ test('push protocol extension contract pins the production ladder, bridge, auth 
   ]);
 });
 
+test('preflight and snapshot listing fixtures pin the live bind and planning-only hash surface', () => {
+  const preflight = readJson('fixtures/protocol/push-preflight-contract.json');
+  const snapshotListing = readJson('fixtures/protocol/push-remote-snapshot-listing-contract.json');
+  const dryRunRevalidation = readJson('fixtures/protocol/push-dry-run-apply-revalidation-contract.json');
+
+  assert.equal(preflight.contract_id, 'push-preflight-contract-one-remote-one-local');
+  assert.equal(preflight.pull_provenance.remote_site_id, 'remote-example');
+  assert.equal(preflight.live_binding.remote_site_id, 'remote-example');
+  assert.deepEqual(preflight.live_binding.requested_scope, ['files', 'database', 'plugins', 'themes']);
+  assert.equal(preflight.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(preflight.topology.docker_ingress_port, 8080);
+  assert.equal(preflight.topology.proxy_policy, 'local-only');
+  assert.ok(preflight.required_invariants.includes('preflight is the first live-remote binding step after importer provenance exists'));
+  assert.ok(preflight.required_invariants.includes('preflight does not authorize dry-run, apply, or recovery on its own'));
+
+  assert.equal(snapshotListing.contract_id, 'push-remote-snapshot-listing-contract-one-remote-one-local');
+  assert.equal(snapshotListing.snapshot_listing.pageable, true);
+  assert.equal(snapshotListing.snapshot_listing.complete, undefined);
+  assert.equal(snapshotListing.snapshot_listing.response.complete, false);
+  assert.ok(snapshotListing.snapshot_listing.evidence.includes('never upgrades into write authority'));
+  assert.ok(snapshotListing.required_invariants.includes('remote snapshot hash listing is planning evidence, not write authority'));
+  assert.ok(snapshotListing.required_invariants.includes('dry-run is a receipt, not a lock'));
+
+  assert.equal(dryRunRevalidation.contract_id, 'push-dry-run-apply-revalidation-contract-one-remote-one-local');
+  assert.equal(dryRunRevalidation.pull_handoff.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
+  assert.ok(dryRunRevalidation.apply_revalidation.rejected_if.includes('the remote changed after the dry-run receipt'));
+  assert.equal(dryRunRevalidation.journal_and_recovery.inspect_is_read_only, true);
+  assert.ok(dryRunRevalidation.required_invariants.includes('dry-run and apply are separate remote operations'));
+  assert.ok(dryRunRevalidation.required_invariants.includes('inspect is read-only and must happen before any mutating recovery'));
+});
+
 test('push protocol fixture readme keeps the production ladder and topology bridge aligned', () => {
   assert.ok(
     protocolReadme.includes(
