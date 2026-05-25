@@ -213,6 +213,24 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     'recovery-inspect',
     'recovery-mutate',
   ]);
+  assert.deepEqual(flow.topology.route_matrix.docker, {
+    preflight: 'preflight',
+    snapshot_hashes: 'snapshot-hashes',
+    dry_run: 'dry-run',
+    apply: 'apply',
+    journal: 'journal',
+    recovery_inspect: 'recovery-inspect',
+    recovery_mutate: 'recovery-mutate',
+  });
+  assert.deepEqual(flow.topology.route_matrix.playground, {
+    preflight: 'preflight',
+    snapshot_hashes: 'snapshot-hashes',
+    dry_run: 'dry-run',
+    apply: 'apply',
+    journal: 'journal',
+    recovery_inspect: 'recovery-inspect',
+    recovery_mutate: 'recovery-mutate',
+  });
   assert.ok(flow.lab_topology.live_drift.proof.includes('dry-run and apply remain separate remote operations'));
   assert.ok(flow.lab_topology.live_drift.proof.includes('apply revalidates fresh live evidence before every batch and again at the storage boundary'));
 });

@@ -51,6 +51,26 @@
       "proxy_policy": "local-only",
       "tunnels": "disallowed"
     },
+    "route_matrix": {
+      "docker": {
+        "preflight": "preflight",
+        "snapshot_hashes": "snapshot-hashes",
+        "dry_run": "dry-run",
+        "apply": "apply",
+        "journal": "journal",
+        "recovery_inspect": "recovery-inspect",
+        "recovery_mutate": "recovery-mutate"
+      },
+      "playground": {
+        "preflight": "preflight",
+        "snapshot_hashes": "snapshot-hashes",
+        "dry_run": "dry-run",
+        "apply": "apply",
+        "journal": "journal",
+        "recovery_inspect": "recovery-inspect",
+        "recovery_mutate": "recovery-mutate"
+      }
+    },
     "docker": {
       "network": "one private network",
       "proof": [
