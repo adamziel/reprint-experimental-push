@@ -1985,6 +1985,11 @@ Concrete failure scenarios that still need repo-local proof:
 - A manual-review artifact is still readable after drift. The missing proof is
   that the artifact remains audit-only, cannot widen scope, and cannot be used
   as current authority on retry.
+- A manual-review artifact can still be read after drift but is reused for a
+  different row, file, relationship-bearing record, or plugin-owned surface.
+  The missing proof is rejection before mutation, a preserved remote for
+  audit, and a retry that rebuilds scope from fresh live hashes instead of
+  inheriting the old approval.
 - A comparison note from Reprint, ZS-Sync, or ForkPress is treated as current
   because the route shape looks similar. The missing proof is the exact
   upstream revision or worktree state, plus a recheck at the same live write
