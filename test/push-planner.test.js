@@ -7359,6 +7359,7 @@ test('durable pre-commit failures keep boundary-specific journal evidence and co
   const plan = planFor(base, local, baseSite());
 
   for (const [label, options, expectedJournalStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
     ['after staging', { failAfterStaging: true }, 'staged'],
     ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
   ]) {
