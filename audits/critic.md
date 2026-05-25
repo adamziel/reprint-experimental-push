@@ -2754,7 +2754,8 @@ Production-readiness release gate checklist:
    rather than inheriting stale approval.
 7. Treat Reprint, ZS-Sync, and ForkPress notes as historical context unless
    the exact upstream commit or worktree state was reverified at the same
-   live mutation boundary for this repo's claim.
+   live mutation boundary for this repo's claim and the branch-local retry
+   or drift case was rerun here.
 8. Fail closed if the wording only cites route shape, packaged-plugin mount,
    fixture replay, or `finalMatchesLocal` without the live boundary proof
    above. A readable manual-review artifact is not enough unless the claim
@@ -2807,7 +2808,8 @@ False reliability claims to avoid:
 - "The comparison proves it" when the Reprint, ZS-Sync, or ForkPress note did
   not cite the exact upstream revision or worktree state, was not rechecked
   at the same live write boundary, or lacks the branch-local same-boundary
-  recheck.
+  recheck. A matching upstream state without a fresh branch-local live
+  boundary rerun is still historical context, not current authority.
 - "The plugin is handled" when the claim only covers the main row and not the
   complete plugin-owned surface list, including late-discovered side effects.
 - "Recovery succeeded" when only one store committed and the others were
