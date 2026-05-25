@@ -33,7 +33,7 @@ The objective implies these minimum release requirements:
 | Auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver | Optional smokes and benchmark fixtures cover pieces of the matrix | No single required command composes all of them at release time | Disconnected coverage cannot be promoted to a release gate |
 | Real remote/local topology | Some smokes exercise lab routes and local aliases | No checked-in required gate proves a real remote/local topology instead of a lab-backed route | Lab topology can satisfy tests while the live source remains unproven |
 | Speed claim or explicit refusal | Benchmark tests refuse unsupported throughput claims | No measured live-path speed result and no enforced `speed unclaimed` release command | Refusal-only evidence blocks overclaiming but does not release the speed claim |
-| Required release entrypoint | None | No `verify`, `release`, or `verify:release` script in `package.json` and no checked-in workflow here; the benchmark surface still reports `productionThroughput: 'not-claimed'` | Green optional runs can bypass the release decision entirely, so the repo still has no mandatory place where the live-source verdict, `speed unclaimed` refusal, or measured throughput result must appear |
+| Required release entrypoint | None | No `verify`, `release`, or `verify:release` script in `package.json`; this checkout also has no `.github/workflows/` gate, and the benchmark surface still reports `productionThroughput: 'not-claimed'` | Green optional runs can bypass the release decision entirely, so the repo still has no mandatory place where the live-source verdict, `speed unclaimed` refusal, or measured throughput result must appear |
 
 ## Proof Boundary
 
