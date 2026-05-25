@@ -1550,8 +1550,12 @@ The topology proof means:
 The machine-readable topology proof keeps those roles consistent. Use
 `push-protocol-extension-contract.json` for the full ladder,
 `push-pull-to-topology-contract.json` for the provenance bridge, and
-`push-topology-matrix.json` or `push-deployment-topology-contract.json` for
-the explicit Docker/Playground test topology.
+`push-production-topology-contract.json` for the production-shaped Docker
+and Playground harness. Use `push-topology-matrix.json` or
+`push-deployment-topology-contract.json` when you need the explicit
+Docker/Playground test topology. Use
+`push-production-journal-lease-recovery-inspect-contract.json` when you need
+the narrow journal and lease fence proof after the dry-run/apply split.
 
 ## Auth And Recovery
 

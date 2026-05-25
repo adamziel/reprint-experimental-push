@@ -123,7 +123,9 @@ The same production proof stack is reviewed in this order:
    split.
 6. `push-production-auth-session-journal-recovery-inspect-contract.json` for
    the auth/session/journal/lease/recovery-inspect floor.
-7. `push-production-executor-flow-contract.json` for the full end-to-end flow
+7. `push-production-journal-lease-recovery-inspect-contract.json` for the
+   narrow journal and lease fence proof.
+8. `push-production-executor-flow-contract.json` for the full end-to-end flow
    in one compact bundle.
 
 That topology is the same one-remote, one-local, one-drift proof in both

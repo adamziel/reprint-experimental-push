@@ -115,6 +115,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'push-production-journal-lease-recovery-inspect-contract.json` is the compact production proof for journal rows, lease fencing, and read-only recovery inspect after the dry-run/apply split.',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'The mapping from pull exporter/importer to push surfaces is explicit and',
     ),
   );
@@ -412,6 +417,7 @@ test('top-level extension contract pins the production ladder and topology split
   assert.ok(extension.required_invariants.includes('dry-run and apply are separate remote operations'));
   assert.ok(extension.required_invariants.includes('recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair'));
   assert.ok(extension.required_invariants.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.ok(extension.topology.proof.includes('journal inspect is read-only'));
 });
 
 test('production recovery drift contract keeps inspect-first recovery aligned after live drift', () => {
