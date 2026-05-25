@@ -13953,6 +13953,7 @@ test('keeps remote-only plugin changes while a live-preconditioned file delete, 
   base.files['about.php'] = '<?php echo "base about";';
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
   base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
   base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base post 2', post_status: 'publish' };
 
   const local = baseSite();
