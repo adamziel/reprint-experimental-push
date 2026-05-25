@@ -6476,6 +6476,11 @@ Comparison release gate:
   does not prove here, and the rerun status on this branch must fail closed,
   even if the route family, package layout, or reviewer wording matches the
   production path.
+- the observed anchors `27c5f25`, `d9334a0`, and `55f9879` are provenance
+  only; if this branch did not rerun the same live boundary with preserved-
+  remote evidence and a fresh retry scope, those anchors cannot be promoted
+  into retry authority, even when the route family or reviewer wording looks
+  identical.
 - any Reprint, ZS-Sync, or ForkPress note described only as historical
   context, compatibility evidence, or design lineage must stay in that class
   unless this branch reran the same live boundary with preserved remote
