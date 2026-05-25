@@ -5900,6 +5900,38 @@ test('mid-apply failure only leaves blocked recovery with artifacts, never a sil
   assert.equal(remote.db.wp_posts['ID:2'], undefined);
 });
 
+test('mid-apply failure on a later mutation keeps the earlier commit visible and still blocks recovery', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const remote = baseSite();
+  const remoteBefore = JSON.stringify(remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 2,
+    }),
+  );
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assertAcceptableRecoveryState(error.details.recovery);
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts?.journal, 'blocked recovery must keep journal artifacts');
+  assert.ok(error.details.recovery.artifacts?.remote, 'blocked recovery must keep remote artifacts');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(
+    error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+  );
+  assert.notEqual(JSON.stringify(remote), remoteBefore);
+  assert.equal(remote.files['index.php'], '<?php echo "local";');
+  assert.equal(remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+});
+
 test('durable mid-apply failure remains blocked on retry and preserves the partial-commit artifacts', () => {
   const base = baseSite();
   const local = baseSite();
