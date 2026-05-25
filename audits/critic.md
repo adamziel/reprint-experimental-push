@@ -627,7 +627,8 @@ Release gate for production wording:
 - A production-grade push claim must fail if "manual resolution" is used
   without the preserved remote, the rejection point, and the fresh retry
   artifact for the same live boundary, because that label can otherwise hide
-  a widened second boundary.
+  a widened second boundary to a different row, file, relationship-bearing
+  record, remapped create target, or later plugin-owned surface.
 - A production-grade push claim must fail if any touched row, file, relation-
   bearing record, or plugin-owned surface is left unclassified before retry
   scope is rebuilt.
