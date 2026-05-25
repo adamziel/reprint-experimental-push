@@ -814,6 +814,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install',
+    proposal: 'treat a compressed remote index plus cached row receipts as enough proof to skip plugin-install finalization',
+    rejectedBecause: 'planning evidence and cached row receipts can reduce replay work, but they cannot prove the dependency checks, metadata writes, or atomic-group commit survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-row-batch-completes-plugin-activation',
     proposal: 'treat a fresh remote index plus a compressed row batch as proof that plugin activation already finished',
     rejectedBecause: 'planning evidence and batch compression can reduce work, but they cannot prove the activation state change, per-row receipts, or the atomic-group commit survived failure',

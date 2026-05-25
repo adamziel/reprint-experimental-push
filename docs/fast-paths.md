@@ -560,6 +560,10 @@ under load:
 - remote-index-plus-compressed-row-batch-completes-plugin-install is rejected
   for the same reason, because install row batches still need per-row
   preconditions, dependency checks, and the atomic-group commit barrier.
+- compressed-remote-index-and-cached-row-receipts-skips-plugin-install is
+  rejected because planning evidence and cached row receipts can reduce replay
+  work, but they cannot prove the dependency checks, metadata writes, or
+  atomic-group commit survived failure.
 - compressed-row-batch-skips-batch-receipts is rejected because compression
   can lower queue pressure, but it cannot replace per-row receipts or the
   recovery record needed to classify a partial batch.
