@@ -8588,3 +8588,58 @@ test('the only acceptable recovery outcomes are old remote, blocked recovery, an
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
+
+test('no-data-loss recovery boundaries remain old remote, fully updated remote, or blocked recovery with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true }],
+    ['after staging', { failAfterStaging: true }],
+    ['after dependency validation', { failAfterDependencyValidation: true }],
+  ]) {
+    const remote = baseSite();
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+    assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Base post', label);
+    assert.equal(remote.db.wp_posts['ID:2'], undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  const staleReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  staleReplayRemote.files['index.php'] = '<?php echo "stale local";';
+  const staleReplay = captureError(() => applyPlan(staleReplayRemote, plan, { journal: completed.journal }));
+
+  assert.ok(staleReplay instanceof PushPlanError);
+  assert.equal(staleReplay.code, 'RECOVERY_BLOCKED');
+  assertAcceptableRecoveryState(staleReplay.details.recovery);
+  assertRecoveryStateArtifacts(staleReplay.details.recovery, 'blocked-recovery');
+  assert.ok(staleReplay.details.recovery.artifacts.remote, 'stale completed replay must keep remote artifacts');
+  assert.ok(staleReplay.details.recovery.artifacts.journal, 'stale completed replay must keep journal artifacts');
+  assert.equal(staleReplay.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
+  assert.equal(staleReplayRemote.files['index.php'], '<?php echo "stale local";');
+});
