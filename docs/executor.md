@@ -115,6 +115,12 @@ The lab identities for that proof are `remote-example` and `local-dev-site`.
 They let the executor point at one remote source, one imported local edit
 site, and the same remote identity again after drift.
 
+For the end-to-end protocol proof, use
+[`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json).
+It is the canonical object that binds preflight, remote snapshot hash
+listing, dry-run plan upload, batched apply, journal inspect, and
+inspect-first recovery to the pull/export/import provenance source.
+
 The machine-readable topology proof lives in
 [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json).
 It keeps the Docker and Playground shapes explicit without collapsing the

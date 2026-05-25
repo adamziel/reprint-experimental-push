@@ -179,6 +179,41 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology.playground.remote_base, 'remote-base');
   assert.equal(contract.topology.playground.local_edited, 'local-edited');
   assert.equal(contract.topology.playground.remote_changed, 'remote-changed');
+  assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
+  assert.deepEqual(protocolExtensionContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.push_snapshot_hashes,
+    'collects live comparison evidence for planning only and never becomes write authority',
+  );
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.push_plan_dry_run,
+    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.push_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping['push_recover inspect'],
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(protocolExtensionContract.push_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(protocolExtensionContract.topology.same_remote_identity, true);
+  assert.equal(protocolExtensionContract.topology.remote_base, 'remote-base');
+  assert.equal(protocolExtensionContract.topology.local_edited, 'local-edited');
+  assert.equal(protocolExtensionContract.topology.remote_changed, 'remote-changed');
+  assert.equal(protocolExtensionContract.topology.runner, 'runner');
+  assert.equal(protocolExtensionContract.lab_topology.remote_base.identity, 'remote-example');
+  assert.equal(protocolExtensionContract.lab_topology.local_edited.identity, 'local-dev-site');
+  assert.equal(protocolExtensionContract.lab_topology.remote_changed.identity, 'remote-example');
   assert.equal(topologyMatrix.push_pipeline.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
   assert.equal(topologyMatrix.push_pipeline.snapshot_hash_listing, 'returns the live remote comparison set for planning only');
   assert.equal(topologyMatrix.push_pipeline.dry_run_plan_upload, 'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock');
