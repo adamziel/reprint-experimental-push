@@ -8,9 +8,9 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `778f4c35`
-- `origin/lane/no-data-loss-recovery` -> `02506805`
-- `origin/lane/fast-paths` -> `c3812794`
-- `origin/lane/independent-auditor` -> `b60ececf`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
+- `origin/lane/fast-paths` -> `9be664b2`
+- `origin/lane/independent-auditor` -> `6f287623`
 - `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `12183774`
@@ -34,18 +34,18 @@ but it did not change the release conclusion:
   entries at `778f4c35`, and the newer `63ebcc84` proof extends that blocker
   coverage to socket-like special files and hard-link special files.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `02506805` while preserving the earlier recovery
+  production gate at `47b675c0` while preserving the earlier recovery
   evidence.
   `origin/lane/cycle-20260525-mainwindows-2349/no-data-loss-recovery` now
   tightens the durable journal inspect gate at `37d1cd8d`, but it still does
   not add production-backed journal ownership or replay proof.
 - `origin/lane/fast-paths` now tightens blocked production-claim diagnostics at
-  `c3812794` by failing closed on oversized chunk windows.
+  `9be664b2` by failing closed on oversized chunk windows.
 - `origin/lane/critic` now refreshes the critic handoff at `f8591f9d`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `b60ececf`.
+  `6f287623`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `534d941b`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
