@@ -2145,6 +2145,28 @@ Source-note comparison scoreboard:
   proof that this repo's live mutation executor preserves the remote, blocks
   stale authority, or keeps manual-review artifacts audit-only after drift.
 
+Production-grade push wording is still blocked unless the current evidence set
+proves all of the following in the same live write boundary:
+
+- a drifted remote was revalidated before the first write and stale authority
+  failed closed;
+- create-time identity remapping either had a durable remap proof or was
+  blocked before mutation;
+- plugin-owned state outside the allowlist was enumerated or hard-blocked,
+  including custom tables, generated files, cron rows, runtime registries, and
+  other late-discovered side effects;
+- mixed file, DB, or plugin side effects were durably classified as old, new,
+  or blocked instead of being treated as success by a single-store pass;
+- any manual-review artifact stayed auditable after drift but could not be
+  reused as retry authority or widened to a different row, file,
+  relationship-bearing record, or plugin-owned surface;
+- the claim names whether Reprint, ZS-Sync, or ForkPress source notes were
+  reverified at the cited upstream revision or worktree, and treats them as
+  historical comparison only if that recheck did not happen at the same live
+  mutation boundary;
+- route shape, package shape, fixture replay, and `finalMatchesLocal` are
+  treated as compatibility evidence only, not proof of the live executor.
+
 If any of those notes are cited in production-readiness language, the claim
 must also name the exact upstream revision or worktree state that was
 reverified at the same live mutation boundary. Otherwise the comparison is
