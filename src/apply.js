@@ -639,6 +639,7 @@ function recordDurableReplay(writer, remote, plan, recoveryState, journal = null
     });
     recordDurableTargets(writer, remote, plan, journal);
   }
+  recordDurableRecoveryState(writer, remote, plan, recoveryState);
   recordDurableBoundary(writer, 'journal-replayed', remote, plan, {
     state: recoveryState.status,
     reason: recoveryState.reason,

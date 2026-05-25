@@ -2578,6 +2578,7 @@ test('durable completed replay stays inert after local divergence and preserves 
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
   assert.equal(persisted.integrity.status, 'ok');
@@ -4104,6 +4105,7 @@ test('durable recovery boundaries stay within the acceptable recovery states', (
   assert.equal(replay.appliedMutations, 0);
   assertAcceptableRecoveryState(replay.recoveryState);
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -4407,11 +4409,7 @@ test('completed replay on a fresh durable journal persists a restart-inspectable
   assert.equal(persisted.integrity.status, 'ok');
   assert.deepEqual(
     persisted.records.map((record) => record.type),
-    [
-      'journal-opened',
-      ...plan.mutations.map(() => 'target-planned'),
-      'journal-replayed',
-    ],
+    ['journal-opened', ...plan.mutations.map(() => 'target-planned'), 'recovery-state', 'journal-replayed'],
   );
   assert.equal(persisted.records[0].state, 'replay-observed');
   assert.equal(targetRecords.length, plan.mutations.length);
@@ -4452,7 +4450,7 @@ test('completed replay on an existing durable journal keeps replay evidence appe
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.deepEqual(
     persisted.records.map((record) => record.type),
-    ['journal-opened', 'journal-replayed'],
+    ['journal-opened', 'recovery-state', 'journal-replayed'],
   );
   assert.equal(persisted.records[1].state, 'fully-updated-remote');
   assert.equal(persisted.records.some((record) => record.type === 'target-planned'), false);
@@ -4531,6 +4529,7 @@ test('completed replay on a durable journal stays inert after stale local drift 
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -5443,6 +5442,7 @@ test('durable completed replay ignores later local divergence and remains fully 
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
   assert.equal(staleLocal.files['index.php'], '<?php echo "stale-local";');
@@ -5552,6 +5552,7 @@ test('durable recovery stays within old remote, fully updated remote, or blocked
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -5582,6 +5583,7 @@ test('durable replay of a completed plan remains inert and keeps the recovery ma
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
   assert.equal(
@@ -5933,6 +5935,7 @@ test('durable completed replay stays inert and records the replay boundary witho
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
@@ -6253,6 +6256,7 @@ test('durable recovery boundaries preserve the same three acceptable post-failur
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -6286,6 +6290,7 @@ test('durable completed replay stays inert after local source divergence and doe
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -6520,6 +6525,7 @@ test('replaying a completed plan stays inert and reports fully updated recovery'
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -6574,6 +6580,7 @@ test('durable no-data-loss recovery keeps completed replay inert and stale compl
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -6609,6 +6616,7 @@ test('durable completed replay stays idempotent after the local source diverges'
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -6660,7 +6668,7 @@ test('durable recovery boundaries stay in old remote or fully updated remote wit
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.deepEqual(
     persisted.records.map((record) => record.type),
-    ['journal-opened', ...plan.mutations.map(() => 'target-planned'), 'journal-replayed'],
+    ['journal-opened', ...plan.mutations.map(() => 'target-planned'), 'recovery-state', 'journal-replayed'],
   );
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -6956,6 +6964,7 @@ test('durable completed replay stays inert when local source has stale inserts a
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -7091,6 +7100,7 @@ test('durable recovery contract keeps pre-commit failures old and completed repl
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -7216,7 +7226,7 @@ test('durable recovery outcomes stay within the contract across failure boundari
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.deepEqual(
     persisted.records.map((record) => record.type),
-    ['journal-opened', ...plan.mutations.map(() => 'target-planned'), 'journal-replayed'],
+    ['journal-opened', ...plan.mutations.map(() => 'target-planned'), 'recovery-state', 'journal-replayed'],
   );
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -7405,6 +7415,7 @@ test('durable recovery contract keeps the only acceptable post-failure states ac
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
@@ -7550,6 +7561,7 @@ test('durable no-data-loss recovery boundaries stay in the accepted post-failure
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(persisted.records[0].type, 'journal-opened');
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
   assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
 });
 
@@ -7707,7 +7719,9 @@ test('durable completed replay stays append-only across repeated retries and nev
   assert.deepEqual(recordTypes, [
     'journal-opened',
     ...plan.mutations.map(() => 'target-planned'),
+    'recovery-state',
     'journal-replayed',
+    'recovery-state',
     'journal-replayed',
   ]);
   assert.equal(
@@ -10788,7 +10802,7 @@ test('durable recovery contract keeps every boundary in the accepted states and 
   );
   assert.equal(
     replayPersisted.records.filter((record) => record.type === 'recovery-state').length,
-    completedPersisted.records.filter((record) => record.type === 'recovery-state').length,
+    completedPersisted.records.filter((record) => record.type === 'recovery-state').length + 1,
   );
   assert.equal(
     replayPersisted.records.filter((record) => record.type === 'apply-staged').length,
@@ -11351,7 +11365,7 @@ test('durable completed replay stays read-only and does not append fresh mutatio
   );
   assert.equal(
     persistedAfterReplay.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
-    persistedBeforeReplay.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length + 1,
   );
 });
 
@@ -14498,9 +14512,10 @@ test('completed replay keeps the durable journal replay-only and does not emit m
   assert.ok(eventTypes.includes('journal-completed'));
   assert.ok(eventTypes.includes('journal-replayed'));
   assert.equal(eventTypes.filter((type) => type === 'journal-replayed').length, 1);
-  assert.equal(replayStates.filter((record) => record.state === 'fully-updated-remote').length, 1);
+  assert.equal(replayStates.filter((record) => record.state === 'fully-updated-remote').length, 2);
   assert.equal(replayStates.some((record) => record.state === 'blocked-recovery'), false);
   assert.equal(afterReplayMutationObservations, beforeReplayMutationObservations);
+  assert.equal(persisted.records[persisted.records.length - 2].type, 'recovery-state');
 });
 
 test('completed replay stays idempotent when re-applied from the persisted completed journal', () => {
@@ -15634,7 +15649,7 @@ test('replaying a completed plan stays inert and does not duplicate inserts or r
   assert.equal(targetPlannedCountAfterReplay, targetPlannedCountBeforeReplay);
   assert.equal(completedCountAfterReplay, completedCountBeforeReplay);
   assert.equal(replayedCountAfterReplay, replayedCountBeforeReplay + 1);
-  assert.equal(recoveryStateCountAfterReplay, recoveryStateCountBeforeReplay);
+  assert.equal(recoveryStateCountAfterReplay, recoveryStateCountBeforeReplay + 1);
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
@@ -17980,5 +17995,9 @@ test('replaying a completed plan stays fully updated and does not resurrect stal
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(persisted.records.filter((record) => record.type === 'journal-replayed').length, 1);
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote').length,
+    2,
+  );
   assert.equal(persisted.records.filter((record) => record.type === 'journal-completed').length, 1);
 });
