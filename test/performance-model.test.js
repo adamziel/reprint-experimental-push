@@ -202,9 +202,21 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   const model = buildBenchmarkModel();
   const rejectedById = new Map(model.rejectedFastPaths.map((fastPath) => [fastPath.id, fastPath]));
   const rejectedAreas = new Set(model.rejectedFastPaths.map((fastPath) => fastPath.violates).flat());
+  const safeAreas = new Set(model.safeFastPaths.map((fastPath) => fastPath.area));
 
   assert.ok(model.safeFastPaths.length > 0);
   assert.ok(model.rejectedFastPaths.length > 0);
+  for (const area of [
+    'file-hashing',
+    'chunk-upload',
+    'database-row-batching',
+    'remote-indexes',
+    'compression',
+    'parallelism-limits',
+    'backpressure',
+  ]) {
+    assert.ok(safeAreas.has(area), `missing safe-path coverage for ${area}`);
+  }
   assert.ok(
     model.safeFastPaths.every((fastPath) =>
       fastPath.gateProofs &&
@@ -287,12 +299,20 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'live',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers')?.rejectedGate,
     'group',
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause')?.rejectedGate,
     'group',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-upload')?.rejectedGate,
+    'recovery',
   );
   for (const area of [
     'file-hashing',
