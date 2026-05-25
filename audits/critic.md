@@ -3254,6 +3254,11 @@ Source-note proof boundary, restated:
   was rejected before mutation, cannot widen to another row, file,
   relationship-bearing record, plugin-owned surface, or hidden side effect,
   or was separated from fresh retry authority backed by new live hashes.
+- Production-grade wording must also fail closed when a production-shaped
+  route or packaged mount is used as a proxy for current proof. Route family
+  compatibility does not show the live executor rejected stale authority,
+  preserved the remote for audit, or rebuilt retry scope from fresh live
+  hashes on this branch.
 - Production-grade wording must also fail closed when that same stale
   manual-review artifact is reused to justify a later plugin-owned surface
   such as a cron row, cache entry, runtime registry, generated file, custom
