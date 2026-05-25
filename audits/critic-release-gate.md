@@ -4,6 +4,7 @@ This note is a compact checklist for any wording that might claim production-gra
 
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
 
+- `REPRINT_PUSH_SOURCE_URL` is supplied from a real local, Playground, or Docker source and is used by a live preflight/release command, not just a setup placeholder;
 - a single executable real-site preflight/release command is named and can be rerun on demand; this repo currently exposes only `plan`, `apply`, `test`, and `test:playground:*` in `package.json`, so route-smoke scripts, authenticated smokes, and fixture-shaped lab runs remain compatibility checks only unless they are explicitly the real-site release command and prove the live boundary end to end;
 - if the repo only exposes lab and playground entry points (`plan`, `apply`, and `test:playground:*`), production wording must fail closed until a named real-site release command exists, can be rerun on an actual remote, and produces preserved-remote evidence for the rejected boundary;
 - if there is no named real-site release command yet, that missing command is the primary blocker; lab-shaped success cannot be promoted into production wording by route shape, fixture replay, or review-artifact polish;
@@ -14,6 +15,7 @@ Do not use production wording unless the branch has all of the following for the
 - the exact stale-drift case is named and rerun here, not inferred from a route-shaped smoke, fixture replay, or copied mount;
 - the remote that drifted is preserved, still inspectable after rejection, and treated as audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
 - the stale approval or review artifact is rejected before the first write and cannot become retry authority for any later row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
+- the first real executor/auth/preserved-remote boundary is recorded by the live preflight command itself, not inferred from a smoke label, env placeholder, or review note;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified old, new, or blocked before retry starts, so mixed file/DB/plugin side effects cannot be relabeled as success; and
 - any later-discovered plugin-owned surface or remapped create target is a new live boundary unless it was already enumerated before write and separately preserved, rejected, and retried.
 

@@ -6,6 +6,12 @@ Primary finding: this branch still does not expose a single named real-site
 preflight/release command that can be rerun against an actual remote and
 prove the live boundary end to end.
 
+Setup-only gate: a missing `REPRINT_PUSH_SOURCE_URL`, a placeholder local
+Playground, or a Docker-only source URL is still just setup. Until one command
+uses a real local/Playground/Docker `REPRINT_PUSH_SOURCE_URL`, runs the live
+preflight, and records the first executor/auth/preserved-remote boundary, it
+does not count as production proof.
+
 Scenario: an operator sees a green `plan`, `apply`, or `test:playground:*`
 result and assumes production safety. Missing proof: there is still no branch-
 local executable that reruns the exact live boundary, preserves the rejected
