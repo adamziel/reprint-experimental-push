@@ -24,8 +24,10 @@ Relevant evidence:
 Design implication for push: keep the transport resumable and chunked, but do
 not mirror pull blindly. Push mutates the source, so each chunk needs a compare
 precondition, rollback story, and audit record. This is a design requirement,
-not proof that any live mutation boundary is already safe or that staged pull
-behavior alone covers drift, partial write, or identity-remap failure modes.
+not proof that any live mutation boundary is already safe. The Reprint pull
+pipeline does not prove this branch rejects stale remote drift before the first
+write, preserves the remote for audit, classifies later-discovered plugin-owned
+surfaces, or handles create-time identity remap at apply time.
 
 ## ZS-Sync
 
@@ -45,8 +47,9 @@ Relevant evidence:
 Design implication for push: ZS-Sync's scanner/resource model is useful for
 detecting what changed since the pull base, but Reprint push needs source-site
 mutation and conflict policy. The scanner is input to planning, not the whole
-push solution, and it does not prove stale-authority rejection, create-time
-remap handling, plugin-owned coverage, or partial-side-effect classification.
+push solution. It does not prove stale-authority rejection, live remote-drift
+handling, create-time remap safety, plugin-owned surface enumeration, or
+partial-side-effect classification on this branch.
 
 ## ForkPress
 
@@ -71,5 +74,24 @@ Design implication for push: ForkPress has the strongest source-note model for
 merge auditability and crash consistency. Reprint push should borrow the
 invariants, not necessarily the full COW branch runtime. That comparison is
 still historical unless the exact upstream state and the live mutation
-boundary were reverified here, and it does not prove the live executor or
-manual-resolution safety on this branch.
+boundary were reverified here. It does not prove the live executor, preserved
+remote retention after rejection, stale-review rejection, or manual-resolution
+safety for a later boundary on this branch.
+
+## Comparison Boundaries
+
+Use the source notes only as design input:
+
+- Reprint proves staged pull delivery, resumability vocabulary, and transport
+  framing in the observed upstream commit. It does not prove live push safety,
+  stale remote drift rejection, preserved-remote auditability, or create-time
+  identity remapping on this branch.
+- ZS-Sync proves bounded scanning, resource discovery, and batching ideas in
+  the observed upstream commit. It does not prove source mutation safety,
+  late-discovered plugin-owned surface coverage, or partial-write recovery on
+  this branch.
+- ForkPress proves audit vocabulary, merge-review framing, and crash
+  consistency intent in the observed upstream commit. It does not prove the
+  live executor, retry authority, or that a readable manual-review artifact can
+  safely authorize a different row, file, relationship-bearing record,
+  remapped create target, or plugin-owned surface on this branch.
