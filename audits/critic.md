@@ -568,6 +568,18 @@ What each note proves, and what it does not:
   the rejected remote, or become retry authority for a remapped create target
   or plugin-owned surface.
 
+For any of those notes to matter here, the comparison must name the exact
+upstream commit or worktree state, the exact live boundary on this branch,
+and the exact gap that remains unproven here. If the note does not say which
+of the following it covers, it is only historical context:
+
+- Reprint does not cover preserved-remote auditability, create-time identity
+  remap safety, or plugin-owned surface retries on this branch;
+- ZS-Sync does not cover production auth/session lifecycle, durable journal
+  semantics, or plugin-owned data traps hidden outside the allowlist; and
+- ForkPress does not cover live retry authority, remote preservation after
+  rejection, or manual-resolution notes that must be auditably replayable.
+
 Any production wording that cites these notes must also name the exact cited
 upstream state, the exact live boundary rerun on this branch, the preserved
 remote, and the retry scope rebuilt from live hashes. If it cannot do that,
