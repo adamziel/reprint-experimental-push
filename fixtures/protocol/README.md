@@ -59,7 +59,8 @@ The normal production sequence is:
 51. `push-production-pull-bridge-contract.json`
 52. `push-production-journal-lease-recovery-inspect-contract.json`
 53. `push-production-executor-flow-contract.json`
-54. `push-protocol-extension-topology-contract.json`
+54. `push-production-route-matrix-contract.json`
+55. `push-protocol-extension-topology-contract.json`
 
 That sequence is intentionally split into three production phases:
 
@@ -227,6 +228,9 @@ identity across `remote-base` and `remote-changed`:
   `push-production-topology-contract.json` when you need the immutable pull
   provenance bridge and the production-shaped one-remote, one-local, one-drift
   harness in a single review path.
+- `push-production-route-matrix-contract.json` is the compact proof that
+  combines the bridge and the Docker/Playground route matrix for the same
+  one-remote, one-local, one-drift harness.
 - `push-production-executor-flow-contract.json` is the compact end-to-end
   production bundle for the pull handoff, preflight, planning-only hash
   listing, dry-run receipt, batched apply, journal inspect, and inspect-first

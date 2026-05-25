@@ -209,6 +209,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     ),
   );
   assert.ok(
+    protocolReadme.replace(/\s+/g, ' ').includes(
+      'push-production-route-matrix-contract.json` is the compact proof that combines the bridge and the Docker/Playground route matrix for the same one-remote, one-local, one-drift harness.',
+    ),
+  );
+  assert.ok(
     protocolReadme.includes(
       'push-production-journal-lease-recovery-inspect-contract.json` is the compact production proof for journal rows, lease fencing, and read-only recovery inspect after the dry-run/apply split.',
     ),
@@ -218,6 +223,22 @@ test('push protocol fixture readme keeps the production ladder and topology brid
       'The mapping from pull exporter/importer to push surfaces is explicit and',
     ),
   );
+  const routeMatrix = readJson('fixtures/protocol/push-production-route-matrix-contract.json');
+  assert.equal(routeMatrix.contract_id, 'push-production-route-matrix-contract-one-remote-one-local');
+  assert.deepEqual(routeMatrix.stage_order, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(routeMatrix.route_matrix.docker.preflight, 'preflight');
+  assert.equal(routeMatrix.route_matrix.playground.recovery_mutate, 'recovery-mutate');
+  assert.equal(routeMatrix.topology.networking.ingress_port, 8080);
+  assert.equal(routeMatrix.topology.networking.proxy_policy, 'local-only');
+  assert.equal(routeMatrix.topology.networking.tunnels, 'disallowed');
   assert.ok(
     executorDocs.includes('## Canonical Proof Set'),
   );
