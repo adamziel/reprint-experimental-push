@@ -6,6 +6,87 @@ that keeps pull provenance immutable, separates planning from mutation,
 revalidates the live remote identity at apply time, and keeps the dry-run and
 apply liveness split explicit.
 
+## Canonical Extension
+
+The production push protocol is a fixed ladder:
+
+1. Exporter/importer create and persist the immutable pull base package.
+2. `push_preflight` binds that package to one live remote identity and one
+   short-lived push session.
+3. `push_snapshot_hashes` lists the live remote comparison surface for
+   planning only.
+4. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+6. `push_journal` records durable evidence without authorizing mutation.
+7. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+8. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe with the same auth floor as the write path.
+
+The push executor consumes the pull pipeline in the same order:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable handoff object push consumes
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning evidence only
+- `push_plan_dry_run` is an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary
+- `push_journal` is read-only durable evidence
+- `push_recover inspect` is read-only and must happen before any mutating
+  repair
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe and the auth floor still holds
+
+Authentication is intentionally conservative:
+
+- push auth must be at least as strict as current Reprint HMAC usage
+- preflight mints a short-lived session but does not grant mutation authority
+- dry-run is a receipt, not a lock
+- apply must revalidate fresh live evidence after dry-run and before every
+  storage boundary commit
+- journal inspect is read-only and never authorizes mutation by itself
+- mutating recovery is fenced by fresh live hashes and the journal row claim
+  and lease evidence
+
+The canonical test topology is one remote source, one imported local edit
+site, and one later drift observation of the same remote identity:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
+The machine-readable proof bundle is layered around that same ladder:
+
+- `push-protocol-extension-contract.json` is the umbrella production proof
+- `push-production-pull-bridge-contract.json` proves the immutable
+  exporter/importer handoff into the push path
+- `push-remote-snapshot-listing-contract.json` proves planning-only remote
+  hash listing
+- `push-production-revalidation-contract.json` proves dry-run separation and
+  apply-time revalidation
+- `push-production-auth-session-journal-recovery-inspect-contract.json` proves
+  the auth/session/journal/recovery floor
+- `push-production-push-recovery-contract.json` proves the full preflight
+  through mutating recovery ladder
+- `push-production-recovery-inspect-contract.json` proves inspect-first
+  recovery stays aligned with the journal row, lease fence, and fresh live
+  hashes
+- `push-remote-liveness-topology-contract.json` proves the one-remote,
+  one-local, one-drift harness plus the liveness split
+- `push-production-topology-contract.json` proves the Docker and Playground
+  harness shape
+
 ## Canonical Production Contract
 
 The production push ladder is fixed and should be read in this order:

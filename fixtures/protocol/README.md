@@ -160,6 +160,21 @@ identity across `remote-base` and `remote-changed`:
   journal rows, lease fencing, and inspect-first recovery path so the same
   proof covers dry-run, apply, and recovery.
 
+The fixed production ladder is:
+
+1. Exporter/importer create and persist the immutable pull base package.
+2. `push_preflight` binds that package to one live remote identity and one
+   short-lived push session.
+3. `push_snapshot_hashes` is planning evidence only.
+4. `push_plan_dry_run` returns an eligibility receipt, not a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and at
+   the storage boundary.
+6. `push_journal` records durable evidence without authorizing mutation.
+7. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+8. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe with the same auth floor as the write path.
+
 The compact topology proof pair for review is:
 
 - `push-deployment-topology-contract.json` for the Docker and Playground
