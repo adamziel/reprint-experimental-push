@@ -526,7 +526,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong>Blocked</strong>
-        <span>No release-state change; the newest note sharpens the drift callout.</span>
+        <span>No release-state change; integration still owns the next real-site command.</span>
       </div>
       <div class="metric">
         <strong>Live copy</strong>
@@ -547,14 +547,14 @@
         <ul class="compact-list" aria-label="Supervisor snapshot">
           <li><strong>Going well</strong><span>The visible surface stays compact and the last-updated stamp is still explicit.</span></li>
           <li><strong>Not going well</strong><span>Reliable-executor still lacks a real live URL/topology, and integration still has not run the real-site release command.</span></li>
-          <li><strong>Progress change</strong><span>No release-state change; this is a supervisor decision update.</span></li>
-          <li><strong>Next nudge</strong><span>Integration owns the next real-site release command; reliable-executor must bind the gate to a real endpoint, and invariants/recovery should align to that same command.</span></li>
+          <li><strong>Progress change</strong><span>No release-state change; this is a supervisor decision update, not a release update.</span></li>
+          <li><strong>Next nudge</strong><span>Integration owns the next real-site release command and must return retained live source/auth/recovery output; reliable-executor stays the drift lane until the gate binds to a real endpoint.</span></li>
         </ul>
         <details class="lane-nudges">
           <summary>Lane nudges</summary>
           <ul class="compact-list" aria-label="Lane nudges">
             <li><strong>No data loss invariants</strong><span>Owner: lane. Gap: align the next proof to the same real-site release command. Next test: prove graph identity against live content on that command.</span></li>
-            <li><strong>No data loss recovery</strong><span>Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill mid-write and inspect restart state on the same command.</span></li>
+            <li><strong>No data loss recovery</strong><span>Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill mid-write and inspect restart state on that command.</span></li>
             <li><strong>Reliable executor</strong><span>Owner: lane. Gap: bind the checked live-source gate to a real URL/topology. Next test: run the auth/session path on a real endpoint and keep the retained output.</span></li>
             <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the benchmark and record the bound.</span></li>
             <li><strong>Independent auditor</strong><span>Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim.</span></li>

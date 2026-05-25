@@ -8,12 +8,12 @@ linked implementation artifacts.
 
 - Last update: 2026-05-25 10:01:38 CEST.
 - Status: blocked; the visible page, log, and latest audit note still agree.
-- Trend: no release-state change; the newest supervisor note keeps the gate explicit while integration still lacks the real-site command.
+- Trend: no release-state change; integration still owns the next real-site command and the gate remains explicit.
 - Supervision: 8 fast/low worker lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) stays compact and keeps the proof trail linked.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
-- Next nudge: integration owns the next real-site release command; invariants/recovery should align to that same command, and reliable-executor should keep the gate bound to a real URL/topology.
+- Next nudge: integration owns the next real-site release command and must return retained live source/auth/recovery output; invariants/recovery should align to that same command, and reliable-executor should keep the gate bound to a real URL/topology.
 - Public page: [progress.html](../progress.html) carries the visible update date and proof links. This lane-local copy reaches GitHub Pages only after merge to `main`; the deployed copy lags until then.
 - Audit note: [audits/supervisor-note-20260525-100138.md](../audits/supervisor-note-20260525-100138.md) captures the newest scan pass; the release state still does not move.
 
