@@ -203,6 +203,10 @@ or comparison-only.
   looking hash stand in for proof that the remote stayed preserved, the stale
   authority was rejected before mutation, and the retry rebuilt scope from
   fresh live hashes.
+- The claim does not let a comparison note that only proves provenance stand
+  in for proof of the preserved remote, rejection point, or fresh retry
+  scope; if it was not re-run on this branch against the same stale-remote
+  case, it also cannot prove late plugin-owned surfaces stayed blocked.
 - The claim does not treat matching route shape plus a green lab smoke as
   evidence of production safety if the underlying path never revalidated the
   live remote or the hidden plugin-owned surface at apply time.

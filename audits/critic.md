@@ -3391,7 +3391,10 @@ Source-note proof boundary, restated:
   side effects.
 - A correct upstream commit or worktree state is provenance, not current
   authority. If the branch did not re-run the same live drift, retry, or
-  create-time identity case here, the comparison must stay historical.
+  create-time identity case here, the comparison must stay historical. A
+  comparison note that never revalidated the exact live boundary on this
+  branch cannot prove the preserved remote, the rejection point, the fresh
+  retry scope, or the treatment of late plugin-owned state.
 - Even when the upstream state, route family, or package shape matches, the
   comparison is still only provenance until this branch shows the live write
   executor on this worktree rejected stale authority before mutation and kept
@@ -3405,8 +3408,9 @@ Source-note proof boundary, restated:
 - Production-grade wording must also fail closed when a production-shaped
   route or packaged mount is used as a proxy for current proof. Route family
   compatibility does not show the live executor rejected stale authority,
-  preserved the remote for audit, or rebuilt retry scope from fresh live
-  hashes on this branch.
+  preserved the remote for audit, rebuilt retry scope from fresh live
+  hashes on this branch, or blocked late-discovered plugin-owned surfaces
+  before the second write.
 - Production-grade wording must also fail closed when that same stale
   manual-review artifact is reused to justify a later plugin-owned surface
   such as a cron row, cache entry, runtime registry, generated file, custom
