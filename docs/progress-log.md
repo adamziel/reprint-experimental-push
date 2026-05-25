@@ -4,6 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Supervisor Lane Drift Audit 01:36:00
+
+<a id="2026-05-26-supervisor-lane-drift-audit-013600"></a>
+
+- The feedback lane now has fresh non-supervision drift in the main worktree: [`audits/supervisor-note-20260526-0126.md`](../audits/supervisor-note-20260526-0126.md) and [`audits/supervisor-note-20260526-0144.md`](../audits/supervisor-note-20260526-0144.md).
+- This does not change the release gate posture. `progress.html` should stay conservative until `reliable-executor` publishes a real live proof delta.
+- Evidence trail: [progress.html](../progress.html), [supervisor feedback](supervisor-feedback.md), [accountability check](../scripts/supervision/accountability.sh).
+
 ## 2026-05-26 - Public Status Audit 01:11:15
 
 <a id="2026-05-26-public-status-audit-011115"></a>

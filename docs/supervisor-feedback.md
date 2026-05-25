@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 01:19 CEST
+Last updated: 2026-05-26 01:36 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -12,6 +12,13 @@ changed, what is helping, what is not helping, and the next nudge.
 - `progress-publisher` should keep the page conservative and dated; this refresh is about head accuracy, not a release-readiness jump.
 - Next nudge: keep polling `reliable-executor` for the live production-shaped proof result, and only publish again when a lane head or gate verdict materially changes.
 - Gate status: still closed; this is a coordination sync only.
+
+## 2026-05-26 01:36 CEST - Main Worktree Drift
+
+- The accountability check now reports fresh non-supervision drift in the main worktree: `audits/supervisor-note-20260526-0126.md` and `audits/supervisor-note-20260526-0144.md`.
+- This is a blocker for claiming a clean supervisor lane state, but it does not change the release verdict. No new production-shaped proof landed, and the gate remains closed.
+- Next nudge: keep the feedback surface conservative, and wait for `reliable-executor` to publish a real live proof delta before refreshing progress again.
+- Gate status: still closed; this is a cleanup-and-evidence note, not a readiness jump.
 
 ## 2026-05-26 00:49 CEST - Reliable Executor Recheck
 
