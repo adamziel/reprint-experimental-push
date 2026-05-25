@@ -51,6 +51,9 @@ available command yet proves preserved-remote safety, apply-time
 revalidation, production auth/session lifecycle, graph identity, or
 plugin-driver coverage on a real-site boundary. A wrapper, comparison note,
 or polished smoke name never replaces that proof.
+The retained-source `npm run verify:release` run can support the design
+history, but it does not become retry authority until the branch reruns the
+same live boundary here and preserves the rejected remote for audit.
 Concretely, the next proof must be one rerunnable command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that shows the exact
 executor/auth boundary before the first write, the rejected remote that
@@ -79,7 +82,9 @@ The comparison rule is equally strict: any Reprint, ZS-Sync, or ForkPress
 note is provenance only unless it names the exact upstream commit or worktree
 state, says what it proves here, says what it does not prove here, and is
 backed by a branch-local rerun of the same live boundary. Shape similarity is
-not retry authority.
+not retry authority, and a historical note cannot authorize a later plugin-
+owned surface, remapped create target, or manual-resolution artifact that was
+not preserved on the same rejected boundary.
 Missing repo proof is still the live rerun on this branch: without the
 preserved remote, exact rejection point, fresh live hashes, and per-surface
 old/new/blocked classification on the same live boundary, the comparison
