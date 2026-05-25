@@ -7801,10 +7801,9 @@ or historical context, not production-grade push support.
 
 Exact next proof required from `3089aee2`:
 
-- rerun `npm run test:playground:production-shaped-release-verify` against one
-  live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, and treat that
-  rerun itself as the proof command rather than as a wrapper label or setup
-  placeholder;
+- rerun one named real-site release command against a live local, Playground,
+  or Docker `REPRINT_PUSH_SOURCE_URL` and treat that rerun itself as the proof
+  command, not a wrapper label, compatibility smoke, or setup placeholder;
 - print the executor identity and auth/session boundary before the first
   write;
 - preserve the rejected remote so it remains inspectable after rejection;
@@ -7830,6 +7829,9 @@ Must-happen-before-production-grade-push-support checklist:
 - the branch must show apply-time revalidation on the same live boundary that
   produced the rejection, not on a fixture or replayed boundary, or the proof
   is still lab-only;
+- the branch must show the exact executable release command and exact live
+  `REPRINT_PUSH_SOURCE_URL` in the same run, or the evidence cannot be audited
+  or rerun;
 - the branch must show the exact conflict policy for every touched surface:
   old, new, or blocked, including late-discovered plugin-owned tables, cron
   rows, runtime registries, generated files, caches, serialized blobs, and
