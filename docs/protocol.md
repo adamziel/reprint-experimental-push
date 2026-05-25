@@ -35,6 +35,22 @@ The production ladder is fixed:
    the action safe with fresh live evidence and the same auth floor as the
    write path.
 
+The pull/export/import pipeline remains the only source of immutable push
+provenance:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is read-only planning evidence and may page large
+  sites, but it never becomes write authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` is a separate remote operation that revalidates fresh
+  live evidence before every batch and again at the storage boundary
+- `push_journal` is durable evidence only and never authorizes mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating recovery branch
+
 The write path is deliberately one-way:
 
 - pull discovers and persists the immutable base package
@@ -83,6 +99,16 @@ For the harness shape, keep the topology pair together:
   liveness split to the same one-remote, one-local, one-drift harness
   and keeps apply-time revalidation separate from the dry-run receipt
 
+The same topology is mirrored in the fixtures:
+
+- `push-deployment-topology-contract.json` is the smallest Docker and
+  Playground topology-only proof, with the sandbox-provided `8080` ingress
+  rule, the local-only proxy policy, and the no-tunnel rule spelled out
+- `push-remote-liveness-topology-contract.json` combines that topology with
+  the dry-run/apply split so liveness stays separate from write authority
+- `push-topology-matrix.json` keeps the Docker and Playground stage matrix in
+  machine-readable form
+
 The machine-readable bridge is split across the fixtures:
 
 - `push-preflight-contract.json` captures the first live binding between the
@@ -130,6 +156,18 @@ The machine-readable bridge is split across the fixtures:
   inspect-first recovery in one object.
 - `push-production-topology-contract.json` keeps the same topology and the
   full push stage sequence in one compact production object.
+
+The compact proof chain is intentionally one-way:
+
+- pull exporter/importer produce the immutable base package that push consumes
+- `push_preflight` binds that immutable provenance to one live remote
+  identity and one short-lived push session
+- remote snapshot hash listing stays planning-only
+- dry-run is a receipt, not a lock
+- apply is a separate remote operation that revalidates fresh live evidence
+  before every batch and at the storage boundary
+- journal inspect stays read-only
+- recovery starts with inspect before any mutating repair
 
 The compact production proof stack is:
 

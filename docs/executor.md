@@ -99,6 +99,20 @@ That handoff is intentionally one-way:
 - journal inspection stays read-only
 - recovery starts with inspect before any mutating repair
 
+That same bridge is the executor contract:
+
+- exporter/importer produce the immutable base package that push consumes
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` stays planning-only and never upgrades into write
+  authority
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
+  lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating recovery branch
+
 The auth floor is not relaxed for the executor:
 
 - push auth must be at least as strict as current Reprint HMAC usage
@@ -161,6 +175,15 @@ The same mapping is what the Docker and Playground proofs must exercise:
 - one runner that owns the protocol calls
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
+
+The harness contracts that pin that shape are:
+
+- `push-deployment-topology-contract.json` for the smallest topology-only
+  proof with the `8080` ingress rule and the no-tunnel policy
+- `push-remote-liveness-topology-contract.json` for the topology plus
+  dry-run/apply liveness split
+- `push-production-topology-contract.json` for the compact production bundle
+  that keeps the pull provenance, push stage sequence, and topology aligned
 
 Use `push-deployment-topology-contract.json` for the smallest topology proof
 and `push-remote-liveness-topology-contract.json` when you need the dry-run
@@ -252,6 +275,10 @@ The topology story is intentionally small:
 - `remote-changed` is the same remote identity observed later after drift.
 - `runner` is the only actor that may preflight, list hashes, upload the
   dry-run plan, apply batches, inspect the journal, or run recovery.
+
+The executor is therefore not a general remote write loop. It is the
+production write path for one imported base package, one edited local site,
+and one live remote identity that must be revalidated at apply time.
 
 ## Stage Semantics
 
