@@ -302,6 +302,11 @@ Evidence classes used below:
 - `Missing proof`: the claim is not yet exercised at the required boundary.
 - `Release blocker`: the missing proof prevents a production release claim.
 
+The practical split is still harsh: model tests and lab smokes are useful
+evidence, but they are not boundary proof for a live WordPress source push.
+The strongest release claim remains blocked until one required command proves
+the live-source boundary, not just the local lab boundary.
+
 | Req | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
 | R1 base manifest | Executable proof: the JSON model carries base/local/remote snapshots with stable resource keys and hashes. Lab/fixture proof: Playground exporters produce fixture snapshots for posts, options, files, postmeta, a forms lab table, and narrow plugin metadata. | No production Reprint pull-base manifest contract. No proof for complete WordPress identity mapping, table schemas, generated data, object cache state, media metadata, taxonomies, users, multisite, or arbitrary plugin ownership. | Yes |
