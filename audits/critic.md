@@ -38,6 +38,11 @@ Must change before any production-grade push claim:
   route family, package mount, fixture replay, readable review artifact, or
   `finalMatchesLocal` result is compatibility evidence only and cannot
   substitute for the branch-local live rerun;
+- prove that any Reprint, ZS-Sync, or ForkPress note is being used as
+  historical context only unless this branch names the exact upstream state,
+  reruns the same live boundary here, and shows the preserved remote,
+  rejection point, and fresh retry scope for that exact case; a comparison
+  note without that branch-local rerun is not current proof;
 - prove a stale approval or readable review artifact cannot be widened into
   a different row, file, relationship-bearing record, remapped create target,
   or plugin-owned surface after drift;
