@@ -68,6 +68,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
     pluginUpdate.actions.some((action) => action.type === 'group-staging-finalize'),
     'plugin update exposes group finalize records',
   );
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'file-hash'),
+    'large upload models file hashing',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'remote-index-probe'),
+    'plugin install models remote-index planning',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'backpressure-pause'),
+    'plugin install models backpressure pauses',
+  );
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
@@ -464,4 +476,24 @@ test('production throughput stays blocked until measured storage receipts exist'
   assert.ok(blockers.has('production-atomic-group-commit-not-measured'));
   assert.ok(blockers.has('production-storage-receipts-not-measured'));
   assert.ok(blockers.has('production-row-batch-executor-not-measured'));
+});
+
+test('guarded executor report keeps the large-upload and plugin-install evidence visible', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+
+  assert.equal(report.profile, 'ci');
+  assert.ok(report.shape.fileBytes >= 16 * MIB);
+  assert.ok(report.evidence.chunkReceipts.expected > 0);
+  assert.equal(report.evidence.chunkReceipts.recorded, report.evidence.chunkReceipts.expected);
+  assert.ok(report.evidence.chunkReceipts.finalStagingRecord);
+  assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
+  assert.equal(report.evidence.atomicGroup.requireAtomic, true);
+  assert.equal(report.evidence.atomicGroup.successAllTargetsNew, true);
+  assert.equal(report.evidence.recovery.successReplayInspectable, true);
+  assert.equal(report.evidence.recovery.preCommitFailureInspectable, true);
+  assert.equal(report.evidence.recovery.partialCommitBlocksRecovery, true);
+  assert.equal(report.executorCapabilities.fileReceipts, 'lab-file-journal-receipts');
+  assert.equal(report.executorCapabilities.rowApply, 'per-row-apply-model');
+  assert.equal(report.executorCapabilities.productionAtomicCommit, 'not-measured');
+  assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });

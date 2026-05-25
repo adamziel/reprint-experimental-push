@@ -661,6 +661,10 @@ The model intentionally treats receipts, cursors, and pressure budgets as
 first-class fields. A benchmark that only proves fewer requests were made is not
 enough; it must also prove which chunks, row batches, and group members can be
 resumed after a failure.
+The executable guarded-executor report should make those boundaries visible in
+the same run: chunk receipts for the large upload, row receipts for the plugin
+install, group-finalize evidence for the plugin update, plus the remote-index,
+compression, and backpressure decisions that led to those outcomes.
 
 The important rejection cases are modeled too:
 
