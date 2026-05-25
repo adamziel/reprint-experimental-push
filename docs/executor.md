@@ -90,6 +90,13 @@ The executor follows the same boundary order as the protocol:
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes prove the repair safe
 
+The auth boundary is part of that same executor contract:
+
+- read-only inspection may stay on the existing HMAC family
+- dry-run, apply, and mutating recovery must carry the push session plus the
+  canonical push signature and idempotency key
+- the push session scopes the write path, but it never reserves remote state
+
 That boundary order maps directly to the pull pipeline:
 
 - exporter scans the merge base and coverage evidence
@@ -408,6 +415,29 @@ The executor keeps the same security envelope in Docker and Playground:
 - dry-run and apply remain separate remote operations
 - apply-time revalidation must still happen before every batch and at the
   storage boundary
+
+The canonical proof order is:
+
+1. `push-pull-mapping.json`
+2. `push-protocol-extension-contract.json`
+3. `push-remote-liveness-contract.json`
+4. `push-deployment-topology-contract.json`
+5. `push-topology-matrix.json`
+6. `push-auth-session-fencing-contract.json`
+7. `push-auth-session-recovery-contract.json`
+8. `push-recovery-inspect-contract.json`
+9. `push-recovery-revalidation-contract.json`
+10. `push-snapshot-hashes-page-contract.json`
+11. `push-dry-run-apply-revalidation-contract.json`
+
+Use the narrowest fixture that proves the point:
+
+- `push-protocol-extension-contract.json` proves the full push ladder and the
+  pull-to-push mapping.
+- `push-pull-to-topology-contract.json` proves the production bridge from the
+  imported pull base package into the Docker and Playground topology.
+- `push-executor-topology-proof.json` proves the same remote identity, route
+  names, and `8080` ingress rule across both harnesses.
 
 ## Test Fixtures
 
