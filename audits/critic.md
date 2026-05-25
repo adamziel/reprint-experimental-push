@@ -6935,6 +6935,10 @@ are true on this worktree:
   and the retry scope was rebuilt from live hashes; if the proof still comes
   only from `plan`, `apply`, `test:playground:*`, route-smoke output, or
   source-note comparison, the claim is still lab-only;
+- a command name that sounds real-site but still resolves to the playground
+  or lab executor cannot be promoted into release proof, even if it reaches a
+  remote-like URL or matches the expected route family; the executor identity
+  and preserved-remote evidence still have to be proven on the live boundary;
 - any script branded `production-shaped`, `authenticated`, or
   `production-plugin-package` is still just a smoke unless it reruns the same
   live boundary on an actual remote and preserves the rejected remote for
