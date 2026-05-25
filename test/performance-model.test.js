@@ -251,6 +251,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'index-and-chunk-receipts-skip-file-compare')?.rejectedGate,
+    'live',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-row-batch-skips-group-finalize')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'backpressure-drops-queued-receipts')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-cache-skips-plugin-install-activation')?.rejectedGate,
     'group',
   );
