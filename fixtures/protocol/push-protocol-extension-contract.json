@@ -50,6 +50,12 @@
     "push_recover inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair",
     "push_recover auto|finish|rollback": "may mutate only when journal evidence plus fresh live hashes prove the action safe"
   },
+  "recovery_chain": {
+    "inspect_first": "push_recover inspect reads the journal and fresh live hashes before any mutating repair",
+    "fresh_live_hashes": "mutating recovery may proceed only when the journal row and fresh live hashes prove the branch safe",
+    "stale_dry_run": "stale dry-run evidence never becomes recovery authority",
+    "classification": "finish, rollback, retry, or block are the only recovery classifications"
+  },
   "push_guards": {
     "snapshot_hash_listing": "returns live remote comparison evidence for planning only and never upgrades into write authority",
     "dry_run_receipt": "proves eligibility only and cannot be reused as a liveness lock",
@@ -168,6 +174,7 @@
     "dry-run and apply stay separate even when the same runner executes both",
     "recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair",
     "the pull exporter/importer pipeline remains the only source of immutable push provenance",
-    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy",
+    "stale dry-run evidence never becomes recovery authority"
   ]
 }

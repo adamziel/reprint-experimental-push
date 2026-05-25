@@ -2592,6 +2592,14 @@ test('push protocol extension fixture keeps the canonical production ladder and 
     protocolExtension.pull_to_push_mapping['push_recover inspect'],
     'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
   );
+  assert.equal(
+    protocolExtension.recovery_chain.inspect_first,
+    'push_recover inspect reads the journal and fresh live hashes before any mutating repair',
+  );
+  assert.equal(
+    protocolExtension.recovery_chain.stale_dry_run,
+    'stale dry-run evidence never becomes recovery authority',
+  );
   assert.equal(protocolExtension.topology.same_remote_identity, true);
   assert.equal(protocolExtension.topology.remote_base, 'remote-base');
   assert.equal(protocolExtension.topology.local_edited, 'local-edited');
@@ -2635,6 +2643,7 @@ test('push protocol extension fixture keeps the canonical production ladder and 
     'recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair',
     'the pull exporter/importer pipeline remains the only source of immutable push provenance',
     'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    'stale dry-run evidence never becomes recovery authority',
   ]);
 });
 
