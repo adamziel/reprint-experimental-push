@@ -1,34 +1,15 @@
-# No-Data-Loss Recovery Contract
+# No Data Loss Recovery Contract
 
-This lane treats recovery as a three-state contract:
+The recovery boundary for atomic apply is intentionally narrow:
 
-* `old-remote` for failures that happen before any remote mutation can be
-  committed.
-* `fully-updated-remote` for successful completion or replay of a completed
-  plan.
-* `blocked-recovery` when the remote has partial writes or drift and the
-  recovery path must preserve artifacts.
+- `old-remote` for failures before mutation, after staging, and after dependency validation.
+- `fully-updated-remote` for a completed plan replay when the remote already matches the completed journal.
+- `blocked-recovery` only when the journal and current remote drift outside the before/after recovery envelope, and the error carries artifacts.
 
-The last state is only acceptable when it carries both:
+Operationally, a recovery artifact is required for any partial commit. A partial remote mutation without a durable recovery artifact is a release blocker.
 
-* durable journal artifacts, and
-* a classified remote snapshot or equivalent recovery evidence.
+Retry must not:
 
-Anything else is a release blocker because a partial mutation without recovery
-artifacts cannot be safely retried.
-
-In practice, the durable journal must be able to explain one of only three
-post-failure outcomes:
-
-* `old-remote` when the apply stopped before a remote mutation became durable.
-* `fully-updated-remote` when a completed plan is replayed inertly.
-* `blocked-recovery` when the remote is partial, ambiguous, or stale and the
-  journal cannot prove the replay is safe.
-
-The tests in `test/push-planner.test.js` pin this contract across:
-
-* failure before mutation,
-* failure after staging,
-* failure after dependency validation,
-* replay of a completed plan, and
-* stale replay of a completed plan on a drifted remote.
+- duplicate inserts,
+- resurrect stale local data,
+- or treat a partially written remote as safe unless the recovery journal proves it is either old remote or fully updated remote.
