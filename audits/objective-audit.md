@@ -88,6 +88,8 @@ The weakest current claim is not merely that the suite is incomplete. It is that
 
 Right now the best available commands are `node --test`, `npm run test:playground`, `plan`, and `apply`. Those are useful, but they are support paths, not a release gate, because none of them force a live-source verdict in the same invocation.
 
+Fresh recheck on 2026-05-25: `node --test` still passes at `89/89`, but that does not change the absence of a checked-in live-source release gate.
+
 Minimum properties of that gate:
 
 1. it must run on the real release boundary, not just on fixtures or Playground storage
