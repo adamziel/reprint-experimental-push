@@ -291,6 +291,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'cached chunk receipts still cannot bypass backpressure-aware window sizing',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-window-sizing-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-window-sizing-after-pause')?.violates.includes('file-hashing'),
+    'cached file hashes still cannot bypass large-upload window sizing after a pause',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-window-sizing-after-pause')?.violates.includes('backpressure'),
+    'cached file hashes still cannot bypass backpressure-aware window sizing after a pause',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-publish-after-pause')?.rejectedGate,
     'recovery',
   );
