@@ -29,6 +29,27 @@ Primary critic finding:
   even if the executor, route shape, and retained-source replay all look
   correct.
 
+What must change before production-grade wording is defensible:
+
+- one rerunnable live release command must exist and print the exact command
+  string, executor identity, live auth/session boundary, preserved remote,
+  exact rejection point, dry-run receipt, apply-time revalidation, and
+  journal/recovery inspection for the same boundary;
+- the branch must prove live old/new/blocked classification for every touched
+  row, file, relationship-bearing record, and plugin-owned surface before
+  retry starts, including any hidden table, cron row, runtime registry,
+  generated file, cache entry, serialized blob, or plugin-owned file outside
+  the allowlist;
+- create-time identity remaps must be proven at apply time, not assumed from
+  route shape or fixture replay;
+- any later-discovered plugin-owned surface, remapped create target, or mixed
+  file/DB/plugin side effect must get its own preserve / reject / retry cycle
+  unless it was already enumerated before the first write; and
+- source-note comparisons to Reprint, ZS-Sync, and ForkPress must stay
+  provenance-only unless they name the exact upstream state, state what each
+  note proves here, state what it does not prove here, and are backed by a
+  rerun of the same live boundary on this worktree.
+
 Current critic bar for this baseline:
 
 - `3089aee2` is retained-source evidence only; it does not authorize
@@ -94,6 +115,24 @@ Source-note comparison stays provenance only:
   for Reprint, `d9334a0` for ZS-Sync, and `55f9879` for ForkPress; they are
   still provenance only until this branch reruns the same live boundary and
   states what each note proves here and what it does not prove here.
+
+False reliability scenarios that must fail closed:
+
+- a "manual resolution" note covers the first conflict, then a later
+  plugin-owned table, cron row, generated file, cache entry, serialized blob,
+  or remapped create target appears after the first write;
+- a comparison note says Reprint, ZS-Sync, or ForkPress "covers" the branch
+  because the route family or package mount looks similar, but it does not
+  name the exact upstream state or the exact live boundary on this worktree;
+- a create-time identity remap points at a different row, file, or
+  relationship-bearing record than the planner originally approved;
+- a plugin-owned option, custom table, registry entry, or generated file falls
+  outside the allowlist but still shares the same route shape as a covered
+  fixture; and
+- a lab or retained-source `verify:release` run is promoted to production
+  evidence without the live WordPress auth/session boundary, preserved remote,
+  and apply-time revalidation on a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`.
 
 Evidence classes:
 
