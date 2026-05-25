@@ -1,5 +1,41 @@
 # Critic Audit
 
+## 2026-05-25 Commit `25c4ef54` Is Live Preflight Only, Not Production Proof
+
+Commit `25c4ef54` adds `npm run
+test:playground:production-shaped-release-verify` and reaches
+`LIVE_PREFLIGHT_OK` against a local Playground source. That is a useful live
+preflight, but it is still not production-grade push support until the same
+run also proves preserved-remote retention, apply-time revalidation, journal
+and recovery inspection, production auth/session lifecycle, graph identity,
+and plugin-owned surface classification on the live boundary.
+
+Scenario: a reviewer upgrades `LIVE_PREFLIGHT_OK` to "production-ready push"
+because the command is executable and the source is live. Missing proof: the
+branch still does not show the rejected remote remaining inspectable after
+rejection, the exact first-write rejection point, the live apply-time
+revalidation result, or the journal/recovery record that defines retry scope.
+Without those, the command proves only that a live preflight can run, not
+that a remote can be preserved, audited, and safely retried after drift.
+
+Scenario: someone treats the new command as proof that auth, session, and
+graph boundaries are production-safe. Missing proof: the current claim does
+not yet demonstrate the full auth/session lifecycle on the live source, nor
+does it prove create-time identity remap handling or later-discovered
+plugin-owned surfaces at apply time. A live preflight can still be a lab
+boundary if it does not show those exact transitions and their preserved
+artifacts.
+
+The next exact proof reliable-executor must produce is a rerun of
+`npm run test:playground:production-shaped-release-verify` against a live
+local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that prints, in one
+run, the preserved remote that stayed inspectable after rejection, the exact
+rejection point before the first write, the apply-time revalidation result,
+the journal/recovery inspection used to rebuild retry scope, the production
+auth/session boundary, the graph-identity evidence, and the classification of
+all plugin-owned surfaces. Until that exact rerun exists, `LIVE_PREFLIGHT_OK`
+remains preflight evidence only.
+
 ## 2026-05-25 Commit `2b00b189` Is Still A Wrapper, Not Release Proof
 
 Commit `2b00b189` adds a release-shaped wrapper, but the branch still does
@@ -103,6 +139,8 @@ plugin-owned surface classification remain claims, not release proof.
 
 What still has to be shown before production wording is credible:
 
+- the exact live preflight command must be rerun against a real
+  `REPRINT_PUSH_SOURCE_URL`, not only a local Playground source;
 - the exact real-site command name, not just a Playground or lab smoke;
 - the exact command string must be rerunnable without prose changes, and it
   must name the live `REPRINT_PUSH_SOURCE_URL` it was run against;
