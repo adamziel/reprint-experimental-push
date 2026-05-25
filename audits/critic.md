@@ -15,6 +15,21 @@ and rebuild retry scope from fresh live hashes without widening the old
 approval into the new surface. Until that is shown, "manual resolution"
 language can still conceal a second-write data-loss path.
 
+Three production claims still need to be rejected explicitly:
+
+- "manual resolution succeeded" is not production proof unless the drifted
+  remote is still preserved for audit, the stale approval cannot be reused
+  as retry authority, and the user can inspect and retry from fresh live
+  evidence on this branch;
+- "plugin-safe push" is not production proof unless plugin-owned state
+  outside the allowlist is enumerated or hard-blocked at apply time,
+  including late-discovered rows, files, registries, generated assets,
+  custom tables, cache entries, and serialized blobs; and
+- "compatibility passed" is not production proof when it comes from route
+  shape, package mount shape, fixture replay, `finalMatchesLocal`, or a
+  readable review artifact, because those only show that a lab-shaped path
+  still looks compatible.
+
 Do not let lab-shaped success stand in for live proof. A production-shaped
 route, package mount, fixture replay, or `finalMatchesLocal` result can still
 come from a copied executor behind the same URL family; that is compatibility
