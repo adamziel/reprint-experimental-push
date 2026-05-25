@@ -1,120 +1,30 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 02:13:08 CEST
+Last updated: 2026-05-25 02:13:56 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 02:13:08 CEST - Supervisor Snapshot
-
-- Going well: the page, log, and feedback note still agree.
-- Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the public page now keeps the date visible and the history note shorter.
-- Next nudge: keep each lane to one proof gap, one next test, and one owner.
-
-| Lane | Next nudge |
-| --- | --- |
-| Invariants | Prove graph identity on a real site. |
-| Recovery | Prove durable journal writes under crash boundaries. |
-| Reliable executor | Prove auth, session, and lease behavior in production. |
-| Fast paths | Benchmark a real large site before claiming rollout speed. |
-| Audit and critic | Re-audit the next production-backed slice, not lab shape. |
-| Progress publisher | Keep the page dated, concise, and linked to evidence. |
-
-Note: this lane's page update becomes live only after the branch merges to `main`.
-
-## 2026-05-25 02:10:55 CEST - Supervisor Snapshot
-
-- Going well: the page, log, and feedback note still agree.
-- Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the visible page trims one repeated summary line.
-- Next nudge: keep each lane to one proof gap, one next test, and one owner.
-
-| Lane | Next nudge |
-| --- | --- |
-| Invariants | Prove graph identity on a real site. |
-| Recovery | Prove durable journal writes under crash boundaries. |
-| Reliable executor | Prove auth, session, and lease behavior in production. |
-| Fast paths | Benchmark a real large site before claiming rollout speed. |
-| Audit and critic | Re-audit the next production-backed slice, not lab shape. |
-| Progress publisher | Keep the page dated, concise, and linked to evidence. |
-
-Note: this lane's page update becomes live only after the branch merges to `main`.
-
-## 2026-05-25 02:09:35 CEST - Supervisor Snapshot
-
-- Going well: the page, log, and feedback note still agree.
-- Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the public page is now a little tighter and repeats less.
-- Next nudge: keep each lane to one proof gap, one next test, and one owner.
-
-| Lane | Next nudge |
-| --- | --- |
-| Invariants | Prove graph identity on a real site. |
-| Recovery | Prove durable journal writes under crash boundaries. |
-| Reliable executor | Prove auth, session, and lease behavior in production. |
-| Fast paths | Benchmark a real large site before claiming rollout speed. |
-| Audit and critic | Re-audit the next production-backed slice, not lab shape. |
-| Progress publisher | Keep the page dated, concise, and linked to evidence. |
-
-Note: this lane's page update becomes live only after the branch merges to `main`.
-
-## 2026-05-25 02:09:03 CEST - Supervisor Snapshot
-
-- Going well: the page, log, and feedback note still agree.
-- Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the visible page now stays shorter and the repeated scan copy is trimmed.
-- Next nudge: keep each lane to one proof gap, one next test, and one owner.
-
-| Lane | Next nudge |
-| --- | --- |
-| Invariants | Prove graph identity on a real site. |
-| Recovery | Prove durable journal writes under crash boundaries. |
-| Reliable executor | Prove auth, session, and lease behavior in production. |
-| Fast paths | Benchmark a real large site before claiming rollout speed. |
-| Audit and critic | Re-audit the next production-backed slice, not lab shape. |
-| Progress publisher | Keep the page dated, concise, and linked to evidence. |
-
-Note: this lane's page update becomes live only after the branch merges to `main`.
-
-## 2026-05-25 02:07:30 CEST - Supervisor Snapshot
-
-- Going well: the page, log, and feedback note still agree.
-- Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
-- Progress change: the visible page was tightened again so the newest status scans faster without adding noise.
-- Next nudge: keep each lane to one proof gap, one next test, and one owner.
-
-| Lane | Next nudge |
-| --- | --- |
-| Invariants | Prove graph identity on a real site. |
-| Recovery | Prove durable journal writes under crash boundaries. |
-| Reliable executor | Prove auth, session, and lease behavior in production. |
-| Fast paths | Benchmark a real large site before claiming rollout speed. |
-| Audit and critic | Re-audit the next production-backed slice, not lab shape. |
-| Progress publisher | Keep the page dated, concise, and linked to evidence. |
-
-Note: this lane's page update becomes live only after the branch merges to `main`.
-
-## 2026-05-25 02:06:47 CEST - Supervisor Snapshot
-
-- Going well: the page, log, and feedback note still agree.
-- Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
-- Progress change: no evidence moved; the visible page stays short and links detail out.
-- Next nudge: keep each lane to one proof gap, one next test, and one owner.
-
-| Lane | Next nudge |
-| --- | --- |
-| Invariants | Prove graph identity on a real site. |
-| Recovery | Prove durable journal writes under crash boundaries. |
-| Reliable executor | Prove auth, session, and lease behavior in production. |
-| Fast paths | Benchmark a real large site before claiming rollout speed. |
-| Audit and critic | Re-audit the next production-backed slice, not lab shape. |
-| Progress publisher | Keep the page dated, concise, and linked to evidence. |
-
-Note: this lane's page update becomes live only after the branch merges to `main`.
-
 <details>
   <summary>Older supervisor snapshots</summary>
+
+## 2026-05-25 02:13:56 CEST - Supervisor Snapshot
+
+- Going well: the page, log, and feedback note still agree.
+- Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
+- Progress change: no new evidence landed; the live page stays compact and points at the detailed evidence trail.
+- Next nudge: keep each lane to one proof gap, one next test, and one owner.
+
+| Lane | Next nudge |
+| --- | --- |
+| Invariants | Prove graph identity on a real site. |
+| Recovery | Prove durable journal writes under crash boundaries. |
+| Reliable executor | Prove auth, session, and lease behavior in production. |
+| Fast paths | Benchmark a real large site before claiming rollout speed. |
+| Audit and critic | Re-audit the next production-backed slice, not lab shape. |
+| Progress publisher | Keep the page dated, concise, and linked to evidence. |
+
+Note: this lane's page update becomes live only after the branch merges to `main`.
 
 ## 2026-05-25 01:28:07 CEST - Supervisor Snapshot
 
