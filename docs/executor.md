@@ -70,6 +70,11 @@ the production handshake from preflight through inspect-first recovery, and
 the explicit missing-secret failure contract that blocks preflight, dry-run,
 and apply when the real push secret is unavailable.
 
+The compact release-facing fixture proof is `fixtures/protocol/push-production-executor-flow-contract.json`.
+That contract is pinned by the same checked test and is the shortest review path
+for the exporter/importer handoff, the preflight-to-recovery ladder, and the
+shared Docker and Playground route matrix.
+
 The checked topology proof is `npm run test:playground:production-shaped-topology-proof`.
 Use it when you need the fixed one-remote, one-local, one-drift harness summary
 and the shared Docker and Playground route matrix without live credentials.

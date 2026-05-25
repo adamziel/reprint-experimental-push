@@ -802,6 +802,7 @@ test('production recovery drift contract keeps inspect-first recovery aligned af
 test('production executor flow contract keeps the pull handoff, ladder, and topology in one production-shaped proof', () => {
   const flow = readJson('fixtures/protocol/push-production-executor-flow-contract.json');
 
+  assert.equal(flow.contract_id, 'push-production-executor-flow-contract-one-remote-one-local');
   assert.equal(
     flow.purpose,
     'compact production proof that combines the exporter/importer handoff, preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery on one remote source site, one imported local site, and one later drift observation of the same remote identity',
@@ -824,11 +825,30 @@ test('production executor flow contract keeps the pull handoff, ladder, and topo
     flow.pull_to_push_mapping.push_batch_apply.includes('revalidates fresh live evidence before every batch and again at the storage boundary'),
   );
   assert.equal(flow.production_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.deepEqual(flow.topology.route_matrix.docker, {
+    preflight: 'preflight',
+    snapshot_hashes: 'snapshot-hashes',
+    dry_run: 'dry-run',
+    apply: 'apply',
+    journal: 'journal',
+    recovery_inspect: 'recovery-inspect',
+    recovery_mutate: 'recovery-mutate',
+  });
+  assert.deepEqual(flow.topology.route_matrix.playground, {
+    preflight: 'preflight',
+    snapshot_hashes: 'snapshot-hashes',
+    dry_run: 'dry-run',
+    apply: 'apply',
+    journal: 'journal',
+    recovery_inspect: 'recovery-inspect',
+    recovery_mutate: 'recovery-mutate',
+  });
   assert.equal(flow.topology.same_remote_identity, true);
   assert.equal(flow.topology.networking.ingress_port, 8080);
   assert.equal(flow.topology.networking.proxy_policy, 'local-only');
   assert.equal(flow.topology.networking.tunnels, 'disallowed');
   assert.ok(flow.topology.docker.proof.includes('dry-run and apply remain separate remote calls'));
+  assert.ok(flow.topology.docker.proof.includes('runner owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and recovery'));
   assert.ok(flow.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
   assert.deepEqual(flow.required_invariants, [
     'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
