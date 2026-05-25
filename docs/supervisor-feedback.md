@@ -1,9 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:46:48 CEST
+Last updated: 2026-05-25 09:47:54 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 09:47:54 CEST
+
+- Going well: the checked gate stays explicit and the compact status view is still easy to scan.
+- Not going well: reliable-executor still has no real live URL/topology, and integration still has not issued the real-site release command.
+- Progress change: none; no new production-backed evidence landed in this pass.
+- Next nudge: integration owns the next real-site release command; reliable-executor is drifting if it keeps the gate stubbed, and status can move only with retained real-endpoint output that proves live source/auth/recovery.
 
 ## 2026-05-25 09:46:48 CEST
 
