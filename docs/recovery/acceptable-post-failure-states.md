@@ -6,6 +6,16 @@ This lane treats durable recovery as valid only when an interrupted apply lands 
 1. `fully-updated-remote`
 1. `blocked-recovery` with artifacts
 
+The atomic apply boundaries that must stay on the `old-remote` side are:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+
+Completed-plan replay is only valid when it returns `fully-updated-remote` and stays inert.
+If the replayed remote has drifted since completion, recovery must become `blocked-recovery`
+with journal and remote artifacts instead of silently reapplying the plan.
+
 The named failure boundaries in this lane are expected to stay in `old-remote`:
 
 - failure before mutation
