@@ -5890,7 +5890,7 @@ Production-ready wording gate:
 - if a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface appears after the first write, it is a new boundary and must get its own preserve / reject / retry cycle before it can be treated as success;
 - if any plugin-owned table, file, cron row, runtime registry entry, generated asset, cache entry, or serialized blob is outside the allowlist and not explicitly blocked before write, the branch does not have production-grade push proof;
 - if any file, DB row, or plugin side effect survives a failed apply, the whole touched set must be labeled old, new, or blocked before retry starts; a partially successful write cannot be relabeled as success; and
-- if a Reprint, ZS-Sync, or ForkPress note is cited, it must say exactly what the note proves here and what it does not prove here; otherwise it remains historical context only and cannot support production wording.
+- if a Reprint, ZS-Sync, or ForkPress note is cited, it must say exactly what the note proves here, what it does not prove here, and whether this branch reran the same live boundary; otherwise it remains historical context only and cannot support production wording.
 
 ## Remaining Production-Grade Gaps
 
@@ -5925,7 +5925,9 @@ The design still has not closed the following production-grade gaps:
   used as proof instead of historical context; missing proof is the exact
   upstream state, what the note proves here, what it does not prove here, and
   a rerun of the same live boundary on this branch with preserved-remote,
-  stale-rejection, and fresh-retry evidence; and
+  stale-rejection, and fresh-retry evidence; route shape, package layout,
+  reviewer wording, and fixture replay stay compatibility evidence only even
+  when the note is precise; and
 - any "production-ready" or "manual resolution" wording is false reliability
   unless it names the exact drift case, the preserved remote, the rejection
   point before the first write, the fresh live-hash retry scope, and the
