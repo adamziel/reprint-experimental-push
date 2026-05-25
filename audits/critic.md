@@ -3637,3 +3637,18 @@ proves all of the following:
 If any one of those proof points is missing, the wording is still
 compatibility-only or historical-context-only, not production-grade push
 support.
+
+Do not let success wording outrun the evidence:
+
+- "manual resolution succeeded" is not acceptable unless the branch shows
+  the preserved remote stayed auditable after reject, the stale approval was
+  unusable for retry, and the fresh retry artifact was recorded on this
+  branch for the same live boundary;
+- "production-ready push support" is not acceptable if the only supporting
+  evidence is a route-shaped smoke, fixture replay, readable review
+  artifact, `finalMatchesLocal`, or a matching upstream note without branch-
+  local live revalidation; and
+- "safe retry" is not acceptable unless every touched surface is explicitly
+  classified as old, new, or blocked and any late-discovered plugin-owned
+  surface is handled as a separate boundary, not folded into the earlier
+  success story.
