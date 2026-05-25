@@ -255,6 +255,26 @@ The reason is not that the repo lacks useful tests. It has them. The reason is t
 
 Until one checked-in gate fails closed on `labBacked: true`, fixture-only, benchmark-only, or missing live-source evidence, the project can still produce green runs without proving no data loss, reliability, or speed on the real release path.
 
+## Test Sufficiency Verdict
+
+The current tests are stronger at rejecting unsafe claims than they are at proving a safe release path.
+
+What the tests do prove:
+
+- `test/push-planner.test.js` covers planner refusal, live-remote precondition modeling, and conflict handling.
+- `test/recovery-journal.test.js` covers restart classification, monotonic journaling, and redaction in a file-backed model.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` cover refusal of unsupported throughput claims.
+- The `npm run test:playground:*` scripts cover several lab-backed route and storage slices.
+
+What they do not prove:
+
+- No data loss on a live WordPress source after a pull-base reuse, retry, replay, or mid-apply restart.
+- Reliability across crash, duplicate request, stale claim, lease expiry, or fencing on the real storage and transport path.
+- Speed on the production-shaped push path with a measured runtime and memory threshold.
+- That one required command exists and is wired into CI as the default release gate.
+
+The important distinction is that the suite is currently a blocker system, not an approver system. A green run can still stop short of the live-source boundary, which means the tests are necessary but not sufficient for release.
+
 ## Release Gate Acceptance Criteria
 
 The missing release gate is only real proof if it does all of the following:
