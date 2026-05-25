@@ -866,6 +866,10 @@ under load:
   is rejected because planning evidence and cached manifest hashes can trim
   lookup work, but they cannot prove the live compare, chunk acknowledgements,
   or the guarded publish record survived failure.
+- compressed-remote-index-and-cached-manifest-hash-skips-large-upload-resume-
+  after-pause is rejected because planning compression and cached manifest
+  state can reduce recovery work, but they cannot prove which chunk
+  acknowledgements survived the pause or restore the guarded publish barrier.
 - compressed-remote-index-and-cached-file-digest-skips-large-upload-resume-after-pause
   is rejected because planning evidence, cached digests, and a pause can reduce
   recovery work, but they cannot prove which chunk acknowledgements survived
