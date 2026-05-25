@@ -267,6 +267,12 @@ Conservative comparison matrix:
   does not prove that a readable manual-review artifact can authorize a later
   row, file, relationship-bearing record, remapped create target, or plugin-
   owned surface on this branch.
+- Even when the exact upstream state is named, the comparison still does not
+  transfer authority to a later boundary on this branch. A later row, file,
+  relationship-bearing record, remapped create target, or plugin-owned
+  surface still needs its own preserve / reject / retry cycle with live
+  hashes, because the earlier note only proves historical context unless this
+  worktree reran the same live mutation boundary.
 - The missing repo proof for all three is the same live mutation boundary on
   this worktree, rerun against the exact drift case, with preserved-remote
   evidence, stale rejection before the first write, fresh retry scope rebuilt
