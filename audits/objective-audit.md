@@ -33,6 +33,13 @@ good negative evidence, but it is still not direct proof for the objective:
 pushing local edits back to a live source WordPress site without losing
 concurrent source changes, while remaining reliable and fast.
 
+The current release wiring is still just optional scripts. `package.json`
+exposes `npm test`, a bundled `npm run test:playground` chain, and several
+opt-in smokes, but it does not define a mandatory `verify:release` command.
+A fresh scan on 2026-05-25 also found no checked-in `.github` workflow
+directory. That means there is still no enforced CI or equivalent release
+entrypoint that composes the strongest checks and fails closed.
+
 ## Evidence Table
 
 | Requirement | Current proof | Missing proof | Release blocker |
@@ -43,7 +50,7 @@ concurrent source changes, while remaining reliable and fast.
 | Auth, session, lease, fencing, journal, graph identity, plugin-driver gates | Authenticated local Playground routes, DB journal slices, and graph-identity assertions exist in lab scope. | A required production release gate that enforces all of them together. | Yes: no enforced gate exists. |
 | Real remote/local topology | Playground blueprints and local HTTP route smokes approximate the topology. | Evidence from the actual remote/local production topology. | Yes: topology proof remains lab-only. |
 | Speed claim | Benchmark refusal tests block unsupported throughput claims. | A measured runtime or memory result from the production-shaped push path. | Yes: speed is unproven. |
-| Required release command | Optional npm scripts and opt-in smokes exist. | One mandatory `verify:release`-style entrypoint that fails closed. | Yes: no mandatory gate. |
+| Required release command | Optional npm scripts and opt-in smokes exist. | One mandatory `verify:release`-style entrypoint that fails closed. | Yes: no mandatory gate or CI workflow. |
 
 A fresh repo scan on 2026-05-25 also found no checked-in `.github` workflow
 directory and no enforced CI entrypoint that could serve as a required release
@@ -101,6 +108,9 @@ The test audit is therefore uncomfortable but clear:
   `npm run test:playground:production-plugin-package` are better evidence for
   route shape and packaging, but both still report `labBacked: true`, so they
   cannot be used as proof of release safety.
+- No default command in `package.json` currently forces auth/session,
+  durable journal, lease/fencing, graph identity, plugin-driver, live-topology,
+  crash-boundary, and benchmark checks into one required release path.
 - `test/guarded-executor-benchmark.test.js` and
   `test/performance-model.test.js` are refusal and invariants tests first.
   They prove that unsupported throughput claims are blocked and that the
