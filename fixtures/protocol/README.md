@@ -200,6 +200,9 @@ identity across `remote-base` and `remote-changed`:
   recovery inspect stays read-only after live drift while the persisted pull
   base, journal row, auth floor, and one-remote, one-local topology still
   line up for a safe mutating recovery branch.
+- `push-production-route-matrix-contract.json` is the compact proof that the
+  same route names, ingress rule, and proxy policy stay aligned in Docker and
+  Playground while the one-remote, one-local, one-drift harness remains fixed.
 - `push-recovery-inspect-contract.json` and
   `push-auth-session-journal-recovery-inspect-contract.json` are the compact
   inspect-first recovery proofs that keep the journal row, lease fence, live
