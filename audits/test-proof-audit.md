@@ -28,4 +28,4 @@ A passing suite here supports a cautious lab narrative. It does not support a pr
 
 If the repository wants to claim no data loss, reliability, or speed, those claims need a required live-source gate in addition to the current tests. Until then, the tests are evidence of guardrails, not release readiness.
 
-The actionable next step is therefore not to expand the current refusal checks in place. It is to add one mandatory command that reaches the live-source boundary and makes the release decision explicit, including an enforced `speed unclaimed` verdict if throughput remains unmeasured.
+The actionable next step is therefore not to expand the current refusal checks in place. It is to add one mandatory command that reaches the live-source boundary and makes the release decision explicit. If throughput remains unmeasured, that command must still surface an enforced `speed unclaimed` verdict; otherwise the suite is only refusing claims in a lab, not making a release decision.

@@ -220,7 +220,9 @@ Treat `speed unclaimed` as an explicit release verdict, not a soft omission. If 
 | --- | --- | --- |
 | `No data loss` | Not proven at the live-source boundary | A required live-path gate that survives crash, retry, replay, duplicate claim, stale lease, and mid-apply restart on production storage |
 | `Reliable` | Not proven at the live-source boundary | Enforced auth/session, durable journal, leases/fencing, graph identity, and plugin-driver checks in one default release command |
-| `Fast` | Explicitly unclaimed | Either a measured live-path throughput threshold or an intentional, enforced `speed unclaimed` decision surfaced by the required release gate; a green refusal-only test run is not enough, optional smokes must never be allowed to stand in for that verdict, and the current benchmark suite must not be misread as speed proof |
+| `Fast` | Explicitly unclaimed, and still blocked from release language | Either a measured live-path throughput threshold or an intentional, enforced `speed unclaimed` decision surfaced by the required release gate; a green refusal-only test run is not enough, optional smokes must never be allowed to stand in for that verdict, and the current benchmark suite must not be misread as speed proof |
+
+The weakest claim is still speed. It is weaker than the others because the repo does not just lack a positive number; it lacks a mandatory command that can make the negative decision in a release-grade way. Until that exists, `speed unclaimed` is not a neutral absence of data. It is the only defensible release verdict, and it must remain an explicit output of a required command rather than a sentence hidden in audit prose. Any future throughput language should be treated as release-blocked unless it comes from that command and names the live-source boundary it measured.
 
 ## Actionable Next Step
 
@@ -229,7 +231,15 @@ Add a required release entrypoint that fails closed unless it can prove, in one 
 1. a measured live-path throughput result plus an explicit release threshold, or
 2. an intentional refusal to make any production speed claim.
 
-If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command such as `npm run verify:release`. That command should exit non-zero unless it can surface the live-path measurement or the deliberate `speed unclaimed` verdict in the same run. Until that command exists, `speed unclaimed` is not a deferment; it is the current release verdict, and the suite remains insufficient for any no-loss or reliability claim at the live-source boundary. A default `npm test` pass should be treated as regression-only evidence until the mandatory release command exists and runs the live boundary. Any future speed claim should be blocked unless it comes from that required command, because a benchmark refusal without the release entrypoint is still only lab evidence.
+If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command such as `npm run verify:release`.
+
+That command should do three things at once:
+
+1. prove the live-source boundary or fail,
+2. surface `speed unclaimed` or a measured throughput result, and
+3. exit non-zero if the proof is still lab-backed, fixture-backed, or omitted.
+
+Until that command exists, `speed unclaimed` is not a deferment; it is the current release verdict, and the suite remains insufficient for any no-loss or reliability claim at the live-source boundary. A default `npm test` pass should be treated as regression-only evidence until the mandatory release command exists and runs the live boundary. Any future speed claim should be blocked unless it comes from that required command, because a benchmark refusal without the release entrypoint is still only lab evidence.
 
 ## Audit Rule
 
