@@ -449,6 +449,30 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'inspect',
   );
   assert.equal(
+    readJson('fixtures/protocol/push-recovery-inspect-contract.json').journal_fence.storage_guard,
+    'filesystem-compare-rename',
+  );
+  assert.ok(
+    readJson('fixtures/protocol/push-recovery-inspect-contract.json').required_invariants.includes(
+      'inspect is read-only',
+    ),
+  );
+  assert.ok(
+    readJson('fixtures/protocol/push-auth-session-recovery-contract.json').auth.inspect_requires.includes(
+      'read-only recovery mode',
+    ),
+  );
+  assert.ok(
+    readJson('fixtures/protocol/push-auth-session-recovery-contract.json').required_invariants.includes(
+      'push auth must be at least as strict as the current export HMAC family',
+    ),
+  );
+  assert.ok(
+    readJson('fixtures/protocol/push-auth-session-recovery-contract.json').required_invariants.includes(
+      'inspect is read-only and must come before any mutating recovery mode',
+    ),
+  );
+  assert.equal(
     readJson('fixtures/protocol/push-executor-topology-proof.json').pull_to_push_mapping.preflight,
     'binds that persisted base package to the live remote identity and a short-lived session',
   );
