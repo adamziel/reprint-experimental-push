@@ -4802,6 +4802,34 @@ test('durable recovery boundaries stay in old remote or fully updated remote wit
   assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
 });
 
+test('durable failure before mutation keeps the old remote and records only the opening boundary', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remoteSnapshot = JSON.stringify(remote);
+
+  const error = captureError(() => applyPlan(remote, plan, { failBeforeMutation: true, durableJournal }));
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(JSON.stringify(remote), remoteSnapshot);
+  assert.equal(error.details.recovery.status, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.deepEqual(
+    persisted.records.map((record) => record.type),
+    ['journal-opened', ...plan.mutations.map(() => 'target-planned'), 'recovery-state'],
+  );
+  assert.equal(persisted.integrity.status, 'ok');
+});
+
 test('durable stale completed replay blocks with inspectable artifacts instead of duplicating inserts', () => {
   const base = baseSite();
   const local = baseSite();
