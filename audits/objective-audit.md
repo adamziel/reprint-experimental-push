@@ -60,6 +60,7 @@ The current tests are strongest where they reject unsafe claims, and weakest whe
 - `test/recovery-journal.test.js` proves file-backed JSONL append/restart behavior, monotonic sequences, no raw journal values, and restart classification. It does not prove production storage durability, cross-process lease handling, a live remote/local crash boundary, or any production WordPress mutation path, so it is proof of a journal model rather than proof of the live storage path.
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the benchmark model keeps proof obligations attached to the proposed fast paths and that unsupported throughput claims are blocked. They do not measure a production push path, establish a real runtime/memory threshold, or prove that the live source topology is fast, so they support refusal of unsupported speed claims rather than a release-speed claim.
 - All of the optional smokes can pass at once and still leave the objective blocked, because none of them is mandatory and none of them is the single enforced decision point the release bar needs.
+- In practical terms, the suite currently proves "we refuse to overclaim" much better than it proves "we can safely release."
 
 The uncomfortable conclusion is that the suite proves guardrails, not release safety. If the release claim depends on no data loss, reliability, or speed, the current tests are still missing the only evidence that would make those claims credible:
 
