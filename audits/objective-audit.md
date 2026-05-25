@@ -6,6 +6,15 @@ The project is **not releasable as a production WordPress push path**.
 
 The repo still lacks one required command that proves the one-way pull base plus one-way push back to the live source on the real storage and transport path. `node --test` passes, but every passing subtest remains fixture-, model-, or lab-backed, and `package.json` still exposes only `test`, `plan`, `apply`, and optional `test:playground:*` helpers. It proves local rejection and recovery classifications, not end-to-end no-loss behavior, crash recovery on live storage, or a live-path speed claim. The benchmark surface is even more explicit: it returns `productionThroughput: 'not-claimed'` and blocks production throughput claims. That is negative proof, not release proof. The release claim is still false until a required gate closes that gap, runs against the real live-source boundary, and is wired into a mandatory entrypoint such as `npm run verify:release` or `npm run release`. A green test run is therefore regression evidence only; it is not a production verdict. The existing blocker note in [`audits/release-blockers.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-blockers.md) says the same thing from a narrower angle. Until a required gate exists, `speed unclaimed` is the only defensible production-facing wording, and it must be the output of an enforced release verdict, not a placeholder, pending benchmark. Optional smokes can keep producing lab evidence, but they cannot collapse the missing live-source proof into a release decision or convert `productionThroughput: 'not-claimed'` into a release-ready speed claim. The current suite is therefore refusal-capable, not release-capable, even though it is green. The actionable blocker is not a missing assertion inside the current tests; it is the absence of a mandatory release command that consumes those tests, fails closed when live-source proof remains missing, and prints an explicit machine-checkable verdict instead of silently passing. That means every green run remains blocker evidence until a mandatory live-source verdict exists. The command-surface gap matters because it is the only place the repo can turn these partial proofs into a release decision, and that entrypoint does not exist yet. The audit therefore treats every current passing test as support evidence only: useful for regression and refusal checks, but not sufficient to promote any release claim without a required live-source verdict.
 
+## Weakest Current Claim
+
+The weakest claim is the production release verdict itself.
+
+- No required command exists that must reach the live-source boundary and emit a machine-checkable release decision.
+- The suite can still go green without proving live-source mutation, crash survival, or throughput on the real path.
+- `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
+- Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
+
 ## Release Summary
 
 | Item | Current reading |
@@ -30,6 +39,13 @@ The current audit separates proof into four buckets so the release gap stays unc
 | Missing proof | Live-source apply-time recheck, durable crash survival, topology fidelity, and a measured live-path speed verdict. | These are still absent from the mandatory command surface. | The repo has no enforced release verdict. |
 
 The current `package.json` script surface confirms the gap: it exposes `test`, `plan`, `apply`, and optional playground helpers, but no required `verify`, `verify:release`, or `release` command. That means the evidence buckets above are still support evidence, not a mandatory release decision.
+
+Treat indirect evidence as insufficient:
+
+- Fixture coverage can show the code is shaped correctly.
+- Lab coverage can show the local flow is plausible.
+- Refusal benchmarks can show unsupported claims are blocked.
+- None of those prove the live source was safely mutated, recovered, and measured in one required release run.
 
 ## Explicit Requirements
 
