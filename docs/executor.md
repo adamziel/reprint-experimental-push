@@ -199,6 +199,14 @@ That boundary order maps directly to the pull pipeline:
 - recovery starts with inspect and only mutates when fresh live hashes and
   journal evidence still prove the branch safe
 
+The fixture bundle that anchors this executor story is:
+
+- `push-protocol-extension-contract.json` for the end-to-end production ladder
+- `push-pull-to-topology-contract.json` for the compact pull-to-push bridge
+- `push-executor-topology-proof.json` for the shortest Docker/Playground proof
+- `push-topology-matrix.json` for the machine-readable one-remote, one-local
+  topology
+
 ## Executor Contract
 
 The executor has one production shape:

@@ -88,6 +88,17 @@ The executor proof is intentionally split across three levels:
   one-local, one-drift harness in Docker and Playground, including the shared
   `8080` ingress rule.
 
+Use these fixtures as the canonical proof bundle:
+
+- `push-protocol-extension-contract.json` is the end-to-end production ladder
+  proof.
+- `push-pull-to-topology-contract.json` is the smallest composite proof that
+  links pull provenance, push stages, auth floor, and topology.
+- `push-executor-topology-proof.json` is the shortest executor-shaped proof
+  for Docker and Playground ingress behavior.
+- `push-topology-matrix.json` is the machine-readable one-remote,
+  one-local, one-drift matrix.
+
 ## Pull To Push Mapping
 
 Push consumes immutable provenance from the existing pull pipeline. The
