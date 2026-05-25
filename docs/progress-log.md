@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 06:31:01 CEST.
-- Status: lab evidence still holds; production proof is still missing.
-- Trend: the visible page and log still line up, and the latest audit pointer now matches the feedback note.
+- Last update: 2026-05-25 06:31:42 CEST.
+- Status: lab evidence holds; production proof is still missing.
+- Trend: the visible page and log line up, and the latest audit pointer matches the feedback note.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: production auth/session, durable journal writes, leases/fencing, WordPress graph identity, Playground integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to the proof trail.
 - Pending proof gates: production auth/session, durable journal writes, leases/fencing, WordPress graph identity, Playground integration, and plugin drivers.
 - Next nudge: keep the gates blocked until a worker proves one concrete gap at a time, starting with auth/session, journal internals, or graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. This lane-local copy becomes live only after merge to `main`; GitHub Pages will lag until then.
-- Audit note: [audits/supervisor-note-20260525-063019.md](../audits/supervisor-note-20260525-063019.md) captures this no-delta pass in one screen.
+- Audit note: [audits/supervisor-note-20260525-063142.md](../audits/supervisor-note-20260525-063142.md) captures this no-delta pass in one screen.
 
 ## 2026-05-25 - Supervisor Follow-up
 
