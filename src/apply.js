@@ -26,11 +26,19 @@ export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
 ]);
 
 export function isAcceptableRecoveryState(recoveryState) {
-  return Boolean(
-    recoveryState
-      && typeof recoveryState === 'object'
-      && ACCEPTABLE_RECOVERY_STATES.includes(recoveryState.status),
-  );
+  if (!recoveryState || typeof recoveryState !== 'object') {
+    return false;
+  }
+
+  if (!ACCEPTABLE_RECOVERY_STATES.includes(recoveryState.status)) {
+    return false;
+  }
+
+  if (recoveryState.status !== 'blocked-recovery') {
+    return Boolean(recoveryState.artifacts && recoveryState.artifacts.journal);
+  }
+
+  return Boolean(recoveryState.artifacts && recoveryState.artifacts.journal && recoveryState.artifacts.remote);
 }
 
 export class PushPlanError extends Error {

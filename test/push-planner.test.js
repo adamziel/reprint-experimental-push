@@ -17238,11 +17238,24 @@ test('replaying a completed plan through the durable journal stays fully updated
 });
 
 test('approved recovery states are limited to the durable old, updated, and blocked envelopes', () => {
-  assert.equal(isAcceptableRecoveryState({ status: 'old-remote' }), true);
-  assert.equal(isAcceptableRecoveryState({ status: 'fully-updated-remote' }), true);
-  assert.equal(isAcceptableRecoveryState({ status: 'blocked-recovery' }), true);
+  assert.equal(isAcceptableRecoveryState({
+    status: 'old-remote',
+    artifacts: { journal: { status: 'opened' } },
+  }), true);
+  assert.equal(isAcceptableRecoveryState({
+    status: 'fully-updated-remote',
+    artifacts: { journal: { status: 'completed' } },
+  }), true);
+  assert.equal(isAcceptableRecoveryState({
+    status: 'blocked-recovery',
+    artifacts: { journal: { status: 'blocked' }, remote: { files: {} } },
+  }), true);
   assert.equal(isAcceptableRecoveryState({ status: 'unexpected' }), false);
   assert.equal(isAcceptableRecoveryState(null), false);
+  assert.equal(isAcceptableRecoveryState({
+    status: 'blocked-recovery',
+    artifacts: { journal: { status: 'blocked' } },
+  }), false);
 });
 
 test('durable recovery keeps the approved failure envelope and retries do not duplicate inserts', () => {
