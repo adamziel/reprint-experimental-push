@@ -98,6 +98,9 @@ identity across `remote-base` and `remote-changed`:
 - `push-remote-liveness-topology-contract.json` combines that liveness split
   with the one-remote, one-local, one-drift test topology so a review can
   cite a single compact proof for both sequencing and harness shape.
+- `push-deployment-topology-contract.json` is the smallest Docker and
+  Playground topology-only proof, with the sandbox-provided `8080` ingress
+  rule and the local-only proxy policy spelled out.
 - `push-production-push-recovery-contract.json` is the canonical
   end-to-end production bundle for the pull provenance, push ladder, and
   one-remote, one-local topology story, including the same remote identity

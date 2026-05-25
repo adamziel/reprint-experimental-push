@@ -25,11 +25,13 @@ The executor follows the same ordered stages defined in the protocol:
    identity and one short-lived push session.
 2. `push_snapshot_hashes` lists the live remote comparison surface for
    planning only and may page large sites.
-3. `push_plan_dry_run` uploads the canonical plan as a receipt, not a lock,
-   and that receipt never substitutes for a live revalidation.
-4. `push_batch_apply` revalidates fresh live evidence before every batch and
-   at the storage boundary. Apply must not reuse the dry-run receipt as
-   authority, as a lease, or as a session substitute.
+3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
+   eligibility receipt, not a lock. The dry-run receipt never substitutes for
+   a live revalidation.
+4. `push_batch_apply` is a separate remote call that revalidates fresh live
+   evidence before every batch and again at the storage boundary. Apply must
+   not reuse the dry-run receipt as authority, as a lease, or as a session
+   substitute.
 5. `push_journal` stays read-only.
 6. `push_recover inspect` classifies finish, rollback, retry, or block before
    any mutating recovery and keeps the same auth floor as the write path.
@@ -50,9 +52,9 @@ The same pull-to-push bridge applies here:
 - remote snapshot hash listing stays planning-only and may page through the
   live remote comparison surface without upgrading into write authority.
 - dry-run uploads a canonical plan receipt and never becomes a lock.
-- batched apply revalidates fresh live evidence before every batch and again
-  at the storage boundary, and is a separate remote operation from dry-run
-  while also rechecking the auth floor before mutation.
+- batched apply is a separate remote operation from dry-run, revalidates
+  fresh live evidence before every batch and again at the storage boundary,
+  and rechecks the auth floor before mutation.
 - journal inspection stays read-only.
 - inspect-first recovery is the only safe starting point for mutating
   recovery.
@@ -111,6 +113,14 @@ For the compact bridge between the pull pipeline and that topology, cite
 cite `push-deployment-topology-contract.json`. For the strongest liveness
 boundary proof, cite `push-remote-liveness-topology-contract.json`.
 
+The topology story is intentionally small:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` is the imported local site that carries the candidate plan.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only actor that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or run recovery.
+
 ## Stage Semantics
 
 The executor needs the same boundary discipline as the protocol:
@@ -119,8 +129,9 @@ The executor needs the same boundary discipline as the protocol:
 - remote snapshot hash listing is planning evidence only and never a write
   precondition by itself
 - dry-run uploads the canonical plan and returns a receipt, not a lock
-- apply revalidates fresh live evidence before every batch and again at the
-  storage boundary, and does not reuse the dry-run receipt as a lock
+- apply is a separate remote operation that revalidates fresh live evidence
+  before every batch and again at the storage boundary, and does not reuse
+  the dry-run receipt as a lock
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when inspect proves the branch
   safe with fresh live evidence

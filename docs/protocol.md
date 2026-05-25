@@ -41,7 +41,8 @@ The ladder maps directly to the pull pipeline:
 - preflight is the first live binding after importer persistence
 - snapshot hash listing is planning evidence only and may page large sites
 - dry-run is an eligibility receipt, not a lock, and never authorizes apply
-- batch apply revalidates before every batch and again at the storage boundary
+- batch apply is a separate remote operation that revalidates before every
+  batch and again at the storage boundary
 - journal inspect is read-only
 - recovery starts with inspect and only mutates when journal evidence and
   fresh live hashes still prove the branch safe
@@ -102,6 +103,16 @@ The compact production proof stack is:
   keeps dry-run and apply separate while apply revalidates fresh live hashes
 - `push-protocol-extension-contract.json` for the full production ladder
   from preflight through inspect-first recovery
+
+The pull-to-push bridge is one-way:
+
+- exporter/importer produce the immutable base package that push consumes
+- push never turns that base package back into a mutable snapshot cache
+- dry-run is a receipt, not a lock
+- apply must revalidate fresh live evidence before every batch and at the
+  storage boundary
+- journal inspect stays read-only
+- recovery starts with inspect before any mutating repair
 
 The topology model is deliberately minimal:
 
