@@ -16,6 +16,25 @@ boundary, dry-run receipt, journal/recovery inspection, production auth/
 session lifecycle, graph identity, and plugin-driver plus plugin-owned
 surface classification in one rerun.
 
+Production-grade support is still blocked by these concrete gaps:
+
+- live remote drift can still be hidden by a lab-shaped smoke, because no
+  rerunnable real-site command has yet preserved the rejected remote and
+  printed the exact first-write rejection point on the same live boundary;
+- create-time identity remapping can still fail silently, because the branch
+  has not shown live apply-time identity evidence or a hard block before the
+  write;
+- plugin-owned data traps can still escape coverage, because hidden options,
+  serialized blobs, generated files, caches, cron rows, runtime registries,
+  and plugin-owned files are not yet proven enumerated or blocked before
+  write;
+- partial file, DB, or plugin side effects can still be relabeled as success,
+  because the branch has not shown old/new/blocked classification for every
+  touched surface before retry starts; and
+- a stale manual-review artifact can still be reused against a later boundary,
+  because no rerun has yet shown that a later-discovered plugin-owned surface
+  or remapped create target gets its own preserve / reject / retry cycle.
+
 This remains the primary blocker even if the branch has polished production-
 shaped wrappers. Scenario: a reviewer upgrades a live preflight or lab-shaped
 script into production proof. Missing proof: the branch has still not shown a
