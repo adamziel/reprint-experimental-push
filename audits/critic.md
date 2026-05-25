@@ -3189,6 +3189,12 @@ Source-note proof boundary, restated:
   was rejected before mutation, cannot widen to another row, file,
   relationship-bearing record, plugin-owned surface, or hidden side effect,
   or was separated from fresh retry authority backed by new live hashes.
+- Production-grade wording must also fail closed when that same stale
+  manual-review artifact is reused to justify a later plugin-owned surface
+  such as a cron row, cache entry, runtime registry, generated file, custom
+  table, or plugin-owned file. If the proof does not show that surface was
+  blocked or classified before retry, the artifact is only historical
+  context and cannot authorize the new write.
 - Production-grade wording must fail closed when a late-discovered
   plugin-owned surface is widened into a second success claim. If the proof
   does not show the late surface was blocked or durably classified before the
