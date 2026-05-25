@@ -767,6 +767,10 @@ under load:
   rejected because planning evidence and cached hashes can skip lookup and
   rehash work, but they cannot prove the live compare, staged rows, or the
   atomic-group finalize survived failure.
+- compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure
+  is rejected because planning evidence and cached row receipts can reduce
+  replay work, but they cannot prove the queue order, journal order, or
+  atomic-group commit order needed to recover a partial plugin update.
 - compressed-remote-index-and-compressed-row-batch-skips-plugin-update-finalize
   is rejected because planning compression and batch compression can reduce
   replay work, but they cannot prove the dependency checks, live row compares,
