@@ -10,6 +10,11 @@ Do not use production wording unless the branch has all of the following for the
   preserved remote that stayed inspectable after rejection, the exact
   rejection point before the first write, and the journal/recovery inspection
   needed to audit retry scope;
+- commit `3089aee2` and a completed `npm run verify:release` run are
+  retained-source evidence on this baseline, but they still do not satisfy
+  production proof until the same branch shows live WordPress auth/session
+  lifecycle, durable journal semantics, graph identity, and plugin-driver
+  coverage on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
 - `REPRINT_PUSH_SOURCE_URL` is supplied from a real local, Playground, or Docker source and is used by a live preflight/release command, not just a setup placeholder;
 - the claimed `npm run test:playground:production-shaped-release-proof` command is not a proof command at all if it is absent from `package.json`; if it exists only as a discussion label or wrapper around other playground scripts, it remains compatibility evidence only;
 - a completed `npm run verify:release` run is still local lab evidence unless the same branch also proves the live WordPress auth/session lifecycle, durable journal semantics, preserved-remote auditability, and apply-time revalidation on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
@@ -17,6 +22,7 @@ Do not use production wording unless the branch has all of the following for the
 - if a command name sounds real-site but still resolves to the playground or lab executor, it is still compatibility evidence only; remote-like URL shape does not make a Playground executor a release command, and it does not prove preserved-remote auditability;
 - if the repo only exposes lab and playground entry points (`plan`, `apply`, and `test:playground:*`), production wording must fail closed until a named real-site release command exists, can be rerun on an actual remote, and produces preserved-remote evidence for the rejected boundary;
 - if the branch has not yet shown the exact first executor/auth/preserved-remote boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, then production wording must also fail closed on production auth/session lifecycle, recovery-journal durability, graph identity, and plugin-driver coverage; those are not implied by route shape, script naming, or review wording;
+- if the branch has only shown local retained-source evidence, route-shape compatibility, or a named smoke such as `verify:release` without the live executor/auth/preserved-remote boundary, then it has not proven production push support and must not claim production-grade wording;
 - if no branch-local command has yet been run against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, then the branch has not proven the first executor/auth/preserved-remote boundary and every production-grade claim must stay blocked;
 - if a claim points to `npm run test:playground:production-shaped-release-proof` or any similarly named wrapper without a matching `package.json` entry and a rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, treat that claim as setup-only and fail closed;
 - the next acceptable proof from reliable-executor must be a live rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that records the exact executable command string, the executor identity, the preserved remote that remained inspectable after rejection, the exact rejection point before the first write, and the journal/recovery inspection needed to audit retry scope; without those facts from one rerun, the branch still has compatibility evidence only;

@@ -7563,6 +7563,10 @@ Must-happen-before-production-grade-push-support checklist:
 - the branch must show dry-run receipt and journal/recovery inspection in the
   same run so the retry scope is auditable instead of inferred from a
   successful smoke;
+- the branch must show the exact real-site release command, not just a
+  retained-source `verify:release` run or another compatibility wrapper;
+- the branch must show production WordPress auth/session lifecycle on that
+  same live boundary, or auth remains lab-only evidence;
 - the branch must distinguish provenance from proof for each Reprint,
   ZS-Sync, and ForkPress comparison: what the note proves here, what it does
   not prove here, and the exact upstream revision or worktree state used; and
@@ -7571,6 +7575,13 @@ Must-happen-before-production-grade-push-support checklist:
   same live boundary on this worktree also shows preserved-remote evidence,
   stale-authority rejection before the first write, and a fresh retry scope
   rebuilt from live hashes.
+
+Source-note comparisons stay historical context unless this branch reran the
+same live boundary and can point to the preserved remote, stale rejection
+point, fresh retry scope, and per-surface old/new/blocked classification. The
+Reprint, ZS-Sync, and ForkPress notes remain provenance for transport,
+discovery, and review vocabulary; they are not current proof of production
+push safety on this branch.
 
 The canonical production-readiness checklist for this branch lives in
 [`audits/critic-production-checklist.md`](./critic-production-checklist.md).
