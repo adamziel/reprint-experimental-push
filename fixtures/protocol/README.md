@@ -71,6 +71,17 @@ remote boundaries:
 - journal inspect
 - recovery
 
+The production topology proof is the same in Docker and Playground:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` is the imported local edit site derived from that package
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 That same proof bundle keeps the one-remote, one-local, one-drift topology
 explicit:
 

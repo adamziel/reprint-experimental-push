@@ -87,6 +87,19 @@ drift production harness:
   through a local-only proxy.
 - Remote tunnels are disallowed in both harnesses.
 
+The one-remote, one-local, one-drift harness is the production shape:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` is the imported local site derived from that package
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
+- Docker uses one private network for those roles
+- Playground uses separate disposable blueprints for the same roles
+- both harnesses keep browser-visible inspection on the sandbox-provided
+  `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
+
 The executor also maps the pull/export/import pipeline directly onto the push
 stages:
 

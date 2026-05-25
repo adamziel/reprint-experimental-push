@@ -130,8 +130,9 @@ The pull/export/import pipeline is the immutable source of push provenance:
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
 - `persisted_pull_base_package` is the immutable handoff object push consumes
-- `push_preflight` is the first live binding after importer persistence
-- `push_snapshot_hashes` is planning evidence only and never becomes write
+- `push_preflight` is the first live bind after the importer persists that
+  handoff
+- `push_snapshot_hashes` is planning-only comparison evidence, not write
   authority
 - `push_plan_dry_run` is an eligibility receipt, not a lock
 - `push_batch_apply` revalidates fresh live evidence before every batch and at
