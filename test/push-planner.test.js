@@ -1275,6 +1275,52 @@ test('allows term taxonomy and relationships to reference same-plan terms and po
   assert.equal(result.site.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'].term_taxonomy_id, 9);
 });
 
+test('allows local termmeta references to a term created by the same plan', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local tagged term',
+      slug: 'local-tagged-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'Local term note',
+    },
+  };
+  const remote = baseSite();
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(termmetaMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(termmetaMutation),
+    'term create must be ordered before dependent termmeta',
+  );
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local tagged term');
+  assert.equal(result.site.db.wp_termmeta['meta_id:12'].term_id, 7);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();

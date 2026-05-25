@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof now includes three passing same-plan graph edges: local postmeta to a same-plan post, local parent-post links, local thumbnail metadata to a same-plan attachment, and taxonomy term relationships to same-plan terms and posts. The broader production gate is still closed until the merged evidence set catches up.</p>
-        <time class="update-stamp" datetime="2026-05-26T00:40:00+02:00">Last updated: May 26, 2026, 00:40 CEST</time>
+        <p class="lead">Current proof now includes five passing same-plan graph edges: local postmeta to a same-plan post, local parent-post links, local thumbnail metadata to a same-plan attachment, taxonomy term relationships to same-plan terms and posts, and local termmeta to a same-plan term. The broader production gate is still closed until the merged evidence set catches up.</p>
+        <time class="update-stamp" datetime="2026-05-26T00:46:00+02:00">Last updated: May 26, 2026, 00:46 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">82 Node tests passing</span>
           <span class="pill">Packaged plugin route passing</span>
@@ -554,9 +554,9 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>The same-plan graph identity coverage now spans postmeta, parent-post, thumbnail, and taxonomy relationship cases.</span></li>
+            <li><strong>Going well</strong><span>The same-plan graph identity coverage now spans postmeta, parent-post, thumbnail, taxonomy relationship, and termmeta cases.</span></li>
             <li><strong>Not going well</strong><span>The merged production gate is still closed; the planner proof has not yet been reflected in the broader end-to-end evidence set.</span></li>
-            <li><strong>Progress change</strong><span>Executable evidence now covers a third same-plan graph edge without changing the closed production gate.</span></li>
+            <li><strong>Progress change</strong><span>Executable evidence now covers the wp_termmeta.term_id edge without changing the closed production gate.</span></li>
             <li><strong>Next nudge</strong><span>Keep the page dated and explicit about the proof split between lane evidence and merged production evidence.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
