@@ -148,6 +148,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const remoteLivenessTopologyContract = readJson(
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
   );
+  const remoteLivenessContract = readJson('fixtures/protocol/push-remote-liveness-contract.json');
   const recoveryBoundaryContract = readJson('fixtures/protocol/push-recovery-boundary-contract.json');
   const productionLadderContract = readJson('fixtures/protocol/push-production-ladder-contract.json');
   assert.equal(contract.contract_id, 'push-contract-production-extension');
@@ -796,6 +797,34 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(
     remoteLivenessTopologyContract.pull_to_push_mapping.push_batch_apply,
     'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(remoteLivenessContract.contract_id, 'push-remote-liveness-contract');
+  assert.equal(
+    remoteLivenessContract.push_liveness.snapshot_hash_listing,
+    'returns live remote comparison evidence for planning only',
+  );
+  assert.equal(
+    remoteLivenessContract.push_liveness.dry_run,
+    'uploads eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    remoteLivenessContract.push_liveness.apply,
+    'revalidates live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    remoteLivenessContract.push_liveness.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(remoteLivenessContract.live_remote_proof.same_identity_at_two_times, true);
+  assert.ok(
+    remoteLivenessContract.live_remote_proof.proof.includes(
+      'dry-run and apply remain separate remote operations',
+    ),
+  );
+  assert.ok(
+    remoteLivenessContract.required_invariants.includes(
+      'dry-run and apply are separate remote operations',
+    ),
   );
   assert.ok(
     remoteLivenessTopologyContract.required_invariants.includes(
