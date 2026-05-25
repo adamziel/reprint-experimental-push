@@ -2941,6 +2941,23 @@ manual-review artifact or a source-note comparison, the claim is still
 historical context. If the evidence does not preserve the remote for audit
 after reject, it is not a production-ready push claim.
 
+Hard failure modes that still disqualify production wording:
+
+- A route-shaped smoke or packaged-plugin mount that never exercised a live
+  drifted remote on this branch.
+- A readable stale review artifact that can still be copied, matched, or
+  reused as authority after drift, even if it remains inspectable for audit.
+- A create-time alias or identity remap that silently hits a different live
+  target than the local row or path the claim names.
+- A plugin-owned surface discovered after the first write, including custom
+  tables, generated files, cron rows, runtime registries, caches, serialized
+  blobs, or external side effects, when the proof only covered the first pass.
+- A partial file, DB, or plugin write that is relabeled as success without a
+  durable old/new/blocked classification and a separately recorded fresh
+  retry scope.
+- A Reprint, ZS-Sync, or ForkPress comparison that names the upstream state
+  but not the branch-local live boundary where stale authority was rejected.
+
 Source-note comparison summary:
 
 - Reprint proves staged transport and resumable delivery rhythm. It does not
@@ -3079,6 +3096,9 @@ all of these in the same branch-local proof:
   anything unknown or outside the allowlist hard-blocked at apply time; and
 - the durable old/new/blocked classification for every touched file, DB, or
   plugin side effect.
+- the exact upstream revision or worktree state for any Reprint, ZS-Sync, or
+  ForkPress comparison, plus the branch-local live drift or retry case that
+  was reverified here.
 
 If any one of those is missing, the claim is still lab-backed or historical
 context, even if the route shape, packaged mount, fixture replay, or
