@@ -107,6 +107,9 @@ Release gate for any production wording:
   and the exact rejection point before mutation.
 - Show the preserved remote stayed auditable after reject and that the stale
   approval or review artifact could not be reused as retry authority.
+- Show that any later write, including a plugin-owned surface discovered
+  after the first write, was classified separately and not authorized by the
+  earlier comparison note or manual-review artifact.
 - Show create-time identity handling explicitly, either as a durable remap
   proof or a hard block before write.
 - Show the full plugin-owned surface for the claim, including anything found
@@ -117,6 +120,10 @@ Release gate for any production wording:
 - Show that any plugin-owned surface discovered only after the first write
   is classified as blocked, not retroactively folded into a success claim or
   treated as a safe continuation without fresh live evidence.
+- Show that comparison notes remain provenance only unless this branch
+  reverified the same live mutation boundary here; a matching upstream
+  revision or worktree state must never become current retry authority by
+  itself.
 - Show that the comparison set is conservative: Reprint proves staged
   transport rhythm and resumable pull structure, ZS-Sync proves bounded
   discovery and cursoring, and ForkPress proves reviewed-resolution
