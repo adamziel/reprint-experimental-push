@@ -21,6 +21,19 @@ The objective implies these minimum release requirements:
 9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
 10. Keep optional smokes available for local evidence collection, but do not let them stand in for release proof.
 
+## Requirement Map
+
+| Requirement | Current proof | Missing proof | Release blocker |
+| --- | --- | --- | --- |
+| One-way pull base, then one-way push to live source | Planner and smoke tests model the direction of the flow | No live-source apply path proves the direction on the production boundary | Directional intent is not enough until the live source is mutated in the same run |
+| Live recheck at apply time | Planner tests require live remote preconditions | No production apply gate proves the recheck happens against the real source before mutation | A stale preflight can still pass unless the live boundary is enforced |
+| WordPress shape coverage | Lab tests cover rows, files, plugin ownership, and graph identity modeling | No production-shaped gate proves every touched shape survives on live storage | Partial shape coverage is not a release claim |
+| Crash/retry/replay safety | Recovery and journal tests cover restart classifications | No crash boundary proof on live storage, duplicate-request proof, or stale-lease proof | Restart classes in fixtures do not prove durability on the real source |
+| Auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver | Optional smokes and benchmark fixtures cover pieces of the matrix | No single required command composes all of them at release time | Disconnected coverage cannot be promoted to a release gate |
+| Real remote/local topology | Some smokes exercise lab routes and local aliases | No checked-in required gate proves a real remote/local topology instead of a lab-backed route | Lab topology can satisfy tests while the live source remains unproven |
+| Speed claim or explicit refusal | Benchmark tests refuse unsupported throughput claims | No measured live-path speed result and no enforced `speed unclaimed` release command | Refusal-only evidence blocks overclaiming but does not release the speed claim |
+| Required release entrypoint | None | No `verify`, `release`, or `verify:release` script in `package.json` and no checked-in workflow here | Green optional runs can bypass the release decision entirely |
+
 ## Proof Boundary
 
 Current proof must be judged against the live-source release boundary, not against the existence of local helper paths. The following are useful inputs, but they are not release proof on their own:
@@ -63,7 +76,7 @@ Until that gate exists and is wired into a default entrypoint such as `npm run v
 
 ## Test Audit
 
-The current tests are useful, but they are not proof of no data loss, reliability, or speed at the production boundary. They mostly prove that the lab harness is internally consistent and that unsafe claims are refused. That is necessary guardrail coverage, not release evidence. The suite still stops short of proving the live-source loop, so every positive interpretation must stay limited to lab scope. In particular, `npm test` proving 89 passing subtests is still compatible with a release that would lose data or fail under a crash on the live boundary, because the suite never forces that boundary or a production storage backend.
+The current tests are useful, but they are not proof of no data loss, reliability, or speed at the production boundary. They mostly prove that the lab harness is internally consistent and that unsafe claims are refused. That is necessary guardrail coverage, not release evidence. The suite still stops short of proving the live-source loop, so every positive interpretation must stay limited to lab scope. In particular, `npm test` proving 89 passing subtests is still compatible with a release that would lose data or fail under a crash on the live boundary, because the suite never forces that boundary or a production storage backend. Passing tests here are best read as "the release should not be trusted yet", not as "the release is safe".
 
 Release inference rule: if a test only shows fixture integrity, redaction, refusal, or lab replay, it can support a blocker note, but it cannot support `no data loss`, `reliable`, or `fast` at the live-source boundary.
 
