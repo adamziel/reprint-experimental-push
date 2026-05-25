@@ -378,7 +378,8 @@ adjustment on the retained-source lane.
 
 Production-grade push support remains blocked until a rerunnable live boundary
 on this branch proves, on the same mutation and with replayable preserved-
-remote evidence:
+remote evidence that can be audited and rerun without trusting manual
+resolution text:
 
 - preserved-remote retention after rejection, with exact audit/retry evidence;
 - production WordPress auth/session lifecycle, not just retained-source
