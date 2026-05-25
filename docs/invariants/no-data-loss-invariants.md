@@ -22,6 +22,10 @@ This note captures the planner boundary in plain language.
 - A file type swap that would hide a live remote descendant must still stop
   even when the remote side removed an unrelated plugin; the unrelated plugin
   removal stays `keep-remote` and the file-topology evidence stays bounded.
+- A file delete that would hide a live remote descendant must still stop even
+  when an unrelated matching edit and remote-only plugin drift are present;
+  the matching edit stays `already-in-sync`, the plugin drift stays
+  `keep-remote`, and the conflict evidence stays bounded.
 - The same file type swap stop rule also holds when the remote side removed
   the unrelated plugin entirely and a matching independent edit stays
   `already-in-sync`.
