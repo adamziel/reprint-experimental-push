@@ -80,6 +80,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'push-remote-snapshot-listing-contract.json` is the compact proof that',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'push-production-revalidation-contract.json` is the compact proof that',
     ),
   );
@@ -177,6 +182,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
     ),
   );
   assert.ok(
+    protocolDocs.includes(
+      'The production proof bundle is the same one used to review the real push',
+    ),
+  );
+  assert.ok(
     protocolDocs.replace(/\s+/g, ' ').includes(
       'persisted_pull_base_package` is the immutable object the push executor consumes after importer persistence',
     ),
@@ -250,6 +260,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'The canonical production proof bundle is `push-protocol-extension-contract.json`',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'The real push executor maps that proof bundle onto the existing pull pipeline in a fixed order:',
     ),
   );
   assert.ok(

@@ -82,6 +82,8 @@ identity across `remote-base` and `remote-changed`:
   the proof to cite when you need the minimum production evidence for auth
   floor, push session minting, journal rows, lease fencing, and read-only
   recovery inspect on the same remote identity.
+- `push-remote-snapshot-listing-contract.json` is the compact proof that
+  keeps planning-only remote hash discovery separate from write authority.
 - `push-production-revalidation-contract.json` is the compact proof that
   keeps preflight, planning-only snapshot hashes, dry-run eligibility,
   apply-time revalidation, journal evidence, and inspect-first recovery

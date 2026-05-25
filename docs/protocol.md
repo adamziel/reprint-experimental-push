@@ -97,6 +97,16 @@ The pull-to-push handoff is explicit in the machine-readable proof:
 - journal inspect is read-only
 - recovery starts with inspect before any mutating repair
 
+The production proof bundle is the same one used to review the real push
+extension:
+
+- `push-production-pull-bridge-contract.json` proves the immutable pull-to-push bridge.
+- `push-remote-snapshot-listing-contract.json` proves remote hash listing stays planning-only.
+- `push-production-revalidation-contract.json` proves dry-run separation and apply-time revalidation.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` proves the auth/session/journal/recovery floor.
+- `push-remote-liveness-topology-contract.json` proves the one-remote, one-local, one-drift harness plus the liveness split.
+- `push-production-topology-contract.json` proves the Docker and Playground harness shape.
+
 The stage contract is intentionally simple:
 
 | Stage | What it does | What it does not do |

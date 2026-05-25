@@ -200,11 +200,12 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 
 The executor reviews the compact proofs in this order:
 
-1. `push-production-pull-bridge-contract.json` for immutable pull-to-push provenance
-2. `push-production-revalidation-contract.json` for the preflight, dry-run, apply-time revalidation, journal, and recovery ladder
-3. `push-production-auth-session-journal-recovery-inspect-contract.json` for auth/session/journal/inspect recovery proof
-4. `push-production-topology-contract.json` for the one-remote, one-local, one-drift topology
-5. `push-remote-liveness-topology-contract.json` for the dry-run/apply separation on that topology
+1. `push-production-pull-bridge-contract.json` for immutable pull-to-push provenance.
+2. `push-remote-snapshot-listing-contract.json` for planning-only remote hash listing.
+3. `push-production-revalidation-contract.json` for the preflight, dry-run, apply-time revalidation, journal, and recovery ladder.
+4. `push-production-auth-session-journal-recovery-inspect-contract.json` for auth/session/journal/inspect recovery proof.
+5. `push-remote-liveness-topology-contract.json` for the dry-run/apply separation on that topology.
+6. `push-production-topology-contract.json` for the Docker and Playground harness proof.
 
 The executor can be implemented as a strict request ladder:
 
@@ -258,8 +259,23 @@ That order is the production proof stack:
 
 - extension contract for stage order and recovery gates
 - pull bridge contract for immutable provenance handoff
+- remote snapshot listing contract for planning-only live hash discovery
+- production revalidation contract for dry-run separation and apply-time revalidation
+- auth/session/journal/recovery inspect contract for the auth floor and inspect-first boundary
 - remote liveness topology contract for dry-run/apply separation with live drift
 - production topology contract for the one-remote, one-local, one-drift harness proof
+
+The real push executor maps that proof bundle onto the existing pull pipeline in a fixed order:
+
+1. exporter discovers the merge base and coverage evidence.
+2. importer persists the base package as immutable provenance.
+3. `push_preflight` binds the persisted pull base package to one live remote identity and one short-lived push session.
+4. `push_snapshot_hashes` performs planning-only remote hash listing.
+5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility receipt.
+6. `push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary.
+7. `push_journal` records durable evidence without authorizing mutation.
+8. `push_recover inspect` reads the journal and fresh live hashes before any mutating repair.
+9. `push_recover auto|finish|rollback` may mutate only after inspect proves the branch safe with the same auth floor as the write path.
 
 The bridge is reviewed in a fixed order:
 
