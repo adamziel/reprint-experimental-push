@@ -52,6 +52,8 @@ The strongest current runnable evidence still falls into four classes:
 - docs-only proof: prose in `README.md`, `progress.html`, and the supervisor/audit notes
 - missing proof: live-source apply-time mutation, durable crash survival on production storage, measured live-path throughput, and a required release gate
 
+The test surfaces themselves are not stronger than that evidence boundary. [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md) records the same limit from the test side: the suite proves guardrails and refusals, not no data loss, reliability, or speed at the live-source boundary.
+
 Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push.
 
 For a narrower test-by-test breakdown, see [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md).
