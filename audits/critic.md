@@ -178,6 +178,29 @@ Production-readiness language checklist:
     unless the exact upstream revision or worktree state is named and this
     branch reran the same live mutation boundary here.
 
+Release gate for production wording:
+
+- A production-grade push claim must fail if the proof only shows a route-
+  shaped smoke, package mount shape, fixture replay, readable review note,
+  or `finalMatchesLocal` result without a branch-local live rejection point.
+- A production-grade push claim must fail if the first write succeeded but a
+  later live snapshot exposed a remapped create target, hidden plugin-owned
+  row, file, registry entry, generated asset, serialized blob, or cache
+  entry that was not separately blocked or classified before retry.
+- A production-grade push claim must fail if the remote is not preserved for
+  audit after reject, if the stale approval can be reused as retry authority,
+  or if the retry artifact is not fresh on this branch and rebuilt from live
+  hashes.
+- A production-grade push claim must fail if any touched row, file, relation-
+  bearing record, or plugin-owned surface is left unclassified before retry
+  scope is rebuilt.
+- A production-grade push claim must fail if any Reprint, ZS-Sync, or
+  ForkPress note is used as current proof without naming the exact upstream
+  revision or worktree state and rerunning the same live boundary here.
+- A production-grade push claim must fail if "manual resolution" is used as
+  a success label without the preserved remote, the rejection point, and the
+  fresh retry artifact all recorded for the same live boundary.
+
 Source-note comparison policy:
 
 - Reprint source notes may justify the overall push shape because they cover
