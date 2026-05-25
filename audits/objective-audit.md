@@ -10,7 +10,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-invariants` -> `5b25867b`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/independent-auditor` -> `2642080b`
+- `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `592c949e`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
@@ -101,7 +101,7 @@ The release requirements implied by that objective are:
 | R10 honest dry-run | Protocol smokes require receipts, reject missing/tampered receipts, bind receipts to plan/preconditions, and reject stale remote state. Authenticated lab routes bind receipts to auth/session/request data. | No production UI/operator warning tests. No proof for remote changes between production chunks or between individual production writes beyond fixture hooks. | Yes for production UX and source mutation |
 | R11 durable recovery | Model recovery tests classify old/updated/blocked states. JSONL journal tests append with monotonic sequences and `fsync` calls, and now block missing target records plus corrupt/truncated journals. Playground recovery, DB journal, process-kill, missing-commit finalization, stale-claim, and production-shaped route recovery-inspect smokes add useful fixture evidence. | No production DB-table journal, no storage-level crash matrix, no target write `fsync` proof, no exactly-once production writes, no production leases/fencing/claim expiry, no rollback, and no automatic repair policy. | Yes |
 | R12 idempotent resumability | DB journal smokes require `X-Reprint-Push-Idempotency-Key`, reject same-key/different-body requests, replay committed or rejected results, claim one concurrent same-key executor, finalize missing commits, and handle one all-old stale-claim retry path. Production-shaped route smoke also proves same-key replay and same-key/different-body conflict under `/wp-json/reprint/v1`. | No chunk cursor, production retry contract, production duplicate first-apply test, shared-DB multi-worker proof, stale-plan invalidation across chunks, or production stale-claim lease/fencing/expiry behavior. | Yes |
-| R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, attachment graph handling, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no taxonomy/menu/user/meta coverage, no arbitrary plugin tables, no multisite, no object cache/runtime side effects. | Yes |
+| R13 real WordPress shapes | Playground fixtures exercise real WordPress-visible posts, options, files, selected postmeta, one custom table, fixture plugin metadata, attachment graph handling, and a packaged temporary plugin route under `/wp-json/reprint/v1/push/*`. Local REST smokes mutate disposable Playground source sites. | Coverage is narrow. No production-backed Reprint source mutation endpoint, no large live WordPress fixture matrix, no taxonomy/menu/user/meta coverage, no serialized block-reference proof, no comments/users proof, no arbitrary plugin tables, no multisite, and no object cache/runtime side effects. | Yes |
 | R14 redaction | Several unit and smoke tests assert no raw fixture strings in conflicts, journals, storage evidence, and recovery reports. DB/file storage guard evidence is hash-only. | Redaction is checked through selected fixture strings, forbidden field names, and scoped assertions. No formal allowlist schema for all future plan, journal, conflict, recovery, auth, or benchmark artifacts. | Yes for production |
 | R15 speed | `test/performance-model.test.js` proves a deterministic model for large uploads, chunk staging, bounded DB batches, atomic visibility, parallelism limits, remote indexes as planning-only, and backpressure triggers. | No runtime benchmark, no transfer implementation proof, no memory ceiling, no latency/throughput target, no large-site run, and no proof that the model is wired into the executor. | Yes for any speed claim |
 | R16 release suite | `npm test` passed 89 tests during this audit. `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` also passed when run explicitly. | No CI workflow was found. `npm test` does not run the strongest Playground smokes. `npm run test:playground` only chains plan/apply/protocol and excludes auth, HTTP, DB journal, storage guards, process kill, stale claim, plugin atomic, forms lab, authenticated CLI, production-shaped route/package, and recovery smokes unless invoked separately. | Yes |
@@ -145,7 +145,8 @@ These tests are still lab-bound. They mostly prove carefully controlled fixtures
 6. Reliability assertions often count events rather than prove every hash transition.
 7. Auth is lab-auth, not production-auth.
 8. Plugin safety is intentionally hard-coded.
-9. Speed has no measured evidence.
+9. The strongest unsupported production-slice gap is still the boundary coverage for menu/navigation, serialized block references, comments/users, and plugin-owned custom tables.
+10. Speed has no measured evidence.
 
 ## Required Release Gates
 
@@ -157,8 +158,9 @@ Before any production no-data-loss push claim, the project needs these direct pr
 4. A durable production journal with kill-at-every-boundary tests across journal writes, DB writes, file writes, plugin activation, commit finalization, replay, and stale-claim paths.
 5. A broader WordPress fixture suite covering posts, postmeta, attachments, terms, menus, users, options, serialized data, uploads, plugin tables, plugin activation, schema changes, and multisite if in scope.
 6. A plugin validator/semantic-driver contract with at least one real plugin fixture and a conservative fallback that preserves remote state and blocks.
-7. A release test aggregator and CI workflow that run the safety, recovery, auth, storage, plugin, and performance gates or explicitly label excluded tests as non-release proof.
-8. Runtime benchmarks for large uploads and large DB changes with concrete throughput, memory, retry, and recovery measurements.
+7. A dedicated failing gate for at least one unsupported supported-slice boundary, with menu/navigation, serialized block references, comments/users, or plugin-owned custom tables made to fail before release claims can expand.
+8. A release test aggregator and CI workflow that run the safety, recovery, auth, storage, plugin, and performance gates or explicitly label excluded tests as non-release proof.
+9. Runtime benchmarks for large uploads and large DB changes with concrete throughput, memory, retry, and recovery measurements.
 
 Until these gates exist, public documentation should keep the claim scoped to:
 **lab evidence for push safety invariants, not production-safe live WordPress push.**
