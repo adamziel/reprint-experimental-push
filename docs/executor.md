@@ -86,6 +86,7 @@ The canonical proof stack for that scope is:
 
 | Proof | What it pins down |
 | --- | --- |
+| [`fixtures/protocol/push-pull-mapping.json`](../fixtures/protocol/push-pull-mapping.json) | The one-way bridge from exporter/importer provenance into the push ladder. |
 | [`fixtures/protocol/push-protocol-extension-contract.json`](../fixtures/protocol/push-protocol-extension-contract.json) | The full push ladder: preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery. |
 | [`fixtures/protocol/push-remote-liveness-contract.json`](../fixtures/protocol/push-remote-liveness-contract.json) | The compact proof that dry-run and apply stay separate remote operations and that apply revalidates fresh live evidence. |
 | [`fixtures/protocol/push-deployment-topology-contract.json`](../fixtures/protocol/push-deployment-topology-contract.json) | The one-remote, one-local, one-drift topology in Docker and Playground. |

@@ -7,12 +7,13 @@ exporter/importer pull pipeline with a safe remote mutation protocol.
 ## Production Contract
 
 The push executor may mutate only after it proves a safe three-way plan from
-the persisted pull base, the edited local site, and the live remote site.
+the persisted pull base package, the edited local site, and the live remote
+site.
 
 The production ladder is fixed:
 
-1. `push_preflight` binds the persisted pull base to one live remote identity
-   and one short-lived push session.
+1. `push_preflight` binds the persisted pull base package to one live remote
+   identity and one short-lived push session.
 2. `push_snapshot_hashes` lists live remote hashes for planning only.
 3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
    receipt, not a lock.
@@ -30,7 +31,7 @@ Push consumes immutable provenance from the existing pull pipeline:
 
 | Pull artifact or stage | Push consumer | Boundary rule |
 | --- | --- | --- |
-| Exporter merge-base scan | `push_preflight` | Bind the imported base to one live remote identity and one short-lived session. |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base package to one live remote identity and one short-lived session. |
 | Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live hash listing. |
 | Coverage evidence | `push_plan_dry_run` | Upload the canonical plan, but do not reserve a lock. |
 | Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
