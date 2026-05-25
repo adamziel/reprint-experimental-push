@@ -15,6 +15,12 @@ but the production path still needs:
 - claim fencing or lease ownership so stale retries cannot overwrite newer recovery work
 - restart-readable artifacts for the remote snapshot and the recovery journal
 
+The runtime contract is stricter than the lab harness:
+
+- a transient JSON journal in the test process is proof of behavior, not proof of durability
+- a partial remote mutation without a durable recovery artifact is a release blocker
+- replay must not duplicate inserts or resurrect stale local data when the journal already proves completion
+
 Release blocker rule:
 
 - Any partial remote mutation without a corresponding recovery artifact is unacceptable.

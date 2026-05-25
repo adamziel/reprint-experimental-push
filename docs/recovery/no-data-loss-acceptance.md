@@ -15,8 +15,17 @@ This lane treats the recovery boundary as valid only when one of these states is
 ## What counts as acceptable evidence
 
 - Lab tests may use in-memory JSON journals and temporary files to prove the state machine.
+- That evidence is model-only. It does not prove crash safety until the same boundary is backed by a durable journal.
 - Production recovery still needs durable journal storage, claim fencing, restart-readable inspection, and flush semantics appropriate to the storage backend.
 - A partial remote mutation without inspectable recovery artifacts is a release blocker.
+
+## Acceptable post-failure states
+
+The apply boundary only accepts these recovery results:
+
+- `old-remote`: nothing visible has committed, and the journal explains where the attempt stopped.
+- `fully-updated-remote`: the plan already landed, replay is inert, and the completed journal is enough to classify the site.
+- `blocked-recovery`: the remote drifted, the journal is incomplete, or the retry cannot prove safety; both journal and remote artifacts must remain inspectable.
 
 ## Retry rule
 
