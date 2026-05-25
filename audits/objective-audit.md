@@ -31,6 +31,19 @@ Current proof must be judged against the live-source release boundary, not again
 - route smokes that still report `labBacked: true`
 - any proof that does not exercise the one-way pull base to one-way push to live source loop
 
+## Required Release Gate
+
+The repo still needs one enforced release gate that closes the gap between lab evidence and a releasable live push path. That gate must fail closed unless it can prove, in the same run, all of the following:
+
+1. live-source boundary validation at apply time
+2. durable journal evidence that survives crash/retry/replay cases
+3. lease/fencing enforcement against stale or duplicate claims
+4. graph identity and plugin-data-driver coverage for the WordPress shapes this push can touch
+5. a real remote/local topology, not a fixture-only or Playground-only alias
+6. either a measured live-path throughput result or an explicit refusal to claim throughput
+
+Until that gate exists and is wired into a default entrypoint, the project can only claim lab proof, not production release readiness.
+
 ## Evidence Table
 
 | Bucket | Current proof | Missing proof | Release blocker |
@@ -59,7 +72,7 @@ The objective stays blocked for five concrete reasons:
 
 1. There is no single required release command that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, real remote/local topology, crash boundary, recovery, and a measured live-path speed check.
 2. The strongest authenticated push route still self-identifies as `labBacked: true`, so the best visible push evidence is still lab-scoped and cannot be treated as a production release proof.
-3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path, publish a live-path threshold, or establish a production release speed claim.
+3. The benchmark tests are refusal-only. They prove the suite can reject unsupported throughput claims, but they do not measure the live push path, publish a live-path threshold, or establish a production release speed claim. A refusal-only benchmark is anti-claim evidence, not speed proof.
 4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary, and they do not exercise a real remote-to-local-to-remote release path or no-loss behavior under the production storage semantics named by the objective.
 5. There is no checked-in CI workflow in this checkout and no `verify`/`release`/`verify:release` script in `package.json`, so there is no visible enforced entrypoint that could make the release gate mandatory or close the loop from proof to deployable gate.
 6. The benchmark suite is intentionally refusal-first: `report.throughput.productionThroughput` stays `not-claimed`, and the speed claim tests only prove the gate refuses unsupported production throughput until the missing measurements exist.
