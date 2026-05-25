@@ -94,6 +94,7 @@ try {
             boundary: {
               firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
               status: 'unimplemented',
+              verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
             },
             preflight: {
               status: preflight.status,

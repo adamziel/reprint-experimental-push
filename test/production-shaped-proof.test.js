@@ -169,6 +169,7 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.match(proof.stdout, /"sameRemoteIdentity": true/);
   assert.match(proof.stdout, /"boundary": \{/);
   assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
   assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
   assert.match(proof.stdout, /"liveDrift": \{\s*"sameRemoteIdentity": true/);
   assert.match(proof.stdout, /"releaseProof": \{/);
@@ -215,6 +216,7 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.equal(releaseVerify.proof.snapshot_hash_listing, 'planning-only remote hash listing');
   assert.equal(releaseVerify.proof.boundary.first_remaining_production_boundary, 'auth/session lifecycle and durable journal semantics');
   assert.equal(releaseVerify.proof.boundary.status, 'unimplemented');
+  assert.equal(releaseVerify.proof.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
   assert.equal(releaseVerify.topology.networking.ingress_port, 8080);
   assert.equal(releaseVerify.topology.networking.proxy_policy, 'local-only');
   assert.equal(releaseVerify.topology.networking.tunnels, 'disallowed');
@@ -233,8 +235,8 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.equal(releaseVerify.releaseProof.apply.idempotency.replayed, false);
   assert.equal(releaseVerify.releaseProof.apply.idempotency.freshMutationWork, true);
   assert.equal(releaseVerify.releaseProof.apply.idempotency.conflict, false);
-  assert.notEqual(releaseVerify.proof.liveDrift.baseHash, releaseVerify.proof.liveDrift.changedHash);
-  assert.equal(releaseVerify.proof.liveDrift.changedFixture, 'remote-changed');
+  assert.notEqual(releaseVerify.proof.liveDrift.base_hash, releaseVerify.proof.liveDrift.changed_hash);
+  assert.equal(releaseVerify.proof.liveDrift.changed_fixture, 'remote-changed');
 });
 
 test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {

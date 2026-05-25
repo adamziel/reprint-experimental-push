@@ -34,10 +34,39 @@
     "snapshot_hash_listing": "planning-only remote hash listing",
     "apply": "fresh live revalidation before every batch and at the storage boundary",
     "journal": "durable journal readback with apply-committed evidence",
+    "liveDrift": {
+      "same_remote_identity": true,
+      "base_hash": "retained-remote-snapshot-hash",
+      "changed_hash": "later-remote-snapshot-hash-from-the-same-remote-identity",
+      "changed_fixture": "remote-changed"
+    },
+    "durableJournal": {
+      "rows": 17,
+      "applyCommitted": true,
+      "mutationApplied": 7,
+      "idempotencyOpened": 1
+    },
     "recovery": "inspect-first recovery readback",
     "boundary": {
       "first_remaining_production_boundary": "auth/session lifecycle and durable journal semantics",
-      "status": "unimplemented"
+      "status": "unimplemented",
+      "verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"
+    }
+  },
+  "releaseProof": {
+    "preflight": {
+      "sessionType": "application-password-basic"
+    },
+    "dryRun": {
+      "sessionType": "application-password-basic"
+    },
+    "apply": {
+      "sessionType": "application-password-basic",
+      "idempotency": {
+        "replayed": false,
+        "freshMutationWork": true,
+        "conflict": false
+      }
     }
   },
   "required_invariants": [

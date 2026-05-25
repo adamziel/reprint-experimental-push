@@ -148,6 +148,9 @@ expected session types or if the journal readback does not preserve durable
 apply-committed evidence after apply and recovery inspect.
 The checked proof also asserts the durable journal summary fields directly:
 `rows`, `applyCommitted`, `mutationApplied`, and `idempotencyOpened`.
+It also emits the exact boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`
+so the supervisor output distinguishes the lab-shaped proof from the missing
+production boundary.
 
 That checked release entrypoint has two exact outputs:
 
