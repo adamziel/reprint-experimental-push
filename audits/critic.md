@@ -2896,6 +2896,14 @@ False reliability claims to avoid:
   against any different row, file, relationship-bearing record, or
   plugin-owned surface, including a late-discovered cache entry, cron row,
   runtime registry, generated file, or custom table.
+- "Manual resolution later" when the only new evidence is a still-readable
+  stale review note. Readability is audit value only unless the claim also
+  shows the preserved remote, the stale rejection point, and a separately
+  recorded fresh retry artifact rebuilt from current live hashes.
+- "The route is production-safe" when the evidence only shows route shape,
+  a packaged mount, a fixture replay, or `finalMatchesLocal`. Those are
+  compatibility checks, not proof that the live executor rejected stale
+  authority before mutation.
 
 Production claim bar:
 
