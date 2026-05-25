@@ -95,6 +95,8 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 
 None of those tests is weak because it fails to assert enough detail. They are weak only in the specific sense that they stop at the wrong boundary. A release claim needs a required command that binds those guardrails to a live-source apply step; without that, the suite can still be green while the objective remains unproven.
 
+The practical audit point is sharper than "the suite lacks coverage": the current tests are distributed guardrails with no single enforced release verdict. That means a green run can still leave auth/session, durable journal, leases/fencing, graph identity, plugin-driver, topology, and throughput claims unclosed in the same invocation.
+
 Concrete read:
 
 - `test/push-planner.test.js` tells us the planner refuses stale or overlapping changes, but it does not prove the source site was mutated safely.
