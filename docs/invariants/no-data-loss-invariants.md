@@ -25,6 +25,9 @@ This note summarizes the planner's no-overwrite contract.
 - Matching independent file deletions, edits, and file type swaps may also
   coexist with a live-preconditioned delete while remote-only plugin drift or
   removals stay preserved.
+- Matching independent row deletions and file type swaps may also coexist
+  with a live-preconditioned delete while remote-only plugin drift stays
+  preserved.
 
 ## Must Preserve
 
@@ -58,6 +61,8 @@ This note summarizes the planner's no-overwrite contract.
 - Local delete or file type swap when the live remote resource drifted and the
   local side did not independently reach the live remote hash.
 - Local delete or file type swap when it would hide a live remote descendant.
+- Local row delete or file type swap when a matching independent resource has
+  not independently reached the live remote hash.
 - Plugin-owned or plugin-context mutations when the required live remote plugin
   context drifted and the local side did not independently match it.
 - Unsupported plugin-owned resources when the planner cannot establish a

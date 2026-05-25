@@ -9854,6 +9854,63 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned row delete and matching independent edit and type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery/photo.txt'] = 'base photo';
+  base.db.wp_options['option_name:reprint_push_row_fixture_delete'] = {
+    option_name: 'reprint_push_row_fixture_delete',
+    option_value: { mode: 'base' },
+  };
+  base.db.wp_options['option_name:reprint_push_row_fixture_shared'] = {
+    option_name: 'reprint_push_row_fixture_shared',
+    option_value: { mode: 'base-shared' },
+  };
+
+  const local = baseSite();
+  delete local.db.wp_options['option_name:reprint_push_row_fixture_delete'];
+  local.db.wp_options['option_name:reprint_push_row_fixture_shared'] = {
+    option_name: 'reprint_push_row_fixture_shared',
+    option_value: { mode: 'shared' },
+  };
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery/photo.txt'] = { type: 'directory' };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.db.wp_options['option_name:reprint_push_row_fixture_shared'] = {
+    option_name: 'reprint_push_row_fixture_shared',
+    option_value: { mode: 'shared' },
+  };
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const rowDeleteMutation = mutationFor(plan, 'row:["wp_options","option_name:reprint_push_row_fixture_delete"]');
+  const matchingRow = decisionFor(plan, 'row:["wp_options","option_name:reprint_push_row_fixture_shared"]');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/gallery/photo.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(rowDeleteMutation.action, 'delete');
+  assert.equal(typeSwapMutation.action, 'put');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(matchingRow.decision, 'already-in-sync');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.db.wp_options, 'option_name:reprint_push_row_fixture_delete'), false);
+  assert.equal(result.site.db.wp_options['option_name:reprint_push_row_fixture_shared'].option_value.mode, 'shared');
+  assert.equal(result.site.files['about.php'], '<?php echo "shared about";');
+  assert.deepEqual(result.site.files['wp-content/uploads/gallery/photo.txt'], { type: 'directory' });
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
