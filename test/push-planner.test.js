@@ -11023,6 +11023,33 @@ test('keeps remote-only plugin changes while a matching independent delete stays
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin changes while a matching file delete stays already-in-sync', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+
+  const remote = baseSite();
+  delete remote.files['index.php'];
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(deleteDecision.change.localChange, 'delete');
+  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(plan.preconditions.length, 0);
+});
+
 test('keeps remote-only plugin removals while a live-preconditioned delete, matching independent edit, delete, and type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
