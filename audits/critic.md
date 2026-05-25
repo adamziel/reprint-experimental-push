@@ -154,6 +154,11 @@ Source-note comparison boundary:
   unusable as retry authority unless the remote stayed preserved and the next
   attempt rebuilt scope from fresh live evidence at the same live write
   boundary.
+- Therefore, any production wording that cites a source note must still show
+  the missing repo proof on this branch: the exact live write boundary, the
+  preserved remote snapshot, the stale rejection point, the fresh retry
+  scope, and the failure case that was actually exercised. Without all five,
+  the note remains historical input only.
 
 Any comparison that omits the exact upstream revision or worktree state being
 reverified remains historical context only, even if it names the same feature
