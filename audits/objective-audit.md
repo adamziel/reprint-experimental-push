@@ -213,6 +213,12 @@ What they do not prove:
 - They do not prove that any single green command is sufficient for release, because the evidence is still split across optional commands.
 - They do not prove a production speed claim because the benchmark checks are model-level or refusal-only; no live push path benchmark is enforced here.
 
+Claim-by-claim test verdict:
+
+- No data loss: not proven. The tests cover planner and journal invariants, but they do not execute a live-source mutation boundary that rechecks the current remote immediately before apply and then verifies all affected WordPress shapes survive.
+- Reliability: not proven. The tests simulate recovery conditions and stale-claim handling in fixtures or lab routes, but they do not prove crash, retry, duplicate request, lease expiry, or mid-apply restart behavior on the real storage and transport path.
+- Speed: not proven. The benchmark tests only refuse unsupported throughput claims and describe safe fast-path structure. They do not time the live push path, establish a threshold, or prove memory/runtime ceilings on the release boundary.
+
 That is why the suite remains a proof of refusal and local safety modeling, not a proof of release readiness.
 The uncomfortable but useful reading is that the suite is more trustworthy as a blocker than as an approver.
 
@@ -226,6 +232,14 @@ The uncomfortable but useful reading is that the suite is more trustworthy as a 
 | Missing proof | [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L33) has no required `verify:release`-style command; this checkout has no `.github` directory, so there is no visible CI entrypoint that composes auth/session, journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and benchmark checks. | Nothing by itself; this bucket marks the gap. | The objective still lacks a single required release gate that fails closed when any safety proof remains optional, and there is no checked-in automation to prevent a green default run from bypassing the hardest checks. `npm test` and `npm run test:playground` therefore remain insufficient by design. |
 | Release blocker | The best evidence still says `labBacked: true` for the production-shaped route/package smokes, the benchmark path remains refusal-only, and the strongest checks are still opt-in scripts rather than one enforced release path. | Honest refusal to overclaim release readiness | Production no-data-loss, reliability, and speed remain unproven until the missing gate and live-source evidence exist, so the release claim still fails closed. |
 | Release blocker | [`src/authenticated-http-push-client.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/src/authenticated-http-push-client.js#L60-L74) still self-identifies the authenticated push profile as `labBacked: true`, and [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L33) still exposes only opt-in scripts. | Honest refusal to overclaim release readiness | The release claim still fails closed because the strongest visible authenticated flow remains lab-labeled and there is still no enforced release gate to stop a green default run from bypassing the missing proof. |
+
+## Release Verdict
+
+The release verdict remains **blocked**.
+
+The reason is not that the repo lacks useful tests. It has them. The reason is that the tests stop at indirect proof, refusal proof, and lab proof. None of those buckets clears the live-source boundary that the objective names, and none of them is enforced by a required release command.
+
+Until one checked-in gate fails closed on `labBacked: true`, fixture-only, benchmark-only, or missing live-source evidence, the project can still produce green runs without proving no data loss, reliability, or speed on the real release path.
 
 ## Explicit Requirements From The Objective
 
