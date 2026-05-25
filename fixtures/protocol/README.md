@@ -55,7 +55,6 @@ The normal sequence is:
 47. `push-production-recovery-inspect-contract.json`
 48. `push-production-recovery-drift-contract.json`
 49. `push-production-topology-contract.json`
-50. `push-protocol-extension-contract.json`
 
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
@@ -74,10 +73,6 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-recovery-inspect-contract.json` is the compact proof that
   recovery inspect stays read-only while the journal row, lease fence, live
   evidence, auth floor, and `8080` topology still match the write path.
-- `push-protocol-extension-contract.json` is the top-level production ladder
-  proof that explicitly pins preflight, remote snapshot hash listing,
-  dry-run plan upload, batched apply, journal inspect, and inspect-first
-  recovery to the same immutable pull provenance.
 - `push-production-recovery-drift-contract.json` is the compact proof that
   recovery inspect stays read-only after live drift while the persisted pull
   base, journal row, auth floor, and one-remote, one-local topology still
@@ -170,10 +165,6 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-topology-contract.json` is the compact production bundle
   that keeps the same one-remote, one-local, one-drift topology and the
   push-stage sequence in a single object.
-- `push-protocol-extension-contract.json` is the canonical production ladder
-  bundle. It ties the persisted pull base to preflight, remote snapshot hash
-  listing, dry-run plan upload, batched apply, journal inspect, and
-  inspect-first recovery in one object.
 - The test topology is the same in both harnesses: `remote-base` seeds the
   persisted pull base, `local-edited` holds the imported local edits,
   `remote-changed` is the same remote identity after drift, and `runner`

@@ -19,6 +19,29 @@ The concrete lab roles are:
 - `runner`: the only actor allowed to preflight, list hashes, upload the dry-
   run plan, apply batches, inspect the journal, or run recovery
 
+The canonical push ladder is:
+
+| Stage | Purpose | Boundary rule |
+| --- | --- | --- |
+| `push_preflight` | Bind the persisted pull base package to one live remote identity and one short-lived push session. | First live binding after importer persistence. |
+| `push_snapshot_hashes` | List the live remote comparison surface for planning only. | Read-only; never becomes write authority. |
+| `push_plan_dry_run` | Upload the canonical dry-run plan and get an eligibility receipt. | Receipt only; not a lock or lease. |
+| `push_batch_apply` | Mutate in batches after fresh validation. | Revalidate before every batch and again at the storage boundary. |
+| `push_journal` | Record durable evidence. | Read-only. |
+| `push_recover inspect` | Classify finish, rollback, retry, or block before repair. | Inspect first; read-only. |
+| `push_recover auto|finish|rollback` | Perform a recovery branch only when inspect proves it safe. | Same auth floor as the write path. |
+
+The pull-to-push bridge is one-way:
+
+| Pull provenance | Push use | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the immutable base package to one live remote identity and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Use it as planning provenance only. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan as an eligibility receipt. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only. |
+| Coverage and lineage replay | `push_recover inspect` | Classify recovery before any mutating repair. |
+
 The executor follows the same ordered stages defined in the protocol:
 
 1. `push_preflight` binds the imported pull base package to one live remote
@@ -142,6 +165,16 @@ The same mapping is what the Docker and Playground proofs must exercise:
 Use `push-deployment-topology-contract.json` for the smallest topology proof
 and `push-remote-liveness-topology-contract.json` when you need the dry-run
 and apply liveness split in the same harness.
+
+The same topology is mirrored in both harnesses:
+
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- both harnesses use the same route names for preflight, dry-run, apply,
+  journal inspection, and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 
 This keeps the exporter/importer pipeline authoritative for the base package
 while making push a separate production write path that can only consume that
