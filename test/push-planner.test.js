@@ -1536,6 +1536,70 @@ test('durable completed replay stays fully-updated and remains inspectable from 
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('durable atomic apply preserves old-remote failures and completed replay through recovery inspection', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+
+  for (const [label, options, expectedJournalStatus, expectedCode] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened', 'INJECTED_FAILURE_BEFORE_MUTATION'],
+    ['after staging', { failAfterStaging: true }, 'staged', 'INJECTED_FAILURE_AFTER_STAGING'],
+    [
+      'after dependency validation',
+      { failAfterDependencyValidation: true },
+      'dependencies-validated',
+      'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION',
+    ],
+  ]) {
+    const writer = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, { durableJournal: writer, ...options }));
+    writer.close();
+
+    const persisted = readRecoveryJournal(journalPath);
+    const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(error.code, expectedCode, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(inspection.status, 'old-remote', label);
+    assert.equal(persisted.integrity.status, 'ok', label);
+  }
+
+  const completedWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedWriter });
+  completedWriter.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayWriter = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: replayWriter,
+  });
+  replayWriter.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: replayRemote });
+
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.equal(inspection.claim.status, 'none');
+  assert.ok(persisted.records.some((record) => record.type === 'recovery-state'));
+  assert.ok(persisted.records.some((record) => record.type === 'journal-replayed'));
+  assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
+});
+
 test('durable completed replay stays inert across repeated retries and does not duplicate recovery evidence', () => {
   const base = baseSite();
   const local = baseSite();
