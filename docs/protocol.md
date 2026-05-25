@@ -25,6 +25,19 @@ The production push protocol is a fixed ladder:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
+The remote liveness boundary is part of the ladder, not an implementation
+detail:
+
+| Step | What it proves |
+| --- | --- |
+| `push_preflight` | Binds the persisted pull base package to one live remote identity and one short-lived push session. |
+| `push_snapshot_hashes` | Lists the live remote comparison surface for planning only. |
+| `push_plan_dry_run` | Uploads the canonical plan and returns an eligibility receipt, not a lock. |
+| `push_batch_apply` | Revalidates fresh live evidence before every batch and again at the storage boundary. |
+| `push_journal` | Records durable evidence without authorizing mutation. |
+| `push_recover inspect` | Reads the journal and fresh live hashes before any mutating repair. |
+| `push_recover auto|finish|rollback` | Mutates only after inspect proves the branch safe with the same auth floor as the write path. |
+
 ## Pull Bridge
 
 The pull/export/import pipeline is the immutable source of push provenance:
@@ -62,6 +75,18 @@ the docs:
   repair
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe with the same auth floor as the write path
+
+The bridge also maps to the persisted pull package that the importer stores:
+
+| Pull artifact | Push use |
+| --- | --- |
+| merge-base and coverage evidence from the exporter | `push_preflight` binds the imported package to the live remote identity. |
+| persisted pull base package from the importer | `push_snapshot_hashes` reads planning-only live comparison evidence. |
+| immutable pull provenance | `push_plan_dry_run` uploads the canonical plan as an eligibility receipt. |
+| persisted pull base package plus live drift evidence | `push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary. |
+| durable pull provenance | `push_journal` records read-only evidence for recovery. |
+| immutable provenance plus fresh live hashes | `push_recover inspect` classifies finish, rollback, retry, or block before any mutating repair. |
+| importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` mutates only when the inspect branch and auth floor still agree. |
 
 ## Auth Floor
 

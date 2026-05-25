@@ -112,6 +112,22 @@ its ordering or auth floor:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
+The executor treats the live remote as a liveness boundary, not a cached
+plan:
+
+- `push_preflight` is a short-lived identity bind to the persisted pull base.
+- `push_snapshot_hashes` is remote hash listing only and must not authorize a
+  write.
+- `push_plan_dry_run` returns a receipt that can be inspected, replayed, or
+  rejected, but never a lock.
+- `push_batch_apply` rechecks the live remote before each batch and again at
+  the storage boundary, so drift between dry-run and apply is visible.
+- `push_journal` is durable evidence for later inspection, not an apply gate.
+- `push_recover inspect` must happen before any mutating repair and must
+  classify the branch before mutation starts.
+- `push_recover auto|finish|rollback` may only run after inspect, and only
+  when the same auth floor still holds.
+
 The compact end-to-end production proof is
 `push-production-executor-flow-contract.json`:
 
@@ -139,6 +155,23 @@ The pull/export/import pipeline is the only immutable provenance source:
   mutating repair
 - `push_recover auto|finish|rollback` mutates only after inspect proves the
   branch safe with the same auth floor as the write path
+
+The test topology is the same in Docker and Playground:
+
+| Role | Identity | Contract |
+| --- | --- | --- |
+| Remote source | `remote-base` | Seeds the persisted pull base package. |
+| Local edit site | `local-edited` | Carries the imported local edits. |
+| Drift witness | `remote-changed` | Reuses the same remote identity after drift. |
+| Runner | `runner` | Owns preflight, hash listing, dry-run, apply, journal inspect, and recovery. |
+
+Implementation notes for that topology:
+
+- Docker uses one private network.
+- Playground uses separate disposable blueprints.
+- Browser-visible inspection stays on the sandbox-provided `8080` ingress.
+- The local inspection proxy stays local-only.
+- Remote tunnels are disallowed.
 
 The executor proof should be read as one compact production bundle:
 
