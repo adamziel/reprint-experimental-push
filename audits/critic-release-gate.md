@@ -235,6 +235,7 @@ Production-readiness language checklist:
 Evidence-classification rule:
 
 - if a claim does not explicitly say whether a note, artifact, or smoke is historical context, compatibility evidence, or live retry proof, the wording is ambiguous and must fail closed;
+- if a comparison note does not explicitly say what it proves here and what it does not prove here, the wording is ambiguous and must fail closed;
 - a Reprint, ZS-Sync, or ForkPress note is historical context unless the exact upstream state and the same live boundary were rerun here;
 - a readable manual-review artifact is audit evidence only unless it is paired with the preserved remote, the rejection point, and a fresh retry scope rebuilt from live hashes on this branch; and
 - a route-shaped smoke, package-mount match, or `finalMatchesLocal` result is compatibility evidence only and cannot be upgraded into proof for a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface.
