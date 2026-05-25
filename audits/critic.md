@@ -260,7 +260,8 @@ The failure scenarios that still need explicit proof are:
   attempt to rebuild scope from fresh live evidence after the remote was
   preserved for audit, with a fresh retry artifact recorded instead of
   widening to a different row or file, or targeting a relationship-bearing or
-  plugin-owned surface.
+  plugin-owned surface, including any late-discovered option, table, file,
+  cron row, cache, runtime registry, or generated artifact.
 - A live remote drift is detected only after the first write has already
   started; the missing proof is a fail-closed pre-write boundary, not a
   post-hoc "partial recovery" story that rebrands a mixed write as success.
@@ -2846,7 +2847,8 @@ False reliability claims to avoid:
   manual-review note or source-note comparison is only audit context. If the
   remote drifted, that artifact stays audit-only and cannot authorize a retry
   against any different row, file, relationship-bearing record, or
-  plugin-owned surface.
+  plugin-owned surface, including a late-discovered cache entry, cron row,
+  runtime registry, generated file, or custom table.
 
 Production claim bar:
 
@@ -2867,3 +2869,12 @@ all of these in the same branch-local proof:
 If any one of those is missing, the claim is still lab-backed or historical
 context, even if the route shape, packaged mount, fixture replay, or
 `finalMatchesLocal` hash looks production-shaped.
+
+Source-note proof boundary, restated:
+
+- Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress `55f9879` are
+  historical design inputs here unless this branch rechecked the exact live
+  mutation boundary on the same scenario and preserved the remote for audit.
+- A correct upstream commit or worktree state is provenance, not current
+  authority. If the branch did not re-run the same live drift, retry, or
+  create-time identity case here, the comparison must stay historical.
