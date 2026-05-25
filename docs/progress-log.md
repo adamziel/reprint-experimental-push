@@ -4,6 +4,19 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:57:57
+
+<a id="2026-05-25-public-status-audit-095757"></a>
+
+- Tightened the evidence-map copy in [progress.html](../progress.html) so it
+  says the lab snapshots cover guarded behavior instead of claiming proof.
+- Kept the public status unchanged in substance: the runnable live-topology
+  proof is still the current material step, and the real executor/auth,
+  recovery journal, Docker/Playground, and plugin driver gates remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [newest audit](../progress.html#recent-public-audits),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 09:55:47
 
 <a id="2026-05-25-public-status-audit-095547"></a>
