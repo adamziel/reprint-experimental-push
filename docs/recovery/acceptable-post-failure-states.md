@@ -13,6 +13,8 @@ The named failure boundaries in this lane are expected to stay in `old-remote`:
 - failure after dependency validation
 
 Completed-plan replay is only acceptable when it returns `fully-updated-remote` and stays inert.
+If the replayed remote has drifted since completion, the result must be `blocked-recovery`
+with journal and remote artifacts, not a silent retry.
 
 ## Old remote
 
@@ -38,6 +40,7 @@ The remote matches the completed plan and replay is inert.
 Required artifacts:
 
 - Journal evidence proving the plan was already completed.
+- No new mutation work should be produced by replay.
 
 Retry must not:
 
@@ -64,9 +67,16 @@ The artifact pair must make inspection possible:
 
 - Durable journal evidence.
 - Remote-state evidence describing the observed drift or partial commit.
+- The blocked state must remain inspectable after restart.
 
 ## Operational rule
 
 Any failure path must end in one of the three states above.
 
 If the remote is not fully old or fully updated, the recovery result must be blocked and inspectable.
+
+## Production note
+
+The JSON and in-memory lab fixtures validate the model. Production recovery still needs
+durable journal storage, sync guarantees, and restart-readable recovery artifacts before
+any partial remote mutation can be considered recoverable.
