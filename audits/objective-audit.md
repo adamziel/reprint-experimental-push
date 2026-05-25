@@ -6,6 +6,8 @@ The project is **not releasable as a production WordPress push path**.
 
 Current top blocker, rechecked on 2026-05-25: there is still no checked-in, required live-source release command. The repo has helper and lab scripts, but no enforced `verify`, `verify:release`, or `release` entrypoint that exports `REPRINT_PUSH_SOURCE_URL`, runs against a retained source endpoint, rechecks apply-time state, and records preserved-remote evidence in the same invocation. The claimed `test:playground:production-shaped-release-proof` surface is also absent in this checkout. The blocker is not "more tests"; it is the missing single command that must own the live-source verdict and fail closed when preserved-remote proof is absent.
 
+Audit focus note for this checkout: because `verify:release` is absent here, the missing proof is not limited to preserved-remote drift, journal recovery, auth/session lifecycle, graph identity, plugin drivers, or CI enforcement. All of those would still matter if the command existed, but the present blocker is more basic: there is no checked-in required command surface to carry any of those proofs at the live-source boundary.
+
 Top blocker, stated narrowly:
 
 - `package.json` still stops at `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers
