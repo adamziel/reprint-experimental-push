@@ -45,7 +45,7 @@ Current command-surface gap:
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone. The actionable fix is not another lab helper; it is a checked-in `verify` or `release` gate that fails closed unless it can prove live-source state at apply time. Until that exists, the strongest evidence remains regression or lab evidence, not release evidence.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone. The actionable fix is not another lab helper; it is a checked-in `verify` or `release` gate that fails closed unless it can prove live-source state at apply time, reject stale claims, and emit a machine-checkable verdict from the same invocation. Until that exists, the strongest evidence remains regression or lab evidence, not release evidence.
 
 Right now the best available commands are `node --test`, `npm run test:playground`, `plan`, and `apply`. Those are useful, but they are support paths, not a release gate, because none of them force a live-source verdict in the same invocation.
 
@@ -212,6 +212,7 @@ Actionable release criterion:
 - add one checked-in command that revalidates live state, applies to the real source boundary, and prints a fail-closed verdict
 - wire that command into CI or another default invocation path
 - keep `speed unclaimed` as the required output until a live-path measurement is available
+- treat any green run that does not include the live-source boundary as non-release evidence, even if it exercises auth/session, journal, or recovery helpers
 
 ## Actionable Gate
 
@@ -228,7 +229,7 @@ Without that command, every passing test remains support evidence only.
 
 ## Weakest Current Claim
 
-The weakest claim is any implication that the current suite can certify the live-source release boundary. That claim is unsupported for one simple reason: there is still no required command that must touch live source storage and then emit a release verdict in the same run.
+The weakest claim is any implication that the current suite can certify the live-source release boundary. That claim is unsupported for one simple reason: there is still no required command that must touch live source storage and then emit a release verdict in the same run, so the repo can still go green while the release decision remains unmade.
 
 - No required command exists that must reach the live-source boundary and emit a machine-checkable release decision.
 - The suite can still go green without proving live-source mutation, crash survival, replay safety, or throughput on the real path.
