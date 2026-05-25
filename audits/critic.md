@@ -4,7 +4,7 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
-The latest lab evidence is real. The reliable lane now adds a missing-secret production-shaped gate, a timeout wrapper around the HTTP client, and a stricter failure fixture for the production release verifier. That is useful, but it still only proves bounded lab behavior. It does not prove a production auth/session lifecycle, durable production journal ownership with lease/fencing/replay wiring, or replay output equivalence strong enough to trust as a release gate. Until those exist, wording about production-ready push is stronger than the evidence.
+The latest lab evidence is real. The reliable lane now adds a missing-secret production-shaped gate, a timeout wrapper around the HTTP client, a stricter failure fixture for the production release verifier, and a replay-idempotency check that requires `replayed: true` and `freshMutationWork: false` on a second `/apply`. That is useful, but it still only proves bounded lab behavior. It does not prove a production auth/session lifecycle, durable production journal ownership with lease/fencing/replay wiring, or full replay output equivalence strong enough to trust as a release gate. Until those exist, wording about production-ready push is stronger than the evidence.
 
 ## What The Source Notes Actually Support
 
@@ -16,9 +16,10 @@ The push design should borrow those pieces, but it still needs its own mutation-
 
 Latest supervision evidence narrows the remaining gap, but does not close it:
 the branch now carries explicit release-boundary wording, a missing-secret gate,
-and a timeout-protected release verifier, yet production auth/session lifecycle,
-durable journal ownership with lease/fencing/replay wiring, and replay output
-equivalence are still not proven on a real WordPress source site.
+a timeout-protected release verifier, and a replay-idempotency proof, yet
+production auth/session lifecycle, durable journal ownership with
+lease/fencing/replay wiring, and exact replay output equivalence are still not
+proven on a real WordPress source site.
 
 ## Blocking Gaps
 
@@ -26,7 +27,7 @@ equivalence are still not proven on a real WordPress source site.
 | --- | --- | --- | --- |
 | Hidden data loss across graph writes | A push edits `wp_postmeta.post_id`, `post_parent`, `_thumbnail_id`, menu links, attachment references, or serialized block payloads while the target identity changed on the remote after pull. | The current proof only blocks a narrow stale-reference case and explicitly says same-plan identity creation and general rewrite remain unsupported. There is no identity map, rewrite proof, or end-to-end referential integrity test for the affected WordPress graph surfaces. | Without automatic rewrite or a hard block for every graph-mutating class, a push can preserve row hashes while breaking relationships or resurrecting the wrong object. |
 | Auth/session release boundary is still lab-shaped | A real production request needs cookie, nonce, or Application Password state to survive issuance, scoping, rotation, revocation, replay rejection, and cleanup across retries and crashes. | The recent release-boundary evidence proves only the checked boundary wording and lab behavior. There is still no production auth/session lifecycle with durable retention, replay-safe cleanup, or revocation on the real push path. | Without a real lifecycle, a release gate can accept a request that cannot be audited, replayed safely, or rejected after credential state changes. |
-| Replay output is not proven exact | A replayed release response returns `200` and `replayed=true` but differs from the original completed apply in body fields that callers or auditors depend on. | The release verifier now checks the success shape more carefully, but it still does not prove exact replay equivalence, canonical response stability, or field-level identity with the original apply response. | A release gate that only checks broad success can bless a replay that is semantically different from the original apply. |
+| Replay output is not proven exact | A replayed release response returns `200` and `replayed=true` but differs from the original completed apply in body fields that callers or auditors depend on. | The release verifier now proves replay idempotency at the mutation boundary, but it still does not prove exact replay equivalence, canonical response stability, or field-level identity with the original apply response. | A release gate that only checks broad success can bless a replay that is semantically different from the original apply. |
 | Durable journal ownership is not yet production-proven | Two workers or a retry race to own the same push journal after a timeout, crash, or network loss, and the old worker resumes late. | The current notes still stop at boundary vocabulary. They do not show durable journal storage with lease/fencing tokens, replay wiring, or a production claim model that survives stale-worker resumption. | A journal without ownership and fencing can let a stale worker publish or replay writes after a newer claim has advanced. |
 | Preserved-remote retry is not proven | A retry after partial apply reuses stale local evidence and overwrites the remote instead of resuming from an auditable preserved remote snapshot. | There is no end-to-end proof that the remote state is retained, reloaded, and compared before retry, or that replay is fenced so a retry cannot silently choose a newer or older remote than the one first observed. | Retry safety is part of production durability; without preserved remote evidence, a second attempt can become a blind overwrite. |
 | Manual resolution can become stale overwrite permission | An operator selects "take local" after reviewing a conflict, then retries after the remote changed again or after a previous attempt left a mixed state. | No reviewed-resolution artifact binds the approval to the exact base/local/remote hashes, reviewer identity, and a fresh live snapshot on retry. The docs say manual resolution is only acceptable if the remote is preserved for audit and retry starts from fresh evidence, but the design does not yet show that artifact or enforcement path. | A stale manual decision is equivalent to granting overwrite permission on new remote data. |
@@ -78,4 +79,4 @@ These are the missing proofs that must land before the project can claim product
 
 ## Current Bottom Line
 
-The project has credible lab evidence for staged transport, stale-claim handling, and some guarded writes. It still does not prove production auth/session lifecycle, durable journal ownership with lease/fencing/replay, preserved-remote retry, full graph identity safety, or general plugin driver coverage. Until those are demonstrated in production-backed code, the honest claim remains: fixture-scoped and lab-backed push evidence, blocked for production.
+The project has credible lab evidence for staged transport, stale-claim handling, replay idempotency, and some guarded writes. It still does not prove production auth/session lifecycle, durable journal ownership with lease/fencing/replay, preserved-remote retry, full graph identity safety, or general plugin driver coverage. Until those are demonstrated in production-backed code, the honest claim remains: fixture-scoped and lab-backed push evidence, blocked for production.
