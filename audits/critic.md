@@ -1820,3 +1820,25 @@ smoke, fixture replay, or `finalMatchesLocal` result cannot backfill those
 gaps, and a comparison to Reprint, ZS-Sync, or ForkPress is historical only
 unless the cited upstream revision or worktree was reverified at the same live
 write boundary.
+
+Concrete failure scenarios that still need repo-local proof:
+
+- A remote row changes after dry-run but before the first write. The missing
+  proof is a live revalidation check that fails closed before any mutation and
+  preserves the rejected hashes for later audit.
+- A create path renumbers or aliases the target ID during apply. The missing
+  proof is either a durable remap reservation or a hard block before write.
+- A plugin owns custom tables, serialized state, cron rows, generated files,
+  or runtime registries outside the allowlist. The missing proof is an exact
+  owned-surface manifest and apply-time revalidation, or a durable block with
+  an auditable rejection reason.
+- A write succeeds in one store but not another, leaving mixed DB/file/plugin
+  state. The missing proof is durable old/new/blocked classification and a
+  retry path that starts from fresh live evidence instead of inherited
+  approval.
+- A manual-review artifact is still readable after drift. The missing proof is
+  that the artifact remains audit-only, cannot widen scope, and cannot be used
+  as current authority on retry.
+- A Reprint, ZS-Sync, or ForkPress comparison sounds current because the route
+  or package shape matches. The missing proof is the exact upstream revision or
+  worktree state and a fresh recheck at the same live write boundary.
