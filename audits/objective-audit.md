@@ -7,13 +7,13 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `29bfcd55`
+- `origin/lane/no-data-loss-invariants` -> `fa0ce3ea`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `7f7f9b6c`
-- `origin/lane/independent-auditor` -> `369fdd07`
-- `origin/lane/critic` -> `c036004c`
+- `origin/lane/independent-auditor` -> `33b839f0`
+- `origin/lane/critic` -> `2a3634b7`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/same-plan-wordpress-graph-create` -> `70925d88`
+- `origin/lane/same-plan-wordpress-graph-create` -> `732e1251`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `f0b2fcde`
 - `origin/main` -> `4b7b47a6`
@@ -28,16 +28,16 @@ but it did not change the release conclusion:
 - `origin/lane/reliable-executor` now retries the release-proof port handling
   at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` now adds an atomic plugin bundle
-  invariant proof at `29bfcd55`.
+  invariant proof at `fa0ce3ea`.
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `7f7f9b6c`.
 - `origin/lane/critic` now tightens the audit around the recovery conflict
-  evidence at `c036004c`.
+  evidence at `2a3634b7`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
-- `origin/lane/same-plan-wordpress-graph-create` now records a silent smoke
-  blocker at `70925d88`, so the same-plan path still stops short of release-
+- `origin/lane/same-plan-wordpress-graph-create` now records a stale term
+  taxonomy identity proof at `732e1251`, so the same-plan path still stops short of release-
   grade proof.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss

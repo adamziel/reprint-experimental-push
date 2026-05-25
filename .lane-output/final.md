@@ -10,8 +10,8 @@ Evidence checked:
 - `git diff -- audits/objective-audit.md`
 
 What I found:
-- `origin/lane/fast-paths` is now at `7f7f9b6c`, and the audit now matches the refreshed remote head list.
-- `origin/lane/same-plan-wordpress-graph-create` remains at `70925d88`, and the audit still records that its silent smoke blocker falls short of release-grade proof.
+- `origin/lane/no-data-loss-invariants` moved to `fa0ce3ea`, `origin/lane/critic` moved to `2a3634b7`, `origin/lane/independent-auditor` moved to `33b839f0`, and `origin/lane/same-plan-wordpress-graph-create` moved to `732e1251`.
+- The audit now matches those refreshed remote heads and still records that the same-plan proof remains below release grade.
 - The overall release verdict is unchanged: the repository is still not releasable as a production WordPress push path.
 - No new production-backed mutation, recovery, or measured-speed evidence appeared in this pass.
 
@@ -25,7 +25,7 @@ Push result:
 Worktree status:
 - Branch: `lane/cycle-20260525-mainwindows-2349/independent-auditor`
 - Dirty tracked files: `audits/objective-audit.md`, `.lane-output/final.md`
-- Relative to `origin/main`: `ahead 1217, behind 198`
+- Relative to `origin/main`: `ahead 1220, behind 198`
 - Supervisor accountability: clean
 
 Next supervisor nudge:
