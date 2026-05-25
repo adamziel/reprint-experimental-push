@@ -11248,6 +11248,53 @@ test('durable recovery boundaries classify failures as old remote and completed 
   );
 });
 
+test('reopened durable journals keep the replay boundary inert after a dependency-validation failure boundary', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const firstWriter = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: firstWriter,
+      failAfterDependencyValidation: true,
+    }),
+  );
+
+  firstWriter.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(failure.details.recovery.status, 'old-remote');
+  assert.ok(failure.details.recovery.artifacts.journal, 'dependency validation failure must retain journal artifacts');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+
+  const completedJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedJournal });
+  completedJournal.close();
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('reopened durable journals keep completed replays inert and do not resurrect stale local data', () => {
   const base = baseSite();
   const local = baseSite();
