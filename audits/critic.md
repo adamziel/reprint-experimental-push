@@ -102,6 +102,10 @@ Any hidden-loss mode that is not proven there remains a blocker:
 - remote drift after dry-run but before apply must be rejected without losing
   the original remote state, and retry scope must be rebuilt from fresh live
   hashes rather than manual judgment;
+- stale auth/session reuse after identity or role drift must be proven safe
+  only if the branch shows lease/fencing behavior; a preflight-minted session
+  or refreshed credential that can still authorize a later apply against a
+  changed remote is a replay-risk bug, not production proof;
 - create-time identity remaps must be proven at apply time, not assumed from
   route shape, fixture replay, or review wording;
 - later-discovered plugin-owned surfaces, remapped create targets, and mixed
