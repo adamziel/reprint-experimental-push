@@ -6830,6 +6830,48 @@ test('completed-plan replay keeps stale remote data blocked and safe retries rem
   );
 });
 
+test('completed-plan replay stays read-only and blocks when stale local data is reintroduced', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "stale local";';
+  replayRemote.db.wp_posts['ID:2'].post_title = 'Stale inserted local';
+  const replaySnapshot = JSON.stringify(replayRemote);
+
+  const replayError = captureError(() =>
+    applyPlan(replayRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.journal);
+  assert.ok(replayError.details.recovery.artifacts.remote);
+  assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
+  assert.equal(
+    replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Stale inserted local',
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    0,
+  );
+});
+
 test('completed-plan replay stays blocked across repeated drifted retries and preserves the same recovery artifacts', () => {
   const base = baseSite();
   const local = baseSite();
