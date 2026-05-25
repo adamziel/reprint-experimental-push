@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 07:44:27 CEST
+Last updated: 2026-05-25 07:45:03 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 07:44:27 CEST - Supervisor Snapshot
+## 2026-05-25 07:45:03 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and latest audit note still agree on the blocked state.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the public page stays scan-first and points at linked evidence instead of repeating it.
+- Progress change: the public page now points at a fresher audit note and stays scan-first instead of repeating evidence.
 - Next nudge: keep each lane to one proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
@@ -23,12 +23,12 @@ changed, what is helping, what is not helping, and the next nudge.
 
 Note: the lane-local page becomes live only after merge to `main`; GitHub Pages lags until then.
 
-Audit note: [audits/supervisor-note-20260525-073717.md](../audits/supervisor-note-20260525-073717.md) captures the latest alignment pass in one screen.
+Audit note: [audits/supervisor-note-20260525-074503.md](../audits/supervisor-note-20260525-074503.md) captures the latest alignment pass in one screen.
 
 <details>
 <summary>Earlier entries</summary>
 
-- 2026-05-25 07:44:27 CEST: kept the blocked assessment, proof links, and lane nudges aligned while the scan view stayed terse.
+- 2026-05-25 07:45:03 CEST: kept the blocked assessment, proof links, and lane nudges aligned while the scan view stayed terse.
 - 2026-05-25 07:37:17 CEST: tightened the public scan view to remove repeated wording while keeping the blocked assessment and proof links intact.
 - 2026-05-25 07:32:57 CEST: refreshed the snapshot without changing the blocked assessment and kept the page/log/audit links aligned.
 - 2026-05-25 07:29:32 CEST: removed the duplicate lane-nudges block from the public page and kept the blocked state intact.
