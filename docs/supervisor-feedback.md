@@ -1,11 +1,11 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 12:31:15 CEST
+Last updated: 2026-05-25 12:33:38 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 12:31:15 CEST
+## 2026-05-25 12:33:38 CEST
 
 - Going well: `reliable-executor` still has the clearest lab proof, and `progress-publisher` keeps the page and log short.
 - Not going well: the production gate is still closed because real-endpoint auth/session, durable journal semantics, graph identity, and plugin-driver proof are still missing.
