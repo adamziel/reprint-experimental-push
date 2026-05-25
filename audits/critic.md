@@ -1,17 +1,15 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `889bd37a`, with `63a3502f` as an earlier retained-source proof
-point and `68664884` as the prior boundary-verdict step. That lane's completed
+remote head `c00eb112`, with `889bd37a` as the prior explicit production
+boundary verdict, `63a3502f` as an earlier retained-source proof point, and
+`68664884` as the earlier boundary-verdict step. That lane's completed
 `npm run verify:release` result, including `authSessionType`, minted session
 shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
-retained-source lab evidence. The newer boundary verdict at `889bd37a`
-retires the stale "no verify:release exists" critique, but it does not convert
-retained-source evidence into branch-local retry authority or production
-proof. The remote lane now also exposes `verify:release` in `package.json`, so
-any remaining absence of that command on this checkout is only a branch-local
-merge gap, not a project-wide absence, and must not be confused with the live
-proof gap this branch still has.
+retained-source lab evidence. The remote lane now also exposes `verify:release`
+in `package.json`, so any remaining absence of that command on this checkout is
+only a branch-local merge gap, not a project-wide absence, and must not be
+confused with the live proof gap this branch still has.
 
 That means the critique target is narrower now: the supervised lane has
 stronger retained-source evidence, but this worktree still lacks a rerunnable
@@ -33,10 +31,10 @@ Single strongest blocker: this worktree still has no rerunnable live release
 command that proves the first executor/auth/preserved-remote boundary on a
 real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. Until that exact
 boundary exists here, production-grade push wording stays false reliability.
-The next acceptable proof must be a single rerun of that live boundary, with
-preserved remote, apply-time revalidation, journal/recovery inspection, and
-explicit old/new/blocked classification for every touched row, file,
-relationship-bearing record, and plugin-owned surface.
+The next acceptable proof must be one rerun of that live boundary, with exact
+command string, preserved remote, apply-time revalidation, journal/recovery
+inspection, and explicit old/new/blocked classification for every touched row,
+file, relationship-bearing record, and plugin-owned surface.
 
 What improved in the supervised lane is narrow but real: the retained-source
 harness now names executor/session/journal details instead of only route
@@ -351,6 +349,20 @@ of these on the same live boundary:
 - preserved-remote evidence that stays inspectable after rejection; and
 - an executable rerun that classifies every touched surface old, new, or
   blocked before retry starts.
+
+Release-gate checklist before any production wording:
+
+- exact executable command and exact live `REPRINT_PUSH_SOURCE_URL`;
+- executor identity and auth/session boundary before the first write;
+- preserved remote still inspectable after rejection;
+- dry-run receipt plus apply-time revalidation on the same mutation;
+- journal/recovery inspection showing retry scope rebuilt from fresh live
+  hashes;
+- graph identity coverage for create-time remaps and late-discovered surfaces;
+- plugin-driver coverage for hidden plugin-owned data traps outside the
+  allowlist; and
+- old/new/blocked classification for each touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts.
 
 Production-grade wording is still invalid if any of the following are true:
 
