@@ -150,6 +150,8 @@
       "identity": "remote-example",
       "drift_witness": true
     },
+    "remote_identity": "remote-example",
+    "local_identity": "local-dev-site",
     "live_drift": {
       "between": ["remote_base", "remote_changed"],
       "proof": [

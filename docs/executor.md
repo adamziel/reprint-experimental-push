@@ -287,6 +287,24 @@ listing, dry-run, apply, journal inspect, and inspect-first recovery all stay
 separate while the topology keeps the same one-remote, one-local, one-runner
 shape.
 
+The pull/export/import pipeline is the provenance source for that proof:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- push preflight binds that persisted package to the live remote identity and
+  a short-lived push session
+- push snapshot hashes remain planning evidence only
+- push dry-run uploads the canonical plan and returns a receipt, not a lock
+- push batch apply revalidates live evidence before every batch and at the
+  storage boundary
+- push journal and push recover inspect durable evidence first, and mutating
+  recovery only proceeds when journal rows plus fresh live hashes prove the
+  action
+
+That mapping is one-way on purpose: push consumes the stored base package, but
+it never rewrites the exporter/importer provenance to make a stale remote look
+current.
+
 ## Topology
 
 The topology proof is the simplest possible production-shaped setup that still
