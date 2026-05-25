@@ -1445,6 +1445,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['atomic-groups', 'backpressure', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-unbounded-upload-parallelism-skips-backpressure',
+    proposal: 'use a compressed remote index to justify unbounded upload parallelism once staging has started',
+    rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded parallelism can still outrun the receipt and journal order needed to recover after a pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
