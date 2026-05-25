@@ -14,7 +14,7 @@ linked implementation artifacts.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to the proof trail.
 - Pending proof gates: production auth/session storage, durable journal ownership, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers.
 - Next nudge: keep production gates blocked until a worker proves production auth/session/journal internals and graph identity mapping.
-- Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. This lane's copy becomes live only after merge to `main`, so the published copy still lags until merge.
+- Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. The published copy still lags until this lane merges to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>
