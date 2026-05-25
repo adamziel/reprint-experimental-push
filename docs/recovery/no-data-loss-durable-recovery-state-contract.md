@@ -1,32 +1,38 @@
-# No-Data-Loss Durable Recovery State Contract
+# No Data Loss Durable Recovery State Contract
 
-The durable apply path has three acceptable outcomes after an interruption:
+This lane treats atomic apply as safe only when every interrupted run lands in one of three outcomes:
 
 1. `old-remote`
 2. `fully-updated-remote`
-3. `blocked-recovery` with journal and remote artifacts
+3. `blocked-recovery` with recovery artifacts attached
 
-Any partial remote mutation that cannot be explained with a durable recovery
-artifact is a release blocker.
+Anything else is a release blocker.
 
-## Boundary rules
+## Required failure shape
 
-- Failure before mutation must leave the remote unchanged and the journal in an
-  inspectable pre-commit state.
-- Failure after staging or after dependency validation must still classify as
-  `old-remote` when the remote has not been mutated yet.
-- A completed plan replay must remain inert. It may update durable journal
-  evidence, but it must not duplicate inserts or resurrect stale local data.
-- A stale completed replay against a drifted remote must be blocked instead of
-  being treated as safe.
+A failure during apply must not leave the remote partially mutated without a recovery artifact.
 
-## Retry contract
+The acceptable aftermath is:
 
-Retries are only safe when the journal and current remote jointly prove one of
-the accepted states above.
+- the remote is unchanged (`old-remote`)
+- the remote is fully updated and replay is inert (`fully-updated-remote`)
+- the apply is blocked and the recovery record carries both journal evidence and the current remote snapshot (`blocked-recovery`)
 
-- `old-remote` means the remote still matches the pre-apply envelope.
-- `fully-updated-remote` means the remote already matches the completed plan.
-- `blocked-recovery` means replay cannot be proven safe and must stop with
-  artifacts for inspection.
+## Retry rules
 
+- Retrying a completed plan must not reapply mutations.
+- Retrying must not duplicate inserts.
+- Retrying must not resurrect stale local data that is already superseded by the remote state.
+- A partial write without recovery artifacts is not safe to retry.
+
+## Boundary evidence
+
+The test matrix in `test/push-planner.test.js` should keep proving these boundaries:
+
+- failure before mutation
+- failure after staging
+- failure after dependency validation
+- replay of a completed plan
+- blocked partial recovery
+
+The durable journal implementation should preserve these states with append-only evidence, not just in-memory test fixtures.
