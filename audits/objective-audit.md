@@ -233,6 +233,12 @@ What they do not prove:
 - They do not prove a production speed claim because the benchmark checks are model-level or refusal-only; no live push path benchmark is enforced here.
 - They do not prove a release-safe no-loss or reliability claim either, because the strongest recovery artifacts still come from fixtures and lab-backed routes, not from a required live-source gate.
 
+Direct claim verdict:
+
+- No data loss: unproven. The suite checks planner and journal invariants, but it never proves live-source mutation plus end-to-end preservation of every affected WordPress shape.
+- Reliability: unproven. The suite simulates crash and replay cases in fixtures or lab routes, but it does not prove the real storage and transport path survives them without loss or reorder.
+- Speed: unproven. The benchmark code refuses unsupported throughput claims, but it does not measure the live push path or enforce a runtime or memory threshold.
+
 Claim-by-claim test verdict:
 
 - No data loss: not proven. The tests cover planner and journal invariants, but they do not execute a live-source mutation boundary that rechecks the current remote immediately before apply and then verifies all affected WordPress shapes survive.
