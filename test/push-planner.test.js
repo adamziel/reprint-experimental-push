@@ -17447,6 +17447,16 @@ test('the durable recovery boundary remains fail-closed until the release gate w
     'the release gate still does not wire the durable recovery inspect proof into the release preflight path',
   );
   assert.equal(
+    packageJson.scripts['verify:release'].includes('db-journal-process-kill'),
+    false,
+    'the release gate still does not prove crash durability at the DB journal boundary',
+  );
+  assert.equal(
+    packageJson.scripts['verify:release'].includes('db-journal-stale-claim-all-old'),
+    false,
+    'the release gate still does not prove lease ownership or fencing against stale recovery claims',
+  );
+  assert.equal(
     packageJson.scripts['verify:release'].includes('recovery:file-journal'),
     true,
     'the release gate still only proves restart smoke, not durable recovery inspect, durable storage, or replay classification',
