@@ -10,11 +10,12 @@ and leases/fencing on a real-site rerun. The retired critique is the one that
 said no `verify:release` command exists; do not reintroduce it on this branch.
 The current blocker on this audit branch is the missing rerunnable live
 boundary with preserved-remote audit evidence on a real local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL`; the absence of a branch-local real-site
-release command is secondary to that missing live proof, not a substitute for
-it. Keep the supervised lane and this branch separate: retained-source lab
-evidence can support design review, but it cannot stand in for this
-worktree's own live retry proof.
+Docker `REPRINT_PUSH_SOURCE_URL`. The lack of a branch-local real-site release
+command is a separate gap, but it is not the main blocker and must not be
+mistaken for the supervised lane's retained-source evidence. Keep the
+supervised lane and this branch separate: retained-source lab evidence can
+support design review, but it cannot stand in for this worktree's own live
+retry proof.
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
@@ -113,16 +114,18 @@ What must change before production-grade wording is defensible:
 
 Comparison with the source notes stays conservative:
 
-- Reprint gives staged-transport and resumability vocabulary, but it does not
-  prove this branch can preserve a rejected remote, fence stale authority, or
-  rerun live push on a WordPress source boundary;
-- ZS-Sync gives bounded discovery and batching vocabulary, but it does not
-  prove plugin-owned surface coverage, identity remapping, or retry-safe
-  handling of partial file, DB, and plugin side effects; and
-- ForkPress gives audit and crash-consistency vocabulary, but it does not
-  prove live remote preservation, durable journal semantics on this branch,
-  leases or fencing, or that later-discovered plugin-owned surfaces cannot
-  inherit an earlier approval.
+- Reprint `27c5f25` supports staged transport, resumability vocabulary, and
+  chunked delivery framing only; it does not prove this branch can preserve a
+  rejected remote, fence stale authority, or rerun live push on a WordPress
+  source boundary;
+- ZS-Sync `d9334a0` supports bounded discovery, cursoring, and batched
+  selection only; it does not prove plugin-owned surface coverage, identity
+  remapping, or retry-safe handling of partial file, DB, and plugin side
+  effects on this branch; and
+- ForkPress `55f9879` supports audit and crash-consistency vocabulary only; it
+  does not prove live remote preservation, durable journal semantics on this
+  branch, leases or fencing, or that later-discovered plugin-owned surfaces
+  cannot inherit an earlier approval.
 
 Production-grade wording must also stay explicit about what the notes do not
 prove here:
@@ -138,7 +141,9 @@ prove here:
   runtime registries, generated files, caches, serialized blobs, and plugin-
   owned files must be enumerated before write; and
 - none of them prove a later-discovered row, file, remapped create target, or
-  plugin-owned surface can inherit retry authority from the first approval.
+  plugin-owned surface can inherit retry authority from the first approval;
+  if a comparison note does not state what it proves here and what it does not
+  prove here, it stays provenance only.
 
 Current critic bar for this baseline:
 
