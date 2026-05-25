@@ -1,31 +1,44 @@
 # No Data Loss Recovery Contract
 
-The atomic apply path has three acceptable outcomes after a failure boundary:
+This lane treats `src/apply.js` as safe only when every apply attempt ends in
+one of these inspectable states:
 
-- `old-remote`: nothing was committed to the remote site, and the recovery artifact explains why retry is safe.
-- `fully-updated-remote`: every planned mutation is already present, so replay must stay read-only and return the completed journal artifact.
-- `blocked-recovery`: the remote is partially advanced or drifted, and the result must carry recovery artifacts for inspection and fencing.
-- `blocked-recovery` is also the correct result when a completed journal is replayed against a drifted remote and the replay cannot stay read-only.
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery` with journal and remote artifacts
 
-The important distinction is between lab evidence and durable production storage:
+The durable journal is the release boundary. The in-memory model in
+`test/push-planner.test.js` proves the policy, but production must satisfy the
+same contract with persisted artifacts that survive restart.
 
-- Lab journals and model tests can prove the state machine and replay contract.
-- Production recovery needs durable journal rows, fsync-backed file writes where applicable, fencing or lease protection around the writer, and a clear recovery artifact that survives process failure.
-- The durable journal, not the in-memory replay fixture, must be able to explain why the remote is `old-remote`, `fully-updated-remote`, or `blocked-recovery` after restart.
-- A partial remote mutation without a recovery artifact is a release blocker. If the code cannot prove one of the safe outcomes, it must stay blocked and expose inspectable artifacts instead of retrying blindly.
-- A completed replay must stay read-only. Replaying a completed plan against a fully updated remote can return `fully-updated-remote`, but it must not duplicate inserts or resurrect stale local data.
-- The replay boundary is idempotent: a completed plan replay may only confirm the current remote state, never create a second copy of an inserted row or restore a stale local edit.
-- If the completed remote has drifted, the replay must stop as `blocked-recovery` and keep both the journal and remote artifacts for inspection.
+## Failure boundaries
 
-If a retry cannot prove `old-remote` or `fully-updated-remote`, it must stay blocked rather than reapply mutations blindly.
+The apply path must remain distinguishable at these points:
 
-Failure boundaries covered by this contract:
+1. before any mutation is applied
+1. after staging the plan
+1. after dependency validation
+1. during commit, when the remote may already be partially updated
+1. replay of a completed plan
 
-- failure before mutation
-- failure after staging
-- failure after dependency validation
-- replaying a completed plan
+## Recovery rules
 
-The first three boundaries must stay `old-remote`. A completed replay must stay
-`fully-updated-remote`. If the remote drifts after completion, the replay must
-fall back to `blocked-recovery` with artifacts instead of silently retrying.
+- Pre-mutation, staging, and dependency-validation failures must remain
+  `old-remote`.
+- A completed plan replay must remain `fully-updated-remote`.
+- A partial remote mutation without a durable recovery artifact is a release
+  blocker.
+- If a partial mutation is observable, the recovery state must be
+  `blocked-recovery` and must preserve both the journal and the remote
+  snapshot for inspection.
+
+## Durable storage expectations
+
+The next production hook should be the first executable boundary that can prove
+the journal is durable, readable, and fenced:
+
+- append-only journal rows or files
+- fsync or equivalent durability on the journal path
+- claim or lease fencing so stale retries do not win
+- recovery inspection that can explain why a retry is safe or blocked
+
