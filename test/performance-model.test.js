@@ -621,6 +621,12 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
   );
   assert.ok(
     model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys' &&
+      fastPath.gateProofs.live.includes('original live precondition')
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'compress-chunk-transit-frames-with-canonical-chunk-digests' &&
       fastPath.gateProofs.recovery.includes('durable chunk receipts')
     ),

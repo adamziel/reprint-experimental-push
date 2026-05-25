@@ -758,6 +758,9 @@ The important rejection cases are modeled too:
   dependency checks, metadata writes, or the atomic-group commit.
 - backpressure pauses upstream producers instead of compressing away evidence
   or treating an unacknowledged buffer as success.
+- compressed durable receipt logs are allowed only as recovery-evidence
+  transport, with stable receipt keys preserved so the original live
+  precondition and atomic-group barrier still decide success.
 
 `scripts/bench/guarded-executor-benchmark.js` moves one step past the static
 model. It generates real file chunk buffers, writes them into benchmark staging,
