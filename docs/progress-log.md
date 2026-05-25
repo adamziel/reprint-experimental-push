@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 05:09:30
+
+<a id="2026-05-25-public-status-audit-050930"></a>
+
+- Reconciled [progress.html](../progress.html) with the live `date` output
+  (`2026-05-25 05:09:30 CEST`) and kept the visible last-updated stamp current.
+- Tightened the public lead so the first screen stays concise while still
+  naming the unproven production gates.
+- No new production proof was added; real WordPress executor/auth, durable
+  journaling, Docker/Playground integration, graph identity, plugin drivers,
+  and release-grade leases remain pending until proven.
+- Evidence trail: [progress.html](../progress.html), [progress-log.md](progress-log.md),
+  [approach-scorecard.md](approach-scorecard.md), [executor.md](executor.md),
+  [recovery/apply-journal.md](recovery/apply-journal.md),
+  [playground-topology.md](playground-topology.md), [protocol.md](protocol.md),
+  [supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Public Status Audit 05:08:42
 
 <a id="2026-05-25-public-status-audit-050842"></a>
