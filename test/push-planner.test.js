@@ -12551,6 +12551,51 @@ test('durable replay after an old-remote recovery stays inert and does not resur
   assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('completed replay stays inert on repeated retries and does not duplicate inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const firstReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  const firstReplayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const firstReplay = applyPlan(firstReplayRemote, plan, {
+    durableJournal: firstReplayJournal,
+    journal: completed.journal,
+  });
+  firstReplayJournal.close();
+
+  const secondReplayRemote = JSON.parse(JSON.stringify(firstReplay.site));
+  const secondReplayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const secondReplay = applyPlan(secondReplayRemote, plan, {
+    durableJournal: secondReplayJournal,
+    journal: completed.journal,
+  });
+  secondReplayJournal.close();
+
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(firstReplay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(secondReplay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(firstReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(secondReplay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assertAcceptableRecoveryState(firstReplay.recoveryState);
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assertRecoveryStateArtifacts(firstReplay.recoveryState, 'fully-updated-remote');
+  assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(firstReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(firstReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('stale completed replay stays blocked with inspectable artifacts instead of collapsing to old-remote', () => {
   const base = baseSite();
   const local = baseSite();
