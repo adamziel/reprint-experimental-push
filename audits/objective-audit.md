@@ -19,6 +19,7 @@ The objective implies the following minimum release requirements:
 9. Keep the optional smokes available for local evidence collection, but do not let them stand in for release proof.
 10. Fail the release gate on any claim that remains lab-backed, fixture-scoped, benchmark-only, or otherwise indirect.
 11. Make the release gate print the last failing proof bucket so the missing release evidence is explicit.
+12. Make the release gate the default enforced path in CI or equivalent automation so a green casual run cannot bypass it.
 
 Those requirements are the minimum release bar, not aspirational extras.
 
