@@ -1,0 +1,64 @@
+{
+  "contract_id": "push-production-recovery-inspect-contract-one-remote-one-local",
+  "purpose": "compact production proof that recovery inspect stays read-only while journal rows, lease fencing, and the auth floor still match the write path",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "persisted_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "remote_site_id": "remote-example"
+    }
+  },
+  "push_sequence": [
+    "push_preflight",
+    "push_snapshot_hashes",
+    "push_plan_dry_run",
+    "push_batch_apply",
+    "push_journal",
+    "push_recover inspect",
+    "push_recover auto|finish|rollback"
+  ],
+  "auth_and_session": {
+    "required_floor": "at least as strict as current Reprint HMAC usage",
+    "push_session": "short-lived and bound to the persisted pull base package plus the live remote identity"
+  },
+  "journal_row": {
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "storage_guard": "filesystem-compare-rename",
+    "live_hash_proof": "fresh live hashes are read before any mutating recovery branch"
+  },
+  "recovery_inspect": {
+    "authorization": "read-only evidence reader that never authorizes mutation by itself",
+    "classifies": [
+      "finish",
+      "rollback",
+      "retry",
+      "block"
+    ],
+    "proof": "inspect reads the journal row and fresh live hashes before any mutating recovery mode"
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    },
+    "proof": [
+      "remote-base and remote-changed are the same remote identity observed at different times",
+      "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy",
+      "recovery inspect happens before any mutating repair"
+    ]
+  },
+  "required_invariants": [
+    "recovery must begin with inspect before any mutating repair",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "claim generation and lease expiry fence stale workers before mutation",
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+  ]
+}

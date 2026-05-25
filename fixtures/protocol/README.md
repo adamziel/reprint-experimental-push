@@ -51,6 +51,7 @@ The normal sequence is:
 43. `push-production-revalidation-contract.json`
 44. `push-recovery-boundary-contract.json`
 45. `push-production-push-recovery-contract.json`
+46. `push-production-recovery-inspect-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -65,6 +66,9 @@ The production proof bundle is intentionally layered:
 - `push-production-push-recovery-contract.json` is the compact proof that
   ties the pull provenance, the production push ladder, the one-remote,
   one-local topology, and inspect-first recovery into one reviewable object.
+- `push-production-recovery-inspect-contract.json` is the compact proof that
+  recovery inspect stays read-only while the journal row, lease fence, auth
+  floor, and `8080` topology still match the write path.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-preflight-contract.json` keeps the first live binding explicit: the

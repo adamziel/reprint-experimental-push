@@ -58,6 +58,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const productionPushRecoveryContract = readJson(
     'fixtures/protocol/push-production-push-recovery-contract.json',
   );
+  const productionRecoveryInspectContract = readJson(
+    'fixtures/protocol/push-production-recovery-inspect-contract.json',
+  );
   const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
   const snapshotHashesPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
   const authSessionJournalRecoveryContract = readJson(
@@ -319,6 +322,40 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     productionPushRecoveryContract.required_invariants.includes(
       'recovery must begin with inspect before any mutating repair',
+    ),
+  );
+  assert.equal(
+    productionRecoveryInspectContract.contract_id,
+    'push-production-recovery-inspect-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionRecoveryInspectContract.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(
+    productionRecoveryInspectContract.journal_row.claim_generation,
+    4,
+  );
+  assert.equal(
+    productionRecoveryInspectContract.recovery_inspect.authorization,
+    'read-only evidence reader that never authorizes mutation by itself',
+  );
+  assert.deepEqual(
+    productionRecoveryInspectContract.recovery_inspect.classifies,
+    ['finish', 'rollback', 'retry', 'block'],
+  );
+  assert.equal(
+    productionRecoveryInspectContract.topology.networking.ingress_port,
+    8080,
+  );
+  assert.ok(
+    productionRecoveryInspectContract.topology.proof.includes(
+      'recovery inspect happens before any mutating repair',
+    ),
+  );
+  assert.ok(
+    productionRecoveryInspectContract.required_invariants.includes(
+      'journal inspection is read-only and never authorizes mutation by itself',
     ),
   );
   assert.ok(
