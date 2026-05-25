@@ -8,10 +8,14 @@ Primary blocker: `package.json` exposes only lab and playground entry points
 (`plan`, `apply`, and `test:playground:*`); it does not expose a single
 named real-site preflight/release command that can be rerun against an actual
 remote and prove the live boundary while preserving the rejected remote,
-rejection point, and fresh retry scope in one auditable flow. Until that
-command exists and is named here, any doc, PR, or review wording is still
-lab-backed or comparison-only, no matter how production-shaped the route or
-reviewer language looks.
+rejection point, and fresh retry scope in one auditable flow. The existing
+`test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`,
+and `test:playground:production-plugin-package` scripts are still smoke tests,
+not a production release command: they may demonstrate route shape or fixture
+behavior, but they do not by themselves give a rerunnable live boundary with
+preserved-remote proof. Until that command exists and is named here, any doc,
+PR, or review wording is still lab-backed or comparison-only, no matter how
+production-shaped the route or reviewer language looks.
 
 Command-surface audit:
 
@@ -53,6 +57,9 @@ Release-gate checklist for production-grade wording:
 
 - name the exact executable real-site preflight/release command, or treat the
   absence of that command as a blocker;
+- do not confuse `test:playground:*` or other smoke scripts with a release
+  command; they remain compatibility evidence unless they rerun the live
+  boundary on an actual remote and preserve the rejected remote for audit;
 - name the exact live boundary and exact stale-drift case, not just the route family or product path;
 - keep the rejected remote inspectable after rejection so the user can audit the drift and retry from fresh live hashes;
 - reject stale approval or manual-review artifacts before the first write, and do not let them widen to later rows, files, relationship-bearing records, remapped create targets, or plugin-owned surfaces;
