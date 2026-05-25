@@ -82,12 +82,28 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'large upload models file hashing',
   );
   assert.ok(
+    largeUpload.actions.some((action) => action.type === 'remote-index-probe' && action.applyMustRevalidate === true),
+    'large upload keeps remote-index planning separate from apply authorization',
+  );
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'file-publish' && action.publishMode === 'compare-and-swap'),
+    'large upload uses guarded file publish',
+  );
+  assert.ok(
     pluginInstall.actions.some((action) => action.type === 'remote-index-probe'),
     'plugin install models remote-index planning',
   );
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'backpressure-pause'),
     'plugin install models backpressure pauses',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'plugin-metadata-stage' && action.canonicalVisible === false),
+    'plugin install keeps metadata staging invisible until commit',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'group-staging-finalize' && action.finalizeMode === 'receipts-plus-live-preconditions'),
+    'plugin install keeps the group barrier intact during finalize',
   );
 });
 
@@ -452,6 +468,7 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-publish').violates.includes('atomic-file-publish'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('atomic-groups'));

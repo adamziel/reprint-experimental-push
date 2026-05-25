@@ -788,6 +788,9 @@ The executable benchmark should still prove remote-index planning, compression
 choices, and backpressure pauses on the large-upload, plugin-install, and
 plugin-update workloads, so a fast path never hides the failure boundaries it
 is meant to preserve.
+That means the same run should keep file hashing, chunk upload, database row
+batches, remote-index probes, compression decisions, and pressure pauses
+visible before the guarded publish or atomic-group commit can happen.
 It should also expose the exact durable boundaries that recovery depends on:
 chunk acknowledgements and guarded file publish for large uploads, row batch
 commit records for plugin installs, group-staging finalize records for plugin
