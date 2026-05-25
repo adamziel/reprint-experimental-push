@@ -88,6 +88,8 @@ This note summarizes the planner's no-overwrite contract.
 
 - Any remote-only change the local side does not touch.
 - Remote descendants that would be hidden by a local delete or file type swap.
+- A topology-sensitive delete may still stop even when matching independent
+  deletes and edits are already in sync and remote-only plugin drift is present.
 - Bounded conflict and blocker evidence: enough to audit the stop reason,
   never raw file bodies, row contents, plugin payloads, or other secret values.
 - A local file type swap that would hide a live remote descendant must stop
