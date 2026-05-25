@@ -1147,6 +1147,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').rejectedGate, 'recovery');
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').violates.includes('chunk-receipts'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-chunk-send-backpressure').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-chunk-send-backpressure').violates.includes('parallelism-limits'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-chunk-send-backpressure').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-chunk-send-backpressure').violates.includes('chunk-receipts'),
+  );
   assert.equal(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate, 'recovery');
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('compression'));
