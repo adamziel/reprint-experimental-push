@@ -6,7 +6,7 @@ The project is **not releasable as a production WordPress push path**.
 
 That is a release judgment, not a test-pass judgment: the repo still lacks one enforced command that proves the live-source boundary on the real storage and transport path. Passing local tests still leaves the release claim false.
 
-## Derived Requirements
+## Explicit Requirements
 
 The objective implies the following minimum release requirements:
 
