@@ -35,9 +35,9 @@ The next production proof must be one rerunnable live boundary, not another word
 
 ## Source-note comparison
 
-- Reprint source notes prove staged transport and resumable-delivery vocabulary here, but they do not prove a live mutation boundary, preserved-remote retry authority, or WordPress auth/session lifecycle on this branch.
-- ZS-Sync source notes prove discovery and batching vocabulary here, but they do not prove source-mutation safety, create-time remap safety, graph identity, or plugin-owned surface coverage on this branch.
-- ForkPress source notes prove audit and crash-consistency vocabulary here, but they do not prove a live WordPress boundary, preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
+- Reprint source notes are provenance only. The observed upstream anchor `27c5f25` supports staged transport and resumable-delivery vocabulary, but it does not prove a live mutation boundary, preserved-remote retry authority, or WordPress auth/session lifecycle on this branch.
+- ZS-Sync source notes are provenance only. The observed upstream anchor `d9334a0` supports discovery and batching vocabulary, but it does not prove source-mutation safety, create-time remap safety, graph identity, or plugin-owned surface coverage on this branch.
+- ForkPress source notes are provenance only. The observed local anchor `55f9879` supports audit and crash-consistency vocabulary, but it does not prove a live WordPress boundary, preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
 - None of them prove live push safety on this branch.
 - The missing proof is still one rerunnable live mutation on one exact source URL with preserved-remote retention, apply-time revalidation, auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage all observed together.
 
