@@ -36,11 +36,12 @@ The normal sequence is:
 28. `push-executor-topology-proof.json`
 29. `push-recovery-path.json`
 30. `push-recovery-inspect-contract.json`
-31. `push-snapshot-hashes-page-contract.json`
-32. `push-dry-run-apply-revalidation-contract.json`
-33. `push-remote-liveness-contract.json`
-34. `push-deployment-topology-contract.json`
-35. `push-protocol-extension-contract.json`
+31. `push-recovery-revalidation-contract.json`
+32. `push-snapshot-hashes-page-contract.json`
+33. `push-dry-run-apply-revalidation-contract.json`
+34. `push-remote-liveness-contract.json`
+35. `push-deployment-topology-contract.json`
+36. `push-protocol-extension-contract.json`
 
 The production proof bundle is intentionally layered:
 
