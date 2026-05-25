@@ -33,6 +33,7 @@ The weakest claim is the production release verdict itself.
 - `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
 - The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added.
+- The next concrete release step should be a mandatory `verify:release` or `release` command that composes the existing guardrail tests, prints either a measured live-path threshold or `speed unclaimed`, and exits non-zero until that verdict is produced.
 
 ## Release Summary
 
