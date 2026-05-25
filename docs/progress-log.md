@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:54:15
+
+<a id="2026-05-25-public-status-audit-095415"></a>
+
+- Published the current public update in [progress.html](../progress.html): the
+  runnable `npm run test:playground:production-shaped-live-topology-proof`
+  command now anchors the top-line status.
+- Kept the public status conservative at 0/4 verified; the real WordPress
+  executor/auth, recovery journal, Docker/Playground, and plugin drivers remain
+  pending.
+- Evidence trail: [progress.html](../progress.html),
+  [production-shaped proof](../scripts/playground/production-shaped-proof.mjs),
+  [live-topology proof](../scripts/playground/production-shaped-live-topology-proof.mjs),
+  [newest audit](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 09:45:58
 
 <a id="2026-05-25-public-status-audit-094558"></a>
