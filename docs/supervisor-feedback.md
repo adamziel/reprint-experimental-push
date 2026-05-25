@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 02:25:26 CEST
+Last updated: 2026-05-25 02:25:58 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -8,11 +8,11 @@ changed, what is helping, what is not helping, and the next nudge.
 <details>
   <summary>Older supervisor snapshots</summary>
 
-## 2026-05-25 02:25:26 CEST - Supervisor Snapshot
+## 2026-05-25 02:25:58 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and feedback note still match, and the visible page stays scan-friendly.
 - Not going well: production proof is still missing for auth, journal durability, leases, graph identity, integration, and plugin drivers.
-- Progress change: no evidence moved; the page stayed compact and the trail stays linked.
+- Progress change: no evidence moved; the page stayed compact and the trail stayed linked.
 - Next nudge: keep each lane to one proof gap, one test, and one owner.
 
 | Lane | Next nudge |
@@ -24,7 +24,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Audit and critic | Owner: lane. Next test: re-audit the next production-backed slice, not lab shape. |
 | Progress publisher | Owner: lane. Next test: keep the page dated, concise, and linked to evidence. |
 
-Note: this lane's page update becomes live only after the branch merges to `main`.
+Note: this lane's page update becomes live only after merge to `main`.
 
 ## 2026-05-25 02:17:37 CEST - Supervisor Snapshot
 
