@@ -46,6 +46,29 @@ Production-readiness language checklist:
 8. Fail closed if the wording says "manual resolution" but does not also show
    the preserved remote, the stale rejection point, and the fresh retry
    artifact on the same live boundary.
+9. Treat "manual resolution" as audit-only unless the preserved remote stays
+   inspectable, the stale rejection point is recorded, and the retry artifact
+   is fresh on this branch for the same boundary.
+
+Source-note comparison policy:
+
+- Reprint source notes may justify the overall push shape because they cover
+  staged transport rhythm, resumable pull structure, and a production push
+  protocol direction. They do not prove this branch's live write path,
+  preserved-remote retry, create-time remap handling, plugin-owned coverage,
+  or partial-write classification unless this branch reran the same live
+  boundary and recorded the proof here.
+- ZS-Sync source notes may justify continuous scanning, bounded discovery,
+  and cursoring. They do not prove safe mutation, remote preservation after
+  drift, identity remapping, or plugin-owned allowlist coverage unless the
+  same live write boundary was rechecked here.
+- ForkPress source notes may justify reviewed-resolution vocabulary and a
+  crash-consistency target. They do not prove production push support on this
+  branch unless the same drifted remote, preserved remote, and fresh retry
+  scope were rerun and recorded here.
+- Any note that names the right family but omits the exact upstream revision
+  or worktree state remains provenance only, even if it matches route shape,
+  package mount shape, or a readable review artifact.
 
 One weak claim still worth tightening explicitly: a production-shaped route,
 package mount, or fixture can still be a copied-lab executor behind the same
