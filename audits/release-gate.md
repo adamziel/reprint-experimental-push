@@ -71,6 +71,9 @@ or comparison-only.
 - The claim shows plugin-owned state outside the allowlist is either enumerated
   live or blocked, including hidden custom tables, generated files, cron rows,
   runtime registries, serialized blobs, and other plugin-owned side effects.
+- The claim does not treat one allowlisted plugin row, option, or fixture
+  record as proof that the rest of the plugin-owned graph is safe; the exact
+  live plugin-owned surface list must still be named and revalidated.
 - The claim shows any late-discovered plugin-owned surface is classified as
   blocked, old, or new before retry can continue, and it is not folded into a
   successful second phase without a separate rejection point and preserved
