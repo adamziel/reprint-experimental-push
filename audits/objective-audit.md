@@ -68,18 +68,20 @@ The test suite is still an audit harness, not a release harness.
 
 Current test audit, stripped down:
 
-- `test/push-planner.test.js` and `test/recovery-journal.test.js` prove model and file-backed behavior, not live-source durability.
-- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove refusal discipline, not measured throughput.
-- The optional playground smokes prove route shape and failure classification, but they still run behind lab profiles or fixture-backed storage.
+- `test/push-planner.test.js` and `test/recovery-journal.test.js` prove model and file-backed behavior, not live-source durability or apply-time rechecks on the live source boundary.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove refusal discipline, not measured throughput on the live push path.
+- `scripts/playground/authenticated-http-push-smoke.mjs`, `scripts/playground/authenticated-cli-push-smoke.mjs`, `scripts/playground/production-shaped-route-smoke.mjs`, `scripts/playground/db-journal-process-kill-smoke.mjs`, and the other Playground smokes prove route shape, journal behavior, and failure classification, but they still run behind lab profiles or fixture-backed storage.
 - None of the tests are wired into a single required release decision, so green local output can still leave the production claim false.
 
 Minimal gate contract:
 
-1. One checked-in command, preferably `npm run verify:release`.
+1. One checked-in command, preferably `npm run verify:release`, that is the release decision rather than a convenience wrapper.
 2. A non-zero exit when any required check is still lab-backed, fixture-only, benchmark-only, or missing live-source proof.
 3. An explicit final failing bucket in the output so the operator knows what remains unproven.
 4. A checked-in workflow or equivalent default entrypoint that runs the same command, not a weaker substitute.
 5. No release claim unless the same command also covers auth/session, durable journal, lease/fencing, graph identity, plugin-data-driver, topology, crash-boundary, and speed proof.
+
+The weakest current claim is still the release gate itself. That is the claim most worth tightening because it is the one that converts every existing proof fragment into an enforceable decision. Until the repo has a required `verify:release`-style command and a checked-in automation path that runs it, every other proof bucket remains optional and therefore bypassable. The immediate actionable requirement is not more lab coverage; it is a fail-closed release command that prints the first missing proof bucket, rejects `labBacked: true` and fixture-only evidence, and is the default path in CI or equivalent automation.
 
 ## Release Gate Gap
 
