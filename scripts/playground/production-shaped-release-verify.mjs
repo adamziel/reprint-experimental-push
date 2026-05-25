@@ -41,6 +41,10 @@ if (!liveSourceUrl) {
           firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
           status: 'unimplemented',
           verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
         },
         releaseProof: {
           status: 1,
@@ -77,6 +81,10 @@ if (!username || !applicationPassword) {
           firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
           status: 'unimplemented',
           verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
         },
         releaseProof: {
           status: 1,
@@ -171,6 +179,10 @@ try {
               firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
               status: 'unimplemented',
               verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+              durableJournal: {
+                storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+                verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+              },
             },
             preflight: {
               status: preflight.status,

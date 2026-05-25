@@ -217,6 +217,8 @@ after apply and recovery inspect.
 It also emits the checked boundary verdict
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` so the supervisor can tell the
 lab-shaped proof from the still-missing production boundary.
+The checked boundary object also names the still-unproven durable-journal
+storage/lease/fence gap with `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
 
 The release entrypoint has two exact checked outcomes:
 

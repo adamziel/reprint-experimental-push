@@ -170,6 +170,7 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.match(proof.stdout, /"boundary": \{/);
   assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}/);
   assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
   assert.match(proof.stdout, /"liveDrift": \{\s*"sameRemoteIdentity": true/);
   assert.match(proof.stdout, /"releaseProof": \{/);
@@ -217,6 +218,11 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.equal(releaseVerify.proof.boundary.first_remaining_production_boundary, 'auth/session lifecycle and durable journal semantics');
   assert.equal(releaseVerify.proof.boundary.status, 'unimplemented');
   assert.equal(releaseVerify.proof.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+  assert.equal(
+    releaseVerify.proof.boundary.durableJournal.storageLeaseFence,
+    'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+  );
+  assert.equal(releaseVerify.proof.boundary.durableJournal.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
   assert.equal(releaseVerify.topology.networking.ingress_port, 8080);
   assert.equal(releaseVerify.topology.networking.proxy_policy, 'local-only');
   assert.equal(releaseVerify.topology.networking.tunnels, 'disallowed');
