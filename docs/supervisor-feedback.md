@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 11:51:20 CEST
+Last updated: 2026-05-25 11:53:59 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 11:51:20 CEST
+## 2026-05-25 11:53:59 CEST
 
 - Going well: `reliable-executor` still keeps the lab proof explicit at `63a3502f`, and the auth/session plus durable-journal shape is easy to inspect.
 - Not going well: the production gate is still closed because the real-endpoint boundary is unproven.
-- Progress delta: no release-state change; the useful update is a cleaner decision surface that removes stale lane wording and keeps the proof link first.
+- Progress delta: no release-state change; the public surfaces are now a little tighter and easier to scan.
 - Next nudge: `reliable-executor` owns the next real endpoint proof; `progress-publisher` keeps the page terse and linked; `critic` and `auditor` should reject wording-only proof.
 - Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
