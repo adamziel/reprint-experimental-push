@@ -17,6 +17,8 @@ What it does not prove:
 - It does not prove stale remote drift rejection at apply time.
 - It does not prove identity remapping on create, plugin-owned allowlist
   coverage, or partial file/DB/plugin side-effect classification.
+- It does not prove plugin data traps are safe just because a fixture-owned
+  option, row, or route matches the expected shape.
 - It does not prove production auth, replay cleanup, TLS policy, or audit
   retention for push.
 
@@ -35,6 +37,8 @@ What it does not prove:
   push write path.
 - It does not prove plugin semantic ownership, create-time remap handling, or
   the durable classification of partial side effects.
+- It does not prove unknown plugin-owned state is discovered consistently
+  enough to block unsafe writes before mutation.
 
 ## ForkPress
 
@@ -50,6 +54,8 @@ What it does not prove:
 - It does not prove this repo's live write boundary.
 - It does not prove that route-shape, package layout, or lab fixtures are
   sufficient for production push support.
+- It does not prove plugin-owned state outside the allowlist is blocked when
+  the same data path is hidden behind a valid-looking lab route.
 - It does not prove the exact current upstream state unless the cited upstream
   revision or worktree was reverified at the same live mutation boundary.
 
