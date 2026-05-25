@@ -4393,6 +4393,10 @@ to prove here, especially for live drift rejection, create-time identity
 remapping, and plugin-owned surfaces discovered after the first write. A
 comparison note that lacks that branch-local rerun is historical context
 only, even if the note is readable and seems production-shaped.
+The same rule applies to a route-shaped smoke or fixture replay that happens
+to match the note: if this branch did not rerun the exact live boundary and
+record the preserved remote, stale rejection point, and fresh retry scope,
+the matching note stays compatibility evidence only.
 
 Mixed writes need one more explicit failure mode on the record: if the first
 write succeeds, then a later snapshot reveals a different row, file,
@@ -4479,6 +4483,9 @@ Release gate additions needed before production-grade push support:
    family, package layout, or reviewer wording does not convert upstream
    provenance into current retry authority, and a route-shaped smoke can still
    mask a stale remote, remapped create target, or late plugin-owned surface.
+   If the branch did not rerun the same live boundary, a matching route shape,
+   fixture replay, or `finalMatchesLocal` result still cannot promote the note
+   into current proof.
 8. The release gate must fail closed and record the exact rejection reason
    whenever any of the above proofs is missing; route shape, package mount,
    fixture replay, readable review artifacts, source-note comparison, and
