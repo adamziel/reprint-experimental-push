@@ -1,0 +1,72 @@
+{
+  "contract_id": "push-auth-session-journal-recovery-inspect-contract-one-remote-one-local",
+  "purpose": "binds push auth, session minting, journal rows, lease fencing, live drift evidence, and inspect-first recovery into one compact proof",
+  "auth": {
+    "export_hmac_family": "hmac-sha256",
+    "push_hmac_family": "hmac-sha256",
+    "push_requires": [
+      "push session",
+      "canonical push signature",
+      "idempotency key"
+    ],
+    "inspect_requires": [
+      "HMAC-authenticated request",
+      "read-only recovery mode"
+    ]
+  },
+  "session": {
+    "push_session": "psh_01j00000000000000000000000",
+    "remote_site_id": "remote-example",
+    "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+    "identity_hash": "sha256:remote-identity",
+    "expires_at": "2026-05-24T00:10:00Z"
+  },
+  "journal_row": {
+    "journal_cursor": "journal:dry_01j00000000000000000000000:1",
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "before_hash": "sha256:base-index",
+    "staged_hash": "sha256:local-index",
+    "after_hash": "sha256:remote-index",
+    "storage_guard": "filesystem-compare-rename"
+  },
+  "live_evidence": {
+    "snapshot_id": "snap_01j00000000000000000000000",
+    "remote_changed_snapshot_id": "snap_01j00000000000000000000001",
+    "same_remote_identity": true,
+    "coverage_hash": "sha256:remote-coverage"
+  },
+  "journal_fence": {
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "storage_guard": "filesystem-compare-rename",
+    "proof": "claim generation and lease expiry fence stale workers before mutation"
+  },
+  "recovery_inspect": {
+    "mode": "inspect",
+    "mutates": false,
+    "proof": "journal-and-live-hashes-reviewed",
+    "blocked_when": [
+      "fresh live hashes do not match the journaled target",
+      "the journal cannot prove a safe finish or rollback",
+      "the claim lease has expired and the worker is fenced"
+    ]
+  },
+  "live_classification": {
+    "old": 2,
+    "new": 3,
+    "blocked": 1,
+    "open": 0,
+    "proof": "inspect reads the journal row and live hashes before classifying finish, rollback, retry, or block"
+  },
+  "required_invariants": [
+    "push auth must be at least as strict as the current export HMAC family",
+    "mutating push requests must carry a push session, idempotency key, and canonical push signature",
+    "claim generation and lease expiry fence stale workers before mutation",
+    "inspect is read-only and must come before any mutating recovery mode",
+    "inspect reads the journal row and live hashes before classifying finish, rollback, retry, or block",
+    "fresh live hashes must still be checked before finish, rollback, or auto"
+  ]
+}

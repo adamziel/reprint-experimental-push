@@ -55,6 +55,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const authSessionJournalRecoveryContract = readJson(
     'fixtures/protocol/push-auth-session-journal-recovery-contract.json',
   );
+  const authSessionJournalRecoveryInspectContract = readJson(
+    'fixtures/protocol/push-auth-session-journal-recovery-inspect-contract.json',
+  );
   const journalInspectContract = readJson('fixtures/protocol/push-journal-inspect-contract.json');
   const remoteLivenessTopologyContract = readJson(
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
@@ -455,6 +458,18 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     authSessionJournalRecoveryContract.recovery_inspect.blocked_when.includes(
       'the claim lease has expired and the worker is fenced',
+    ),
+  );
+  assert.equal(
+    authSessionJournalRecoveryInspectContract.contract_id,
+    'push-auth-session-journal-recovery-inspect-contract-one-remote-one-local',
+  );
+  assert.equal(authSessionJournalRecoveryInspectContract.live_evidence.same_remote_identity, true);
+  assert.equal(authSessionJournalRecoveryInspectContract.recovery_inspect.mode, 'inspect');
+  assert.equal(authSessionJournalRecoveryInspectContract.recovery_inspect.mutates, false);
+  assert.ok(
+    authSessionJournalRecoveryInspectContract.required_invariants.includes(
+      'inspect reads the journal row and live hashes before classifying finish, rollback, retry, or block',
     ),
   );
   assert.equal(journalInspectContract.contract_id, 'push-journal-inspect-contract-one-remote-one-local');

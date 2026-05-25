@@ -30,23 +30,24 @@ The normal sequence is:
 22. `push-auth-session-fencing-contract.json`
 23. `push-auth-session-recovery-contract.json`
 24. `push-auth-session-journal-recovery-contract.json`
-25. `push-journal-inspect-contract.json`
-26. `push-pull-mapping.json`
-27. `push-contract.json`
-28. `push-topology-matrix.json`
-29. `push-production-ladder-contract.json`
-30. `push-executor-topology-proof.json`
-31. `push-recovery-path.json`
-32. `push-recovery-inspect-contract.json`
-33. `push-recovery-revalidation-contract.json`
-34. `push-snapshot-hashes-page-contract.json`
-35. `push-dry-run-apply-revalidation-contract.json`
-36. `push-remote-liveness-contract.json`
-37. `push-deployment-topology-contract.json`
-38. `push-protocol-extension-contract.json`
-39. `push-pull-to-topology-contract.json`
-40. `push-preflight-contract.json`
-41. `push-remote-liveness-topology-contract.json`
+25. `push-auth-session-journal-recovery-inspect-contract.json`
+26. `push-journal-inspect-contract.json`
+27. `push-pull-mapping.json`
+28. `push-contract.json`
+29. `push-topology-matrix.json`
+30. `push-production-ladder-contract.json`
+31. `push-executor-topology-proof.json`
+32. `push-recovery-path.json`
+33. `push-recovery-inspect-contract.json`
+34. `push-recovery-revalidation-contract.json`
+35. `push-snapshot-hashes-page-contract.json`
+36. `push-dry-run-apply-revalidation-contract.json`
+37. `push-remote-liveness-contract.json`
+38. `push-deployment-topology-contract.json`
+39. `push-protocol-extension-contract.json`
+40. `push-pull-to-topology-contract.json`
+41. `push-preflight-contract.json`
+42. `push-remote-liveness-topology-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -75,6 +76,9 @@ The production proof bundle is intentionally layered:
 - `push-auth-session-journal-recovery-contract.json` is the compact proof that
   binds auth, session minting, journal rows, lease fencing, and inspect-first
   recovery into one production-shaped contract.
+- `push-auth-session-journal-recovery-inspect-contract.json` is the compact
+  proof that folds live drift classification into that same auth, session,
+  journal, lease, and inspect-first recovery chain.
 - `push-journal-inspect-contract.json` is the compact proof that journal
   inspection is read-only evidence and never becomes write authority.
 - `push-auth-session-recovery-contract.json` keeps the stronger auth floor and
@@ -153,6 +157,9 @@ Failure and recovery examples:
 - `push-auth-session-journal-recovery-contract.json` is the compact bridge
   from the auth floor into journal rows, lease fencing, and inspect-first
   recovery.
+- `push-auth-session-journal-recovery-inspect-contract.json` is the compact
+  proof that keeps auth, session minting, journal rows, lease fencing, live
+  drift classification, and inspect-first recovery together in one object.
 - `push-flow.json` shows the ordered push stages from preflight through
   inspect-first recovery and makes the dry-run/apply split explicit.
 - `push-topology.json` shows the one-remote, one-local, one-drift-witness

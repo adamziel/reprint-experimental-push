@@ -201,6 +201,9 @@ Use these fixtures as the canonical proof bundle:
 - `push-auth-session-journal-recovery-contract.json` is the compact proof that
   ties auth, session minting, journal rows, lease fencing, and inspect-first
   recovery together.
+- `push-auth-session-journal-recovery-inspect-contract.json` is the compact
+  proof that folds live drift classification into the same auth, session,
+  journal, lease, and inspect-first recovery chain.
 - `push-remote-liveness-topology-contract.json` is the compact proof that the
   liveness split and the one-remote, one-local, one-drift test topology stay
   aligned in one object.

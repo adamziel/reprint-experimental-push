@@ -148,6 +148,8 @@ The canonical proof stack for that executor story is the same one named in
 - `push-preflight-contract.json` for the first live binding between imported
   provenance, scope, and session
 - `push-recovery-inspect-contract.json` for the read-only recovery classifier
+- `push-auth-session-journal-recovery-inspect-contract.json` for the combined
+  auth, session, journal, lease, live drift, and inspect-first recovery proof
 - `push-recovery-revalidation-contract.json` for mutating recovery after
   inspect proves the branch safe
 - `push-deployment-topology-contract.json` for the exact one-remote,
