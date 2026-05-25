@@ -1,4 +1,4 @@
-Refreshed the public progress surface for newer critic and no-data-loss-invariants evidence, then aligned the progress log and header links to the same audit.
+Public progress was updated for visibility only. The release gate is still `0/4`; the page now names the blocker and the next executable proof more explicitly.
 
 Changed files:
 - [`progress.html`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/progress-publisher/progress.html)
@@ -7,19 +7,17 @@ Changed files:
 
 Commands run:
 - `git fetch --all --prune --quiet && git for-each-ref --format='%(refname:short) %(objectname:short) %(subject)' refs/remotes/origin/lane/reliable-executor refs/remotes/origin/lane/no-data-loss-recovery refs/remotes/origin/lane/no-data-loss-invariants refs/remotes/origin/lane/fast-paths refs/remotes/origin/lane/same-plan-wordpress-graph-create refs/remotes/origin/lane/progress-publisher refs/remotes/origin/lane/independent-auditor refs/remotes/origin/lane/critic refs/remotes/origin/lane/feedback-supervisor refs/remotes/origin/main`
-- `git status --short --branch && printf '\n--- progress.html ---\n' && rg -n 'Last updated|Gate status|verified|pending|blocked|evidence|release blockers|latest public audit' progress.html docs/progress-log.md docs/supervisor-feedback.md && printf '\n--- newest log ---\n' && sed -n '1,80p' docs/progress-log.md`
-- `git show --stat --oneline --decorate --summary origin/lane/critic --`
-- `git show --stat --oneline --decorate --summary origin/lane/no-data-loss-invariants --`
-- `date '+%Y-%m-%d %H:%M:%S %Z'`
-- `git diff -- progress.html docs/progress-log.md && git status --short --branch`
+- `git status --short --branch && rg -n 'Last updated|Gate status|release blockers|pending|blocked|verified|evidence' progress.html docs/progress-log.md`
+- `sed -n '1,60p' docs/progress-log.md`
+- `git diff -- progress.html docs/progress-log.md`
 
 Push result:
-- Not yet pushed
+- Pending
 
 Worktree status:
-- Dirty with tracked edits in `progress.html`, `docs/progress-log.md`, and `.lane-output/final.md`
+- Dirty before commit: `progress.html`, `docs/progress-log.md`, `.lane-output/final.md`
 - Branch: `lane/cycle-20260525-mainwindows-2349/progress-followup`
-- Ahead of `origin/main` by 17 commits
+- Ahead of `origin/main` by 18 commits before this handoff
 
 Next supervisor nudge:
-- Re-poll only after `reliable-executor`, `no-data-loss-recovery`, or `no-data-loss-invariants` publishes a newer executable proof; otherwise keep `progress.html` and `docs/progress-log.md` frozen.
+- Keep `progress.html` frozen again until `reliable-executor`, `no-data-loss-recovery`, or `no-data-loss-invariants` publishes a newer executable proof that changes one of the four release gates.

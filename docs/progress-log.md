@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-26 - Public Status Audit 01:18:21
+
+<a id="2026-05-26-public-status-audit-011821"></a>
+
+- Tightened the public copy in [progress.html](../progress.html) so the flat
+  gate is explicit: production WordPress auth/session lifecycle and durable
+  journal storage with lease/fencing remain the blocker.
+- Gate 1 now names the next executable proof directly: make
+  [release-verify runner](../scripts/playground/production-shaped-release-verify.mjs)
+  fail closed if the packaged route is lab-backed or if the source gate is not
+  production-shaped.
+- Gate 2 now names the missing dependency plainly: publish the durable storage
+  result or the exact lease/fencing primitive that still blocks recovery.
+- The evidence set did not change, so the release gate stays `0/4` and the
+  older proof trail remains frozen.
+
 # 2026-05-26 - Public Status Audit 01:16:03
 
 <a id="2026-05-26-public-status-audit-011603"></a>
