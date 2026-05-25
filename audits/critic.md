@@ -5787,3 +5787,12 @@ Final production-grade deltas still required on this branch:
 - annotate every Reprint, ZS-Sync, or ForkPress citation with the exact upstream commit or worktree state, what it proves here, and what it does not prove here, because the notes are historical design input only unless the same live boundary was rerun on this branch;
 - reject any wording that uses `manual resolution`, `comparison passed`, `finalMatchesLocal`, or route-shaped smokes as current proof unless the preserved remote stayed inspectable after rejection and the retry scope was rebuilt from live hashes; and
 - keep the release-gate language explicit that production-grade push support is blocked until the branch can show the live executor, preserved-remote auditability, stale-authority rejection, fresh retry scope, and per-surface classification for every touched boundary.
+
+Production-ready wording gate:
+
+- if the evidence only shows route shape, package layout, fixture replay, readable review output, or `finalMatchesLocal`, the claim stays compatibility-only;
+- if the evidence does not name the exact live boundary, the stale-drift case, the preserved remote that stayed inspectable after rejection, and the fresh retry scope rebuilt from live hashes, the claim fails closed;
+- if a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface appears after the first write, it is a new boundary and must get its own preserve / reject / retry cycle before it can be treated as success;
+- if any plugin-owned table, file, cron row, runtime registry entry, generated asset, cache entry, or serialized blob is outside the allowlist and not explicitly blocked before write, the branch does not have production-grade push proof;
+- if any file, DB row, or plugin side effect survives a failed apply, the whole touched set must be labeled old, new, or blocked before retry starts; a partially successful write cannot be relabeled as success; and
+- if a Reprint, ZS-Sync, or ForkPress note is cited, it must say exactly what the note proves here and what it does not prove here; otherwise it remains historical context only and cannot support production wording.
