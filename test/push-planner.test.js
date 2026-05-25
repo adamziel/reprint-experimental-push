@@ -7550,3 +7550,44 @@ test('stale completed replay blocks when the remote drifts outside the completed
   assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
   assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
 });
+
+test('partial commit and completed replay both keep recovery artifacts instead of pretending to be safe', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const partialRemote = baseSite();
+  const partialError = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  assert.ok(partialError instanceof PushPlanError);
+  assert.equal(partialError.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(partialError.details.recovery.status, 'blocked-recovery');
+  assert.ok(partialError.details.recovery.artifacts.journal, 'partial commit must keep journal artifacts');
+  assert.ok(partialError.details.recovery.artifacts.remote, 'partial commit must keep remote artifacts');
+  assert.equal(partialError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(partialError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "stale local";';
+  delete replayRemote.db.wp_posts['ID:2'];
+
+  const replayError = captureError(() =>
+    applyPlan(replayRemote, plan, { journal: completed.journal }),
+  );
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.code, 'RECOVERY_BLOCKED');
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.journal, 'stale replay must keep journal artifacts');
+  assert.ok(replayError.details.recovery.artifacts.remote, 'stale replay must keep remote artifacts');
+  assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
+  assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+});
