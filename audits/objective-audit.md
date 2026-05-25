@@ -53,6 +53,8 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 - `Reliable`: no current test composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks into one enforced release decision against real storage.
 - `Fast`: no current test reports a measured live-path throughput result or a release threshold; [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the opposite only, by asserting `report.throughput.productionThroughput === 'not-claimed'` and by rejecting unsupported production throughput claims. That is useful blocker evidence, but it is not a speed result, so the required release command must surface `speed unclaimed` as an explicit verdict instead of omitting the claim. A green refusal-only benchmark is not a release verdict.
 
+The pattern across the suite is consistent: it is better at proving that unsafe claims are blocked than at proving the live-source release claims themselves.
+
 Put bluntly: the current suite can prove that unsafe claims are refused, but it cannot prove that the live source was mutated safely, recovered safely, and measured safely in the same release run. That gap is the release blocker, not a cosmetic documentation issue.
 
 | Evidence class | Current state | Release reading |
