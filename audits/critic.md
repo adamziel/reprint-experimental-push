@@ -14,7 +14,9 @@ Must change before any production-grade push claim:
   route family, packaged mount, fixture replay, readable review artifact, or
   `finalMatchesLocal` result that only looks production-shaped while still
   masking a stale remote, remapped create target, or late plugin-owned
-  surface;
+  surface; a production-shaped URL family can still be served by a copied or
+  fixture-backed executor behind the same path shape, so shape alone is not
+  live-write proof;
 - prove the claim is rerun on the same live drift case here; a matching
   route family, package mount, fixture replay, readable review artifact, or
   `finalMatchesLocal` result is compatibility evidence only and cannot
@@ -25,6 +27,9 @@ Must change before any production-grade push claim:
 - prove a readable manual-review artifact is audit-only unless the preserved
   remote, rejection point, and fresh retry scope are all recorded on this
   branch for the same live boundary;
+- prove a manual-resolution label never becomes success by itself; it is only
+  audit context until the remote is preserved, the stale approval is rejected
+  before mutation, and the fresh retry scope is rebuilt from live hashes;
 - enumerate or hard-block late-discovered plugin-owned state, including
   custom tables, generated files, cron rows, runtime registries, serialized
   blobs, cache entries, and other hidden side effects; and
@@ -50,13 +55,14 @@ Operational release gate:
   surface after drift; and
 - route shape, package mount shape, fixture replay, readable review output,
   and `finalMatchesLocal` remain compatibility evidence only unless the same
-  live boundary was revalidated on this branch with preserved-remote proof.
+  live boundary was revalidated on this branch with preserved-remote proof;
+  shape alone does not show the live executor, auth path, or write boundary.
 
 Source-note comparison rule:
 
 - Reprint, ZS-Sync, and ForkPress notes are historical context unless the
   exact upstream commit or worktree state is named and this branch reran the
-  same live mutation boundary;
+  same live mutation boundary with preserved-remote evidence;
 - route-shape smokes, package mounts, fixture replays, readable review
   artifacts, and `finalMatchesLocal` remain compatibility evidence only even
   when they look production-shaped; and
