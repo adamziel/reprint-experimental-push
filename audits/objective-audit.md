@@ -8,6 +8,8 @@ The blocker is structural: there is still no mandatory command that proves the o
 
 That means the current green suite is useful only as regression evidence. It is not enough to justify a production claim, and it should not be read as proof that no data loss, reliability, or speed has been demonstrated on the live source boundary.
 
+Boundary note: `npm test` is only a green regression signal unless the same invocation also reaches the live-source apply boundary and fails closed on missing release proof. Without that, the pass rate cannot be promoted to a durability, reliability, or throughput claim.
+
 ## Explicit Requirements
 
 The objective implies these minimum release requirements:
@@ -24,7 +26,7 @@ The objective implies these minimum release requirements:
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone. The actionable fix is not another lab helper; it is a checked-in `verify` or `release` gate that fails closed unless it can prove live-source state at apply time.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone. The actionable fix is not another lab helper; it is a checked-in `verify` or `release` gate that fails closed unless it can prove live-source state at apply time. Until that exists, the strongest evidence remains regression or lab evidence, not release evidence.
 
 Right now the best available commands are `node --test`, `npm run test:playground`, `plan`, and `apply`. Those are useful, but they are support paths, not a release gate, because none of them force a live-source verdict in the same invocation.
 
