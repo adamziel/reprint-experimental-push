@@ -4454,4 +4454,10 @@ test('acceptable recovery outcomes are old remote, fully updated remote, or bloc
   assert.equal(blockedError.details.recovery.status, 'blocked-recovery');
   assert.ok(blockedError.details.recovery.artifacts.journal);
   assert.ok(blockedError.details.recovery.artifacts.remote);
+  assert.equal(blockedError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(
+    blockedError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+  );
+  assert.equal(blockedError.details.recovery.artifacts.journal.status, 'completed');
 });

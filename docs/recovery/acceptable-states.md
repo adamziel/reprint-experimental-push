@@ -1,48 +1,22 @@
-# Acceptable Post-Failure States
+# Recovery states
 
-The apply contract accepts exactly three post-failure outcomes:
+The atomic apply path is only allowed to end in one of three states after a failure or replay:
 
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery`
+- `old-remote`: no remote mutation was committed.
+- `fully-updated-remote`: every planned mutation was committed and the journal reflects completion.
+- `blocked-recovery`: the remote may be partially updated, but the journal and remote artifacts must remain inspectable so recovery can be audited.
 
-These states are a safety contract, not just a test label.
+Release-blocking rule:
 
-## `old-remote`
+- A partial remote mutation without a recovery artifact is not acceptable.
 
-No remote mutation was committed.
+Retry rule:
 
-Required artifact:
+- Replaying a completed plan must stay inert.
+- Retry must not duplicate inserts.
+- Retry must not resurrect stale local data after the remote is already fully updated.
 
-- the recovery journal that proves the plan can be retried after revalidation
+Durable journal rule:
 
-This state is valid after failures before mutation, after staging, or after
-dependency validation, as long as the remote remains unchanged.
-
-## `fully-updated-remote`
-
-Every planned mutation is already present on the remote.
-
-Required artifact:
-
-- the completed recovery journal
-
-Replay must not reapply inserts, rewrite already committed data, or resurrect
-stale local state.
-
-## `blocked-recovery`
-
-The remote is partial, drifted, or otherwise ambiguous.
-
-Required artifacts:
-
-- the recovery journal
-- the observed remote evidence needed to explain why retry is unsafe
-
-This is the only acceptable state for a partial remote mutation. A partial
-remote mutation without inspectable recovery artifacts is a release blocker.
-
-## Operational Rule
-
-If a retry cannot prove `old-remote` or `fully-updated-remote`, it must stop
-in `blocked-recovery` with artifacts rather than treating the mutation as safe.
+- JSON lab output is not enough on its own.
+- Production recovery needs durable journal records that survive failure boundaries and can be inspected after the process exits.
