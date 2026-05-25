@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 03:11:10 CEST.
+- Last update: 2026-05-25 03:11:57 CEST.
 - Status: Lab/model evidence still holds; production proof is still blocked by missing evidence.
-- Trend: the visible page, this log, and the newest supervisor note stay aligned; the public page now keeps the linked evidence trail first-class while hiding the long inventory behind details.
+- Trend: the visible page, this log, and the newest supervisor note stay aligned; the public page is a little less repetitive because the merge-delay note now appears once instead of twice.
 - Supervision: the same-plan graph lane remains active and unmerged.
 - Blocker: production credential lifecycle, durable storage, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact, hides the long evidence inventory behind details, and links to this log and the feedback note for the evidence trail.
