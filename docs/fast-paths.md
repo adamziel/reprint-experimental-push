@@ -714,6 +714,9 @@ under load:
   is rejected because planning evidence, compression, and cached receipts can
   reduce replay work, but they cannot prove the live compare or guarded
   publish barrier survived failure.
+- batched-receipt-journal-flush is rejected because journal batching can reduce
+  fsync work, but it cannot replace the raw chunk, row, or group receipts
+  needed to classify a crash, retry, or pause.
 
 ## Benchmark Shape
 
