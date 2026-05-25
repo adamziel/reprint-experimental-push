@@ -11,6 +11,24 @@ move the proof onto a rerunnable live boundary with preserved-remote audit
 evidence. The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
+Current critic bar for this baseline:
+
+- `3089aee2` is retained-source evidence only; it does not authorize
+  production wording by itself.
+- The next acceptable proof must be one rerunnable live command against a
+  real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
+- That command must show the executor identity, live auth/session boundary,
+  preserved remote, exact rejection point, dry-run receipt, apply-time
+  revalidation, journal/recovery inspection, graph identity, plugin-driver
+  coverage, and old/new/blocked classification for every touched surface.
+- Any later-discovered plugin-owned surface or remapped create target must
+  get its own preserve / reject / retry cycle; it cannot inherit the earlier
+  approval just because the route family, package mount, or review wording
+  matches.
+- Reprint, ZS-Sync, and ForkPress remain provenance until this branch names
+  the exact upstream state, states what each note proves here, states what it
+  does not prove here, and reruns the same live boundary on this worktree.
+
 Source-note comparison stays provenance only:
 
 - Reprint proves staged transport vocabulary and resumable delivery framing,
