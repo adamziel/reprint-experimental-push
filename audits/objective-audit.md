@@ -60,6 +60,7 @@ Evidence buckets:
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the benchmark model moves staged buffers and row payloads through durable evidence and blocks unsupported production throughput claims. It still does not measure the real push path, so it cannot support a speed claim.
 - The local regression slice rechecked in this worktree passed `86/86`. That is useful regression evidence, but it is still not live-boundary proof of no data loss, reliability, or speed.
 - The remote release verifier is stronger than the local regression slice because it checks live preflight, dry-run, apply, recovery inspect, journal readback, durable-journal restart smoke, and drift revalidation. Even so, it remains upstream-only evidence until this checkout owns the same verdict in-tree. The remote audit note at `993d0d2c` keeps the first open boundary on production auth/session lifecycle rather than claiming release readiness. Neither change converts the upstream proof into in-tree release evidence.
+- Net effect: the current tests prove important guardrails, but they do not yet prove the production release claim. They are local invariants, fixture checks, or upstream-only release smokes, not this checkout's live-boundary no-data-loss, reliability, or speed verdict.
 
 ## Current Command Surface
 
