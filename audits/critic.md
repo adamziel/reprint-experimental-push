@@ -6289,6 +6289,11 @@ Production-ready wording gate:
 
 The design still has not closed the following production-grade gaps:
 
+- there is still no single executable real-site preflight/release command on
+  this branch; `plan`, `apply`, and the `test:playground:*` smoke scripts are
+  compatibility and lab-verification entry points only, so they cannot by
+  themselves prove the live boundary, preserved remote, stale rejection point,
+  or fresh retry scope on an actual remote;
 - conflict policy is still ambiguous when the remote drifts between dry-run
   and apply; missing proof is a branch-local rejection point before the first
   write, plus an auditable preserved remote that the user can inspect and
@@ -6705,8 +6710,9 @@ are true on this worktree:
 - the branch has a single executable preflight/release command that can be
   run against a real remote on this branch, and its output proves the exact
   live boundary, preserved remote, stale rejection point, and fresh retry
-  scope end to end; protocol prose, `plan`/`apply`, route-shaped smokes, and
-  lab fixtures are not enough on their own;
+  scope end to end; if the only available commands are `plan`, `apply`, or
+  `test:playground:*`, the branch is still lab-only and cannot claim
+  production-grade push support;
 - the exact stale-drift case has been rerun here, with the rejected remote
   still inspectable after rejection and the rejection point named before the
   first write;
