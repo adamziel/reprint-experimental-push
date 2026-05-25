@@ -8368,6 +8368,66 @@ test('durable recovery boundaries persist the expected journal evidence and comp
   );
 });
 
+test('durable mid-apply failures remain blocked with artifacts and replaying the completed journal stays inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const snapshot = JSON.stringify(remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(JSON.stringify(remote), snapshot);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.remote, 'partial commit must preserve remote artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.planId, plan.id);
+  assert.equal(error.details.recovery.artifacts.journal.status, 'blocked');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'mutation-observed'),
+    true,
+    'partial commit must record the observed mutation before blocking',
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    true,
+    'partial commit must persist a blocked recovery state',
+  );
+
+  const retryRemote = JSON.parse(JSON.stringify(error.details.recovery.artifacts.remote));
+  const retrySnapshot = JSON.stringify(retryRemote);
+  const retry = captureError(() =>
+    applyPlan(retryRemote, plan, {
+    journal: error.details.recovery.artifacts.journal,
+    }),
+  );
+
+  assert.equal(JSON.stringify(retryRemote), retrySnapshot);
+  assert.ok(retry instanceof PushPlanError);
+  assert.equal(retry.code, 'RECOVERY_BLOCKED');
+  assertAcceptableRecoveryState(retry.details.recovery);
+  assertRecoveryStateArtifacts(retry.details.recovery, 'blocked-recovery');
+  assert.equal(retry.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(retry.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+});
+
 test('durable pre-commit fence failures stay blocked and do not expose a partial remote', () => {
   const base = baseSite();
   const local = baseSite();
