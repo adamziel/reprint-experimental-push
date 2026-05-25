@@ -193,6 +193,12 @@ the remote-base, local-edited, and remote-changed roles.
 That contract uses the exact push stage names, including `push_snapshot_hashes`,
 `push_plan_dry_run`, `push_batch_apply`, `push_journal`, and the inspect-first
 recovery pair, so the prose and fixture stay aligned.
+The companion auth/session proofs are
+[`fixtures/protocol/push-auth-session-fencing-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-fencing-contract.json)
+and
+[`fixtures/protocol/push-auth-session-recovery-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-recovery-contract.json);
+they keep the push session, journal row, lease fence, and inspect-first recovery
+boundary explicit without widening the topology proof.
 For the inspect-first recovery proof with the journal row, claim fence, and
 fresh-live classification in one object, cite
 [`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json).

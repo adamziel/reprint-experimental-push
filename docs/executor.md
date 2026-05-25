@@ -41,6 +41,15 @@ Scope:
 - one runner process that owns preflight, planning, apply, journal inspect,
   and recovery
 
+The canonical proof stack for that scope is:
+
+| Proof | What it pins down |
+| --- | --- |
+| [`fixtures/protocol/push-protocol-extension-contract.json`](../fixtures/protocol/push-protocol-extension-contract.json) | The full push ladder: preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery. |
+| [`fixtures/protocol/push-deployment-topology-contract.json`](../fixtures/protocol/push-deployment-topology-contract.json) | The one-remote, one-local, one-drift topology in Docker and Playground. |
+| [`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json) | The push-session boundary, journal-row fence, and read-only recovery inspect rule. |
+| [`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json) | The same fence when recovery needs to prove finish, rollback, or block before mutating. |
+
 The production sequence is fixed:
 
 1. `push_preflight` binds the persisted pull base to a live remote identity
