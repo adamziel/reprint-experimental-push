@@ -26,6 +26,10 @@ Durable artifact contract:
 - Recovery journals need to survive process death before the remote mutation boundary is crossed.
 - A successful replay should leave inspectable journal evidence, but it should not need a remote artifact because the remote itself is already fully updated.
 - A blocked recovery must keep both journal and remote artifacts so operators can inspect the partial state and retry safely.
+- The recovery journal must make the boundary legible enough to classify retries without guessing:
+  - `old-remote` means no target mutation escaped staging.
+  - `fully-updated-remote` means every planned mutation is already present and replay is read-only.
+  - `blocked-recovery` means a partial mutation was observed and the journal must carry the artifacts needed to inspect or fence it.
 
 Release-blocker rule:
 
