@@ -20,11 +20,11 @@ retained-source journal rows, or route compatibility as a stand-in for live
 WordPress auth/session durability.
 
 The latest remote evidence is strong enough to retire stale "no
-`verify:release` exists" critiques. It is not strong enough to unlock
-production wording, because no rerunnable live boundary on a real local,
-Playground, or Docker `REPRINT_PUSH_SOURCE_URL` has yet proven preserved-
-remote retention, apply-time revalidation, and production auth/session
-lifecycle on the same mutation.
+`verify:release` exists" critiques on this audit branch. It is not strong
+enough to unlock production wording, because no rerunnable live boundary on a
+real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` has yet proven
+preserved-remote retention, apply-time revalidation, and production
+auth/session lifecycle on the same mutation.
 
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
