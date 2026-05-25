@@ -2475,6 +2475,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause',
+    proposal: 'use a compressed remote index plus a cached dependency graph to skip plugin-install finalize after a pause',
+    rejectedBecause: 'planning evidence and dependency shape can reduce duplicate lookup work, but they cannot prove the live row compares, staged metadata writes, or the atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
     proposal: 'use a compressed remote index plus cached row receipts to skip plugin-install backpressure after a pause',
     rejectedBecause: 'planning evidence and cached row receipts can reduce replay work, but they cannot prove the queue order, plugin preconditions, or atomic-group evidence survived the pause',
