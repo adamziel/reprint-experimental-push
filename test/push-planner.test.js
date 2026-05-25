@@ -13046,6 +13046,38 @@ test('recognizes matching independent file deletions as already in sync while re
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('recognizes matching independent file restores as already in sync while remote-only plugin drift is preserved', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/archive/keep.txt'] = 'base archive bytes';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/archive/keep.txt'] = 'restored archive bytes';
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/archive/keep.txt'] = 'restored archive bytes';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const restoreDecision = decisionFor(plan, 'file:wp-content/uploads/archive/keep.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/archive/keep.txt'), undefined);
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'update');
+  assert.equal(restoreDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files['wp-content/uploads/archive/keep.txt'], 'restored archive bytes');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent row restore, and matching file type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };

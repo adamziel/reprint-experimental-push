@@ -8,6 +8,8 @@ It may apply automatically when:
 - the local resource differs from base, the remote resource still matches base,
   and the mutation keeps a live remote hash precondition
 - a local and remote change converge to the same ordinary resource content
+- matching file deletions, file restores, row deletes, row restores, and file
+  type swaps are preserved as already-in-sync instead of being re-written
 - a remote-only change is unrelated to the local mutation set and can be
   preserved as `keep-remote`
 
