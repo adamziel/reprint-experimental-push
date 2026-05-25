@@ -50,6 +50,12 @@ Current command-surface gap:
 - The current production-shaped routes still label themselves `labBacked: true`, so the real remote/local topology is still unproven.
 - The practical meaning is simple: `npm test` can stay green while the repository still has no mandatory command that can certify no data loss, reliability, or speed on the live source.
 
+Release preflight absence:
+
+- there is still no checked-in command that reaches the live-source boundary and fails closed when live proof is absent
+- there is still no checked-in workflow entrypoint in this checkout to enforce that verdict
+- until that changes, the top blocker remains the missing real-site push preflight command
+
 ## Release Gate Definition
 
 The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone. The actionable fix is not another lab helper; it is a checked-in `verify`, `verify:release`, or `release` gate, wired into the default automation path, that fails closed unless it can prove live-source state at apply time, reject stale claims, and emit a machine-checkable verdict from the same invocation. Until that exists, the strongest evidence remains regression or lab evidence, not release evidence.
