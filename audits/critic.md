@@ -15,14 +15,14 @@ The latest lab evidence is real. The reliable lane now adds a missing-secret pro
 The push design should borrow those pieces, but it still needs its own mutation-grade proof. Transport shape and scanner coverage are not enough.
 
 Latest supervision evidence narrows the remaining gap, but does not close it:
-`origin/lane/reliable-executor` is still at `0c4fd10f`,
-`origin/lane/no-data-loss-invariants` is now at `fa0ce3ea`,
-`origin/lane/no-data-loss-recovery` is still at `47b675c0`,
-`origin/lane/fast-paths` is now at `b54f1b34`,
-`origin/lane/independent-auditor` is now at `33b839f0`,
-`origin/lane/feedback-supervisor` is now at `f386dfa6`,
-`origin/lane/progress-publisher` is now at `7695e1f9`,
-and `origin/lane/same-plan-wordpress-graph-create` is now at `732e1251`,
+`origin/lane/reliable-executor` is at `0c4fd10f`,
+`origin/lane/no-data-loss-invariants` is at `fa0ce3ea`,
+`origin/lane/no-data-loss-recovery` is at `47b675c0`,
+`origin/lane/fast-paths` is at `b54f1b34`,
+`origin/lane/independent-auditor` is at `33b839f0`,
+`origin/lane/feedback-supervisor` is at `f386dfa6`,
+`origin/lane/progress-publisher` is at `7695e1f9`,
+and `origin/lane/same-plan-wordpress-graph-create` is at `732e1251`,
 while the critic branch still matches `origin/lane/critic` at `c036004c`.
 These moves refresh the audit snapshot but do not change the underlying
 verdict: production auth/session lifecycle, durable journal ownership with
