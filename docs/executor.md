@@ -137,6 +137,10 @@ dry-run, apply, journal, and recovery inspect evidence in the release proof.
 The supervisor-facing shortcut is `npm run verify:release`.
 It resolves to the same retained-source proof, so the checked command and the
 release alias stay aligned.
+In this lane, that alias is the checked supervisor command for the production
+boundary: it must either reach the live Playground preflight path or fail
+closed at the explicit live-source or secret gate before any dry-run or apply
+mutation begins.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.
@@ -156,6 +160,9 @@ The checked proof also asserts the durable journal summary fields directly:
 It also emits the exact boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`
 so the supervisor output distinguishes the lab-shaped proof from the missing
 production boundary.
+The same release path also names the durable storage gap explicitly with
+`PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`, which keeps the auth/session
+lifecycle boundary separate from the storage/lease/fence boundary.
 
 That checked release entrypoint has two exact outputs:
 
