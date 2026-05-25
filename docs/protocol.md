@@ -120,6 +120,21 @@ The liveness split is strict:
 - `push_recover inspect` is read-only, must happen first, and classifies
   finish, rollback, retry, or block before any mutating repair.
 
+The production executor checklist is the same in every harness:
+
+1. preflight binds the persisted pull base package to one live remote identity
+   and one short-lived push session.
+2. remote snapshot hash listing stays planning-only and never becomes write
+   authority.
+3. dry-run uploads the canonical plan and returns an eligibility receipt, not
+   a lock.
+4. apply revalidates fresh live evidence before every batch and again at the
+   storage boundary.
+5. journal inspect stays read-only.
+6. recovery inspect happens before any mutating repair.
+7. recovery mutate runs only when inspect proves the branch safe and the same
+   auth floor still holds.
+
 ## Canonical Proof Set
 
 The production push extension is reviewed in a fixed order so the protocol,

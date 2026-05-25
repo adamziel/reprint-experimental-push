@@ -199,6 +199,11 @@ The remote liveness split stays explicit across the whole executor:
 - recovery must begin with inspect before any mutating repair
 - authentication must be at least as strict as current Reprint HMAC usage
 
+The production executor proof is therefore anchored on
+`push-protocol-extension-contract.json` plus the
+`push-production-executor-flow-contract.json` route matrix, which together pin
+the same stage order in Docker and Playground.
+
 The compact auth/session proof to cite is
 `push-production-auth-session-journal-recovery-inspect-contract.json`, which
 now bundles the short-lived session, durable journal rows, lease fence,
