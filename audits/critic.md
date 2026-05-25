@@ -52,6 +52,9 @@ Must change before any production-grade push claim:
   reruns the same live boundary here, and shows the preserved remote,
   rejection point, and fresh retry scope for that exact case; a comparison
   note without that branch-local rerun is not current proof;
+- prove that a named upstream note cannot be widened to a later-discovered
+  plugin-owned surface just because the later surface shares the same route
+  family, package mount, or reviewer wording as the earlier note;
 - prove a stale approval or readable review artifact cannot be widened into
   a different row, file, relationship-bearing record, remapped create target,
   or plugin-owned surface after drift;
@@ -163,6 +166,8 @@ Release-gate checklist:
 - require any Reprint, ZS-Sync, or ForkPress comparison to name the exact
   upstream revision or worktree state, the exact live boundary rerun here,
   and the exact proof boundary it does and does not cover.
+- require any Reprint, ZS-Sync, or ForkPress comparison to say whether a
+  later-discovered plugin-owned surface is in scope or explicitly excluded;
 
 False reliability claims to reject:
 
