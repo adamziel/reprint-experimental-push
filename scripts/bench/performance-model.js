@@ -147,6 +147,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'file-hashing',
+    reduces: ['duplicate-rehash-work', 'resume-recompute-time', 'planning-round-trips'],
+    allowedShortcut: 'reuse-file-hash-ledger-to-size-large-upload-resume-with-guarded-publish-check',
+    guardrails: [
+      'hash-ledger-is-resume-evidence-only',
+      'publish-still-compares-the-live-resource-hash',
+    ],
+    gateProofs: {
+      skip: 'a recorded file-hash ledger can skip duplicate rehashing and planning rescans for a large-upload resume when the ledger matches the plan-scoped receipt set',
+      live: 'the guarded publish step still compares the live remote resource hash before any bytes become visible',
+      group: 'hash-ledger reuse stays inside one file boundary and never widens an atomic group',
+      recovery: 'the ledger is only resume evidence; durable chunk receipts and the publish record still classify whether the upload stopped before or after visibility',
+    },
+    visibilityBoundary: 'plan-staging-resume-only',
+    failureEvidence: 'file-hash ledger plus guarded file-publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'chunk-upload',
     reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
     allowedShortcut: 'reuse-remote-index-cursor-to-size-bounded-chunk-windows',
@@ -1337,6 +1357,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'planning evidence and cached hashes can skip lookup and rehash work, but they cannot prove the live compare, every chunk acknowledgement, or the guarded publish barrier survived failure',
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-resume-publish',
+    proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip the guarded publish step after a resume',
+    rejectedBecause: 'planning evidence and cached hashes cannot prove which chunk acknowledgements survived the pause or restore the live publish compare',
+    rejectedGate: 'live',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish'],
   },
   {
     id: 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-publish',

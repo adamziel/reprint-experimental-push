@@ -430,6 +430,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'planning cursor plus cached digest and guarded file-publish record',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-file-hash-ledger-to-size-large-upload-resume-with-guarded-publish-check')?.visibilityBoundary,
+    'plan-staging-resume-only',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-file-hash-ledger-to-size-large-upload-resume-with-guarded-publish-check')?.failureEvidence,
+    'file-hash ledger plus guarded file-publish record',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-size-bounded-chunk-windows')?.failureEvidence,
     'planning cursor plus bounded chunk receipt ledger',
   );
@@ -1065,6 +1073,10 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-digest-skips-large-upload-resume-after-pause').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume-after-pause').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('atomic-file-publish'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume-publish').rejectedGate,
+    'live',
+  );
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions').violates.includes('atomic-groups'));

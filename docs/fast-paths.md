@@ -1098,6 +1098,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
 
 - File hashing cannot fall back to mtime-only, size-only, or path-only
   equality when that would skip a live remote hash check.
+- File hashing cannot use a cached hash ledger to skip the guarded publish
+  compare after a large-upload resume, because the ledger only trims duplicate
+  rehash work and does not prove which chunk acknowledgements survived the
+  pause.
 - Chunk upload cannot publish staged chunks into the live file path before the
   finalize compare-and-swap.
 - Database batching cannot use a table checksum, row count, or blind SQL replay
