@@ -23,6 +23,10 @@ support.
 - If the comparison was not re-verified at the exact live write boundary, it
   stays historical context only, even when the route name or package layout
   matches the production path.
+- A source-note comparison never becomes current proof by itself; the claim
+  must name the exact upstream revision or worktree state, the exact live
+  mutation boundary, and the exact stale remote-drift case that failed
+  closed before any write.
 - The claim does not treat an unverified Reprint, ZS-Sync, or ForkPress
   comparison as current proof, even if the endpoint path, package layout, or
   expected hash looks production-shaped.
@@ -93,6 +97,9 @@ support.
 - The claim does not treat manual resolution as success unless the remote is
   preserved, the stale artifact stays auditable but unusable, and the retry
   rebuilds scope from fresh live hashes before any write.
+- Manual resolution is not a production proof if the approval can be reused
+  after drift, if the remote was not preserved for audit, or if the retry
+  inherits scope from the stale snapshot instead of re-reading the live one.
 - The claim does not treat a stale review artifact as current authority even
   if it is still readable, because readability alone does not preserve the
   remote or prove the write path failed closed.
