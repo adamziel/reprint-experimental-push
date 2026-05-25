@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but `4baf67ab` is still an assertion-alignment commit, not a live WordPress boundary. This branch-local audit file is not the proof surface; only the supervised remote lane plus one rerunnable live boundary can count.
+The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but `4baf67ab` is still an assertion-alignment commit, not a live WordPress boundary. The local audit branch can only record the critique; it cannot substitute for the supervised remote lane plus one rerunnable live boundary on a real source URL.
 
 The missing production proof is now precise: one rerunnable live mutation boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence.
 
@@ -38,7 +38,7 @@ The next production proof must be one rerunnable live boundary on a real local, 
 
 ## Hidden-loss scenarios
 
-- If drift appears after dry-run and before apply, the remote must remain preserved and inspectable. There is no live proof of that rejection path here.
+- If drift appears after dry-run and before apply, the remote must remain preserved and inspectable. There is no live proof of that rejection path here, so the design still cannot prove safe audit or safe retry after rejection.
 - If create-time remapping rewires identity, the mutation must either preserve graph identity or hard-block. There is no production proof of that behavior, so late-discovered relationship-bearing records can still drift out of the intended graph.
 - If a plugin-owned option, table, cron row, cache entry, generated file, or activation side effect appears late, the push must classify it before any write lands and before any stale approval or cached retry can be reused. There is no coverage proof for that trap on a rerunnable live boundary, so plugin-driver behavior can still silently miss writes outside the initial allowlist.
 - If a retry reuses stale manual-resolution text, it must not authorize a new mutation. The design does not yet show an auditable artifact that binds the approval to fresh live hashes and the preserved remote, so the retry path can still misrepresent a rejected remote as resolved.
