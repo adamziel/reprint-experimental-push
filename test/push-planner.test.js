@@ -3052,6 +3052,58 @@ test('atomic apply recovery contract keeps the documented states and artifact sh
   assert.ok(blocked.details.recovery.artifacts.remote);
 });
 
+test('atomic apply recovery boundaries accept only old remote, fully updated remote, or blocked recovery artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:1'].post_title = 'Local title';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const boundaries = [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote', 'opened'],
+    ['after staging', { failAfterStaging: true }, 'old-remote', 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote', 'dependencies-validated'],
+  ];
+
+  for (const [label, options, expectedStatus, expectedJournalStatus] of boundaries) {
+    const remote = baseSite();
+    const snapshot = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assert.equal(error.details.recovery.status, expectedStatus, label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+
+  const staleRemote = JSON.parse(JSON.stringify(completed.site));
+  staleRemote.files['index.php'] = '<?php echo "drifted";';
+  const blocked = captureError(() => applyPlan(staleRemote, plan, { journal: completed.journal }));
+
+  assert.ok(blocked instanceof PushPlanError);
+  assertAcceptableRecoveryState(blocked.details.recovery);
+  assert.equal(blocked.details.recovery.status, 'blocked-recovery');
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+});
+
 test('partial remote mutation is a blocked recovery state with artifacts', () => {
   const base = baseSite();
   const local = baseSite();
