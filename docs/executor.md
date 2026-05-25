@@ -38,6 +38,27 @@ The pull-to-push bridge is one-way and fixed:
 - push recovery starts with inspect and only mutates when the journal and
   fresh live hashes still prove the branch safe
 
+The bridge maps the existing pull pipeline to the push ladder like this:
+
+| Pull artifact or stage | Push stage | Boundary rule |
+| --- | --- | --- |
+| Exporter merge-base scan | `push_preflight` | Bind the imported base package to one live remote identity, one requested scope, and one short-lived session. |
+| Importer persisted base package | `push_snapshot_hashes` | Use it only as planning provenance for the live remote hash listing. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan as a receipt, not a lock. |
+| Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
+| Persisted provenance checksum | `push_journal` | Read durable evidence only; never turn it into write authority. |
+| Coverage and lineage replay | `push_recover inspect` | Classify finish, rollback, retry, or block before any mutating repair. |
+
+That mapping stays strict:
+
+- `push_snapshot_hashes` is planning evidence only.
+- `push_plan_dry_run` returns an eligibility receipt, not a lock.
+- `push_batch_apply` is the first write stage and must revalidate fresh live
+  evidence before every batch and at the storage boundary.
+- `push_journal` and `push_recover inspect` are read-only.
+- `push_recover auto|finish|rollback` may mutate only after inspect proves the
+  branch safe and the auth floor still holds.
+
 The executor contract is intentionally linear:
 
 1. bind the persisted pull base package to one live remote identity in

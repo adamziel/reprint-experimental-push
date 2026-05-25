@@ -47,6 +47,10 @@ The normal sequence is:
 
 The production proof bundle is intentionally layered:
 
+- `push-protocol-extension-contract.json` is the top-level production ladder
+  proof. Start here when you need the full preflight, snapshot hash listing,
+  dry-run, batched apply, journal inspect, and inspect-first recovery story in
+  one object.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-preflight-contract.json` keeps the first live binding explicit: the
@@ -75,9 +79,9 @@ The production proof bundle is intentionally layered:
 - `push-executor-topology-proof.json` is the shortest proof that the executor
   keeps the same remote identity, the same route names, and the
   sandbox-provided `8080` ingress rule aligned across Docker and Playground.
-- `push-protocol-extension-contract.json` is the best single fixture when a
-  review needs the full preflight, snapshot hash listing, dry-run, apply,
-  journal inspect, and recovery ladder in one object.
+- `push-pull-to-topology-contract.json` is the smallest bridge from pull
+  provenance into the production push topology when a review needs the proof
+  chain in compact form.
 
 The canonical end-to-end bundle for the push extension is:
 
