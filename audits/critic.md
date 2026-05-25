@@ -7199,9 +7199,9 @@ are true on this worktree:
 - the next acceptable proof from reliable-executor is a live rerun against a
   real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that prints the
   executor identity, the preserved remote that stayed inspectable after
-  rejection, and the exact rejection point before the first write; a wrapper
-  that only reuses the playground or fixture-backed boundary is still
-  compatibility evidence, not release proof;
+  rejection, the dry-run receipt, and the exact rejection point before the
+  first write; a wrapper that only reuses the playground or fixture-backed
+  boundary is still compatibility evidence, not release proof;
 - that command must be a real-site entry point, not just a production-
   sounding wrapper around `plan`, `apply`, or a playground smoke; command
   naming alone never proves the live executor boundary, preserved remote, or
@@ -7243,11 +7243,11 @@ Lead finding for the current release-proof claim:
   wrapper name plus lab-shaped output is not production proof.
 - production-grade push support is still blocked until one exact executable
   command, one exact live source URL, and one preserved remote can be shown in
-  the same rerun together with apply-time revalidation, journal/recovery
-  inspection, auth/session boundary capture, graph-identity evidence, and
-  plugin-owned surface classification; any missing item means the branch has
-  not yet proven the exact retry boundary and must not use production-ready
-  wording.
+  the same rerun together with dry-run receipt evidence, apply-time
+  revalidation, journal/recovery inspection, auth/session boundary capture,
+  graph-identity evidence, and plugin-owned surface classification; any
+  missing item means the branch has not yet proven the exact retry boundary
+  and must not use production-ready wording.
 
 Exact next proof required from `25c4ef54`:
 
@@ -7258,6 +7258,7 @@ Exact next proof required from `25c4ef54`:
 - print the executor identity and auth/session boundary before the first
   write;
 - preserve the rejected remote so it remains inspectable after rejection;
+- record the dry-run receipt before any write is finalized;
 - show the exact rejection point before the first write;
 - show apply-time revalidation on that same live boundary;
 - inspect the journal and recovery state that defines retry scope;
