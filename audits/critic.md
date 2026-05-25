@@ -3133,8 +3133,11 @@ all of these in the same branch-local proof:
 If any one of those is missing, the claim is still lab-backed or historical
 context, even if the route shape, packaged mount, fixture replay, or
 `finalMatchesLocal` hash looks production-shaped. In particular, "manual
-resolution later" is not a success label unless the preserved remote is still
-auditable, the stale artifact cannot authorize retry for any other row, file,
+resolution later" is not a success label when the first write already
+committed on a narrower surface and a late-discovered plugin-owned surface
+still needs work. That scenario only counts if the preserved remote is still
+auditable, the late surface is blocked or durably classified before any
+retry, the stale artifact cannot authorize retry for any other row, file,
 relationship-bearing record, or plugin-owned surface, and the fresh retry
 artifact is recorded separately from the stale review artifact.
 
