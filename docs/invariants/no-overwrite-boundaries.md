@@ -58,6 +58,9 @@ mutation id, the resource key, the remote hash observed during planning, and
 ## Planner Must Stop
 
 - Same-resource local and remote changes that diverge to different hashes.
+- File delete conflicts must stop when the live remote changed the same file,
+  even if unrelated remote-only plugin drift is present elsewhere; the
+  conflict evidence stays redacted and the plugin drift stays preserved.
 - Local delete or file type swap when the live remote resource drifted and the
   local side did not independently reach the live remote hash.
 - Plugin-context or plugin-owned data mutations when the relevant live remote

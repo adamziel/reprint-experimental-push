@@ -390,6 +390,29 @@ test('stops a local file deletion on conflict while preserving unrelated remote-
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('bounds file delete conflict evidence while preserving unrelated remote-only plugin drift', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete local.files['index.php'];
+  remote.files['index.php'] = '<?php echo "Remote secret file update";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const conflictJson = JSON.stringify(conflict);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.reason, 'Local and remote both changed this resource after the pull base.');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-and-stop');
+  assert.equal(conflictJson.includes('Remote secret file update'), false);
+  assert.equal(conflictJson.includes('remote-only plugin drift'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('stops a local file deletion when the remote turned the same file into a directory', () => {
   const base = baseSite();
   const local = baseSite();
