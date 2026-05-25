@@ -85,6 +85,10 @@ This note captures the planner boundary in plain language.
   plugin-owned resource while remote-only plugin changes remain
   `keep-remote`.
 - A ready delete plan at the live release boundary may still preserve a
+  matching independent delete, a matching file type swap, and a matching
+  plugin-owned resource while remote-only plugin changes remain
+  `keep-remote`.
+- A ready delete plan at the live release boundary may still preserve a
   matching independent file type swap and a matching plugin-owned resource
   while remote-only plugin changes remain `keep-remote` and late plugin
   drift is refused on re-apply.
@@ -108,6 +112,9 @@ This note captures the planner boundary in plain language.
 - A live-preconditioned file delete may still coexist with a matching
   independent file type swap and matching independent row delete while
   unrelated remote-only plugin metadata and files remain `keep-remote`.
+- A live-preconditioned file delete may still coexist with a matching
+  independent delete, file type swap, and plugin-owned resource while
+  remote-only plugin changes remain `keep-remote`.
 - A live-preconditioned file delete may still coexist with a matching
   independent row delete, edit, and file type swap while unrelated
   remote-only plugin metadata and files remain `keep-remote`.

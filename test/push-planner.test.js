@@ -25546,3 +25546,89 @@ test('keeps remote-only plugin changes at the live release boundary while a read
   assert.equal(driftedError.code, 'PRECONDITION_FAILED');
   assert.equal(driftedRemote.plugins.forms.description, 'late plugin drift');
 });
+
+test('keeps remote-only plugin changes at the live release boundary while a ready delete plan preserves a matching independent delete, a matching file type swap, and a matching plugin-owned resource', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Base post',
+    post_status: 'publish',
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.db.wp_posts['ID:1'];
+  local.files['about.php'] = { type: 'directory' };
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  local.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+
+  const remote = baseSite();
+  delete remote.db.wp_posts['ID:1'];
+  remote.files['about.php'] = { type: 'directory' };
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  remote.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingRowDelete = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const matchingTypeSwap = decisionFor(plan, 'file:about.php');
+  const matchingCoverSwap = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const matchingPluginOwned = decisionFor(plan, 'row:["wp_options","option_name:forms_settings"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingRowDelete.decision, 'already-in-sync');
+  assert.equal(matchingRowDelete.change.localChange, 'delete');
+  assert.equal(matchingRowDelete.change.remoteChange, 'delete');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(matchingCoverSwap.decision, 'already-in-sync');
+  assert.equal(matchingCoverSwap.change.localChange, 'type-change');
+  assert.equal(matchingCoverSwap.change.remoteChange, 'type-change');
+  assert.equal(matchingPluginOwned.decision, 'already-in-sync');
+  assert.equal(matchingPluginOwned.change.localChange, 'update');
+  assert.equal(matchingPluginOwned.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(completed.site.db.wp_posts, 'ID:1'), false);
+  assert.equal(completed.site.files['about.php'].type, 'directory');
+  assert.equal(completed.site.files['wp-content/uploads/cover'].type, 'directory');
+  assert.equal(completed.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'shared');
+  assert.equal(completed.site.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(completed.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.files['wp-content/plugins/forms/forms.php'] = '<?php /* late remote plugin drift */';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* late remote plugin drift */');
+  assert.equal(driftedRemote.plugins.forms.description, 'remote-only plugin change');
+});
