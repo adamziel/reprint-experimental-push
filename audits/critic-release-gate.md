@@ -129,6 +129,7 @@ Concrete failure modes that still block the claim:
 - partial file, DB, or plugin side effects that are relabeled as success without old/new/blocked classification for every touched surface, including the case where the first write succeeded but the later retry boundary did not.
 
 Release wording must also avoid implying that a readable review artifact or comparison note is equivalent to a live retry gate. Those artifacts are audit evidence only until the branch shows the preserved remote, rejection point, and fresh retry scope for the same boundary on this worktree. Manual resolution is not success unless the remote is preserved for audit, the stale artifact stays unusable as retry authority, and the fresh retry artifact is recorded separately on this branch.
+If a later review rerun produces a fresh-looking manual-resolution note, it still does not inherit the earlier note unless it re-proves the same live boundary here with the preserved remote, the stale rejection point, and a retry scope rebuilt from live hashes.
 
 Anti-trap wording:
 

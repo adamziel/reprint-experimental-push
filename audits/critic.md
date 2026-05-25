@@ -266,7 +266,10 @@ authority. Even a named upstream state is still historical unless this
 branch reran the same live boundary and can show fresh preserved-remote,
 rejection-point, and retry evidence for that exact case, plus per-surface
 old/new/blocked classification for every touched row, file, relationship-
-bearing record, remapped create target, and plugin-owned surface.
+bearing record, remapped create target, and plugin-owned surface. A later
+review rerun does not inherit the earlier note unless it proves that exact
+same live boundary again; matching reviewer wording alone never promotes the
+older note to current retry authority.
 
 Release-gate checklist for production-grade wording:
 
