@@ -68,6 +68,10 @@ The machine-readable bridge is split across the fixtures:
   again at the storage boundary.
 - `push-journal-inspect-contract.json` and the recovery contracts keep
   journal inspection read-only before any mutating repair.
+- `push-auth-session-journal-recovery-contract.json` and
+  `push-production-push-recovery-contract.json` bind the auth floor, minted
+  push session, journal rows, lease fencing, and inspect-first recovery into
+  one production-shaped proof.
 - `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
   `push-remote-liveness-topology-contract.json` define the Docker and
   Playground test topology with one remote source, one imported local site,

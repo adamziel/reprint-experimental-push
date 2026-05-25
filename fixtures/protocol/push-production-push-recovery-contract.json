@@ -32,10 +32,14 @@
   "auth_and_session": {
     "required_floor": "at least as strict as current Reprint HMAC usage",
     "preflight_binding": "mints one short-lived push session bound to one remote identity and one persisted pull base",
-    "mutating_calls": "dry-run, apply, and mutating recovery require the push session, canonical push signature, and idempotency key"
+    "mutating_calls": "dry-run, apply, and mutating recovery require the push session, canonical push signature, and idempotency key",
+    "inspect_requires": [
+      "HMAC-authenticated request",
+      "read-only recovery mode"
+    ]
   },
   "journal_and_recovery": {
-    "journal_inspect": "reads durable claim and fencing evidence without mutating target resources",
+    "journal_inspect": "reads durable claim, lease, fencing, and apply-boundary evidence without authorizing mutation",
     "recovery_inspect": "classifies finish, rollback, retry, or block before any mutating repair",
     "lease_fence": "claim generation and lease expiry fence stale workers before mutation",
     "revalidation": "mutating recovery still requires fresh live hashes plus journal evidence"
@@ -61,13 +65,14 @@
     ]
   },
   "required_invariants": [
-    "pull exporter/importer establish the immutable base package before push",
     "preflight binds the persisted pull base package to one live remote identity and one short-lived push session",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "pull exporter/importer establish the immutable base package before push",
     "remote snapshot hash listing is planning evidence and never write authority",
     "dry-run and apply are separate remote operations",
     "apply must revalidate the live remote before every batch and at the storage boundary",
-    "journal inspection is read-only and never authorizes mutation by itself",
-    "recovery must begin with inspect before any mutating repair",
-    "authentication must be at least as strict as current Reprint HMAC usage"
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "mutating recovery still requires fresh live hashes plus journal evidence"
   ]
 }

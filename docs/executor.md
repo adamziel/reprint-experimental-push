@@ -188,6 +188,8 @@ The canonical proof stack for that executor story is the same one named in
   first recovery into one reviewable object, with `remote-base` and
   `remote-changed` proving the same remote identity before and after drift
   and with apply-time revalidation kept separate from dry-run
+- `push-auth-session-journal-recovery-contract.json` for the compact auth,
+  session, journal-row, lease-fence, and inspect-first recovery proof
 - `push-auth-session-journal-recovery-inspect-contract.json` for the compact
   proof that binds auth, session minting, journal rows, lease fencing, live
   drift, and inspect-first recovery into one object
@@ -195,8 +197,6 @@ The canonical proof stack for that executor story is the same one named in
   contract that still proves the same remote identity twice, the imported
   local site, and the sandbox-provided `8080` ingress rule
 - `push-journal-inspect-contract.json` for the read-only journal boundary
-- `push-auth-session-journal-recovery-contract.json` for the compact auth,
-  session, journal-row, lease-fence, and inspect-first recovery proof
 - `push-remote-liveness-topology-contract.json` for the compact liveness plus
   one-remote, one-local, one-drift harness proof
 - `push-topology-matrix.json` for the canonical Docker/Playground stage
