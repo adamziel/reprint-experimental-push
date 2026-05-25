@@ -475,7 +475,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until production evidence lands. Linked docs hold the proof trail. This lane-local copy becomes live after merge to <code>main</code>, so GitHub Pages will lag until then.</p>
-        <time class="update-stamp" datetime="2026-05-25T04:58:39+02:00">Last updated: May 25, 2026, 04:58:39 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T04:59:39+02:00">Last updated: May 25, 2026, 04:59:39 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production evidence</span>
           <span class="pill">Detailed proof stays in linked docs</span>
@@ -491,15 +491,15 @@
 
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
-        <strong>Lab-backed only</strong>
+        <strong>Lab-backed</strong>
         <span>Node tests still cover the lab/model path, not production.</span>
       </div>
       <div class="metric">
-        <strong>Blocked</strong>
+        <strong>Still blocked</strong>
         <span>Production gates stay blocked until one real proof gap closes.</span>
       </div>
       <div class="metric">
-        <strong>Open proof gaps</strong>
+        <strong>Open gaps</strong>
         <span>Auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.</span>
       </div>
       <div class="metric">
@@ -521,12 +521,12 @@
           <li><strong>Next nudge</strong><span>Keep each lane to one proof gap, one test, and one owner.</span></li>
         </ul>
         <ul class="compact-list" aria-label="Lane nudges">
-          <li><strong>Invariants</strong><span>Owner: lane. Next test: prove graph identity mapping on a real site.</span></li>
-          <li><strong>Recovery</strong><span>Owner: lane. Next test: prove durable journal writes across a crash boundary.</span></li>
-          <li><strong>Reliable executor</strong><span>Owner: lane. Next test: prove auth, session, and lease behavior in production.</span></li>
-          <li><strong>Fast paths</strong><span>Owner: lane. Next test: benchmark a real large site before rollout claims.</span></li>
-          <li><strong>Audit and critic</strong><span>Owner: lane. Next test: re-audit the next production-backed slice.</span></li>
-          <li><strong>Progress publisher</strong><span>Owner: lane. Next test: keep the page dated, concise, and linked to evidence.</span></li>
+          <li><strong>Invariants</strong><span>Owner: lane. Proof gap: graph identity mapping on a real site.</span></li>
+          <li><strong>Recovery</strong><span>Owner: lane. Proof gap: durable journal writes across a crash boundary.</span></li>
+          <li><strong>Reliable executor</strong><span>Owner: lane. Proof gap: auth, session, and lease behavior in production.</span></li>
+          <li><strong>Fast paths</strong><span>Owner: lane. Proof gap: benchmark a real large site before rollout claims.</span></li>
+          <li><strong>Audit and critic</strong><span>Owner: lane. Proof gap: re-audit the next production-backed slice.</span></li>
+          <li><strong>Progress publisher</strong><span>Owner: lane. Proof gap: keep the page dated, concise, and linked to evidence.</span></li>
         </ul>
       </div>
     </section>
@@ -539,25 +539,25 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">Verified in lab</span></div>
+          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">Lab-backed</span></div>
           <div class="bar" aria-label="No data loss merge invariants lab-backed"><div class="fill green" style="width:45%"></div></div>
           <p class="note">Lab delete/edit cases still match. Gap: prove graph identity mapping on a real site.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">Verified in lab</span></div>
+          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">Lab-backed</span></div>
           <div class="bar" aria-label="No data loss recovery boundaries lab-backed"><div class="fill green" style="width:29%"></div></div>
           <p class="note">Replay and failure-state coverage is model-only. Gap: durable journal writes under crash boundaries.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">Blocked by evidence</span></div>
+          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">Blocked</span></div>
           <div class="bar" aria-label="Reliable executor and protocol blocked"><div class="fill amber" style="width:42%"></div></div>
           <p class="note">Protocol docs name the flow, but the proof is still local. Gap: production auth, session, and lease behavior.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">Pending proof</span></div>
+          <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">Pending</span></div>
           <div class="bar" aria-label="Fast path and chunking pending"><div class="fill" style="width:19%"></div></div>
           <p class="note">Rejected fast paths now name the safety gate. Gap: benchmark a real large site before rollout claims.</p>
         </div>
