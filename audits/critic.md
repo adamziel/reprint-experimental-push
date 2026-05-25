@@ -1172,6 +1172,10 @@ would reasonably read as equivalent.
   review, even when the old approval is still readable; the stale artifact
   must fail closed before write and the retry must start from fresh live
   evidence.
+- A route-shaped smoke or package mount cannot revive a stale review artifact;
+  if the fresh live snapshot does not match the reviewed scope, the artifact
+  stays audit-only and cannot authorize a different row, file, option, or
+  plugin-owned surface.
 - Manual resolution is not production proof by itself; if the remote cannot be
   preserved for audit and the stale approval cannot be rejected in a
   retryable, user-auditable way before any write, the push must fail closed.

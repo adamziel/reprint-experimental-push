@@ -13,6 +13,10 @@ support.
 - A green lab smoke is never enough unless the same request path was re-run
   against a live remote after drift and the stale attempt failed before any
   mutation.
+- A route-shaped or package-shaped smoke never upgrades stale manual review
+  into current authority; the claim must show the stale artifact was rejected
+  against the fresh live snapshot before any write, not merely still readable
+  for audit.
 - The claim says whether any comparison to Reprint, ZS-Sync, or ForkPress
   was re-verified against the current upstream commit or worktree state.
 - If that upstream comparison was not re-verified, the claim must label it as
