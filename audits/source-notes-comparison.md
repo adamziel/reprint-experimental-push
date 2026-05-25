@@ -15,7 +15,9 @@ reverified the exact cited revision or worktree and the exact live mutation
 boundary for the same claim. If either the exact upstream state or the exact
 live boundary is missing, the note is historical context only and cannot be
 used to claim that the live executor, retry path, or manual-review flow is
-safe. A route-shaped smoke, package mount, live-looking hash, or matching
+safe.
+
+A route-shaped smoke, package mount, live-looking hash, or matching
 `finalMatchesLocal` result does not fill that gap. Neither does a later
 manual-resolution label unless the preserved remote stayed auditable, the
 stale rejection point is recorded, the fresh retry scope was rebuilt from
@@ -34,6 +36,29 @@ In other words: a named feature family is not enough. The branch must be able
 to point to the exact upstream commit or worktree state and the exact live
 mutation boundary that was exercised here, or the comparison stays historical
 context even if it sounds current.
+
+## Must-Happen-Before Production Wording
+
+Before this branch can use a Reprint, ZS-Sync, or ForkPress comparison as
+production wording, it must also show all of the following on the same live
+boundary:
+
+- the preserved remote stayed inspectable after rejection and is still usable
+  for audit;
+- the stale approval or manual-review artifact was rejected before the first
+  write and cannot widen to a different row, file, relationship-bearing
+  record, remapped create target, or plugin-owned surface;
+- every touched surface was classified old, new, or blocked before retry
+  started, including any partial file, DB, or plugin side effect;
+- any create-time identity remap was either backed by live identity evidence
+  at apply time or hard-blocked before mutation;
+- every plugin-owned surface outside the allowlist was enumerated or blocked
+  before write, including late-discovered tables, cron rows, runtime
+  registries, generated files, caches, serialized blobs, and plugin-owned
+  files; and
+- any later-discovered plugin-owned surface or remapped create target was
+  treated as a new boundary with its own preserve / reject / retry cycle
+  instead of inheriting the earlier approval.
 
 ## Reprint
 
