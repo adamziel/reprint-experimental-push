@@ -11430,6 +11430,69 @@ test('durable recovery stays within the approved state envelope across failure b
   );
 });
 
+test('no-data-loss recovery accepts only old remote, fully updated remote, or blocked recovery with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const remoteSnapshot = JSON.stringify(remote);
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true }],
+    ['after staging', { failAfterStaging: true }],
+    ['after dependency validation', { failAfterDependencyValidation: true }],
+  ]) {
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), remoteSnapshot, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.ok(error.details.recovery.artifacts.journal, label);
+  }
+
+  const completed = applyPlan(remote, plan, { durableJournal });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal,
+    journal: completed.journal,
+  });
+
+  const blockedRemote = JSON.parse(JSON.stringify(completed.site));
+  blockedRemote.db.wp_posts['ID:2'].post_title = 'Drifted after completion';
+  const blockedError = captureError(() =>
+    applyPlan(blockedRemote, plan, {
+      durableJournal,
+      journal: completed.journal,
+    }),
+  );
+
+  durableJournal.close();
+
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.ok(replay.recoveryState.artifacts.journal);
+
+  assert.ok(blockedError instanceof PushPlanError);
+  assert.equal(blockedError.details.recovery.status, 'blocked-recovery');
+  assertAcceptableRecoveryState(blockedError.details.recovery);
+  assert.ok(blockedError.details.recovery.artifacts.remote);
+  assert.ok(blockedError.details.recovery.artifacts.journal);
+});
+
 test('reopened durable journals keep the replay boundary inert after a dependency-validation failure boundary', () => {
   const base = baseSite();
   const local = baseSite();
