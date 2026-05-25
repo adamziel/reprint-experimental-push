@@ -130,6 +130,11 @@ False success to reject:
   approval was rejected before the first write, the retry scope was rebuilt
   from fresh live hashes, and every touched surface was classified old, new,
   or blocked; a readable note by itself is audit evidence only.
+- "manual resolution" is also false reliability if the first write only
+  covered a subset of touched surfaces and the remaining file, DB,
+  relationship-bearing, or plugin-owned surfaces were discovered later; mixed
+  outcomes stay audit evidence only until the whole set is reclassified and
+  retried from fresh live hashes.
 
 Checklist before any production-grade wording:
 

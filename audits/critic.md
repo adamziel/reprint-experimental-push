@@ -6224,6 +6224,12 @@ The design still has not closed the following production-grade gaps:
   plugin-owned surface that was not enumerated before the first write; the
   earlier note may remain audit evidence, but it cannot become retry authority
   for a boundary that was only discovered after the write;
+- "manual resolution later" is also false reliability when the first write
+  succeeded only for a subset of touched surfaces and the remaining file, DB,
+  relationship-bearing, or plugin-owned surfaces were discovered afterward;
+  the readable note cannot upgrade that mixed outcome into success unless the
+  whole touched set is reclassified old, new, or blocked and retried from
+  fresh live hashes on this branch;
 - a readable stale manual-review artifact is still not retry authority even
   when it survives drift intact; if the first write already committed and a
   later boundary appears, the artifact can remain audit evidence only, while
