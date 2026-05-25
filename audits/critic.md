@@ -111,6 +111,11 @@ What must change before any production-grade push claim:
   keep the preserved remote inspectable for audit/retry; if the artifact does
   not prove the same live boundary was retried from fresh live hashes, it is
   only a note, not success;
+- the preserved remote must stay separately auditable so a later reviewer can
+  inspect the rejected state and retry safely from fresh live hashes; if the
+  note cannot point to that preserved remote, it cannot claim production
+  success for any later row, file, relationship-bearing record, remapped
+  create target, or plugin-owned surface;
 - the exact drift case, stale artifact, and fresh live hash set must be named
   in the evidence; a generic "manual resolution" label does not prove the same
   boundary was retried;
