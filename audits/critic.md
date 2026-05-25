@@ -34,8 +34,8 @@ this branch; do not generalize that branch-local gap into a claim that the
 supervised lane lacks the command. The next acceptable proof is not another
 replay of the retained-source lane; it must be a live WordPress auth/session
 boundary with preserved-remote retention, apply-time revalidation,
-journal/recovery inspection, and exact preserved-remote retry evidence that
-can be rerun and audited from this branch.
+journal/recovery inspection, lease/fencing proof outside Playground, and exact
+preserved-remote retry evidence that can be rerun and audited from this branch.
 
 ## Single strongest blocker
 
@@ -93,7 +93,8 @@ the following on the same live boundary:
 - dry-run receipt plus apply-time revalidation on the same live mutation;
 - journal/recovery inspection that proves retry scope from fresh live hashes,
   durable storage, and lease/fencing behavior under retry on production
-  WordPress state, not just retained-source lab state;
+  WordPress state, not just retained-source lab state or Playground-only
+  instrumentation;
 - graph identity proof for create-time remaps and late-discovered
   relationship-bearing records;
 - explicit old/new/blocked classification for touched rows, files,
