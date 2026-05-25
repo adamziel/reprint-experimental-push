@@ -23,7 +23,8 @@ Latest supervision evidence narrows the remaining gap, but does not close it:
 `origin/lane/feedback-supervisor` is at `f386dfa6`,
 `origin/lane/progress-publisher` is at `7695e1f9`,
 and `origin/lane/same-plan-wordpress-graph-create` is at `d1994422`,
-while the critic branch still matches `origin/lane/critic` at `c036004c`.
+while the critic branch now matches `HEAD` at `f8591f9d` and is ahead of
+`origin/lane/critic` at `4e487df4`.
 These moves refresh the audit snapshot but do not change the underlying
 verdict: production auth/session lifecycle, durable journal ownership with
 lease/fencing/replay wiring, and exact replay output equivalence are still not
