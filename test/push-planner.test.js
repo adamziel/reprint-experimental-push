@@ -9207,6 +9207,45 @@ test('durable completed replay stays inert after stale local edits and preserves
   );
 });
 
+test('completed replay keeps stale local drift blocked when the recovery journal is replayed again', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "stale local";';
+  driftedRemote.db.wp_posts['ID:2'].post_title = 'Stale local insert';
+
+  const error = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      journal: completed.journal,
+    }),
+  );
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked replay must preserve remote artifacts');
+  assert.ok(error.details.recovery.artifacts.journal, 'blocked replay must preserve journal artifacts');
+  assert.equal(
+    error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Stale local insert',
+    'blocked replay must preserve the drifted remote state instead of replaying the completed insert set',
+  );
+  assert.equal(
+    Object.values(error.details.recovery.artifacts.remote.db.wp_posts).filter(
+      (row) => row.post_title === 'Stale local insert',
+    ).length,
+    1,
+    'blocked replay must preserve the single drifted insert record',
+  );
+});
+
 test('durable recovery stays within the accepted post-failure states and completed replay remains inert', () => {
   const base = baseSite();
   const local = baseSite();
