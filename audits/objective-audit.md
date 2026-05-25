@@ -337,7 +337,7 @@ The current test suite is useful, but it does not prove release readiness:
 - [`test/playground-snapshot-lib.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/playground-snapshot-lib.test.js) constrains fixture topology and file-path safety. It helps prevent accidental overreach, but it still remains fixture-scoped.
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) confirms the operational gap: there is no required release command, only `test`, `plan`, `apply`, and optional playground or recovery helpers. Optional entrypoints can produce evidence, but they do not create a mandatory verdict.
 
-Bottom line: the tests collectively prove the repo is refusal-capable and model-aware. They do not prove the objective's live-source no-loss, reliability, or speed claims.
+Bottom line: the tests collectively prove the repo is refusal-capable and model-aware. They do not prove the objective's live-source no-loss, reliability, or speed claims, and they must not be read as release proof just because `node --test` passes.
 
 Test verdict: `node --test` is necessary regression evidence, but it is not a release verdict. The suite can reject unsafe claims, yet it still leaves the live-source boundary, durable production storage, and mandatory throughput verdict unproven. A passing test run should therefore be treated as lab evidence unless and until a required release command composes the missing gates and prints the release decision itself.
 
