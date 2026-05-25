@@ -169,6 +169,10 @@ Release gate for any production wording:
   a late-discovered plugin-owned surface just because the first write already
   succeeded on a narrower surface set; the proof must keep the preserved
   remote, blocked late surface, and fresh retry scope separate.
+- Show that "manual resolution" cannot be recycled into a second write after
+  a later plugin-owned surface appears, even if the first write looked clean;
+  the branch needs a separate preserved remote, rejection point, and retry
+  artifact for that later surface.
 - Show that a source-note comparison cannot become retry authority for the
   live write path just because it names the right upstream commit or route
   family; if this branch did not rerun the same drifted remote and the same
