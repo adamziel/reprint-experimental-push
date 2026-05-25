@@ -216,6 +216,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(
     model.rejectedFastPaths.some(
+      (rejection) => rejection.id === 'index-and-compressed-chunk-receipts-complete-large-upload',
+    ),
+    'model rejects treating compressed chunk receipts plus a fresh remote index as large-upload completion',
+  );
+  assert.ok(
+    model.rejectedFastPaths.some(
       (rejection) => rejection.id === 'index-and-compressed-queue-skips-large-upload-resume',
     ),
     'model rejects treating a compressed queue plus a fresh remote index as a way to skip large-upload resume decisions',
@@ -279,9 +285,15 @@ test('safe fast paths include compressed remote index planning only', () => {
       fastPath.area === 'file-hashing' &&
       fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-digests-for-large-file-resume',
   );
+  const pipelinedChunkUploadPath = model.safeFastPaths.find(
+    (fastPath) =>
+      fastPath.area === 'chunk-upload' &&
+      fastPath.allowedShortcut === 'pipeline-independent-chunks-within-byte-and-receipt-budgets',
+  );
 
   assert.ok(compressedIndexPath, 'compressed remote index planning path exists');
   assert.ok(resumableFileHashPath, 'resumable file-hash planning path exists');
+  assert.ok(pipelinedChunkUploadPath, 'pipelined chunk-upload planning path exists');
   assert.equal(compressedIndexPath.visibilityBoundary, 'transport-only');
   assert.equal(compressedIndexPath.bypassesLivePreconditions, false);
   assert.ok(
@@ -292,6 +304,11 @@ test('safe fast paths include compressed remote index planning only', () => {
   assert.ok(
     resumableFileHashPath.gateProofs.skip.includes('cached chunk digest'),
     'resumable file hashing path keeps chunk digest reuse explicit',
+  );
+  assert.equal(pipelinedChunkUploadPath.visibilityBoundary, 'plan-staging-pipeline-only');
+  assert.ok(
+    pipelinedChunkUploadPath.gateProofs.group.includes('never widens the visibility boundary'),
+    'pipelined chunk uploads keep the visibility boundary fixed',
   );
 });
 
@@ -434,6 +451,8 @@ test('chunk uploads stay staged until a guarded publish step', () => {
   assert.ok(chunkUploads.every((action) => action.receiptKey.includes(action.chunkDigest)));
   assert.ok(chunkUploads.every((action) => action.resumeCursor?.chunkDigest === action.chunkDigest));
   assert.ok(chunkUploads.every((action) => action.resumeCursor?.offsetBytes === action.offsetBytes));
+  assert.ok(chunkUploads.every((action) => action.planId.startsWith('plan-')));
+  assert.ok(chunkUploads.every((action) => action.receiptKey.includes(':chunk:')));
 
   assert.ok(filePublishes.length > 0);
   assert.ok(filePublishes.every((action) => action.precondition?.expectedHash));

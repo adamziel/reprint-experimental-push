@@ -38,6 +38,7 @@ the safe list even when they improve a throughput metric.
 | File hashing | Cache strong file hashes behind a local fingerprint such as size, mtime, inode, mode, and the previous digest. Stream only uncached or fingerprint-changed files, and keep per-chunk hashes for large files so resume can skip work safely. | Size, mtime, or inode can only skip a rehash when they match a cached strong digest. The apply precondition remains the live remote resource hash. |
 | File hashing | Reuse plan-scoped chunk digests for large-file resume so the sender can skip recomputing chunk hashes that already have durable receipts. | Cached chunk digests are only resume evidence. They do not replace the live publish compare or the guarded file-publish record. |
 | Chunk upload | Upload large file bodies to plan-scoped staging objects in digest-addressed chunks, then assemble or publish the file with one compare-and-swap finalize step. | Chunk writes must not mutate the live path. Each chunk needs a checksum, idempotency key, and durable journal entry before the sender advances. |
+| Chunk upload | Pipeline independent chunk sends within a plan-scoped byte and receipt budget so retry-only chunks can overlap while final visibility stays on the same guarded publish step. | Pipelining may overlap chunk sends, but it cannot widen the visibility boundary or skip the complete durable receipt set required by finalize. |
 | Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order with one precondition per row. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
 | Remote indexes | Ask the remote for an indexed resource listing with keys, type, size, generation, tombstone state, strong hash, and owner so planning can avoid fetching unchanged resources. | The index speeds up planning only. Apply must recheck live preconditions against the current resource state. |
 | Remote indexes | Compress index responses and cache the planning cursor so repeated scans move fewer bytes without changing planning semantics. | Compression stays transport-only, and a compressed index response still cannot authorize apply or widen the atomic-group barrier. |
@@ -430,6 +431,8 @@ validators, and the final durable commit record.
   durable receipt.
 - Treating a full-file digest as enough proof to resume chunk work when chunk
   receipts are missing.
+- Treating pipelined chunk sends as proof that final publish already happened
+  without the guarded receipt set.
 - Treating a compressed in-memory buffer as proof that upload or batch work is
   durable.
 - Treating a drained compressed queue as proof that all staged work reached the
@@ -450,6 +453,9 @@ break the no-data-loss contract:
 - File hashing cannot fall back to mtime-only, size-only, or path-only equality.
 - Chunk upload cannot publish directly to the live file path or accept a chunk
   without a matching durable receipt.
+- Chunk upload cannot treat pipelined chunk sends as final publish, because
+  the guarded receipt set and compare-and-swap finalize step still decide
+  visibility.
 - Database row batching cannot use blind `REPLACE` or reorder rows across
   plugin owners or atomic groups.
 - Remote indexes cannot authorize apply writes, even when the listing is fresh.
@@ -469,6 +475,10 @@ under load:
   would be overwritten without a live compare-and-swap check.
 - remote-index authorization is rejected because a stale listing can still
   plan quickly but cannot prove current storage state.
+- remote-index plus compressed chunk receipts is rejected because planning
+  evidence and compressed receipts can reduce recovery work, but they still
+  cannot prove the live compare, guarded publish, or every chunk acknowledgement
+  survived failure.
 - remote-index plus cached package hash is rejected because planning evidence
   and package identity cannot prove dependency checks, metadata writes, or the
   atomic-group commit.

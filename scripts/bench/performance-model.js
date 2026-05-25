@@ -107,6 +107,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'chunk-upload',
+    reduces: ['idle-time', 'lost-response-retries', 'duplicate-body-transfer'],
+    allowedShortcut: 'pipeline-independent-chunks-within-byte-and-receipt-budgets',
+    guardrails: [
+      'chunks-remain-plan-scoped-and-addressed-by-digest',
+      'finalize-still-requires-complete-durable-receipts',
+    ],
+    gateProofs: {
+      skip: 'independent chunk sends may overlap when each chunk keeps its own digest, byte range, and idempotency key',
+      live: 'the final file publish still compares the live remote resource hash against the expected precondition',
+      group: 'chunk pipelining only advances work inside the same plan or atomic group and never widens the visibility boundary',
+      recovery: 'durable chunk receipts and the guarded publish record still classify whether a crash happened before or after finalize',
+    },
+    visibilityBoundary: 'plan-staging-pipeline-only',
+    failureEvidence: 'plan-scoped receipt ledger plus guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'database-row-batching',
     reduces: ['round-trips', 'statement-setup-cost'],
     allowedShortcut: 'reuse-statement-shapes-for-bounded-primary-key-batches',
@@ -829,6 +849,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'compression can shrink receipt storage, but it cannot prove the live compare, guarded publish, or every chunk acknowledgement survived failure',
     rejectedGate: 'recovery',
     violates: ['compression', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
+  },
+  {
+    id: 'index-and-compressed-chunk-receipts-complete-large-upload',
+    proposal: 'treat a fresh remote index plus compressed chunk receipts as proof that a large upload already finished',
+    rejectedBecause: 'planning evidence and compressed receipts can reduce recovery work, but they cannot prove the live compare, guarded publish, or every chunk acknowledgement survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
     id: 'compressed-receipts-plus-cached-hash-complete-large-upload',
