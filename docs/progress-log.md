@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 11:29:22
+
+<a id="2026-05-25-public-status-audit-112922"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 11:29:22 CEST`) and kept the public anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- The first screen still surfaces newer lane evidence in `6e89211e` and
+  `e552c02a`: a live remote drift regression with `431/431` planner tests and
+  a recovery inspect replay regression, while `f9fcb123` keeps the blocker
+  explicit as `auth/session lifecycle and durable journal semantics`.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 11:16:35
 
 <a id="2026-05-25-public-status-audit-111635"></a>
