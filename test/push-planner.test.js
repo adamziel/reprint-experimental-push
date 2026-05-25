@@ -7727,6 +7727,55 @@ test('durable stale completed replay stays blocked and preserves the drifted rem
   );
 });
 
+test('retrying a blocked completed replay stays blocked and leaves the drifted remote unchanged', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "stale local";';
+  delete driftedRemote.db.wp_posts['ID:2'];
+
+  const firstRetryError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  const retrySnapshot = JSON.stringify(driftedRemote);
+  const secondRetryError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(firstRetryError instanceof PushPlanError);
+  assert.ok(secondRetryError instanceof PushPlanError);
+  assert.equal(firstRetryError.code, 'RECOVERY_BLOCKED');
+  assert.equal(secondRetryError.code, 'RECOVERY_BLOCKED');
+  assert.equal(JSON.stringify(driftedRemote), retrySnapshot);
+  assert.equal(driftedRemote.files['index.php'], '<?php echo "stale local";');
+  assert.equal(driftedRemote.db.wp_posts['ID:2'], undefined);
+  assert.equal(firstRetryError.details.recovery.status, 'blocked-recovery');
+  assert.equal(secondRetryError.details.recovery.status, 'blocked-recovery');
+  assert.ok(firstRetryError.details.recovery.artifacts.remote, 'first blocked retry must keep remote artifacts');
+  assert.ok(secondRetryError.details.recovery.artifacts.remote, 'second blocked retry must keep remote artifacts');
+  assert.equal(
+    Object.values(secondRetryError.details.recovery.artifacts.remote.db.wp_posts).filter(
+      (row) => row.post_title === 'Inserted locally',
+    ).length,
+    0,
+    'blocked retry must not resurrect inserted rows',
+  );
+});
+
 test('partial commit and completed replay both keep recovery artifacts instead of pretending to be safe', () => {
   const base = baseSite();
   const local = baseSite();
