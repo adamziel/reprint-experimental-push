@@ -35,6 +35,8 @@ This is the short operational version of the planner invariant policy.
   the restore stays `already-in-sync`, the delete keeps its own live remote
   precondition, and unrelated remote-only plugin drift stays preserved through
   apply.
+- A directory delete must stop when it would hide a live remote descendant,
+  even if unrelated remote-only plugin drift is present.
 - The same delete rule also holds when the matching resource is a restored file
   and a file type swap appears in the same plan; both matching resources stay
   `already-in-sync` and remote-only plugin drift remains preserved.
