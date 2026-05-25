@@ -4392,3 +4392,22 @@ One more false-reliability trap to reject explicitly:
   outcomes prove the live write path rejected stale authority before the
   first mutation, preserved the remote, or rebuilt retry authority from fresh
   live hashes.
+
+Production-readiness language checklist:
+
+- name the exact live boundary and the exact stale-drift case;
+- show the preserved remote stayed auditable after rejection;
+- show the stale approval, review artifact, or comparison note was rejected
+  before mutation and cannot widen to a different row, file, relationship-
+  bearing record, remapped create target, or plugin-owned surface;
+- show the fresh retry artifact was rebuilt from live hashes on this branch,
+  not inherited from earlier approval or copied from a note;
+- classify every touched surface as old, new, or blocked before retry starts;
+- enumerate or block every plugin-owned surface outside the allowlist,
+  including late-discovered tables, files, cron rows, runtime registries,
+  serialized blobs, caches, and generated assets;
+- treat route shape, package mount shape, fixture replay, readable review
+  output, and `finalMatchesLocal` as compatibility evidence only; and
+- name the exact upstream revision or worktree state for any Reprint,
+  ZS-Sync, or ForkPress comparison, plus what that note proves here and what
+  it does not prove.
