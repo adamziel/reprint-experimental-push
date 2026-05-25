@@ -245,6 +245,20 @@ mutating mode proceed when the journal plus fresh live hashes prove the
 action. This keeps lost-response recovery and crash recovery on the evidence
 side of the protocol until the remote proves it is safe to mutate.
 
+Recovery classification is intentionally narrow:
+
+- `old` means the journal proves the prior write already committed.
+- `new` means the remote advanced independently and the stale attempt must be
+  discarded or replanned from fresh evidence.
+- `open` means the attempt is still in flight and inspect-first recovery must
+  continue.
+- `blocked` means the journal or live hashes cannot prove that finish or
+  rollback is safe.
+
+The read-only inspect step may return any of those classifications, but it
+never authorizes mutation by itself. Mutating recovery still requires the same
+fresh-live revalidation boundary used by apply.
+
 Minimal wire shapes:
 
 | Endpoint | Required request evidence | Required response evidence |

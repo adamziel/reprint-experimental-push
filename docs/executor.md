@@ -182,6 +182,17 @@ The executor must treat the pull pipeline as immutable provenance and the push p
 6. Apply revalidates the live remote before every batch and again at the storage boundary.
 7. Journal inspect and recovery inspect read durable evidence first, then allow mutation only when fresh live proof exists.
 
+That provenance boundary is the same one the pull/export/import pipeline already
+uses:
+
+- exporter records the merge-base and coverage evidence
+- importer persists the base package as immutable provenance
+- push preflight binds that package to the live remote identity and a short-lived session
+- push snapshot hashes list live comparison evidence for planning only
+- push dry-run uploads the canonical plan as eligibility evidence only
+- push apply revalidates fresh live evidence before every batch and again at the storage boundary
+- push journal and push recover inspect read durable evidence before any mutating repair
+
 The executor must not mutate the remote during planning. It may fetch remote
 content for conflict display, but mutation starts only at `push_batch_apply`.
 Dry-run success is a permission and eligibility receipt, not a liveness lock.
