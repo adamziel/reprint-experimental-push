@@ -124,6 +124,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a cached file digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
 - A fresh remote index plus a compressed manifest hash still cannot prove a large upload finished, because the live compare, every chunk receipt, and the guarded publish record still need to survive failure.
 - A matching archive hash still cannot replace missing chunk receipts during large-upload resume, because the hash does not prove which acknowledgements survived a crash or lost response.
+- Unlimited parallel chunk sends during large-upload resume still cannot replace backpressure evidence, because the sender must preserve queue order and journal order to classify partial failure safely.
 - Publishing database batches from different atomic groups in parallel still cannot make their visibility boundary safe, because recovery must keep each coupled group pinned to its own commit barrier.
 - A compressed upload buffer still cannot stand in for per-chunk receipts or the guarded publish step.
 - A matching manifest or archive hash still cannot stand in for missing chunk receipts or the guarded publish finalize record.

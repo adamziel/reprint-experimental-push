@@ -1175,6 +1175,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['atomic-groups', 'chunk-receipts', 'visibility-boundary'],
   },
+  {
+    id: 'unbounded-parallel-large-upload-resume',
+    proposal: 'resume large uploads with unlimited concurrent chunk sends once a cached receipt set exists',
+    rejectedBecause: 'cached receipts can skip duplicate work, but unlimited concurrency can drop the backpressure evidence and journal order needed to resume or classify a partial failure',
+    rejectedGate: 'recovery',
+    violates: ['backpressure', 'durable-progress', 'chunk-receipts'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
