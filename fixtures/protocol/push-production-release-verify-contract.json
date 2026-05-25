@@ -1,0 +1,37 @@
+{
+  "contract_id": "push-production-release-verify-contract-one-remote-one-local",
+  "purpose": "checked supervisor entrypoint for the production-shaped retained-source proof that exercises live preflight, dry-run, apply revalidation, journal readback, and the first remaining production-only boundary",
+  "checked_command": "npm run verify:release",
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "same_remote_identity": true,
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    }
+  },
+  "proof": {
+    "live_preflight": "production-shaped live preflight against a supplied local Playground source",
+    "dry_run": "canonical dry-run receipt",
+    "apply": "fresh live revalidation before every batch and at the storage boundary",
+    "journal": "durable journal readback",
+    "recovery": "inspect-first recovery readback",
+    "boundary": {
+      "first_remaining_production_boundary": "auth/session lifecycle and durable journal semantics",
+      "status": "unimplemented"
+    }
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "one remote source site, one imported local site, and one drift witness are enough to prove the production topology",
+    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+  ]
+}

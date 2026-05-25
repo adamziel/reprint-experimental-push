@@ -205,6 +205,12 @@ It is the same checked command as the live-source verify path, so the release
 proof remains a single executable surface even when the command is invoked
 through the shorter alias.
 
+The checked release-verify contract is
+`fixtures/protocol/push-production-release-verify-contract.json`.
+It pins `npm run verify:release` as the supervisor entrypoint, the one-remote,
+one-local, one-drift topology, and the first remaining production boundary:
+`auth/session lifecycle and durable journal semantics`.
+
 The release entrypoint has two exact checked outcomes:
 
 - when live source and auth are present, it prints the live preflight proof and

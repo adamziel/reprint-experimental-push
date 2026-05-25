@@ -174,6 +174,15 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.match(proof.stdout, /"recoveryInspect": \{/);
   assert.match(proof.stdout, /"after": \{/);
   assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
+  const releaseVerify = readJson('fixtures/protocol/push-production-release-verify-contract.json');
+  assert.equal(releaseVerify.contract_id, 'push-production-release-verify-contract-one-remote-one-local');
+  assert.equal(releaseVerify.checked_command, 'npm run verify:release');
+  assert.equal(releaseVerify.proof.boundary.first_remaining_production_boundary, 'auth/session lifecycle and durable journal semantics');
+  assert.equal(releaseVerify.proof.boundary.status, 'unimplemented');
+  assert.equal(releaseVerify.topology.networking.ingress_port, 8080);
+  assert.equal(releaseVerify.topology.networking.proxy_policy, 'local-only');
+  assert.equal(releaseVerify.topology.networking.tunnels, 'disallowed');
+  assert.ok(releaseVerify.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
 });
 
 test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {

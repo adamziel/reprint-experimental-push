@@ -126,6 +126,12 @@ The supervisor-facing shortcut is `npm run verify:release`.
 It resolves to the same retained-source proof, so the checked command and the
 release alias stay aligned.
 
+The checked release-verify contract is
+`fixtures/protocol/push-production-release-verify-contract.json`.
+It pins `npm run verify:release` as the supervisor entrypoint, the one-remote,
+one-local, one-drift topology, and the first remaining production boundary:
+`auth/session lifecycle and durable journal semantics`.
+
 That checked release entrypoint has two exact outputs:
 
 - with live source and production-shaped auth, it prints the live preflight
