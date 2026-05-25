@@ -47,6 +47,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'large upload models transport-only compression for compressible content',
   );
   assert.ok(
+    largeUpload.actions.some((action) => action.type === 'chunk-window-sizing' && action.reusesPlanningCursor === true),
+    'large upload models bounded chunk-window sizing from planning evidence',
+  );
+  assert.ok(
     largeUpload.actions.some((action) => action.type === 'backpressure-pause'),
     'large upload models backpressure pauses',
   );
@@ -237,6 +241,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-resume-after-pause')?.rejectedGate,
     'recovery',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-windowing')?.rejectedGate,
+    'recovery',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-publish')?.violates.includes('chunk-receipts'),
   );
@@ -257,6 +265,12 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-resume-after-pause')?.violates.includes('atomic-file-publish'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-windowing')?.violates.includes('file-hashing'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-windowing')?.violates.includes('atomic-file-publish'),
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-resume-after-pause')?.violates.includes('durable-progress'),
@@ -359,6 +373,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.failureEvidence,
     'planning cursor plus cached digest and guarded file-publish record',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-size-bounded-chunk-windows')?.failureEvidence,
+    'planning cursor plus bounded chunk receipt ledger',
   );
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-index-listings-without-changing-planning-semantics')?.visibilityBoundary,

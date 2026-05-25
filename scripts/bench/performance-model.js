@@ -148,6 +148,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'chunk-upload',
+    reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
+    allowedShortcut: 'reuse-remote-index-cursor-to-size-bounded-chunk-windows',
+    guardrails: [
+      'remote-index-stays-planning-evidence-only',
+      'chunk-window-stays-within-byte-and-receipt-budgets',
+    ],
+    gateProofs: {
+      skip: 'the sender can reuse the remote-index cursor to avoid rescanning unchanged planning data while sizing the next large-upload chunk window',
+      live: 'the eventual file publish still compares the live remote resource hash before any bytes become visible',
+      group: 'chunk-window sizing only shortens planning inside the same file boundary and never widens an atomic group',
+      recovery: 'the planning cursor stays advisory while chunk receipts and the guarded publish record classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'plan-staging-window-only',
+    failureEvidence: 'planning cursor plus bounded chunk receipt ledger',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'chunk-upload',
     reduces: ['duplicate-body-transfer', 'lost-response-retries'],
     allowedShortcut: 'resume-plan-scoped-chunks-with-matching-receipts',
     guardrails: [
@@ -850,6 +870,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'hash compression and queue pressure only change recovery cost; they do not prove which chunk acknowledgements survived or that the publish barrier is still intact',
     rejectedGate: 'recovery',
     violates: ['compression', 'file-hashing', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-windowing',
+    proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip chunk-window sizing for a large upload',
+    rejectedBecause: 'planning evidence and cached hashes can reduce lookup work, but they cannot prove the live compare, chunk receipts, or the guarded publish barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
     id: 'index-and-digest-skips-row-preconditions',
@@ -2390,6 +2417,23 @@ function scheduleFile(file, planId, limits) {
       transportEncoding: file.compressible ? 'zstd' : 'identity',
     },
   ];
+  if (file.sizeBytes > limits.chunkSizeBytes) {
+    actions.push({
+      type: 'chunk-window-sizing',
+      resourceKey: file.resourceKey,
+      sizeBytes: file.sizeBytes,
+      chunkSizeBytes: limits.chunkSizeBytes,
+      remoteIndexCursor: 'generation-and-scanner-cursor',
+      reusesPlanningCursor: true,
+      livePublishPrecondition: {
+        resourceKey: file.resourceKey,
+        expectedHash: file.remoteBeforeHash,
+      },
+      boundedByReceiptBudget: true,
+      canonicalVisible: false,
+      durableEvidence: 'planning-cursor-and-window-sizing-record',
+    });
+  }
 
   for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
     const offsetBytes = chunkIndex * limits.chunkSizeBytes;
