@@ -8,7 +8,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `29bfcd55`
-- `origin/lane/no-data-loss-recovery` -> `134d0401`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `ff1915fb`
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `26d2697a`
@@ -29,6 +29,8 @@ but it did not change the release conclusion:
   at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` now adds an atomic plugin bundle
   invariant proof at `29bfcd55`.
+- `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
+  preserving recovery proofs at `47b675c0`.
 - `origin/lane/fast-paths` now adds refreshed fast-path evidence at `ff1915fb`.
 - `origin/lane/same-plan-wordpress-graph-create` now adds same-plan term
   taxonomy proof at `383bb025`.
