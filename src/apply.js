@@ -892,33 +892,23 @@ function injectedFailure(code, message, remote, plan, journal, details = {}) {
     message,
     {
       ...details,
-      recovery: oldRemoteRecoveryState(remote, plan, journal, message),
+      recovery: recoveryState('old-remote', remote, plan, journal, message, {
+        artifacts: { journal },
+      }),
     },
   );
 }
 
 function oldRemoteRecoveryState(remote, plan, journal, reason) {
-  return {
-    status: 'old-remote',
-    reason,
-    remoteHash: digest(remote),
-    planId: plan.id,
-    artifacts: {
-      journal,
-    },
-  };
+  return recoveryState('old-remote', remote, plan, journal, reason, {
+    artifacts: { journal },
+  });
 }
 
 function fullyUpdatedRecoveryState(remote, plan, journal, reason) {
-  return {
-    status: 'fully-updated-remote',
-    reason,
-    remoteHash: digest(remote),
-    planId: plan.id,
-    artifacts: {
-      journal,
-    },
-  };
+  return recoveryState('fully-updated-remote', remote, plan, journal, reason, {
+    artifacts: { journal },
+  });
 }
 
 function journalWriteFailureOldRemote(error, remote, plan, journal, boundary) {
@@ -974,18 +964,46 @@ function recoveryBlocked(remote, plan, journal, reason, details = {}) {
     reason,
     {
       ...details,
-      recovery: {
-        status: 'blocked-recovery',
-        reason,
-        remoteHash: digest(remote),
-        planId: plan.id,
+      recovery: recoveryState('blocked-recovery', remote, plan, journal, reason, {
         artifacts: {
           journal,
           remote: sanitizeRecoveryRemote(remote, plan),
         },
-      },
+      }),
     },
   );
+}
+
+function recoveryState(status, remote, plan, journal, reason, details = {}) {
+  if (!ACCEPTABLE_RECOVERY_STATES.includes(status)) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_UNSUPPORTED',
+      `Unsupported recovery state ${status}.`,
+      { status, planId: plan.id },
+    );
+  }
+
+  const recovery = {
+    status,
+    reason,
+    remoteHash: digest(remote),
+    planId: plan.id,
+    ...details,
+  };
+
+  if (status !== 'blocked-recovery' && recovery.artifacts?.remote !== undefined) {
+    delete recovery.artifacts.remote;
+  }
+
+  if (status !== 'blocked-recovery') {
+    recovery.artifacts = {
+      ...(recovery.artifacts || {}),
+      journal,
+    };
+    delete recovery.artifacts.remote;
+  }
+
+  return recovery;
 }
 
 function sanitizeRecoveryRemote(remote, plan) {
