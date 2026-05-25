@@ -55,6 +55,8 @@ Release preflight absence:
 - there is still no checked-in command that reaches the live-source boundary and fails closed when live proof is absent
 - there is still no checked-in workflow entrypoint in this checkout to enforce that verdict
 - until that changes, the top blocker remains the missing real-site push preflight command
+- fixture-only or lab-backed work is still insufficient for shipping, even when it is green
+- a real-site preflight command must exist on the checked-in command surface before the release verdict can move
 
 ## Release Gate Definition
 
