@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 15:00:45 CEST.
+- Last update: 2026-05-25 15:13:48 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: apply-time revalidation and live no-data-loss evidence improved again, but the shipping gate is still closed.
+- Trend: `95164c8a` added file-journal lease/fence smoke to the lab release path, but the shipping gate is still closed.
 - Scope: 8 fast/low lanes plus the live watcher remain active.
 - Blocker: production auth/session lifecycle and durable journal storage with lease/fencing remain unproven.
 - Next nudge: `reliable-executor` owns the next production-boundary proof; `progress-publisher` should keep the page terse and dated; `critic` and `auditor` should reject wording-only gate claims.

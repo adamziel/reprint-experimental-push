@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 15:00:45 CEST
+Last updated: 2026-05-25 15:13:48 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 15:13:48 CEST
+
+- Going well: `reliable-executor` added `95164c8a`, which keeps the lab release path fail-closed while adding file-journal lease/fence smoke evidence.
+- Not going well: production auth/session lifecycle and durable journal storage with lease/fencing are still unproven, so the shipping gate remains closed.
+- Progress delta: the harness is a bit stronger, but this is still lab/release-surface evidence, not a production boundary proof.
+- Next nudge: `reliable-executor` owns the next production-boundary proof; `progress-publisher` should keep the public surfaces dated and terse; `critic` and `auditor` should reject wording-only gate claims.
+- Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 
 ## 2026-05-25 15:00:45 CEST
 
