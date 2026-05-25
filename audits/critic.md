@@ -4,11 +4,21 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+Scope note: this audit only accepts production wording when the same live
+boundary on this worktree shows preserved-remote evidence, stale authority
+rejection before the first write, fresh retry scope rebuilt from live hashes,
+and old/new/blocked classification for every touched surface. Lab-shaped
+route matches, package-mount matches, fixture replay, readable manual-review
+artifacts, and `finalMatchesLocal` stay compatibility evidence only.
+
 What must change before any production-grade push claim:
 
 - the branch must show a live write boundary that rejects stale remote drift
   before the first mutation, preserves the remote for audit, and rebuilds a
   fresh retry scope from live hashes on this branch;
+- the exact drift case, stale artifact, and fresh live hash set must be named
+  in the evidence; a generic "manual resolution" label does not prove the same
+  boundary was retried;
 - the preserved remote must stay inspectable so the user can audit the drift
   and safely retry from fresh live hashes; preserving it alone is not proof
   unless the same boundary was rejected before write and re-planned on this
@@ -21,6 +31,10 @@ What must change before any production-grade push claim:
 - every plugin-owned surface outside the allowlist must be enumerated live or
   blocked at apply time, including late-discovered tables, files, cron rows,
   runtime registries, generated assets, caches, and serialized blobs;
+- if a later snapshot reveals a new plugin-owned table, file, registry entry,
+  generated asset, cache entry, or serialized blob, that surface becomes a new
+  boundary with its own preserve / reject / retry cycle; the earlier artifact
+  cannot be widened into retry authority for it;
 - any readable manual-review artifact must stay audit-only after drift and
   cannot become retry authority for a different row, file, relationship-
   bearing record, remapped create target, or plugin-owned surface; and
@@ -103,8 +117,8 @@ Production-grade comparison gate:
 - Reprint `27c5f25` only proves staged pull delivery, resumable transport, and
   protocol framing in the observed upstream commit. It does not prove a live
   push boundary, stale remote-drift rejection, preserved-remote auditability,
-  create-time identity remapping, or late-discovered plugin-owned surface
-  handling on this branch.
+  create-time identity remapping, partial-write classification, or
+  late-discovered plugin-owned surface handling on this branch.
 - ZS-Sync `d9334a0` only proves bounded scanning, cursoring, and resource
   discovery in the observed upstream commit. It does not prove source-side
   mutation safety, live-drift handling, partial-write recovery, create-time
@@ -273,18 +287,24 @@ Known data-loss traps still unresolved:
 
 - a live remote can drift between preflight and apply, and the branch still
   needs proof that stale authority fails before the first write while the
-  remote remains auditable for retry;
+  remote remains auditable for retry. Missing proof: a branch-local live rerun
+  with the drifted remote, rejection point, and fresh retry hashes recorded
+  together;
 - create-time identity can be remapped, aliased, or renumbered, and the
   branch still needs proof that the create target is either preserved or
   blocked before write, not just that the local plan still names the same
-  logical resource;
+  logical resource. Missing proof: live identity evidence or a hard block
+  before mutation;
 - plugin-owned state can exist outside any allowlist in late tables, files,
   cron rows, runtime registries, generated assets, caches, and serialized
   blobs, and the branch still needs live enumeration or an explicit block for
-  each surface, including surfaces discovered only after the first write;
+  each surface, including surfaces discovered only after the first write.
+  Missing proof: a complete live inventory or hard block for every surface;
 - a write can touch files, DB rows, and plugin state in one run, and the
   branch still needs old/new/blocked classification for the full mixed write
-  path instead of success for only the committed part; and
+  path instead of success for only the committed part. Missing proof:
+  durable old/new/blocked classification for every touched surface before
+  retry; and
 - a readable review artifact, comparison note, or route-shaped smoke can look
   authoritative while still failing to prove current retry authority for the
   exact live boundary on this branch, especially when it can be reused as
