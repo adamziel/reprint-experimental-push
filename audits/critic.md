@@ -4664,14 +4664,16 @@ true on this branch:
   does not prove.
 - any Reprint, ZS-Sync, or ForkPress note that merely matches the same route
   family, package layout, or reviewer wording is still historical context
-  only and cannot be recast as live proof.
+  only and cannot be recast as live proof, even if the cited upstream commit
+  is named correctly;
 - the proof for the first boundary is not being recycled for a later
   boundary just because the route family, package mount, fixture replay, or
-  reviewer wording still looks the same.
+  reviewer wording still looks the same, or because the later boundary uses
+  the same local labels, file names, or approval language;
 - a route-shaped smoke, fixture replay, or `finalMatchesLocal` result can
   still come from a copied or fixture-backed executor behind the same URL
   shape, so shape alone is compatibility evidence only and not proof of live
-  executor safety.
+  write safety, remote preservation, or retry authority.
 
 Route-shaped smokes and fixture replays are useful compatibility evidence, but
 they do not establish production safety unless the branch separately proves the
