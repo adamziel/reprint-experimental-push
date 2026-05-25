@@ -1539,6 +1539,55 @@ test('blocks a completed replay when the remote drifts and preserves recovery ar
   assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
 });
 
+test('completed replay stays append-only under a durable journal and blocks stale drift', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const driftError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.ok(driftError instanceof PushPlanError);
+  assert.equal(driftError.details.recovery.status, 'blocked-recovery');
+  assert.ok(driftError.details.recovery.artifacts.journal);
+  assert.ok(driftError.details.recovery.artifacts.remote);
+  assert.equal(driftError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    1,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-opened').length,
+    1,
+  );
+});
+
 test('replays a completed plan without reapplying mutations', () => {
   const base = baseSite();
   const local = baseSite();
