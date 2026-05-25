@@ -6922,6 +6922,12 @@ Release gate for production-grade wording:
 Use `audits/critic-release-gate.md` as the compact preflight checklist for
 these requirements before any wording is promoted.
 
+Primary finding for this iteration: the branch still does not have a named
+real-site preflight/release command that can be rerun against a live remote
+and prove preserved-remote behavior on the rejected boundary. Until that
+exists, production-grade wording is blocked no matter how production-shaped
+the smoke route, review artifact, or command name looks.
+
 Do not let the branch claim production-grade push support until all of these
 are true on this worktree:
 
@@ -6949,6 +6955,12 @@ are true on this worktree:
   scope end to end; if the only available commands are `plan`, `apply`, or
   `test:playground:*`, the branch is still lab-only and cannot claim
   production-grade push support;
+- the next acceptable proof from reliable-executor is a live rerun against a
+  real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that prints the
+  executor identity, the preserved remote that stayed inspectable after
+  rejection, and the exact rejection point before the first write; a wrapper
+  that only reuses the playground or fixture-backed boundary is still
+  compatibility evidence, not release proof;
 - that command must be a real-site entry point, not just a production-
   sounding wrapper around `plan`, `apply`, or a playground smoke; command
   naming alone never proves the live executor boundary, preserved remote, or
