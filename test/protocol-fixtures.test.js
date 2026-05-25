@@ -523,7 +523,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
     authSessionJournalRecoveryInspectContract.contract_id,
     'push-auth-session-journal-recovery-inspect-contract-one-remote-one-local',
   );
-  assert.equal(authSessionJournalRecoveryInspectContract.live_evidence.same_remote_identity, true);
+  assert.equal(authSessionJournalRecoveryInspectContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(authSessionJournalRecoveryInspectContract.session.remote_site_id, 'remote-example');
+  assert.equal(authSessionJournalRecoveryInspectContract.journal_row.claim_generation, 4);
+  assert.equal(authSessionJournalRecoveryInspectContract.journal_fence.storage_guard, 'filesystem-compare-rename');
   assert.equal(authSessionJournalRecoveryInspectContract.recovery_inspect.mode, 'inspect');
   assert.equal(authSessionJournalRecoveryInspectContract.recovery_inspect.mutates, false);
   assert.ok(
@@ -531,6 +534,14 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'inspect reads the journal row and live hashes before classifying finish, rollback, retry, or block',
     ),
   );
+  assert.ok(
+    authSessionJournalRecoveryInspectContract.required_invariants.includes(
+      'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
+  assert.equal(authSessionJournalRecoveryInspectContract.live_evidence.same_remote_identity, true);
+  assert.equal(authSessionJournalRecoveryInspectContract.recovery_inspect.mode, 'inspect');
+  assert.equal(authSessionJournalRecoveryInspectContract.recovery_inspect.mutates, false);
   assert.equal(journalInspectContract.contract_id, 'push-journal-inspect-contract-one-remote-one-local');
   assert.equal(journalInspectContract.journal_row.claim_generation, 4);
   assert.equal(journalInspectContract.journal_row.storage_guard, 'filesystem-compare-rename');
