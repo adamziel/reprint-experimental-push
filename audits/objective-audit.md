@@ -33,29 +33,29 @@ good negative evidence, but it is still not direct proof for the objective:
 pushing local edits back to a live source WordPress site without losing
 concurrent source changes, while remaining reliable and fast.
 
-The weakest current claim is still speed, but the more important release
-blocker is structural: the repository still lacks one enforced release gate
-that runs the auth/session, durable journal, storage, graph identity,
-plugin-data-driver, real remote/local topology, crash-boundary, recovery, and
-benchmark checks in a single required command and fails closed when any of
-them are still fixture-scoped or lab-backed. `package.json` exposes only
-optional smokes and `npm test`; there is no checked-in `verify:release`
-command, and this tree does not contain a CI workflow that enforces the full
-safety matrix. The benchmark code already refuses an unsupported throughput
-claim by listing blockers such as missing durable chunk receipts, missing live
-remote preconditions, missing durable journal integrity, missing
-graph-identity evidence, missing recovery evidence, and non-production
-storage or row-apply capabilities. That is useful refusal logic, but it is
-still only refusal logic: it does not measure a production-shaped runtime or
-memory ceiling, and it cannot substitute for a required release command.
-`npm test` and `npm run test:playground` remain green even when the strongest
-checks are skipped, so the repo can look healthy while the objective remains
-unproven. The immediate action is to turn the strongest checks into one
-required `verify:release`-style gate that is wired into CI or another
-enforced entrypoint; until that exists, the current test story is stronger as
-a blocker generator than as release-grade proof of no data loss, reliability,
-or speed. The operational blocker is not "speed is weak"; it is "the live
-source boundary is still unproven."
+The weakest current claim is speed, but the actual release blocker is broader:
+the repository still lacks one enforced release gate that runs the
+auth/session, durable journal, storage, graph identity, plugin-data-driver,
+real remote/local topology, crash-boundary, recovery, and benchmark checks in
+a single required command and fails closed when any of them are still
+fixture-scoped or lab-backed. `package.json` exposes only optional smokes and
+`npm test`; there is no checked-in `verify:release` command, and this tree
+does not contain a CI workflow that enforces the full safety matrix. The
+benchmark code already refuses an unsupported throughput claim by listing
+blockers such as missing durable chunk receipts, missing live remote
+preconditions, missing durable journal integrity, missing graph-identity
+evidence, missing recovery evidence, and non-production storage or row-apply
+capabilities. That is useful refusal logic, but it is still only refusal
+logic: it does not measure a production-shaped runtime or memory ceiling, and
+it cannot substitute for a required release command. `npm test` and
+`npm run test:playground` remain green even when the strongest checks are
+skipped, so the repo can look healthy while the objective remains unproven.
+The immediate action is to turn the strongest checks into one required
+`verify:release`-style gate that is wired into CI or another enforced
+entrypoint; until that exists, the current test story is stronger as a blocker
+generator than as release-grade proof of no data loss, reliability, or speed.
+The operational blocker is not "speed is weak"; it is "the live source
+boundary is still unproven."
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
@@ -229,9 +229,9 @@ red flag, not as release authorization.
 The strongest unresolved claim is therefore live-boundary correctness, not
 raw throughput. Speed remains unproven, but the release blocker is broader:
 the repository still lacks executable proof that the live WordPress source
-graph survives guarded writes without silent loss or duplication.
-That also means the current suite can veto a bad release, but it cannot
-authorize a good one.
+graph survives guarded writes without silent loss or duplication. That also
+means the current suite can veto a bad release, but it cannot authorize a
+good one.
 
 That splits the suite into three evidence classes:
 
@@ -243,7 +243,9 @@ That splits the suite into three evidence classes:
   script bundle instead of one enforced gate.
 
 The practical consequence is that the suite is good at proving "do not claim
-release yet." It is not yet good enough to prove "release is safe."
+release yet." It is not yet good enough to prove "release is safe," and it
+still cannot be treated as a release gate because the strongest checks remain
+optional.
 
 To keep the evidence map explicit, the strongest currently visible artifacts
 fall into five buckets:
