@@ -375,6 +375,53 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.lab_topology.remote_changed.identity, 'remote-example');
   assert.equal(topologyMatrix.lab_topology.live_drift.between[0], 'remote_base');
   assert.equal(topologyMatrix.lab_topology.live_drift.proof[0], 'remote-base and remote-changed are the same remote identity observed at different times');
+  assert.equal(
+    topologyMatrix.test_topology.proof_order[0],
+    'preflight',
+  );
+  assert.equal(
+    topologyMatrix.test_topology.proof_order.at(-1),
+    'recovery-mutate',
+  );
+  assert.ok(
+    topologyMatrix.test_topology.drift_proof.includes(
+      'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.equal(
+    deploymentTopologyContract.contract_id,
+    'push-deployment-topology-contract',
+  );
+  assert.equal(deploymentTopologyContract.topology.same_remote_identity, true);
+  assert.equal(deploymentTopologyContract.deployment.docker.ingress_port, 8080);
+  assert.equal(deploymentTopologyContract.deployment.docker.proxy_policy, 'local-only');
+  assert.ok(
+    deploymentTopologyContract.deployment.docker.proof.includes(
+      'runner is the only process allowed to preflight, list hashes, upload, inspect, revalidate, and recover',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.deployment.playground.proof.includes(
+      'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
+  assert.equal(executorTopologyProof.topology.docker.remote_base, 'remote-base');
+  assert.ok(
+    executorTopologyProof.topology.docker.proof.includes(
+      'push preflight binds the persisted pull base to the live remote identity',
+    ),
+  );
+  assert.ok(
+    executorTopologyProof.topology.playground.proof.includes(
+      'browser-visible inspection goes through the sandbox-provided 8080 ingress',
+    ),
+  );
+  assert.equal(
+    remoteLivenessTopologyContract.required_invariants.includes(
+      'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+    ),
+    true,
+  );
   assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
   assert.equal(
     protocolExtensionContract.purpose,

@@ -90,7 +90,9 @@ The production proof bundle is intentionally layered:
   one object.
 - `push-topology.json`, `push-topology-matrix.json`, and
   `push-deployment-topology-contract.json` prove the one-remote, one-local,
-  one-drift-witness topology in both Docker and Playground.
+  one-drift-witness topology in both Docker and Playground. The matrix is the
+  canonical machine-readable topology proof, and the deployment contract is
+  the canonical Docker/Playground harness proof.
 - `push-executor-topology-proof.json` is the shortest proof that the executor
   keeps the same remote identity, the same route names, and the
   sandbox-provided `8080` ingress rule aligned across Docker and Playground.
