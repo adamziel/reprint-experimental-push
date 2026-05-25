@@ -28,6 +28,11 @@ The objective implies these minimum release requirements:
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
 9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
 
+Top release blocker:
+
+- there is still no checked-in real-site push preflight command that owns the release verdict
+- until that command exists, fixture-only and lab-backed work can keep passing without proving the live-source boundary
+
 Requirement mapping rule:
 
 - if a requirement is only proven in fixtures, Playground, or model code, it is not release proof
@@ -68,6 +73,7 @@ Release command audit:
 - `test:playground:*` helpers are optional and lab-scoped
 - `test:recovery:file-journal` proves file-backed restart behavior only
 - there is no checked-in workflow or `.github` tree in this checkout that can upgrade regression evidence into a release gate
+- the current green suite is regression evidence, not proof of no data loss, reliability, or measured speed on the live push path
 
 ## Release Gate Definition
 
