@@ -131,7 +131,7 @@ can claim production-grade push support:
 ### Reprint
 
 Reprint gives the transport skeleton: preflight, chunking, resumability, and
-protocol versioning. The source notes prove pull/export mechanics and a
+protocol versioning. The source notes document pull/export mechanics and a
 resumable stage model, not a production write boundary. That is a good
 starting point for push, but it is not a proof of live-source safety,
 production auth, or rollout behavior. The current design still needs a
@@ -150,7 +150,7 @@ artifact that expires on remote drift.
 
 ZS-Sync contributes scanner composition and bounded resource enumeration. That
 helps the planner know what changed. It does not prove what is safe to mutate.
-The source notes show a bounded changed-resource list and continuous rescans,
+The source notes document a bounded changed-resource list and continuous rescans,
 but not a mutation policy. The current design still lacks a complete coverage
 manifest that ties scanner results to every core, plugin, theme, upload,
 generated, custom-table, and multisite resource the push can affect. Scanner
