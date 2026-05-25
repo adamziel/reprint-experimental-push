@@ -14,6 +14,7 @@ The plain-language invariant note lives in
 | Scenario | Expected behavior | Current evidence |
 | --- | --- | --- |
 | Remote site is unchanged since pull | Local file and row changes are planned and applied. | `plans and applies local changes when remote still matches the pull base` |
+| Live release boundary keeps remote-only plugin drift while a ready delete plan preserves matching independent edits | The plan stays ready, the delete keeps its live remote precondition, the matching independent edit stays `already-in-sync`, and the remote-only plugin drift stays `keep-remote`. | `keeps remote-only plugin drift at the live release boundary while a ready delete plan preserves matching independent edits` |
 | Forged ready plan omits a live remote precondition | Executor rejects the plan with `PRECONDITION_FAILED`; no mutation is applied. | `executor rejects forged ready plans missing live remote preconditions` |
 | Forged ready delete plan omits a live remote precondition | Executor rejects the delete with `PRECONDITION_FAILED`; no mutation is applied. | `executor rejects forged ready delete plans missing live remote preconditions` |
 | Forged ready file type swap plan omits a live remote precondition | Executor rejects the type swap with `PRECONDITION_FAILED`; no mutation is applied. | `executor rejects forged ready file type swap plans missing live remote preconditions` |
