@@ -523,6 +523,35 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-receipt-log-authorizes-apply').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compressed-receipt-log-authorizes-apply').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-receipt-log-authorizes-apply').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('index-and-compressed-package-cache-completes-plugin-update').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-package-cache-completes-plugin-update').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-package-cache-completes-plugin-update').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-package-cache-completes-plugin-update').violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    rejectedById.get('index-and-compressed-buffer-completes-chunk-resume').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-chunk-resume').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-chunk-resume').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-chunk-resume').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('index-and-compressed-buffer-completes-chunk-resume').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('cached-manifest-hash-skips-large-upload-publish').violates.includes('file-hashing'));
   assert.ok(rejectedById.get('cached-manifest-hash-skips-large-upload-publish').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('cached-manifest-hash-skips-large-upload-publish').violates.includes('atomic-file-publish'));
