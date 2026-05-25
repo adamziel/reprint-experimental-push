@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Refresh 02:33:54
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:33:54 CEST`) and kept the visible last-updated stamp current.
+- Tightened the lead so the pending-proof list is stated once, while the first
+  screen still surfaces the verified test count, open gate, and blocker.
+- Public status remains conservative: 89 Node tests pass, production auth plus
+  durable journaling is still the gate, and the WordPress executor/auth,
+  recovery journal, Docker/Playground integration, graph identity, and
+  plugin-driver proof remain pending.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Public Status Refresh 02:32:01
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
@@ -15,6 +30,35 @@ linked implementation artifacts.
   durable journaling is still the gate, and executor/auth, recovery journal,
   Docker/Playground integration, graph identity, and plugin-driver proof stay
   pending.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+## 2026-05-25 - Public Status Refresh 02:30:42
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:30:42 CEST`) and kept the visible last-updated stamp current.
+- Collapsed the first-screen pending-proof language into one concise line so
+  the current gate and blocker are easier to audit at a glance.
+- Public status remains conservative: 89 Node tests pass, and production auth
+  plus durable journaling is still the gate while executor/auth, recovery
+  journal, Docker/Playground integration, graph identity, and plugin drivers
+  stay pending.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
+## 2026-05-25 - Public Status Refresh 02:30:09
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:30:09 CEST`) and kept the visible last-updated stamp current.
+- Tightened the first screen so the lead says the pending proof once and the
+  top blocker stays visible without repeating the same caveat.
+- Public status remains conservative: 89 Node tests pass, production auth plus
+  durable journaling is still the gate, and the WordPress executor/auth,
+  recovery journal, Docker/Playground integration, graph identity, and
+  plugin-driver proof remain pending.
 - Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
   [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
   [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md), and
