@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The release gate stays closed because the live boundary is still not proven where it matters: this checkout does not yet own a checked, in-tree production verdict for auth/session lifecycle and it does not yet own a checked, in-tree verdict for durable journal semantics at the live apply boundary. The current remote release verifier on `origin/lane/reliable-executor` still exposes `verify:release` remotely at `5822745b`, with the gate composed from topology proof, release verification, and file-journal recovery. Earlier upstream evidence at `6fc3ab64` showed the same release ladder with a durable journal smoke, and it still failed closed with the exact verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` when the live source or secrets were missing. The newer remote evidence at `889bd37a` makes the remaining production boundary explicit in the command output: `firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics'` and verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, while still reporting live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback with `rows: 17`. That is stronger proof upstream, but it remains upstream-only until this checkout has a checked `verify:release` run or an equivalent default entrypoint that produces the same verdict here.
+The release gate stays closed because the live boundary is still not proven where it matters: this checkout does not yet own a checked, in-tree production verdict for auth/session lifecycle and it does not yet own a checked, in-tree verdict for durable journal semantics at the live apply boundary. The current remote release verifier on `origin/lane/reliable-executor` still exposes `verify:release` at `5822745b`, and the remote evidence at `889bd37a` makes the remaining production boundary explicit: `firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics'` with verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, while still reporting live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and durable journal readback with `rows: 17`. That is stronger upstream evidence, but it remains upstream-only until this checkout has a checked `verify:release` run or an equivalent default entrypoint that produces the same verdict here.
 
 Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and real topology still need production-boundary proof too. They remain release blockers because they are not proven at the live apply boundary, even though the upstream verifier now covers more of the path than the local regression suite does.
 
@@ -67,7 +67,7 @@ Direct command-surface recheck on `origin/lane/reliable-executor` at `5822745b61
 
 ## Release Gate Definition
 
-The weakest current claim is not simply that the suite is incomplete. It is that this checkout still lacks an in-tree live-boundary verdict for the remaining production claims, so green regression runs cannot be promoted to release proof by interpretation alone. The missing proof is specifically production auth/session lifecycle plus durable journal semantics at the live apply boundary, with graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift still unclosed.
+The weakest current claim is not that the suite is incomplete. It is that this checkout still lacks an in-tree live-boundary verdict for the remaining production claims, so green regression runs cannot be promoted to release proof by interpretation alone. The exact missing proof that would move one gate is a checked command from this checkout that prints the same live-boundary verdict as the remote lane: `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` replaced by a successful production auth/session + durable-journal result at apply time. Until then, graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift stay unclosed.
 
 Minimum properties of the gate:
 
@@ -80,3 +80,7 @@ Minimum properties of the gate:
 ## Conclusion
 
 The repository has strong local regression, refusal, and journaling evidence. It does not yet have in-tree live-boundary proof that production auth/session lifecycle and durable journal semantics hold at apply time, and the remaining graph identity, plugin-driver, lease/fencing, preserved-remote drift, and topology claims are still only lab-backed or upstream-only. The release gate stays closed until this checkout owns a checked live-boundary verdict or an enforced default entrypoint that produces the same verdict here.
+
+## 12h Delta
+
+The last 12 hours changed command-surface evidence, not the gate: `origin/lane/reliable-executor` still exposes `verify:release` at `5822745b`, and the boundary verdict at `889bd37a` remains `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. That means the next owner has not changed. The next proof that would move a gate is a checked in-tree live-boundary run that clears production auth/session lifecycle and durable journal semantics at apply time.
