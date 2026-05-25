@@ -39,6 +39,10 @@ That includes lab/fixture route names that mimic production paths: a matching
 URL family can still hide a copied executor, so the claim must also show the
 preserved remote, the stale rejection point, and the fresh live-hash retry
 scope for the same boundary before any production-grade wording is allowed.
+The same warning applies to a readable manual-review artifact: it may prove
+auditability, but it does not prove that the remote was preserved, stale
+authority was rejected before the first write, or the retry scope was rebuilt
+from live hashes for the same live boundary.
 
 Anti-trap clarification: a readable manual-review artifact can help audit the
 history of a boundary, but it is not retry authority unless the branch also
@@ -56,6 +60,11 @@ preserved remote after reject, the stale rejection point, and the fresh retry
 scope rebuilt from live hashes. If any of those proof points is missing, the
 claim must stay audit-only even when the artifact is readable and the route
 looks production-shaped.
+False reliability also includes any claim that a later-discovered plugin-owned
+surface was "already covered" by an earlier readable artifact, because a
+hidden table, file, cron row, runtime registry entry, generated asset, cache
+entry, or serialized blob that appears after the first write is a new live
+boundary and needs its own preserve / reject / retry cycle.
 
 Source-note bottom line: Reprint, ZS-Sync, and ForkPress notes are useful
 comparative context, but they do not prove the live executor, the preserved
