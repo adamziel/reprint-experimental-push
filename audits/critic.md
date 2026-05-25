@@ -5738,3 +5738,12 @@ False-reliability trap to keep naming explicitly:
 - a readable manual-resolution note, source comparison, or review artifact is still not retry authority if the later boundary is a remapped create target, a new row/file/relationship-bearing record, or a plugin-owned surface discovered after the first write;
 - the same route family, package mount, reviewer wording, or historical upstream anchor does not make that later boundary the same boundary; the earlier artifact stays audit-only until the later boundary separately preserves the remote, rejects stale authority before mutation, and rebuilds retry scope from fresh live hashes; and
 - if the later surface cannot be named as old, new, or blocked before retry, the branch still lacks production-grade proof even when the earlier artifact is readable and the route looks production-shaped.
+
+Final production-grade deltas still required on this branch:
+
+- state the live boundary, the preserved remote, the stale-rejection point, and the fresh retry scope in one place, so a reviewer can audit the exact failure case instead of inferring it from route shape or fixture replay;
+- split out any late-discovered plugin-owned surface as its own boundary when it appears after the first write, and forbid it from inheriting the earlier approval even if the route family, mount, or reviewer wording matches;
+- mark mixed file, DB, and plugin writes old/new/blocked across the full touched set before retry, so a partial commit cannot be recast as success after the surviving surfaces are visible;
+- annotate every Reprint, ZS-Sync, or ForkPress citation with the exact upstream commit or worktree state, what it proves here, and what it does not prove here, because the notes are historical design input only unless the same live boundary was rerun on this branch;
+- reject any wording that uses `manual resolution`, `comparison passed`, `finalMatchesLocal`, or route-shaped smokes as current proof unless the preserved remote stayed inspectable after rejection and the retry scope was rebuilt from live hashes; and
+- keep the release-gate language explicit that production-grade push support is blocked until the branch can show the live executor, preserved-remote auditability, stale-authority rejection, fresh retry scope, and per-surface classification for every touched boundary.
