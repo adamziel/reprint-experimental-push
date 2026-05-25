@@ -110,6 +110,8 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   const snapshotListing = readJson('fixtures/protocol/push-remote-snapshot-listing-contract.json');
   const dryRunRevalidation = readJson('fixtures/protocol/push-dry-run-apply-revalidation-contract.json');
   const productionTopology = readJson('fixtures/protocol/push-production-topology-contract.json');
+  const authSessionJournalRecoveryInspect = readJson('fixtures/protocol/push-production-auth-session-journal-recovery-inspect-contract.json');
+  const journalLeaseRecoveryInspect = readJson('fixtures/protocol/push-production-journal-lease-recovery-inspect-contract.json');
 
   assert.equal(preflight.contract_id, 'push-preflight-contract-one-remote-one-local');
   assert.equal(preflight.pull_provenance.remote_site_id, 'remote-example');
@@ -149,6 +151,20 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   assert.ok(productionTopology.topology.playground.proof.includes('runner uses the same route names as Docker'));
   assert.ok(productionTopology.required_invariants.includes('one remote source site, one imported local site, and one drift witness are enough to prove the production topology'));
   assert.ok(productionTopology.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
+  assert.equal(authSessionJournalRecoveryInspect.contract_id, 'push-production-auth-session-journal-recovery-inspect-contract-one-remote-one-local');
+  assert.equal(authSessionJournalRecoveryInspect.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(authSessionJournalRecoveryInspect.session.remote_site_id, 'remote-example');
+  assert.equal(authSessionJournalRecoveryInspect.journal_row.claim_owner, 'worker-17');
+  assert.equal(authSessionJournalRecoveryInspect.journal_row.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(authSessionJournalRecoveryInspect.recovery_inspect.mode, 'inspect');
+  assert.equal(authSessionJournalRecoveryInspect.recovery_inspect.mutates, false);
+  assert.ok(authSessionJournalRecoveryInspect.required_invariants.includes('inspect is read-only and must come before any mutating recovery mode'));
+  assert.ok(authSessionJournalRecoveryInspect.required_invariants.includes('apply must revalidate fresh live hashes before every batch and at the storage boundary'));
+  assert.equal(journalLeaseRecoveryInspect.contract_id, 'push-production-journal-lease-recovery-inspect-contract-one-remote-one-local');
+  assert.equal(journalLeaseRecoveryInspect.journal_fence.claim_generation, 4);
+  assert.equal(journalLeaseRecoveryInspect.journal_fence.storage_guard, 'filesystem-compare-rename');
+  assert.equal(journalLeaseRecoveryInspect.recovery_inspect.classifies.includes('block'), true);
+  assert.ok(journalLeaseRecoveryInspect.required_invariants.includes('journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable'));
   assert.ok(
     packageJson.scripts['test:playground:production-shaped-proof'],
     'node ./scripts/playground/production-shaped-proof.mjs',
@@ -217,6 +233,9 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     executorDocs.includes(
       'The executor maps the pull pipeline into the push ladder without turning the',
     ),
+  );
+  assert.ok(
+    executorDocs.includes('The checked proof path for this document is `node --test test/protocol-fixtures.test.js`.'),
   );
   assert.ok(executorDocs.includes('That bridge is one-way'));
   assert.ok(
