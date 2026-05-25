@@ -456,7 +456,8 @@ The stronger smoke commands are better, but they are still not release proof.
 `/wp-json/reprint/v1/push/*` shape, replay behavior, and cross-route receipt
 rejection, yet they still report `labBacked: true`. That means they prove
 route shape and lab packaging, not production-backed auth, storage, journal,
-crash, or graph safety.
+crash, or graph safety. They are evidence that the blocker is real, not
+evidence that the blocker is gone.
 
 `npm run test:playground` is also evidence, but it is only a partial lab chain:
 it runs plan/apply/push-protocol and then stops. The stronger auth, DB journal,
@@ -474,6 +475,8 @@ Practical reading of the current suite:
   unsupported speed claim, but it does not measure the live push path.
 - None of those commands alone prove no data loss, reliability, or speed at
   the live WordPress source boundary.
+- The speed claim is the weakest because the benchmark is explicitly a refusal
+  gate; it is not a runtime or memory measurement on the live push path.
 
 Concrete limitation: the default suite can prove a planner rule such as "do not
 drop a remote-only descendant when a local directory disappears" in a model, but
@@ -530,7 +533,7 @@ invocation and can be skipped while `npm test` remains green.
    plugin, graph, performance, and crash-boundary checks are skipped.
    A release claim cannot rely on tests that only pass when somebody remembers
    to run the right scripts, and the current suite therefore cannot function as
-   the final release gate for the objective.
+   the final release gate for the objective. That is the blocker to fix first.
 
 2. **The default suite is proof of invariants, not proof of release readiness.**
    `npm test` is useful because it proves the model and several fixture
