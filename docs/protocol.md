@@ -42,6 +42,28 @@ The executor must treat the pull base package as immutable provenance for the
 entire push attempt. It is read to build plans and bind preflight, but it is
 never rewritten to make stale evidence look current.
 
+That provenance boundary is the same one the pull/export/import pipeline
+already establishes:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- push preflight binds that stored base package to the live remote identity
+  and a short-lived push session
+- push snapshot hashes remain planning evidence only
+- push dry-run uploads the canonical plan and returns an eligibility receipt,
+  not a lock
+- push batch apply revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- push journal and push recover inspect durable evidence first, then permit
+  mutating recovery only when fresh live hashes prove the action
+
+The one-remote, one-local, one-drift-witness test shape is the same in Docker
+and Playground: `remote-base` seeds the persisted pull base, `local-edited`
+holds the imported local edits, `remote-changed` is the same remote identity
+observed later after drift, and `runner` is the only process allowed to
+compare, upload, inspect, and recover. Browser-visible inspection must stay on
+the sandbox-provided `8080` ingress through a local-only proxy.
+
 ## Runtime Stages
 
 The production push extension has six ordered remote stages:

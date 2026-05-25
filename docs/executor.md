@@ -229,6 +229,20 @@ The executor also treats the pushed session as bounded provenance:
 - any scope or identity change requires a fresh preflight rather than a reused
   session
 
+The same pull/export/import handoff remains the provenance source for every
+push run:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` binds that package to the live remote identity and a
+  short-lived push session
+- `push_snapshot_hashes` stays planning-only
+- `push_plan_dry_run` uploads the canonical plan as a receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` and `push_recover inspect` stay read-only until fresh live
+  hashes prove a mutating recovery path
+
 The production test topology is intentionally one remote source site, one
 local edited site, and one drift witness:
 
