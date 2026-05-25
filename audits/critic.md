@@ -173,6 +173,10 @@ Release-gate checklist:
   and the exact proof boundary it does and does not cover.
 - require any Reprint, ZS-Sync, or ForkPress comparison to say whether a
   later-discovered plugin-owned surface is in scope or explicitly excluded;
+- require any later-discovered plugin-owned surface to get its own preserve /
+  reject / retry record on this branch, because the earlier audit trail cannot
+  be widened into authority for a new table, file, registry entry, generated
+  asset, cache entry, or serialized blob;
 
 False reliability claims to reject:
 
