@@ -5,6 +5,7 @@ The durable apply path is only allowed to leave the system in one of three recov
 1. `old-remote`
    - No remote mutation has been committed.
    - The journal may show `opened`, `staged`, or `dependencies-validated`.
+   - This covers failure before mutation, after staging, and after dependency validation.
    - Recovery remains inspectable from artifacts, but the remote must remain unchanged.
 
 2. `fully-updated-remote`
@@ -16,5 +17,6 @@ The durable apply path is only allowed to leave the system in one of three recov
    - A partial remote mutation exists and the plan cannot be safely replayed.
    - Both the journal and the current remote must be preserved as artifacts.
    - This is the only acceptable state for a partial commit without a clean completion record.
+   - A completed plan replay that drifts from the current remote also belongs here.
 
 Release rule: any partial remote mutation without a blocked recovery artifact is a blocker.
