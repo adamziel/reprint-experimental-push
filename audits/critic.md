@@ -187,7 +187,10 @@ authority was rebuilt from fresh live evidence. The same limit applies to any
 readable manual-review artifact and any Reprint, ZS-Sync, or ForkPress
 citation: unless this branch reran the same live mutation boundary against
 the same drift case and recorded the preserved remote, rejection point, and
-fresh retry scope, the artifact or citation remains historical only.
+fresh retry scope, the artifact or citation remains historical only. If a
+later snapshot exposes a new plugin-owned surface, the earlier artifact stays
+audit-only and cannot authorize that second boundary unless the preserve /
+reject / retry proof is repeated for the new surface on this branch.
 That warning also covers route-shaped smokes that happen to return live-looking
 hashes or inspectable review output: a matching surface can still mask a stale
 remote, a remapped create target, or a late plugin-owned surface that only
