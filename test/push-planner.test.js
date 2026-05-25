@@ -17573,6 +17573,47 @@ test('completed replay remains fully updated and refuses to resurrect stale loca
   assert.equal(readRecoveryJournal(journalPath).integrity.status, 'ok');
 });
 
+test('acceptable recovery states keep remote artifacts confined to blocked recovery', () => {
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'old-remote',
+      artifacts: {
+        journal: { status: 'opened' },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'fully-updated-remote',
+      artifacts: {
+        journal: { status: 'completed' },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'old-remote',
+      artifacts: {
+        journal: { status: 'opened' },
+        remote: { files: {} },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    isAcceptableRecoveryState({
+      status: 'blocked-recovery',
+      artifacts: {
+        journal: { status: 'blocked' },
+        remote: { files: {} },
+      },
+    }),
+    true,
+  );
+});
+
 test('failure before mutation keeps the old remote and leaves inspectable journal artifacts', () => {
   const base = baseSite();
   const local = baseSite();

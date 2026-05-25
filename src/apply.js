@@ -35,7 +35,11 @@ export function isAcceptableRecoveryState(recoveryState) {
   }
 
   if (recoveryState.status !== 'blocked-recovery') {
-    return Boolean(recoveryState.artifacts && recoveryState.artifacts.journal);
+    return Boolean(
+      recoveryState.artifacts
+      && recoveryState.artifacts.journal
+      && recoveryState.artifacts.remote === undefined,
+    );
   }
 
   return Boolean(recoveryState.artifacts && recoveryState.artifacts.journal && recoveryState.artifacts.remote);
