@@ -82,6 +82,8 @@ The pull-to-push bridge is also fixed and one-way:
 - importer persists the base package as immutable provenance
 - `persisted_pull_base_package` is the only pull-derived input the executor may
   consume
+- `push-pull-mapping.json` is the compact machine-readable handoff that maps
+  the immutable pull package into the push ladder
 - `push_preflight` is the first live binding after importer persistence
 - `push_snapshot_hashes` stays planning-only
 - `push_plan_dry_run` returns an eligibility receipt, not a lock
@@ -102,6 +104,17 @@ The topology is fixed for both Docker and Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+
+The top-level production proof is the umbrella contract:
+
+- `push-protocol-extension-contract.json` binds the pull bridge, the auth
+  floor, the dry-run/apply split, the journal boundary, the recovery floor,
+  and the one-remote, one-local, one-drift topology in one object
+- `push-production-pull-bridge-contract.json` is the smaller bridge proof
+- `push-production-revalidation-contract.json` is the smaller dry-run/apply
+  separation proof
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is
+  the smaller auth/session/journal/recovery proof
 
 Docker and Playground differ only in harness shape, not in protocol
 semantics:

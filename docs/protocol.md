@@ -90,6 +90,15 @@ The canonical production proof bundle is reviewed in this order:
 5. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology.
 6. `push-production-topology-contract.json` for the Docker and Playground harness proof.
 
+The machine-readable bridge is carried by the same pull/import artifacts the
+executor already trusts:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable object the push executor consumes after importer persistence
+- `push-pull-mapping.json` is the compact contract that maps that immutable pull provenance into preflight, snapshot listing, dry-run, batched apply, journal inspect, and inspect-first recovery
+- `push-protocol-extension-contract.json` is the umbrella contract that ties the pull bridge, auth floor, apply revalidation, and topology proof into one production ladder
+
 ## Production Contract
 
 The push executor may mutate only after it proves a safe three-way plan from
@@ -216,6 +225,19 @@ executor runs it:
    mutating branch.
 10. `push_recover auto|finish|rollback` may mutate only after inspect proves
     the branch safe with the same auth floor as the write path.
+
+The topology proof is fixed and intentionally small:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor allowed to preflight, list hashes, dry-run,
+  apply, inspect the journal, or recover
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 
 The pull pipeline stays authoritative and push only consumes its immutable
 output:

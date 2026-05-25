@@ -1477,7 +1477,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(productionTopologyContract.topology.networking.ingress_port, 8080);
   assert.equal(
     productionTopologyContract.push_guards.journal_inspect,
-    'reads durable evidence without authorizing mutation',
+    'reads durable evidence, claim, lease, and recovery fence without authorizing mutation',
   );
   assert.equal(
     productionTopologyContract.topology.docker.proof.includes(
