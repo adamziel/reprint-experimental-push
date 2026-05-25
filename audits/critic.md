@@ -187,8 +187,10 @@ Non-negotiable release gate:
   surface;
 - no production-grade push claim is allowed unless Reprint, ZS-Sync, and
   ForkPress comparisons explicitly state the exact upstream revision or
-  worktree state, what each note proves here, what it does not prove here, and
-  whether this branch reran the same live boundary; and
+  worktree state, what each note proves here, what it does not prove here,
+  whether this branch reran the same live boundary, and whether any later-
+  discovered plugin-owned table, file, registry entry, generated asset, cache
+  entry, or serialized blob is explicitly in scope or explicitly excluded; and
 - no production-grade push claim is allowed if the evidence rests only on
   route shape, package mount shape, fixture replay, readable manual-review
   artifacts, `finalMatchesLocal`, or a "manual resolution" label without the
@@ -224,6 +226,11 @@ Must change before any production-grade push claim:
 - prove that a named upstream note cannot be widened to a later-discovered
   plugin-owned surface just because the later surface shares the same route
   family, package mount, or reviewer wording as the earlier note;
+- prove that a readable review artifact or historical note cannot become
+  retry authority for a later row, file, relationship-bearing record,
+  remapped create target, or plugin-owned surface after drift; the missing
+  proof is the preserved remote plus the fresh live-hash retry scope for the
+  exact same boundary;
 - prove a stale approval or readable review artifact cannot be widened into
   a different row, file, relationship-bearing record, remapped create target,
   or plugin-owned surface after drift;
