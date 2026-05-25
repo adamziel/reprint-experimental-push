@@ -6192,6 +6192,7 @@ test('the no-data-loss recovery matrix keeps pre-commit failures old and complet
 
     assert.ok(error instanceof PushPlanError, label);
     assert.equal(JSON.stringify(remote), before, label);
+    assertAcceptableRecoveryState(error.details.recovery);
     assert.equal(error.details.recovery.status, 'old-remote', label);
     assert.ok(error.details.recovery.artifacts.journal, label);
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
@@ -6202,6 +6203,7 @@ test('the no-data-loss recovery matrix keeps pre-commit failures old and complet
   const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
 
   assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
+  assertAcceptableRecoveryState(replay.recoveryState);
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.ok(replay.recoveryState.artifacts.journal);
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
