@@ -1321,6 +1321,58 @@ test('keeps the durable replay contract intact when failure happens after depend
   assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote');
 });
 
+test('durable recovery journals keep the old remote contract across the interruption boundaries', () => {
+  const scenarios = [
+    {
+      name: 'before mutation',
+      options: { failBeforeMutation: true },
+      expectedRecoveryStatus: 'old-remote',
+      expectedLastState: 'old-remote',
+    },
+    {
+      name: 'after staging',
+      options: { failAfterStaging: true },
+      expectedRecoveryStatus: 'old-remote',
+      expectedLastState: 'old-remote',
+    },
+    {
+      name: 'after dependency validation',
+      options: { failAfterDependencyValidation: true },
+      expectedRecoveryStatus: 'old-remote',
+      expectedLastState: 'old-remote',
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    const base = baseSite();
+    const local = baseSite();
+    local.files['index.php'] = '<?php echo "local";';
+    local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+    const remote = baseSite();
+    const plan = planFor(base, local, remote);
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const before = JSON.stringify(remote);
+
+    const error = captureError(() => applyPlan(remote, plan, {
+      ...scenario.options,
+      durableJournal,
+    }));
+    durableJournal.close();
+
+    const persisted = readRecoveryJournal(journalPath);
+
+    assert.ok(error instanceof PushPlanError, scenario.name);
+    assert.equal(JSON.stringify(remote), before, scenario.name);
+    assert.equal(error.details.recovery.status, scenario.expectedRecoveryStatus, scenario.name);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, scenario.name);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, scenario.name);
+    assert.equal(persisted.records[0].type, 'journal-opened', scenario.name);
+    assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state', scenario.name);
+    assert.equal(persisted.records[persisted.records.length - 1].state, scenario.expectedLastState, scenario.name);
+  }
+});
+
 test('atomic apply keeps the documented recovery states across failure boundaries and completed replay', () => {
   const base = baseSite();
   const local = baseSite();
