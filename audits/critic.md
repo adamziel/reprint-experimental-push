@@ -265,6 +265,10 @@ any production-grade wording is defensible:
   upstream commit or worktree state that was reverified and the exact live
   write boundary that was exercised. If either is missing, the citation is
   historical context only and cannot support production wording.
+- A cited upstream commit or worktree state is still not current proof unless
+  this branch replayed the same live mutation boundary against that exact
+  upstream state and recorded the stale-approval rejection that protected the
+  remote.
 - An unverified Reprint, ZS-Sync, or ForkPress comparison is never current
   proof, even when the path, package shape, or expected hash looks
   production-shaped.
