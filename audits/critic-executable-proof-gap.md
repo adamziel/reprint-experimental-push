@@ -5,17 +5,16 @@ this branch.
 
 Primary finding:
 
-- the repo has provenance material for Reprint, ZS-Sync, and ForkPress, but it
-  still lacks a single branch-local executable real-site preflight/release
-  command that proves the live boundary end to end on an actual remote. The
-  existing `plan`, `apply`, and `test:playground:*` commands are lab or
-  compatibility surfaces only, and the current production-shaped smoke still
-  advertises `labBacked: true`. Until a named real-site release command exists
-  and can be rerun on an actual remote with a real `REPRINT_PUSH_SOURCE_URL`
-  target, live preflight evidence, and the first real executor/auth/
-  preserved-remote boundary recorded, any production-grade push wording is
-  false reliability and must fail closed; docs-only or lab-only success
-  claims are not enough;
+- the primary blocker is still the absence of a single branch-local,
+  executable real-site preflight/release command. The repo only exposes
+  `plan`, `apply`, and `test:playground:*` entry points, so the current
+  production-shaped smoke remains lab or compatibility evidence only and the
+  current `labBacked: true` signal cannot be promoted into production proof.
+  Until a named real-site release command exists, can be rerun on an actual
+  remote with a real `REPRINT_PUSH_SOURCE_URL` target, and records the first
+  real executor/auth/preserved-remote boundary, any production-grade push
+  wording is false reliability and must fail closed; docs-only or lab-only
+  success claims are not enough;
 
 Supporting failures:
 
@@ -26,7 +25,10 @@ Supporting failures:
 - a comparison note that names an upstream commit or worktree state is
   historical context only unless the same live boundary is rerun on this
   branch, the preserved remote remains inspectable after rejection, and the
-  fresh retry scope is rebuilt from live hashes on this worktree;
+  fresh retry scope is rebuilt from live hashes on this worktree; that note
+  still does not prove preserved-remote safety, production auth/session
+  lifecycle, recovery-journal durability, graph identity, or plugin-driver
+  coverage here;
 - manual resolution is not a success label unless the same live boundary
   preserved the remote, rejected stale authority before the first write, and
   rebuilt retry scope from live hashes for the exact boundary that drifted; and
