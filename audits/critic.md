@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and the newer `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, with the remote now clarifying the release-proof ladder rather than pretending the command surface is absent. That is real progress, but it is still lab evidence. The next missing proof is one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Wording alone does not close that gap.
+The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and the newer `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, with the remote now clarifying the release-proof ladder rather than pretending the command surface is absent. That is real progress, but it is still lab evidence. The next missing proof is one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Wording alone does not close that gap, and manual resolution is not success unless the rejected remote stays inspectable and retryable.
 
 ## What still blocks the claim
 
@@ -14,7 +14,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 4. Durable journal storage with lease/fencing is only proven in retained-source or lab harness form, not on production storage.
 5. Graph identity under create-time remap is not proven for relationship-bearing WordPress rows and late-discovered records.
 6. Plugin-driver coverage is not proven for plugin-owned surfaces outside the initial allowlist.
-7. The design still leaves hidden-loss modes where partial file, DB, cache, cron, and plugin side effects can mix without a production recovery artifact that cleanly classifies what committed, what was blocked, and what must remain preserved for audit or retry.
+7. The design still leaves hidden-loss modes where partial file, DB, cache, cron, and plugin side effects can mix without a production recovery artifact that cleanly classifies what committed, what was blocked, what must remain preserved for audit, and what must be retried.
 8. There is still no proof of a single rerunnable boundary that can preserve the rejected remote, reject stale authority before the first write, rerun apply-time revalidation after fresh hashes are rebuilt, and cover plugin-owned surfaces that appear late on the same mutation.
 9. There is still no production proof that the journal can survive a real lease/fencing handoff on durable storage while the same boundary remains rerunnable after rejection.
 10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation.
@@ -38,8 +38,8 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - ZS-Sync source notes contribute discovery and batching lineage, but not source-mutation safety, create-time remap safety, or plugin-owned surface coverage on this branch.
 - ForkPress source notes contribute audit and crash-consistency vocabulary, but not a live WordPress boundary with preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
 - The three families are useful as lineage context only: Reprint helps with staged delivery vocabulary, ZS-Sync with scanning/batching vocabulary, and ForkPress with recovery/audit vocabulary; none of them prove the branch preserved the rejected remote, rebuilt retry scope from live hashes, or covered plugin-owned surfaces on a rerunnable live boundary.
-- In other words: Reprint is delivery lineage, ZS-Sync is discovery lineage, ForkPress is recovery lineage, and this branch still needs a live push boundary to prove authority, fencing, and retry safety.
-- The comparison also does not prove graph identity or live auth/session lifecycle; those remain missing from the production claim even if the lineage vocabulary is correct.
+- In other words: Reprint is delivery lineage, ZS-Sync is discovery lineage, ForkPress is recovery lineage, and this branch still needs a live push boundary to prove authority, fencing, retry safety, and graph identity.
+- The comparison also does not prove live auth/session lifecycle; that remains missing from the production claim even if the lineage vocabulary is correct.
 - Any comparison to those notes must name the exact upstream revision or worktree state, say what the note proves here, and say what it does not prove here. If it only supports historical vocabulary, it stays provenance only and cannot be used as production proof by analogy.
 
 ## Changes required before production wording is defensible
