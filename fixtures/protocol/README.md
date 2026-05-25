@@ -98,10 +98,16 @@ For the production Docker and Playground harness shape, the topology pair is:
 
 1. `push-production-topology-contract.json`
 2. `push-production-route-matrix-contract.json`
+3. `push-production-executor-flow-contract.json`
 
 Use that pair when you need the one-remote, one-local, one-drift proof plus the
 shared route matrix, ingress rule, and local-only proxy policy in one review
 path.
+
+The checked proof command for this fixture set is `node --test test/protocol-fixtures.test.js`.
+It exercises the production executor flow contract, the route matrix, the pull
+bridge, the live revalidation contract, and the inspect-first recovery boundary
+as a single production-shaped proof.
 
 When you need the exact one-remote, one-local topology proof, start with:
 
