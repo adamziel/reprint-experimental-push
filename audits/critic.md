@@ -2,11 +2,14 @@
 
 ## 2026-05-25 Production Wording Still Fails Without a Real-Site Release Command
 
-The branch still cannot claim production-grade push support because `npm run
-verify:release` may strengthen the release topology, but it does not yet prove a
-branch-local, named real-site release command that can be rerun unchanged against
-a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` and preserve the
-rejected remote for audit.
+The branch still cannot claim production-grade push support because there is
+still no branch-local, named real-site release command that can be rerun
+unchanged against a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
+and preserve the rejected remote for audit. A command like `npm run
+verify:release` would only matter if it actually existed in `package.json` and
+proved the live boundary instead of just the route topology; in this worktree it
+is not present, so the critique still fails closed on the missing executable
+boundary.
 
 Scenario: someone upgrades a green Playground run or a polished script name into
 "production-ready push". Missing proof: the repo still lacks a live release
