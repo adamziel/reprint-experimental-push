@@ -86,6 +86,19 @@ The same handoff can be read as a pull-stage to push-stage map:
 | Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before any mutation. |
 | Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only after inspect and auth-floor checks pass. |
 
+The pull-to-push bridge is therefore a strict provenance chain:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the immutable base package
+- `persisted_pull_base_package` is the only object push may consume as origin
+- `push_preflight` binds that origin to one live remote identity and one short-lived session
+- `push_snapshot_hashes` lists remote hashes for planning only
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the branch safe with the same auth floor as the write path
+
 The production topology is fixed to the same four roles in both Docker and
 Playground:
 
@@ -170,6 +183,19 @@ The production topology stays fixed across Docker and Playground:
 - one imported local edit site, `local-edited`
 - one later drift observation of the same remote identity, `remote-changed`
 - one runner, `runner`, that owns the push protocol calls
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
+The topology proof is the same in both harnesses:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover
 - Docker uses one private network
 - Playground uses separate disposable blueprints
 - browser-visible inspection stays on the sandbox-provided `8080` ingress

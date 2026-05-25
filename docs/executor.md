@@ -64,6 +64,19 @@ both environments:
   through a local-only proxy
 - remote tunnels are disallowed
 
+That topology is the test contract, not a suggestion:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or start recovery
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- both harnesses keep browser-visible inspection on the sandbox-provided
+  `8080` ingress through a local-only proxy
+- remote tunnels are disallowed
+
 The executor uses the same route names in Docker and Playground:
 
 | Stage | Route name |
@@ -94,6 +107,21 @@ The harness routes stay identical across both environments:
 | Journal | `journal` | `journal` |
 | Recovery inspect | `recovery-inspect` | `recovery-inspect` |
 | Recovery mutate | `recovery-mutate` | `recovery-mutate` |
+
+Those route names are the production API boundary:
+
+- `preflight` binds the persisted pull base package to one live remote identity
+  and one short-lived push session
+- `snapshot-hashes` lists live remote comparison evidence for planning only
+- `dry-run` uploads the canonical plan and returns an eligibility receipt, not
+  a lock
+- `apply` revalidates fresh live evidence before every batch and at the
+  storage boundary
+- `journal` inspects durable evidence without authorizing mutation
+- `recovery-inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `recovery-mutate` only runs after inspect proves the branch safe and the
+  auth floor still holds
 
 The route matrix is the contract boundary for the one-remote, one-local, one-
 drift production harness:
