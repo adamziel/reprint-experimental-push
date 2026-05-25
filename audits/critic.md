@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but `4baf67ab` is still an assertion-alignment commit, not a live WordPress boundary. This branch-local audit file is not the proof surface; only the supervised remote lane plus a rerunnable live boundary can count.
+The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but `4baf67ab` is still an assertion-alignment commit, not a live WordPress boundary. This branch-local audit file is not the proof surface; only the supervised remote lane plus one rerunnable live boundary can count.
 
 The missing production proof is now precise: one rerunnable live mutation boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence.
 
@@ -20,7 +20,7 @@ The source-note anchors are historical design input only; they cannot be promote
 - ForkPress notes help explain audit and crash-consistency vocabulary, but they do not prove lease/fenced journal durability, preserved-remote retry authority, or plugin-driver coverage.
 - None of the three source-note sets prove that a rejected remote remains inspectable while fresh live hashes are re-derived at apply time on the same rerunnable mutation boundary.
 
-The next production proof must be one rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`: preserve the rejected remote, reject stale authority before the first write, rebuild authority from fresh live hashes at apply time, and keep the same live mutation boundary rerunnable while real WordPress auth/session state, lease-fenced journal storage, graph identity, and plugin-driver coverage are all proven on that same boundary.
+The next production proof must be one rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`: preserve the rejected remote, reject stale authority before the first write, rebuild authority from fresh live hashes at apply time, and keep the same live mutation boundary rerunnable while real WordPress auth/session state, lease-fenced journal storage, graph identity, and plugin-driver coverage are all proven together on that same boundary.
 
 ## What still blocks the claim
 
