@@ -260,6 +260,11 @@ The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprin
   hashes must never be upgraded into a production claim unless the same write
   path was exercised against a live remote after drift and the evidence shows
   the remote was preserved or the write failed closed.
+- A review note, PR description, or status comment that says "same as
+  upstream," "package smoke passed," or "route shape matches" still needs the
+  live proof bundle. Without the rejected stale approval, preserved remote,
+  fresh snapshot, and exact reverified upstream revision or worktree state,
+  the wording stays comparison-only and cannot claim production support.
 - `finalMatchesLocal`, committed replay, or packaged-plugin success on a
   fixture never prove the same path is safe against live remote drift in
   plugin metadata, graph identity, custom-table state, or create-time identity
