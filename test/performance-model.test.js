@@ -2644,6 +2644,28 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('chunk-receipts'),
   );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('atomic-file-publish'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause').violates.includes('parallelism-limits'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause').violates.includes('remote-index-planning-only'),
+  );
   assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate,
     'recovery',

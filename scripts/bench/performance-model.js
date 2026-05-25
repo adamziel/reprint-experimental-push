@@ -1081,6 +1081,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'backpressure', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+    proposal: 'treat a compressed remote index and extra chunk parallelism as enough proof to skip large-upload backpressure handling after a pause',
+    rejectedBecause: 'planning evidence and wider fan-out cannot prove the bounded queue order, which chunk acknowledgements survived the pause, or that the guarded publish barrier survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'index-and-digest-skips-row-preconditions',
     proposal: 'use a fresh remote index plus a cached digest to skip per-row preconditions in a database batch',
     rejectedBecause: 'row-level compare-and-swap still has to guard each mutating write at apply time',
