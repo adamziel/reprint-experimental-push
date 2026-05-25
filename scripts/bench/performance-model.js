@@ -1845,6 +1845,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'group',
     violates: ['remote-index-planning-only', 'compression', 'atomic-groups', 'backpressure', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish',
+    proposal: 'use a compressed remote index to justify unbounded chunk upload parallelism and treat the drained queue as publish-ready',
+    rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded chunk parallelism can still erase the receipt order and backpressure evidence needed to recover after pause or crash',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

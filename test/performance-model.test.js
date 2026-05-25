@@ -1164,6 +1164,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').rejectedGate,
+    'recovery',
+  );
+  assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('parallelism-limits'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('backpressure'));
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
   assert.ok(model.rejectedFastPaths.every((fastPath) => fastPath.rejectedBecause));
