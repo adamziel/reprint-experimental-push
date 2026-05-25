@@ -1169,3 +1169,6 @@ Rejected fast paths stay rejected even when they look fast on paper:
   apply or collapse the atomic-group boundary that still guards plugin writes.
 - Cached row receipts cannot skip plugin-install writeback, because the
   metadata writes and atomic-group barrier still need durable proof.
+- Cached row receipts cannot skip plugin-update finalize, because the live row
+  compares, dependency checks, and atomic-group finalize still need durable
+  proof.
