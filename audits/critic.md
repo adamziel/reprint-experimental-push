@@ -17,6 +17,11 @@ preserved-remote proof. Until that command exists and is named here, any doc,
 PR, or review wording is still lab-backed or comparison-only, no matter how
 production-shaped the route or reviewer language looks.
 
+That absence matters because the branch still has no executable surface that
+can be handed to a real-site operator, rerun after drift, and independently
+prove the preserved remote was still inspectable when the write was rejected.
+Route shape, reviewer wording, and smoke logs do not supply that proof.
+
 Command-surface audit:
 
 - `plan` and `apply` are present, but they are not a named real-site release
@@ -101,7 +106,8 @@ Source-note comparison audit:
   live boundary with live hashes. A preserved review note is only historical
   context until the branch also proves the rejected remote stayed inspectable
   after rejection and the later boundary rebuilt retry scope from fresh live
-  hashes.
+  hashes. If this branch has not rerun that same live boundary, the note is
+  comparison-only and cannot be promoted to production proof.
 
 Comparison gap summary:
 
