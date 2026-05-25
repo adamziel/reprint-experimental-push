@@ -154,6 +154,13 @@ export function productionThroughputBlockers(report) {
   if (report.evidence.chunkReceipts.recorded !== report.evidence.chunkReceipts.expected) {
     blockers.push('missing-durable-chunk-receipts');
   }
+  if (
+    !report.evidence.chunkReceipts.resumeCursor
+    || report.evidence.chunkReceipts.resumeCursor.chunkIndex !== report.evidence.chunkReceipts.recorded - 1
+    || report.evidence.chunkReceipts.resumeCursor.chunkCount !== report.evidence.chunkReceipts.expected
+  ) {
+    blockers.push('missing-valid-receipt-cursor');
+  }
   if (!report.evidence.preconditions.everyMutationHasLiveRemotePrecondition) {
     blockers.push('missing-live-remote-preconditions');
   }
@@ -211,6 +218,7 @@ export function productionThroughputDetails(report) {
     executorCapabilities: report.executorCapabilities,
     resourceLimits: report.resourceLimits,
     receiptCursor: report.evidence.chunkReceipts.resumeCursor,
+    receiptCursorConsistency: report.evidence.chunkReceipts.cursorConsistency,
     recovery: report.evidence.recovery,
     atomicGroup: report.evidence.atomicGroup,
     blockers: productionThroughputBlockers(report),
@@ -583,6 +591,14 @@ function buildReport({
               receiptKey: lastChunkReceipt.receiptKey,
             }
           : null,
+        cursorConsistency: {
+          expectedNextChunkIndex: Math.max(chunkReceiptRecords.length - 1, 0),
+          matchesRecordedReceiptCount: chunkReceiptRecords.length === stagedFile.chunkCount,
+          canResumeFromCursor: Boolean(lastChunkReceipt)
+            && lastChunkReceipt.chunkIndex === chunkReceiptRecords.length - 1
+            && lastChunkReceipt.chunkCount === stagedFile.chunkCount
+            && chunkReceiptRecords.length === stagedFile.chunkCount,
+        },
         finalStagingRecord: successPersisted.records.some((record) =>
           record.type === 'file-staging-finalized'
           && record.assembledHash === stagedFile.assembledHash),

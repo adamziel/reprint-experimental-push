@@ -41,6 +41,8 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.chunkReceipts.resumeCursor.chunkCount, report.shape.chunkCount);
   assert.equal(report.evidence.chunkReceipts.resumeCursor.chunkIndex, report.shape.chunkCount - 1);
   assert.equal(report.evidence.chunkReceipts.resumeCursor.resourceKey, 'file:wp-content/uploads/2026/05/catalog-export.bin');
+  assert.equal(report.evidence.chunkReceipts.cursorConsistency.matchesRecordedReceiptCount, true);
+  assert.equal(report.evidence.chunkReceipts.cursorConsistency.canResumeFromCursor, true);
   assert.equal(report.evidence.chunkReceipts.finalStagingRecord, true);
   assert.equal(report.evidence.chunkReceipts.canonicalVisibleBeforePublish, false);
   assert.equal(report.evidence.preconditions.liveRemoteMutationPreconditions, report.shape.mutations);
@@ -92,6 +94,14 @@ test('guarded benchmark refuses production throughput claims until production ga
     'file:wp-content/uploads/2026/05/catalog-export.bin',
   );
   assert.equal(
+    report.claims.productionThroughputDetails.receiptCursorConsistency.matchesRecordedReceiptCount,
+    true,
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.receiptCursorConsistency.canResumeFromCursor,
+    true,
+  );
+  assert.equal(
     report.claims.productionThroughputDetails.recovery.partialCommitInspectionStatus,
     'blocked-recovery',
   );
@@ -122,6 +132,9 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
   assert.ok(
     report.claims.productionThroughput.blockers.includes('production-row-batch-executor-not-measured'),
+  );
+  assert.ok(
+    !report.claims.productionThroughput.blockers.includes('missing-valid-receipt-cursor'),
   );
   assert.equal(report.results.preCommitFailure.remoteUnchanged, true);
   assert.equal(report.results.partialFailure.remoteUnchanged, false);
@@ -166,6 +179,15 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   missingRecovery.evidence.recovery.partialCommitBlocksRecovery = false;
   assert.ok(
     productionThroughputBlockers(missingRecovery).includes('missing-partial-commit-recovery-evidence'),
+  );
+
+  const missingReceiptCursor = clone(report);
+  missingReceiptCursor.evidence.chunkReceipts.resumeCursor = {
+    ...missingReceiptCursor.evidence.chunkReceipts.resumeCursor,
+    chunkIndex: 0,
+  };
+  assert.ok(
+    productionThroughputBlockers(missingReceiptCursor).includes('missing-valid-receipt-cursor'),
   );
 
   const missingMemoryCeiling = clone(report);
