@@ -20139,6 +20139,55 @@ test('keeps remote-only plugin drift at the live release boundary while a ready 
   assert.equal(driftedRemote.plugins.forms.description, 'late drift');
 });
 
+test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent delete and remote-only plugin removals', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/legacy.txt'] = 'base legacy bytes';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.files['wp-content/uploads/legacy.txt'];
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  delete remote.plugins.seo;
+  delete remote.files['wp-content/plugins/seo/seo.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingDelete = decisionFor(plan, 'file:wp-content/uploads/legacy.txt');
+  const editDecision = decisionFor(plan, 'file:about.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(completed.site.files, 'wp-content/uploads/legacy.txt'), false);
+  assert.equal(completed.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(Object.hasOwn(completed.site.plugins, 'seo'), false);
+  assert.equal(Object.hasOwn(completed.site.files, 'wp-content/plugins/seo/seo.php'), false);
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.files['wp-content/uploads/legacy.txt'] = 'late drift';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.files['wp-content/uploads/legacy.txt'], 'late drift');
+});
+
 test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching independent edit, matching plugin-owned resource, and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
