@@ -4722,3 +4722,18 @@ Minimum proof still missing for any production-grade claim:
   asset, cache entry, or serialized blob; and
 - a separate preserve / reject / retry cycle for any later-discovered plugin-
   owned surface that appears after the first write.
+
+If the branch cannot show that the stale manual-review artifact is unusable as
+current retry authority, the claim is still false even when the route, mount,
+fixture, or `finalMatchesLocal` output looks production-shaped. A later
+plugin-owned row, file, registry entry, cache record, or generated asset is a
+new boundary until this branch records its own preserve / reject / retry
+cycle; the earlier review note stays audit-only and cannot be widened to cover
+that surface.
+
+Conservative comparison rule: a Reprint, ZS-Sync, or ForkPress citation must
+name the exact upstream revision or worktree state, say exactly what the note
+does prove here, and say exactly what it does not prove here. If that note is
+being used to imply live write safety, remote preservation, stale-drift
+rejection, or retry authority on this branch, the proof is missing and the
+claim must fail closed.
