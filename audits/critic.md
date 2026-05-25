@@ -5976,7 +5976,7 @@ Source-note comparison rule:
 - ZS-Sync `d9334a0` only supports bounded discovery, cursoring, and batched resource selection; it does not prove source mutation safety, retry authority, or recovery from partial side effects on this branch.
 - ForkPress `55f9879` only supports merge-audit vocabulary and crash-consistency intent; it does not prove that a readable review artifact can authorize a later row, file, remapped create target, or plugin-owned surface on this branch.
 - none of those notes proves that a later-discovered plugin-owned surface or remapped create target belongs to the same live boundary as the earlier readable artifact; if the later surface appears after the first write, it is a new boundary until this branch separately preserves the remote, rejects stale authority, and rebuilds retry scope from live hashes for that later surface.
-- any comparison that does not explicitly say what the note proves here and what it does not prove here is ambiguous and must fail closed; a source note that only names a similar route family, package mount, or reviewer vocabulary is still compatibility context, not production proof.
+- any comparison that does not explicitly say what the note proves here and what it does not prove here is ambiguous and must fail closed; a source note that only names a similar route family, package mount, production-shaped URL, or reviewer vocabulary is still compatibility context, not production proof.
 - a note that reuses the same route family, package mount, reviewer wording, or upstream anchor still does not prove the same live boundary was rerun here; if the preserved remote was not shown, the stale authority rejection point was not shown, and the fresh retry scope was not rebuilt from live hashes on this branch, then the comparison remains historical context only.
 
 Evidence-classification rule:
@@ -5986,7 +5986,7 @@ Evidence-classification rule:
 - a readable manual-review artifact stays audit evidence only unless it is paired with the preserved remote, the rejection point, and a fresh retry scope rebuilt from live hashes on this branch; a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface still needs its own preserve / reject / retry cycle and cannot inherit that artifact; and
 - a comparison note that only matches route family, package mount, or reviewer wording still cannot become retry authority for a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
 - that same artifact still cannot authorize a later-discovered plugin-owned surface, remapped create target, or different row/file/relationship-bearing record just because the route family, package mount, or reviewer wording stayed the same; and
-- route shape, package mount shape, fixture replay, readable review output, and `finalMatchesLocal` stay compatibility evidence only and cannot be upgraded into proof for a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface.
+- route shape, package mount shape, production-shaped URL, fixture replay, readable review output, and `finalMatchesLocal` stay compatibility evidence only and cannot be upgraded into proof for a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface.
 
 Production-grade blocker summary:
 
