@@ -7,14 +7,14 @@ linked implementation artifacts.
 Newest public summary stays concise by design; details belong in the linked
 evidence trail below.
 
-## 2026-05-25 - Public Status Audit 06:30:37
+## 2026-05-25 - Public Status Audit 06:34:33
 
-<a id="2026-05-25-public-status-audit-063037"></a>
+<a id="2026-05-25-public-status-audit-063433"></a>
 
 - Refreshed [progress.html](../progress.html) with the live `date` output
-  (`2026-05-25 06:30:37 CEST`) and kept the visible last-updated stamp current.
-- Tightened the first screen so the newest audit, release-gate checklist, and
-  evidence trail are visible without repeating the same status sentence.
+  (`2026-05-25 06:34:33 CEST`) and kept the visible last-updated stamp current.
+- Kept the top summary concise by pointing the newest audit link directly at the
+  current log entry.
 - No new production proof was added; real WordPress executor/auth, durable
   recovery journaling, Docker/Playground integration, graph identity, and
   plugin drivers remain pending until proven.
