@@ -36,8 +36,9 @@ The lab JSON and in-memory replay fixtures are useful for proving the model, but
 
 Production recovery still needs:
 
-- durable journal storage with restart-readable records
-- fsync or equivalent persistence guarantees
+- durable journal storage with restart-readable DB rows or files
+- fsync or equivalent persistence guarantees on the journal path
+- plugin activation and other source-side state tracked in the durable journal
 - claim fencing or lease ownership for the recovery writer
 - inspectable blocked-recovery artifacts
 - recovery inspection that can distinguish old remote, fully updated remote, and blocked partial recovery
