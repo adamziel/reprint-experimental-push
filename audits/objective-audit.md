@@ -101,7 +101,7 @@ The objective stays blocked for five concrete reasons:
 10. No test or smoke in this checkout demonstrates the one-way pull base plus one-way push back to live source under the production storage semantics named by the objective.
 11. The repository still has no measured live-path throughput result, so speed is blocked even if all of the lab safety claims remain green.
 
-The weakest claim is speed, and the audit should keep treating it as blocked until there is a measured live-path number with a threshold. The practical consequence is simple: do not convert the current refusal-only benchmark into release language. If the repo cannot measure production throughput yet, the release gate should fail closed on that missing measurement instead of implying performance confidence from models or smokes. A refusal-only benchmark is useful because it prevents overclaiming, but it is not evidence that the live push path is fast enough.
+The weakest claim is speed, and the audit should keep treating it as blocked until there is a measured live-path number with a threshold. The practical consequence is simple: do not convert the current refusal-only benchmark into release language. If the repo cannot measure production throughput yet, the release gate should fail closed on that missing measurement instead of implying performance confidence from models or smokes. A refusal-only benchmark is useful because it prevents overclaiming, but it is not evidence that the live push path is fast enough. Release copy should therefore say `speed unclaimed` until the live-path benchmark exists and is wired into a required gate that exits non-zero when `productionThroughput` is still `not-claimed`.
 
 The repository still has only refusal-only throughput evidence, no measured live-path result, and no enforced threshold that would let the project say anything positive about production speed. Until that changes, the only defensible statement is that unsupported throughput claims are rejected. The release gate should therefore require a positive live-path measurement or fail the run, rather than allowing a green benchmark refusal to masquerade as performance proof.
 
@@ -112,7 +112,7 @@ Add a required release entrypoint that fails closed unless it can prove, in one 
 1. a measured live-path throughput result plus an explicit release threshold, or
 2. an intentional refusal to make any production speed claim.
 
-If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command.
+If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command such as `npm run verify:release`.
 
 ## Audit Rule
 
