@@ -13704,6 +13704,76 @@ test('durable mid-apply failures stay blocked with recovery artifacts and never 
   );
 });
 
+test('durable recovery boundaries stay limited to old-remote, fully-updated-remote, or blocked-recovery with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const boundaries = [
+    ['before mutation', { failBeforeMutation: true }, 'opened', 'old-remote'],
+    ['after staging', { failAfterStaging: true }, 'staged', 'old-remote'],
+    [
+      'after dependency validation',
+      { failAfterDependencyValidation: true },
+      'dependencies-validated',
+      'old-remote',
+    ],
+  ];
+
+  for (const [label, options, journalState, expectedRecoveryState] of boundaries) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const failure = captureError(() =>
+      applyPlan(baseSite(), plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+    durableJournal.close();
+
+    assert.ok(failure instanceof PushPlanError, label);
+    assertAcceptableRecoveryState(failure.details.recovery);
+    assertFailureRecoveryState(failure.details.recovery, expectedRecoveryState);
+    assert.equal(failure.details.recovery.artifacts.journal.status, journalState, label);
+    assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
+
+    const persisted = readRecoveryJournal(journalPath);
+    assert.equal(
+      persisted.records.some(
+        (record) => record.type === 'recovery-state' && record.state === expectedRecoveryState,
+      ),
+      true,
+      label,
+    );
+  }
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('persisted partial-commit recovery remains blocked on inspection and does not collapse into old-remote', () => {
   const base = baseSite();
   const local = baseSite();
