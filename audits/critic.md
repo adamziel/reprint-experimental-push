@@ -8,13 +8,13 @@ durable journal semantics, graph identity, and plugin-driver coverage on a
 real-site rerun.
 That means the next acceptable proof must move off retained-source lab
 evidence and into a production WordPress auth/session lifecycle, with durable
-journal semantics plus explicit graph-identity and plugin-driver coverage on
-the live boundary.
+journal semantics plus explicit graph-identity, plugin-driver, and plugin-
+owned surface coverage on the live boundary.
 The older critique that no `verify:release` command exists is retired; the
 remaining issue is that the command still does not prove preserved-remote
-safety, apply-time revalidation, or production auth/session lifecycle on a
-real-site boundary. A wrapper, comparison note, or polished smoke name never
-replaces that proof.
+safety, apply-time revalidation, production auth/session lifecycle, graph
+identity, or plugin-driver coverage on a real-site boundary. A wrapper,
+comparison note, or polished smoke name never replaces that proof.
 
 ## 2026-05-25 Current Verdict
 
