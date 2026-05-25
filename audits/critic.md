@@ -37,7 +37,7 @@ The only acceptable transition to production wording is one rerunnable live Word
 If any of those are only shown in retained-source harness output, the release claim stays false.
 
 Reprint, ZS-Sync, and ForkPress only supply provenance for transport, discovery, and crash-consistency vocabulary. Reprint is closest on resumable transport and staged delivery; ZS-Sync is closest on discovery and batching; ForkPress is closest on audit and crash-consistency language. None of them prove the missing production boundary here. Their observed anchors (`27c5f25`, `d9334a0`, `55f9879`) are useful context, but they are not retry authority: they do not prove preserved-remote retention after rejection, stale-authority rejection before the first write, live auth/session lifecycle, lease/fenced durability, graph identity, or plugin-driver coverage on this branch.
-The source-note anchors are historical design input only; they cannot be promoted to current retry authority unless this branch reran the same live boundary and preserved the rejected remote on that boundary.
+The source-note anchors are historical design input only. They cannot be promoted to current retry authority unless this branch reran the same live boundary here and preserved the rejected remote on that boundary.
 
 - Reprint notes help explain resumable transport and staged delivery, but they do not prove a WordPress auth/session lifecycle or a preserved remote that survives rejection on the same live boundary.
 - ZS-Sync notes help explain discovery and batching, but they do not prove create-time remap handling, graph identity, or late plugin-owned surface classification.
@@ -81,6 +81,8 @@ Treat the three source-note families as historical context, not retry authority:
 - Reprint (`27c5f25`) proves resumable transport and staged delivery vocabulary only. It does not prove a live mutation boundary, preserved-remote retention after rejection, or WordPress auth/session lifecycle on this branch.
 - ZS-Sync (`d9334a0`) proves discovery and batching vocabulary only. It does not prove source-mutation safety, create-time remap safety, graph identity, or plugin-owned surface coverage on this branch.
 - ForkPress (`55f9879`) proves audit and crash-consistency vocabulary only. It does not prove a live WordPress boundary, durable journal lease/fencing, preserved-remote auditability, or plugin-driver coverage on this branch.
+
+If a summary tries to turn those notes into retry authority without a branch-local rerun of the same live boundary, it is a wording leak rather than evidence.
 
 None of the three source-note sets prove live push safety on this branch, and none should be read as production evidence without the rerunnable live boundary described above.
 The missing proof is still one rerunnable live mutation on one exact source URL with preserved-remote retention, apply-time revalidation, auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage all observed together. The remote `4096f3ac` drift-rejection proof and `7e0f27f2` apply-revalidation proof are useful, but they remain separate retained-source steps until the same live boundary preserves the rejected remote and survives retry on production-like state. The current `4baf67ab` verdict is useful release-boundary evidence, but it still only proves the retained-source auth/session gate and not the full production WordPress boundary.
