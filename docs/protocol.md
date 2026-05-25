@@ -17,9 +17,11 @@ The production ladder is fixed:
 1. `push_preflight` binds the persisted pull base package to one live remote
    identity, one requested scope, and one short-lived push session.
 2. `push_snapshot_hashes` lists the live remote comparison surface for
-   planning only and never becomes write authority.
+   planning only and never becomes write authority. It may page through
+   large sites, but it never becomes a lock, a lease, or apply authority.
 3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
-   eligibility receipt, not a lock.
+   eligibility receipt, not a lock. The receipt proves planning eligibility
+   only and cannot be reused as write authority.
 4. `push_batch_apply` is the first mutation stage. It must revalidate fresh
    live evidence before every batch and again at the storage boundary. Dry-run
    and apply are separate remote operations, and apply must not trust the
@@ -37,8 +39,8 @@ The ladder maps directly to the pull pipeline:
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
 - preflight is the first live binding after importer persistence
-- snapshot hash listing is planning evidence only
-- dry-run is an eligibility receipt, not a lock
+- snapshot hash listing is planning evidence only and may page large sites
+- dry-run is an eligibility receipt, not a lock, and never authorizes apply
 - batch apply revalidates before every batch and again at the storage boundary
 - journal inspect is read-only
 - recovery starts with inspect and only mutates when journal evidence and
@@ -86,6 +88,9 @@ The machine-readable bridge is split across the fixtures:
   `push-remote-liveness-topology-contract.json` define the Docker and
   Playground test topology with one remote source, one imported local site,
   one drift witness, and the sandbox-provided `8080` ingress rule.
+- `push-remote-liveness-topology-contract.json` also proves that dry-run and
+  apply are separate remote calls and that apply revalidates live evidence
+  before every batch and at the storage boundary.
 
 The topology model is deliberately minimal:
 
@@ -94,6 +99,8 @@ The topology model is deliberately minimal:
 - `remote-changed` is the same remote identity observed later after drift.
 - `runner` is the only actor that may preflight, list hashes, dry-run,
   apply, inspect the journal, or recover.
+- journal inspection remains read-only and recovery must begin with inspect
+  before any mutating repair.
 
 ## Stage Semantics
 

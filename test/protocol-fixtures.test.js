@@ -45,6 +45,71 @@ test('push protocol fixture captures the production stage order and recovery rul
   ]);
 });
 
+test('push remote liveness topology fixture keeps planning, apply, and recovery separate', () => {
+  const contract = readJson('fixtures/protocol/push-remote-liveness-topology-contract.json');
+
+  assert.equal(contract.contract_id, 'push-remote-liveness-topology-contract');
+  assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(contract.pull_pipeline.importer, 'persists the base package as immutable provenance');
+  assert.equal(contract.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.deepEqual(contract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    contract.push_guards.remote_snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    contract.push_guards.dry_run_receipt,
+    'eligibility evidence only and never a lock',
+  );
+  assert.equal(
+    contract.push_guards.apply_revalidation,
+    'refreshes fresh live evidence before every batch and at the storage boundary',
+  );
+  assert.equal(
+    contract.push_guards.journal_inspect,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    contract.push_guards.recovery_inspect,
+    'must happen before any mutating recovery path',
+  );
+  assert.equal(contract.push_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(contract.topology.networking.ingress_port, 8080);
+  assert.equal(contract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(contract.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    contract.topology.docker.proof.includes('dry-run and apply remain separate remote calls'),
+  );
+  assert.ok(
+    contract.topology.docker.proof.includes(
+      'apply revalidates fresh live evidence before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    contract.topology.playground.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.equal(
+    contract.required_invariants.includes('dry-run and apply are separate remote operations'),
+    true,
+  );
+  assert.equal(
+    contract.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
+    ),
+    true,
+  );
+});
+
 test('push contract fixture binds the pull handoff to the production push sequence', () => {
   const contract = readJson('fixtures/protocol/push-contract.json');
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');

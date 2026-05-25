@@ -25,7 +25,8 @@ The executor follows the same ordered stages defined in the protocol:
    identity and one short-lived push session.
 2. `push_snapshot_hashes` lists the live remote comparison surface for
    planning only and may page large sites.
-3. `push_plan_dry_run` uploads the canonical plan as a receipt, not a lock.
+3. `push_plan_dry_run` uploads the canonical plan as a receipt, not a lock,
+   and that receipt never substitutes for a live revalidation.
 4. `push_batch_apply` revalidates fresh live evidence before every batch and
    at the storage boundary. Apply must not reuse the dry-run receipt as
    authority, as a lease, or as a session substitute.
@@ -132,7 +133,7 @@ That mapping is intentionally one-way:
 - push consumes that provenance and never rewrites the pull base package
 - preflight is the first live binding after importer persistence
 - snapshot hashes are planning evidence only
-- dry-run is a receipt, not a lock
+- dry-run is a receipt, not a lock, and cannot authorize apply
 - apply revalidates before every batch and again at the storage boundary
 - journal inspect stays read-only
 - mutating recovery only happens after inspect proves the branch safe
@@ -171,6 +172,7 @@ That topology keeps the executor proof stable:
 - both harnesses use the same route names and the same dry-run/apply split
 - both harnesses keep `remote-base` and `remote-changed` as two observations
   of the same remote identity, not two different sites
+- both harnesses require journal inspection before any mutating recovery
 
 ## Canonical Proofs
 
