@@ -134,6 +134,9 @@ The failure scenarios that still need explicit proof are:
   attempt to rebuild scope from fresh live evidence after the remote was
   preserved for audit instead of widening to a different row or file, or
   targeting a relationship-bearing or plugin-owned surface.
+- A live remote drift is detected only after the first write has already
+  started; the missing proof is a fail-closed pre-write boundary, not a
+  post-hoc "partial recovery" story that rebrands a mixed write as success.
 
 Source-note comparison boundary:
 
@@ -309,6 +312,9 @@ Release-go/no-go scenarios:
   durably as partial side effects with fresh retry scope. Manual resolution
   only counts when the remote is preserved, the stale artifact is rejected as
   authority, and the retry starts from new live evidence.
+- If drift is only detected after the first write starts, the proof must show
+  the earlier write is durably fenced and auditably incomplete; it cannot be
+  used as evidence of a successful production retry.
 - If a stale manual-review artifact remains readable after drift, that
   readability is audit evidence only. It is not retry authority unless the
   proof shows the artifact cannot widen to a different row, file,
