@@ -28,6 +28,9 @@ This note is the short form of the planner policy in
   or file type swap plus unrelated remote-only plugin drift: the safe
   resources stay `already-in-sync`, the plugin drift stays `keep-remote`, and
   the delete still needs its own live remote precondition.
+- The planner can still stop on a plugin-owned mutation while preserving
+  unrelated matching independent edits, deletions, and file type swaps as
+  `already-in-sync`, and remote-only plugin drift remains `keep-remote`.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Remote-only plugin drift stays preserved when the local plan also contains
