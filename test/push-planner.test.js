@@ -17495,9 +17495,17 @@ test('approved recovery states are limited to the durable old, updated, and bloc
     artifacts: { journal: { status: 'opened' } },
   }), true);
   assert.equal(isAcceptableRecoveryState({
+    status: 'old-remote',
+    artifacts: { journal: { status: 'opened' }, remote: { files: {} } },
+  }), false);
+  assert.equal(isAcceptableRecoveryState({
     status: 'fully-updated-remote',
     artifacts: { journal: { status: 'completed' } },
   }), true);
+  assert.equal(isAcceptableRecoveryState({
+    status: 'fully-updated-remote',
+    artifacts: { journal: { status: 'completed' }, remote: { files: {} } },
+  }), false);
   assert.equal(isAcceptableRecoveryState({
     status: 'blocked-recovery',
     artifacts: { journal: { status: 'blocked' }, remote: { files: {} } },
