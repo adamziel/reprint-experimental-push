@@ -2006,6 +2006,61 @@ test('completed replay remains inert for a matching remote and blocks drift with
   assert.ok(driftError.details.recovery.artifacts.remote, 'stale replay must keep remote artifacts');
 });
 
+test('durable recovery matrix keeps the three failure boundaries old-remote and a completed replay fully-updated', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const failureCases = [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ];
+
+  for (const [label, options, expectedJournalStatus] of failureCases) {
+    const snapshot = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, { durableJournal, ...options }));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), snapshot, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+  }
+
+  const completed = applyPlan(remote, plan, { durableJournal });
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal,
+    journal: completed.journal,
+  });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  durableJournal.close();
+});
+
 test('atomic apply only allows old remote, fully updated remote, or blocked recovery with artifacts across failure boundaries', () => {
   const base = baseSite();
   const local = baseSite();
