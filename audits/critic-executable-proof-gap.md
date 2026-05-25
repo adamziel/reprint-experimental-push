@@ -19,7 +19,10 @@ Primary finding:
   move from local retained-source evidence to production WordPress
   auth/session lifecycle, durable journal, and lease/fencing semantics, with
   graph identity and plugin-driver coverage made explicit on that same live
-  boundary;
+  boundary. A later-discovered plugin-owned surface or remapped create target
+  must be shown as its own preserve / reject / retry cycle; manual resolution
+  is not enough unless the preserved remote remains inspectable and the retry
+  scope is rebuilt from live hashes for that exact later boundary;
 
 Supporting failures:
 

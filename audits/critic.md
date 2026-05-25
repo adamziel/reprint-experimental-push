@@ -8318,6 +8318,17 @@ identity plus plugin-driver coverage in the same rerun. Until that happens,
 the branch cannot convert a source-note comparison into retry authority or
 production wording.
 
+The missing proof is not abstract. A release claim still fails if a later
+plugin-owned table, cron row, serialized blob, generated file, or remapped
+create target only appears after the first write and is then folded into the
+earlier approval without its own preserve / reject / retry cycle. The audit
+must see that later surface classified old, new, or blocked before retry
+starts, with the remote still preserved for inspection and the retry scope
+rebuilt from live hashes on the same boundary. Manual resolution is only
+audit evidence unless it preserves the remote, rejects stale authority
+before the first write, and leaves a fresh retry scope for the exact later
+surface.
+
 The canonical production-readiness checklist for this branch lives in
 [`audits/critic-production-checklist.md`](./critic-production-checklist.md).
 
@@ -8343,6 +8354,20 @@ boundary:
 
 If any item is missing, the branch has compatibility evidence only and must
 not claim production-grade push support.
+
+Release-gate checklist for production wording:
+
+- name the exact executable command and exact live `REPRINT_PUSH_SOURCE_URL`
+  in the same proof;
+- show the executor identity, preserved remote, and exact rejection point
+  before the first write;
+- show dry-run receipt, apply-time revalidation, and journal/recovery
+  inspection on that same live boundary;
+- classify every touched row, file, relationship-bearing record, and
+  plugin-owned surface as old, new, or blocked before retry starts; and
+- give any later-discovered plugin-owned surface or remapped create target
+  its own preserve / reject / retry cycle instead of inheriting the first
+  approval.
 
 Source-note comparisons remain provenance only unless this branch reran the
 same live boundary:
