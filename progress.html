@@ -508,7 +508,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until the real-endpoint proof gap closes. The linked docs hold the proof trail and the latest evidence.</p>
-        <time class="update-stamp" datetime="2026-05-25T12:45:31+02:00">Last updated: May 25, 2026, 12:45:31 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T12:46:58+02:00">Last updated: May 25, 2026, 12:46:58 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing real-endpoint evidence</span>
           <span class="pill">Lane-local only until merge to main</span>
@@ -549,9 +549,9 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>Reliable-executor still has the clearest lab proof, and the public surfaces stay short, dated, and linked.</span></li>
-          <li><strong>Not going well</strong><span>The production gate remains closed because real-endpoint auth/session, durable journal semantics, graph identity, and plugin-driver proof are still missing.</span></li>
-          <li><strong>Progress delta</strong><span>The boundary verdict got sharper, but the release state still does not move because the missing production boundary is not shipped.</span></li>
+          <li><strong>Going well</strong><span>Reliable-executor keeps tightening the release boundary, and the public surfaces stay short, dated, and linked.</span></li>
+          <li><strong>Not going well</strong><span>The production gate remains closed because real-endpoint auth/session lifecycle, durable journal semantics, graph identity, and plugin-driver proof are still missing.</span></li>
+          <li><strong>Progress delta</strong><span>`889bd37a` is now visible in the public snapshot, and `b1a41539` is tightening the verifier ordering, but the release state still does not move.</span></li>
           <li><strong>Next nudge</strong><span>Reliable-executor owns the next real-site release command; progress-publisher keeps the page concise; critic and auditor should reject wording-only proof.</span></li>
         </ul>
         <details class="lane-nudges">
@@ -592,7 +592,7 @@
         <span>Open evidence gaps</span>
       </div>
       <div class="proof-list">
-        <div class="proof-item"><span class="status">Missing</span><p>Auth/session proof on a real endpoint.</p></div>
+        <div class="proof-item"><span class="status">Missing</span><p>Auth/session lifecycle proof on a real endpoint.</p></div>
         <div class="proof-item"><span class="status">Missing</span><p>Durable journal, crash, lease, and fencing proof.</p></div>
         <div class="proof-item"><span class="status">Missing</span><p>Playground integration beyond fixture labs.</p></div>
         <div class="proof-item"><span class="status">Missing</span><p>Graph identity, plugin drivers, and rollback proof.</p></div>
