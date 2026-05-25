@@ -4611,6 +4611,11 @@ One more false-reliability trap to reject explicitly:
   first mutation, preserved the remote, or rebuilt retry authority from fresh
   live hashes; a production-shaped route can still be served by the wrong
   executor, so shape is compatibility evidence only.
+- a preserved remote that is still auditable after rejection is not itself
+  retry authority; if the branch does not also record the stale rejection
+  point and a fresh retry artifact rebuilt from live hashes for the same
+  boundary, the preserved remote is only audit evidence and cannot justify a
+  second write.
 
 Production-readiness language checklist:
 
