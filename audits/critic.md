@@ -5519,8 +5519,10 @@ Proof-substitution fail-closed rule:
   surface, remapped create target, or new row/file/relationship-bearing
   record unless this branch separately preserves the remote, rejects stale
   authority before mutation, and rebuilds retry scope from live hashes for
-  that later boundary; otherwise the later surface remains blocked or audit-
-  only, regardless of how similar it looks to the earlier boundary.
+  that later boundary; the preserved remote must stay independently
+  inspectable so the operator can audit the drift and safely retry from fresh
+  live hashes. Otherwise the later surface remains blocked or audit-only,
+  regardless of how similar it looks to the earlier boundary.
 
 Source-note comparison rule:
 
