@@ -189,6 +189,11 @@ It pairs the protocol fixture test with the explicit missing-secret smoke so
 the executable boundary proves both the production ladder and the fast-fail
 auth gate in one checked entry point.
 
+The stricter release-oriented proof command is `npm run test:playground:production-shaped-release-proof`.
+It is the same checked supervisor entry point when you want a single command
+that either exercises a supplied live source preflight or emits the explicit
+missing-secret and missing-live-source gates with exact output.
+
 When a live source URL and production-shaped credentials are present, that
 same wrapper switches to `npm run test:playground:production-shaped-live-preflight`
 and exercises the real preflight handshake instead of only the gate checks.
@@ -202,6 +207,13 @@ Run the proof command when you need the exact production-shaped boundary:
 
 ```sh
 npm run test:playground:production-shaped-proof
+```
+
+Run the release proof command when you want the live-source branch or the exact
+gate output in one checked entry point:
+
+```sh
+npm run test:playground:production-shaped-release-proof
 ```
 
 That checked command is the one that matters for the release proof:

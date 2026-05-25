@@ -1968,6 +1968,10 @@ The harness contracts that pin that shape are:
   session, journal, lease, and inspect-first recovery pair
 - `push-production-recovery-drift-contract.json` for the production-shaped
   inspect-first recovery proof after live drift
+- `npm run test:playground:production-shaped-release-proof` for the
+  supervisor-facing command that either runs the supplied live-source
+  preflight or fails at the explicit missing-secret and missing-live-source
+  gates with exact output
 
 Use `push-deployment-topology-contract.json` for the smallest topology proof
 and `push-remote-liveness-topology-contract.json` when you need the dry-run

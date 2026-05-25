@@ -90,6 +90,33 @@ test('production-shaped live preflight smoke fails fast when the live source or 
   );
 });
 
+test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(proof.status, 0);
+  assert.match(proof.stdout, /"releaseProof": \{\s*"status": 0\s*\}/);
+  assert.match(
+    proof.stdout,
+    /"missingSecret": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_SECRET_REQUIRED",\s*"stderr": "REPRINT_PUSH_SECRET_REQUIRED: production push credentials are missing; provide REPRINT_PUSH_SIGNING_SECRET or REPRINT_PUSH_APPLICATION_PASSWORD before running preflight, dry-run, or apply\."\s*\}/,
+  );
+  assert.match(
+    proof.stdout,
+    /"missingLiveSource": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",\s*"stderr": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\."\s*\}/,
+  );
+});
+
 test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-topology-proof.mjs'], {
     cwd: repoRoot,
