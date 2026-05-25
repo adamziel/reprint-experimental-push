@@ -500,20 +500,20 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `3d8748b6` now keeps the release command fail-closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` keeps `REPRINT_PUSH_SECRET_REQUIRED` visible, and `889bd37a` still emits `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`; release gates stay at `0/4`, and durable journal storage with lease/fencing remains pending.</p>
-        <time class="update-stamp" datetime="2026-05-25T14:18:48+02:00">Last updated: May 25, 2026, 14:18:48 CEST</time>
+        <p class="lead">The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `3d8748b6` now keeps the release command fail-closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, while `REPRINT_PUSH_SECRET_REQUIRED` and `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` stay visible and release gates remain at `0/4`.</p>
+        <time class="update-stamp" datetime="2026-05-25T14:22:05+02:00">Last updated: May 25, 2026, 14:22:05 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `3d8748b6` adds the fail-closed release-source gate while `471440b9` and `889bd37a` keep the boundary visible</span>
+          <span class="pill">Trend: `3d8748b6` adds the fail-closed release-source gate while `REPRINT_PUSH_SECRET_REQUIRED` and `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` keep the boundary visible</span>
           <span class="pill">Top blocker: real WordPress executor/auth plus durable journal storage and lease/fencing still block any production push claim</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-141848">2026-05-25 14:18:48</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-25-public-status-audit-142205">2026-05-25 14:22:05</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-141848">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-25-public-status-audit-142205">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -522,7 +522,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-        <span>Latest lane evidence adds fail-closed release-source, secret, and auth-session proof without changing the 0/4 release gates</span>
+        <span>Latest lane evidence adds fail-closed release-source proof without changing the 0/4 release gates</span>
       </div>
       <div class="metric">
         <strong>Flat</strong>
