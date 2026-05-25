@@ -189,7 +189,7 @@ Checklist before any production-grade wording:
   preserved remote, the stale rejection point, and the fresh retry scope
   rebuilt from live hashes on this branch.
 
-Source-note comparisons are historical context unless the exact upstream revision or worktree state is named and this branch reran the same live boundary against the same drift case. A named Reprint, ZS-Sync, or ForkPress note can justify historical transport, discovery, or review vocabulary, but it does not prove the live executor, the preserved remote, retry safety, create-time remap safety, or plugin-owned surface handling on this branch.
+Source-note comparisons are historical context unless the exact upstream revision or worktree state is named and this branch reran the same live boundary against the same drift case. A named Reprint, ZS-Sync, or ForkPress note can justify historical transport, discovery, or review vocabulary, but it does not prove the live executor, the preserved remote, retry safety, create-time remap safety, or plugin-owned surface handling on this branch. If the comparison cannot name the exact upstream state, the exact live boundary, what the note proves here, and what it does not prove here, it stays provenance only and cannot support production-grade wording.
 
 That means:
 
@@ -199,7 +199,7 @@ That means:
 
 Even when the upstream state is named precisely, the comparison still does not prove this branch preserved the remote, rejected stale authority before mutation, or rebuilt retry scope from fresh live hashes. At best it proves that the cited note is a valid historical reference point for the same family of ideas.
 
-If any production claim depends only on route shape, package mount shape, fixture replay, readable review output, or `finalMatchesLocal`, the claim must fail closed. Those are compatibility signals, not proof that the live mutation path rejected stale authority before the first write.
+If any production claim depends only on route shape, package mount shape, fixture replay, readable review output, or `finalMatchesLocal`, the claim must fail closed. Those are compatibility signals, not proof that the live mutation path rejected stale authority before the first write. The branch still lacks a named real-site preflight/release command, so lab or compatibility flows cannot be promoted into production-grade push support.
 
 Concrete failure modes that still block the claim:
 
