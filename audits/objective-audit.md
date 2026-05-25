@@ -10,10 +10,10 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-invariants` -> `fa0ce3ea`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `b54f1b34`
-- `origin/lane/independent-auditor` -> `86a0d38f`
-- `origin/lane/critic` -> `4e487df4`
-- `origin/lane/progress-publisher` -> `c0fc1502`
-- `origin/lane/same-plan-wordpress-graph-create` -> `d1994422`
+- `origin/lane/independent-auditor` -> `889631e8`
+- `origin/lane/critic` -> `767f4d66`
+- `origin/lane/progress-publisher` -> `7695e1f9`
+- `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `b14aa74d`
 - `origin/main` -> `4b7b47a6`
@@ -32,15 +32,15 @@ but it did not change the release conclusion:
 - `origin/lane/no-data-loss-recovery` now reconciles the recovery lane while
   preserving recovery proofs at `47b675c0`.
 - `origin/lane/fast-paths` now refreshes benchmark evidence at `b54f1b34`.
-- `origin/lane/critic` now refreshes the critic audit heads at `4e487df4`.
+- `origin/lane/critic` now refreshes the critic audit heads at `767f4d66`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
-  at `c0fc1502`.
+  at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `86a0d38f`.
+  `889631e8`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
   refreshes the supervisor evidence snapshot at `b14aa74d`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a stale term
-  taxonomy identity proof at `d1994422`, so the same-plan path still stops short of release-
+  taxonomy identity proof at `24c58564`, so the same-plan path still stops short of release-
   grade proof.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
