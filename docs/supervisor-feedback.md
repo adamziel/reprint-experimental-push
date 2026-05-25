@@ -1,17 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 10:11:12 CEST
+Last updated: 2026-05-25 10:11:57 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 10:11:12 CEST
+## 2026-05-25 10:11:57 CEST
 
-- Going well: the scan stays compact, and the proof trail still points at linked evidence instead of long audit text.
-- Not going well: `integration` still has not returned the real-site release command output, and `reliable-executor` is still not bound to a real live URL/topology.
-- Progress change: none; this is a decision update, not a release-state change.
-- Next nudge: `integration` owns the next real-site release command and must return retained live source/auth/recovery output; `reliable-executor` remains the drifting lane until the gate binds to a real endpoint, and `invariants`/`recovery` should align to that same command.
-- Evidence needed: one retained real-endpoint run plus preserved auth/session and recovery output that shows the live-source gate is runnable on the real topology.
+- Going well: the visible status stays compact, and the evidence trail still points to linked docs instead of long audit text.
+- Not going well: `integration` still has not returned the real-site release command output, and `reliable-executor` still is not bound to a real live URL/topology.
+- Progress change: none; this remains a supervisor decision update, not a release-state change.
+- Next nudge: `integration` owns the next real-site release command and must return retained live source/auth/recovery output; `reliable-executor` is the drifting lane until the gate binds to a real endpoint, and `invariants`/`recovery` should align to that same command.
+- Evidence needed: one retained real-endpoint run plus preserved auth/session and recovery output that proves the live-source gate is runnable on the real topology.
 - Note: `progress.html` stays lane-local until merge to `main`; the deployed GitHub Pages copy updates only after merge.
 
 ## 2026-05-25 10:08:45 CEST
