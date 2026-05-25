@@ -1461,6 +1461,35 @@ test('atomic apply only allows old remote, fully updated remote, or blocked reco
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
 
+test('mid-apply partial recovery stays blocked with artifacts and replaying the completed journal remains inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const before = JSON.stringify(remote);
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.remote, 'mid-apply failure must keep remote artifacts');
+  assert.ok(error.details.recovery.artifacts.journal, 'mid-apply failure must keep journal artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.planId, plan.id);
+});
+
 test('durable completed replay blocks partial drift instead of treating it as a safe replay', () => {
   const base = baseSite();
   const local = baseSite();

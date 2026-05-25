@@ -17,6 +17,7 @@ Rules:
 - Failure before mutation must leave the remote old.
 - Failure after staging must still leave the remote old, with journal evidence for the staged boundary.
 - Failure after dependency validation must still leave the remote old, with journal evidence for the validated boundary.
+- A mid-apply partial commit must be `blocked-recovery` and keep both the remote and journal artifacts inspectable.
 - A completed plan replay must not reapply mutations or resurrect stale local data.
 - A blocked partial recovery must preserve artifacts so a retry can classify the live remote without guessing.
 
@@ -29,7 +30,8 @@ Durable artifact contract:
 - The recovery journal must make the boundary legible enough to classify retries without guessing:
   - `old-remote` means no target mutation escaped staging.
   - `fully-updated-remote` means every planned mutation is already present and replay is read-only.
-  - `blocked-recovery` means a partial mutation was observed and the journal must carry the artifacts needed to inspect or fence it.
+- `blocked-recovery` means a partial mutation was observed and the journal must carry the artifacts needed to inspect or fence it.
+- A blocked recovery is only acceptable when the journal and remote artifacts survive the failure boundary.
 
 Release-blocker rule:
 
