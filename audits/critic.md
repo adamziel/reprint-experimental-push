@@ -5526,4 +5526,5 @@ Evidence-classification rule:
 - if a note, artifact, or smoke does not explicitly say whether it is historical context, compatibility evidence, or live retry proof, the wording is ambiguous and must fail closed;
 - a Reprint, ZS-Sync, or ForkPress citation is historical context unless the exact upstream state and the same live boundary were rerun here;
 - a readable manual-review artifact stays audit evidence only unless it is paired with the preserved remote, the rejection point, and a fresh retry scope rebuilt from live hashes on this branch; and
+- that same artifact still cannot authorize a later-discovered plugin-owned surface, remapped create target, or different row/file/relationship-bearing record just because the route family, package mount, or reviewer wording stayed the same; and
 - route shape, package mount shape, fixture replay, readable review output, and `finalMatchesLocal` stay compatibility evidence only and cannot be upgraded into proof for a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface.
