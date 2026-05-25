@@ -395,6 +395,18 @@ Bottom line:
 - neither is a release gate for the objective, because the objective needs a
   single enforced command that proves or blocks the live-source release claim
   before shipping
+- speed remains the weakest claim, but the release blocker is broader: the repo
+  still lacks one enforced gate that would make no-data-loss, reliability, and
+  speed claims non-optional at the live-source boundary
+
+Actionable conclusion:
+
+- treat every current success as proof of a slice, not proof of production
+  readiness
+- do not soften the live-source no-data-loss, reliability, or speed claims
+  until the missing enforced gate exists
+- keep the release blocker centered on the absent `verify:release`-style path
+  rather than on any single passing smoke
 
 The uncomfortable interpretation is that the suite is currently better at
 preventing false confidence than at proving live-source safety. A green run
