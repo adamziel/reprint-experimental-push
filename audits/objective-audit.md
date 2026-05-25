@@ -14,6 +14,7 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `12183774`
+- `origin/lane/same-plan-wordpress-graph-create` -> `69f27361`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `534d941b`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `895a7025`
@@ -51,9 +52,10 @@ but it did not change the release conclusion:
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
   records the latest progress handoff at `895a7025`.
 - `origin/lane/same-plan-wordpress-graph-create` now blocks unsupported graph
-  surfaces at `12183774`, including revision posts, menu/navigation posts, and
-  serialized blocks. That is a better fail-closed proof, but it still stops
-  short of release-grade live mutation evidence.
+  surfaces at `69f27361`, including revision posts, menu/navigation posts,
+  serialized blocks, and thumbnail parent references. That is a better
+  fail-closed proof, but it still stops short of release-grade live mutation
+  evidence.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
