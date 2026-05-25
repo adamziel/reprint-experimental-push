@@ -7594,6 +7594,26 @@ Lead finding for the current release-proof claim:
   missing item means the branch has not yet proven the exact retry boundary
   and must not use production-ready wording.
 
+Production-grade wording stays blocked until one rerunnable command shows,
+on the same live boundary:
+
+- the exact executable command string and exact live `REPRINT_PUSH_SOURCE_URL`;
+- the live WordPress auth/session boundary before the first write;
+- the preserved remote that remained inspectable after rejection;
+- the exact rejection point before the first write;
+- dry-run receipt, apply-time revalidation, and journal/recovery inspection;
+- graph identity plus plugin-driver coverage;
+- old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts;
+- explicit handling of hidden plugin-owned data traps outside the allowlist,
+  including cron rows, runtime registries, generated files, caches, and
+  serialized blobs; and
+- a separate preserve / reject / retry cycle for any later-discovered
+  plugin-owned surface or remapped create target.
+
+If any of those facts are missing, the proof is still compatibility evidence
+or historical context, not production-grade push support.
+
 Exact next proof required from `25c4ef54`:
 
 - rerun `npm run test:playground:production-shaped-release-verify` against one
