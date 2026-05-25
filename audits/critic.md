@@ -65,9 +65,12 @@ rejection point, and fresh retry scope in one auditable flow. The existing
 and `test:playground:production-plugin-package` scripts are still smoke tests,
 not a production release command: they may demonstrate route shape or fixture
 behavior, but they do not by themselves give a rerunnable live boundary with
-preserved-remote proof. Until that command exists and is named here, any doc,
-PR, or review wording is still lab-backed or comparison-only, no matter how
-production-shaped the route or reviewer language looks.
+preserved-remote proof. The `plan` and `apply` bin wrapper is also not enough,
+because it still lacks a named real-site entry point, a live executor boundary,
+and preserved-remote evidence from an actual remote. Until that command exists
+and is named here, any doc, PR, or review wording is still lab-backed or
+comparison-only, no matter how production-shaped the route or reviewer language
+looks.
 
 That missing command is not a wording gap. It is visible in the actual script
 surface today: there is no `real-site` or equivalent release entry point in
