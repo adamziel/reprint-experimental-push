@@ -22,6 +22,17 @@ The current remote state still adds no production-backed auth/session
 lifecycle or durable journal ownership/lease/fencing/replay path proving a
 real source-site mutation boundary. The release gates still stay `0/4`.
 
+Fresh lane proof since the last audit pass improved the local evidence floor,
+but it did not change the release conclusion:
+
+- `origin/lane/reliable-executor` now tightens release proof failure branches
+  at `c99b19d0`.
+- `origin/lane/no-data-loss-invariants` now adds a no-loss row-delete proof at
+  `f209000b`.
+
+Those changes strengthen the lab evidence for protocol safety and no-loss
+planning, but they still do not prove the production-backed push path.
+
 ### Gate Movement Trigger
 
 One gate would move if there were a production-backed test that starts with a
