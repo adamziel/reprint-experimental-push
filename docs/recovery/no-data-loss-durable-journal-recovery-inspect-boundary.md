@@ -1,40 +1,24 @@
 # No Data Loss Durable Journal Recovery Inspect Boundary
 
-This lane's recovery contract is only acceptable when the apply path can be
-classified from durable artifacts after a crash, retry, or stale replay.
+This lane treats durable recovery as release-blocked unless every failure path lands in one of these states:
 
-The only acceptable post-failure states are:
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery` with inspectable journal and remote artifacts
 
-1. `old-remote`
-   - The remote did not accept a committed mutation.
-   - The recovery artifact may show opened, staged, or dependencies-validated
-     progress, but no partial remote mutation is allowed to escape without a
-     journal record.
-   - Retry must not duplicate inserts or resurrect stale local data.
+The executable boundary is the apply/replay handoff in [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/no-data-loss-recovery/test/push-planner.test.js):
 
-2. `fully-updated-remote`
-   - The plan already completed.
-   - Replay must remain read-only and inert.
-   - The durable journal must be able to prove that the plan was completed
-     before the retry path runs.
+- failure before mutation stays `old-remote`
+- failure after staging stays `old-remote`
+- failure after dependency validation stays `old-remote`
+- replaying a completed plan stays `fully-updated-remote`
+- stale or partial replay stays `blocked-recovery`
 
-3. `blocked-recovery`
-   - The remote is partially mutated or the replay state is no longer safe to
-     classify as old or fully updated.
-   - Both remote and journal artifacts must remain inspectable.
-   - This is the only acceptable state for a partial remote mutation.
+The recovery inspect boundary is only acceptable when:
 
-Release blocker:
+- the journal can be reopened after process exit
+- the replay result preserves the journal artifact
+- `blocked-recovery` also preserves the remote artifact for inspection
+- retrying from a completed journal does not duplicate inserts or resurrect stale local data
 
-- Any partial remote mutation without a recovery artifact is a release blocker.
-
-Executable boundary to keep proving:
-
-- journal opened before mutation
-- journal staged before commit
-- journal validated before commit
-- completed replay against a matching remote
-- stale completed replay against a drifted remote
-
-The next implementation step should attach these states to a durable storage
-primitive that survives process death and can be read back by recovery inspect.
+If a partial remote mutation exists without a recovery artifact, the state is not safe to release.
