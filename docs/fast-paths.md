@@ -183,6 +183,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Parallelism cannot publish multiple atomic groups together, because recovery must still identify which group owns each partial failure.
 - A fresh remote index plus compressed chunk receipts still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need durable evidence.
 - A compressed remote index plus cached chunk receipts still cannot skip the guarded publish step for a large upload, because planning evidence and cached receipts cannot prove the live compare or publish barrier survived failure.
+- A compressed remote index plus cached chunk receipts still cannot skip the guarded publish step for a large upload, because planning evidence and cached receipts cannot prove the live compare, the guarded publish barrier, or which acknowledgements survived failure.
 - A local fingerprint match still cannot skip the live file compare before publish, because size, mtime, inode, or mode can only skip a rehash and cannot authorize the mutation boundary.
 - A fresh remote index plus a compressed upload queue still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.
 - A fresh remote index plus a compressed upload buffer still cannot prove a large upload finished, because the live compare and durable chunk receipts still need to survive failure.

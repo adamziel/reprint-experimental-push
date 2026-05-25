@@ -491,6 +491,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-finalize')?.rejectedGate,
     'group',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish')?.rejectedGate,
+    'recovery',
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-finalize')?.violates.includes('chunk-receipts'),
   );
@@ -499,6 +503,12 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-update-finalize')?.violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish')?.violates.includes('live-preconditions'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish')?.violates.includes('atomic-file-publish'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation')?.rejectedGate,
@@ -511,6 +521,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize')?.rejectedGate,
     'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish').violates.includes('durable-progress'),
   );
 });
 
