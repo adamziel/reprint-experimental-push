@@ -1210,7 +1210,11 @@ Before any production-grade push claim, the project needs all of these:
     fresh live hashes rather than inheriting the old approval. It must also
     reject any production claim that relies on Reprint, ZS-Sync, or ForkPress
     notes unless the cited upstream revision or worktree was reverified and the
-    same live write boundary was exercised in this repo.
+    same live write boundary was exercised in this repo. A route-shape or
+    packaged-plugin smoke only qualifies as release-gate evidence if the
+    corresponding claim also shows the same path rejecting stale authority
+    after a live remote drift, preserving the remote for audit, and forcing a
+    fresh retry from current hashes.
 
 Addendum: each of these conditions must be independently testable in the
 release suite. A passing route-shape smoke is not sufficient if any one of the
