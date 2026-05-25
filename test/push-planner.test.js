@@ -1583,6 +1583,47 @@ test('replaying a completed plan ignores later stale local source changes', () =
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
+test('durable completed replay stays inert after local divergence and preserves the completed recovery envelope', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const completed = applyPlan(remote, plan, { durableJournal });
+  durableJournal.close();
+
+  local.files['index.php'] = '<?php echo "stale-local";';
+  local.db.wp_posts['ID:2'].post_title = 'Stale local insert';
+
+  const replayJournalPath = tempRecoveryJournalPath();
+  const replayDurableJournal = openRecoveryJournal(replayJournalPath, { truncate: true, now: fixedNow });
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const before = JSON.stringify(replayRemote);
+
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal: replayDurableJournal,
+  });
+  replayDurableJournal.close();
+
+  const persisted = readRecoveryJournal(replayJournalPath);
+
+  assert.equal(JSON.stringify(replayRemote), before);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'journal-replayed');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'fully-updated-remote');
+  assert.equal(persisted.integrity.status, 'ok');
+});
+
 test('blocks a stale completed replay when the remote drifted after completion', () => {
   const base = baseSite();
   const local = baseSite();
