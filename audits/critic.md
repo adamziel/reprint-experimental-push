@@ -6,6 +6,8 @@ This design still cannot claim production-grade push support.
 
 The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, and the newer `2bdf01a8` proof-contract clarification. That is concrete progress, but it is still lab evidence. This branch's own release surface is secondary to that supervised lane; the critique should keep the gate closed until one rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Until that exact boundary exists, the best available status is "lab-verified, production-unproven."
 
+The next production proof must be one rerunnable boundary, not another wording pass: preserve the rejected remote, reject stale authority before the first write, rebuild authority from fresh live hashes at apply time, and keep the same live mutation boundary rerunnable while plugin-owned surfaces are still discoverable.
+
 ## What still blocks the claim
 
 1. Production WordPress auth/session lifecycle is not proven on a live mutation boundary.
