@@ -629,6 +629,10 @@ under load:
   rejected because planning evidence and cached hashes can skip duplicate
   lookup and rehash work, but they cannot prove dependency checks, staged rows,
   or the atomic-group commit survived failure.
+- compressed-remote-index-and-cached-file-hash-skips-plugin-activation is
+  rejected because a compressed index and cached file hash can reduce lookup
+  work, but they cannot prove the activation state, dependency checks, or the
+  atomic-group commit survived failure.
 - compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-finalize
   is rejected because planning evidence and cached manifest hashes can reduce
   lookup work, but they cannot prove dependency checks, staged rows, or the
