@@ -14,7 +14,7 @@ The objective implies these minimum release requirements:
 2. Recheck the live source at apply time before mutating it. A stale preflight is not enough.
 3. Preserve every WordPress data shape the push can touch, including rows, files, plugin-owned data, serialized payloads, and graph identity, at the live-source boundary.
 4. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary.
-5. Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes. The current `package.json` does not define a required `verify`, `verify:release`, or `release` command, so there is no mandatory gate that composes those checks into one verdict. Optional scripts such as `test:playground:*` do not change that.
+5. Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes. The current `package.json` does not define a required `verify`, `verify:release`, or `release` command, so there is no mandatory gate that composes those checks into one verdict. Optional scripts such as `test:playground:*` do not change that, and they cannot substitute for a release gate that fails closed when any proof remains `labBacked: true`.
 6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or any storage abstraction that can satisfy the tests without touching live source storage or a real apply-time mutation.
 7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one. Refusal-only benchmarks are not a speed claim, and release language must not drift into implied speed confidence without live-path measurement.
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
@@ -38,7 +38,7 @@ Treat indirect evidence as insufficient:
 
 ## Test Audit
 
-The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own.
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command.
 
 | Test surface | What it really proves | What it does not prove |
 | --- | --- | --- |
@@ -47,7 +47,7 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 | [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) | Internal benchmark guardrails and rejection of unsupported speed claims | Measured live-path throughput or any release-grade speed threshold |
 | [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) | Integrity checks and the current `productionThroughput: 'not-claimed'` stance | Any positive speed claim, a measured threshold, or a required release verdict |
 
-The sharpest test verdict is negative: the current tests are good at proving what the repo must refuse, but they do not prove the live-source path succeeds under the release boundary. That means the suite is suitable as guardrail evidence and regression evidence only until a mandatory release command exists.
+The sharpest test verdict is negative: the current tests are good at proving what the repo must refuse, but they do not prove the live-source path succeeds under the release boundary. That means the suite is suitable as guardrail evidence and regression evidence only until a mandatory release command exists. If someone cites `node --test` alone as a production release argument, that would overstate the evidence.
 
 ## Release Summary
 
