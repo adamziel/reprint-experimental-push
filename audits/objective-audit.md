@@ -29,6 +29,8 @@ The current audit separates proof into four buckets so the release gap stays unc
 | Docs-only proof | Audits and progress notes accurately describe the intended release path. | Documentation cannot recheck live state or mutate production storage. | Prose cannot close the release gate. |
 | Missing proof | Live-source apply-time recheck, durable crash survival, topology fidelity, and a measured live-path speed verdict. | These are still absent from the mandatory command surface. | The repo has no enforced release verdict. |
 
+The current `package.json` script surface confirms the gap: it exposes `test`, `plan`, `apply`, and optional playground helpers, but no required `verify`, `verify:release`, or `release` command. That means the evidence buckets above are still support evidence, not a mandatory release decision.
+
 ## Explicit Requirements
 
 The objective implies these minimum release requirements:
