@@ -5,6 +5,7 @@
 The project is **not releasable as a production WordPress push path**.
 
 That is a release judgment, not a test-pass judgment: the repo still lacks one enforced command that proves the live-source boundary on the real storage and transport path. Passing local tests still leaves the release claim false.
+The strongest current tests are honest refusal and fixture evidence, but honesty is not approval proof.
 
 ## Explicit Requirements
 
@@ -22,6 +23,7 @@ The objective implies the following minimum release requirements:
 10. Make the release gate print the last failing proof bucket so the missing release evidence is explicit.
 11. Treat any claim that remains lab-backed, fixture-scoped, benchmark-only, or otherwise indirect as non-release evidence.
 12. Make the release gate the default enforced path in CI or equivalent automation so a green casual run cannot bypass it.
+13. Do not read `npm test` as approval evidence for no data loss, reliability, or speed until it exercises the live-source boundary.
 
 The key release point is not merely "tests pass." The project objective only becomes releasable when the same checked-in command proves the live-source release path, not just the fixture path or the refusal path.
 
@@ -173,6 +175,7 @@ For this audit, the proof buckets are strict:
 - `Docs-only proof` is prose or script naming without an enforced executable gate.
 - `Missing proof` is the specific production evidence still absent.
 - `Release blocker` is the reason the objective remains unreleasable.
+- `Refusal proof` is a valid blocker signal, not approval evidence.
 
 When reading the table, treat any non-executable bucket as insufficient for a release claim. A row only becomes release-acceptable when the `Executable proof` column covers the same boundary named in the requirement and the `Missing proof` and `Release blocker` columns are both empty.
 
