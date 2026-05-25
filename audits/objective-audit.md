@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is not command absence. It is the lack of a checked live-boundary verdict that proves the production apply path end to end. Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker.
+Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is not command absence in the abstract; it is the lack of a checked live-boundary verdict that proves the production apply path end to end. Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -81,7 +81,7 @@ Direct command-surface recheck on 2026-05-25:
 - This checkout exposes helper and Playground scripts, but it does not carry the upstream `verify:release` command surface in-tree. That is an enforcement gap in this lane, not the root release blocker.
 - The upstream release verifier now exists in the reliable-executor branch, and its checked outputs move the discussion from command absence to the remaining production boundary: auth/session lifecycle plus durable journal semantics, with graph identity, plugin-driver behavior, leases/fencing, preserved-remote drift, and topology still needing release-boundary proof.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
-- The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, and the targeted planner/recovery tests are green at `73/73`, but both remain regression-only evidence rather than a live-boundary release verdict.
+- The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, and the targeted planner/recovery tests were rechecked at `73/73`, but both remain regression-only evidence rather than a live-boundary release verdict.
 
 ## Release Gate Definition
 
