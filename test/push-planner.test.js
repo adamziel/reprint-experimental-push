@@ -8315,3 +8315,45 @@ test('durable recovery boundaries persist the expected journal evidence and comp
     false,
   );
 });
+
+test('durable pre-commit fence failures stay blocked and do not expose a partial remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const remoteSnapshot = JSON.stringify(remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failBeforeCommitAtMutation: 1,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_COMMIT');
+  assert.equal(JSON.stringify(remote), remoteSnapshot);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+  assert.ok(error.details.recovery.artifacts.journal, 'pre-commit fence failure must preserve journal artifacts');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'mutation-observed'),
+    false,
+    'pre-commit fence failure must not record a committed mutation',
+  );
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'target-planned');
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state'),
+    false,
+    'pre-commit fence failure must not emit a recovery-state record',
+  );
+});
