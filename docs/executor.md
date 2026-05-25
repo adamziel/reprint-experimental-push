@@ -47,6 +47,7 @@ The canonical proof stack for that scope is:
 | --- | --- |
 | [`fixtures/protocol/push-protocol-extension-contract.json`](../fixtures/protocol/push-protocol-extension-contract.json) | The full push ladder: preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery. |
 | [`fixtures/protocol/push-deployment-topology-contract.json`](../fixtures/protocol/push-deployment-topology-contract.json) | The one-remote, one-local, one-drift topology in Docker and Playground. |
+| [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json) | The stage-level Docker/Playground proof with liveness, recovery, and apply revalidation rules. |
 | [`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json) | The push-session boundary, journal-row fence, and read-only recovery inspect rule. |
 | [`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json) | The same fence when recovery needs to prove finish, rollback, or block before mutating. |
 
@@ -124,6 +125,8 @@ The executor topology proof is intentionally narrow:
 - one later observation of the same remote identity proves drift
 - one runner process owns preflight, snapshot listing, dry-run, apply,
   journal inspect, and recovery
+- the Docker and Playground proofs keep the same route names and the same
+  8080-only browser ingress rule
 
 Use the same shape in both harnesses:
 
@@ -137,6 +140,16 @@ Use the same shape in both harnesses:
 The lab identities for that proof are `remote-example` and `local-dev-site`.
 They let the executor point at one remote source, one imported local edit
 site, and the same remote identity again after drift.
+
+The pull-to-push handoff stays one-way:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- push preflight binds that package to the live remote identity and a short-lived session
+- push snapshot hashes stay planning-only
+- push dry-run uploads a receipt, not a lock
+- push batch apply revalidates before every batch and at the storage boundary
+- push journal and push recover inspect read durable evidence first
 
 For the precise Docker/Playground harness shape, use
 [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json).

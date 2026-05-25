@@ -190,16 +190,32 @@ The machine-readable bridge between pull provenance and push execution is
 Use it when a test needs the importer-owned base package, the push stage
 ordering, and the recovery boundary in one compact object.
 
-The machine-readable topology proof is
-[`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json).
-Use it when a test needs the exact Docker/Playground shape for one remote
-source, one local edited site, one drift witness, and one runner.
+The machine-readable topology proof is split between
+[`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
+and
+[`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).
+Use the matrix when a test needs the exact stage order and liveness split;
+use the deployment contract when a test needs the one-remote, one-local,
+one-drift-witness shape in both Docker and Playground.
 
 That is the compact end-to-end proof that dry-run and apply are separate
 remote operations, apply revalidates live evidence before every batch and at
 the storage boundary, and recovery starts with inspect before any mutating
 repair. Browser-visible inspection must stay on the sandbox-provided `8080`
 ingress through a local-only proxy.
+
+For the concrete lab identities, `remote-example` is the remote source and
+drift witness, while `local-dev-site` is the imported local edited site. The
+tests should treat them as the immutable provenance pair that backs the
+production push ladder:
+
+- exporter/importer create the base package
+- preflight binds that package to the live remote identity and a short-lived session
+- snapshot hash listing remains planning-only
+- dry-run uploads a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage boundary
+- journal inspect is read-only
+- recovery starts with inspect before any mutating repair
 
 Docker and Playground share that same security envelope:
 
