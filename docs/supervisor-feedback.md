@@ -7,9 +7,9 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-25 07:25:11 CEST - Supervisor Snapshot
 
-- Going well: the page, log, and latest audit note still agree on the blocked state.
+- Going well: page, log, and audit note still agree on the blocked state.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no new production evidence landed; the public surfaces stay short and link out instead of repeating the audit text.
+- Progress change: no new production evidence landed; the public surfaces stay short and linked.
 - Next nudge: keep each lane to one proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
