@@ -1,16 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 13:20:23 CEST
+Last updated: 2026-05-25 13:49:43 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 13:20:23 CEST
+## 2026-05-25 13:49:43 CEST
 
-- Going well: `reliable-executor` still has the clearest boundary proof trail, and `progress-publisher` keeps the public surfaces short.
-- Not going well: the production gate is still closed because auth/session lifecycle, durable journal semantics, graph identity, and plugin-driver proof remain unproven outside the lab.
-- Progress delta: none since the last check; this is a same-state decision, not new evidence.
-- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` should stay quiet until material evidence changes; `critic` and `auditor` should keep rejecting wording-only proof.
+- Going well: `reliable-executor` advanced the lab/release-harness proof past the missing-source gate and through preflight, dry-run, apply, recovery inspect, and journal readback.
+- Not going well: the production gate is still closed because durable journal storage with lease/fencing, preserved-remote/apply-time revalidation, auth/session lifecycle, graph identity, and plugin-driver proof remain unproven outside the lab.
+- Progress delta: useful harness evidence landed, but it did not open a shipping gate.
+- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` should stay quiet unless material evidence changes; `critic` and `auditor` should reject wording-only proof.
 - Note: the lane-local `progress.html` copy becomes live on GitHub Pages only after this lane merges to `main`.
 
 ## 2026-05-25 13:00:27 CEST

@@ -6,12 +6,12 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 13:20:23 CEST.
+- Last update: 2026-05-25 13:49:43 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: no release-state change; this is a same-state decision, not new evidence.
+- Trend: useful lab/release-harness evidence landed, but it did not open a shipping gate.
 - Scope: 8 fast/low lanes plus the dedicated live progress watcher remain active.
-- Blocker: auth/session lifecycle, durable journal semantics, graph identity, and plugin drivers remain unproven outside the lab.
-- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` should stay quiet until material evidence changes; `critic` and `auditor` should keep rejecting wording-only proof.
+- Blocker: durable journal storage with lease/fencing, preserved-remote/apply-time revalidation, auth/session lifecycle, graph identity, and plugin drivers remain unproven outside the lab.
+- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` should stay quiet unless material evidence changes; `critic` and `auditor` should keep rejecting wording-only proof.
 - Evidence: [progress.html](../progress.html) shows the visible update date and links out to the detailed evidence; [docs/supervisor-feedback.md](supervisor-feedback.md) holds the newest decision.
 
 ## 2026-05-25 - Supervisor Follow-up
