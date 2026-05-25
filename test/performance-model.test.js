@@ -383,6 +383,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause')?.rejectedGate,
+    'group',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause')?.violates.includes('file-hashing'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause')?.violates.includes('atomic-groups'),
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause')?.rejectedGate,
     'group',
   );
@@ -2209,6 +2219,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause').violates.includes('durable-progress'));
+  assert.equal(rejectedById.get('compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause').rejectedGate, 'group');
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause').violates.includes('file-hashing'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause').violates.includes('atomic-groups'));
   assert.equal(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback').rejectedGate, 'group');
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback').violates.includes('compression'));

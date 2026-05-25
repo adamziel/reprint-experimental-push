@@ -2796,6 +2796,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-finalize-after-pause',
+    proposal: 'use a compressed remote index plus a cached file fingerprint to skip plugin-update finalize after a pause',
+    rejectedBecause: 'planning evidence and cached fingerprints can reduce replay work, but they cannot prove the live row compares, dependency checks, or atomic-group finalize survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause',
     proposal: 'use a compressed remote index plus a cached package hash to skip plugin-install finalize after a pause',
     rejectedBecause: 'planning evidence and cached package hashes can reduce duplicate inspection, but they cannot prove the install rows, activation checks, or atomic-group barrier survived the pause',
