@@ -776,6 +776,10 @@ under load:
   is rejected because compressed planning evidence and compressed chunk ledgers
   can trim replay work, but they cannot prove which chunk acknowledgements
   survived failure or that the live compare still holds.
+- compressed-remote-index-and-compressed-upload-queue-skips-large-upload-publish
+  is rejected because planning evidence and smaller queued buffers can reduce
+  memory pressure, but they cannot prove which chunk acknowledgements
+  survived failure or that the live compare and publish barrier still hold.
 - batched-receipt-journal-flush is rejected because journal batching can reduce
   fsync work, but it cannot replace the raw chunk, row, or group receipts
   needed to classify a crash, retry, or pause.

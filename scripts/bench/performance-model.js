@@ -1419,6 +1419,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-compressed-upload-queue-skips-large-upload-publish',
+    proposal: 'treat a compressed remote index plus a compressed upload queue as enough proof to skip the guarded publish step for a large upload',
+    rejectedBecause: 'planning evidence and smaller queued buffers can reduce memory pressure, but they cannot prove which chunk acknowledgements survived failure or that the live compare and publish barrier still hold',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'fingerprint-completes-large-upload',
     proposal: 'treat a local fingerprint plus cached file hash as proof that a large upload already finished',
     rejectedBecause: 'a local fingerprint can skip duplicate hashing, but it cannot prove chunk receipts, guarded publish, or durable upload completion survived failure',
