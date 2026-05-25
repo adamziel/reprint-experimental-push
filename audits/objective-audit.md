@@ -37,6 +37,14 @@ The current checkout does not yet satisfy those requirements at the release boun
 
 The weakest current requirement is the enforced release gate itself. The repo has many useful opt-in checks, but the objective is still blocked until one required command composes the safety matrix and fails closed when any claim is only lab-backed, fixture-scoped, benchmark-only, or otherwise indirect. Right now [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L33) only exposes `test`, `test:playground`, and separate opt-in smokes such as `test:playground:authenticated-http-push`, `test:playground:authenticated-cli-push`, `test:playground:production-shaped-push`, and `test:playground:production-plugin-package`; there is still no `verify`, `release`, or `verify:release` script. The checked-in automation surface is also empty of `.github` workflow files, so there is no visible CI entrypoint to enforce a default release path. A green run can still stop short of the production bar, which means the strongest available evidence can still be bypassed by choosing the wrong command. That is not a documentation gap; it is a missing release control, and until it exists every other proof bucket remains bypassable. The actionable fix is a single required gate, such as `npm run verify:release`, wired into CI or the release pipeline, that refuses any lab-backed or fixture-only proof and is the only path that can support a release claim. The gate must be evaluated from the checked-in default automation path, not from operator memory or manual script composition. A production-shaped route is not enough on its own if the authenticated implementation still reports `labBacked: true`, and the absence of a checked-in workflow means the release control is not just unimplemented but unenforced. In practical terms, `npm test` and `npm run test:playground` are currently evidence collectors for local safety and refusal behavior, not release approvers.
 
+Minimal gate contract:
+
+1. One checked-in command, preferably `npm run verify:release`.
+2. A non-zero exit when any required check is still lab-backed, fixture-only, benchmark-only, or missing live-source proof.
+3. An explicit final failing bucket in the output so the operator knows what remains unproven.
+4. A checked-in workflow or equivalent default entrypoint that runs the same command, not a weaker substitute.
+5. No release claim unless the same command also covers auth/session, durable journal, lease/fencing, graph identity, plugin-data-driver, topology, crash-boundary, and speed proof.
+
 ## Release Gate Gap
 
 The release gate is the highest-value missing proof because it is the only thing that would turn the current evidence buckets into a mandatory release matrix.
