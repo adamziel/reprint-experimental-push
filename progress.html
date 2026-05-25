@@ -530,7 +530,7 @@
       </div>
       <div class="metric">
         <strong>Live copy</strong>
-        <span>Lane-local only until merge to <code>main</code>; the deployed copy picks up the newest published timestamp after that.</span>
+        <span>Lane-local only until merge to <code>main</code>; the deployed copy updates after that merge.</span>
       </div>
       <div class="metric">
         <strong>Linked trail</strong>
@@ -547,7 +547,7 @@
         <ul class="compact-list" aria-label="Supervisor snapshot">
           <li><strong>Going well</strong><span>The visible status stays compact, and the proof trail still points to linked evidence instead of long audit text.</span></li>
           <li><strong>Not going well</strong><span>Integration still has not returned the real-site release command output, and reliable-executor still is not bound to a real live URL/topology.</span></li>
-          <li><strong>Progress change</strong><span>No release-state change; this remains a supervisor decision update, not a release update.</span></li>
+          <li><strong>Progress change</strong><span>No release-state change; this remains a supervisor decision update.</span></li>
           <li><strong>Next nudge</strong><span>Integration owns the next real-site release command; reliable-executor is drifting until the gate binds to a real endpoint; invariants and recovery should align to the same run.</span></li>
         </ul>
         <details class="lane-nudges">
