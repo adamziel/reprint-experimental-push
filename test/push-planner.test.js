@@ -11195,6 +11195,11 @@ test('durable recovery boundaries classify failures as old remote and completed 
       label,
     );
     assert.equal(
+      persisted.records.some((record) => record.type === 'mutation-observed'),
+      false,
+      label,
+    );
+    assert.equal(
       persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
       false,
       label,
