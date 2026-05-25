@@ -6242,6 +6242,13 @@ Comparison rule:
   fresh retry scope rebuilt from live hashes; matching route family,
   package mount, or reviewer wording is not enough to promote the note to
   current proof.
+- the same rule applies to any later-discovered row, file,
+  relationship-bearing record, remapped create target, or plugin-owned
+  surface: if that later boundary was not independently rerun here with its
+  own preserved remote, rejection point, and fresh retry scope rebuilt from
+  live hashes, the earlier Reprint, ZS-Sync, or ForkPress comparison stays
+  historical context for the earlier boundary only, even when the route or
+  reviewer wording is identical.
 
 Production-grade wording still needs explicit proof for these failure modes:
 
