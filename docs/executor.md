@@ -164,6 +164,13 @@ modes:
   through a local-only proxy.
 - remote tunnels are disallowed in both Docker and Playground.
 
+The compact end-to-end fixture at
+[`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
+encodes the same proof as one machine-readable ladder: preflight, snapshot
+listing, dry-run, apply, journal inspect, and inspect-first recovery all stay
+separate while the topology keeps the same one-remote, one-local, one-runner
+shape.
+
 ## Topology
 
 The topology proof is the simplest possible production-shaped setup that still

@@ -197,6 +197,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const inspectContract = readJson('fixtures/protocol/push-recovery-inspect-contract.json');
   const snapshotPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
   const dryRunApplyContract = readJson('fixtures/protocol/push-dry-run-apply-revalidation-contract.json');
+  const productionLadderContract = readJson('fixtures/protocol/push-production-ladder-contract.json');
 
   assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightRequest.remote_site_id, 'remote-example');
@@ -315,6 +316,47 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(dryRunApplyContract.topology.proxy_policy, 'local-only');
   assert.equal(dryRunApplyContract.topology.tunnels, 'disallowed');
   assert.ok(dryRunApplyContract.required_invariants.includes('the dry-run receipt never becomes a lock'));
+  assert.equal(productionLadderContract.contract_id, 'push-production-ladder-one-remote-one-local');
+  assert.equal(
+    productionLadderContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.deepEqual(
+    productionLadderContract.push_ladder.map((stage) => stage.stage),
+    [
+      'push_preflight',
+      'push_snapshot_hashes',
+      'push_plan_dry_run',
+      'push_batch_apply',
+      'push_journal',
+      'push_recover inspect',
+      'push_recover auto|finish|rollback',
+    ],
+  );
+  assert.equal(
+    productionLadderContract.push_ladder[0].proof,
+    'binds the persisted pull base to the live remote identity and a short-lived push session',
+  );
+  assert.equal(
+    productionLadderContract.push_ladder[1].proof,
+    'lists the live remote comparison set for planning only',
+  );
+  assert.equal(
+    productionLadderContract.push_ladder[3].proof,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    productionLadderContract.push_ladder[5].proof,
+    'starts with inspect and may block when finish or rollback cannot be proven safe',
+  );
+  assert.equal(productionLadderContract.topology.networking.ingress_port, 8080);
+  assert.equal(productionLadderContract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(productionLadderContract.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    productionLadderContract.required_invariants.includes(
+      'authentication must be at least as strict as current Reprint HMAC usage',
+    ),
+  );
 });
 
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {

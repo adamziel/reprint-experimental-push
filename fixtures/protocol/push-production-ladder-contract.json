@@ -1,0 +1,74 @@
+{
+  "contract_id": "push-production-ladder-one-remote-one-local",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "persisted_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "remote_site_id": "remote-example",
+      "base_coverage_hash": "sha256:pull-base-coverage"
+    }
+  },
+  "push_ladder": [
+    {
+      "stage": "push_preflight",
+      "proof": "binds the persisted pull base to the live remote identity and a short-lived push session"
+    },
+    {
+      "stage": "push_snapshot_hashes",
+      "proof": "lists the live remote comparison set for planning only"
+    },
+    {
+      "stage": "push_plan_dry_run",
+      "proof": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock"
+    },
+    {
+      "stage": "push_batch_apply",
+      "proof": "revalidates fresh live evidence before every batch and again at the storage boundary"
+    },
+    {
+      "stage": "push_journal",
+      "proof": "reads durable evidence without authorizing mutation"
+    },
+    {
+      "stage": "push_recover inspect",
+      "proof": "starts with inspect and may block when finish or rollback cannot be proven safe"
+    },
+    {
+      "stage": "push_recover auto|finish|rollback",
+      "proof": "mutates only when the journal and fresh live hashes prove the action"
+    }
+  ],
+  "topology": {
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    },
+    "docker": {
+      "remote_base": "remote-base",
+      "local_edited": "local-edited",
+      "remote_changed": "remote-changed",
+      "proof": [
+        "one private network",
+        "remote-base and remote-changed are the same remote identity at different times"
+      ]
+    },
+    "playground": {
+      "remote_base": "remote-base",
+      "local_edited": "local-edited",
+      "remote_changed": "remote-changed",
+      "proof": [
+        "separate disposable blueprints",
+        "remote-base and remote-changed are the same remote identity at different times"
+      ]
+    }
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage"
+  ]
+}

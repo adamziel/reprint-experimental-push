@@ -157,6 +157,11 @@ deployment shape. It names the remote-base, local-edited, remote-changed, and
 runner roles directly, records the `8080` ingress rule, and keeps Docker and
 Playground on the same evidence boundaries so tests can prove the same
 identity was observed twice.
+The end-to-end companion at
+[`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
+ties the pull provenance, push ladder, and Docker/Playground topology into a
+single production contract that spans preflight through inspect-first
+recovery.
 
 For machine-readable verification, the compact contract fixture at
 [`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)

@@ -35,6 +35,7 @@ The normal sequence is:
 27. `push-recovery-inspect-contract.json`
 28. `push-snapshot-hashes-page-contract.json`
 29. `push-dry-run-apply-revalidation-contract.json`
+30. `push-production-ladder-contract.json`
 
 Failure and recovery examples:
 
@@ -112,6 +113,10 @@ Failure and recovery examples:
   snapshot planning, dry-run eligibility, apply-time revalidation, and
   storage-boundary guards stay separate even when the remote drifts between
   dry-run and apply.
+- `push-production-ladder-contract.json` gives the compact end-to-end proof
+  that preflight, snapshot listing, dry-run, apply, journal inspect, and
+  recovery all stay on the production push ladder while Docker and Playground
+  use the same one-remote, one-local topology.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
