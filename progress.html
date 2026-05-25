@@ -474,7 +474,7 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Blocked until production evidence lands. The linked docs hold the proof trail; this page stays scan-first and avoids fake precision. This lane-local copy becomes live only after merge to <code>main</code>.</p>
+        <p class="lead">Blocked until production evidence lands. The linked docs hold the proof trail, and this lane-local copy becomes live only after merge to <code>main</code>.</p>
         <time class="update-stamp" datetime="2026-05-25T05:26:48+02:00">Last updated: May 25, 2026, 05:26:48 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production evidence</span>
@@ -485,7 +485,7 @@
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/supervisor-feedback.md">Open supervisor feedback</a>
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <p>Scan view only. The linked docs hold the detailed evidence and lane nudges; audit notes stay in `audits/` when evidence changes.</p>
+        <p>Scan view only. The linked docs carry the detailed evidence and lane nudges; audit notes stay in `audits/` when evidence changes.</p>
       </div>
     </header>
 
@@ -517,8 +517,8 @@
         <ul class="compact-list" aria-label="Supervisor snapshot">
           <li><strong>Going well</strong><span>The page and log still line up, and the scan view stays short.</span></li>
           <li><strong>Not going well</strong><span>Production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.</span></li>
-          <li><strong>Progress change</strong><span>No new evidence landed; the copy now keeps the proof trail linked instead of repeated inline.</span></li>
-          <li><strong>Next nudge</strong><span>Give each lane one owner, one proof gap, and one concrete test before widening scope.</span></li>
+          <li><strong>Progress change</strong><span>No new evidence landed; the scan view is shorter and the proof trail stays linked.</span></li>
+          <li><strong>Next nudge</strong><span>Keep each lane to one owner, one proof gap, and one concrete test.</span></li>
         </ul>
         <ul class="compact-list" aria-label="Lane nudges">
           <li><strong>Invariants</strong><span>Owner: lane. Gap: graph identity mapping on a real site. Next test: prove the mapping against live content.</span></li>
@@ -588,7 +588,7 @@
 
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Pending Proof Gates</h2>
-          <p class="note">The linked docs hold the detailed proof trail. The public page only names the remaining gaps and points to the short audit note.</p>
+          <p class="note">The linked docs hold the detailed proof trail. The public page only names the remaining gaps.</p>
           <details open>
             <summary>Current gaps</summary>
             <div class="proof-list">
