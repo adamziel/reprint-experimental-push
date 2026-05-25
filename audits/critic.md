@@ -34,6 +34,10 @@ Release-gate checklist for production-readiness wording:
   drift, could not authorize a retry, and could not be widened into a new
   row, file, relationship-bearing record, plugin-owned surface, or hidden
   side effect.
+- Show that any Reprint, ZS-Sync, or ForkPress comparison names the exact
+  upstream revision or worktree state and the exact live write boundary that
+  was reverified here; otherwise the comparison is historical context only,
+  even if the route family, package shape, or feature vocabulary matches.
 - Show the create-time identity decision explicitly: either a durable remap
   proof or a hard block before write.
 - Show the complete plugin-owned surface list for the claim, including any
@@ -89,6 +93,10 @@ Blocked production claims:
   audit-only after drift, cannot authorize retry, and cannot be widened to a
   different row, file, relationship-bearing record, plugin-owned surface, or
   hidden plugin side effect.
+- "comparison passed" is blocked unless the exact upstream revision or
+  worktree state and the exact live write boundary were both reverified in
+  this repo; a matching route shape, package mount, or `finalMatchesLocal`
+  result is compatibility evidence only.
 - "plugin-safe push" is blocked until the full plugin-owned surface list is
   either enumerated live at apply time or hard-blocked, including late
   discoveries such as options, custom tables, generated files, hooks, cron
