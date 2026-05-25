@@ -45,6 +45,19 @@ recomputing provenance locally:
 7. journal and recover inspect durable evidence first, then permit mutating
    recovery only when fresh live hashes prove the action
 
+That mapping is intentionally one-way:
+
+- exporter/importer create the immutable pull base package
+- preflight binds that package to one remote identity and one short-lived
+  push session
+- snapshot hashes are planning-only live evidence
+- dry-run uploads the canonical plan as eligibility evidence only
+- apply revalidates the live remote before every batch and at the storage
+  boundary
+- journal inspection and recovery inspection read durable evidence first
+- mutating recovery only proceeds when the journal and fresh live hashes prove
+  the action
+
 ## Executor Responsibilities
 
 The executor is the client-side orchestrator. It runs after a site was pulled,
@@ -103,6 +116,16 @@ local edited site, and one drift witness:
   after independent drift between dry-run and apply
 - `runner` is the only process that may run preflight, snapshot listing,
   dry-run, apply, journal inspection, and recovery
+
+That proof must hold in both Docker and Playground:
+
+- Docker keeps the roles on one private network and uses the sandbox-provided
+  `8080` ingress with a local-only proxy for browser-visible inspection.
+- Playground uses separate disposable blueprints for the same `remote-base`,
+  `local-edited`, `remote-changed`, and `runner` roles.
+- Remote tunnels are disallowed in both modes.
+- `remote-base` and `remote-changed` must be the same remote identity observed
+  at two different times.
 
 That topology is the implementation contract, not just an example. The same
 shape must be represented in Docker and Playground, and the browser-visible

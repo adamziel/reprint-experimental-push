@@ -45,6 +45,18 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 7. `push_journal` and `push_recover` inspect durable evidence first, then
    allow mutating recovery only when fresh live hashes prove the action
 
+That handoff is one-way on purpose:
+
+- exporter/importer create immutable provenance for the later push run
+- push preflight binds that provenance to the live remote identity and a
+  short-lived session
+- push snapshot hashes are planning evidence only
+- push dry-run uploads the canonical plan as eligibility evidence only
+- push batch apply revalidates the live remote before every batch and again
+  at the storage boundary
+- push journal and push recover read durable evidence first and only allow
+  mutating recovery when the journal plus fresh live hashes prove the action
+
 The machine-readable companion at
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
 captures that one-way handoff in compact form. Tests can use it to prove the
@@ -53,7 +65,15 @@ dry-run, journal, and recovery evidence on top.
 The compact topology fixture at
 [`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
 captures the same one-remote, one-local, one-drift-witness test shape for
-Docker and Playground.
+Docker and Playground. Both packaging modes must preserve the same proof
+boundary:
+
+- Docker uses one private network and browser-visible inspection through the
+  sandbox-provided `8080` ingress with a local-only proxy.
+- Playground uses separate disposable blueprints, but the same remote identity
+  split and the same no-tunnel rule.
+- `remote-base` and `remote-changed` must be the same remote identity observed
+  at two different times, not two different sites.
 
 For machine-readable verification, the compact contract fixture at
 [`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
@@ -230,6 +250,10 @@ The pull exporter/importer handoff is one-way:
 5. push dry-run uploads the canonical plan derived from base, local, and live
 6. push apply revalidates the live remote before every batch and at the storage boundary
 7. push journal and push recover inspect read durable evidence only
+
+The executor should treat that mapping as the production boundary: the pull
+package stays immutable provenance, while push is a later live mutation path
+that must still refresh remote evidence before every batch.
 
 That handoff is intentionally asymmetric. Export/import proves the merge base
 and scope coverage. Push consumes that base as provenance, then proves remote
