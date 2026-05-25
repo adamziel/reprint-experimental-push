@@ -4554,3 +4554,34 @@ test('verify:release stays pinned to the checked release entrypoint and exact li
   assert.match(proof.stdout, /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/);
   assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
 });
+
+test('verify:release fails closed at the explicit missing-secret gate when a source URL is supplied', () => {
+  const proof = spawnSync('npm', ['run', 'verify:release'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+    },
+    encoding: 'utf8',
+    shell: false,
+  });
+
+  assert.equal(proof.status, 0);
+  assert.match(
+    proof.stdout,
+    /REPRINT_PUSH_SECRET_REQUIRED: production push credentials are missing; provide REPRINT_PUSH_SIGNING_SECRET or REPRINT_PUSH_APPLICATION_PASSWORD before running preflight, dry-run, or apply\./,
+  );
+  assert.match(
+    proof.stdout,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/,
+  );
+  assert.match(
+    proof.stdout,
+    /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_SECRET_REQUIRED"\s*\}/,
+  );
+});
