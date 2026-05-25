@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: this checkout still lacks executable proof that the live push boundary is safe. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping, plugin-driver coverage, and preserved-remote drift are still only lab-shaped. The decisive blocker is the missing live-boundary proof for production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, and preserved-remote drift at apply time. The lack of a checked release command is a separate release-engineering gap, but it is not the primary blocker unless that command also proves the live boundary in the same invocation.
+Current top blocker, rechecked on 2026-05-25: this checkout still lacks executable proof that the live push boundary is safe. The repo has green regression and lab evidence, plus helper and Playground scripts, but no checked run here proves production auth/session lifecycle and durable journal semantics on the real push path in one fail-closed invocation. Graph identity mapping, plugin-driver coverage, leases/fencing, and preserved-remote drift are still only lab-shaped. The decisive blocker is the missing live-boundary proof for production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift at apply time.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -93,7 +93,7 @@ Minimum properties of that gate:
 4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
 5. it must be the command CI or another default entrypoint actually invokes
 
-Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle and durable journal semantics, with graph identity, plugin-driver behavior, and preserved-remote drift still only lab-backed. The missing script name is still worth fixing, but it is not the decisive blocker.
+Until that gate exists, the strongest evidence remains regression or lab evidence, not release evidence. The current blocker is the absence of checked live-boundary proof for production auth/session lifecycle and durable journal semantics, with graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift still only lab-backed. The missing script name is still worth fixing, but it is not the decisive blocker.
 
 ## Conclusion
 
