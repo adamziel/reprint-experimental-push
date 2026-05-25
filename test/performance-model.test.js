@@ -2611,6 +2611,32 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-chunk-digests-skips-large-upload-chunk-upload-after-pause').violates.includes('atomic-file-publish'),
   );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('parallelism-limits'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-backpressure').violates.includes('chunk-receipts'),
+  );
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('atomic-file-publish'),
+  );
   const drainedBufferFastPath = model.safeFastPaths.find(
     (fastPath) => fastPath.allowedShortcut === 'treat-drained-upload-buffer-as-publish-ready',
   );
