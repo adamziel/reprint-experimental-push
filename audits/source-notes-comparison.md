@@ -22,6 +22,10 @@ fresh retry scope was rebuilt from live hashes on this branch.
 That also means a stale manual-review artifact stays audit evidence only
 unless the remote was preserved for audit, the stale approval was rejected
 before mutation, and the retry rebuilt scope from fresh live hashes.
+Reprint, ZS-Sync, and ForkPress each fail for a different missing proof:
+Reprint does not prove preserved-remote push safety on this branch, ZS-Sync
+does not prove plugin-owned surface coverage or identity-remap safety, and
+ForkPress does not prove stale-review artifacts stay audit-only after drift.
 In other words: a named feature family is not enough. The branch must be able
 to point to the exact upstream commit or worktree state and the exact live
 mutation boundary that was exercised here, or the comparison stays historical
