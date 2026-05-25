@@ -359,6 +359,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'cached row receipts still cannot bypass the plugin-update atomic-group barrier',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause')?.violates.includes('parallelism-limits'),
+    'parallel row batches still cannot bypass plugin-install parallelism limits after a pause',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause')?.violates.includes('backpressure'),
+    'parallel row batches still cannot bypass plugin-install backpressure after a pause',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.rejectedGate,
     'recovery',
   );
