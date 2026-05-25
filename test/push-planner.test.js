@@ -15281,6 +15281,9 @@ test('replaying a completed plan stays inert and does not duplicate inserts or r
   durableJournal.close();
   const persistedBeforeReplay = readRecoveryJournal(journalPath);
   const targetPlannedCountBeforeReplay = persistedBeforeReplay.records.filter((record) => record.type === 'target-planned').length;
+  const completedCountBeforeReplay = persistedBeforeReplay.records.filter((record) => record.type === 'journal-completed').length;
+  const replayedCountBeforeReplay = persistedBeforeReplay.records.filter((record) => record.type === 'journal-replayed').length;
+  const recoveryStateCountBeforeReplay = persistedBeforeReplay.records.filter((record) => record.type === 'recovery-state').length;
 
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
@@ -15293,6 +15296,9 @@ test('replaying a completed plan stays inert and does not duplicate inserts or r
   replayJournal.close();
   const persistedAfterReplay = readRecoveryJournal(journalPath);
   const targetPlannedCountAfterReplay = persistedAfterReplay.records.filter((record) => record.type === 'target-planned').length;
+  const completedCountAfterReplay = persistedAfterReplay.records.filter((record) => record.type === 'journal-completed').length;
+  const replayedCountAfterReplay = persistedAfterReplay.records.filter((record) => record.type === 'journal-replayed').length;
+  const recoveryStateCountAfterReplay = persistedAfterReplay.records.filter((record) => record.type === 'recovery-state').length;
 
   assert.equal(JSON.stringify(replayRemote), replaySnapshot);
   assert.equal(replay.appliedMutations, 0);
@@ -15300,6 +15306,9 @@ test('replaying a completed plan stays inert and does not duplicate inserts or r
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(targetPlannedCountAfterReplay, targetPlannedCountBeforeReplay);
+  assert.equal(completedCountAfterReplay, completedCountBeforeReplay);
+  assert.equal(replayedCountAfterReplay, replayedCountBeforeReplay + 1);
+  assert.equal(recoveryStateCountAfterReplay, recoveryStateCountBeforeReplay);
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
