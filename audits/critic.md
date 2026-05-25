@@ -8,6 +8,12 @@ proof point. That lane's completed `npm run verify:release` result, including
 It is not branch-local retry authority and it does not close the live-boundary
 gap on this worktree.
 
+Treat that result as a stronger lab baseline, not as production retry
+authority: it still does not prove this branch can rerun the same live
+boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`,
+preserve the rejected remote, and revalidate apply-time behavior from fresh
+live hashes on retry.
+
 The right reading of that evidence is narrow: it shows the supervised lane has
 advanced, not that this worktree can yet claim production-grade push support.
 The branch still lacks a rerunnable live boundary on a real local, Playground,
