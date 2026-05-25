@@ -311,6 +311,19 @@ with graph identity and plugin-driver coverage made explicit on the live
 boundary. That proof still has to preserve the rejected remote, show apply-time
 revalidation, and keep later-discovered plugin-owned surfaces on their own
 preserve / reject / retry cycle.
+Single strongest blocker: this worktree still lacks one rerunnable live
+boundary against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
+that preserves the rejected remote and proves audit/retry safety on the same
+mutation boundary.
+Exact evidence that improved: the supervised retained-source lane now names
+`authSessionType`, minted session shape, `applyCommitted`, and
+`durableJournal.rows: 17`; that is better lab evidence, but it still does not
+replace a branch-local live rerun with preserved-remote auditability.
+Next proof required: one rerunnable live command that prints the executor
+identity, live auth/session boundary, preserved remote, exact rejection point,
+dry-run receipt, apply-time revalidation, journal/recovery inspection, graph
+identity, plugin-driver coverage, and per-surface old/new/blocked
+classification on the same boundary.
 
 Production-grade push support checklist:
 
