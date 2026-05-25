@@ -643,6 +643,34 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(protocolExtensionContract.pull_pipeline.importer, 'persists the base package as immutable provenance');
   assert.equal(
+    protocolExtensionContract.production_boundary.preflight,
+    'first live binding after importer provenance exists',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.remote_snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.dry_run_plan_upload,
+    'uploads the canonical plan as an eligibility receipt, not a lock',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.mutation_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.journal_inspect,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(
+    protocolExtensionContract.production_boundary.recovery_mutation,
+    'may mutate only when journal evidence plus fresh live hashes prove the action safe',
+  );
+  assert.equal(
     protocolExtensionContract.bridge_rule,
     'the importer-owned base package is immutable provenance for planning, apply, journal, and recovery',
   );
