@@ -306,6 +306,7 @@ try {
               dryRun: proof.dryRun,
               apply: proof.apply,
               recoveryInspect: proof.recoveryInspect,
+              replay: proof.replay,
               after: proof.after,
               dbJournal: proof.dbJournal,
             },
@@ -360,6 +361,7 @@ try {
               dryRun: proof.dryRun,
               apply: proof.apply,
               recoveryInspect: proof.recoveryInspect,
+              replay: proof.replay,
               after: proof.after,
               dbJournal: proof.dbJournal,
             },
@@ -379,6 +381,10 @@ try {
       assert.equal(proof.dryRun.status, 200);
       assert.equal(proof.apply.status, 200);
       assert.equal(proof.recoveryInspect.status, 200);
+      assert.equal(proof.replay.status, 200);
+      assert.equal(proof.replay.ok, true);
+      assert.equal(proof.replay.idempotency?.replayed, true);
+      assert.equal(proof.replay.idempotency?.freshMutationWork, false);
       assert.equal(proof.after.status, 200);
       assert.equal(proof.after.finalMatchesLocal, true);
       assert.ok(proof.dryRun.receiptHash, 'dry-run receipt hash missing');

@@ -77,6 +77,7 @@ export async function runAuthenticatedHttpPush({
     dryRun: null,
     apply: null,
     recoveryInspect: null,
+    replay: null,
     after: null,
     dbJournal: null,
   };
@@ -153,6 +154,15 @@ export async function runAuthenticatedHttpPush({
   });
   summary.recoveryInspect = summarizeResponse(recoveryInspect);
 
+  const replay = await client.signedPost('/apply', {
+    plan,
+    receipt: dryRun.body.receipt,
+  }, {
+    session,
+    idempotencyKey,
+  });
+  summary.replay = summarizeResponse(replay);
+
   const afterApply = await client.get('/snapshot');
   summary.after = summarizeSnapshot(afterApply, local);
   const dbJournal = await client.get('/db-journal?limit=80');
@@ -162,9 +172,12 @@ export async function runAuthenticatedHttpPush({
     && apply.body?.ok === true
     && recoveryInspect.status === 200
     && recoveryInspect.body?.ok === true
+    && replay.status === 200
+    && replay.body?.ok === true
+    && replay.body?.idempotency?.replayed === true
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
-    summary.code = apply.body?.code || recoveryInspect.body?.code || 'APPLY_FAILED';
+    summary.code = apply.body?.code || recoveryInspect.body?.code || replay.body?.code || 'APPLY_FAILED';
   }
   return summary;
 }
