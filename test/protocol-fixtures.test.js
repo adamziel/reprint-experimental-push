@@ -248,6 +248,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     protocolDocs.includes(
+      'The machine-readable umbrella contract is `push-protocol-extension-contract.json`:',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
       'The bridge is machine-readable and stage-ordered:',
     ),
   );
@@ -284,6 +289,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     executorDocs.includes(
+      'it is the umbrella contract that sits above `push-production-topology-contract.json` and `push-remote-liveness-topology-contract.json`',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
       'The real push executor maps that proof bundle onto the existing pull pipeline in a fixed order:',
     ),
   );
@@ -305,6 +315,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'push-production-auth-session-journal-recovery-inspect-contract.json` is the compact proof for the auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'The bridge is reviewed in a fixed order:',
     ),
   );
   assert.ok(

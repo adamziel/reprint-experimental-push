@@ -41,6 +41,18 @@ The pull/export/import pipeline maps to the push ladder one step at a time:
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe and the auth floor still holds
 
+The machine-readable umbrella contract is `push-protocol-extension-contract.json`:
+
+- it captures the full production stage ladder in one object
+- it binds the persisted pull base package to a live remote identity before
+  any mutating stage
+- it keeps dry-run and apply separate while apply revalidates fresh live
+  evidence before every batch and at the storage boundary
+- it requires journal inspect to stay read-only and recovery to start with
+  inspect before any mutating repair
+- it carries the one-remote, one-local, one-drift topology for Docker and
+  Playground
+
 Authentication is deliberately conservative:
 
 - push auth must be at least as strict as current Reprint HMAC usage

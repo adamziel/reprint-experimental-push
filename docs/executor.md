@@ -780,6 +780,7 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary
 - it carries the one-remote, one-local, one-drift topology in both Docker and Playground
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
+- it is the umbrella contract that sits above `push-production-topology-contract.json` and `push-remote-liveness-topology-contract.json`
 
 The auth floor is not relaxed for the executor:
 
