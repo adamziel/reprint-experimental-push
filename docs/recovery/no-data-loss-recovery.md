@@ -20,6 +20,7 @@ Rules:
 - A mid-apply partial commit must be `blocked-recovery` and keep both the remote and journal artifacts inspectable.
 - A completed plan replay must not reapply mutations or resurrect stale local data.
 - A blocked partial recovery must preserve artifacts so a retry can classify the live remote without guessing.
+- The only acceptable post-failure states are `old-remote`, `fully-updated-remote`, or `blocked-recovery` with artifacts.
 
 Durable artifact contract:
 
@@ -34,6 +35,7 @@ Durable artifact contract:
   - journal appends need flush or `fsync`-equivalent persistence
   - a single writer needs a lease, fence, or equivalent claim ownership
   - recovery inspect must be able to classify the persisted artifacts after a crash
+- Lab-only JSON snapshots can prove behavior, but they do not satisfy the release-barrier requirement for durable recovery.
 - The recovery journal must make the boundary legible enough to classify retries without guessing:
   - `old-remote` means no target mutation escaped staging.
   - `fully-updated-remote` means every planned mutation is already present and replay is read-only.
