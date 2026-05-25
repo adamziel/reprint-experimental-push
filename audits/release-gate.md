@@ -160,6 +160,10 @@ or comparison-only.
 - The claim does not let Reprint, ZS-Sync, or ForkPress notes imply current
   upstream reliability unless the exact upstream revision or worktree state was
   reverified and the live mutation boundary was exercised in this repo.
+- The claim does not let any comparison note, manual review artifact, or
+  live-looking hash stand in for proof that a live remote drifted, the stale
+  authority was rejected before mutation, and the retry rebuilt scope from
+  fresh live hashes.
 - The claim does not let a comparison note, manual review artifact, or live
   looking hash stand in for proof that the remote stayed preserved, the stale
   authority was rejected before mutation, and the retry rebuilt scope from
@@ -192,6 +196,9 @@ or comparison-only.
   revalidated.
 - The claim does not let a stale approval be widened to a different row, file,
   relationship-bearing record, or plugin-owned surface on retry.
+- The claim does not let a late-discovered plugin-owned surface be reclassified
+  as success, compatibility, or a harmless second phase if the first write
+  already happened against a different surface set.
 - The claim does not let a source-note comparison become current proof unless
   the same live write boundary was reverified on this branch at the cited
   upstream state; otherwise it stays historical context only.
