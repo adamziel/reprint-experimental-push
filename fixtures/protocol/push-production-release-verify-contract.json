@@ -39,6 +39,28 @@
     }
   },
   "proof": {
+    "protocol_extension": {
+      "stages": [
+        "preflight",
+        "remote-snapshot-hashes",
+        "dry-run-plan-upload",
+        "mutation-batch-apply",
+        "journal-inspect",
+        "recovery-inspect",
+        "recovery-mutate"
+      ],
+      "pull_to_push_mapping": {
+        "exporter": "discovers the merge base and coverage evidence before any push request exists",
+        "importer": "persists the immutable pull base package as the only origin push may consume",
+        "preflight": "binds the imported pull provenance to one live remote identity and a short-lived push session",
+        "remote_snapshot_hashes": "turns importer provenance into planning-only remote hash discovery",
+        "dry_run_plan_upload": "turns the immutable base package into a receipt-only plan with no mutation authority",
+        "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+        "journal_inspect": "reads durable provenance without authorizing mutation",
+        "recovery_inspect": "classifies recovery before any repair mutation begins",
+        "recovery_mutate": "requires inspect plus fresh live evidence and the same HMAC floor as apply"
+      }
+    },
     "live_preflight": "production-shaped live preflight against a supplied local Playground source",
     "dry_run": "canonical dry-run receipt",
     "snapshot_hash_listing": "planning-only remote hash listing",

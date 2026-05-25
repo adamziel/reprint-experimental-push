@@ -15,6 +15,38 @@ const credentials = {
   password: 'reprint-push-admin-app-password',
 };
 
+const protocolExtension = {
+  stages: [
+    'preflight',
+    'remote-snapshot-hashes',
+    'dry-run-plan-upload',
+    'mutation-batch-apply',
+    'journal-inspect',
+    'recovery-inspect',
+    'recovery-mutate',
+  ],
+  pullToPushMapping: {
+    exporter: 'discovers the merge base and coverage evidence before any push request exists',
+    importer: 'persists the immutable pull base package as the only origin push may consume',
+    preflight: 'binds the imported pull provenance to one live remote identity and a short-lived push session',
+    remoteSnapshotHashes: 'turns importer provenance into planning-only remote hash discovery',
+    dryRunPlanUpload: 'turns the immutable base package into a receipt-only plan with no mutation authority',
+    mutationBatchApply: 'revalidates fresh live evidence before every batch and again at the storage boundary',
+    journalInspect: 'reads durable provenance without authorizing mutation',
+    recoveryInspect: 'classifies recovery before any repair mutation begins',
+    recoveryMutate: 'requires inspect plus fresh live evidence and the same HMAC floor as apply',
+  },
+  topology: {
+    remoteBase: 'remote-base',
+    localEdited: 'local-edited',
+    remoteChanged: 'remote-changed',
+    runner: 'runner',
+    ingressPort: 8080,
+    localOnlyProxy: true,
+    remoteTunnels: 'disallowed',
+  },
+};
+
 let liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 let username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
 let applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
@@ -95,6 +127,7 @@ try {
                   verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
                 },
               },
+              protocolExtension,
               preflight: {
                 status: preflight.status,
                 authSessionType: preflight.body.auth.session.type,
@@ -206,8 +239,9 @@ try {
                 storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
                 verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
               },
-            },
-            preflight: {
+          },
+          protocolExtension,
+          preflight: {
               status: preflight.status,
               authSessionType: preflight.body.auth.session.type,
               routeProfile: preflight.body.routeProfile,
