@@ -67,6 +67,7 @@ export function applyPlan(remote, plan, options = {}) {
   validateAtomicGroupDependencyPlan(remote, plan);
 
   const durableJournal = getDurableJournalWriter(options);
+  assertProductionDurableJournalSupport(options, durableJournal);
   const hasPreviousJournal = Boolean(options.journal);
   let previousJournalState = null;
   let journal = prepareJournal(remote, plan, options.journal);
@@ -576,6 +577,35 @@ function getDurableJournalWriter(options) {
     );
   }
   return writer;
+}
+
+function assertProductionDurableJournalSupport(options, writer) {
+  if (!options?.requireProductionDurableJournal) {
+    return;
+  }
+
+  if (
+    writer
+    && typeof writer.flush === 'function'
+    && typeof writer.close === 'function'
+    && typeof writer.inspect === 'function'
+  ) {
+    return;
+  }
+
+  throw new PushPlanError(
+    'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED',
+    'Production durable journal recovery is not available in this worktree.',
+    {
+      missingDependency: [
+        'append-only persisted journal storage',
+        'restart-readable recovery inspection',
+        'fencing or lease ownership for the journal writer',
+        'stable-storage flush or fsync semantics',
+      ],
+      requiresDurableJournal: true,
+    },
+  );
 }
 
 function recordDurablePlanOpened(writer, remote, plan, options = {}) {
