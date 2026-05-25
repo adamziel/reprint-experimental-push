@@ -187,6 +187,10 @@ evidence for all of these, not just a plausible design:
   revalidation, durable recovery, remote-preserving retry after drift, stale
   manual-review artifact rejection, or a production write boundary in this
   repo.
+- The observed upstream commit or worktree state in the source notes is
+  historical context only. It cannot be treated as current upstream proof
+  unless this branch re-verifies the same behavior at the live mutation
+  boundary and records the exact evidence for the current claim.
 - A lab route, fixture route, packaged-plugin route, or copied source-note
   route shape is compatibility evidence only. It does not prove production
   auth, production storage durability, live remote preservation, or that the
@@ -317,6 +321,9 @@ attached to the current commit or worktree state:
   outside the allowlist, including at least one of options, custom tables,
   generated files, activation hooks, cron, or cache side effects, or else the
   design must hard-block that surface before apply.
+- A production claim must not rely on the observed commit or worktree in
+  `docs/source-notes.md` as current upstream proof unless the same upstream
+  behavior was re-verified and attached to the current claim.
 - Production wording is blocked unless the claim names the exact live-write
   boundary it exercised in this repo; route-shape, packaged-plugin mounting,
   `finalMatchesLocal`, and benchmark throughput models are compatibility
