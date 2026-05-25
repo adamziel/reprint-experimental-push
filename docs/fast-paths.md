@@ -30,13 +30,13 @@ the proof is that a gate is not doing mutation work, such as remote indexes or
 backpressure pauses. The executable fixture in `test/performance-model.test.js`
 also proves that the recovery path keeps bounded chunk-window sizing, row-batch
 parallelism, and atomic-group commit evidence visible together with the cursor,
-compression, and pause records. It also forces the model to cover the full
-speedup surface for file hashing, chunk upload, database row batching, remote
-indexes, compression, parallelism limits, and backpressure. Each rejected entry
-names the first gate it breaks through `rejectedGate`; `violates` records the
-broader contract breaks that make the proposal unsafe. That keeps "fast but
-ambiguous after failure" proposals out of the safe list even when they improve
-a throughput metric.
+compression, memory ceiling, and pause records. It also forces the model to
+cover the full speedup surface for file hashing, chunk upload, database row
+batching, remote indexes, compression, parallelism limits, memory ceilings,
+and backpressure. Each rejected entry names the first gate it breaks through
+`rejectedGate`; `violates` records the broader contract breaks that make the
+proposal unsafe. That keeps "fast but ambiguous after failure" proposals out of
+the safe list even when they improve a throughput metric.
 
 Current executable gate:
 

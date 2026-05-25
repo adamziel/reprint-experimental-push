@@ -52,6 +52,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.wordpressGraphIdentity.graphIdentityBlockers, 0);
   assert.equal(report.evidence.journal.allJournalsIntegrityOk, true);
   assert.equal(report.evidence.redaction.durableJournalsContainNoRawValues, true);
+  assert.equal(report.resourceLimits.memoryCeilingBytes, 32 * 1024 * 1024);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
   assert.equal(report.evidence.recovery.preCommitFailureInspectionStatus, 'old-remote');
   assert.equal(report.evidence.recovery.partialCommitInspectionStatus, 'blocked-recovery');
@@ -95,6 +96,8 @@ test('guarded benchmark refuses production throughput claims until production ga
     (error) =>
       error instanceof BenchmarkClaimError
       && error.code === 'PRODUCTION_THROUGHPUT_CLAIM_BLOCKED'
+      && error.details.throughput.productionThroughput === 'not-claimed'
+      && error.details.executorCapabilities.fileReceipts === 'lab-file-journal-receipts'
       && error.details.blockers.includes('production-atomic-group-commit-not-measured'),
   );
 });
@@ -114,6 +117,12 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   missingRecovery.evidence.recovery.partialCommitBlocksRecovery = false;
   assert.ok(
     productionThroughputBlockers(missingRecovery).includes('missing-partial-commit-recovery-evidence'),
+  );
+
+  const missingMemoryCeiling = clone(report);
+  delete missingMemoryCeiling.resourceLimits.memoryCeilingBytes;
+  assert.ok(
+    productionThroughputBlockers(missingMemoryCeiling).includes('production-memory-ceiling-not-measured'),
   );
 
   const missingGraphIdentity = clone(report);

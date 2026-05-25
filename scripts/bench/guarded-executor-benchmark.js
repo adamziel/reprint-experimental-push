@@ -180,6 +180,9 @@ export function productionThroughputBlockers(report) {
   if (!report.evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged) {
     blockers.push('atomic-group-pre-commit-visibility-not-proven');
   }
+  if (!Number.isFinite(report.resourceLimits?.memoryCeilingBytes) || report.resourceLimits.memoryCeilingBytes <= 0) {
+    blockers.push('production-memory-ceiling-not-measured');
+  }
   if (!report.evidence.atomicGroup.productionAtomicCommitMeasured) {
     blockers.push('production-atomic-group-commit-not-measured');
   }
@@ -209,6 +212,8 @@ export function assertCanClaimProductionThroughput(report) {
       {
         code: 'PRODUCTION_THROUGHPUT_CLAIM_BLOCKED',
         blockers: claim.blockers,
+        throughput: report.throughput,
+        executorCapabilities: report.executorCapabilities,
       },
     );
   }
@@ -222,6 +227,7 @@ function benchmarkConfig(options) {
   }
   return {
     ...profile,
+    maxBufferedUploadBytes: DEFAULT_LIMITS.maxBufferedUploadBytes,
     ...options,
     profile: profileName,
     now: options.now || FIXED_NOW,
@@ -538,6 +544,9 @@ function buildReport({
       rowApply: 'per-row-apply-model',
       recoveryJournal: 'file-backed-jsonl-fsync',
       productionAtomicCommit: 'not-measured',
+    },
+    resourceLimits: {
+      memoryCeilingBytes: config.maxBufferedUploadBytes,
     },
     evidence: {
       chunkReceipts: {
