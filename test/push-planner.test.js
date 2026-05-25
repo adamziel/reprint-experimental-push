@@ -6991,6 +6991,50 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete, matching independent delete, restore, and type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
+  base.files['wp-content/uploads/gallery/cover.txt/keep.txt'] = 'base keep';
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery/sidebar.txt'] = 'base sidebar';
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery/cover.txt'];
+  delete local.files['wp-content/uploads/gallery/cover.txt/keep.txt'];
+  local.files['about.php'] = '<?php echo "restored";';
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  local.files['wp-content/uploads/gallery/sidebar.txt'] = 'shared sidebar';
+
+  const remote = JSON.parse(JSON.stringify(base));
+  delete remote.files['wp-content/uploads/gallery/cover.txt/keep.txt'];
+  remote.files['about.php'] = '<?php echo "restored";';
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.files['wp-content/uploads/gallery/sidebar.txt'] = 'shared sidebar';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery/cover.txt').action, 'delete');
+  assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery/cover.txt/keep.txt').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'file:about.php').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery/sidebar.txt').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/cover.txt'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/cover.txt/keep.txt'), false);
+  assert.equal(result.site.files['about.php'], '<?php echo "restored";');
+  assert.equal(result.site.files['wp-content/uploads/gallery'].type, 'directory');
+  assert.equal(result.site.files['wp-content/uploads/gallery/sidebar.txt'], 'shared sidebar');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('keeps remote-only plugin removals while a live-preconditioned delete, matching independent restore, and matching type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
