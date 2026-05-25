@@ -84,6 +84,12 @@ The minimum production-shaped topology is the same in Docker and Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 
+The concrete lab identities used in the proof are `remote-example` for the
+remote source site and `local-dev-site` for the imported local site. The same
+remote identity is observed again after drift so the topology proves one
+remote site, one local edited site, and one runner without introducing a
+second remote authority.
+
 | Role | Docker | Playground |
 | --- | --- | --- |
 | `remote-base` | `remote-base` | `remote-base` |

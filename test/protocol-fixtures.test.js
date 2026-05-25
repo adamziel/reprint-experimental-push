@@ -412,6 +412,39 @@ test('push contract fixture binds the pull handoff to the production push sequen
     ),
   );
   assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'local-edited is the imported local site with user edits',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.deployment.docker.proof.includes(
+      'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.deployment.playground.proof.includes(
+      'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.equal(deploymentTopologyContract.lab_topology.remote_base.identity, 'remote-example');
+  assert.equal(deploymentTopologyContract.lab_topology.local_edited.identity, 'local-dev-site');
+  assert.equal(deploymentTopologyContract.lab_topology.remote_changed.identity, 'remote-example');
+  assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'local-edited is the imported local site with user edits',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'remote-base seeds the persisted pull base',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.deployment.playground.proof.includes(
+      'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
+  assert.ok(
     topologyMatrix.docker.proof.includes(
       'push preflight mints one short-lived session bound to the persisted base and live remote identity',
     ),

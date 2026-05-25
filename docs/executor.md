@@ -168,6 +168,12 @@ The executor topology proof is intentionally narrow:
 - the Docker and Playground proofs keep the same route names and the same
   `8080`-only browser ingress rule
 
+The lab identities behind that shape are `remote-example` for the remote
+source site and `local-dev-site` for the imported local edit site. Docker and
+Playground both prove the same remote identity twice, once as the seeded base
+site and again as the drift witness, so the executor never needs to infer a
+second remote from the test topology.
+
 The intended one-remote, one-local topology is:
 
 | Environment | Remote source | Local edited site | Drift witness | Runner |
