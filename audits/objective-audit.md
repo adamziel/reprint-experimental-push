@@ -272,4 +272,4 @@ The current weak point is not another missing assertion inside the existing suit
 3. real remote/local topology not exercised
 4. `productionThroughput` still `not-claimed` without an explicit `speed unclaimed` verdict
 
-Until that command exists, the repo has blocker evidence only. It does not have release proof.
+Until that command exists, the repo has blocker evidence only. It does not have release proof, and no passing `node --test` or optional smoke can be promoted into one because the live-source verdict itself is still missing.
