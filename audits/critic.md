@@ -3152,7 +3152,10 @@ still needs work. That scenario only counts if the preserved remote is still
 auditable, the late surface is blocked or durably classified before any
 retry, the stale artifact cannot authorize retry for any other row, file,
 relationship-bearing record, or plugin-owned surface, and the fresh retry
-artifact is recorded separately from the stale review artifact.
+artifact is recorded separately from the stale review artifact. If a second
+write touches that late-discovered plugin-owned surface, the proof must show
+the surface was already classified before retry started; otherwise the second
+write is a new boundary, not a production-safe continuation of the first one.
 
 Source-note proof boundary, restated:
 
@@ -3172,3 +3175,8 @@ Source-note proof boundary, restated:
   was rejected before mutation, cannot widen to another row, file,
   relationship-bearing record, plugin-owned surface, or hidden side effect,
   or was separated from fresh retry authority backed by new live hashes.
+- Production-grade wording must fail closed when a late-discovered
+  plugin-owned surface is widened into a second success claim. If the proof
+  does not show the late surface was blocked or durably classified before the
+  retry, the second write is not retry proof and does not authorize
+  production wording.
