@@ -1364,6 +1364,35 @@ test('accepts only the documented post-failure states for atomic apply recovery'
   }
 });
 
+test('documented recovery states carry the expected artifact shapes', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const failure = captureError(() => applyPlan(JSON.parse(JSON.stringify(remote)), plan, { failAfterStaging: true }));
+  assertAcceptableRecoveryState(failure.details.recovery);
+  assert.equal(failure.details.recovery.status, 'old-remote');
+  assert.ok(failure.details.recovery.artifacts?.journal, 'old-remote must keep journal artifacts');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+
+  const applied = applyPlan(baseSite(), plan);
+  assertAcceptableRecoveryState(applied.recoveryState);
+  assert.equal(applied.recoveryState.status, 'fully-updated-remote');
+  assert.ok(applied.recoveryState.artifacts?.journal, 'fully-updated-remote must keep journal artifacts');
+  assert.equal(applied.recoveryState.artifacts.remote, undefined);
+
+  const staleRemote = JSON.parse(JSON.stringify(applied.site));
+  staleRemote.files['index.php'] = '<?php echo "drifted";';
+  const blocked = captureError(() => applyPlan(staleRemote, plan, { journal: applied.journal }));
+  assertAcceptableRecoveryState(blocked.details.recovery);
+  assert.equal(blocked.details.recovery.status, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts?.journal, 'blocked-recovery must keep journal artifacts');
+  assert.ok(blocked.details.recovery.artifacts?.remote, 'blocked-recovery must keep remote artifacts');
+});
+
 test('replaying a completed plan twice stays inert and keeps the fully updated remote', () => {
   const base = baseSite();
   const local = baseSite();
