@@ -11,6 +11,7 @@
       "remote-base seeds the persisted pull base",
       "local-edited is the imported local site with user edits",
       "remote-changed is the same remote identity observed later after drift",
+      "remote snapshot hash listing stays planning-only",
       "dry-run and apply remain separate remote operations",
       "apply revalidates fresh live evidence before every batch and at the storage boundary",
       "journal inspect stays read-only",
@@ -26,7 +27,7 @@
       "proof": [
         "remote-base and remote-changed are the same remote identity at different times",
         "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy",
-        "runner is the only process allowed to preflight, plan, upload, inspect, revalidate, and recover"
+        "runner is the only process allowed to preflight, list hashes, upload, inspect, revalidate, and recover"
       ]
     },
     "playground": {

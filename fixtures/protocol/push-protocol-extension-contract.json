@@ -1,6 +1,6 @@
 {
   "contract_id": "push-protocol-extension-production-contract",
-  "purpose": "compact end-to-end proof for preflight, remote hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery",
+  "purpose": "compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery",
   "push_sequence": [
     "push_preflight",
     "push_snapshot_hashes",
@@ -14,11 +14,12 @@
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance",
     "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
-    "snapshot_hash_listing": "collects live comparison evidence for planning only",
+    "remote_snapshot_hash_listing": "collects live comparison evidence for planning only and never becomes write authority",
     "dry_run_plan_upload": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
     "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
     "journal_inspect": "reads durable evidence without authorizing mutation",
-    "recovery": "starts with inspect and only mutates when the journal plus fresh live hashes prove the action"
+    "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair",
+    "recovery": "mutates only when the journal plus fresh live hashes prove the action"
   },
   "push_guards": {
     "remote_liveness": "dry-run and apply are separate remote operations",
@@ -27,6 +28,12 @@
     "journal": "read-only evidence only",
     "recovery": "inspect-first and mutates only when journal evidence plus fresh live hashes prove the action",
     "auth_floor": "at least as strict as current Reprint HMAC usage"
+  },
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "bridge_rule": "the importer-owned base package is immutable provenance for planning, apply, journal, and recovery"
   },
   "topology": {
     "remote_base": "remote-base",
@@ -42,7 +49,11 @@
     "proof": [
       "remote-base and remote-changed are the same remote identity observed at different times",
       "local-edited carries the imported local edits used to build the canonical plan",
-      "runner owns preflight, planning, dry-run upload, apply, journal inspect, and recovery",
+      "runner owns preflight, remote snapshot hash listing, dry-run upload, apply, journal inspect, and recovery",
+      "dry-run is a receipt, not a lock",
+      "apply revalidates fresh live evidence before every batch and at the storage boundary",
+      "journal inspect is read-only",
+      "recovery inspect happens before any mutating repair",
       "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
     ],
     "docker": {
@@ -50,6 +61,7 @@
       "proof": [
         "remote-base seeds the persisted pull base",
         "remote-changed reuses the same remote identity after drift",
+        "remote snapshot hash listing stays planning-only",
         "apply revalidates fresh live evidence before every batch and at the storage boundary"
       ]
     },

@@ -243,6 +243,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.lab_topology.live_drift.between[0], 'remote_base');
   assert.equal(topologyMatrix.lab_topology.live_drift.proof[0], 'remote-base and remote-changed are the same remote identity observed at different times');
   assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
+  assert.equal(
+    protocolExtensionContract.pull_pipeline.bridge_rule,
+    'the importer-owned base package is immutable provenance for planning, apply, journal, and recovery',
+  );
   assert.deepEqual(protocolExtensionContract.push_sequence, [
     'push_preflight',
     'push_snapshot_hashes',
@@ -257,12 +261,16 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'binds the persisted pull base to the live remote identity and a short-lived push session',
   );
   assert.equal(
-    protocolExtensionContract.pull_to_push_mapping.snapshot_hash_listing,
-    'collects live comparison evidence for planning only',
+    protocolExtensionContract.pull_to_push_mapping.remote_snapshot_hash_listing,
+    'collects live comparison evidence for planning only and never becomes write authority',
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.dry_run_plan_upload,
     'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
   );
   assert.equal(
     protocolExtensionContract.push_guards.remote_liveness,
@@ -278,12 +286,22 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.topology.networking.tunnels, 'disallowed');
   assert.ok(
     protocolExtensionContract.topology.proof.includes(
-      'runner owns preflight, planning, dry-run upload, apply, journal inspect, and recovery',
+      'runner owns preflight, remote snapshot hash listing, dry-run upload, apply, journal inspect, and recovery',
+    ),
+  );
+  assert.ok(
+    protocolExtensionContract.topology.proof.includes(
+      'recovery inspect happens before any mutating repair',
     ),
   );
   assert.ok(
     protocolExtensionContract.topology.docker.proof.includes(
       'apply revalidates fresh live evidence before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    protocolExtensionContract.topology.docker.proof.includes(
+      'remote snapshot hash listing stays planning-only',
     ),
   );
   assert.ok(
