@@ -66,7 +66,8 @@
       ],
       "revalidation": [
         "fresh remote hash check before every batch",
-        "storage-boundary proof before each mutation"
+        "storage-boundary proof before each mutation",
+        "apply must not trust the dry-run receipt as write authority"
       ],
       "outputs": [
         "batch receipts",
@@ -94,7 +95,8 @@
       "mode": "inspect",
       "mutates": false,
       "required_inputs": [
-        "push session"
+        "push session",
+        "fresh live remote evidence"
       ],
       "outputs": [
         "read-only evidence",
