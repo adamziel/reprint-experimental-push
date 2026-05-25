@@ -1,18 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 12:25:41 CEST
+Last updated: 2026-05-25 12:27:00 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 12:25:41 CEST
+## 2026-05-25 12:27:00 CEST
 
-- Going well: `reliable-executor` still owns the clearest lab proof, and the public surfaces remain short and linked.
-- Not going well: the production gate is still closed because real-endpoint auth/session, durable journal semantics, graph identity, and plugin-driver proof remain missing.
-- Progress delta: none; this is a same-state decision, not new evidence.
-- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the public page terse and linked; `critic` and `auditor` should reject wording-only proof.
+- Going well: `reliable-executor` still owns the clearest lab proof, and the linked surfaces stay terse.
+- Not going well: the production gate is still closed because real-endpoint auth/session, durable journal semantics, graph identity, and plugin-driver proof are missing.
+- Progress delta: none; this is a same-state supervisor decision, not new evidence.
+- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the page terse and linked; `critic` and `auditor` should reject wording-only proof.
 - Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
+
+<details>
+<summary>Recent same-state refreshes</summary>
+
+  - 2026-05-25 12:25:41 CEST: same blocker, same nudge, no release-state change.
+
+</details>
 
 ## 2026-05-25 12:21:00 CEST
 
