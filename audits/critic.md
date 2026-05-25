@@ -5507,7 +5507,7 @@ Production-readiness language checklist:
   including late-discovered tables, files, cron rows, runtime registries,
   serialized blobs, caches, and generated assets;
 - treat route shape, package mount shape, fixture replay, readable review
-  output, and `finalMatchesLocal` as compatibility evidence only; and
+  output, lab-shaped route output, copied-executor output, and `finalMatchesLocal` as compatibility evidence only; and
 - name the exact upstream revision or worktree state for any Reprint,
   ZS-Sync, or ForkPress comparison, plus what that note proves here and what
   it does not prove.
@@ -5976,7 +5976,7 @@ Must-happen-before-production-grade-push-support checklist:
 - plugin-owned surfaces outside the allowlist: enumerate late-discovered tables, blobs, cron rows, runtime registries, generated files, caches, and plugin-owned files, then either block them or give each its own preserve / reject / retry cycle;
 - partial side effects: show the whole touched set classified old/new/blocked across file, DB, and plugin writes, with no surface silently succeeding while another surface is left in limbo;
 - stale manual-review artifacts: prove a readable review note cannot authorize a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface after drift unless the remote was preserved and the retry scope was rebuilt from live state;
-- production claims: never infer production-grade push support from lab route shape, package layout, fixture replay, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes, and they do not cover a later-discovered surface that appears only after the first write.
+- production claims: never infer production-grade push support from lab route shape, lab-shaped route output, package layout, fixture replay, copied-executor output, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes, and they do not cover a later-discovered surface that appears only after the first write.
 - production claims must also name the exact boundary transition when a plugin-owned surface or remapped create target is discovered after the first write; if that discovery creates a new boundary, the earlier preserved remote and review artifact stay audit-only and cannot be reused as retry authority for the new boundary.
 - production claims must not treat a lab-shaped URL, package mount, or fixture-backed route as proof that the live executor exists behind it; the shape can match while the boundary is still copied, fixture-backed, or otherwise non-live.
 
