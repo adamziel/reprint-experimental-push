@@ -11,6 +11,19 @@ move the proof onto a rerunnable live boundary with preserved-remote audit
 evidence. The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
+Evidence classes:
+
+- historical context: source notes, upstream comparisons, and retained-source
+  lab runs that explain the design lineage but do not authorize retry on this
+  branch;
+- compatibility evidence: route shape, package-mount shape, fixture replay,
+  and smoke naming that show the surface looks right but do not prove the
+  live write boundary; and
+- live retry proof: one rerunnable live boundary on a real local, Playground,
+  or Docker `REPRINT_PUSH_SOURCE_URL` with preserved-remote evidence, exact
+  rejection point, fresh live hashes, and per-surface old/new/blocked
+  classification.
+
 The next acceptable proof is one executable live rerun against a real local,
 Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that prints, in the same run,
 the exact command string, executor identity, auth/session boundary, preserved
