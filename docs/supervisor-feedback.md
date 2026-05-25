@@ -9,7 +9,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 - Going well: `reliable-executor` still owns the clearest lab proof, and `progress-publisher` keeps the visible surfaces terse and linked.
 - Not going well: the production gate is still closed because real-endpoint auth/session, durable journal semantics, graph identity, and plugin-driver proof are still missing.
-- Progress delta: none; the newest audit note records the same blocked state, so the release state does not move.
+- Progress delta: none; no new evidence landed, so the release state does not move.
 - Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the page concise; `critic` and `auditor` should reject wording-only proof.
 - Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.

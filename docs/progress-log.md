@@ -8,8 +8,8 @@ linked implementation artifacts.
 
 - Last update: 2026-05-25 12:38:26 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: no new evidence landed; the production gate stayed closed.
-- Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
+- Trend: no new evidence landed, so the production gate stayed closed.
+- Scope: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, real-endpoint proof, and plugin drivers remain unproven outside the lab.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, real-endpoint proof, and plugin drivers.
 - Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` keeps the public page terse and linked; `critic` and `auditor` should reject wording-only proof.
