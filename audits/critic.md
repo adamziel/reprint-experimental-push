@@ -36,6 +36,22 @@ remote audit evidence on a real local, Playground, or Docker
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
+Branch-local release gate, stated narrowly:
+
+- this worktree still has not produced a rerunnable real-site release command
+  against a live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- the supervised reliable-executor lane's completed `npm run verify:release`
+  run remains retained-source lab evidence, not this worktree's live retry
+  authority;
+- production-grade wording is blocked until one executable live rerun shows
+  the executor identity, auth/session boundary, preserved remote, exact
+  rejection point, dry-run receipt, apply-time revalidation, journal/recovery
+  inspection, graph identity, plugin-driver coverage, and old/new/blocked
+  classification for every touched surface; and
+- any late-discovered plugin-owned surface or remapped create target must get
+  its own preserve / reject / retry cycle instead of inheriting the first
+  approval.
+
 Production-grade wording on this branch is defensible only after the same live
 boundary shows all of the following:
 
