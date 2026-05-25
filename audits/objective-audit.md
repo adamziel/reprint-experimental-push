@@ -127,6 +127,8 @@ The strongest current runnable evidence still falls into the following classes:
 
 The current tests are useful, but they are not proof of no data loss, reliability, or speed at the production boundary. They mostly prove that the lab harness is internally consistent and that unsafe claims are refused. That is necessary guardrail coverage, not release evidence. The suite still stops short of proving the live-source loop, so every positive interpretation must stay limited to lab scope. In particular, `node --test` passing is still compatible with a release that would lose data, fail under a crash, or miss a throughput threshold on the live boundary, because the suite never forces that boundary or a production storage backend. Passing tests here are best read as "the release should not be trusted yet", not as "the release is safe". For the claim audit: no data loss is unproven, reliability is unproven, and speed is explicitly unclaimed.
 
+That means the current test suite can support a blocker note, but it cannot serve as the release gate itself. Any green run that only exercises these tests still leaves the live-source verdict open.
+
 The strongest test files deserve a stricter reading:
 
 - [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) proves planner invariants and refusal behavior for modeled inputs, not that a live source is mutated safely.
