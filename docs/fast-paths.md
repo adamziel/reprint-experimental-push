@@ -968,6 +968,10 @@ under load:
   reduce replay work, but they cannot prove the bounded queue order, the
   surviving acknowledgements, or the guarded publish barrier after a pause or
   crash.
+- compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-upload-
+  after-pause is rejected because planning evidence and cached file hashes can
+  trim duplicate hashing, but they cannot prove which chunk acknowledgements
+  survived the pause or restore the guarded publish barrier.
 - compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing
   is rejected because planning evidence and cached chunk receipts can trim
   duplicate replay, but they cannot prove the next bounded window still
