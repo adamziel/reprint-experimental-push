@@ -462,6 +462,19 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'pull exporter/importer establish the immutable base package before push',
     ),
   );
+  assert.ok(
+    pullToTopologyContract.required_invariants.includes(
+      'dry-run and apply are separate remote operations',
+    ),
+  );
+  assert.equal(
+    mapping.push_bindings.push_preflight,
+    'binds the persisted pull base to the live remote identity and a short-lived push session',
+  );
+  assert.equal(
+    mapping.push_bindings.push_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary, and rechecks the auth floor before mutation',
+  );
   assert.equal(preflightContract.live_binding.remote_site_id, 'remote-example');
   assert.equal(preflightContract.live_binding.push_session, 'psh_01j00000000000000000000000');
   assert.ok(

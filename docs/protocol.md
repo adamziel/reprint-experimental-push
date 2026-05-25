@@ -72,6 +72,24 @@ The write path is deliberately one-way:
 - journal inspect is read-only evidence gathering
 - recovery starts with inspect before any mutating repair
 
+For implementation and review, the bridge should be read in the same order as
+the production executor:
+
+1. exporter discovers the merge base and coverage evidence.
+2. importer persists the base package as immutable provenance.
+3. `push_preflight` binds that persisted package to one live remote identity.
+4. `push_snapshot_hashes` stays planning-only and may page through the live
+   comparison surface.
+5. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+6. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+7. `push_journal` stays read-only.
+8. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+9. `push_recover auto|finish|rollback` may mutate only after inspect proves
+   the branch safe with the same auth floor as the write path.
+
 The ladder maps directly to the pull pipeline:
 
 - exporter discovers the merge base and coverage evidence

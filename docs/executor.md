@@ -123,6 +123,17 @@ stage:
 - journal inspect is read-only
 - recovery starts with inspect before any mutating repair
 
+The same topology proof stays fixed in both Docker and Playground:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` carries the imported local edits.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` owns preflight, snapshot listing, dry-run upload, apply, journal
+  inspect, and recovery.
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy.
+- remote tunnels are disallowed.
+
 That handoff is intentionally one-way:
 
 - exporter/importer produce the immutable base package that push consumes
