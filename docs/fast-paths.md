@@ -106,6 +106,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus compressed row receipts still cannot prove a dependency-heavy plugin update finished, because compressed summaries cannot prove the per-row preconditions, dependency checks, or atomic-group commit survived failure.
 - A fresh remote index plus compressed row receipts still cannot skip the group finalize barrier for a plugin update, because compressed summaries cannot prove the finalize ran, the dependency checks held, or the atomic-group visibility boundary survived failure.
 - A compressed remote index plus cached row-batch receipts still cannot skip a plugin install, because planning evidence and compressed batch receipts cannot prove dependency checks, per-row preconditions, or the atomic-group commit survived failure.
+- A compressed remote index plus a cached file hash still cannot skip plugin-install writeback, because planning evidence and cached hashes do not prove the plugin metadata writes, per-row compares, or the atomic-group barrier survived failure.
 - A compressed database batch still cannot stand in for batch receipts, because compression can reduce recovery work but cannot prove every row reached the remote.
 - A fresh remote index plus durable chunk receipts still cannot skip the live file compare before publish.
 - A fresh remote index plus cached chunk receipts still cannot skip the guarded publish finalize for a large upload.
@@ -140,6 +141,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A fresh remote index plus a compressed in-memory buffer still cannot prove a dependency-heavy plugin update finished, because dependency checks, row receipts, and the atomic-group commit still need durable evidence.
 - A fresh remote index plus a compressed row batch still cannot skip live row compares, because planning evidence and batch compression cannot replace the live compare-and-swap predicate on each row.
 - A fresh remote index plus a cached file digest still cannot prove a large upload finished, because chunk receipts and the guarded publish record still need to survive failure.
+- A compressed remote index plus a cached file hash still cannot skip plugin-install writeback, because cached hashes do not prove the metadata writes, row compares, or atomic-group barrier survived failure.
 - A fresh remote index plus a compressed manifest hash still cannot prove a large upload finished, because the live compare, every chunk receipt, and the guarded publish record still need to survive failure.
 - A matching archive hash still cannot replace missing chunk receipts during large-upload resume, because the hash does not prove which acknowledgements survived a crash or lost response.
 - Unlimited parallel chunk sends during large-upload resume still cannot replace backpressure evidence, because the sender must preserve queue order and journal order to classify partial failure safely.
