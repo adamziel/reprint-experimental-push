@@ -138,6 +138,14 @@ the minimum production-shaped proof the executor must preserve:
 - `runner` is the only actor that may preflight, plan, upload, inspect, and recover
 - Docker and Playground must prove the same identity twice, not two different sites.
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy.
+
+That is the minimum production proof:
+
+- one remote source site seeds the persisted pull base
+- one local edited site produces the candidate plan
+- one later remote observation proves drift on the same identity
+- one runner process owns preflight, snapshot listing, dry-run, apply,
+  journal inspect, and recovery
 - remote tunnels are disallowed.
 
 The topology is intentionally asymmetric:

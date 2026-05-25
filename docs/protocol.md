@@ -68,8 +68,10 @@ The one-remote, one-local, one-drift-witness test shape is the same in Docker
 and Playground: `remote-base` seeds the persisted pull base, `local-edited`
 holds the imported local edits, `remote-changed` is the same remote identity
 observed later after drift, and `runner` is the only process allowed to
-compare, upload, inspect, and recover. Browser-visible inspection must stay on
-the sandbox-provided `8080` ingress through a local-only proxy.
+compare, upload, inspect, and recover. That is the compact end-to-end proof
+that dry-run and apply are separate remote operations, apply revalidates live
+evidence, and recovery starts with inspect. Browser-visible inspection must
+stay on the sandbox-provided `8080` ingress through a local-only proxy.
 
 The smallest machine-readable proof for that topology is
 [`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).
@@ -187,6 +189,19 @@ That ladder is the production contract in miniature:
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh live hashes prove the action
 
+The importer must preserve enough lineage for that boundary to remain
+provable later:
+
+- `pull_protocol_version`, the exporter/importer bundle, and the base manifest
+  identify the exact pull contract that may later be reused for push
+- the persisted base package keeps the merge-base resources, coverage proof,
+  and remote site identity that `push_preflight` must bind before any write
+  stage can begin
+- the canonical push plan is derived from that immutable base plus the live
+  snapshot listing and the edited local tree
+- mutating push stages must never rewrite the stored pull base to make stale
+  evidence look current
+
 The inspect-first recovery path is always the same:
 
 1. inspect the journal and live hashes
@@ -211,6 +226,14 @@ The same proof shape is what Docker and Playground must both preserve:
 - `remote-changed` is the same remote identity observed later after drift
 - `runner` is the only actor allowed to preflight, plan, upload, inspect, and recover
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+
+In other words, the deployable proof is intentionally minimal:
+
+- one remote source site seeds the persisted pull base
+- one local edited site produces the candidate plan
+- one later remote observation proves drift on the same identity
+- one runner process owns preflight, snapshot listing, dry-run, apply,
+  journal inspect, and recovery
 
 ## Authentication
 
