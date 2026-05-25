@@ -14,6 +14,10 @@ This is the short operational version of the planner invariant policy.
   preserved through apply.
 - Matching independent edits may coexist with a live-preconditioned deletion
   while remote-only plugin drift remains preserved in the same plan.
+- A live-preconditioned delete may still apply alongside a matching
+  independent edit and file type swap; the matching resources stay
+  `already-in-sync`, the delete keeps its own live remote precondition, and
+  unrelated remote-only plugin drift stays preserved through apply.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Plugin-context and plugin-owned data mutations only when their required live
@@ -37,6 +41,8 @@ This is the short operational version of the planner invariant policy.
 - Same-resource local/remote changes that diverge to different hashes.
 - Local delete or file type swap when the live remote resource drifted and the
   local side did not independently reach the live remote hash.
+- Plugin-owned deletions when the owner context is stale and the local side did
+  not independently match the live remote context.
 - Plugin-context or plugin-owned data mutations when the relevant live remote
   plugin context drifted and the local side did not independently match it.
 - Any mutation that lacks a live remote precondition bound to the mutation id,

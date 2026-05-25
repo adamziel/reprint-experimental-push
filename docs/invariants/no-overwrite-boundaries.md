@@ -38,6 +38,10 @@ This note is the short form of the planner policy in
   independent edit and file type swap; the matching resources stay
   `already-in-sync`, the delete keeps its own live remote precondition, and
   unrelated remote-only plugin drift stays `keep-remote`.
+- A live-preconditioned file delete may still apply alongside a matching
+  independent edit and file type swap, and the same plan may also preserve
+  unrelated remote-only plugin removals or metadata changes without creating
+  extra mutations.
 - The planner can still stop on a plugin-owned mutation while preserving
   unrelated matching independent edits, deletions, and file type swaps as
   `already-in-sync`, and remote-only plugin drift remains `keep-remote`.
@@ -75,6 +79,8 @@ mutation id, the resource key, the remote hash observed during planning, and
   conflict evidence stays redacted and the plugin drift stays preserved.
 - Local delete or file type swap when the live remote resource drifted and the
   local side did not independently reach the live remote hash.
+- Plugin-owned deletions when the owner context is stale and the local side did
+  not independently match the live remote context.
 - Plugin-context or plugin-owned data mutations when the relevant live remote
   plugin context drifted and the local side did not independently match it.
 - Plugin-file or plugin-owned-data mutations when the live remote plugin was
