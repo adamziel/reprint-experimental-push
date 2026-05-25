@@ -69,6 +69,7 @@ The tests do the right kind of negative work, but they are not positive release 
 - `node --test test/push-planner.test.js test/recovery-journal.test.js test/performance-model.test.js test/guarded-executor-benchmark.test.js` was rechecked in this worktree on 2026-05-25 and passed `86/86`. That is regression evidence only. It does not certify no data loss, reliability, or speed on the live source boundary.
 - `origin/lane/reliable-executor` at `2ac32891` exposes `verify:release` and `test:playground:production-shaped-missing-secret`, and is the current remote proof that the release wrapper and the missing-secret gate exist upstream. That command exists upstream, but the proof is still remote-lane evidence and still not enough by itself, because this checkout does not yet own an equivalent live-boundary verdict.
 - The strongest live-boundary claims still missing are not hypothetical. They are the production auth/session lifecycle, durable journal semantics, graph identity mapping, plugin-driver behavior, leases/fencing, and preserved-remote drift at apply time. The blocking issue is the incomplete production-boundary verdict, not the mere existence of a wrapper command.
+- Remote-lane proof changes the wording of the blocker, not the blocker itself. It is valid evidence that the upstream release wrapper now reaches live preflight, dry-run, apply, recovery inspect, and journal readback, but this checkout still needs its own checked verdict or enforced default entrypoint before the release gate can open.
 
 ## Current Command Surface
 
