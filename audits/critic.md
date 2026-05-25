@@ -47,6 +47,15 @@ Concrete failure scenarios that still block production wording:
   name what the note proves here and what it does not prove here, it stays
   historical context only and cannot authorize a retry boundary.
 
+Missing repo proof for the comparisons is still the same live boundary on
+this worktree, rerun against the exact drift case, with:
+
+- preserved-remote evidence after rejection;
+- a stale-artifact rejection point before the first write;
+- a fresh retry scope rebuilt from live hashes on this branch; and
+- old/new/blocked classification for every touched surface, including any
+  later-discovered plugin-owned surface.
+
 What must change before any production-grade push claim:
 
 - the branch must show a live write boundary that rejects stale remote drift
@@ -90,6 +99,14 @@ What must change before any production-grade push claim:
   same live boundary here, and says what that note proves and does not prove
   here; a note that only matches the same route family, package layout, or
   reviewer wording is still compatibility evidence, not production proof.
+
+Comparison bottom line: Reprint proves staged pull transport, ZS-Sync proves
+bounded discovery, and ForkPress proves review/durability vocabulary. None of
+them proves a live push executor on this branch that rejects stale drift
+before the first write, preserves the remote for audit, blocks create-time
+identity remap, or classifies late-discovered plugin-owned surfaces before
+retry. If the branch cannot show those live-boundary proofs here, the source
+note remains design context only.
 
 Important boundary: a lab-shaped route family, packaged mount, fixture replay,
 or `finalMatchesLocal` result can still be compatible without proving the
