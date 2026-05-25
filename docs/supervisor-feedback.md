@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 14:40:20 CEST
+Last updated: 2026-05-25 14:45:18 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 14:40:20 CEST
+## 2026-05-25 14:45:18 CEST
 
-- Going well: `reliable-executor` added `ee43e194`, which binds `verify:release` to the supplied source URL, and `no-data-loss-recovery` added `ee25a9b5` with `403` passing planner tests.
-- Not going well: the shipping gate is still closed because production auth/session lifecycle and durable journal storage with lease/fencing remain unproven.
-- Progress delta: the harness/source binding and recovery evidence improved again, but the release state still does not move.
+- Going well: `reliable-executor` kept the release harness fail-closed and `no-data-loss-recovery` kept adding durable replay evidence, while the 8 fast/low lanes plus the live watcher stay active.
+- Not going well: production auth/session lifecycle and durable journal storage with lease/fencing are still unproven, so the shipping gate remains closed.
+- Progress delta: lab and recovery evidence improved again, but it still does not prove a shippable real-endpoint boundary.
 - Next nudge: `reliable-executor` owns the next production-boundary proof; `no-data-loss-recovery` should keep tightening durable recovery evidence; `progress-publisher` should stay quiet unless material evidence changes.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 

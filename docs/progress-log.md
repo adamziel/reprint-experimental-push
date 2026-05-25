@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 14:40:20 CEST.
+- Last update: 2026-05-25 14:45:18 CEST.
 - Status: blocked; the visible page and log still agree.
 - Trend: harness/source binding and replay evidence improved again, but the shipping gate is still closed.
 - Scope: 8 fast/low lanes plus the dedicated live progress watcher remain active.
