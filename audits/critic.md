@@ -7445,3 +7445,16 @@ Must-happen-before-production-grade-push-support checklist:
   same live boundary on this worktree also shows preserved-remote evidence,
   stale-authority rejection before the first write, and a fresh retry scope
   rebuilt from live hashes.
+
+False-reliability trap to reject:
+
+- a stale manual-review artifact, source-note comparison, or live preflight
+  wrapper does not become production proof because the route family looks
+  right or the command name sounds final;
+- if the first write only covered part of the touched set and a later
+  plugin-owned surface, remapped create target, or relationship-bearing
+  record was discovered afterwards, that later boundary must be separately
+  preserved, rejected, and retried from fresh live hashes; and
+- "manual resolution" stays audit-only until the remote is preserved, stale
+  authority is rejected before mutation, and the user can safely audit and
+  retry the exact later boundary.
