@@ -1,16 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 00:20 CEST
+Last updated: 2026-05-26 00:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-26 00:20 CEST - Keep-Busy Swarm Check
+## 2026-05-26 00:24 CEST - Keep-Busy Swarm Check
 
-- `reliable-executor` changed materially: the follow-up now reports a clean push on `origin/lane/reliable-executor` and a closed-only proof for the live-source gate alias. The earlier exact-output failure note is stale.
-- `no-data-loss-recovery` is unchanged: the direct planner proof still passes, and the HTTP smoke is still blocked by the ready-plan fixture state rather than the recovery logic.
-- Next nudge: wait for the reliable lane to bring back the live-source preflight with an actual source URL, and only reopen the recovery smoke after the ready-plan dependency is restored.
-- Gate status: still closed; the reliable lane has a boundary proof, not a live end-to-end confirmation yet.
+- `reliable-executor` is not green yet: the follow-up worktree is still dirty with edits in `scripts/playground/production-shaped-release-verify.mjs`, `src/authenticated-http-push-client.js`, and `test/protocol-fixtures.test.js`, and the handoff still says the exact-output assertions are failing in the missing-secret/drift branches.
+- `no-data-loss-recovery` is unchanged: the direct planner proof still passes, and the HTTP smoke remains blocked by the ready-plan fixture state rather than the recovery logic.
+- Next nudge: ask `reliable-executor` to re-run the release-proof path against the exact fixture expectations and report the specific assertion delta before anyone treats the lane as passed.
+- Gate status: still closed; there is a concrete patch in flight, but no rechecked end-to-end confirmation yet.
 
 ## 2026-05-26 00:19 CEST - Main Window Swarm Check
 
