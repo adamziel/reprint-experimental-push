@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Live Progress Refresh
 
-- Last update: 2026-05-25 02:01 CEST.
+- Last update: 2026-05-25 02:04 CEST.
 - Status: `89` Node tests still pass after supervised lane merges, and the
   swarm remains active.
 - Trend: fresh lane evidence stayed aligned on recovery, protocol, critic, and
@@ -15,7 +15,7 @@ linked implementation artifacts.
   identity, plugin drivers, live Docker/Playground topology, recovery
   boundaries, and release gate evidence remain unproven.
 - Public page: [progress.html](../progress.html) now carries the refreshed
-  visible timestamp and keeps the first screen concise.
+  visible timestamp and keeps the first screen concise and conservative.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
