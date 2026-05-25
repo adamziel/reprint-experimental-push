@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is no longer "there is no release command"; it is "there is no checked live-boundary verdict in this checkout that proves the production boundary." Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker.
+Current top blocker, rechecked on 2026-05-25: the release boundary still lacks executable proof that production auth/session lifecycle and durable journal semantics are safe on the real push path. The blocker is no longer "there is no release command"; it is "there is no checked live-boundary verdict in this checkout that proves the production boundary." Graph identity mapping, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional release gaps, but they do not displace the main blocker. Upstream `verify:release`-style output does not change that until this checkout owns the same enforced verdict or an equivalent local gate.
 
 The release gate therefore remains closed until there is executable proof for all of the following in the same required invocation:
 
@@ -78,7 +78,7 @@ The tests do the right kind of negative work, but they are not positive release 
 Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
-- This checkout exposes helper and Playground scripts, but it does not carry a checked `verify:release` command surface in-tree. That is an enforcement gap in this lane, not the root release blocker.
+- This checkout exposes helper and Playground scripts, but it does not carry a checked `verify:release` command surface in-tree. That is enforcement debt in this lane, not the root release blocker.
 - Upstream release-verifier claims move the discussion from command absence to the remaining production boundary: auth/session lifecycle plus durable journal semantics, with graph identity, plugin-driver behavior, leases/fencing, preserved-remote drift, and topology still needing release-boundary proof. Reported passing output there includes live preflight, dry-run, apply, recovery inspect, and journal readback, but that remains upstream evidence until this checkout owns the same verdict.
 - There is no checked-in `.github` tree or workflow entrypoint in this checkout.
 - The strongest current scripts remain support evidence, not a release gate, because none of them own the live-source verdict in the same invocation. The current regression suite is green at `89/89`, and the targeted planner/recovery/benchmark tests were rechecked at `86/86`, but both remain regression-only evidence rather than a live-boundary release verdict. That is enforcement debt in this checkout, not a substitute for production-boundary proof.
