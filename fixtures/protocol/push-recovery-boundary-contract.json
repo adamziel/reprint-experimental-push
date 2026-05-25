@@ -1,0 +1,53 @@
+{
+  "contract_id": "push-recovery-boundary-contract-one-remote-one-local",
+  "purpose": "ties inspect-first recovery to the pull provenance handoff and the fresh-live revalidation boundary",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "persisted_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "remote_site_id": "remote-example"
+    }
+  },
+  "recovery_sequence": [
+    "push_journal",
+    "push_recover inspect",
+    "push_recover auto|finish|rollback"
+  ],
+  "recovery_boundary": {
+    "journal": "reads durable claim, lease, and fencing evidence without authorizing mutation",
+    "inspect": "classifies finish, rollback, retry, or block before any mutating repair",
+    "mutate": "may run only after inspect and fresh live hashes prove the action safe"
+  },
+  "liveness_boundary": {
+    "dry_run_and_apply": "remain separate remote operations",
+    "apply": "revalidates fresh live evidence before every batch and at the storage boundary",
+    "journal": "remains read-only even when recovery is needed"
+  },
+  "auth_boundary": {
+    "read_only": "may stay on the existing HMAC family",
+    "mutating": [
+      "push session",
+      "canonical push signature",
+      "idempotency key"
+    ],
+    "floor": "at least as strict as current Reprint HMAC usage"
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "browser_ingress_port": 8080,
+    "proxy_policy": "local-only",
+    "tunnels": "disallowed"
+  },
+  "required_invariants": [
+    "pull exporter/importer establish the immutable base package before push",
+    "dry-run and apply are separate remote operations",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage"
+  ]
+}

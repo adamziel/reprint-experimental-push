@@ -858,6 +858,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const productionLadderContract = readJson('fixtures/protocol/push-production-ladder-contract.json');
   const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
   const recoveryRevalidationContract = readJson('fixtures/protocol/push-recovery-revalidation-contract.json');
+  const recoveryBoundaryContract = readJson('fixtures/protocol/push-recovery-boundary-contract.json');
   const remoteLivenessContract = readJson('fixtures/protocol/push-remote-liveness-contract.json');
   const pullToTopologyContract = readJson('fixtures/protocol/push-pull-to-topology-contract.json');
 
@@ -923,6 +924,30 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
     ),
   );
   assert.equal(recoveryRevalidationContract.stale_to_live_flow.apply_revalidation.rejects_without_fresh_live_evidence, true);
+  assert.equal(recoveryBoundaryContract.contract_id, 'push-recovery-boundary-contract-one-remote-one-local');
+  assert.deepEqual(recoveryBoundaryContract.recovery_sequence, [
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(recoveryBoundaryContract.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(
+    recoveryBoundaryContract.recovery_boundary.inspect,
+    'classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(
+    recoveryBoundaryContract.recovery_boundary.mutate,
+    'may run only after inspect and fresh live hashes prove the action safe',
+  );
+  assert.equal(recoveryBoundaryContract.liveness_boundary.dry_run_and_apply, 'remain separate remote operations');
+  assert.equal(recoveryBoundaryContract.auth_boundary.floor, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(recoveryBoundaryContract.topology.browser_ingress_port, 8080);
+  assert.equal(recoveryBoundaryContract.topology.proxy_policy, 'local-only');
+  assert.ok(
+    recoveryBoundaryContract.required_invariants.includes(
+      'journal inspection is read-only and never authorizes mutation by itself',
+    ),
+  );
   assert.equal(remoteLivenessContract.contract_id, 'push-remote-liveness-contract');
   assert.equal(remoteLivenessContract.push_liveness.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
   assert.equal(remoteLivenessContract.push_liveness.snapshot_hash_listing, 'returns live remote comparison evidence for planning only');
