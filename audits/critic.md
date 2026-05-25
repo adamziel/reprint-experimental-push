@@ -2665,6 +2665,25 @@ Production-readiness release gate checklist:
    also shows the preserved remote, the stale rejection point, and the fresh
    retry scope on the same live write path.
 
+If any of those proofs is missing, the claim is not production-grade. The
+specific failure cases that still need explicit proof are:
+
+- Live remote drift after dry-run but before the first write, because a
+  matching route path does not prove the stale remote was revalidated on the
+  real executor.
+- Create-time identity remap or aliasing that points at a different live
+  target, because a stable local ID does not prove the write hit the intended
+  record.
+- Plugin-owned data outside the allowlist, because one covered row does not
+  prove the rest of the plugin-owned graph is safe.
+- Partial file, DB, or plugin side effects, because a single committed store
+  does not prove mixed writes were classified or retried safely.
+- Stale manual-review artifacts, because a readable artifact does not prove it
+  stayed audit-only after drift or that it could not widen scope on retry.
+- Reprint, ZS-Sync, or ForkPress source notes, because historical comparison
+  does not prove the exact live boundary on this branch unless the cited
+  upstream revision or worktree state was rechecked there.
+
 Minimum proof artifacts before any production-grade push wording:
 
 1. A live-boundary trace that names the exact request path, the exact stale
@@ -2682,3 +2701,17 @@ Minimum proof artifacts before any production-grade push wording:
 7. A source-note comparison record that names the exact upstream revision or
    worktree state and says whether it was reverified at the same live write
    boundary; otherwise the comparison remains historical context only.
+
+False reliability claims to avoid:
+
+- "Manual resolution succeeded" when the remote was not preserved for audit,
+  the stale artifact was not rejected before mutation, or the retry was not
+  rebuilt from fresh live evidence.
+- "The comparison proves it" when the Reprint, ZS-Sync, or ForkPress note did
+  not cite the exact upstream revision or worktree state and was not rechecked
+  at the same live write boundary.
+- "The plugin is handled" when the claim only covers the main row and not the
+  complete plugin-owned surface list, including late-discovered side effects.
+- "Recovery succeeded" when only one store committed and the others were
+  merely observed, because mixed side effects still need durable old/new/blocked
+  classification.
