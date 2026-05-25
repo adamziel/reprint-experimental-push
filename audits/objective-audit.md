@@ -64,6 +64,8 @@ Current proof must be judged against the live-source release boundary, not again
 - route smokes that still report `labBacked: true`
 - any proof that does not exercise the one-way pull base to one-way push to live source loop on the real release boundary
 
+Indirect evidence is not enough here: a route name, a `labBacked` label, a docs paragraph, or a passing optional smoke can support the audit, but none of them can promote a missing live-source run into release proof.
+
 The strongest current runnable evidence still falls into four classes:
 
 - executable proof: none that reaches the live-source boundary; the strongest tests are [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js), [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js), [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js), and [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js), but every one of them remains fixture-, model-, or refusal-backed rather than live-source-backed
