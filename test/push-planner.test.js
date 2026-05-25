@@ -17057,6 +17057,14 @@ test('durable recovery boundaries preserve the old remote until commit and repla
     1,
   );
   assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'journal-opened').length,
+    1,
+  );
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
+  assert.equal(
     replayPersisted.records.some((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote'),
     true,
   );
