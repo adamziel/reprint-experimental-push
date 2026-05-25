@@ -2708,6 +2708,36 @@ export function buildBenchmarkModel(overrides = {}) {
   };
 }
 
+export function buildFastPathFixture(overrides = {}) {
+  const model = buildBenchmarkModel(overrides);
+  const scheduleByKind = new Map(model.schedules.map((schedule) => [schedule.kind, schedule]));
+  const fixtureKinds = ['large-upload', 'plugin-install', 'plugin-update'];
+  const schedules = fixtureKinds.map((kind) => scheduleByKind.get(kind)).filter(Boolean);
+
+  return {
+    schemaVersion: model.schemaVersion,
+    safetyContract: model.safetyContract,
+    fastPathGates: model.fastPathGates,
+    safeSpeedupAreas: model.safeSpeedupAreas,
+    fixture: {
+      purpose: 'large-upload-and-plugin-apply-safety-evidence',
+      workloads: model.workloads.filter((workload) => fixtureKinds.includes(workload.kind)),
+      schedules,
+      totals: summarizeSchedules(schedules),
+    },
+    rejectedFastPaths: model.rejectedFastPaths.filter((fastPath) =>
+      fastPath.violates.includes('atomic-groups') ||
+      fastPath.violates.includes('live-preconditions') ||
+      fastPath.violates.includes('chunk-receipts') ||
+      fastPath.violates.includes('row-preconditions') ||
+      fastPath.violates.includes('remote-index-planning-only') ||
+      fastPath.violates.includes('compression') ||
+      fastPath.violates.includes('parallelism-limits') ||
+      fastPath.violates.includes('backpressure')
+    ),
+  };
+}
+
 function largeUploadWorkload() {
   return {
     id: 'large-media-upload',
