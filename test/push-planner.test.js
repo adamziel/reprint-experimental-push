@@ -4773,6 +4773,7 @@ test('durable recovery boundaries stay in old remote or fully updated remote wit
 
     assert.ok(error instanceof PushPlanError, label);
     assert.equal(JSON.stringify(remote), remoteSnapshot, label);
+    assertAcceptableRecoveryState(error.details.recovery);
     assert.equal(error.details.recovery.status, expectedStatus, label);
     assert.ok(error.details.recovery.artifacts.journal, label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
@@ -4792,6 +4793,7 @@ test('durable recovery boundaries stay in old remote or fully updated remote wit
   const persisted = readRecoveryJournal(journalPath);
 
   assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
