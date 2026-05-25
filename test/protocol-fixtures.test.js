@@ -199,6 +199,123 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
 });
 
+test('push production contracts pin the ladder, pull bridge, and one-remote-one-local topology', () => {
+  const extensionContract = readJson('fixtures/protocol/push-protocol-extension-contract.json');
+  const pullBridgeContract = readJson('fixtures/protocol/push-production-pull-bridge-contract.json');
+  const remoteLivenessTopologyContract = readJson(
+    'fixtures/protocol/push-remote-liveness-topology-contract.json',
+  );
+  const productionTopologyContract = readJson('fixtures/protocol/push-production-topology-contract.json');
+
+  assert.equal(extensionContract.contract_id, 'push-protocol-extension-production-contract');
+  assert.equal(
+    extensionContract.production_boundary.remote_snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    extensionContract.production_boundary.dry_run_plan_upload,
+    'uploads the canonical plan as an eligibility receipt, not a lock',
+  );
+  assert.equal(
+    extensionContract.production_boundary.mutation_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run',
+  );
+  assert.equal(
+    extensionContract.pull_to_push_mapping.push_preflight,
+    'binds the persisted pull base package to one live remote identity and one short-lived push session',
+  );
+  assert.equal(
+    extensionContract.topology.remote_base,
+    'remote-base',
+  );
+  assert.equal(extensionContract.topology.local_edited, 'local-edited');
+  assert.equal(extensionContract.topology.remote_changed, 'remote-changed');
+  assert.equal(extensionContract.topology.runner, 'runner');
+  assert.ok(
+    extensionContract.required_invariants.includes(
+      'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
+    ),
+  );
+  assert.ok(
+    extensionContract.required_invariants.includes(
+      'dry-run and apply are separate remote operations',
+    ),
+  );
+
+  assert.equal(
+    pullBridgeContract.contract_id,
+    'push-production-pull-bridge-contract-one-remote-one-local',
+  );
+  assert.equal(
+    pullBridgeContract.pull_to_push_mapping['push_preflight'],
+    'binds the persisted pull base package to one live remote identity and one short-lived push session',
+  );
+  assert.equal(
+    pullBridgeContract.pull_to_push_mapping['push_batch_apply'],
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(pullBridgeContract.topology.networking.ingress_port, 8080);
+  assert.equal(pullBridgeContract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(pullBridgeContract.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    pullBridgeContract.required_invariants.includes(
+      'authentication must be at least as strict as current Reprint HMAC usage',
+    ),
+  );
+
+  assert.equal(
+    remoteLivenessTopologyContract.contract_id,
+    'push-remote-liveness-topology-contract',
+  );
+  assert.deepEqual(remoteLivenessTopologyContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    remoteLivenessTopologyContract.topology.docker.network,
+    'one private network',
+  );
+  assert.ok(
+    remoteLivenessTopologyContract.topology.playground.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.ok(
+    remoteLivenessTopologyContract.required_invariants.includes(
+      'dry-run and apply are separate remote operations',
+    ),
+  );
+
+  assert.equal(
+    productionTopologyContract.contract_id,
+    'push-production-topology-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionTopologyContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.ok(
+    productionTopologyContract.topology.docker.proof.includes(
+      'dry-run and apply remain separate remote calls',
+    ),
+  );
+  assert.ok(
+    productionTopologyContract.topology.playground.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.ok(
+    productionTopologyContract.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
+    ),
+  );
+});
+
 test('push remote liveness topology fixture keeps planning, apply, and recovery separate', () => {
   const contract = readJson('fixtures/protocol/push-remote-liveness-topology-contract.json');
 
