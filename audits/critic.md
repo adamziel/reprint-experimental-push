@@ -223,6 +223,14 @@ upstream state at the same live write boundary. If that recheck did not
 happen, the note stays historical even when the route shape, package mount, or
 hash looks current.
 
+The same restriction applies to any `production-shaped` label in progress
+pages, smoke names, or audit summaries. That wording can describe a lab route
+profile, a packaged plugin mount, or a route-compatibility check, but it is
+not proof of a production-backed mutation boundary unless the live remote
+drifted and the apply path failed closed before mutation. If the surrounding
+text does not name the rejected stale hash set, the preserved remote, and the
+fresh retry scope, the label is still compatibility language.
+
 In the same way, a route-shaped smoke or package-mounted fixture can at most prove compatibility with the route contract; it does not prove the write executor preserved the remote, rejected stale authority, or classified partial side effects correctly. The missing proof is the live mutation boundary itself, not the endpoint shape.
 The release gate and the long audit should stay aligned on one point: a matching endpoint name, ingress shape, or packaged-plugin mount is compatibility evidence only unless the exact live mutation boundary was exercised against a drifted remote and stale authority failed closed before mutation.
 This means a source-note comparison cannot be promoted into live write-path safety unless the claim also names the exact boundary that was exercised and the exact upstream revision or worktree state that was reverified.
