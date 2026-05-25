@@ -475,7 +475,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until missing evidence closes. Linked docs hold the proof trail.</p>
-        <time class="update-stamp" datetime="2026-05-25T08:19:10+02:00">Last updated: May 25, 2026, 08:19:10 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T08:20:00+02:00">Last updated: May 25, 2026, 08:20:00 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production evidence</span>
           <span class="pill">Evidence stays in linked docs</span>
@@ -517,11 +517,11 @@
         <ul class="compact-list" aria-label="Supervisor snapshot">
           <li><strong>Going well</strong><span>Page, log, and audit note still agree on the blocked state, and the evidence links stay easy to scan.</span></li>
           <li><strong>Not going well</strong><span>Proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.</span></li>
-          <li><strong>Progress change</strong><span>No evidence delta in this pass; the block stays explicit and the live-copy note is clear.</span></li>
+          <li><strong>Progress change</strong><span>No evidence delta in this pass; the visible lane nudges are shorter and the live-copy note stays explicit.</span></li>
           <li><strong>Next nudge</strong><span>Keep each lane on one proof gap, one owner, and one production-backed test.</span></li>
         </ul>
         <ul class="compact-list" aria-label="Lane nudges">
-          <li><strong>Invariants</strong><span>Owner: lane. Gap: graph identity mapping on a real site. Next test: prove it against live content.</span></li>
+          <li><strong>Invariants</strong><span>Owner: lane. Gap: graph identity on a real site. Next test: prove it against live content.</span></li>
           <li><strong>Recovery</strong><span>Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill mid-write and inspect restart state.</span></li>
           <li><strong>Reliable executor</strong><span>Owner: lane. Gap: auth, session, and lease behavior in production. Next test: prove the auth/session path on a real endpoint.</span></li>
           <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the benchmark and record the bound.</span></li>
@@ -553,7 +553,7 @@
         <span>What still blocks production readiness</span>
       </div>
       <div class="proof-list">
-        <div class="proof-item"><span class="status">Missing</span><p>Production auth/session proof.</p></div>
+        <div class="proof-item"><span class="status">Missing</span><p>Auth/session proof on a real endpoint.</p></div>
         <div class="proof-item"><span class="status">Missing</span><p>Durable journal, crash, lease, and fencing proof.</p></div>
         <div class="proof-item"><span class="status">Missing</span><p>Playground integration beyond fixture labs.</p></div>
         <div class="proof-item"><span class="status">Missing</span><p>WordPress graph identity, plugin drivers, and rollback proof.</p></div>
