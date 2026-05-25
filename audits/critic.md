@@ -7816,6 +7816,11 @@ Lead finding for the current release-proof claim:
   retained-source evidence to a live WordPress auth/session lifecycle
   boundary, with durable journal semantics and explicit graph identity and
   plugin-driver evidence in the same rerun;
+- if that rerun cannot name the exact command string, exact live source URL,
+  executor identity, preserved remote, rejection point, dry-run receipt,
+  apply-time revalidation, journal/recovery inspection, and old/new/blocked
+  classification for every touched surface, it is compatibility evidence only
+  and must not be phrased as production-grade push support;
 - any wrapper-shaped progress claim that names `verify:release` but does not
   show the exact live boundary, preserved remote, apply-time revalidation, and
   journal/recovery inspection is still lab-only evidence; without those facts,

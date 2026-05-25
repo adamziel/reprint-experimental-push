@@ -12,6 +12,8 @@ Required proof artifacts on the same live boundary:
 - graph identity and plugin-driver coverage on the live boundary; and
 - old/new/blocked classification for every touched row, file, relationship-bearing record, and plugin-owned surface before retry starts.
 
+If any claim cannot name all of those artifacts for the same rerunnable live boundary, it is compatibility evidence only and must not be phrased as production-grade push support.
+
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
 
 - commit `2b00b189` is not treated as proof until a live real-site command,
@@ -44,7 +46,7 @@ Do not use production wording unless the branch has all of the following for the
 - if a smoke script is named `production-shaped`, `authenticated`, `authenticated-cli-push`, `authenticated-http-push`, or `production-plugin-package` while the repo still lacks a named real-site release command, that label is false reliability unless the script itself reruns the exact live boundary on an actual remote and preserves the rejected remote for audit;
 - if that smoke also reports `labBacked: true`, the label is compatibility evidence only and cannot be read as a production executor, production auth/session lifecycle proof, or preserved-remote proof;
 - if a smoke script, production-shaped route, or review artifact is described as "the release command" while the repo still lacks a named real-site entry point, that is false reliability and must be rejected as a proof gap, not accepted as operational coverage;
-- any comparison to Reprint, ZS-Sync, or ForkPress is provenance only unless it names the exact upstream revision or worktree state, says what it proves here, says what it does not prove here, and is backed by a branch-local rerun of the same live boundary; those notes do not prove preserved-remote safety, production auth/session lifecycle, recovery-journal durability, graph identity, or plugin-driver coverage on this branch;
+- any comparison to Reprint, ZS-Sync, or ForkPress is provenance only unless it names the exact upstream revision or worktree state, says what it proves here, says what it does not prove here, and is backed by a branch-local rerun of the same live boundary; those notes do not prove preserved-remote safety, production auth/session lifecycle, recovery-journal durability, graph identity, or plugin-driver coverage on this branch, and wording alone never upgrades them to retry authority;
 - even a correct upstream anchor is still only provenance if the branch does not rerun the same live boundary on this worktree and preserve the rejected remote for audit; the note must say what it proves here and what it does not prove here, or it stays ambiguous and cannot authorize production wording;
 - the exact stale-drift case is named and rerun here, not inferred from a route-shaped smoke, fixture replay, or copied mount;
 - the remote that drifted is preserved, still inspectable after rejection, and treated as audit evidence only until a fresh retry scope is rebuilt from live hashes on this branch;
