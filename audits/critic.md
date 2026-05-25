@@ -1871,6 +1871,25 @@ would reasonably read as equivalent.
   owned resource set and shows the apply-time revalidation result; route shape,
   package mount, or fixture success alone cannot stand in for that proof.
 
+### Release-Gate Evidence Standard
+
+Before any wording can call this project production-grade, the claim must
+carry all of these items in the same evidence set:
+
+- The exact live write boundary that was exercised.
+- The exact remote drift case, create-time remap case, plugin-owned surface
+  set, and partial side-effect classification for that boundary.
+- The preserved remote snapshot, the stale rejection point, and the fresh
+  retry scope that kept old approval from becoming current authority.
+- The exact upstream revision or worktree state for any Reprint, ZS-Sync, or
+  ForkPress comparison, plus what that note actually proves.
+- A fail-closed release gate result that records why any missing proof item
+  blocked release.
+
+If any of those pieces is missing, the claim stays historical context only.
+Route shape, package mount, fixture replay, and `finalMatchesLocal` are not
+substitutes for this evidence.
+
 ## Production Claim Blockers
 
 Before this project can claim production-grade push support, all of the
