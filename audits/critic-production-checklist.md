@@ -6,6 +6,8 @@ this branch.
 - The exact live boundary is named, along with the exact stale-drift case.
 - The same live boundary preserves the rejected remote and leaves it
   inspectable after rejection.
+- A named real-site release command exists and can be rerun unchanged against
+  that same live boundary.
 - Stale authority is rejected before the first write.
 - Dry-run receipt and apply-time revalidation are shown on the same live
   boundary.
@@ -39,3 +41,5 @@ this branch.
 - The claim does not use "comparison passed", "manual resolution succeeded",
   "production-ready", or "release-ready" unless the preserved remote,
   rejection point, and fresh retry scope are all present in the same rerun.
+- If the claim only has a lab, fixture, or wrapper command, it must say so
+  explicitly and cannot be treated as release evidence.

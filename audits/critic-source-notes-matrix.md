@@ -3,7 +3,8 @@
 This matrix is the compact comparison record for the current critic baseline.
 It is not retry authority. It only records what the upstream notes prove as
 historical context and what still needs branch-local proof before production-
-grade push wording is allowed.
+grade push wording is allowed, including a named real-site release command
+that can be rerun unchanged on the same live boundary.
 
 The comparison is intentionally conservative: a note can explain design
 lineage, but it cannot prove the live executor boundary, preserved-remote
@@ -16,10 +17,10 @@ anchors are provenance only, not retry authority.
 
 The practical rule is simple: each note can explain why the design looks the
 way it does, but none of them prove the live WordPress auth/session boundary,
-the preserved remote, or the fresh retry scope on this branch. Production-
-grade wording still needs a branch-local rerun that names the exact command,
-the exact live `REPRINT_PUSH_SOURCE_URL`, and the exact boundary that was
-rejected before the first write.
+the preserved remote, the named real-site release command, or the fresh retry
+scope on this branch. Production-grade wording still needs a branch-local
+rerun that names the exact command, the exact live `REPRINT_PUSH_SOURCE_URL`,
+and the exact boundary that was rejected before the first write.
 
 ## Reprint
 
@@ -64,6 +65,8 @@ Any comparison to Reprint, ZS-Sync, or ForkPress stays historical context
 unless this branch reruns the same live boundary and proves:
 
 - the exact live `REPRINT_PUSH_SOURCE_URL`;
+- a named real-site release command that can be rerun unchanged on this
+  branch;
 - the preserved remote that stayed inspectable after rejection;
 - the exact rejection point before the first write;
 - dry-run receipt and apply-time revalidation;
@@ -73,6 +76,6 @@ unless this branch reruns the same live boundary and proves:
   relationship-bearing record, and plugin-owned surface.
 
 If a comparison note says "passed", "resolved", or "production-ready" but
-does not name the exact live boundary and preserved remote on this branch,
-that wording is false reliability and must be treated as compatibility
-evidence only.
+does not name the exact live boundary, preserved remote, and rerunnable
+real-site release command on this branch, that wording is false reliability
+and must be treated as compatibility evidence only.
