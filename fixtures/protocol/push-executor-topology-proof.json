@@ -1,0 +1,58 @@
+{
+  "proof_id": "push-executor-topology-proof-one-remote-one-local",
+  "purpose": "compact proof that the executor keeps pull provenance, push staging, and browser ingress on one production-shaped topology",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "persisted_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "base_manifest_hash": "sha256:pull-base-manifest",
+      "base_coverage_hash": "sha256:pull-base-coverage",
+      "remote_site_id": "remote-example"
+    }
+  },
+  "push_pipeline": {
+    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "snapshot_hashes": "returns the live remote comparison set for planning only",
+    "dry_run": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
+    "apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "journal": "reads durable evidence without authorizing mutation",
+    "recovery": "starts with inspect and allows mutating repair only when the journal and live hashes prove the action"
+  },
+  "topology": {
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    },
+    "docker": {
+      "remote_base": "remote-base",
+      "local_edited": "local-edited",
+      "remote_changed": "remote-changed",
+      "runner": "runner",
+      "proof": [
+        "one private network",
+        "remote-base and remote-changed are the same remote identity at different times",
+        "browser-visible inspection goes through the sandbox-provided 8080 ingress"
+      ]
+    },
+    "playground": {
+      "remote_base": "remote-base",
+      "local_edited": "local-edited",
+      "remote_changed": "remote-changed",
+      "runner": "local test process",
+      "proof": [
+        "separate disposable blueprints",
+        "remote-base and remote-changed are the same remote identity at different times",
+        "browser-visible inspection goes through the sandbox-provided 8080 ingress"
+      ]
+    }
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage"
+  ]
+}

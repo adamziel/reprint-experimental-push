@@ -106,6 +106,12 @@ captures the same one-remote, one-local, one-drift-witness test shape for
 Docker and Playground. Both packaging modes must preserve the same proof
 boundary:
 
+The executor-topology companion at
+[`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
+binds the pull pipeline, push stages, and ingress policy into one compact
+proof object. It is the shortest machine-readable summary of the production
+push contract and the one-remote/one-local test topology.
+
 The companion now includes an explicit `push_pipeline` block so tests can
 assert the production stage order directly: preflight binds the persisted
 pull base to the live remote identity, snapshot listing stays planning only,

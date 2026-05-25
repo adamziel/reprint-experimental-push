@@ -386,6 +386,7 @@ test('push topology matrix fixture captures the minimal docker and playground pr
 
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
+  const executorTopology = readJson('fixtures/protocol/push-executor-topology-proof.json');
 
   assert.equal(mapping.mapping_id, 'push-pull-handoff-production-map');
   assert.equal(mapping.pull_exports.exporter, 'scans the merge base and coverage evidence');
@@ -404,6 +405,26 @@ test('push pull mapping fixture preserves the one-way pull-to-push provenance bo
   assert.equal(mapping.restart_proof.invariants[0], 'dry-run and apply are separate remote operations');
   assert.ok(
     mapping.restart_proof.invariants.includes('remote snapshot hash listing is planning evidence, not write authority'),
+  );
+  assert.equal(executorTopology.proof_id, 'push-executor-topology-proof-one-remote-one-local');
+  assert.equal(executorTopology.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(
+    executorTopology.push_pipeline.preflight,
+    'binds the persisted pull base to the live remote identity and a short-lived push session',
+  );
+  assert.equal(
+    executorTopology.push_pipeline.dry_run,
+    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(executorTopology.topology.networking.ingress_port, 8080);
+  assert.equal(executorTopology.topology.networking.proxy_policy, 'local-only');
+  assert.equal(executorTopology.topology.networking.tunnels, 'disallowed');
+  assert.ok(executorTopology.topology.docker.proof.includes('one private network'));
+  assert.ok(executorTopology.topology.playground.proof.includes('separate disposable blueprints'));
+  assert.ok(
+    executorTopology.required_invariants.includes(
+      'authentication must be at least as strict as current Reprint HMAC usage',
+    ),
   );
 });
 

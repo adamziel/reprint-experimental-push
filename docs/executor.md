@@ -165,6 +165,12 @@ through a local-only proxy. Remote tunnels are disallowed.
 The topology matrix fixture is the shortest machine-readable version of the
 same proof:
 
+[`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
+keeps the executor-focused version of the same proof in one place: pull
+provenance, preflight, snapshot listing, dry-run, apply, journal inspect, and
+inspect-first recovery all share the same one-remote, one-local, one-runner
+shape.
+
 - Docker uses one private network and keeps `remote-base`, `local-edited`,
   `remote-changed`, and `runner` distinct.
 - Playground uses separate disposable blueprints with the same remote identity
