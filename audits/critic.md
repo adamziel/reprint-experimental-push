@@ -1799,7 +1799,8 @@ evidence must be attached or directly referenced:
 3. The claim shows the stale approval that failed closed, plus the preserved
    audit artifact that makes it readable but unusable.
 4. The claim shows a fresh retry built from current live hashes rather than
-   reusing the stale approval.
+   reusing the stale approval, and it names the exact reject point that kept
+   the old approval from authorizing any write.
 5. The claim states whether Reprint, ZS-Sync, or ForkPress source notes were
    reverified against the exact upstream revision or worktree state named in
    the claim; if not, the comparison is historical context only.
@@ -1828,7 +1829,9 @@ evidence must be attached or directly referenced:
 13. The claim does not treat "manual resolution" as success unless the remote
     was preserved for audit, the stale approval was rejected before mutation,
     and the retry can be audited from fresh live hashes without widening the
-    approved scope.
+    approved scope. A readable stale artifact is audit evidence only; it is
+    not retry authority after drift, partial recovery, or plugin-owned state
+    remapping.
 
 ## Minimum Production Claim Gates
 
