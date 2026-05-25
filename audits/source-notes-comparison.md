@@ -178,6 +178,11 @@ If a manual-review artifact is still readable after drift but has not been
 rejected before write, that readability is audit evidence only, not proof of a
 safe retry. The retry proof must show the preserved remote, the stale artifact
 rejection point, and fresh live hashes used to rebuild scope.
+If the first write already committed and a later plugin-owned surface only
+appears afterward, that later surface is a new boundary, not a continuation of
+the earlier success story. The comparison stays historical unless it shows a
+preserved remote, a separate rejection or classification point for the later
+surface, and a fresh retry scope for that later boundary.
 That also covers any live-looking hash emitted by a fixture-backed or
 copied-lab path behind a production-shaped mount: the hash may confirm the
 route answered, but it still does not prove the live mutation executor ran.

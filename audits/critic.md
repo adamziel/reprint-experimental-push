@@ -3546,6 +3546,10 @@ Production release gate checklist:
   write touches a late-discovered plugin-owned surface; if the proof does not
   show that surface was blocked or durably classified before retry, then the
   earlier artifact cannot authorize the new boundary.
+- A late-discovered plugin-owned surface cannot be folded into the earlier
+  success story just because the first write committed cleanly; the proof must
+  show a preserved remote, a separate rejection or classification point for
+  the late surface, and a fresh retry scope for that later boundary.
 - Any source-note comparison that reuses a readable review artifact for a
   later write must keep the stale note audit-only unless the branch shows the
   exact live boundary, preserved remote, rejection point, and fresh retry
