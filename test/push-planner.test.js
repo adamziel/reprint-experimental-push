@@ -7734,3 +7734,30 @@ test('apply boundary failures stay in old-remote and completed replay stays full
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
 });
+
+test('replaying a completed plan stays inert and never revives stale local inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const completed = applyPlan(baseSite(), plan);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "stale local";';
+  replayRemote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Stale insert', post_status: 'draft' };
+  const replaySnapshot = JSON.stringify(replayRemote);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  const replayError = captureError(() => applyPlan(replayRemote, plan, { journal: completed.journal }));
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.code, 'RECOVERY_BLOCKED');
+  assertAcceptableRecoveryState(replayError.details.recovery);
+  assertRecoveryStateArtifacts(replayError.details.recovery, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.remote, 'blocked replay must carry remote artifacts');
+  assert.ok(replayError.details.recovery.artifacts.journal, 'blocked replay must carry journal artifacts');
+  assert.equal(replayRemote.db.wp_posts['ID:2'].post_title, 'Stale insert');
+  assert.equal(replayRemote.files['index.php'], '<?php echo "stale local";');
+});
