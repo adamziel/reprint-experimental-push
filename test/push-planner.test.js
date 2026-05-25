@@ -1402,6 +1402,61 @@ test('durable pre-commit failures stay old-remote and a completed replay stays f
   }
 });
 
+test('supported recovery boundaries only resolve to old-remote, fully-updated-remote, or blocked-recovery', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const boundaryScenarios = [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote'],
+    ['after staging', { failAfterStaging: true }, 'old-remote'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote'],
+    ['completed replay', {}, 'fully-updated-remote'],
+  ];
+
+  for (const [label, options, expectedStatus] of boundaryScenarios) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+
+    let result;
+    if (label === 'completed replay') {
+      result = applyPlan(remote, plan, { durableJournal });
+      durableJournal.close();
+      assertAcceptableRecoveryState(result.recoveryState);
+      assertRecoveryStateArtifacts(result.recoveryState, expectedStatus);
+      assert.equal(result.recoveryState.artifacts.remote, undefined);
+      assert.equal(result.recoveryState.artifacts.journal.status, 'completed');
+      assert.equal(result.appliedMutations, plan.mutations.length);
+      assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+      assert.equal(Object.keys(result.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+      continue;
+    }
+
+    const failure = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+    durableJournal.close();
+
+    assert.ok(failure instanceof PushPlanError, label);
+    assertAcceptableRecoveryState(failure.details.recovery);
+    assertRecoveryStateArtifacts(failure.details.recovery, expectedStatus);
+    assert.equal(failure.details.recovery.artifacts.remote, undefined);
+    assert.equal(
+      readRecoveryJournal(journalPath).records.some(
+        (record) => record.type === 'recovery-state' && record.state === expectedStatus,
+      ),
+      true,
+      label,
+    );
+  }
+});
+
 test('keeps the durable old-remote contract intact when failure happens before mutation', () => {
   const base = baseSite();
   const local = baseSite();
