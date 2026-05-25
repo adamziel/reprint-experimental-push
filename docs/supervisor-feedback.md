@@ -1,9 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 02:47 CEST
+Last updated: 2026-05-25 23:49 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 23:49 CEST - Release-State Check
+
+- Improved: the restart-cycle evidence is stronger at the release boundary. `b725b2d3` keeps the production auth/session release boundary visible, with `b9aebe71` and `134d0401` still backing no-data-loss and recovery claims.
+- Still blocks shipping: release gates remain `0/4`. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing are still missing, so this is not a shippability change.
+- Next proof owner: `reliable-executor` owns the next real-site release command or production durable-journal proof. `progress-publisher` keeps the visible page dated and concise, but its update only becomes live after merge to `main`.
 
 ## 2026-05-25 02:47 CEST - Live Progress Refresh
 
