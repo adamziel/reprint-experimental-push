@@ -22,6 +22,9 @@ What it does not prove:
   coverage, or partial file/DB/plugin side-effect classification.
 - It does not prove plugin data traps are safe just because a fixture-owned
   option, row, or route matches the expected shape.
+- It does not prove a stale manual-review artifact can remain auditable while
+  being unusable as authority after drift, or that a retry must rebuild scope
+  from fresh live hashes instead of inheriting the old decision.
 - It does not prove production auth, replay cleanup, TLS policy, or audit
   retention for push.
 
@@ -59,6 +62,8 @@ What it does not prove:
   sufficient for production push support.
 - It does not prove plugin-owned state outside the allowlist is blocked when
   the same data path is hidden behind a valid-looking lab route.
+- It does not prove a create-time remap, alias, or renumber event is safe just
+  because the route looks production-shaped or the package mount matches.
 - It does not prove the exact current upstream state unless the cited upstream
   revision or worktree was reverified at the same live mutation boundary.
 
@@ -77,6 +82,7 @@ Without that revalidation, the notes cannot backfill missing proof for:
 - create-time remap or alias handling,
 - plugin-owned allowlist coverage,
 - partial file/DB/plugin side-effect classification,
+- stale manual-review artifact reuse,
 - or remote-preserving retry behavior.
 
 A source-note comparison by itself is never enough to claim the live retry

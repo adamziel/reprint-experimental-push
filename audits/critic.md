@@ -1676,7 +1676,10 @@ Before any production-grade push claim, the project needs all of these:
     aliasing, plugin-owned state outside the allowlist, partial file/DB/plugin
     side effects, or stale manual-review artifacts. If the claim cannot name
     the scenario, it does not prove the boundary and cannot count as
-    production support.
+    production support. A stale review artifact only counts as audit evidence
+    if the retry rebuilt scope from fresh live hashes and the artifact could
+    not be reused against a different row, file, relationship-bearing record,
+    create-time alias, or plugin-owned surface.
 
 Addendum: each of these conditions must be independently testable in the
 release suite. A passing route-shape smoke is not sufficient if any one of the
