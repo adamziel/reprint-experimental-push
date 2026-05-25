@@ -2373,6 +2373,9 @@ False reliability claims to avoid:
 - "Release gate passed" when the evidence set omits any blocker above but
   still emits a lab-shaped success marker. Production wording requires the
   exact rejection reason for every missing proof item.
+- "Comparison passed" when a Reprint, ZS-Sync, or ForkPress note is cited
+  without the exact upstream revision or worktree state and the exact live
+  mutation boundary that was reverified for this repo's claim.
 - "The plugin is safe" when the proof omits plugin-owned state outside the
   allowlist, including generated files, cron rows, runtime registries, custom
   tables, or other late-discovered side effects.
@@ -2404,3 +2407,5 @@ Additional production-readiness blockers that still need explicit proof:
   the exact upstream revision or worktree state and the exact live mutation
   boundary were both reverified for this repo's claim on the same live
   mutation executor.
+- Any comparison that lacks those two specifics is historical context only,
+  even if the route shape, mount shape, or hash output looks current.
