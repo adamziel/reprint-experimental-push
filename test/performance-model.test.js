@@ -51,6 +51,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'large upload models bounded chunk-window sizing from planning evidence',
   );
   assert.ok(
+    largeUpload.actions.some((action) => action.type === 'chunk-window-sizing' && action.reusesDurableReceipts === true),
+    'large upload models bounded chunk-window sizing from durable receipts',
+  );
+  assert.ok(
     largeUpload.actions.some((action) => action.type === 'backpressure-pause'),
     'large upload models backpressure pauses',
   );
@@ -216,6 +220,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-upload')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-large-upload-window-sizing')?.rejectedGate,
     'recovery',
   );
   assert.ok(

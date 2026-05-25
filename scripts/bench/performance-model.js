@@ -188,6 +188,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
   },
   {
     area: 'chunk-upload',
+    reduces: ['planning-round-trips', 'duplicate-body-transfer', 'idle-time'],
+    allowedShortcut: 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing',
+    guardrails: [
+      'chunk-receipts-are-plan-scoped-and-durable',
+      'window-sizing-stays-within-byte-and-receipt-budgets',
+    ],
+    gateProofs: {
+      skip: 'a plan-scoped chunk receipt set can avoid rescanning already-acknowledged chunks while sizing the next bounded upload window',
+      live: 'the eventual publish still compares the live remote resource hash before any staged bytes become visible',
+      group: 'window reuse stays inside the same file boundary and never widens an atomic group',
+      recovery: 'durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'plan-staging-window-resume-only',
+    failureEvidence: 'plan-scoped chunk receipts plus guarded file-publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
+    area: 'chunk-upload',
     reduces: ['duplicate-body-transfer', 'lost-response-retries'],
     allowedShortcut: 'resume-plan-scoped-chunks-with-matching-receipts',
     guardrails: [
@@ -2199,6 +2219,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
   {
+    id: 'compressed-remote-index-and-cached-chunk-digests-skips-large-upload-window-sizing',
+    proposal: 'use a compressed remote index plus cached chunk digests to skip large-upload window sizing after a pause',
+    rejectedBecause: 'planning evidence and cached chunk digests can trim duplicate replay, but they cannot prove the next bounded window still matches the live queue order or restore the guarded publish barrier after failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'backpressure', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-window-sizing',
     proposal: 'use a compressed remote index plus a cached manifest hash to skip large-upload window sizing after a pause',
     rejectedBecause: 'planning evidence and cached manifest hashes can trim duplicate replay, but they cannot prove the next bounded window still matches the live queue order or restore the guarded publish barrier after failure',
@@ -2688,6 +2715,7 @@ function scheduleFile(file, planId, limits) {
       chunkSizeBytes: limits.chunkSizeBytes,
       remoteIndexCursor: 'generation-and-scanner-cursor',
       reusesPlanningCursor: true,
+      reusesDurableReceipts: true,
       livePublishPrecondition: {
         resourceKey: file.resourceKey,
         expectedHash: file.remoteBeforeHash,
