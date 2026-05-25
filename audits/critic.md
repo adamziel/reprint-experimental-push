@@ -47,6 +47,25 @@ Source-note comparison rule:
   rejection point, and the fresh retry scope are recorded on this branch for
   the same boundary.
 
+Release-gate checklist:
+
+- name the exact live write boundary and the exact stale-drift case rerun on
+  this worktree;
+- show the preserved remote stayed auditable after reject, not just readable
+  before apply;
+- show the stale approval, review artifact, or source-note comparison cannot
+  authorize a later row, file, relationship-bearing record, remapped create
+  target, or plugin-owned surface;
+- classify every touched surface as old, new, or blocked before retry starts,
+  including any late-discovered plugin-owned table, file, registry entry,
+  cache entry, generated asset, or serialized blob;
+- treat route shape, package mount shape, fixture replay, readable review
+  output, and `finalMatchesLocal` as compatibility evidence only unless the
+  branch also records the live rejection point and fresh retry hashes; and
+- require any Reprint, ZS-Sync, or ForkPress comparison to name the exact
+  upstream revision or worktree state and say what it proves here and what it
+  does not prove.
+
 The missing proof is not just "the route works" or "the reviewer can
 manually inspect the result." The branch still needs live evidence that the
 preserved remote survives reject, that stale approval cannot be widened into a
