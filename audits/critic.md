@@ -9,13 +9,13 @@ proof, and the lab-session details `authSessionType`, minted session shape,
 `applyCommitted`, and `durableJournal.rows: 17`. That retires any stale claim
 that there is no retained-source `verify:release` evidence. It does not prove
 a live production boundary because the branch still lacks preserved-remote
-retention after rejection, live WordPress auth/session lifecycle, apply-time
-revalidation against a fresh real-site source, durable journal storage with
-lease/fencing outside the Playground harness, graph identity under remap, and
-plugin-driver coverage for late-discovered plugin-owned surfaces. Production
-wording is still false if it treats lab-session shape, retained-source journal
-rows, route compatibility, or command-topology proof as a substitute for a
-rerunnable live mutation boundary.
+retention after rejection, apply-time revalidation against a fresh live
+source, production WordPress auth/session lifecycle, durable journal storage
+with lease/fencing outside the Playground harness, graph identity under
+remap, and plugin-driver coverage for late-discovered plugin-owned surfaces.
+Production wording is still false if it treats lab-session shape,
+retained-source journal rows, route compatibility, or command-topology proof
+as a substitute for a rerunnable live mutation boundary.
 
 Source-note comparison, kept conservative and non-authoritative unless this branch reran the same live boundary:
 
@@ -146,8 +146,8 @@ boundary verdict.
 
 The single strongest proof gap is still production WordPress auth/session
 lifecycle plus preserved-remote auditability on a live boundary. Until that is
-shown with exact remote preservation and retry evidence, the retained-source
-`verify:release` lineage remains lab evidence only.
+shown with exact remote preservation and retry evidence on this branch, the
+retained-source `verify:release` lineage remains lab evidence only.
 
 The next acceptable proof must be one rerunnable live command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
@@ -193,9 +193,10 @@ the rejected remote and revalidates apply-time behavior from fresh live hashes
 on production WordPress auth/session state.
 
 The Reprint, ZS-Sync, and ForkPress notes remain provenance only unless this
-branch reran the same live boundary here. Matching route family, package
-layout, or reviewer wording is not enough to promote those notes from design
-input to retry authority.
+branch reran the same live boundary here. The observed anchors in
+`docs/source-notes.md` are `27c5f25`, `d9334a0`, and `55f9879`; matching
+route family, package layout, or reviewer wording is not enough to promote
+those notes from design input to retry authority.
 
 ## Release Gate Checklist
 
