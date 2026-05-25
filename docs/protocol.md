@@ -54,8 +54,9 @@ snapshot cache.
 For the harness shape, keep the topology pair together:
 
 - `push-deployment-topology-contract.json` is the smallest topology-only proof
-  for one remote source, one local edited site, one drift witness, and the
-  sandbox-only ingress policy
+  for one remote source site, one imported local edited site, and one later
+  drift observation of the same remote identity, with the sandbox-only ingress
+  policy spelled out
 - `push-remote-liveness-topology-contract.json` adds the dry-run/apply
   liveness split to the same one-remote, one-local, one-drift harness
 
@@ -88,7 +89,8 @@ The machine-readable bridge is split across the fixtures:
 - `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
   `push-remote-liveness-topology-contract.json` define the Docker and
   Playground test topology with one remote source, one imported local site,
-  one drift witness, and the sandbox-provided `8080` ingress rule.
+  one later drift observation of that same remote identity, and the
+  sandbox-provided `8080` ingress rule.
 - `push-remote-liveness-topology-contract.json` also proves that dry-run and
   apply are separate remote calls and that apply revalidates live evidence
   before every batch and at the storage boundary.
