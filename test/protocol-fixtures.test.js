@@ -319,12 +319,12 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     executorDocs.includes(
-      'it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`',
+      'it is the umbrella contract that sits above `push-production-topology-contract.json` and `push-remote-liveness-topology-contract.json`',
     ),
   );
   assert.ok(
     executorDocs.includes(
-      'push-deployment-topology-contract.json` is the smallest topology-only proof for the one-remote, one-local, one-drift harness and the `8080` ingress rule',
+      'push-production-topology-contract.json` is the smallest topology-only proof for the one-remote, one-local, one-drift harness and the `8080` ingress rule',
     ),
   );
   assert.ok(

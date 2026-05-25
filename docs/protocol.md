@@ -503,7 +503,7 @@ The canonical production ladder bundle is `push-protocol-extension-contract.json
 - it is the canonical machine-readable bridge from the exporter/importer pull pipeline into the push write path
 - it maps the persisted pull base package into preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery
 - it preserves the one-way rule that pull provenance is immutable push input, not a mutable snapshot cache
-- it is the umbrella contract that pairs with `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json` so the one remote source, one imported local edit site, and one later drift observation stay explicit in both harnesses
+- it is the umbrella contract that pairs with `push-production-topology-contract.json` and `push-remote-liveness-topology-contract.json` so the one remote source, one imported local edit site, and one later drift observation stay explicit in both harnesses
 
 The compact production proofs are split by concern:
 
@@ -520,7 +520,7 @@ The production proof is also split into smaller reviewable fixtures:
 - `push-production-auth-session-journal-recovery-inspect-contract.json` proves the auth floor, push-session minting, journal rows, lease fencing, and read-only recovery inspect stay aligned with the write path.
 - `push-production-topology-contract.json` proves the one-remote, one-local, one-drift harness shape in both Docker and Playground.
 - `push-remote-liveness-topology-contract.json` proves dry-run and apply stay separate while apply revalidates fresh live evidence before every batch and at the storage boundary.
-- `push-deployment-topology-contract.json` proves the sandbox-provided `8080` ingress, local-only proxying, and no-tunnel rule for the topology harness.
+- `push-production-topology-contract.json` proves the sandbox-provided `8080` ingress, local-only proxying, and no-tunnel rule for the topology harness.
 
 For review and test planning, the production proof stack is:
 

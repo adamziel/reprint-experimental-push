@@ -408,7 +408,7 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
 - it is the canonical bridge from the persisted pull base package into the production push executor
 - it preserves the one-way mapping from immutable pull provenance to mutable push execution
-- it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`, which are the compact one-remote, one-local, one-drift harness proofs for Docker and Playground
+- it is the umbrella contract that sits above `push-production-topology-contract.json` and `push-remote-liveness-topology-contract.json`, which are the compact one-remote, one-local, one-drift harness proofs for Docker and Playground
 
 The executor reviews the compact proofs in this order:
 
@@ -442,7 +442,7 @@ That ladder maps directly to the production harness:
 
 The same topology is the one used by the Docker and Playground contract pair:
 
-- `push-deployment-topology-contract.json` is the smallest topology-only proof for the one-remote, one-local, one-drift harness and the `8080` ingress rule
+- `push-production-topology-contract.json` is the smallest topology-only proof for the one-remote, one-local, one-drift harness and the `8080` ingress rule
 - `push-remote-liveness-topology-contract.json` adds the dry-run/apply separation and live revalidation boundary on top of that same harness
 
 The review path is intentionally layered:
