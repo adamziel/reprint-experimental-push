@@ -7,6 +7,10 @@ const protocolResult = spawnSync(process.execPath, ['--test', 'test/protocol-fix
   cwd: process.cwd(),
   encoding: 'utf8',
   maxBuffer: 1024 * 1024 * 20,
+  env: {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+  },
 });
 
 process.stdout.write(protocolResult.stdout || '');
@@ -20,6 +24,7 @@ const smokeResult = spawnSync(process.execPath, ['scripts/playground/production-
     ...process.env,
     REPRINT_PUSH_SIGNING_SECRET: '',
     REPRINT_PUSH_APPLICATION_PASSWORD: '',
+    NODE_NO_WARNINGS: '1',
   },
 });
 
