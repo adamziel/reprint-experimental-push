@@ -359,6 +359,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-db-receipts-skips-plugin-install-row-preconditions-after-pause')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.rejectedGate,
     'recovery',
   );
@@ -404,6 +408,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause')?.violates.includes('durable-progress'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-db-receipts-skips-plugin-install-row-preconditions-after-pause')?.violates.includes('database-row-batching'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-db-receipts-skips-plugin-install-row-preconditions-after-pause')?.violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-db-receipts-skips-plugin-install-row-preconditions-after-pause')?.violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-db-receipts-skips-plugin-install-row-preconditions-after-pause')?.violates.includes('atomic-groups'),
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause')?.violates.includes('atomic-groups'),

@@ -2608,6 +2608,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-batched-db-receipts-skips-plugin-install-row-preconditions-after-pause',
+    proposal: 'use a compressed remote index plus batched database row receipts to skip plugin-install row preconditions after a pause',
+    rejectedBecause: 'planning evidence and row-receipt batching can reduce replay cost, but they cannot prove the live row compares, plugin-install dependency checks, or the atomic-group barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'database-row-batching', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
     proposal: 'treat a compressed remote index plus a cached release manifest as enough proof to skip the release-bundle commit barrier',
     rejectedBecause: 'planning evidence and a cached manifest can reduce scans, but they cannot prove the dependent plugin files, row batches, and atomic-group commit survived failure',
