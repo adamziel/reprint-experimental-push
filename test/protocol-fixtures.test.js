@@ -2202,6 +2202,71 @@ test('push auth session journal proof binds push-scoped auth to journal fencing 
   assert.ok(proof.required_invariants.includes('mutating push requests must carry a push session, idempotency key, and canonical push signature'));
 });
 
+test('push auth session journal recovery proof keeps inspect-first recovery read-only before mutation', () => {
+  const contract = readJson('fixtures/protocol/push-auth-session-journal-recovery-contract.json');
+  const inspectContract = readJson('fixtures/protocol/push-recovery-inspect-contract.json');
+  const recoveryContract = readJson('fixtures/protocol/push-auth-session-recovery-contract.json');
+
+  assert.equal(contract.contract_id, 'push-auth-session-journal-recovery-contract-one-remote-one-local');
+  assert.equal(contract.auth.export_hmac_family, 'hmac-sha256');
+  assert.equal(contract.auth.push_hmac_family, 'hmac-sha256');
+  assert.deepEqual(contract.auth.push_requires, [
+    'push session',
+    'canonical push signature',
+    'idempotency key',
+  ]);
+  assert.equal(contract.session.remote_site_id, 'remote-example');
+  assert.equal(contract.session.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
+  assert.equal(contract.journal_row.claim_generation, 4);
+  assert.equal(contract.journal_row.storage_guard, 'filesystem-compare-rename');
+  assert.equal(contract.recovery_inspect.mode, 'inspect');
+  assert.equal(contract.recovery_inspect.mutates, false);
+  assert.ok(
+    contract.recovery_inspect.blocked_when.includes(
+      'the claim lease has expired and the worker is fenced',
+    ),
+  );
+  assert.equal(inspectContract.contract_id, 'push-recovery-inspect-contract-one-remote-one-local');
+  assert.equal(inspectContract.session.remote_site_id, 'remote-example');
+  assert.equal(inspectContract.journal_row.claim_generation, 4);
+  assert.equal(inspectContract.journal_fence.storage_guard, 'filesystem-compare-rename');
+  assert.equal(inspectContract.recovery.inspect_mode, 'inspect');
+  assert.equal(inspectContract.recovery.mutates, false);
+  assert.equal(inspectContract.live_evidence.same_remote_identity, true);
+  assert.equal(inspectContract.live_classification.blocked, 1);
+  assert.ok(
+    inspectContract.required_invariants.includes(
+      'journal inspection is read-only and must happen before any mutating recovery',
+    ),
+  );
+  assert.equal(recoveryContract.contract_id, 'push-auth-session-recovery-contract-one-remote-one-local');
+  assert.equal(
+    recoveryContract.auth.push_hmac_family,
+    'hmac-sha256',
+  );
+  assert.equal(
+    recoveryContract.session.remote_site_id,
+    'remote-example',
+  );
+  assert.equal(
+    recoveryContract.journal_row.lease_expires_at,
+    '2026-05-24T00:00:09Z',
+  );
+  assert.equal(
+    recoveryContract.recovery.inspect_mode,
+    'inspect',
+  );
+  assert.equal(
+    recoveryContract.journal_row.storage_guard,
+    'filesystem-compare-rename',
+  );
+  assert.ok(
+    recoveryContract.required_invariants.includes(
+      'inspect is read-only and must come before any mutating recovery mode',
+    ),
+  );
+});
+
 test('push fixture index keeps the production proof bundle grouped around the new push ladder', () => {
   const readme = fs.readFileSync(path.join(repoRoot, 'fixtures/protocol/README.md'), 'utf8').replace(/\s+/g, ' ');
 

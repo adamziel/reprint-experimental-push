@@ -108,7 +108,9 @@ identity across `remote-base` and `remote-changed`:
   fence, and inspect-first recovery proof together.
 - `push-auth-session-journal-recovery-contract.json` is the compact proof that
   binds auth, session minting, journal rows, lease fencing, and inspect-first
-  recovery into one production-shaped contract.
+  recovery into one production-shaped contract, and is the canonical bridge
+  when a review needs the auth floor, session mint, journal row, and recovery
+  inspect proof together.
 - `push-auth-session-journal-recovery-inspect-contract.json` is the compact
   proof that folds live drift classification into that same auth, session,
   journal, lease, and inspect-first recovery chain.
