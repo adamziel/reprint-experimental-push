@@ -4455,6 +4455,22 @@ Release gate additions needed before production-grade push support:
    surface, even if the route shape, package mount, or `finalMatchesLocal`
    result is unchanged.
 
+Release-readiness checklist:
+
+- the exact live boundary and stale-drift case are named;
+- the preserved remote is still auditable after rejection;
+- the stale approval, review artifact, or comparison note cannot widen to a
+  different row, file, relationship-bearing record, remapped create target,
+  or plugin-owned surface;
+- the fresh retry artifact is rebuilt from live hashes on this branch, not
+  inherited from earlier approval or a source note;
+- every touched surface is classified as old, new, or blocked before retry;
+- every plugin-owned surface outside the allowlist is enumerated or blocked
+  live, including late-discovered tables, files, cron rows, runtime
+  registries, serialized blobs, caches, and generated assets; and
+- route shape, package mount shape, fixture replay, readable review output,
+  and `finalMatchesLocal` are treated as compatibility evidence only.
+
 False reliability claims to reject:
 
 - "manual resolution succeeded" when the preserved remote, rejection point,

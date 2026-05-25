@@ -34,9 +34,20 @@ Concrete failure modes that still block the claim:
 
 - live remote drift after dry-run but before apply;
 - create-time identity remapping, aliasing, or renumbering;
-- plugin-owned state outside the allowlist, including hidden tables, cron rows, runtime registries, generated files, serialized blobs, caches, and plugin-owned files; and
-- stale manual-review artifacts that remain readable after drift and could be reused against a different boundary;
+- plugin-owned state outside the allowlist, including hidden tables, cron rows, runtime registries, generated files, serialized blobs, caches, and plugin-owned files, especially when the live surface is only discovered after the first write;
+- stale manual-review artifacts that remain readable after drift and could be reused against a different boundary, remapped create target, or plugin-owned surface;
 - late-discovered plugin-owned surfaces that appear only after the first write and are then folded into the earlier approval without a separate reject/classify/retry cycle; and
-- partial file, DB, or plugin side effects that are relabeled as success without old/new/blocked classification for every touched surface.
+- partial file, DB, or plugin side effects that are relabeled as success without old/new/blocked classification for every touched surface, including the case where the first write succeeded but the later retry boundary did not.
 
 Release wording must also avoid implying that a readable review artifact or comparison note is equivalent to a live retry gate. Those artifacts are audit evidence only until the branch shows the preserved remote, rejection point, and fresh retry scope for the same boundary on this worktree. Manual resolution is not success unless the remote is preserved for audit, the stale artifact stays unusable as retry authority, and the fresh retry artifact is recorded separately on this branch.
+
+Production-readiness language checklist:
+
+- name the exact live boundary and the exact stale-drift case;
+- show the preserved remote stayed auditable after rejection;
+- show the stale approval, review artifact, or comparison note was rejected before mutation and cannot widen to a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
+- show the fresh retry artifact was rebuilt from live hashes on this branch, not inherited from earlier approval or copied from a note;
+- classify every touched surface as old, new, or blocked before retry starts;
+- enumerate or block every plugin-owned surface outside the allowlist, including late-discovered tables, files, cron rows, runtime registries, serialized blobs, caches, and generated assets;
+- treat route shape, package mount shape, fixture replay, readable review output, and `finalMatchesLocal` as compatibility evidence only; and
+- name the exact upstream revision or worktree state for any Reprint, ZS-Sync, or ForkPress comparison, plus what that note proves here and what it does not prove.

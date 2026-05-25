@@ -115,6 +115,10 @@ What it does not prove:
   because the route looks production-shaped or the package mount matches.
 - It does not prove the exact current upstream state unless the cited upstream
   revision or worktree was reverified at the same live mutation boundary.
+- It does not prove plugin-owned surfaces hidden behind the same route family
+  are safe to enumerate by fixture shape alone, including late-discovered
+  tables, cron rows, runtime registries, serialized blobs, caches, and plugin
+  files.
 
 ## Rule For Production Claims
 
@@ -134,6 +138,9 @@ If the only apparent match is the same route family, package layout, or
 reviewer wording, that is still historical context only; shape similarity
 does not prove the live executor, preserved remote, or retry authority on
 this branch.
+If the comparison note leaves any plugin-owned surface implicit instead of
+enumerated, or if it depends on a lab-shaped route to infer live ownership, it
+still fails as proof for production push wording.
 Without that revalidation, the notes cannot backfill missing proof for:
 
 - live remote drift rejection,
@@ -142,6 +149,7 @@ Without that revalidation, the notes cannot backfill missing proof for:
 - plugin-owned allowlist coverage,
 - partial file/DB/plugin side-effect classification,
 - stale manual-review artifact reuse,
+- hidden plugin-owned surfaces or plugin-owned data traps,
 - or remote-preserving retry behavior.
 
 Production-grade wording also needs the source-note comparison itself to say
