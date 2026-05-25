@@ -52,6 +52,11 @@ Must change before any production-grade push claim:
   reruns the same live boundary here, and shows the preserved remote,
   rejection point, and fresh retry scope for that exact case; a comparison
   note without that branch-local rerun is not current proof;
+- prove any Reprint, ZS-Sync, or ForkPress comparison says whether a later-
+  discovered plugin-owned surface is explicitly in scope or explicitly
+  excluded, because a note about one boundary cannot silently cover a new
+  table, file, registry entry, generated asset, cache entry, or serialized
+  blob discovered after the first write;
 - prove that a named upstream note cannot be widened to a later-discovered
   plugin-owned surface just because the later surface shares the same route
   family, package mount, or reviewer wording as the earlier note;
