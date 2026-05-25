@@ -1155,7 +1155,7 @@ test('keeps remote-only plugin changes while recognizing matching independent de
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
-test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent create stay safe', () => {
+test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent create stay safe with apply verification', () => {
   const base = baseSite();
   const local = baseSite();
   delete local.files['index.php'];
@@ -1173,7 +1173,6 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and ma
   const editDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
-  const result = applyPlan(remote, plan);
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.mutations, 1);
@@ -1188,6 +1187,7 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and ma
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assertEveryMutationHasLiveRemotePrecondition(plan);
+  const result = applyPlan(remote, plan);
   assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
   assert.equal(result.site.files['about.php'], '<?php echo "shared created file";');
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Shared independent title');
