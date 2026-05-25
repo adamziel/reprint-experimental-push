@@ -5417,12 +5417,13 @@ Production-grade release gate:
   continuation of the earlier readable artifact;
 - show each Reprint, ZS-Sync, or ForkPress comparison names the exact
   upstream state, states what the note proves here, and states what it does
-  not prove here; a named upstream state is historical provenance only until
-  this branch reruns the same live boundary with preserved-remote evidence.
+  not prove here; a named upstream state is historical provenance only, not
+  current retry proof, until this branch reruns the same live boundary with
+  preserved-remote evidence and fresh live hashes.
 
 Single-sentence release gate:
 
-- this branch may only claim production-grade push support when the exact live boundary on this worktree shows the drifted remote preserved for audit, stale authority rejected before the first write, fresh retry scope rebuilt from live hashes, every touched surface classified old/new/blocked, and every late-discovered plugin-owned surface either blocked or given its own preserve / reject / retry cycle; if any part of that proof is missing, then route shape, package layout, reviewer wording, readable artifacts, `finalMatchesLocal`, and Reprint / ZS-Sync / ForkPress comparisons stay compatibility evidence only.
+- this branch may only claim production-grade push support when the exact live boundary on this worktree shows the drifted remote preserved for audit, stale authority rejected before the first write, fresh retry scope rebuilt from live hashes, every touched surface classified old/new/blocked, and every late-discovered plugin-owned surface either blocked or given its own preserve / reject / retry cycle; if any part of that proof is missing, then route shape, package layout, reviewer wording, readable artifacts, `finalMatchesLocal`, and Reprint / ZS-Sync / ForkPress comparisons stay compatibility evidence only and cannot be promoted to current production proof.
 
 Proof-substitution fail-closed rule:
 
