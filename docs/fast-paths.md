@@ -1052,6 +1052,11 @@ under load:
   rejected because planning evidence and parallel chunk sends can reduce wait
   time, but they cannot prove the sender kept bounded queue order, complete
   chunk receipts, and journal evidence across a pause or crash.
+- compressed-remote-index-and-parallel-chunk-and-row-fanout-skips-large-upload-
+  and-plugin-update-recovery-after-pause is rejected because extra fan-out can
+  reduce wait time, but it cannot prove which chunk acknowledgements, row
+  receipts, live compares, or atomic-group barriers survived a pause on the
+  large-upload and plugin-update paths.
 - compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-install-
   barrier is rejected because planning evidence and unbounded row-batch fan-out
   can reduce lookup time, but they cannot prove the per-row preconditions,

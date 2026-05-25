@@ -2667,6 +2667,19 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause').violates.includes('remote-index-planning-only'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-and-row-fanout-skips-large-upload-and-plugin-update-recovery-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-and-row-fanout-skips-large-upload-and-plugin-update-recovery-after-pause').violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-and-row-fanout-skips-large-upload-and-plugin-update-recovery-after-pause').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-and-row-fanout-skips-large-upload-and-plugin-update-recovery-after-pause').violates.includes('atomic-groups'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate,
     'recovery',
   );
