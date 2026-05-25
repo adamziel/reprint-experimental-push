@@ -92,6 +92,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Batching receipt flushes can reduce fsync cost, but it still cannot prove which chunk acknowledgements survived a pause or restore the guarded publish barrier.
 - A remote index cursor plus a cached dependency graph can pre-size plugin-install batches, but it still cannot skip the live row compares or the atomic-group commit barrier.
 - Batched receipt flushes can reduce fsync overhead, but they still cannot prove plugin-update activation or any other atomic-group commit survived failure.
+- Cached row receipts still cannot skip a plugin-update barrier while parallel batches are in flight, because planning evidence and receipt reuse cannot prove the live row compares, dependency checks, or atomic-group barrier survived failure.
 - A compressed remote index plus a cached file hash still cannot skip the guarded publish step for a large upload, because planning evidence and cached hashes do not prove chunk receipts or the live compare survived failure.
 - A compressed remote index plus a cached file digest still cannot skip the guarded publish step for a large upload, because planning evidence and cached digests do not prove chunk acknowledgements, the live compare, or the guarded publish record survived failure.
 - A compressed remote index plus a cached file hash still cannot skip large-upload resume after a pause, because planning evidence and cached hashes do not prove which chunk acknowledgements survived the pause or restore the guarded publish barrier.

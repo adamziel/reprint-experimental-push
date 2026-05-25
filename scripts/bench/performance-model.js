@@ -2517,6 +2517,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-barrier-with-parallel-batches',
+    proposal: 'use a compressed remote index plus cached row receipts to skip the plugin-update barrier while running parallel row batches',
+    rejectedBecause: 'planning evidence and cached row receipts can reduce replay, but they cannot prove the live row compares, dependency checks, or atomic-group barrier survived failure while parallel batches were in flight',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'parallelism-limits', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-row-preconditions',
     proposal: 'use a compressed remote index plus cached row-batch receipts to skip plugin-install row preconditions',
     rejectedBecause: 'planning evidence and cached batch receipts can trim duplicate lookup work, but they cannot prove the live row compares or the plugin-install barrier survived a pause, retry, or partial failure',
