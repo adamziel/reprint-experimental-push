@@ -97,6 +97,13 @@ That bridge is one-way:
 - journal inspect is read-only evidence gathering
 - recovery starts with inspect before any mutating repair
 
+The canonical production ladder bundle is `push-protocol-extension-contract.json`:
+
+- it binds the immutable pull base package to preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery
+- it keeps apply-time revalidation separate from the dry-run receipt
+- it carries the one-remote, one-local, one-drift topology in both Docker and Playground
+- it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
+
 The Docker and Playground topology contract is intentionally one remote, one
 local, one drift witness:
 

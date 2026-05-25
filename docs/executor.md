@@ -117,6 +117,13 @@ That same bridge is the executor contract:
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating recovery branch
 
+The canonical production proof bundle is `push-protocol-extension-contract.json`:
+
+- it ties exporter/importer provenance to preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery
+- it keeps apply-time revalidation separate from the dry-run receipt
+- it carries the one-remote, one-local, one-drift topology in both Docker and Playground
+- it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
+
 The auth floor is not relaxed for the executor:
 
 - push auth must be at least as strict as current Reprint HMAC usage
