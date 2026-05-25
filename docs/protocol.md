@@ -188,6 +188,10 @@ The machine-readable bridge is split across the fixtures:
   `push-production-recovery-inspect-contract.json` are the production-shaped
   proof pair for auth, session minting, journal rows, lease fencing, apply
   revalidation, and inspect-first recovery on the same remote identity.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is
+  the compact proof that binds auth floor, push session minting, journal
+  rows, lease fencing, and read-only recovery inspect to the same remote
+  identity and local edit site.
 
 For review and implementation work, the canonical production push chain is:
 
@@ -231,6 +235,9 @@ The compact production proof stack is:
 - `push-production-push-recovery-contract.json` and
   `push-production-recovery-inspect-contract.json` for the production auth,
   session, journal, lease, and recovery proof pair
+- `push-production-auth-session-journal-recovery-inspect-contract.json` for
+  the compact auth/session/journal/lease/recovery-inspect proof on the same
+  remote identity
 
 The pull-to-push bridge is one-way:
 

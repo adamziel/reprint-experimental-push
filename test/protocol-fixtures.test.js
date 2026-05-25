@@ -223,6 +223,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const authSessionJournalRecoveryInspectContract = readJson(
     'fixtures/protocol/push-auth-session-journal-recovery-inspect-contract.json',
   );
+  const productionAuthSessionJournalRecoveryInspectContract = readJson(
+    'fixtures/protocol/push-production-auth-session-journal-recovery-inspect-contract.json',
+  );
   const sessionJournalProofCompact = readJson('fixtures/protocol/push-session-journal-proof.json');
   const journalInspectContract = readJson('fixtures/protocol/push-journal-inspect-contract.json');
   const dryRunApplyRevalidationContract = readJson(
@@ -790,6 +793,48 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.ok(
     authSessionJournalRecoveryInspectContract.required_invariants.includes(
+      'fresh live hashes must still be checked before finish, rollback, or auto',
+    ),
+  );
+  assert.equal(
+    productionAuthSessionJournalRecoveryInspectContract.contract_id,
+    'push-production-auth-session-journal-recovery-inspect-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionAuthSessionJournalRecoveryInspectContract.auth.push_hmac_family,
+    'hmac-sha256',
+  );
+  assert.deepEqual(
+    productionAuthSessionJournalRecoveryInspectContract.auth.push_requires,
+    ['push session', 'canonical push signature', 'idempotency key'],
+  );
+  assert.equal(
+    productionAuthSessionJournalRecoveryInspectContract.session.remote_site_id,
+    'remote-example',
+  );
+  assert.equal(
+    productionAuthSessionJournalRecoveryInspectContract.journal_row.claim_generation,
+    4,
+  );
+  assert.equal(
+    productionAuthSessionJournalRecoveryInspectContract.journal_row.storage_guard,
+    'filesystem-compare-rename',
+  );
+  assert.equal(
+    productionAuthSessionJournalRecoveryInspectContract.recovery_inspect.mode,
+    'inspect',
+  );
+  assert.equal(
+    productionAuthSessionJournalRecoveryInspectContract.recovery_inspect.mutates,
+    false,
+  );
+  assert.ok(
+    productionAuthSessionJournalRecoveryInspectContract.required_invariants.includes(
+      'inspect is read-only and must come before any mutating recovery mode',
+    ),
+  );
+  assert.ok(
+    productionAuthSessionJournalRecoveryInspectContract.required_invariants.includes(
       'fresh live hashes must still be checked before finish, rollback, or auto',
     ),
   );

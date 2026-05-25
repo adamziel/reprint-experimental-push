@@ -470,6 +470,9 @@ The canonical proof stack for that executor story is the same one named in
   and with apply-time revalidation kept separate from dry-run
 - `push-auth-session-journal-recovery-contract.json` for the compact auth,
   session, journal-row, lease-fence, and inspect-first recovery proof
+- `push-production-auth-session-journal-recovery-inspect-contract.json` for
+  the compact production proof that keeps the auth floor, minted push
+  session, journal row, lease fence, and read-only recovery inspect together
 - `push-recovery-boundary-contract.json` for the compact inspect-first
   recovery boundary proof that keeps the auth floor and Docker/Playground
   topology together

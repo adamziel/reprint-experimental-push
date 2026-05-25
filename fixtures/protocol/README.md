@@ -55,6 +55,7 @@ The normal sequence is:
 47. `push-production-recovery-inspect-contract.json`
 48. `push-production-recovery-drift-contract.json`
 49. `push-production-topology-contract.json`
+50. `push-production-auth-session-journal-recovery-inspect-contract.json`
 
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
@@ -115,6 +116,10 @@ identity across `remote-base` and `remote-changed`:
   before and after drift. It also pins the shared auth/session floor, the
   journal rows, lease fencing, and inspect-first recovery path so the same
   proof covers dry-run, apply, and recovery.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is
+  the compact proof that binds the auth floor, minted push session, journal
+  row, lease fence, and read-only recovery inspect into one production-shaped
+  object.
 - `push-production-topology-contract.json` is the compact one-remote,
   one-local, one-drift proof that keeps the pull provenance, push ladder, and
   Docker/Playground topology aligned in one object.
@@ -122,6 +127,9 @@ identity across `remote-base` and `remote-changed`:
   `push-production-recovery-inspect-contract.json` are the paired production
   proofs for auth, session minting, journal rows, lease fencing, and
   inspect-first recovery on the same remote identity.
+- `push-production-auth-session-journal-recovery-inspect-contract.json` is
+  the compact proof that binds auth, session minting, journal rows, lease
+  fencing, and read-only inspect into one production-shaped object.
 - `push-production-topology-contract.json` is the compact proof that keeps
   the immutable pull provenance, the production push ladder, and the
   one-remote, one-local, one-drift topology aligned in one object.
