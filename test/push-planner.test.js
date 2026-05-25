@@ -5066,6 +5066,49 @@ test('acceptable recovery outcomes are old remote, fully updated remote, or bloc
   assert.equal(blockedError.details.recovery.artifacts.journal.status, 'completed');
 });
 
+test('atomic apply recovery contract keeps the post-failure states distinct', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const beforeMutationError = captureError(() =>
+    applyPlan(baseSite(), plan, { failBeforeMutation: true }),
+  );
+  assert.equal(beforeMutationError.details.recovery.status, 'old-remote');
+  assert.ok(beforeMutationError.details.recovery.artifacts.journal);
+  assert.equal(beforeMutationError.details.recovery.artifacts.remote, undefined);
+
+  const afterStagingError = captureError(() =>
+    applyPlan(baseSite(), plan, { failAfterStaging: true }),
+  );
+  assert.equal(afterStagingError.details.recovery.status, 'old-remote');
+  assert.ok(afterStagingError.details.recovery.artifacts.journal);
+  assert.equal(afterStagingError.details.recovery.artifacts.remote, undefined);
+
+  const afterDependencyValidationError = captureError(() =>
+    applyPlan(baseSite(), plan, { failAfterDependencyValidation: true }),
+  );
+  assert.equal(afterDependencyValidationError.details.recovery.status, 'old-remote');
+  assert.ok(afterDependencyValidationError.details.recovery.artifacts.journal);
+  assert.equal(afterDependencyValidationError.details.recovery.artifacts.remote, undefined);
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.ok(replay.recoveryState.artifacts.journal);
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+
+  const blockedRemote = JSON.parse(JSON.stringify(completed.site));
+  blockedRemote.files['index.php'] = '<?php echo "drifted";';
+  const blockedError = captureError(() => applyPlan(blockedRemote, plan, { journal: completed.journal }));
+  assert.equal(blockedError.details.recovery.status, 'blocked-recovery');
+  assert.ok(blockedError.details.recovery.artifacts.journal);
+  assert.ok(blockedError.details.recovery.artifacts.remote);
+});
+
 test('durable recovery outcomes stay within the contract across failure boundaries and completed replay', () => {
   const base = baseSite();
   const local = baseSite();
