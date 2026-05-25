@@ -170,11 +170,20 @@ False reliability traps that must fail closed:
   route but never proves the preserved remote, rejection point, or retry
   scope. Missing proof: the user still cannot audit the rejected remote or
   safely retry from live hashes.
+- Scenario: a comparison note says Reprint, ZS-Sync, or ForkPress "covers"
+  the branch because the route family looks similar. Missing proof: the note
+  does not name the exact upstream state, the exact live boundary on this
+  worktree, or what it does not prove here, so provenance was mistaken for
+  retry authority.
 - Scenario: a manual-resolution note covers the first conflict, then a later
   plugin-owned table, cron row, generated file, cache entry, serialized blob,
   or remapped create target appears after the first write. Missing proof: the
   later surface never got its own preserve / reject / retry cycle, so the
   note is audit context only.
+- Scenario: a later discovered row, file, relationship-bearing record, or
+  plugin-owned surface is silently folded into the earlier approval because
+  the reviewer wording stayed the same. Missing proof: the later boundary was
+  not classified old, new, or blocked on its own live hashes before retry.
 - Scenario: a create-time identity remap points at a different row, file, or
   relationship-bearing record than the planner originally approved. Missing
   proof: the branch does not show live apply-time revalidation for the remap,
