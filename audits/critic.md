@@ -4322,9 +4322,10 @@ Release gate additions needed before production-grade push support:
    does not prove. A named note can justify transport shape, discovery shape,
    or review vocabulary, but not live mutation safety on this branch. If the
    note is the only evidence, production wording must fail closed until this
-   branch reruns the same live boundary and records the preserved remote.
-   Matching the note's route family, package layout, or reviewer wording does
-   not convert upstream provenance into current retry authority.
+   branch reruns the same live boundary, records the preserved remote, and
+   rebuilds retry scope from fresh live hashes. Matching the note's route
+   family, package layout, or reviewer wording does not convert upstream
+   provenance into current retry authority.
 8. The release gate must fail closed and record the exact rejection reason
    whenever any of the above proofs is missing; route shape, package mount,
    fixture replay, readable review artifacts, source-note comparison, and
