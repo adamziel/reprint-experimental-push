@@ -28,6 +28,12 @@ boundary contract that production must preserve:
 - any partial or ambiguous mutation must stay `blocked-recovery` with artifacts
 - a partial remote mutation without a durable recovery artifact is a release blocker
 
+This lane still fails the production gate until the apply path is backed by a
+real crash-safe durable journal primitive: append-only DB rows or file-backed
+journal records, fsync or equivalent flush semantics, writer fencing or lease
+ownership, and restart-readable inspection data. The JSON model proves the
+state machine only; it does not supply that storage primitive yet.
+
 ## Production recovery requirements
 
 Production recovery needs durable artifacts that survive process failure:
