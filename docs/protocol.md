@@ -58,6 +58,11 @@ Docker and Playground.
 For machine-readable verification, the compact contract fixture at
 [`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
 binds the pull handoff, push stages, and test topology into one proof object.
+Its `push_guards` fields make the production boundaries explicit: preflight
+binds the pull base to one remote identity and one short-lived session,
+snapshot listing is planning evidence only, dry-run is a receipt not a lock,
+apply revalidates fresh live evidence at every batch and storage boundary, and
+recovery inspect must happen before any mutating repair.
 
 Push is split into a read-only planning phase and a write phase:
 

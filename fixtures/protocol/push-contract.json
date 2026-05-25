@@ -11,6 +11,14 @@
     "push_journal": "inspects durable claim, lease, fencing, and recovery evidence without granting write authority",
     "push_recover": "starts with inspect, then finishes, rolls back, or blocks only when journal evidence plus fresh live hashes prove the action"
   },
+  "push_guards": {
+    "preflight": "binds the pull base to one remote identity, one requested scope, and one short-lived push session",
+    "snapshot_listing": "returns live remote hash evidence for planning and never upgrades into write authority",
+    "dry_run_receipt": "proves eligibility only and cannot be reused as a liveness lock",
+    "apply_revalidation": "refreshes live evidence before every batch and again at the storage boundary",
+    "journal_inspect": "reads durable claim and fencing evidence without mutating target resources",
+    "recovery_inspect": "must happen before any mutating recovery mode and may block when finish or rollback cannot be proven safe"
+  },
   "protocol_sequence": [
     "push_preflight",
     "push_snapshot_hashes",
@@ -21,6 +29,7 @@
     "push_recover auto|finish|rollback"
   ],
   "production_shape": {
+    "preflight_session_binding": "a short-lived session bound to the persisted pull base and live remote identity",
     "remote_snapshot_hash_listing": "a cursorable live remote hash listing used only for planning",
     "dry_run_plan_upload": "a canonical plan upload that yields a receipt but never a lock",
     "mutation_batch_apply": "a batched write path that revalidates live state before every batch and at the storage boundary",

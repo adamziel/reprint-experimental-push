@@ -77,8 +77,24 @@ test('push contract fixture binds the pull handoff to the production push sequen
     'a cursorable live remote hash listing used only for planning',
   );
   assert.equal(
+    contract.push_guards.snapshot_listing,
+    'returns live remote hash evidence for planning and never upgrades into write authority',
+  );
+  assert.equal(
+    contract.push_guards.dry_run_receipt,
+    'proves eligibility only and cannot be reused as a liveness lock',
+  );
+  assert.equal(
+    contract.push_guards.apply_revalidation,
+    'refreshes live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
     contract.production_shape.dry_run_plan_upload,
     'a canonical plan upload that yields a receipt but never a lock',
+  );
+  assert.equal(
+    contract.production_shape.preflight_session_binding,
+    'a short-lived session bound to the persisted pull base and live remote identity',
   );
   assert.equal(contract.topology.networking.ingress_port, 8080);
   assert.equal(contract.topology.networking.proxy_policy, 'local-only');

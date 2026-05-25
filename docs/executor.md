@@ -203,6 +203,10 @@ The machine-readable companion for this topology is
 It records the same remote identity across `remote-base` and `remote-changed`,
 keeps the runner as the only actor that may compare, upload, inspect, or
 recover, and binds the auth/session/journal proof fixtures into one contract.
+Its `push_guards` fields mirror the executor rules: preflight binds the
+persisted base, snapshot listing is planning-only, dry-run is a receipt, apply
+revalidates before each batch and at the storage boundary, and inspect-first
+recovery is mandatory before any mutating repair.
 
 The important part of the topology is not the container count. It is the
 proof boundary: `remote-base` and `remote-changed` must be the same remote
