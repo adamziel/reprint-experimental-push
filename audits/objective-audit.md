@@ -384,6 +384,8 @@ The repository currently has optional proof commands, not an enforced release ga
 
 A green run can therefore omit the exact proof the objective needs, even though the strongest route smokes still report `labBacked: true` and the benchmark suite only refuses unsupported throughput claims instead of timing a real push path. This is a release blocker, not a documentation gap: until one required command exists, the project can keep producing passing lab runs without proving production safety at the live remote/local boundary or a measured speed claim on the real push path. The weak claim is not that the tests are false; it is that they are not yet strong enough to clear release. In particular, `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` are still refusal proof, not performance proof: they demonstrate that unsupported throughput claims are blocked, but they do not establish a runtime, memory ceiling, or acceptance threshold for a production push path.
 
+That is why the strongest current test evidence is still an audit artifact, not a release approval artifact.
+
 Actionable release gate requirement:
 
 1. Add one required command, such as `npm run verify:release`, that runs the auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, real topology, crash-boundary, and benchmark checks in a fixed order.
