@@ -16,6 +16,15 @@ Those three fixtures are enough to show the executor never treats a dry-run
 receipt as write authority and never treats journal inspection as mutation
 authority.
 
+For the full proof graph, add the session and recovery contracts:
+
+| Fixture | What it proves |
+| --- | --- |
+| `push-auth-session-fencing-contract.json` | The minted push session stays fenced to one remote identity, one persisted pull base, and one journal row. |
+| `push-auth-session-recovery-contract.json` | Mutating recovery stays behind the stricter auth floor and does not run until inspect has read the journal and fresh live hashes. |
+| `push-recovery-inspect-contract.json` | Inspect is read-only, classifies finish/rollback/retry/block, and must run before any mutating repair. |
+| `push-executor-topology-proof.json` | The one-remote, one-local, one-drift-witness topology plus the immutable pull base and browser ingress rule. |
+
 The executor has one production shape:
 
 - it starts from a persisted pull base package
@@ -205,6 +214,19 @@ The pull-to-push handoff stays one-way:
 - push dry-run uploads a receipt, not a lock
 - push batch apply revalidates before every batch and at the storage boundary
 - push journal and push recover inspect read durable evidence first
+
+The fixture graph mirrors that one-way handoff:
+
+- `push-pull-mapping.json` and `push-protocol-extension-contract.json` prove
+  the pull provenance, stage order, and recovery boundary.
+- `push-deployment-topology-contract.json` and
+  `push-executor-topology-proof.json` prove the Docker and Playground
+  topology, the same remote identity observed before and after drift, and the
+  sandbox-provided `8080` ingress rule.
+- `push-auth-session-fencing-contract.json`,
+  `push-auth-session-recovery-contract.json`, and
+  `push-recovery-inspect-contract.json` prove the session fence, journal row
+  fence, and inspect-first recovery boundary.
 
 For the precise Docker/Playground harness shape, use
 [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json).

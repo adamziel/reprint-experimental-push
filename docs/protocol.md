@@ -1108,6 +1108,10 @@ at
 [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json)
 captures the one-remote, one-local, one-drift-witness test shape plus the
 sandbox-only `8080` ingress rule used for Docker or Playground proof.
+The compact executor proof at
+[`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
+ties that topology to the immutable pull base, the push session boundary, and
+the journal/recovery fence in one object.
 The journal fixture at
 [`fixtures/protocol/push-journal-open-response.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-journal-open-response.json)
 captures the fenced open-claim state, including claim generation and lease
@@ -1125,6 +1129,15 @@ The recovery path fixture at
 [`fixtures/protocol/push-recovery-path.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-path.json)
 captures the old/new/blocked/open classification that the executor uses after
 an ambiguous apply response and before any mutating recovery mode.
+The deployment topology contract at
+[`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json)
+keeps the Docker and Playground one-remote, one-local, one-drift-witness
+shape explicit when a test only needs the harness topology and the browser
+ingress rule.
+The end-to-end protocol extension contract at
+[`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json)
+binds preflight, remote hash listing, dry-run, batched apply, journal inspect,
+and inspect-first recovery back to the pull exporter/importer provenance.
 
 The pull exporter/importer owns the persisted base package and the base
 coverage evidence. Push never asks pull to become a write lock. Instead, push
