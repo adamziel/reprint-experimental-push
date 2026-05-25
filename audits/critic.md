@@ -3212,6 +3212,10 @@ Production-readiness release gate checklist:
    above. A readable manual-review artifact is not enough unless the claim
    also shows the preserved remote, the stale rejection point, the fresh
    retry scope, and the fresh retry artifact on the same live write path.
+9. Explicitly treat any lab-shaped or fixture-shaped route, mount, or replay
+   as compatibility evidence only; do not let a production-shaped URL family
+   or package layout imply the live executor, auth path, or write boundary
+   was production-safe without the same-boundary drift recheck here.
 
 The branch still has four production-grade blocker classes to close:
 
