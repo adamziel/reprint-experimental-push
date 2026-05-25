@@ -105,7 +105,7 @@ Without that command, every passing test remains support evidence only.
 
 ## Weakest Current Claim
 
-The weakest claim is any implication that the current suite can certify the live-source release boundary.
+The weakest claim is any implication that the current suite can certify the live-source release boundary. That claim is unsupported for one simple reason: there is still no required command that must touch live source storage and then emit a release verdict in the same run.
 
 - No required command exists that must reach the live-source boundary and emit a machine-checkable release decision.
 - The suite can still go green without proving live-source mutation, crash survival, replay safety, or throughput on the real path.
@@ -114,7 +114,7 @@ The weakest claim is any implication that the current suite can certify the live
 - A green `node --test` run and green Playground smokes still do not prove no data loss, reliable crash recovery, or measured speed on the live-source path.
 - The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added and wired into the default release path.
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
-- The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness.
+- The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness, or that optional smokes are equivalent to a required release gate.
 - Said differently: the strongest present tests prove that the repository knows how to refuse unsafe claims, not that it can make the objective's positive claims on a live source.
 
 Actionably: the next release gate must be a checked-in command that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims." Any future claim of no data loss, reliability, or speed must point at that gate, not at `node --test` or the lab smokes, because those runs can still succeed without proving the live-source boundary.
