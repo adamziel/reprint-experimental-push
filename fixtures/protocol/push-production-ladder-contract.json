@@ -9,6 +9,16 @@
       "base_coverage_hash": "sha256:pull-base-coverage"
     }
   },
+  "pull_to_push_mapping": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "snapshot_hash_listing": "lists the live remote comparison set for planning only",
+    "dry_run_plan_upload": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
+    "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "journal_inspect": "reads durable evidence without authorizing mutation",
+    "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair"
+  },
   "auth_and_session": {
     "required_floor": "at least as strict as current Reprint HMAC usage",
     "preflight_binding": "mints one short-lived push session bound to one remote identity and one persisted pull base",
@@ -45,6 +55,7 @@
     }
   ],
   "remote_liveness": {
+    "snapshot_hash_listing": "planning evidence only and never write authority",
     "dry_run": "uploads an eligibility receipt only and never reserves remote state",
     "apply": "revalidates the live remote before every batch and again at the storage boundary",
     "journal": "reads durable evidence without authorizing mutation",
@@ -70,6 +81,8 @@
       "proof": [
         "one private network",
         "remote-base and remote-changed are the same remote identity at different times",
+        "exporter/importer establish the immutable pull base package before push",
+        "push preflight binds the imported base to one live remote identity and one short-lived session",
         "push snapshot hashes are planning evidence only",
         "push dry-run returns a receipt, not a lock",
         "push batch apply revalidates live evidence before every batch and at the storage boundary",
@@ -85,6 +98,8 @@
       "proof": [
         "separate disposable blueprints",
         "remote-base and remote-changed are the same remote identity at different times",
+        "exporter/importer establish the immutable pull base package before push",
+        "push preflight binds the imported base to one live remote identity and one short-lived session",
         "push snapshot hashes are planning evidence only",
         "push dry-run returns a receipt, not a lock",
         "push batch apply revalidates live evidence before every batch and at the storage boundary",
@@ -95,6 +110,9 @@
     }
   },
   "required_invariants": [
+    "pull exporter/importer establish the immutable base package before push",
+    "push preflight must bind the persisted pull base to one live remote identity and one short-lived session",
+    "remote snapshot hash listing is planning evidence, not write authority",
     "dry-run and apply are separate remote operations",
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "journal inspection is read-only and never authorizes mutation by itself",

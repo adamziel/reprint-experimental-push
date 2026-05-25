@@ -918,6 +918,14 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   );
   assert.equal(productionLadderContract.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
   assert.equal(
+    productionLadderContract.pull_to_push_mapping.exporter,
+    'scans the merge base and coverage evidence',
+  );
+  assert.equal(
+    productionLadderContract.pull_to_push_mapping.preflight,
+    'binds the persisted pull base to the live remote identity and a short-lived push session',
+  );
+  assert.equal(
     productionLadderContract.auth_and_session.required_floor,
     'at least as strict as current Reprint HMAC usage',
   );
@@ -963,6 +971,10 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
     'mutating recovery still requires fresh live hashes plus journal evidence',
   );
   assert.equal(
+    productionLadderContract.remote_liveness.snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
     executorTopologyProof.push_pipeline.recovery,
     'allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action',
   );
@@ -972,6 +984,26 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(
     executorTopologyProof.topology.docker.proof.includes(
       'dry-run and apply are separate remote operations',
+    ),
+  );
+  assert.ok(
+    productionLadderContract.topology.docker.proof.includes(
+      'exporter/importer establish the immutable pull base package before push',
+    ),
+  );
+  assert.ok(
+    executorTopologyProof.topology.playground.proof.includes(
+      'push preflight binds the imported base to one live remote identity and one short-lived session',
+    ),
+  );
+  assert.ok(
+    productionLadderContract.required_invariants.includes(
+      'pull exporter/importer establish the immutable base package before push',
+    ),
+  );
+  assert.ok(
+    productionLadderContract.required_invariants.includes(
+      'remote snapshot hash listing is planning evidence, not write authority',
     ),
   );
   assert.ok(
