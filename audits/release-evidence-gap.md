@@ -9,6 +9,7 @@ This note isolates what the current test surface proves and what it still does n
 - `test/performance-model.test.js` proves the benchmark model carries proof obligations and refuses unsupported speed claims.
 - `test/guarded-executor-benchmark.test.js` proves production throughput claims stay blocked when the benchmark evidence is incomplete.
 - `npm run test:playground:*` commands prove local Playground and route-shape flows, including auth and journal scenarios.
+- None of the current commands prove the live-source mutation boundary, a production durability path, or a measured speed threshold.
 
 ## Missing Proof
 
@@ -16,7 +17,7 @@ This note isolates what the current test surface proves and what it still does n
 - No test proves production auth/session, lease, fencing, and durable journal behavior on the real transport path.
 - No test proves the actual remote/local topology with a live source and live push target.
 - No test measures a production push path with a defined runtime or memory threshold.
-- No required command composes those checks and fails closed when any one of them is still lab-backed or fixture-only.
+- No required command composes those checks and fails closed when any one of them is still lab-backed, fixture-only, or benchmark-only.
 
 ## Release Blocker
 
