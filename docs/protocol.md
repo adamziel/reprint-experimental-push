@@ -96,6 +96,9 @@ The production proof bundle is intentionally layered around that contract:
   one-local, one-drift harness plus the liveness split
 - `push-production-topology-contract.json` proves the Docker and Playground
   harness shape
+- `push-topology-matrix.json` is the compact machine-readable topology map
+  for the same one-remote, one-local, one-drift harness and shared route
+  names
 
 The production push extension is the same ladder the fixtures prove:
 
@@ -302,6 +305,7 @@ extension:
 - `push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.
 - `push-remote-liveness-topology-contract.json` proves the one-remote, one-local, one-drift harness plus the liveness split.
 - `push-production-topology-contract.json` proves the Docker and Playground harness shape.
+- `push-topology-matrix.json` is the compact machine-readable topology map for the same one-remote, one-local, one-drift harness and shared route names.
 
 That review order is the production proof stack:
 

@@ -147,6 +147,49 @@ test('production topology fixture keeps the pull bridge, dry-run/apply split, an
   ]);
 });
 
+test('topology matrix fixture keeps the Docker and Playground route matrix aligned with the one-remote one-local harness', () => {
+  const matrix = readJson('fixtures/protocol/push-topology-matrix.json');
+
+  assert.equal(matrix.topology_matrix_id, 'push-topology-docker-playground-matrix');
+  assert.equal(matrix.test_topology.topology_id, 'one-remote-one-local-one-drift');
+  assert.equal(matrix.test_topology.runner, 'the only actor allowed to run the push protocol');
+  assert.deepEqual(matrix.test_topology.proof_order, [
+    'preflight',
+    'snapshot-hashes',
+    'dry-run',
+    'apply',
+    'journal',
+    'recovery-inspect',
+    'recovery-mutate',
+  ]);
+  assert.equal(matrix.test_topology.harness.docker.ingress, 8080);
+  assert.equal(matrix.test_topology.harness.playground.ingress, 8080);
+  assert.equal(matrix.networking.proxy_policy, 'local-only');
+  assert.equal(matrix.networking.tunnels, 'disallowed');
+  assert.ok(matrix.pull_to_push_mapping.preflight.includes('persisted base package'));
+  assert.ok(matrix.pull_to_push_mapping.mutation_batch_apply.includes('revalidates live evidence'));
+  assert.ok(matrix.remote_liveness.apply.includes('separate remote stage'));
+  assert.ok(matrix.docker.proof.includes('one private network'));
+  assert.ok(matrix.playground.proof.includes('separate disposable blueprints'));
+  assert.deepEqual(matrix.required_invariants, [
+    'pull exporter/importer establish the immutable base package before push',
+    'dry-run and apply are separate remote operations',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run is a receipt, not a lock',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    'push preflight must mint a short-lived session bound to one remote identity and one persisted pull base',
+    'dry-run and apply are separate remote operations even when the same runner executes both',
+    'apply must revalidate fresh live hashes after dry-run and before any storage boundary commit',
+    'journal inspect must precede mutating recovery and cannot authorize mutation on its own',
+    'mutating recovery must still be fenced by fresh live hashes and journal evidence',
+    'pull exporter/importer establish the immutable base package before push',
+  ]);
+});
+
 test('production bridge and revalidation fixtures keep the pull handoff and live revalidation proof aligned', () => {
   const bridge = readJson('fixtures/protocol/push-production-pull-bridge-contract.json');
   const revalidation = readJson('fixtures/protocol/push-production-revalidation-contract.json');
