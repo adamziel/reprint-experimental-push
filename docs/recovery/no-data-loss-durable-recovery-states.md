@@ -7,7 +7,8 @@ of three acceptable states:
 1. `old-remote`
    - No remote mutation is committed.
    - The recovery journal may show `opened`, `staged`, or
-     `dependencies-validated`.
+     `dependencies-validated` for failures before mutation, after staging, or
+     after dependency validation.
    - Recovery artifacts must identify the plan and journal boundary, but must
      not claim the remote is updated.
 
