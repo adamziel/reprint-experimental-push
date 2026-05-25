@@ -7077,3 +7077,10 @@ Lead finding for the current release-proof claim:
   and the live source URL in the same run, then the claim is still setup-only
   and production wording must fail closed; a wrapper name plus lab-shaped
   output is not production proof.
+- production-grade push support is still blocked until one exact executable
+  command, one exact live source URL, and one preserved remote can be shown in
+  the same rerun together with apply-time revalidation, journal/recovery
+  inspection, auth/session boundary capture, graph-identity evidence, and
+  plugin-owned surface classification; any missing item means the branch has
+  not yet proven the exact retry boundary and must not use production-ready
+  wording.
