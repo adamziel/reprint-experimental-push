@@ -11,6 +11,29 @@ and old/new/blocked classification for every touched surface. Lab-shaped
 route matches, package-mount matches, fixture replay, readable manual-review
 artifacts, and `finalMatchesLocal` stay compatibility evidence only.
 
+Concrete failure scenarios that still block production wording:
+
+- live remote drift after dry-run but before apply: missing proof is the
+  actual apply-boundary rejection point plus a preserved remote that the user
+  can inspect and retry from, not a green fixture replay or readable note;
+- create-time identity remap, alias, or renumbering: missing proof is live
+  identity evidence that shows the remap is safe, or a hard block before the
+  first write, not a fixture that keeps the same ID shape;
+- plugin-owned state outside the allowlist, including hidden tables, cron
+  rows, runtime registries, generated files, caches, and serialized blobs:
+  missing proof is live enumeration or an apply-time block for every owned
+  surface, including ones discovered only after the first write;
+- partial file, DB, or plugin side effects: missing proof is old/new/blocked
+  classification for every touched surface before retry, so a mixed write
+  cannot be relabeled as success after the committed part;
+- stale manual-review artifacts after drift: missing proof is that the
+  artifact stayed audit-only, could not become retry authority for a later
+  row/file/relationship-bearing record/remapped target/plugin surface, and
+  was replaced by a fresh retry scope rebuilt from live hashes; and
+- Reprint, ZS-Sync, or ForkPress comparisons: missing proof is the exact
+  upstream state plus a rerun of the same live boundary on this branch, not
+  route shape, package layout, reviewer wording, or fixture replay.
+
 What must change before any production-grade push claim:
 
 - the branch must show a live write boundary that rejects stale remote drift
