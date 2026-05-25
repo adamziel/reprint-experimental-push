@@ -35,6 +35,19 @@ The objective implies these minimum release requirements:
 | Speed claim or explicit refusal | Benchmark tests refuse unsupported throughput claims | No measured live-path speed result and no enforced `speed unclaimed` release command | Refusal-only evidence blocks overclaiming but does not release the speed claim, and silent omission is not acceptable |
 | Required release entrypoint | None | No `verify`, `release`, or `verify:release` script in `package.json`; this checkout also has no `.github/workflows/` gate, and the benchmark surface still reports `productionThroughput: 'not-claimed'` | Green optional runs can bypass the release decision entirely, so the repo still has no mandatory place where the live-source verdict, `speed unclaimed` refusal, or measured throughput result must appear |
 
+## Test Audit
+
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own.
+
+| Test surface | What it really proves | What it does not prove | Release reading |
+| --- | --- | --- | --- |
+| `test/push-planner.test.js` | Directional planning rules, stale-claim rejection, and recovery classification in controlled fixtures | Live-source mutation, production no-loss behavior, real remote/local topology, or crash survival on production storage | Useful refusal and shape proof only |
+| `test/recovery-journal.test.js` | File-backed journal sequencing, redaction, and restart inspection in local temp storage | Durable production storage, fencing against concurrent workers, or live-boundary replay after a crash | Local durability model only |
+| `test/performance-model.test.js` | Internal benchmark guardrails and rejection of unsupported speed claims | Measured live-path throughput or any release-grade speed threshold | Explicit anti-claim evidence only |
+| `test/guarded-executor-benchmark.test.js` | Integrity checks and the current `productionThroughput: 'not-claimed'` stance | Any positive speed claim, a measured threshold, or a required release verdict | Refusal proof, not throughput proof |
+
+The uncomfortable conclusion is that the current tests are good enough to block overclaiming, but not good enough to support the release statements the objective asks for. They prove the suite knows how to refuse unsafe claims. They do not prove the live push path is lossless, reliable, or fast enough.
+
 ## Proof Boundary
 
 Current proof must be judged against the live-source release boundary, not against the existence of local helper paths. The following are useful inputs, but they are not release proof on their own:
@@ -51,6 +64,13 @@ The strongest current runnable evidence still falls into four classes:
 - lab / fixture proof: `npm test` plus the optional file-backed and Playground smokes
 - docs-only proof: prose in `README.md`, `progress.html`, and the supervisor/audit notes
 - missing proof: live-source apply-time mutation, durable crash survival on production storage, measured live-path throughput, and a required release gate that can fail closed when those proofs are absent
+
+The test gap matters because the current suite has no executable proof of the production claim itself. It can only validate smaller premises:
+
+- planner tests prove the plan can refuse stale or conflicting inputs
+- journal tests prove local files can persist and be replayed
+- benchmark tests prove unsupported throughput claims are rejected
+- none of them prove the live-source boundary that the objective requires
 
 The test surfaces themselves are not stronger than that evidence boundary. [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md) records the same limit from the test side: the suite proves guardrails and refusals, not no data loss, reliability, or speed at the live-source boundary.
 
@@ -158,7 +178,7 @@ The objective stays blocked for five concrete reasons:
 4. The current recovery and journal tests are fixture-backed. They prove local model behavior, not durable production storage on the live source boundary, and they do not exercise a real remote-to-local-to-remote release path or no-loss behavior under the production storage semantics named by the objective.
 5. There is no checked-in CI workflow in this checkout and no `verify`/`release`/`verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), so there is no visible enforced entrypoint that could make the required release gate mandatory or close the loop from proof to deployable gate. Optional smokes, including the `production-shaped` route path and `http-push`, can still be run directly, which means the repository can report local success without proving the live-source boundary or producing a release-grade speed measurement.
 6. The benchmark suite is intentionally refusal-first: `report.throughput.productionThroughput` stays `not-claimed`, and the speed claim tests only prove the gate refuses unsupported production throughput until the missing measurements exist. That is a blocker-preserving design, not throughput proof.
-7. The tests that look strongest are still proving preconditions and refusal behavior, not end-to-end mutation safety under a crash boundary. That is useful, but it is not release evidence.
+7. The tests that look strongest are still proving preconditions, redaction, and refusal behavior, not end-to-end mutation safety under a crash boundary. That is useful, but it is not release evidence.
 8. The current benchmark surfaces are explicitly refusal-oriented; they are acceptable as anti-claim evidence, but they still do not establish a live-path speed claim.
 9. The lab route coverage is still self-described as `labBacked: true` on the strongest push paths, so even the authenticated success cases remain local proof, not production release proof.
 10. No test or smoke in this checkout demonstrates the one-way pull base plus one-way push back to live source under the production storage semantics named by the objective.
