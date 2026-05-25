@@ -6519,7 +6519,7 @@ test('keeps remote-only plugin removals while a live-preconditioned delete and m
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
-test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent edit, and matching type swap stay safe with apply verification', () => {
+test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent edit, and matching file type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
   base.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
