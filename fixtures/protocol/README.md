@@ -29,21 +29,22 @@ The normal sequence is:
 21. `push-auth-session-journal-proof.json`
 22. `push-auth-session-fencing-contract.json`
 23. `push-auth-session-recovery-contract.json`
-24. `push-pull-mapping.json`
-25. `push-contract.json`
-26. `push-topology-matrix.json`
-27. `push-production-ladder-contract.json`
-28. `push-executor-topology-proof.json`
-29. `push-recovery-path.json`
-30. `push-recovery-inspect-contract.json`
-31. `push-recovery-revalidation-contract.json`
-32. `push-snapshot-hashes-page-contract.json`
-33. `push-dry-run-apply-revalidation-contract.json`
-34. `push-remote-liveness-contract.json`
-35. `push-deployment-topology-contract.json`
-36. `push-protocol-extension-contract.json`
-37. `push-pull-to-topology-contract.json`
-38. `push-preflight-contract.json`
+24. `push-auth-session-journal-recovery-contract.json`
+25. `push-pull-mapping.json`
+26. `push-contract.json`
+27. `push-topology-matrix.json`
+28. `push-production-ladder-contract.json`
+29. `push-executor-topology-proof.json`
+30. `push-recovery-path.json`
+31. `push-recovery-inspect-contract.json`
+32. `push-recovery-revalidation-contract.json`
+33. `push-snapshot-hashes-page-contract.json`
+34. `push-dry-run-apply-revalidation-contract.json`
+35. `push-remote-liveness-contract.json`
+36. `push-deployment-topology-contract.json`
+37. `push-protocol-extension-contract.json`
+38. `push-pull-to-topology-contract.json`
+39. `push-preflight-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -66,6 +67,9 @@ The production proof bundle is intentionally layered:
   `push-auth-session-fencing-contract.json` show the auth floor that is at
   least as strict as current Reprint HMAC usage and keep the session, lease
   fence, and inspect-first recovery proof together.
+- `push-auth-session-journal-recovery-contract.json` is the compact proof that
+  binds auth, session minting, journal rows, lease fencing, and inspect-first
+  recovery into one production-shaped contract.
 - `push-auth-session-recovery-contract.json` keeps the stronger auth floor and
   the recovery fence together when a test wants to prove the claim is still
   fenced at recovery time.
@@ -95,6 +99,7 @@ The canonical end-to-end bundle for the push extension is:
 | `push-remote-liveness-contract.json` | Separate planning-only and write-side liveness boundaries. |
 | `push-dry-run-apply-revalidation-contract.json` | Dry-run/apply separation plus revalidation at batch and storage boundaries. |
 | `push-recovery-inspect-contract.json` | Read-only inspect step that classifies recovery before mutation. |
+| `push-auth-session-journal-recovery-contract.json` | Compact auth, session, journal-row, lease-fence, and inspect-first recovery proof. |
 | `push-recovery-revalidation-contract.json` | Mutating recovery still requires fresh live hashes after inspect. |
 
 Failure and recovery examples:
@@ -128,6 +133,9 @@ Failure and recovery examples:
   that keeps push auth at least as strict as the export HMAC family while
   binding the session, journal row, lease fence, and inspect-first recovery
   path together.
+- `push-auth-session-journal-recovery-contract.json` keeps those same
+  production pieces in one compact contract when a review needs the auth floor,
+  session mint, journal row, and recovery inspect proof together.
 - `push-auth-headers.json` shows the authentication floor for read-only
   inspection versus mutating push requests: inspect stays on the existing HMAC
   family, while dry-run, apply, and mutating recovery require the push
@@ -135,6 +143,9 @@ Failure and recovery examples:
 - `push-auth-session-recovery-contract.json` is the compact contract that
   binds push auth, the minted session, the journal fence, and inspect-only
   recovery in one place.
+- `push-auth-session-journal-recovery-contract.json` is the compact bridge
+  from the auth floor into journal rows, lease fencing, and inspect-first
+  recovery.
 - `push-flow.json` shows the ordered push stages from preflight through
   inspect-first recovery and makes the dry-run/apply split explicit.
 - `push-topology.json` shows the one-remote, one-local, one-drift-witness

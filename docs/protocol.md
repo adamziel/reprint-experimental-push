@@ -171,6 +171,9 @@ Use these fixtures as the canonical proof bundle:
   proof.
 - `push-pull-to-topology-contract.json` is the smallest composite proof that
   links pull provenance, push stages, auth floor, and topology.
+- `push-auth-session-journal-recovery-contract.json` is the compact proof that
+  ties auth, session minting, journal rows, lease fencing, and inspect-first
+  recovery together.
 - `push-executor-topology-proof.json` is the shortest executor-shaped proof
   for Docker and Playground ingress behavior.
 - `push-topology-matrix.json` is the machine-readable one-remote,

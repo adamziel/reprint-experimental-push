@@ -155,6 +155,8 @@ The canonical proof stack for that executor story is the same one named in
 
 - `push-protocol-extension-contract.json` for the full production ladder
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge
+- `push-auth-session-journal-recovery-contract.json` for the compact auth,
+  session, journal-row, lease-fence, and inspect-first recovery proof
 - `push-executor-topology-proof.json` for the shortest Docker/Playground
   executor proof
 - `push-topology-matrix.json` for the stage-level Docker/Playground matrix
@@ -443,6 +445,7 @@ The canonical proof stack for that scope is:
 | [`fixtures/protocol/push-recovery-inspect-contract.json`](../fixtures/protocol/push-recovery-inspect-contract.json) | Inspect reads the journal row and fresh live hashes before classifying finish, rollback, retry, or block. |
 | [`fixtures/protocol/push-recovery-revalidation-contract.json`](../fixtures/protocol/push-recovery-revalidation-contract.json) | Mutating recovery still requires fresh live hashes plus journal evidence after inspect proves the branch is safe. |
 | [`fixtures/protocol/push-pull-to-topology-contract.json`](../fixtures/protocol/push-pull-to-topology-contract.json) | The one-remote, one-local topology that keeps the pull handoff, drift witness, and `8080` ingress proof aligned across Docker and Playground. |
+| [`fixtures/protocol/push-auth-session-journal-recovery-contract.json`](../fixtures/protocol/push-auth-session-journal-recovery-contract.json) | The compact auth, session, journal-row, lease-fence, and inspect-first recovery proof. |
 
 If a review needs the finer-grained auth and restart proof, add:
 

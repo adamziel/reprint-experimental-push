@@ -52,6 +52,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
   const protocolExtensionContract = readJson('fixtures/protocol/push-protocol-extension-contract.json');
   const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
+  const authSessionJournalRecoveryContract = readJson(
+    'fixtures/protocol/push-auth-session-journal-recovery-contract.json',
+  );
 
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
@@ -396,6 +399,20 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(
     protocolExtensionContract.auth_session_recovery_proofs.recovery_inspect,
     'fixtures/protocol/push-recovery-inspect-contract.json',
+  );
+  assert.equal(
+    authSessionJournalRecoveryContract.contract_id,
+    'push-auth-session-journal-recovery-contract-one-remote-one-local',
+  );
+  assert.equal(authSessionJournalRecoveryContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(authSessionJournalRecoveryContract.session.remote_site_id, 'remote-example');
+  assert.equal(authSessionJournalRecoveryContract.journal_row.claim_generation, 4);
+  assert.equal(authSessionJournalRecoveryContract.journal_row.storage_guard, 'filesystem-compare-rename');
+  assert.equal(authSessionJournalRecoveryContract.recovery_inspect.mode, 'inspect');
+  assert.ok(
+    authSessionJournalRecoveryContract.recovery_inspect.blocked_when.includes(
+      'the claim lease has expired and the worker is fenced',
+    ),
   );
   assert.equal(protocolExtensionContract.topology.networking.ingress_port, 8080);
   assert.equal(protocolExtensionContract.topology.networking.proxy_policy, 'local-only');
