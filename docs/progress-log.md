@@ -4,16 +4,16 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 12:28:57
+## 2026-05-25 - Public Status Audit 12:37:16
 
-<a id="2026-05-25-public-status-audit-122857"></a>
+<a id="2026-05-25-public-status-audit-123716"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 12:28:57 CEST`) and kept the public anchor on
+  (`2026-05-25 12:37:16 CEST`) and kept the public anchor on
   `npm run verify:release` from commit `3089aee2`.
-- The first screen now adds `5de7ee40` and `981236d8`: a durable-journal
-  executable boundary and `447/447` planner tests; the retained-source proof
-  in `63a3502f`, `68664884`, and `e269f0d3` stays lab-only.
+- Added `889bd37a`, which emits the exact production-boundary verdict
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. Release gates remain `0/4`
+  because this proves the boundary is still missing, not production-ready.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
