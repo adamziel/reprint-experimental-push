@@ -9,6 +9,9 @@ This note summarizes the planner's no-overwrite contract.
   type swaps that end on the same hash.
 - Matching independent deletes, restores, and file type swaps can coexist with
   a live-preconditioned delete while remote-only plugin drift stays preserved.
+- Matching independent file deletes, row edits, and file type swaps can coexist
+  with a live-preconditioned file delete while remote-only plugin drift stays
+  preserved.
 - Every automatic mutation must still carry a live remote precondition bound to
   the mutation id, resource key, and the hash observed during planning.
 - A live-preconditioned mutation may share a plan with matching independent
@@ -16,6 +19,9 @@ This note summarizes the planner's no-overwrite contract.
   precondition.
 - Remote-only plugin metadata, plugin files, activation state, and removals
   stay preserved while unrelated safe mutations apply.
+- Remote-only plugin metadata, plugin files, activation state, and removals
+  stay preserved even when a live-preconditioned file delete is mixed with a
+  matching independent row edit and a matching file type swap.
 - Matching independent file deletions, edits, and file type swaps may also
   coexist with a live-preconditioned delete while remote-only plugin drift or
   removals stay preserved.

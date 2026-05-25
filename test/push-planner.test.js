@@ -7808,6 +7808,54 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent row edit, and file type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = 'base gallery file';
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant bytes';
+  base.db.wp_options['option_name:site_tagline'] = {
+    option_name: 'site_tagline',
+    option_value: 'Base tagline',
+  };
+
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/gallery/keep.txt'];
+  local.db.wp_options['option_name:site_tagline'].option_value = 'Shared tagline';
+
+  const remote = JSON.parse(JSON.stringify(base));
+  delete remote.files['wp-content/uploads/gallery/keep.txt'];
+  remote.db.wp_options['option_name:site_tagline'].option_value = 'Shared tagline';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/gallery');
+  const rowDecision = decisionFor(plan, 'row:["wp_options","option_name:site_tagline"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(rowDecision.decision, 'already-in-sync');
+  assert.equal(rowDecision.change.localChange, 'update');
+  assert.equal(rowDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.db.wp_options['option_name:site_tagline'].option_value, 'Shared tagline');
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/keep.txt'), false);
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned file delete and matching independent file and row edits stay safe with apply verification', () => {
   const base = baseSite();
   base.files['wp-content/themes/theme/style.css'] = 'base theme css';
