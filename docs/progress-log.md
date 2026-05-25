@@ -9,7 +9,7 @@ linked implementation artifacts.
 - Last update: 2026-05-25 10:33:09 CEST.
 - Status: blocked; the visible page, log, and latest audit note still agree.
 - Trend: no release-state change; `integration` still owns the next real-site command and the gate remains explicit.
-- Supervision: 8 fast/low lanes plus the dedicated live progress watcher are active.
+- Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers.
 - Next nudge: `integration` owns the next real-site release command and must return retained live source/auth/recovery output; `invariants` and `recovery` should align to that same command, and `reliable-executor` should keep the gate bound to a real URL/topology.
