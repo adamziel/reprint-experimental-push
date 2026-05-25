@@ -10,6 +10,12 @@ Acceptable post-failure states:
 
 Anything else is a release blocker.
 
+The replay boundary is part of the same contract:
+
+- a completed replay must stay `fully-updated-remote` and remain inert
+- a stale completed replay must become `blocked-recovery` with journal and remote artifacts
+- a mid-apply partial commit must never be treated as safe without recovery artifacts
+
 ## Release-blocker rule
 
 A partial remote mutation without a durable recovery artifact is never
@@ -31,4 +37,3 @@ Retries must not:
 - duplicate inserts
 - resurrect stale local data
 - treat a partial write as safe
-
