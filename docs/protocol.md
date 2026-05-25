@@ -17,6 +17,22 @@ The production extension has one non-negotiable shape:
 - recovery must begin with inspect before any mutating finish or rollback
 - authentication must be at least as strict as current Reprint HMAC usage
 
+The executor has one production ladder:
+
+1. `push_preflight` binds the persisted pull base to one live remote identity
+   and one short-lived push session.
+2. `push_snapshot_hashes` lists live remote hashes for planning only, even
+   when the listing is cursorable.
+3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+4. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+5. `push_journal` reads durable evidence without authorizing mutation.
+6. `push_recover inspect` classifies finish, rollback, retry, or block before
+   any mutating repair.
+7. `push_recover auto|finish|rollback` may mutate only after inspect and
+   fresh live hashes prove the action safe.
+
 The shortest way to read the production ladder is this:
 
 | Stage | Evidence boundary | Pull provenance mapping |
@@ -46,6 +62,15 @@ half:
 - `push_journal` is read-only.
 - `push_recover` starts with `inspect`; mutating recovery is only allowed
   after inspect proves the action safe with fresh live hashes.
+
+The readback paths keep the same split:
+
+- `push_journal` reads durable claim, lease, fencing, and idempotency evidence
+  without authorizing mutation.
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair is allowed.
+- `push_recover auto|finish|rollback` is the mutating branch and must never
+  run without a prior inspect result.
 
 The remote API is deliberately split by evidence class:
 
@@ -199,6 +224,17 @@ Use the same shape in both harnesses:
 The lab identities for that proof are `remote-example` and `local-dev-site`.
 They let the tests assert one remote source, one imported local edit site, and
 the same remote identity again after drift.
+
+The intended harness topology is:
+
+| Environment | Remote source | Local edit site | Drift witness | Runner |
+| --- | --- | --- | --- | --- |
+| Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
+| Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
+
+Both harnesses keep browser-visible inspection on the sandbox-provided `8080`
+ingress through a local-only proxy, and both preserve the same remote identity
+across the base and drift observations.
 
 The machine-readable bridge between pull provenance and push execution is
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json).

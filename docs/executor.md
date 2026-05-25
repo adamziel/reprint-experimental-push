@@ -27,6 +27,21 @@ The executor has one production shape:
 - it inspects the journal before any mutating recovery
 - it never uses dry-run as a lock or snapshot listing as write authority
 
+The production ladder is fixed:
+
+1. `push_preflight` binds the persisted pull base to one live remote identity
+   and one short-lived push session.
+2. `push_snapshot_hashes` lists live remote hashes for planning only.
+3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+4. `push_batch_apply` revalidates fresh live evidence before every batch and
+   at the storage boundary.
+5. `push_journal` reads durable evidence without authorizing mutation.
+6. `push_recover inspect` classifies finish, rollback, retry, or block before
+   any mutating repair.
+7. `push_recover auto|finish|rollback` mutates only after inspect and fresh
+   live hashes prove the action safe.
+
 The auth and session boundary is part of the production shape:
 
 - preflight must mint one short-lived push session bound to the persisted pull
@@ -45,6 +60,13 @@ readback:
   any mutating repair.
 - `push_recover auto|finish|rollback` may mutate only after inspect and fresh
   live hashes prove the action safe.
+
+The journal and recovery split is intentionally narrow:
+
+- `push_journal` is durable evidence readback only.
+- `push_recover inspect` is a read-only classifier over journal rows and live
+  hashes.
+- `push_recover auto|finish|rollback` is the only mutating recovery path.
 
 That split is the production liveness rule:
 
@@ -149,6 +171,17 @@ The executor topology proof is intentionally narrow:
   journal inspect, and recovery
 - the Docker and Playground proofs keep the same route names and the same
   8080-only browser ingress rule
+
+The intended one-remote, one-local topology is:
+
+| Environment | Remote source | Local edited site | Drift witness | Runner |
+| --- | --- | --- | --- | --- |
+| Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
+| Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
+
+Both harnesses preserve the same remote identity across the base and drift
+observations, and both keep browser-visible inspection on the sandbox-provided
+`8080` ingress through a local-only proxy.
 
 Use the same shape in both harnesses:
 
