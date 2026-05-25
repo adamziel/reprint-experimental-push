@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 02:13:56 CEST
+Last updated: 2026-05-25 02:14:47 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -8,21 +8,21 @@ changed, what is helping, what is not helping, and the next nudge.
 <details>
   <summary>Older supervisor snapshots</summary>
 
-## 2026-05-25 02:13:56 CEST - Supervisor Snapshot
+## 2026-05-25 02:14:47 CEST - Supervisor Snapshot
 
-- Going well: the page, log, and feedback note still agree.
+- Going well: the page, log, and feedback note still agree, and the newest copy stays short.
 - Not going well: production proof is still missing for auth, journals, leases, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the live page stays compact and points at the detailed evidence trail.
+- Progress change: no new evidence landed; the page and log now keep the scan view compact and linked instead of repeating the full trail.
 - Next nudge: keep each lane to one proof gap, one next test, and one owner.
 
 | Lane | Next nudge |
 | --- | --- |
-| Invariants | Prove graph identity on a real site. |
-| Recovery | Prove durable journal writes under crash boundaries. |
-| Reliable executor | Prove auth, session, and lease behavior in production. |
-| Fast paths | Benchmark a real large site before claiming rollout speed. |
-| Audit and critic | Re-audit the next production-backed slice, not lab shape. |
-| Progress publisher | Keep the page dated, concise, and linked to evidence. |
+| Invariants | Owner: lane. Next test: prove graph identity on a real site. |
+| Recovery | Owner: lane. Next test: prove durable journal writes under crash boundaries. |
+| Reliable executor | Owner: lane. Next test: prove auth, session, and lease behavior in production. |
+| Fast paths | Owner: lane. Next test: benchmark a real large site before claiming rollout speed. |
+| Audit and critic | Owner: lane. Next test: re-audit the next production-backed slice, not lab shape. |
+| Progress publisher | Owner: lane. Next test: keep the page dated, concise, and linked to evidence. |
 
 Note: this lane's page update becomes live only after the branch merges to `main`.
 
