@@ -100,6 +100,8 @@ Recovery is intentionally inspect-first:
   safe mutating recovery path.
 - journal rows must persist the claim, lease, fencing state, and apply-time
   evidence that inspect reads before any recovery mutation.
+- recovery inspect is read-only and must happen before any mutating repair;
+  the same auth floor that protects the write path also protects recovery.
 
 The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local

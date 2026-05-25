@@ -75,6 +75,14 @@ identity across `remote-base` and `remote-changed`:
   recovery inspect stays read-only after live drift while the persisted pull
   base, journal row, auth floor, and one-remote, one-local topology still
   line up for a safe mutating recovery branch.
+- `push-recovery-inspect-contract.json` and
+  `push-auth-session-journal-recovery-inspect-contract.json` are the compact
+  inspect-first recovery proofs that keep the journal row, lease fence, live
+  hashes, and recovery classification read-only before any mutating repair.
+- `push-production-recovery-inspect-contract.json` and
+  `push-production-recovery-drift-contract.json` are the production-shaped
+  inspect-first recovery proofs that keep the auth floor, the journal row,
+  and live drift classification aligned with the same remote identity.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-preflight-contract.json` keeps the first live binding explicit: the

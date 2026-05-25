@@ -31,7 +31,7 @@ The executor follows the same ordered stages defined in the protocol:
    authority or as a session substitute.
 5. `push_journal` stays read-only.
 6. `push_recover inspect` classifies finish, rollback, retry, or block before
-   any mutating recovery.
+   any mutating recovery and keeps the same auth floor as the write path.
 7. `push_recover auto|finish|rollback` mutates only when inspect proves the
    branch safe and the auth floor still holds.
 
