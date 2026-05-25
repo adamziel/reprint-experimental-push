@@ -5,7 +5,10 @@ Current baseline: reliable-executor commit `3089aee2`.
 still local Playground lab evidence and not live retry authority unless the
 branch also proves the live production WordPress auth/session boundary,
 durable journal semantics, graph identity, and plugin-driver coverage on a
-real-site rerun. The canonical release-gate checklist lives in
+real-site rerun. Do not resurrect the old "no `verify:release` exists"
+critique; the blocker now is that the retained-source command still does not
+move the proof onto a rerunnable live boundary with preserved-remote audit
+evidence. The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
 Current critic focus: treat `3089aee2` and the completed `npm run verify:release`
@@ -385,6 +388,17 @@ worktree state, the exact live boundary rerun on this branch, and an explicit
 statement of what the note proves here and what it does not prove here. Without
 those facts, the comparison remains historical context only and cannot support
 production wording.
+This is the intended comparison lens:
+
+- Reprint: staged transport and resumability vocabulary only; not preserved-
+  remote auditability, auth/session lifecycle proof, graph identity, or
+  plugin-driver coverage on this branch.
+- ZS-Sync: bounded discovery and batched cursoring vocabulary only; not live
+  source-mutation safety, create-time remap handling, or plugin-owned surface
+  classification on this branch.
+- ForkPress: audit and crash-consistency vocabulary only; not retry authority,
+  preserved-remote retention, or authority over later-discovered plugin-owned
+  surfaces on this branch.
 
 Conservative comparison summary:
 
