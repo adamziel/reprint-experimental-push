@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 13:58:20
+## 2026-05-25 - Public Status Audit 13:59:09
 
-<a id="2026-05-25-public-status-audit-135820"></a>
+<a id="2026-05-25-public-status-audit-135909"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 13:58:20 CEST`), kept the runtime anchor on
+  (`2026-05-25 13:59:09 CEST`), kept the runtime anchor on
   `npm run verify:release` from commit `3089aee2`, and kept `2e30a637` as the
   newest durable-journal proof in the checked release path.
 - `3d8748b6`, `471440b9`, `889bd37a`, `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`,
