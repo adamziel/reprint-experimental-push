@@ -187,6 +187,8 @@ The canonical proof stack for that executor story is the same one named in
   inspect proves the branch safe
 - `push-deployment-topology-contract.json` for the exact one-remote,
   one-local, one-drift Docker and Playground harness shape
+- `push-recovery-boundary-contract.json` for the compact inspect-first
+  recovery boundary proof with the auth floor and topology in one object
 
 These are the same proof points the protocol contract uses:
 

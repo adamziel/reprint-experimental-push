@@ -1959,6 +1959,7 @@ test('push fixture index keeps the production proof bundle grouped around the ne
   assert.ok(readme.includes('push-protocol-extension-contract.json'));
   assert.ok(readme.includes('push-deployment-topology-contract.json'));
   assert.ok(readme.includes('push-pull-to-topology-contract.json'));
+  assert.ok(readme.includes('push-recovery-boundary-contract.json'));
   assert.ok(readme.includes('preflight, remote snapshot hash listing, dry-run receipt, batched apply, journal inspect, and inspect-first recovery stay on separate liveness boundaries'));
   assert.ok(readme.includes('one-remote, one-local, one-drift-witness topology'));
   assert.ok(readme.includes('pull-to-push bridge proofs'));

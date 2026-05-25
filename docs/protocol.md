@@ -274,3 +274,6 @@ Use these fixtures as the canonical proof bundle:
   the drift witness, and the sandbox-provided `8080` ingress rule.
 - `push-topology-matrix.json` is the machine-readable one-remote,
   one-local, one-drift matrix.
+- `push-recovery-boundary-contract.json` is the compact proof that keeps
+  inspect-first recovery, the auth floor, and the Docker/Playground topology
+  in one object.

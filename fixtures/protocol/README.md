@@ -49,6 +49,7 @@ The normal sequence is:
 41. `push-preflight-contract.json`
 42. `push-remote-liveness-topology-contract.json`
 43. `push-production-revalidation-contract.json`
+44. `push-recovery-boundary-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -291,6 +292,9 @@ inspect fence can be asserted independently or together:
   classification.
 - `push-recovery-revalidation-contract.json` shows the same drift case still
   requires fresh live hashes before apply or mutating recovery.
+- `push-recovery-boundary-contract.json` gives the compact proof that keeps
+  inspect-first recovery, the auth floor, and the Docker/Playground topology
+  together in one object.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
