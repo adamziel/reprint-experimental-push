@@ -3523,6 +3523,9 @@ Production release gate checklist:
   or `finalMatchesLocal` is still compatibility evidence only until this
   branch reruns the exact live mutation boundary, records the preserved
   remote after reject, and shows the same drift case on this worktree.
+- That comparison still cannot claim stale-authority rejection, preserved-
+  remote auditability, or fresh retry scope unless this branch records the
+  exact live boundary for the same drift case.
 - Any claim that relies on route shape, packaged-plugin mount, fixture
   replay, or `finalMatchesLocal` must say explicitly that those are
   compatibility checks, not production proof.
