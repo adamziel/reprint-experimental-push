@@ -1554,6 +1554,7 @@ test('push recovery inspect fixture distinguishes safe evidence from blocked rec
   const inspect = readJson('fixtures/protocol/push-recovery-inspect-response.json');
   const blocked = readJson('fixtures/protocol/push-recovery-inspect-blocked-response.json');
   const decision = readJson('fixtures/protocol/push-recovery-decision.json');
+  const liveness = readJson('fixtures/protocol/push-remote-liveness-contract.json');
 
   assert.equal(inspect.state, 'inspect');
   assert.equal(inspect.proof, 'journal-and-live-hashes-reviewed');
@@ -1572,6 +1573,17 @@ test('push recovery inspect fixture distinguishes safe evidence from blocked rec
   assert.equal(decision.inspect.next, 'finish|rollback|retry|block');
   assert.ok(decision.mutating_modes.finish.requires.includes('fresh live hashes'));
   assert.ok(decision.required_invariants.includes('inspect is read-only'));
+  assert.equal(liveness.push_liveness.dry_run_receipt, 'may go stale before apply and never becomes write authority');
+  assert.ok(
+    liveness.live_remote_proof.proof.includes(
+      'recovery inspect stays read-only and happens before any mutating repair',
+    ),
+  );
+  assert.ok(
+    liveness.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
+    ),
+  );
 });
 
 test('push session journal proof binds the minted session to fencing and inspect-first recovery', () => {

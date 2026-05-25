@@ -9,6 +9,7 @@
     "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
     "snapshot_hash_listing": "returns live remote comparison evidence for planning only",
     "dry_run": "uploads eligibility evidence and returns a receipt, not a lock",
+    "dry_run_receipt": "may go stale before apply and never becomes write authority",
     "apply": "revalidates live evidence before every batch and again at the storage boundary",
     "journal": "reads durable claim, lease, and fencing evidence without authorizing mutation",
     "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair"
@@ -20,8 +21,10 @@
     "proof": [
       "remote-base and remote-changed are the same remote identity observed at different times",
       "dry-run and apply remain separate remote operations",
+      "the dry-run receipt can go stale before apply and must never become write authority",
       "apply revalidates fresh live evidence before every batch and at the storage boundary",
-      "journal inspection stays read-only before inspect-first recovery can mutate"
+      "journal inspection stays read-only before inspect-first recovery can mutate",
+      "recovery inspect stays read-only and happens before any mutating repair"
     ]
   },
   "auth_floor": {
