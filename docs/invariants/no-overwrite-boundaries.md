@@ -21,6 +21,9 @@ This note is the short form of the planner policy in
   alongside a live-preconditioned deletion; they still stay `already-in-sync`,
   and the remote plugin drift stays preserved.
 - Matching independent row deletions, edits, and file type swaps can also
+  appear alongside a live-preconditioned row deletion; they still stay
+  `already-in-sync`, and the remote plugin drift stays preserved.
+- Matching independent row deletions, edits, and file type swaps can also
   appear alongside a live-preconditioned file deletion; they still stay
   `already-in-sync`, and the remote plugin drift stays preserved through
   apply.
