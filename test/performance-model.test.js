@@ -1710,6 +1710,31 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('compression'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause').violates.includes('durable-progress'),
+  );
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('file-hashing'));
