@@ -16,7 +16,9 @@ boundary for the same claim, then preserved the rejected remote for audit.
 If either the exact upstream state, the exact live boundary, or the
 preserved-remote evidence is missing, the note is historical context only
 and cannot be used to claim that the live executor, retry path, or
-manual-review flow is safe.
+manual-review flow is safe. A source-note comparison also has to state what
+it proves here and what it does not prove here; without that explicit gap
+statement it is ambiguous and fails closed.
 
 A route-shaped smoke, package mount, live-looking hash, lab-shaped route
 smoke, copied executor output, or matching `finalMatchesLocal` result does

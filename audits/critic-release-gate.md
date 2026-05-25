@@ -2,6 +2,16 @@
 
 This note is a compact checklist for any wording that might claim production-grade push support.
 
+Required proof artifacts on the same live boundary:
+
+- the exact executable command string and exact live `REPRINT_PUSH_SOURCE_URL`;
+- the executor identity and live auth/session boundary before the first write;
+- the preserved remote that stayed inspectable after rejection;
+- the exact rejection point before the first write;
+- dry-run receipt, apply-time revalidation, and journal/recovery inspection;
+- graph identity and plugin-driver coverage on the live boundary; and
+- old/new/blocked classification for every touched row, file, relationship-bearing record, and plugin-owned surface before retry starts.
+
 Do not use production wording unless the branch has all of the following for the same live mutation boundary on this worktree:
 
 - commit `2b00b189` is not treated as proof until a live real-site command,
@@ -23,6 +33,7 @@ Do not use production wording unless the branch has all of the following for the
 - if the repo only exposes lab and playground entry points (`plan`, `apply`, and `test:playground:*`), production wording must fail closed until a named real-site release command exists, can be rerun on an actual remote, and produces preserved-remote evidence for the rejected boundary;
 - if the branch has not yet shown the exact first executor/auth/preserved-remote boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, then production wording must also fail closed on production auth/session lifecycle, recovery-journal durability, graph identity, and plugin-driver coverage; those are not implied by route shape, script naming, or review wording;
 - if the branch has only shown local retained-source evidence, route-shape compatibility, or a named smoke such as `verify:release` without the live executor/auth/preserved-remote boundary, then it has not proven production push support and must not claim production-grade wording;
+- if the proof only shows a wrapper label, route-shaped smoke, or source-note comparison without the exact live boundary and preserved remote, it is still compatibility evidence only;
 - if no branch-local command has yet been run against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, then the branch has not proven the first executor/auth/preserved-remote boundary and every production-grade claim must stay blocked;
 - if a claim points to `npm run test:playground:production-shaped-release-proof` or any similarly named wrapper without a matching `package.json` entry and a rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, treat that claim as setup-only and fail closed;
 - the next acceptable proof from reliable-executor must be a live rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that records the exact executable command string, the executor identity, the preserved remote that remained inspectable after rejection, the exact rejection point before the first write, and the journal/recovery inspection needed to audit retry scope; without those facts from one rerun, the branch still has compatibility evidence only;
@@ -40,6 +51,13 @@ Do not use production wording unless the branch has all of the following for the
 - the first real executor/auth/preserved-remote boundary is recorded by the live preflight command itself, not inferred from a smoke label, env placeholder, or review note;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified old, new, or blocked before retry starts, so mixed file/DB/plugin side effects cannot be relabeled as success; and
 - any later-discovered plugin-owned surface or remapped create target is a new live boundary unless it was already enumerated before write and separately preserved, rejected, and retried.
+
+False-reliability traps to reject:
+
+- a source-note comparison is not proof unless it names the exact upstream revision or worktree state, states what it proves here, states what it does not prove here, and is backed by a branch-local rerun of the same live boundary;
+- a manual-resolution note is not success unless the remote stayed inspectable after rejection, the stale approval was rejected before the first write, and the retry scope was rebuilt from live hashes;
+- a later-discovered plugin-owned surface cannot inherit the earlier approval, even if the route family, package mount, or reviewer wording matches; and
+- a production-sounding script name is not a release command unless the command itself proves the live boundary on an actual remote.
 
 Evidence classes:
 
