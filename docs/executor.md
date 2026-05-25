@@ -5,6 +5,25 @@ protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote source site, one imported local edit
 site, and one later drift observation of the same remote identity.
 
+## Test Topology
+
+Use the same logical harness in Docker and Playground:
+
+| Role | Identity | Purpose |
+| --- | --- | --- |
+| Remote source | `remote-base` | Seeds the persisted pull base package. |
+| Local edit site | `local-edited` | Carries the imported local edits. |
+| Drift witness | `remote-changed` | Reuses the same remote identity after drift. |
+| Runner | `runner` | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
+
+The topology rules are fixed:
+
+- Docker uses one private network.
+- Playground uses separate disposable blueprints.
+- Browser-visible inspection stays on the sandbox-provided `8080` ingress.
+- The local inspection proxy stays local-only.
+- Remote tunnels are disallowed.
+
 ## Canonical Execution
 
 The executor follows the production ladder in `protocol.md` without changing
