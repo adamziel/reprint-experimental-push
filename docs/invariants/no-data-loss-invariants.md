@@ -157,6 +157,9 @@ This note captures the planner boundary in plain language.
   local side did not independently reach the live remote hash.
 - Any local delete or file type swap that would overwrite a remote-only
   plugin change instead of preserving it.
+- A forged live-preconditioned delete must still stop if the live remote
+  precondition is stripped before apply, even when matching independent edits
+  still stay `already-in-sync` and remote-only plugin drift stays untouched.
 - Any local delete that would hide a live remote descendant.
 - Any file type swap that would hide a live remote descendant, even when the
   remote side has already removed an unrelated plugin.
