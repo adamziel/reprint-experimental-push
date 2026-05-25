@@ -12,15 +12,17 @@ remote lane also exposes `verify:release` in `package.json`, so any remaining
 absence of that command on this checkout is a branch-local merge gap, not a
 project-wide absence. That still does not prove a live production boundary,
 because the retained-source run does not show preserved-remote retention across
-rejection, live auth/session lifecycle on WordPress, or apply-time revalidation
-against a fresh real-site source.
+rejection, live auth/session lifecycle on WordPress, apply-time revalidation
+against a fresh real-site source, or durable journal semantics outside the
+Playground harness.
 
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
 apply time, and proves production WordPress auth/session lifecycle, durable
-journal semantics outside the lab harness, graph identity, plugin-driver
-coverage, and leases/fencing on the same mutation.
+journal storage and lease/fencing semantics outside the lab harness, graph
+identity, plugin-driver coverage, and preserved-remote drift handling on the
+same mutation.
 
 ## Single strongest blocker
 
@@ -76,9 +78,9 @@ the following on the same live boundary:
 - exact executor identity, auth/session lifecycle, and rejection point before
   the first write;
 - dry-run receipt plus apply-time revalidation on the same live mutation;
-- journal/recovery inspection that proves retry scope from fresh live hashes
-  and lease/fencing behavior under retry on production WordPress state, not
-  just retained-source lab state;
+- journal/recovery inspection that proves retry scope from fresh live hashes,
+  durable storage, and lease/fencing behavior under retry on production
+  WordPress state, not just retained-source lab state;
 - explicit old/new/blocked classification for touched rows, files,
   relationship-bearing records, and plugin-owned surfaces; and
 - plugin-driver coverage for late-discovered plugin-owned data traps outside
@@ -156,4 +158,5 @@ Before any production wording, the project must show:
   fixture; and
 - a lab or retained-source `verify:release` run is promoted to production
   evidence without the live WordPress auth/session boundary, preserved remote,
-  and apply-time revalidation on a real local, Playground, or Docker source.
+  apply-time revalidation, and journal durability on a real local, Playground,
+  or Docker source.
