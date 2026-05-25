@@ -62,6 +62,12 @@ The repo still needs one enforced release gate that closes the gap between lab e
 5. a real remote/local topology, not a fixture-only or Playground-only alias
 6. either a measured live-path throughput result or an explicit refusal to claim throughput
 
+Current command reality is narrower than that gate:
+
+- `npm test` runs the Node suite only.
+- `npm run test:playground` chains local Playground plan/apply/push protocol smokes.
+- the stronger playground commands remain optional and can be skipped entirely.
+
 Until that gate exists and is wired into a default entrypoint such as `npm run verify:release` or `npm run release`, the project can only claim lab proof, not production release readiness. A green run that comes only from optional smokes, fixture tests, or benchmark refusal paths is still insufficient on its own because it can bypass the live-source release decision entirely.
 
 ## Evidence Table
