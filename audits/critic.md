@@ -218,6 +218,10 @@ Release-grade checklist:
   looked production-shaped.
 - The live remote drifted between dry-run and apply, and the write failed
   closed before mutation.
+- The stale manual-review artifact was audit-visible after drift but could not
+  authorize a retry, widen to a different row/file/relationship-bearing
+  record/plugin-owned surface, or substitute for fresh live hashes on the same
+  live write boundary.
 - Any stale manual-review artifact stayed audit-only after drift, and the
   retry rebuilt scope from fresh live hashes instead of reusing the old
   approval against a different row, file, relationship-bearing record, or
