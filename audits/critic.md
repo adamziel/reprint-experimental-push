@@ -10,13 +10,14 @@ including `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence. The
 remote lane also exposes `verify:release` in `package.json`, so any remaining
 absence of that command on this checkout is a branch-local merge gap, not a
-project-wide absence. That still does not prove a live production boundary,
-because the retained-source run does not show preserved-remote retention across
-rejection, live auth/session lifecycle on WordPress, apply-time revalidation
-against a fresh real-site source, or durable journal semantics outside the
-Playground harness. Production-grade wording also remains false if it relies
-on lab-session shape, retained-source journal rows, or route compatibility as a
-stand-in for live WordPress auth/session durability.
+project-wide absence. That is useful progress, but it still does not prove a
+live production boundary because the retained-source run does not show
+preserved-remote retention across rejection, live auth/session lifecycle on
+WordPress, apply-time revalidation against a fresh real-site source, or durable
+journal semantics outside the Playground harness. Production-grade wording also
+remains false if it relies on lab-session shape, retained-source journal rows,
+or route compatibility as a stand-in for live WordPress auth/session
+durability.
 
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker
@@ -129,6 +130,25 @@ Any hidden-loss mode that is not proven there remains a blocker:
 
 Manual resolution is not success unless the remote is preserved and the user
 can safely audit and retry the exact boundary.
+
+## What the source notes prove, and do not prove
+
+The source notes are still useful, but only as design input:
+
+- Reprint proves resumable pull transport and stage framing in the observed
+  upstream commit; it does not prove live push safety, preserved-remote
+  retention, or WordPress auth/session lifecycle on this branch.
+- ZS-Sync proves bounded discovery and cursoring in the observed upstream
+  commit; it does not prove source mutation safety, plugin-driver coverage, or
+  retry authority on this branch.
+- ForkPress proves merge audit vocabulary and crash-consistency intent in the
+  observed upstream commit; it does not prove this branch can preserve the
+  rejected remote, classify plugin-owned side effects, or rerun the same live
+  boundary with fresh live hashes.
+
+If a claim cites one of those notes as if it were production proof, it must be
+rejected unless the claim also names the exact live boundary and the preserved
+remote evidence from this branch.
 
 ## Source-note comparison
 
