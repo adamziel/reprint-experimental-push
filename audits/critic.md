@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `889bd37a` on `origin/lane/reliable-executor`, with the retained-
+remote head `5822745b` on `origin/lane/reliable-executor`, with the retained-
 source evidence anchored at `63a3502f` and the later explicit verdict
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. The latest remote evidence now
 includes the retained-source `npm run verify:release` lineage plus a durable-
@@ -15,8 +15,9 @@ auth/session lifecycle, apply-time revalidation against a fresh real-site
 source, durable journal storage and lease/fencing semantics outside the
 Playground harness, graph identity under remap, or plugin-driver coverage for
 late-discovered plugin-owned surfaces. Production-grade wording is still false
-if it relies on lab-session shape, retained-source journal rows, or route
-compatibility as a stand-in for live WordPress auth/session durability.
+if it relies on lab-session shape, retained-source journal rows, route
+compatibility, or command-topology proof as a stand-in for live WordPress
+auth/session durability.
 
 Source-note comparison, kept conservative and non-authoritative unless this branch reran the same live boundary:
 
@@ -305,7 +306,7 @@ or production auth/session lifecycle.
 The remote reliable-executor head now gives better lab evidence, not release
 proof:
 
-- `889bd37a` and the retained-source point `63a3502f` keep the release
+- `5822745b` and the retained-source point `63a3502f` keep the release
   boundary explicit and confirm the retained-source verifier path is still
   being tightened, but it still stays inside the supervised lane's lab
   harness.
