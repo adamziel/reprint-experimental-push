@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 15:23:18 CEST
+Last updated: 2026-05-25 15:33:54 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 15:33:54 CEST
+
+- Going well: `reliable-executor` still has the latest release-surface proof in `ec1c9952`, and the 8 fast/low lanes plus the live watcher remain active.
+- Not going well: the production gate is still closed because auth/session lifecycle and durable journal storage with lease/fencing remain unproven.
+- Progress delta: no new material evidence landed since the last check, so the visible release state is unchanged.
+- Next nudge: `reliable-executor` owns the next production-boundary proof; `progress-publisher` should keep the public surfaces terse and linked only when evidence changes; `critic` and `auditor` should reject wording-only gate claims.
+- Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 
 ## 2026-05-25 15:23:18 CEST
 
