@@ -208,10 +208,14 @@ remote, stale-drift rejection, create-time remap safety, or late-discovered
 plugin-owned surface handling on this branch. ForkPress is the most explicit
 historical design note about audit and crash-consistency intent, but it is
 still only a historical design note here. A note that only matches route
-shape, package layout, fixture replay, or reviewer wording is compatibility
-evidence only. Even a named upstream state is still historical unless this
+shape, package layout, fixture replay, reviewer wording, or a known upstream
+commit is compatibility evidence only, because a copied or fixture-backed
+executor can still present the same surface without proving live retry
+authority. Even a named upstream state is still historical unless this
 branch reran the same live boundary and can show fresh preserved-remote,
-rejection-point, and retry evidence for that exact case.
+rejection-point, and retry evidence for that exact case, plus per-surface
+old/new/blocked classification for every touched row, file, relationship-
+bearing record, remapped create target, and plugin-owned surface.
 
 Release-gate checklist for production-grade wording:
 
