@@ -1129,6 +1129,21 @@ design still needs proof for each of these failure classes:
   remain lab evidence only; none of them prove live mutation safety on their
   own.
 
+## Comparison Summary
+
+The source notes in `docs/source-notes.md` are comparison evidence only:
+
+- Reprint proves a resumable, stage-oriented pull pipeline and a streaming
+  export interface. It does not prove live source mutation safety, remote
+  drift handling, rollback, or push retry semantics.
+- ZS-Sync proves scanner/resource discovery and bounded batch fetching of
+  changed resources. It does not prove mutation boundaries, conflict policy,
+  or WordPress write safety on a live source site.
+- ForkPress proves merge auditability, reviewed resolution, validator
+  boundaries, and crash-consistency language. It does not prove this repo has
+  a production push executor, production auth, or current upstream behavior at
+  the mutation boundary.
+
 ## Production Claim Checklist
 
 Use this checklist before any doc, PR, branch status, review comment, or
