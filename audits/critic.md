@@ -4,6 +4,25 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+What must change before any production-grade push claim:
+
+- the branch must show a live write boundary that rejects stale remote drift
+  before the first mutation, preserves the remote for audit, and rebuilds a
+  fresh retry scope from live hashes on this branch;
+- create-time identity remapping, aliasing, or renumbering must be either
+  proven safe with live identity evidence or hard-blocked before write;
+- every touched surface must be classified as old, new, or blocked before
+  retry, including mixed file, DB, and plugin side effects;
+- every plugin-owned surface outside the allowlist must be enumerated live or
+  blocked at apply time, including late-discovered tables, files, cron rows,
+  runtime registries, generated assets, caches, and serialized blobs;
+- any readable manual-review artifact must stay audit-only after drift and
+  cannot become retry authority for a different row, file, relationship-
+  bearing record, remapped create target, or plugin-owned surface; and
+- any Reprint, ZS-Sync, or ForkPress note must be treated as historical
+  context unless this branch names the exact upstream state, reruns the same
+  live boundary here, and says what that note proves and does not prove.
+
 Important boundary: a lab-shaped route family, packaged mount, fixture replay,
 or `finalMatchesLocal` result can still be compatible without proving the
 live executor, preserved remote, or fresh retry scope. Route shape alone is
@@ -29,6 +48,13 @@ preserved remote after reject, the stale rejection point, and the fresh retry
 scope rebuilt from live hashes. If any of those proof points is missing, the
 claim must stay audit-only even when the artifact is readable and the route
 looks production-shaped.
+
+Source-note bottom line: Reprint, ZS-Sync, and ForkPress notes are useful
+comparative context, but they do not prove the live executor, the preserved
+remote, stale-drift rejection, create-time remap safety, or late-discovered
+plugin-owned surface handling on this branch. A note only counts as current
+proof if the exact upstream state is named and the same live boundary was
+rerun here with fresh preserved-remote and retry evidence.
 
 Must change before any production-grade push claim:
 
