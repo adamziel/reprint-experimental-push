@@ -15,10 +15,12 @@ test('benchmark model covers large uploads and plugin installs', () => {
   const largeUpload = model.schedules.find((schedule) => schedule.kind === 'large-upload');
   const pluginInstall = model.schedules.find((schedule) => schedule.kind === 'plugin-install');
   const pluginUpdate = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
+  const releaseBundle = model.schedules.find((schedule) => schedule.kind === 'release-bundle');
 
   assert.ok(largeUpload, 'large upload workload exists');
   assert.ok(pluginInstall, 'plugin install workload exists');
   assert.ok(pluginUpdate, 'plugin update workload exists');
+  assert.ok(releaseBundle, 'release bundle workload exists');
   assert.ok(largeUpload.totals.uploadBytes >= 1024 * MIB, 'large upload is at least 1 GiB');
   assert.ok(largeUpload.totals.uploadChunks > 100, 'large upload is chunked enough to exercise resumability');
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
@@ -40,6 +42,13 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(pluginUpdate.atomicGroupId, 'plugin update has an atomic group id');
   assert.notEqual(pluginUpdate.atomicGroupId, pluginInstall.atomicGroupId);
+  assert.equal(releaseBundle.atomicGroupId, 'release-bundle-commerce-stack');
+  assert.ok(releaseBundle.totals.uploadBytes >= 128 * MIB, 'release bundle includes large upload traffic');
+  assert.ok(releaseBundle.totals.dbRows >= 10_000, 'release bundle includes large row batches');
+  assert.ok(releaseBundle.actions.some((action) => action.type === 'remote-index-probe'), 'release bundle models remote-index planning');
+  assert.ok(releaseBundle.actions.some((action) => action.type === 'compression-decision'), 'release bundle models compression decisions');
+  assert.ok(releaseBundle.actions.some((action) => action.type === 'backpressure-pause'), 'release bundle models backpressure pauses');
+  assert.ok(releaseBundle.actions.some((action) => action.type === 'group-staging-finalize'), 'release bundle preserves atomic-group finalization');
 
   assert.ok(
     largeUpload.actions.some((action) => action.type === 'compression-decision'),
@@ -93,6 +102,14 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginUpdate.actions.some((action) => action.type === 'durable-receipt-flush'),
     'plugin update models bounded durable-receipt flushing',
+  );
+  assert.ok(
+    releaseBundle.actions.some((action) => action.type === 'durable-receipt-flush' && action.preservesRawReceipts),
+    'release bundle models bounded durable-receipt flushing',
+  );
+  assert.ok(
+    releaseBundle.actions.some((action) => action.type === 'atomic-group-commit' && action.commitPolicy === 'all-or-nothing'),
+    'release bundle keeps the atomic group commit barrier explicit',
   );
   assert.ok(
     largeUpload.actions.some((action) => action.type === 'chunk-upload' && action.durableEvidence),
@@ -2446,6 +2463,7 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.ok(model.workloads.some((workload) => workload.kind === 'large-upload'));
   assert.ok(model.workloads.some((workload) => workload.kind === 'plugin-install'));
   assert.ok(model.workloads.some((workload) => workload.kind === 'plugin-update'));
+  assert.ok(model.workloads.some((workload) => workload.kind === 'release-bundle'));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'remote-index-probe')));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'compression-decision')));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')));
@@ -2456,7 +2474,7 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.ok(model.schedules.some((schedule) => schedule.totals.dbRows > 0));
   assert.ok(model.totals.uploadBytes >= 2 * 1024 * MIB);
   assert.ok(model.totals.dbRows >= 10_000);
-  assert.equal(model.totals.filePublishes, 9);
+  assert.equal(model.totals.filePublishes, 11);
   assert.ok(
     model.schedules.flatMap((schedule) => schedule.actions).filter((action) => action.type === 'backpressure-pause').length >= 2,
   );

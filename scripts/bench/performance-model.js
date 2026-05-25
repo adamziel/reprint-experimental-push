@@ -2629,6 +2629,7 @@ export function buildBenchmarkModel(overrides = {}) {
     largeUploadWorkload(),
     pluginInstallWorkload(),
     pluginUpdateWorkload(),
+    releaseBundleWorkload(),
   ];
   const schedules = workloads.map((workload) => scheduleWorkload(workload, limits));
 
@@ -2795,6 +2796,62 @@ function pluginUpdateWorkload() {
         resourceKey: 'plugin:commerce',
         remoteBeforeHash: 'sha256:commerce-1.0.0-active',
         localHash: 'sha256:commerce-1.1.0-active',
+        atomicGroupId: atomicGroup.id,
+      },
+    ],
+  };
+}
+
+function releaseBundleWorkload() {
+  const atomicGroup = {
+    id: 'release-bundle-commerce-stack',
+    kind: 'plugin-update',
+    dependencies: ['payments', 'subscriptions', 'analytics'],
+    commitPolicy: 'all-or-nothing',
+  };
+
+  return {
+    id: 'release-bundle-commerce-stack',
+    kind: 'release-bundle',
+    description: 'A mixed large-upload and dependency-heavy plugin release that exercises shared backpressure and atomic barriers.',
+    planId: 'plan-release-bundle-commerce-stack-v1',
+    atomicGroup,
+    files: [
+      {
+        resourceKey: 'file:wp-content/uploads/2026/05/release-notes.json',
+        path: 'wp-content/uploads/2026/05/release-notes.json',
+        sizeBytes: 128 * MIB,
+        mimeType: 'application/json',
+        compressible: true,
+        baseHash: 'sha256:base-release-notes',
+        remoteBeforeHash: 'sha256:base-release-notes',
+        localHash: 'sha256:local-release-notes',
+      },
+      pluginFile('file:wp-content/plugins/commerce/assets/release-banner.js', 10 * MIB, 'application/javascript', true, atomicGroup.id),
+    ],
+    rowGroups: [
+      rowGroup('wp_options', 260, 1100, atomicGroup.id),
+      rowGroup('wp_postmeta', 7600, 680, atomicGroup.id),
+      rowGroup('wp_termmeta', 1200, 520, atomicGroup.id),
+      rowGroup('wp_actionscheduler_actions', 1800, 920, atomicGroup.id),
+    ],
+    pluginResources: [
+      {
+        resourceKey: 'plugin:payments',
+        remoteBeforeHash: 'sha256:payments-2.1.1-active',
+        localHash: 'sha256:payments-2.2.0-active',
+        atomicGroupId: atomicGroup.id,
+      },
+      {
+        resourceKey: 'plugin:subscriptions',
+        remoteBeforeHash: 'sha256:subscriptions-1.5.0-active',
+        localHash: 'sha256:subscriptions-1.6.0-active',
+        atomicGroupId: atomicGroup.id,
+      },
+      {
+        resourceKey: 'plugin:analytics',
+        remoteBeforeHash: 'sha256:absent',
+        localHash: 'sha256:analytics-1.0.0-active',
         atomicGroupId: atomicGroup.id,
       },
     ],
