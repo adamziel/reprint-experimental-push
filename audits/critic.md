@@ -1,14 +1,15 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `889bd37a` on `origin/lane/reliable-executor`, with the retained-
+remote head `5822745b` on `origin/lane/reliable-executor`, with the retained-
 source evidence anchored at `63a3502f`. The latest remote evidence still
 includes the retained-source `npm run verify:release` lineage plus a durable-
 journal smoke, with `authSessionType`, minted session shape, `applyCommitted`,
 and `durableJournal.rows: 17`, and the later explicit verdict
-`PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` on the supervised lane. That is
-material lab progress, and it is enough to retire any stale claim that there
-is no retained-source `verify:release` evidence at all. It still does not
+`PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` on the supervised lane. The newer
+remote head expands the command-topology proof, but that is still material lab
+progress only. It is enough to retire any stale claim that there is no
+retained-source `verify:release` evidence at all. It still does not
 prove a live production boundary because the retained-source run does not show
 preserved-remote retention across rejection, live WordPress auth/session
 lifecycle, apply-time revalidation against a fresh real-site source, durable
@@ -128,11 +129,11 @@ This worktree still has no rerunnable live boundary on a real local,
 Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that proves preserved-remote
 retention and fresh live-hash revalidation on the same mutation. That is a
 branch-local gap, not a project-wide absence: the supervised lane already has
-`verify:release`, retained-source evidence, and now a durable-journal smoke,
-but this checkout does not yet expose the same live boundary. Until that exact
-boundary exists here, production-grade push wording is false reliability, even
-if the supervised lane has stronger retained-source evidence and an explicit
-boundary verdict.
+`verify:release`, retained-source evidence, a durable-journal smoke, and a
+broader command-topology proof, but this checkout does not yet expose the same
+live boundary. Until that exact boundary exists here, production-grade push
+wording is false reliability, even if the supervised lane has stronger
+retained-source evidence and an explicit boundary verdict.
 
 The single strongest proof gap is still production WordPress auth/session
 lifecycle plus preserved-remote auditability on a live boundary. Until that is
