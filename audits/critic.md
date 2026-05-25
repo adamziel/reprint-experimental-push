@@ -26,6 +26,10 @@ The presence of `verify:release` on the supervised remote lane is accepted as re
 
 The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
 
+## Release gate reminder
+
+The retained-source `verify:release` run, minted session shape, and apply-revalidation proof are useful evidence, but they are still not the release gate. The release gate only opens when one rerunnable live boundary on one exact source URL preserves the rejected remote, revalidates from fresh live hashes at apply time, survives auth/session expiry and re-entry, writes through a lease-fenced durable journal, preserves graph identity across remap, and classifies late plugin-owned surfaces before the first write.
+
 ## Immediate blocker for release wording
 
 The only acceptable transition to production wording is one rerunnable live WordPress boundary that proves all of these together:
