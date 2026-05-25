@@ -19,6 +19,31 @@ const FIXTURE_PLUGIN_OWNED_ROW_DEPENDENCIES = new Map([
     'reprint-push-atomic-dependent-fixture',
   ],
 ]);
+export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
+  'old-remote',
+  'fully-updated-remote',
+  'blocked-recovery',
+]);
+
+export function isAcceptableRecoveryState(recoveryState) {
+  if (!recoveryState || typeof recoveryState !== 'object') {
+    return false;
+  }
+
+  if (!ACCEPTABLE_RECOVERY_STATES.includes(recoveryState.status)) {
+    return false;
+  }
+
+  if (recoveryState.status !== 'blocked-recovery') {
+    return Boolean(
+      recoveryState.artifacts
+      && recoveryState.artifacts.journal
+      && recoveryState.artifacts.remote === undefined,
+    );
+  }
+
+  return Boolean(recoveryState.artifacts && recoveryState.artifacts.journal && recoveryState.artifacts.remote);
+}
 
 export class PushPlanError extends Error {
   constructor(code, message, details = {}) {
@@ -46,13 +71,26 @@ export function applyPlan(remote, plan, options = {}) {
   let previousJournalState = null;
   let journal = prepareJournal(remote, plan, options.journal);
   if (journal.status === 'completed') {
-    const result = replayCompletedPlan(remote, plan, journal);
+    let replayResult;
     try {
-      recordDurableReplay(durableJournal, remote, plan, result.recoveryState, journal);
+      replayResult = replayCompletedPlan(remote, plan, journal);
+      assertRecoveryStateEnvelope(replayResult.recoveryState);
+      recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal);
+      return replayResult;
     } catch (error) {
-      throw journalWriteFailureFullyUpdated(error, remote, plan, result.journal, 'journal-replayed');
+      if (error?.details?.recovery?.status === 'blocked-recovery') {
+        recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, error.details.recovery);
+        throw error;
+      }
+      throw journalWriteFailureFullyUpdated(
+        error,
+        remote,
+        plan,
+        replayResult?.journal || journal,
+        'journal-replayed',
+        recoveryStateDurableWriteDetails(error?.details),
+      );
     }
-    return result;
   }
   if (hasPreviousJournal) {
     const observedState = classifyJournalRemote(remote, journal);
@@ -67,7 +105,9 @@ export function applyPlan(remote, plan, options = {}) {
         },
       };
       try {
+        assertRecoveryStateEnvelope(recoveryState);
         recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
+        recordDurableRecoveryState(durableJournal, remote, plan, recoveryState);
       } catch (error) {
         throw journalWriteFailureFullyUpdated(error, remote, plan, completedJournal, 'journal-replayed');
       }
@@ -195,6 +235,16 @@ export function applyPlan(remote, plan, options = {}) {
       },
     },
   };
+}
+
+function assertRecoveryStateEnvelope(recoveryState) {
+  if (!isAcceptableRecoveryState(recoveryState)) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must be old-remote, fully-updated-remote, or blocked-recovery.',
+      { recoveryState },
+    );
+  }
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {
@@ -451,14 +501,17 @@ function replayCompletedPlan(remote, plan, journal) {
     site: deepClone(remote),
     appliedMutations: 0,
     journal,
-    recoveryState: {
-      status: 'fully-updated-remote',
-      reason: 'Completed plan replayed without reapplying mutations.',
-      artifacts: {
-        journal,
-      },
-    },
+    recoveryState: completedReplayRecoveryState(remote, plan, journal),
   };
+}
+
+function completedReplayRecoveryState(remote, plan, journal) {
+  return fullyUpdatedRecoveryState(
+    remote,
+    plan,
+    journal,
+    'Completed plan replayed without reapplying mutations.',
+  );
 }
 
 function classifyJournalRemote(remote, journal) {
@@ -586,6 +639,7 @@ function recordDurableReplay(writer, remote, plan, recoveryState, journal = null
     });
     recordDurableTargets(writer, remote, plan, journal);
   }
+  recordDurableRecoveryState(writer, remote, plan, recoveryState);
   recordDurableBoundary(writer, 'journal-replayed', remote, plan, {
     state: recoveryState.status,
     reason: recoveryState.reason,
@@ -825,6 +879,10 @@ function commitStagedSite(remote, staged, plan, journal, options, durableJournal
     recordDurableBoundary(durableJournal, 'journal-completed', committed, plan, {
       state: 'completed',
     });
+    recordDurableRecoveryState(durableJournal, committed, plan, {
+      status: 'fully-updated-remote',
+      reason: 'All planned mutations were committed.',
+    });
   } catch (error) {
     return {
       failure: recoveryBlocked(
@@ -871,33 +929,23 @@ function injectedFailure(code, message, remote, plan, journal, details = {}) {
     message,
     {
       ...details,
-      recovery: oldRemoteRecoveryState(remote, plan, journal, message),
+      recovery: recoveryState('old-remote', remote, plan, journal, message, {
+        artifacts: { journal },
+      }),
     },
   );
 }
 
 function oldRemoteRecoveryState(remote, plan, journal, reason) {
-  return {
-    status: 'old-remote',
-    reason,
-    remoteHash: digest(remote),
-    planId: plan.id,
-    artifacts: {
-      journal,
-    },
-  };
+  return recoveryState('old-remote', remote, plan, journal, reason, {
+    artifacts: { journal },
+  });
 }
 
 function fullyUpdatedRecoveryState(remote, plan, journal, reason) {
-  return {
-    status: 'fully-updated-remote',
-    reason,
-    remoteHash: digest(remote),
-    planId: plan.id,
-    artifacts: {
-      journal,
-    },
-  };
+  return recoveryState('fully-updated-remote', remote, plan, journal, reason, {
+    artifacts: { journal },
+  });
 }
 
 function journalWriteFailureOldRemote(error, remote, plan, journal, boundary) {
@@ -914,7 +962,7 @@ function journalWriteFailureOldRemote(error, remote, plan, journal, boundary) {
   );
 }
 
-function journalWriteFailureFullyUpdated(error, remote, plan, journal, boundary) {
+function journalWriteFailureFullyUpdated(error, remote, plan, journal, boundary, recoveryDetails = {}) {
   const details = durableJournalFailureDetails(error);
   const reason = `Durable recovery journal write failed while recording completed replay at ${boundary}.`;
   return new PushPlanError(
@@ -923,6 +971,7 @@ function journalWriteFailureFullyUpdated(error, remote, plan, journal, boundary)
     {
       boundary,
       ...details,
+      ...recoveryDetails,
       recovery: fullyUpdatedRecoveryState(remote, plan, journal, reason),
     },
   );
@@ -952,18 +1001,76 @@ function recoveryBlocked(remote, plan, journal, reason, details = {}) {
     reason,
     {
       ...details,
-      recovery: {
-        status: 'blocked-recovery',
-        reason,
-        remoteHash: digest(remote),
-        planId: plan.id,
+      recovery: recoveryState('blocked-recovery', remote, plan, journal, reason, {
         artifacts: {
           journal,
           remote: sanitizeRecoveryRemote(remote, plan),
         },
-      },
+      }),
     },
   );
+}
+
+function recoveryState(status, remote, plan, journal, reason, details = {}) {
+  if (!ACCEPTABLE_RECOVERY_STATES.includes(status)) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_UNSUPPORTED',
+      `Unsupported recovery state ${status}.`,
+      { status, planId: plan.id },
+    );
+  }
+
+  const recovery = {
+    status,
+    reason,
+    remoteHash: digest(remote),
+    planId: plan.id,
+    ...details,
+  };
+
+  if (status !== 'blocked-recovery') {
+    recovery.artifacts = {
+      ...(recovery.artifacts || {}),
+      journal,
+    };
+    delete recovery.artifacts.remote;
+    validateRecoveryArtifacts(recovery);
+    return recovery;
+  }
+
+  validateRecoveryArtifacts(recovery);
+  return recovery;
+}
+
+function validateRecoveryArtifacts(recovery) {
+  if (recovery.status === 'blocked-recovery') {
+    if (!recovery.artifacts?.journal || !recovery.artifacts?.remote) {
+      throw new PushPlanError(
+        'RECOVERY_ARTIFACTS_INVALID',
+        'Blocked recovery states must preserve both journal and remote artifacts.',
+        {
+          status: recovery.status,
+          planId: recovery.planId,
+        },
+      );
+    }
+    return;
+  }
+
+  if (!recovery.artifacts?.journal) {
+    throw new PushPlanError(
+      'RECOVERY_ARTIFACTS_INVALID',
+      'Non-blocked recovery states must preserve the journal artifact.',
+      {
+        status: recovery.status,
+        planId: recovery.planId,
+      },
+    );
+  }
+
+  if (recovery.artifacts.remote !== undefined) {
+    delete recovery.artifacts.remote;
+  }
 }
 
 function sanitizeRecoveryRemote(remote, plan) {

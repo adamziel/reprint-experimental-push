@@ -500,7 +500,7 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-          <p class="lead">Last 12 hours: evidence progressed; release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `b725b2d3` is the newest release-surface evidence, adding the explicit production auth/session release boundary; `b9aebe71` and `134d0401` add supporting no-data-loss and recovery evidence. Restart follow-up also pushed `4e13d882` critic evidence, `63dd27cc` bounded fast-path coverage, and `9208c2da` objective-audit evidence. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending.</p>
+        <p class="lead">Last 12 hours: evidence progressed; release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `b725b2d3` is the newest release-surface evidence, adding the explicit production auth/session release boundary; `b9aebe71` and `134d0401` add supporting no-data-loss and recovery evidence. Restart follow-up also pushed `4e13d882` critic evidence, `63dd27cc` bounded fast-path coverage, and `9208c2da` objective-audit evidence. Production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending.</p>
         <time class="update-stamp" datetime="2026-05-25T23:44:06+02:00">Last updated: May 25, 2026, 23:44:06 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
@@ -548,7 +548,7 @@
         <div class="lane">
           <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">45%</span></div>
           <div class="bar" aria-label="No data loss merge invariants 45 percent"><div class="fill green" style="width:45%"></div></div>
-          <p class="note">Independent delete/edit cases are covered in lab evidence. Gap: real graph identity mapping.</p>
+          <p class="note">Independent delete/edit cases are covered in lab evidence; stale graph references still block. Gap: real graph identity mapping.</p>
         </div>
 
         <div class="lane">
@@ -560,7 +560,7 @@
         <div class="lane">
           <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">42%</span></div>
           <div class="bar" aria-label="Reliable executor and protocol 42 percent"><div class="fill amber" style="width:42%"></div></div>
-          <p class="note">Docs name the production push flow, but proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
+          <p class="note">Protocol/executor docs name the production push flow, but the proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
         </div>
 
         <div class="lane">
@@ -572,7 +572,7 @@
         <div class="lane">
           <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">30%</span></div>
           <div class="bar" aria-label="Independent evidence and critique 30 percent"><div class="fill red" style="width:30%"></div></div>
-          <p class="note">Current audits reflect lab evidence only. Gap: production-backed internals plus graph and plugin driver proof. This panel summarizes the supervised release gates, not the full lane roster.</p>
+          <p class="note">Objective and critic audits reflect the latest evidence. Gap: re-audit production-backed internals and graph/plugin proof.</p>
         </div>
       </section>
 
@@ -580,10 +580,10 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Lab evidence</strong><span>89 Node tests pass in lab evidence; see the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs.</span></li>
+            <li><strong>Lab evidence</strong><span>89 Node tests pass in lab evidence; planner, recovery, fast-path, protocol, critic, and audit evidence landed. See the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs.</span></li>
             <li><strong>Top blocker</strong><span>Real WordPress executor/auth still blocks any production push claim.</span></li>
             <li><strong>Release gates</strong><span>Four pending gates stay explicit below: executor/auth, recovery journal, Docker/Playground, and plugin drivers.</span></li>
-            <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps.</span></li>
+            <li><strong>Progress change</strong><span>Eight worker outputs were integrated; readiness stayed blocked.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -658,7 +658,7 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Lab snapshots cover guarded plans and fixture apply/refusal paths. Real executor/auth and the remaining gates stay pending until production evidence appears.</p>
+              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth, durable storage, and graph safety remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
