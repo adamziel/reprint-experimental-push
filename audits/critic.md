@@ -215,6 +215,10 @@ Production-readiness language checklist:
 12. Treat Reprint, ZS-Sync, and ForkPress comparisons as historical context
     unless the exact upstream revision or worktree state is named and this
     branch reran the same live mutation boundary here.
+13. Treat any readable review artifact or comparison note as audit evidence
+    only unless it is paired with the preserved remote and a fresh retry
+    artifact on the same live boundary; readability alone is not retry
+    authority.
 
 Release gate for production wording:
 
