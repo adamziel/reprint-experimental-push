@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 02:24:15 CEST
+Last updated: 2026-05-25 02:24:50 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -8,7 +8,7 @@ changed, what is helping, what is not helping, and the next nudge.
 <details>
   <summary>Older supervisor snapshots</summary>
 
-## 2026-05-25 02:24:15 CEST - Supervisor Snapshot
+## 2026-05-25 02:24:50 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and feedback note still match, and the visible page stays scan-friendly.
 - Not going well: production proof is still missing for auth, journal durability, leases, graph identity, integration, and plugin drivers.
