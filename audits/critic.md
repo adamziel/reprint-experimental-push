@@ -153,6 +153,15 @@ can claim production-grade push support:
   whether the target is old, new, or blocked using durable artifacts.
 - An operator approves manual conflict resolution once, then the live remote
   drifts before retry, and the stale approval cannot be reused.
+- A route-shaped smoke returns a live-looking hash, but the write path still
+  resolves to lab internals or fixture-only storage, so the hash is not proof
+  of live mutation safety.
+- A packaged-plugin mount matches the production path, but the exercised route
+  does not preserve the remote or reject stale authority before mutation, so
+  packaging shape is only compatibility evidence.
+- A manual-review artifact remains readable after drift, but the next apply can
+  still widen the old approval to a new row, file, relationship, or
+  plugin-owned surface, which is a false-success mode until disproven.
 
 ## What Reprint, ZS-Sync, And ForkPress Actually Contribute
 
@@ -178,7 +187,9 @@ shape, replay behavior, or packaged-plugin mounting still does not prove live
 remote drift handling, identity remapping, or production storage durability.
 Reprint's stage-oriented pull notes are useful context, but they do not prove
 a retry-safe manual override model for source mutation or a live approval
-artifact that expires on remote drift.
+artifact that expires on remote drift. Unless this branch reverified the exact
+upstream revision or worktree at the same live mutation boundary, the note is
+historical context only.
 
 ### ZS-Sync
 
@@ -197,6 +208,8 @@ It also does not prove that a ready plan remains safe after the remote changes
 between scan and write. That matters for manual resolution too: the scanner
 can tell us what changed, but it cannot prove that an operator approval stays
 valid after a fresh live snapshot diverges.
+Unless this branch reverified the exact upstream revision or worktree at the
+same live mutation boundary, the note stays historical context only.
 
 ### ForkPress
 
@@ -215,6 +228,8 @@ push endpoint can safely claim production support. ForkPress's notes are still
 missing the repo-specific proof we need here: a durable reviewed-resolution
 artifact, expiry on stale approvals, and a remote-preserving retry path after
 a second drift.
+Unless this branch reverified the exact local worktree state at the same live
+mutation boundary, the note is historical context only.
 
 ## Production Claim Checklist
 

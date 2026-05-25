@@ -91,12 +91,20 @@ support.
 - The claim does not rely on route shape, packaged-plugin mounting,
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
   production proof.
+- The claim does not let source-note comparisons backfill missing live proof
+  for drift rejection, create-time remap, plugin ownership, partial
+  side-effect classification, or stale approval expiry unless the same live
+  write boundary was reverified at the exact upstream revision or worktree
+  state.
 - The claim does not treat a lab route shape or fixture-shaped package mount
   as proof of current production safety, even if the path name matches the
   production route.
 - The claim does not treat manual resolution as success unless the remote is
   preserved, the stale artifact stays auditable but unusable, and the retry
   rebuilds scope from fresh live hashes before any write.
+- The claim does not treat a stale manual-review artifact as current
+  authority, even if it is still readable; readability alone is not a
+  production guarantee.
 - Manual resolution is not a production proof if the approval can be reused
   after drift, if the remote was not preserved for audit, or if the retry
   inherits scope from the stale snapshot instead of re-reading the live one.
