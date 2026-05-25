@@ -383,6 +383,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'cached row receipts still cannot bypass the release-bundle atomic-group barrier',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.rejectedGate,
+    'group',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.violates.includes('database-row-batching'),
+    'cached row-batch receipts still cannot bypass release-bundle database batching preconditions',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.violates.includes('atomic-groups'),
+    'cached row-batch receipts still cannot bypass the release-bundle atomic-group barrier',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-publish-after-pause')?.rejectedGate,
     'live',
   );

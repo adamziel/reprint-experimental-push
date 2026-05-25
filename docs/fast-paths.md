@@ -1354,6 +1354,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   bundle commit after a pause, because planning evidence and cached hashes do
   not prove the chunk receipts, row receipts, backpressure state, or
   atomic-group commit barrier survived failure.
+- A compressed remote index plus cached row-batch receipts cannot skip a
+  release-bundle commit after a pause, because cached batch receipts do not
+  prove the mixed upload-and-database bundle, the live row preconditions, or
+  the atomic-group commit barrier survived failure.
 - A compressed remote index plus a cached file hash cannot skip plugin-install
   and large-upload recovery after a pause, because planning evidence and cached
   hashes do not prove the live row compares, chunk acknowledgements, or
