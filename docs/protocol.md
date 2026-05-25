@@ -73,6 +73,18 @@ that dry-run and apply are separate remote operations, apply revalidates live
 evidence, and recovery starts with inspect. Browser-visible inspection must
 stay on the sandbox-provided `8080` ingress through a local-only proxy.
 
+The production test topology can be written as a short matrix:
+
+| Role | Docker | Playground | Meaning |
+| --- | --- | --- | --- |
+| `remote-base` | `remote-base` | `remote-base` | Seeds the persisted pull base and the live remote identity. |
+| `local-edited` | `local-edited` | `local-edited` | Holds the imported local edits that form the candidate plan. |
+| `remote-changed` | `remote-changed` | `remote-changed` | Reuses the same remote identity later to prove drift after dry-run. |
+| `runner` | `runner` | local test process | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
+
+The same matrix is the proof that the same remote identity is observed twice,
+not that two different remotes were involved.
+
 The smallest machine-readable proof for that topology is
 [`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).
 It keeps the deployment shape separate from the larger auth and recovery
@@ -188,6 +200,18 @@ That ladder is the production contract in miniature:
 - apply is the first write stage and must revalidate fresh live evidence before every batch and at the storage boundary
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh live hashes prove the action
+
+The compact proof objects in `fixtures/protocol/` mirror that ladder:
+
+- `push-pull-mapping.json` is the provenance bridge from exporter/importer to
+  preflight, planning, apply, journal inspect, and recovery.
+- `push-remote-liveness-contract.json` keeps snapshot listing, dry-run,
+  apply, and recovery on separate liveness boundaries.
+- `push-dry-run-apply-revalidation-contract.json` records the stale-between
+  dry-run-and-apply case and the storage-boundary revalidation rule.
+- `push-deployment-topology-contract.json` is the smallest Docker/Playground
+  proof for one remote source, one local edited site, one drift witness, and
+  one runner.
 
 The importer must preserve enough lineage for that boundary to remain
 provable later:

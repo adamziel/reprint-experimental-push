@@ -171,6 +171,18 @@ Both harnesses must keep browser-visible inspection on the sandbox-provided
 `8080` ingress with a local-only proxy. That rule is part of the production
 proof, not just a convenience for local testing.
 
+The test shape is easiest to reason about as one remote observed twice, one
+local edited clone, and one runner:
+
+- `remote-base` seeds the persisted pull base
+- `local-edited` carries the imported edits that become the canonical plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
+
+That shape is what proves dry-run and apply are separate remote calls, apply
+revalidates before every batch, and recovery must begin with inspect.
+
 The minimum production-shaped topology is:
 
 | Role | Meaning |
@@ -244,6 +256,16 @@ The executor must treat the pull pipeline as immutable provenance and the push p
 5. Dry-run uploads the canonical plan as eligibility evidence only.
 6. Apply revalidates the live remote before every batch and again at the storage boundary.
 7. Journal inspect and recovery inspect read durable evidence first, then allow mutation only when fresh live proof exists.
+
+The pull-to-push bridge is the compact proof the executor should preserve:
+
+- exporter scans the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that base package to the live remote identity and a short-lived push session
+- snapshot hashes stay planning-only and never become write authority
+- dry-run uploads the canonical plan and returns an eligibility receipt
+- apply revalidates fresh live evidence before every batch and at the storage boundary
+- journal inspect stays read-only, and recovery starts with inspect before any mutating repair
 
 That is the production mapping from pull/export/import to push:
 
