@@ -4,14 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 03:36:12
+## 2026-05-25 - Public Status Audit 03:37:08
 
-<a id="2026-05-25-public-status-audit-033612"></a>
+<a id="2026-05-25-public-status-audit-033708"></a>
 
 - Refreshed [progress.html](../progress.html) to the live `date` output
-  (`2026-05-25 03:36:12 CEST`) and kept the visible last-updated stamp current.
-- Tightened the first-screen summary so the flat trend and the top blocker are
-  stated once, with the pending proof areas still called out conservatively.
+  (`2026-05-25 03:37:08 CEST`) and kept the visible last-updated stamp current.
+- Kept the first screen concise and explicit: flat trend, top blocker, and the
+  release-gate checklist stay visible without widening the claims.
 - Public status remains conservative. WordPress executor/auth, recovery
   journal, Docker/Playground integration, graph identity, and plugin drivers
   remain pending until proven.
