@@ -54,7 +54,8 @@ The normal sequence is:
 46. `push-production-push-recovery-contract.json`
 47. `push-production-recovery-inspect-contract.json`
 48. `push-production-recovery-drift-contract.json`
-49. `push-protocol-extension-contract.json`
+49. `push-production-topology-contract.json`
+50. `push-protocol-extension-contract.json`
 
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
@@ -119,6 +120,9 @@ identity across `remote-base` and `remote-changed`:
   before and after drift. It also pins the shared auth/session floor, the
   journal rows, lease fencing, and inspect-first recovery path so the same
   proof covers dry-run, apply, and recovery.
+- `push-production-topology-contract.json` is the compact one-remote,
+  one-local, one-drift proof that keeps the pull provenance, push ladder, and
+  Docker/Playground topology aligned in one object.
 - `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
   listing clearly in the planning-only lane, including cursoring for larger
@@ -163,6 +167,9 @@ identity across `remote-base` and `remote-changed`:
   one-drift-witness topology in both Docker and Playground. The matrix is the
   canonical machine-readable topology proof, and the deployment contract now
   also carries the explicit Docker/Playground test topology block.
+- `push-production-topology-contract.json` is the compact production bundle
+  that keeps the same one-remote, one-local, one-drift topology and the
+  push-stage sequence in a single object.
 - The test topology is the same in both harnesses: `remote-base` seeds the
   persisted pull base, `local-edited` holds the imported local edits,
   `remote-changed` is the same remote identity after drift, and `runner`

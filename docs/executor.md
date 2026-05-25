@@ -157,6 +157,9 @@ That gives the minimal remote/local pair the task asks for:
 shared topology. Use the deployment contract when you need the smallest
 topology-only proof, and the liveness-topology contract when you need the same
 one-remote, one-local, one-drift harness plus the dry-run/apply split.
+Use `push-production-topology-contract.json` when you need the compact
+production bundle that keeps the pull provenance, push stage sequence, and
+topology proof together in one object.
 
 For the compact bridge between the pull pipeline and that topology, cite
 `push-pull-to-topology-contract.json`. For the smallest topology-only proof,

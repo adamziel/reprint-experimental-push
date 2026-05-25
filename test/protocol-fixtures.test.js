@@ -230,6 +230,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const remoteLivenessTopologyContract = readJson(
     'fixtures/protocol/push-remote-liveness-topology-contract.json',
   );
+  const productionTopologyContract = readJson(
+    'fixtures/protocol/push-production-topology-contract.json',
+  );
   const remoteLivenessContract = readJson('fixtures/protocol/push-remote-liveness-contract.json');
   const recoveryBoundaryContract = readJson('fixtures/protocol/push-recovery-boundary-contract.json');
   const productionLadderContract = readJson('fixtures/protocol/push-production-ladder-contract.json');
@@ -874,6 +877,42 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     remoteLivenessTopologyContract.topology.playground.proof.includes(
       'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
+  assert.equal(
+    productionTopologyContract.contract_id,
+    'push-production-topology-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionTopologyContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.deepEqual(productionTopologyContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(productionTopologyContract.topology.same_remote_identity, true);
+  assert.equal(productionTopologyContract.topology.networking.ingress_port, 8080);
+  assert.equal(
+    productionTopologyContract.topology.docker.proof.includes(
+      'dry-run and apply remain separate remote calls',
+    ),
+    true,
+  );
+  assert.equal(
+    productionTopologyContract.topology.playground.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+    true,
+  );
+  assert.ok(
+    productionTopologyContract.required_invariants.includes(
+      'authentication must be at least as strict as current Reprint HMAC usage',
     ),
   );
   assert.equal(

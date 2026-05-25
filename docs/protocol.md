@@ -98,6 +98,8 @@ The machine-readable bridge is split across the fixtures:
 - `push-remote-liveness-topology-contract.json` also proves that dry-run and
   apply are separate remote calls and that apply revalidates fresh live
   evidence before every batch and at the storage boundary.
+- `push-production-topology-contract.json` keeps the same topology and the
+  full push stage sequence in one compact production object.
 
 The compact production proof stack is:
 
