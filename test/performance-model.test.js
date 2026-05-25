@@ -185,6 +185,9 @@ test('chunk uploads stay staged until a guarded publish step', () => {
   assert.ok(filePublishes.length > 0);
   assert.ok(filePublishes.every((action) => action.precondition?.expectedHash));
   assert.ok(filePublishes.every((action) => action.assembledHash?.startsWith('sha256:')));
+  assert.ok(filePublishes.every((action) => action.durableEvidence));
+  assert.ok(filePublishes.every((action) => action.idempotencyKey));
+  assert.ok(filePublishes.every((action) => action.requiresCompleteChunkReceipts > 0));
 });
 
 test('database batching is bounded and keeps per-row preconditions', () => {
@@ -200,6 +203,27 @@ test('database batching is bounded and keeps per-row preconditions', () => {
   assert.ok(dbBatches.every((batch) => batch.order === 'primary-key'));
   assert.ok(dbBatches.every((batch) => batch.durableEvidence));
   assert.ok(dbBatches.every((batch) => batch.idempotencyKey));
+  assert.ok(dbBatches.every((batch) => batch.resumeCursor?.planId));
+});
+
+test('failure boundaries carry the receipts and commit records needed for recovery', () => {
+  const model = buildBenchmarkModel();
+  const boundaries = new Map(model.failureInjectionBoundaries.map((boundary) => [boundary.boundary, boundary]));
+  const largeUpload = model.schedules.find((schedule) => schedule.kind === 'large-upload');
+  const pluginInstall = model.schedules.find((schedule) => schedule.kind === 'plugin-install');
+  const pluginUpdate = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
+
+  assert.ok(boundaries.get('chunk-ack'));
+  assert.ok(boundaries.get('db-batch-commit'));
+  assert.ok(boundaries.get('group-staging-finalize'));
+  assert.ok(boundaries.get('atomic-group-commit'));
+
+  assert.ok(largeUpload.actions.some((action) => action.type === 'chunk-upload' && action.durableAckRequired));
+  assert.ok(largeUpload.actions.some((action) => action.type === 'file-publish' && action.precondition?.expectedHash));
+  assert.ok(pluginInstall.actions.some((action) => action.type === 'db-row-batch' && action.preconditions.kind === 'per-row-hash'));
+  assert.ok(pluginInstall.actions.some((action) => action.type === 'group-staging-finalize' && action.requiredReceipts.rowBatches > 0));
+  assert.ok(pluginUpdate.actions.some((action) => action.type === 'group-staging-finalize' && action.failsClosedWhen.includes('validator-missing')));
+  assert.ok(pluginUpdate.actions.some((action) => action.type === 'atomic-group-commit' && action.validators.includes('dependency-preconditions')));
 });
 
 test('plugin install remains invisible until the atomic group commit', () => {

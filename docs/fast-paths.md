@@ -698,6 +698,11 @@ The executable benchmark should still prove remote-index planning, compression
 choices, and backpressure pauses on the large-upload, plugin-install, and
 plugin-update workloads, so a fast path never hides the failure boundaries it
 is meant to preserve.
+It should also expose the exact durable boundaries that recovery depends on:
+chunk acknowledgements and guarded file publish for large uploads, row batch
+commit records for plugin installs, group-staging finalize records for plugin
+updates, and the atomic-group commit barrier that keeps coupled members
+visible together.
 
 The model intentionally treats receipts, cursors, and pressure budgets as
 first-class fields. A benchmark that only proves fewer requests were made is not
