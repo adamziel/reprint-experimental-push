@@ -408,6 +408,9 @@ The practical split is still harsh: model tests and lab smokes are useful
 evidence, but they are not boundary proof for a live WordPress source push.
 The strongest release claim remains blocked until one required command proves
 the live-source boundary, not just the local lab boundary.
+`package.json` confirms that the strongest checks are still opt-in scripts,
+and the repository tree still lacks a checked-in CI workflow or a mandatory
+`verify:release` entrypoint to force them together.
 
 | Req | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
@@ -951,7 +954,8 @@ automated backstop that would fail a release when the stronger gates are
 skipped. The next actionable proof is a `verify:release`-style command that
 refuses release whenever any required step still reports `labBacked: true`,
 fixture-only scope, missing live-topology evidence, or an unmeasured speed
-claim.
+claim. Until that command exists, the current suite can prove only that
+release is still blocked, not that release is safe.
 
 ## Required Release Gates
 
