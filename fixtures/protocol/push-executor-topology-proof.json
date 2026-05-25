@@ -31,6 +31,20 @@
     "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block without mutation",
     "recovery": "allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action"
   },
+  "lab_topology": {
+    "remote_base": {
+      "role": "remote source site",
+      "identity": "remote-example"
+    },
+    "local_edited": {
+      "role": "imported local site",
+      "identity": "local-dev-site"
+    },
+    "remote_changed": {
+      "role": "same remote source site later in time",
+      "identity": "remote-example"
+    }
+  },
   "topology": {
     "networking": {
       "ingress_port": 8080,
@@ -42,23 +56,23 @@
       "local_edited": "local-edited",
       "remote_changed": "remote-changed",
       "runner": "runner",
-    "proof": [
-      "one private network",
-      "remote-base and remote-changed are the same remote identity at different times",
-      "push preflight binds the persisted pull base to the live remote identity",
-      "push preflight binds the imported base to one live remote identity and one short-lived session",
-      "exporter/importer establish the immutable pull base package before push",
-      "push snapshot hashes stay planning-only",
-      "push dry-run returns a receipt, not a lock",
-      "push batch apply revalidates live evidence before every batch and at the storage boundary",
-      "push journal remains read-only before mutating recovery",
-      "push recovery inspect happens before any mutating repair",
-      "pull exporter/importer establish the immutable base package before push",
-      "push preflight binds the persisted pull base to one live remote identity and one short-lived session",
-      "push recovery inspect stays read-only and may block when finish or rollback cannot be proven safe",
-      "dry-run and apply are separate remote operations",
-      "push preflight mints one short-lived session bound to the persisted base and live remote identity",
-      "browser-visible inspection goes through the sandbox-provided 8080 ingress"
+      "proof": [
+        "one private network",
+        "remote-base and remote-changed are the same remote identity at different times",
+        "push preflight binds the persisted pull base to the live remote identity",
+        "push preflight binds the imported base to one live remote identity and one short-lived session",
+        "exporter/importer establish the immutable pull base package before push",
+        "push snapshot hashes stay planning-only",
+        "push dry-run returns a receipt, not a lock",
+        "push batch apply revalidates live evidence before every batch and at the storage boundary",
+        "push journal remains read-only before mutating recovery",
+        "push recovery inspect happens before any mutating repair",
+        "pull exporter/importer establish the immutable base package before push",
+        "push preflight binds the persisted pull base to one live remote identity and one short-lived session",
+        "push recovery inspect stays read-only and may block when finish or rollback cannot be proven safe",
+        "dry-run and apply are separate remote operations",
+        "push preflight mints one short-lived session bound to the persisted base and live remote identity",
+        "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     },
     "playground": {
@@ -66,24 +80,24 @@
       "local_edited": "local-edited",
       "remote_changed": "remote-changed",
       "runner": "local test process",
-    "proof": [
-      "separate disposable blueprints",
-      "remote-base and remote-changed are the same remote identity at different times",
-      "push preflight binds the persisted pull base to the live remote identity",
-      "push preflight binds the imported base to one live remote identity and one short-lived session",
-      "exporter/importer establish the immutable pull base package before push",
-      "push snapshot hashes stay planning-only",
-      "push dry-run returns a receipt, not a lock",
-      "push batch apply revalidates live evidence before every batch and at the storage boundary",
-      "push journal remains read-only before mutating recovery",
-      "push recovery inspect happens before any mutating repair",
-      "pull exporter/importer establish the immutable base package before push",
-      "push preflight binds the persisted pull base to one live remote identity and one short-lived session",
-      "push recovery inspect stays read-only and may block when finish or rollback cannot be proven safe",
-      "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
-      "browser-visible inspection goes through the sandbox-provided 8080 ingress"
-    ]
-  }
+      "proof": [
+        "separate disposable blueprints",
+        "remote-base and remote-changed are the same remote identity at different times",
+        "push preflight binds the persisted pull base to the live remote identity",
+        "push preflight binds the imported base to one live remote identity and one short-lived session",
+        "exporter/importer establish the immutable pull base package before push",
+        "push snapshot hashes stay planning-only",
+        "push dry-run returns a receipt, not a lock",
+        "push batch apply revalidates live evidence before every batch and at the storage boundary",
+        "push journal remains read-only before mutating recovery",
+        "push recovery inspect happens before any mutating repair",
+        "pull exporter/importer establish the immutable base package before push",
+        "push preflight binds the persisted pull base to one live remote identity and one short-lived session",
+        "push recovery inspect stays read-only and may block when finish or rollback cannot be proven safe",
+        "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
+        "browser-visible inspection goes through the sandbox-provided 8080 ingress"
+      ]
+    }
   },
   "required_invariants": [
     "dry-run and apply are separate remote operations",
