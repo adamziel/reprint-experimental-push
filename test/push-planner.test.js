@@ -25701,3 +25701,52 @@ test('keeps remote-only plugin changes at the live release boundary while a read
   assert.equal(completed.site.plugins.forms.description, 'remote-only plugin change');
   assert.equal(completed.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
+
+test('keeps remote-only plugin changes at the live release boundary while a ready delete plan preserves a matching independent delete and a matching file type swap', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:31'] = {
+    ID: 31,
+    post_title: 'Base post 31',
+    post_status: 'draft',
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.db.wp_posts['ID:31'];
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  delete remote.db.wp_posts['ID:31'];
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingRowDelete = decisionFor(plan, 'row:["wp_posts","ID:31"]');
+  const matchingTypeSwap = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingRowDelete.decision, 'already-in-sync');
+  assert.equal(matchingRowDelete.change.localChange, 'delete');
+  assert.equal(matchingRowDelete.change.remoteChange, 'delete');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'update');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(completed.site.db.wp_posts, 'ID:31'), false);
+  assert.equal(completed.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(completed.site.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(completed.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
