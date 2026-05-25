@@ -79,7 +79,9 @@ not support here, and is backed by a branch-local live rerun. If the citation
 only justifies transport vocabulary, discovery vocabulary, review vocabulary,
 or audit vocabulary, it must not be used as proof of preserved remote safety,
 auth/session lifecycle, graph identity, create-time remap handling, or
-plugin-owned surface coverage.
+plugin-owned surface coverage. The canonical comparison matrix lives in
+[`audits/source-notes-comparison.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/source-notes-comparison.md);
+this note only enforces the production-wording bar for that comparison.
 
 ## 2026-05-25 Production Wording Still Fails Without a Real-Site Release Command
 
