@@ -3682,4 +3682,8 @@ Do not let success wording outrun the evidence:
 - "safe retry" is not acceptable unless every touched surface is explicitly
   classified as old, new, or blocked and any late-discovered plugin-owned
   surface is handled as a separate boundary, not folded into the earlier
-  success story.
+  success story; and
+- a comparison note that names the right Reprint, ZS-Sync, or ForkPress
+  revision is still not enough by itself unless this branch reran the same
+  live drift or retry case on the same mutation boundary and recorded the
+  preserved remote, rejection point, and fresh retry scope here.
