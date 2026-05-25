@@ -508,7 +508,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until the real-endpoint proof gap closes. The linked docs hold the proof trail, including the latest lab harness delta.</p>
-        <time class="update-stamp" datetime="2026-05-25T11:40:59+02:00">Last updated: May 25, 2026, 11:40:59 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T11:41:54+02:00">Last updated: May 25, 2026, 11:41:54 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing real-endpoint evidence</span>
           <span class="pill">Lane-local only until merge to main</span>
@@ -549,9 +549,9 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>Reliable-executor tightened <code>npm run verify:release</code>, and the latest lab proof at <code>63a3502f</code> now asserts auth/session shape, durable-journal rows, and commit evidence.</span></li>
+          <li><strong>Going well</strong><span>Reliable-executor tightened <code>npm run verify:release</code>, and the latest lab proof at <code>63a3502f</code> still gives a clean retained-source contract boundary with auth/session shape, durable-journal rows, and commit evidence.</span></li>
           <li><strong>Not going well</strong><span>The production gate is still closed because the retained real-endpoint boundary has not been proven outside the lab/Playground topology.</span></li>
-          <li><strong>Progress delta</strong><span>The harness is more explicit, but the release state stays blocked until the same proof crosses onto a real endpoint.</span></li>
+          <li><strong>Progress delta</strong><span>No release-state change; this pass only corrected the surface to the current lane names and kept the proof trail short.</span></li>
           <li><strong>Next nudge</strong><span>Reliable-executor must move the same proof toward a real endpoint; progress-publisher must keep the public page terse and linked; critic and auditor should reject wording-only proof.</span></li>
         </ul>
         <details class="lane-nudges">
@@ -563,7 +563,7 @@
             <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims.</span></li>
             <li><strong>Independent auditor</strong><span>Owner: lane. Gap: re-audit the next production-backed slice.</span></li>
             <li><strong>Critic</strong><span>Owner: lane. Gap: challenge the weakest proof link.</span></li>
-            <li><strong>Progress publisher</strong><span>Owner: lane. Gap: keep the page dated, concise, and linked to evidence.</span></li>
+            <li><strong>Progress publisher</strong><span>Owner: lane. Gap: keep the page dated, concise, and linked to evidence; the deployed copy updates after merge to <code>main</code>.</span></li>
             <li><strong>Live watcher</strong><span>Owner: lane. Gap: confirm what moved since the last publish.</span></li>
           </ul>
         </details>
