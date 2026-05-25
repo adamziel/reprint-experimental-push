@@ -38,6 +38,9 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.claims.labGuardedExecutorEvidence, true);
   assert.equal(report.shape.bytesMovedThroughStaging, report.shape.fileBytes);
   assert.equal(report.evidence.chunkReceipts.recorded, report.shape.chunkCount);
+  assert.equal(report.evidence.chunkReceipts.resumeCursor.chunkCount, report.shape.chunkCount);
+  assert.equal(report.evidence.chunkReceipts.resumeCursor.chunkIndex, report.shape.chunkCount - 1);
+  assert.equal(report.evidence.chunkReceipts.resumeCursor.resourceKey, 'file:wp-content/uploads/2026/05/catalog-export.bin');
   assert.equal(report.evidence.chunkReceipts.finalStagingRecord, true);
   assert.equal(report.evidence.chunkReceipts.canonicalVisibleBeforePublish, false);
   assert.equal(report.evidence.preconditions.liveRemoteMutationPreconditions, report.shape.mutations);
@@ -83,6 +86,10 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.equal(
     report.claims.productionThroughputDetails.recovery.partialCommitInspectionStatus,
     'blocked-recovery',
+  );
+  assert.equal(
+    report.claims.productionThroughputDetails.blockers.includes('production-memory-ceiling-not-measured'),
+    false,
   );
   assert.equal(
     report.claims.productionThroughputDetails.atomicGroup.preCommitFailureLeavesRemoteUnchanged,
@@ -131,6 +138,7 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
   const missingReceipt = clone(report);
   missingReceipt.evidence.chunkReceipts.recorded -= 1;
   assert.ok(productionThroughputBlockers(missingReceipt).includes('missing-durable-chunk-receipts'));
+  assert.ok(missingReceipt.evidence.chunkReceipts.resumeCursor);
 
   const missingPrecondition = clone(report);
   missingPrecondition.evidence.preconditions.everyMutationHasLiveRemotePrecondition = false;

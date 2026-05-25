@@ -511,6 +511,7 @@ function buildReport({
   partialFailure,
 }) {
   const chunkReceiptRecords = successPersisted.records.filter((record) => record.type === 'chunk-receipt');
+  const lastChunkReceipt = chunkReceiptRecords[chunkReceiptRecords.length - 1] || null;
   const mutationPreconditions = plan.preconditions || [];
   const mutationCount = plan.mutations.length;
   const atomicGroup = plan.atomicGroups.find((group) => group.id === sites.atomicGroupId);
@@ -565,6 +566,17 @@ function buildReport({
       chunkReceipts: {
         expected: stagedFile.chunkCount,
         recorded: chunkReceiptRecords.length,
+        resumeCursor: lastChunkReceipt
+          ? {
+              planId: lastChunkReceipt.planId,
+              resourceKey: lastChunkReceipt.resourceKey,
+              chunkIndex: lastChunkReceipt.chunkIndex,
+              chunkCount: lastChunkReceipt.chunkCount,
+              offsetBytes: lastChunkReceipt.offsetBytes,
+              sizeBytes: lastChunkReceipt.sizeBytes,
+              receiptKey: lastChunkReceipt.receiptKey,
+            }
+          : null,
         finalStagingRecord: successPersisted.records.some((record) =>
           record.type === 'file-staging-finalized'
           && record.assembledHash === stagedFile.assembledHash),

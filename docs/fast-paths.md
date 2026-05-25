@@ -47,8 +47,8 @@ Current executable gate:
   row-batch executor evidence.
 - The benchmark report now also exposes `claims.productionThroughputDetails`
   so blocked proof runs carry the current throughput, executor capabilities,
-  resource ceiling, recovery status, atomic-group context, and blocker list
-  without depending on the thrown error.
+  resource ceiling, recovery status, atomic-group context, chunk resume cursor,
+  and blocker list without depending on the thrown error.
 - The release gate does not move on lab throughput alone; the fast-path claim
   stays off until those release receipts exist and can be replayed.
 - Latest measured lab throughput:
