@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but it is still lab evidence. This branch-local audit file is not the proof surface; only the supervised remote lane plus a rerunnable live boundary can count.
+The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but `4baf67ab` is still an assertion-alignment commit, not a live WordPress boundary. This branch-local audit file is not the proof surface; only the supervised remote lane plus a rerunnable live boundary can count.
 
 The missing production proof is now precise: one rerunnable live mutation boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence.
 
@@ -33,7 +33,7 @@ The next production proof must be one rerunnable live boundary on a real local, 
 7. Partial file, DB, cache, cron, and plugin side effects can still mix without a recovery artifact that says what committed, what was blocked, what stayed preserved, and what must be retried.
 8. There is still no single rerunnable live boundary that proves preserved-remote retention, stale-authority rejection before the first write, apply-time revalidation from fresh hashes, graph identity, and late plugin-owned surface coverage together.
 9. The journal has not been proven to survive a real lease/fencing handoff on durable storage while the same boundary remains rerunnable after rejection.
-10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts plus a production-shaped apply-revalidation proof; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation, including credential expiry, refresh, and operator re-entry on the same rerunnable source URL with the rejected remote preserved.
+10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts plus a production-shaped apply-revalidation proof; `4baf67ab` only aligns the release assertions. It does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation, including credential expiry, refresh, and operator re-entry on the same rerunnable source URL with the rejected remote preserved.
 11. No retained-source verdict should be treated as production-grade if it does not survive a rerunnable live mutation on the same source URL with the rejected remote still inspectable.
 
 ## Hidden-loss scenarios
