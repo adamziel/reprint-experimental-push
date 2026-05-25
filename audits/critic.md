@@ -4,6 +4,27 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+Must-fix blockers before any production wording:
+
+- Live remote drift after dry-run must fail closed on the real write path,
+  with the preserved remote auditable and the stale approval unusable for
+  retry.
+- Create-time identity remap, alias, or renumber cases must be proven safe or
+  hard-blocked before mutation.
+- Plugin-owned state outside the allowlist must be enumerated or blocked at
+  apply time, including hidden side effects such as cron rows, cache entries,
+  registries, generated assets, custom tables, and plugin-owned files.
+- Partial file, DB, or plugin side effects must be durably classified old,
+  new, or blocked, and retry must rebuild scope from fresh live hashes.
+- A readable stale manual-review artifact must stay audit-only after drift
+  and must not widen into another row, file, relationship-bearing record, or
+  plugin-owned surface.
+- Reprint, ZS-Sync, and ForkPress comparisons stay historical unless the
+  exact upstream revision or worktree state and the same live mutation
+  boundary were reverified on this branch.
+- Route-shape smokes, packaged-plugin mounts, fixture replay, and
+  `finalMatchesLocal` remain compatibility evidence only.
+
 Release-gate checklist for production-readiness wording:
 
 - Name the exact live write path and the exact stale-remote drift case it
