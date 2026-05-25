@@ -421,7 +421,8 @@ late-discovered plugin-owned surfaces on the same mutation.
 
 Before any production wording, the project must show:
 
-- exact executable command and exact live `REPRINT_PUSH_SOURCE_URL`;
+- one exact executable command that reruns unchanged against the same live
+  `REPRINT_PUSH_SOURCE_URL`;
 - executor identity and auth/session boundary before the first write;
 - preserved remote still inspectable after rejection;
 - dry-run receipt plus apply-time revalidation on the same mutation;
