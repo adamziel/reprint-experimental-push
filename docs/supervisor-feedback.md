@@ -1,9 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 08:51:12 CEST
+Last updated: 2026-05-25 08:53:35 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 08:53:35 CEST
+
+- Going well: the page, log, and latest audit note still agree on the blocked state.
+- Not going well: the same proof gaps remain open, so the blocker is unchanged.
+- Progress change: no evidence delta; this pass only tightened the public wording.
+- Next nudge: keep each lane pinned to one missing proof item, one owner, and one production-backed test.
 
 ## 2026-05-25 08:50:27 CEST
 
