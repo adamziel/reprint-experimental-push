@@ -95,6 +95,25 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
 });
 
+test('production topology fixture keeps the pull bridge, dry-run/apply split, and topology proof aligned', () => {
+  const topology = readJson('fixtures/protocol/push-production-topology-contract.json');
+
+  assert.equal(topology.pull_to_push_mapping.push_preflight, 'binds the persisted pull base package to one live remote identity and one short-lived push session');
+  assert.equal(topology.pull_to_push_mapping.push_plan_dry_run, 'uploads the canonical plan as an eligibility receipt, not a lock');
+  assert.ok(topology.pull_to_push_mapping.push_batch_apply.includes('separate from dry-run'));
+  assert.ok(topology.topology.docker.proof.includes('dry-run and apply remain separate remote calls'));
+  assert.ok(topology.topology.docker.proof.includes('apply revalidates fresh live evidence before every batch and at the storage boundary'));
+  assert.ok(topology.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.deepEqual(topology.required_invariants, [
+    'dry-run and apply are separate remote operations',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+  ]);
+});
+
 test('push protocol docs keep the production ladder, pull bridge, and topology contract aligned', () => {
   assert.ok(
     protocolDocs.includes(
