@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -316,6 +317,24 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     protocolReadme.includes(
       'push-protocol-extension-contract.json` is the top-level production ladder',
     ),
+  );
+  const smoke = spawnSync(
+    process.execPath,
+    ['scripts/playground/production-shaped-missing-secret-smoke.mjs'],
+    {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SIGNING_SECRET: '',
+        REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      },
+      encoding: 'utf8',
+    },
+  );
+  assert.equal(smoke.status, 1);
+  assert.match(
+    smoke.stderr,
+    /REPRINT_PUSH_SECRET_REQUIRED: production push credentials are missing; provide REPRINT_PUSH_SIGNING_SECRET or REPRINT_PUSH_APPLICATION_PASSWORD before running preflight, dry-run, or apply\./,
   );
   const flow = readJson('fixtures/protocol/push-production-executor-flow-contract.json');
   assert.equal(flow.lab_topology.remote_base.identity, 'remote-example');

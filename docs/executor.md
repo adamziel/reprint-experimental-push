@@ -79,6 +79,15 @@ node --test test/protocol-fixtures.test.js
 If the real push secret is missing, the harness must fail fast with
 `REPRINT_PUSH_SECRET_REQUIRED` before preflight, dry-run, or apply can run.
 
+The direct missing-secret smoke is:
+
+```sh
+npm run test:playground:production-shaped-missing-secret
+```
+
+It emits `REPRINT_PUSH_SECRET_REQUIRED` unless
+`REPRINT_PUSH_SIGNING_SECRET` or `REPRINT_PUSH_APPLICATION_PASSWORD` is set.
+
 ## Canonical Proof Set
 
 The executor should cite the same proof chain as the protocol document:

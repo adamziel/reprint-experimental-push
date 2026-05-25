@@ -113,6 +113,15 @@ That checked command is also the release-facing proof entry point for the
 explicit missing-secret gate: when the real push secret is unavailable, the
 harness must fail fast before preflight, dry-run, or apply can proceed.
 
+The direct smoke for the gate is:
+
+```sh
+npm run test:playground:production-shaped-missing-secret
+```
+
+It fails with `REPRINT_PUSH_SECRET_REQUIRED` unless
+`REPRINT_PUSH_SIGNING_SECRET` or `REPRINT_PUSH_APPLICATION_PASSWORD` is set.
+
 When you need the exact one-remote, one-local topology proof, start with:
 
 1. `push-production-topology-contract.json`
