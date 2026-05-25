@@ -4,13 +4,14 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
-Primary blocker: the branch still does not expose a single executable
-real-site preflight/release command that proves the live boundary on an actual
-remote and preserves the rejected remote, rejection point, and fresh retry
-scope in one auditable flow. Until that exists, and until the branch can name
-the command that performs it, any doc, PR, or review wording is still
-lab-backed or comparison-only, no matter how production-shaped the route or
-reviewer language looks.
+Primary blocker: the repo only exposes lab and playground entry points
+(`plan`, `apply`, and `test:playground:*`); it does not expose a single
+executable real-site preflight/release command that proves the live boundary
+on an actual remote and preserves the rejected remote, rejection point, and
+fresh retry scope in one auditable flow. Until that exists, and until the
+branch can name the command that performs it, any doc, PR, or review wording
+is still lab-backed or comparison-only, no matter how production-shaped the
+route or reviewer language looks.
 
 What still has to change before any production-grade claim is credible:
 
@@ -6695,8 +6696,8 @@ are true on this worktree:
 - the branch has a single executable preflight/release command that can be
   run against a real remote on this branch, and its output proves the exact
   live boundary, preserved remote, stale rejection point, and fresh retry
-  scope end to end; protocol prose, route-shaped smokes, and lab fixtures are
-  not enough on their own;
+  scope end to end; protocol prose, `plan`/`apply`, route-shaped smokes, and
+  lab fixtures are not enough on their own;
 - the exact stale-drift case has been rerun here, with the rejected remote
   still inspectable after rejection and the rejection point named before the
   first write;
