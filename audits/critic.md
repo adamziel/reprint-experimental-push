@@ -21,6 +21,9 @@ appears after the first write. A readable approval that covered the first write
 does not prove the second boundary is safe; if a later plugin-owned surface or
 remapped identity appears after that first success, the old artifact remains
 audit-only and cannot be widened into retry authority for the new boundary.
+The same rule applies to comparison notes: unless the exact upstream revision
+or worktree state is named and this branch reran the same live boundary, the
+note is provenance only and cannot become current retry authority.
 
 One weak claim still worth tightening explicitly: a production-shaped route,
 package mount, or fixture can still be a copied-lab executor behind the same
@@ -51,6 +54,11 @@ has a concrete failure scenario:
   the proof has to keep the preserved remote, the blocked or classified late
   surface, and the fresh retry scope separate, or the second write is a new
   boundary with no production safety evidence;
+- a later-discovered plugin-owned surface must not be treated as a harmless
+  continuation of the same success path after the first write; if it appears
+  after the first mutation, the branch needs a separate rejection or
+  classification point and preserved remote, otherwise the hidden second write
+  can bypass the earlier approval and become an unreviewed data-loss path;
 - "manual resolution" only counts when the remote is preserved for audit,
   the retry is recorded as a fresh artifact on this branch, and the stale
   approval cannot be widened to another row, file, relationship-bearing
@@ -132,6 +140,9 @@ Release gate for any production wording:
   reverified the same live mutation boundary here; a matching upstream
   revision or worktree state must never become current retry authority by
   itself.
+- Show that any source-note comparison names the exact upstream revision or
+  worktree state being cited; otherwise it stays historical context even when
+  the feature family matches.
 - Show that the comparison set is conservative: Reprint proves staged
   transport rhythm and resumable pull structure, ZS-Sync proves bounded
   discovery and cursoring, and ForkPress proves reviewed-resolution
