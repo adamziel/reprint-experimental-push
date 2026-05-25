@@ -447,6 +447,7 @@ The test suite is useful, but it does not yet prove the release claims it is mos
 - [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) proves file-backed journal monotonicity, redaction, and restart classification in fixtures. It does not prove production storage durability, lease handling, fencing, or process death recovery on the live source.
 - [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) proves benchmark shape and guardrail modeling. It does not time the real push path, measure memory, or establish a release threshold, so it is refusal scaffolding rather than throughput proof.
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the repo refuses unsupported throughput claims and blocks tampered benchmark evidence. It does not prove a positive speed claim, so it cannot justify a "fast" release claim or stand in for a production benchmark.
+- None of the current tests cross the real remote/local topology and prove that a live source mutation boundary preserves every WordPress data shape without loss, duplication, or reordering.
 - [`npm test`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a sanity check, not a release gate. Even when it passes, it is still blocker evidence because it cannot prove no data loss, reliability, or speed on the live source boundary.
 - [`npm run test:playground`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a lab smoke chain, not a production approval path. Its strongest authenticated route still reports `labBacked: true`, so it remains lab evidence even when green.
 
@@ -458,6 +459,7 @@ Current test verdict:
 - Weak at proving live-source no-data-loss, production reliability, and measured speed.
 - Insufficient as a release approval surface because it can still be bypassed by command choice.
 - Specifically, the current suite proves local consistency and lab-scoped failure handling, but it does not prove a real live mutation boundary, a production durability path, or a measured production speed threshold.
+- The suite also does not prove the remote/local topology described by the release objective; it only proves lab and fixture routes that resemble it.
 - The green `npm test` result, even at 89 passing tests, remains blocker evidence only because it never becomes the single enforced release decision point.
 
 Command verdict:
