@@ -14,6 +14,7 @@ The replay boundary is part of the same contract:
 
 - a completed replay must stay `fully-updated-remote` and remain inert
 - a stale completed replay must become `blocked-recovery` with journal and remote artifacts
+- a blocked replay must stay blocked on retry until recovery evidence changes
 - a mid-apply partial commit must never be treated as safe without recovery artifacts
 
 ## Release-blocker rule

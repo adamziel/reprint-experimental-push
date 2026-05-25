@@ -5174,6 +5174,33 @@ test('durable stale completed replay blocks with inspectable artifacts instead o
   assert.equal(persisted.records[0].state, 'blocked-recovery');
 });
 
+test('blocked stale completed replay stays blocked on retry and does not mutate the remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completed = applyPlan(baseSite(), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "drifted";';
+  const replayBefore = JSON.stringify(replayRemote);
+
+  const firstError = captureError(() => applyPlan(replayRemote, plan, { journal: completed.journal }));
+  const secondError = captureError(() => applyPlan(replayRemote, plan, { journal: completed.journal }));
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(firstError.details.recovery.status, 'blocked-recovery');
+  assert.equal(secondError.details.recovery.status, 'blocked-recovery');
+  assert.ok(firstError.details.recovery.artifacts?.journal, 'blocked replay must keep journal artifacts');
+  assert.ok(firstError.details.recovery.artifacts?.remote, 'blocked replay must keep remote artifacts');
+  assert.ok(secondError.details.recovery.artifacts?.journal, 'blocked replay retry must keep journal artifacts');
+  assert.ok(secondError.details.recovery.artifacts?.remote, 'blocked replay retry must keep remote artifacts');
+  assert.equal(firstError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(secondError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(secondError.details.recovery.artifacts.journal.status, 'completed');
+});
+
 test('durable completed replay stays inert when local source has stale inserts and edits', () => {
   const base = baseSite();
   const local = baseSite();
