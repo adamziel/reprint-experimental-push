@@ -17689,6 +17689,52 @@ test('keeps remote-only plugin changes while a live-preconditioned file delete a
   assertEveryMutationHasLiveRemotePrecondition(plan);
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned file type swap preserves a matching independent edit and restore', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery'] = 'base gallery bytes';
+  base.db.wp_posts['ID:4'] = { ID: 4, post_title: 'Base post 4', post_status: 'publish' };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  local.db.wp_posts['ID:4'] = { ID: 4, post_title: 'Restored post 4', post_status: 'publish' };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/gallery'] = 'base gallery bytes';
+  remote.db.wp_posts['ID:4'] = { ID: 4, post_title: 'Restored post 4', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/gallery');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingRestore = decisionFor(plan, 'row:["wp_posts","ID:4"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(result.site.files['wp-content/uploads/gallery'].type, 'directory');
+  assert.equal(result.site.db.wp_posts['ID:4'].post_title, 'Restored post 4');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('keeps remote-only plugin changes while matching independent delete, edit, and file type swap stay already in sync beside a live-preconditioned file delete', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
