@@ -536,6 +536,10 @@ following on the live push path, not on a fixture or route-shape smoke:
   only. They can explain why a design choice is plausible, but they do not
   prove this repo has a live mutation boundary, stale-artifact rejection, or
   remote-preserving retry at the production executor.
+- Any comparison claim that cites those notes must also name the current
+  upstream commit or worktree state that was re-verified for the same claim;
+  otherwise the note stays historical context and cannot be promoted into
+  production wording.
 
 If any one of those proofs is missing, the branch can describe the design, but
 it cannot claim production-grade push support.
@@ -649,6 +653,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
   verification and a live remote revalidation on this repo's write path after
   drift. The note remains context, not authority, even if the same endpoint
   name or route shape appears in a smoke.
+- If a comparison claim does not attach the current upstream commit or
+  worktree state that was re-verified, the note is historical context only
+  and must not be used to imply a live production mutation boundary.
 - Reprint, ZS-Sync, and ForkPress source notes are comparison evidence only;
   they do not transfer safety proof to this repository by resemblance alone.
   Their notes can justify transport shape, scanner shape, or reliability
