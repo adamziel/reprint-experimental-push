@@ -5886,6 +5886,65 @@ test('durable completed replay stays append-only across repeated retries and nev
   );
 });
 
+test('durable no-data-loss recovery keeps every failure boundary in an acceptable post-state', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+
+  const failureScenarios = [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote', 'opened'],
+    ['after staging', { failAfterStaging: true }, 'old-remote', 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote', 'dependencies-validated'],
+  ];
+
+  for (const [label, options, expectedRecoveryState, expectedJournalState] of failureScenarios) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const before = JSON.stringify(remote);
+
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        ...options,
+        durableJournal,
+      }),
+    );
+    durableJournal.close();
+
+    const persisted = readRecoveryJournal(journalPath);
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assertRecoveryStateArtifacts(error.details.recovery, expectedRecoveryState);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalState, label);
+    assert.equal(persisted.records[0].type, 'journal-opened', label);
+    assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state', label);
+    assert.equal(persisted.records[persisted.records.length - 1].state, expectedRecoveryState, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan);
+  assertAcceptableRecoveryState(completed.recoveryState);
+  assertRecoveryStateArtifacts(completed.recoveryState, 'fully-updated-remote');
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+  assert.equal(completed.recoveryState.artifacts.journal.status, 'completed');
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('recovery boundaries stay within the accepted no-data-loss states', () => {
   const base = baseSite();
   const local = baseSite();
