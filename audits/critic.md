@@ -22,7 +22,8 @@ live boundary on a real local, Playground, or Docker
 apply time, and proves production WordPress auth/session lifecycle, durable
 journal storage and lease/fencing semantics outside the lab harness, graph
 identity, plugin-driver coverage, and preserved-remote drift handling on the
-same mutation.
+same mutation. A retained-source command that only proves those behaviors in
+the supervised lane is not enough to claim production-grade push support here.
 
 ## Single strongest blocker
 
@@ -48,7 +49,7 @@ local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
 
 Until that live boundary exists, `verify:release` is only a retained-source
 lab harness, not evidence that production WordPress push can safely preserve,
-inspect, and retry a rejected remote.
+inspect, and retry a rejected remote on this branch.
 
 ## What improved in the supervised lane
 
