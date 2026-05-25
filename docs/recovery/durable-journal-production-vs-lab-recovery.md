@@ -24,6 +24,7 @@ boundary contract that production must preserve:
 
 - failure before mutation, after staging, and after dependency validation stay `old-remote`
 - replay of a completed plan stays `fully-updated-remote`
+- stale completed replay stays `blocked-recovery` with inspectable artifacts
 - any partial or ambiguous mutation must stay `blocked-recovery` with artifacts
 - a partial remote mutation without a durable recovery artifact is a release blocker
 
