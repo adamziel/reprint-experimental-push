@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 12:37:27
+
+<a id="2026-05-25-public-status-audit-123727"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 12:37:27 CEST`) and kept the public anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- Added the newest boundary verdict from `889bd37a`:
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`; the first screen still keeps
+  `5de7ee40`, `981236d8`, and `447/447` visible as durable-journal lab
+  evidence.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 12:34:37
 
 <a id="2026-05-25-public-status-audit-123437"></a>
