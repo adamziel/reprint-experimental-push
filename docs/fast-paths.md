@@ -242,6 +242,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Chunk upload cannot treat a matching chunk digest as completion, because the receiver still needs durable acknowledgement.
 - A fresh remote index plus a compressed queue still cannot skip large-upload resume decisions, because compressed backpressure state cannot prove which chunk acknowledgements survived a crash or whether the guarded publish record still exists.
 - A compressed remote index plus a compressed upload queue still cannot skip backpressure pauses, because smaller queued buffers do not prove which chunk acknowledgements or journal records survived failure.
+- A drained upload buffer still cannot count as publish-ready, because queue pressure relief does not prove chunk receipts, the live compare, or the guarded publish barrier survived failure.
 - Database row batching cannot widen a batch across plugin owners or atomic groups, because recovery needs one stable commit boundary per coupled set of rows.
 - Remote indexes cannot become a lock, because the listing is only planning evidence and may be stale by the time apply runs.
 - Compression cannot hash compressed bytes as canonical state, because transport encoding must not change the compare-and-swap value.

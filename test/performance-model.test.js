@@ -2008,6 +2008,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-chunk-upload-after-pause').violates.includes('atomic-file-publish'),
   );
   assert.equal(
+    rejectedById.get('treat-drained-upload-buffer-as-publish-ready').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('treat-drained-upload-buffer-as-publish-ready').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('treat-drained-upload-buffer-as-publish-ready').violates.includes('atomic-file-publish'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation').rejectedGate,
     'group',
   );
@@ -2087,6 +2097,12 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
     model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'batch-durable-receipt-flushes-within-bounded-journal-lag' &&
       fastPath.gateProofs.group.includes('atomic group owns the visibility boundary')
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys' &&
+      fastPath.gateProofs.recovery.includes('exact chunk, row, or group state')
     ),
   );
   assert.ok(

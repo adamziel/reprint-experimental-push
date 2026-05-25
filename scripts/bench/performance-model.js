@@ -648,6 +648,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'backpressure',
+    reduces: ['memory-pressure', 'idle-time', 'queue-drain-time'],
+    allowedShortcut: 'treat-drained-upload-buffer-as-publish-ready',
+    guardrails: [
+      'drained-buffer-is-not-a-durable-receipt',
+      'publish-still-requires-live-file-compare',
+    ],
+    gateProofs: {
+      skip: 'a drained upload buffer can shorten queue handling, but only after chunk receipts and journal records already exist',
+      live: 'the large-upload publish still compares the live remote resource hash before any bytes become visible',
+      group: 'buffer drainage never moves the atomic-file-publish barrier or merges independent uploads',
+      recovery: 'buffer state is advisory only; durable chunk receipts and the guarded publish record still classify pause, retry, or crash',
+    },
+    visibilityBoundary: 'none-pause-only',
+    failureEvidence: 'drained buffer state plus durable chunk receipts and guarded publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'compression',
     reduces: ['wire-bytes', 'storage-footprint-for-recovery-evidence'],
     allowedShortcut: 'compress-durable-receipt-logs-with-stable-receipt-keys',
