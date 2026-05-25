@@ -22,6 +22,10 @@ Must-fix blockers before any production wording:
 - Reprint, ZS-Sync, and ForkPress comparisons stay historical unless the
   exact upstream revision or worktree state and the same live mutation
   boundary were reverified on this branch.
+- A matching upstream commit or worktree state is only provenance, not
+  current authority; if the branch did not recheck the same live mutation
+  boundary here, the citation stays audit-only even when the route family or
+  package shape looks identical.
 - Route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` remain compatibility evidence only; they do not prove
   production durability, production auth, or production write safety.
@@ -115,6 +119,11 @@ Release-gate checklist for production-readiness wording:
   live-boundary recheck is still not current proof.
   If the branch-local drift or retry case differs from the upstream note's
   scenario, the citation stays historical context only.
+- A correct upstream revision plus a route-shaped smoke still does not prove
+  production readiness unless the branch also re-exercised the same stale
+  remote, create-time identity, plugin-owned surface, or partial-write case
+  on the live mutation boundary and recorded the preserved remote and fresh
+  retry scope.
 
 Source-note claim gate:
 
