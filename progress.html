@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current proof now includes seven passing same-plan graph edges: local postmeta to a same-plan post, local parent-post links, local thumbnail metadata to a same-plan attachment, taxonomy term relationships to same-plan terms and posts, term-taxonomy term links, term-taxonomy parent links, and local termmeta to a same-plan term. The broader production gate is still closed until the merged evidence set catches up.</p>
-        <time class="update-stamp" datetime="2026-05-26T00:53:00+02:00">Last updated: May 26, 2026, 00:53 CEST</time>
+        <p class="lead">Current proof now includes seven passing same-plan graph edges: local postmeta to a same-plan post, local parent-post links, local thumbnail metadata to a same-plan attachment, taxonomy term relationships to same-plan terms and posts, term-taxonomy term links, term-taxonomy parent links, and local termmeta to a same-plan term. The latest playback attempt timed out silently, so the broader production gate stays closed until the smoke yields a real artifact or is replaced by a smaller assertion.</p>
+        <time class="update-stamp" datetime="2026-05-26T00:59:00+02:00">Last updated: May 26, 2026, 00:59 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">82 Node tests passing</span>
           <span class="pill">Packaged plugin route passing</span>
@@ -555,9 +555,9 @@
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
             <li><strong>Going well</strong><span>The same-plan graph identity coverage now spans postmeta, parent-post, thumbnail, taxonomy relationship, term-taxonomy term and parent, and termmeta cases.</span></li>
-            <li><strong>Not going well</strong><span>The merged production gate is still closed; the planner proof has not yet been reflected in the broader end-to-end evidence set.</span></li>
-            <li><strong>Progress change</strong><span>Executable evidence now covers the wp_term_taxonomy.term_id edge without changing the closed production gate.</span></li>
-            <li><strong>Next nudge</strong><span>Keep the page dated and explicit about the proof split between lane evidence and merged production evidence.</span></li>
+            <li><strong>Not going well</strong><span>`timeout 180s node scripts/playground/push-protocol-smoke.mjs` exited `124` with no stdout or stderr, so the live blocker is a silent harness rather than a planner failure.</span></li>
+            <li><strong>Progress change</strong><span>The evidence now has an exact bounded blocker to carry forward, without changing the closed production gate.</span></li>
+            <li><strong>Next nudge</strong><span>Keep the page dated and explicit about the timeout blocker until the smoke emits a real artifact or is replaced.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -565,6 +565,7 @@
         <section class="panel latest-evidence-panel" aria-labelledby="latest-evidence">
           <h2 id="latest-evidence">Latest Evidence</h2>
           <ul class="link-list">
+            <li><a href="scripts/playground/push-protocol-smoke.mjs">Push protocol smoke</a></li>
             <li><a href="scripts/playground/production-plugin-package-smoke.mjs">Packaged plugin smoke</a></li>
             <li><a href="scripts/playground/production-shaped-route-smoke.mjs">Production-shaped route smoke</a></li>
             <li><a href="plugins/reprint-push/reprint-push.php">Plugin wrapper</a></li>
@@ -588,7 +589,7 @@
             <div class="proof-item"><span class="status">Lab proof</span><p>Packaged route requires scoped credentials, rejects unprovisioned and unscoped credentials, cleans 2 expired signed artifacts, and applies 7 graph-safe mutations.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Production credential lifecycle and authorization.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Durable journal with crash, lease, and fencing tests.</p></div>
-            <div class="proof-item"><span class="status">Pending</span><p>Full integration beyond fixture labs.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Full integration beyond fixture labs; the current push smoke times out without output.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>WordPress graph identity, general plugin drivers, and rollback.</p></div>
           </div>
         </section>
@@ -597,11 +598,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth and graph safety remain pending.</p>
+              <p>Snapshots feed guarded plans; Playground and CLI labs prove fixture apply/refusal paths. Production mutation/auth and graph safety remain pending, and the push smoke currently times out silently.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, and WordPress graph identity are still pending.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Production Reprint mutation, durable storage, and WordPress graph identity are still pending, and the push smoke currently times out without output.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>

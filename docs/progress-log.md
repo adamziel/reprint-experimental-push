@@ -15,11 +15,12 @@ linked implementation artifacts.
   coverage through `wp_term_taxonomy.term_id`.
 - Trend: evidence improved again for the planner lane, while the broader
   production gate is still not closed on `main`.
-- Blocker: the merged production path still needs a visible end-to-end proof
-  set before the release gate should open.
-- Next nudge: keep the gate closed until the merged evidence set matches the
-  lane proof, then reassess whether a smaller fallback assertion is still
-  needed.
+- Blocker: `timeout 180s node scripts/playground/push-protocol-smoke.mjs`
+  exited `124` with no stdout or stderr, so the live issue is a silent
+  Playground smoke harness rather than a planner regression.
+- Next nudge: keep the gate closed until the smoke emits a real success or
+  failure artifact, or replace it with the smallest non-Playground assertion
+  that still covers the same-plan graph proof.
 - Public page: [progress.html](../progress.html) carries the visible update
   date and keeps details behind links.
 

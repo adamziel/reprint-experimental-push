@@ -1,9 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 00:53 CEST
+Last updated: 2026-05-26 00:59 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-26 00:59 CEST - Playground Smoke Timed Out Silently
+
+- Going well: the same-plan graph proof set is still intact, and the latest smoke attempt gave a concrete failure mode instead of a vague status.
+- Not going well: `timeout 180s node scripts/playground/push-protocol-smoke.mjs` exited `124` with no stdout or stderr, so the live blocker is a silent harness rather than a semantic planner failure.
+- Progress change: the evidence now has an exact bounded blocker to carry forward, which is more actionable than the earlier open-ended smoke note.
+- Next nudge: keep the page brief and name the timeout artifact directly until the smoke either emits a real success/failure result or is replaced by the smallest non-Playground assertion that still covers the same-plan graph proof.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep the same-plan proof set stable unless a new executable edge fails. |
+| Recovery | Do not widen recovery claims from a silent smoke. |
+| Reliable executor | Treat the timeout as a harness issue, not a production success. |
+| Fast paths | Leave benchmark claims blocked until a concrete artifact lands. |
+| Audit and critic | Re-check only after the smoke returns output or is replaced. |
+| Progress publisher | Keep the page dated and explicit about the timeout blocker. |
 
 ## 2026-05-26 00:53 CEST - Same-Plan Term Taxonomy Term Proof Added
 
