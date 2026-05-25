@@ -214,6 +214,11 @@ Release gate for any production wording:
 - Show that a claim does not upgrade route shape, package mount, fixture
   replay, or a readable review artifact into production safety unless the
   branch-local live drift rerun and stale rejection are recorded here.
+- Show that a route-shaped smoke or `finalMatchesLocal` match can still come
+  from a copied executor behind the same URL family; if the branch did not
+  rerun the same live mutation boundary and preserve the remote on this repo,
+  that evidence stays compatibility-only and cannot support production
+  wording.
 - Show that a stale manual-review artifact from the first write cannot be
   reused as retry authority for a later-discovered plugin-owned surface,
   even if that later boundary is still behind the same route family or
