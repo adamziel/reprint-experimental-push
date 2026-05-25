@@ -78,8 +78,13 @@ Any Reprint, ZS-Sync, or ForkPress note is only provenance until this branch
 names the exact upstream commit or worktree state, states what the note proves
 here, states what it does not prove here, and reruns the same live boundary on
 this worktree with a preserved remote that stayed inspectable after rejection.
-Route-family, package-mount, or reviewer-wording similarity does not promote a
-historical note to retry authority.
+Reprint only contributes staged transport and resumability vocabulary, ZS-Sync
+only contributes bounded discovery and batching vocabulary, and ForkPress only
+contributes audit and crash-consistency vocabulary; none of them prove live
+push safety, preserved-remote auditability, graph identity, plugin-driver
+coverage, or plugin-owned surface handling on this branch. Route-family,
+package-mount, or reviewer-wording similarity does not promote a historical
+note to retry authority.
 The compact comparison record lives in
 [`audits/critic-source-notes-matrix.md`](./critic-source-notes-matrix.md).
 An authenticated HTTP or CLI smoke does not upgrade that provenance either:
@@ -161,6 +166,10 @@ preserve / reject / retry cycle for that later surface, never preserved the
 remote for audit on that later boundary, and never proved the user can
 safely inspect or retry the original remote without losing the late-found
 state. In that case the note is audit context only, not release evidence.
+The same rule applies if the first pass only proves a subset of touched
+surfaces: a later-discovered row, file, relationship-bearing record, plugin
+surface, or create remap is a new boundary, not a hidden continuation of the
+original approval.
 
 ## 2026-05-25 Current Verdict
 
