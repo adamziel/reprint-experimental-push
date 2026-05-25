@@ -5748,6 +5748,7 @@ Must-happen-before-production-grade-push-support checklist:
 - stale manual-review artifacts: prove a readable review note cannot authorize a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface after drift unless the remote was preserved and the retry scope was rebuilt from live state;
 - production claims: never infer production-grade push support from lab route shape, package layout, fixture replay, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes, and they do not cover a later-discovered surface that appears only after the first write.
 - production claims must also name the exact boundary transition when a plugin-owned surface or remapped create target is discovered after the first write; if that discovery creates a new boundary, the earlier preserved remote and review artifact stay audit-only and cannot be reused as retry authority for the new boundary.
+- production claims must not treat a lab-shaped URL, package mount, or fixture-backed route as proof that the live executor exists behind it; the shape can match while the boundary is still copied, fixture-backed, or otherwise non-live.
 
 Release-gate language checklist:
 
