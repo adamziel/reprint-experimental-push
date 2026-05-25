@@ -65,6 +65,8 @@ Until that gate exists and is wired into a default entrypoint such as `npm run v
 
 The current tests are useful, but they are not proof of no data loss, reliability, or speed at the production boundary. They mostly prove that the lab harness is internally consistent and that unsafe claims are refused. That is necessary guardrail coverage, not release evidence. The suite still stops short of proving the live-source loop, so every positive interpretation must stay limited to lab scope. In particular, `npm test` proving 89 passing subtests is still compatible with a release that would lose data or fail under a crash on the live boundary, because the suite never forces that boundary or a production storage backend.
 
+Release inference rule: if a test only shows fixture integrity, redaction, refusal, or lab replay, it can support a blocker note, but it cannot support `no data loss`, `reliable`, or `fast` at the live-source boundary.
+
 | Test surface | What it proves | What it does not prove | Release value |
 | --- | --- | --- | --- |
 | [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) and `npm test` | Planner refusal, remote-change protection, local deletion blocking, plugin-owned data blocking, and fixture-level conflict handling | No live-source mutation, no production storage boundary, no end-to-end no-loss proof, no real remote/local topology, and no evidence that production writes survive retries, crashes, stale claims, or duplicate apply attempts. These tests prove the planner can reject unsafe states, not that a release path can safely mutate production storage. | Blocker evidence only |
