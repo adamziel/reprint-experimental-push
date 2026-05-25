@@ -21,6 +21,7 @@ conservative and is grounded in [`docs/source-notes.md`](/home/claude/reprint-ex
 Claim rule: if a doc, PR description, review comment, or status note cites Reprint, ZS-Sync, or ForkPress, it must say whether the cited upstream behavior was reverified against the current commit or worktree state. If it was not reverified, the citation stays historical context only. If it cites a route-shape smoke, packaged-plugin mount, or `finalMatchesLocal`, it must also name the live write boundary that was exercised, the remote-drift case that failed closed, and the stale artifact that became audit-only.
 If a claim reuses those source notes without naming the exact upstream revision or worktree state that was checked, the claim is overbroad. "Same idea as upstream" is comparison language, not current proof, and it does not satisfy the release gate by itself.
 The source-note comparison has one more hard limit: Reprint's resumable transport proves a staged delivery shape, not a safe source overwrite boundary; ZS-Sync's scanners prove bounded discovery, not a conflict policy for writes; and ForkPress's reviewed merge language proves the right reliability vocabulary, not that this repository has the same live-remote executor or crash-safe mutation boundary. Reprint does not prove live remote drift rejection at the write boundary, ZS-Sync does not prove create-time identity reservation or remote-preserving retry, and ForkPress does not prove that this repo's push path preserves the remote after a partial apply. None of those notes prove that plugin-owned state outside the allowlist is blocked, that a create can reserve stable identity on the live remote, or that a partial file/DB/plugin write leaves an audit trail instead of a false success. The missing proof is always repo-local and executable: a live remote snapshot must disagree, the apply must fail closed before any write, and the audit trail must show the preserved remote plus the rejected scope. A note that is not re-verified against the current upstream commit or worktree state is historical context only; it cannot be upgraded into current proof by matching route shape, package shape, or `finalMatchesLocal`.
+Matching ingress, route name, or package layout is not enough to turn a lab-shaped route into production proof. If the proof does not identify the exact live mutation boundary and the exact rejection point for stale authority, it is still compatibility evidence only.
 Those upstream notes are snapshots, not current upstream proof. They anchor comparison text, but they do not prove the upstream repos still behave that way today or that this branch has matched them at the mutation boundary.
 No source note proves that a stale manual-review artifact can survive a live
 drift and still authorize apply, so any retry claim has to be backed by a
@@ -227,6 +228,10 @@ The compact release gate lives in [`audits/release-gate.md`](/home/claude/reprin
   source note was not re-verified against the current upstream commit or
   worktree, the claim is still historical context and the live write path
   remains unproven.
+- A lab-shaped route that merely matches ingress, route name, or package
+  layout is still compatibility evidence only; it does not prove the
+  production executor ran, that remote drift was checked at the write
+  boundary, or that the remote was preserved for audit before retry.
 - A route that looks production-shaped, returns live hashes, or passes a
   packaged-plugin smoke must still be proven against a live remote with drift;
   those results are compatibility evidence only and do not prove production
@@ -1302,6 +1307,9 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
 - Manual resolution is not a success state unless the remote is preserved for
   audit, the stale artifact is rejected before write, and the retry starts
   from fresh live evidence with no scope widening.
+- A stale manual-review artifact remains readable for audit but must become
+  unusable as authority as soon as the live hashes change; readability alone
+  is not a success condition.
 - Reprint, ZS-Sync, and ForkPress notes are comparison evidence only; they do
   not prove current upstream behavior today, and they do not prove this repo's
   live mutation boundary unless the same upstream revision or worktree was
