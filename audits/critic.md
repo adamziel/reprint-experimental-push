@@ -9,6 +9,10 @@ What must change before any production-grade push claim:
 - the branch must show a live write boundary that rejects stale remote drift
   before the first mutation, preserves the remote for audit, and rebuilds a
   fresh retry scope from live hashes on this branch;
+- the preserved remote must stay inspectable so the user can audit the drift
+  and safely retry from fresh live hashes; preserving it alone is not proof
+  unless the same boundary was rejected before write and re-planned on this
+  branch;
 - create-time identity remapping, aliasing, or renumbering must be either
   proven safe with live identity evidence or hard-blocked before write;
 - every touched surface must be classified as old, new, or blocked before
@@ -453,6 +457,9 @@ repeated for that later surface on this branch.
 Manual resolution is therefore an audit trail, not a release gate, unless the
 branch can show the preserved remote, the rejection point, and the fresh
 retry artifact for the exact same boundary.
+If the preserved remote cannot still be audited and retried safely from fresh
+live hashes, the branch has not proven production-grade recovery even when
+the review artifact remains readable.
 
 Source-note comparisons are still only historical context unless this branch
 names the exact upstream revision or worktree state and reruns the same live
@@ -583,6 +590,9 @@ Three production claims still need to be rejected explicitly:
   remote is still preserved for audit, the stale approval cannot be reused
   as retry authority, and the user can inspect and retry from fresh live
   evidence on this branch;
+- "manual resolution succeeded" is also not production proof if the preserved
+  remote cannot still be inspected to support a safe retry from fresh live
+  hashes for the same boundary;
 - "plugin-safe push" is not production proof unless plugin-owned state
   outside the allowlist is enumerated or hard-blocked at apply time,
   including late-discovered rows, files, registries, generated assets,
