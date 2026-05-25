@@ -11,6 +11,9 @@ live boundary is missing, the note is historical context only and cannot be
 used to claim that the live executor, retry path, or manual-review flow is
 safe. A route-shaped smoke, package mount, or live-looking hash does not fill
 that gap.
+That also means a stale manual-review artifact stays audit evidence only
+unless the remote was preserved for audit, the stale approval was rejected
+before mutation, and the retry rebuilt scope from fresh live hashes.
 In other words: a named feature family is not enough. The branch must be able
 to point to the exact upstream commit or worktree state and the exact live
 mutation boundary that was exercised here, or the comparison stays historical
@@ -33,6 +36,8 @@ What it does not prove:
   files, or plugin-owned surfaces on retry.
 - It does not prove a stale manual-review artifact stays audit-visible but
   unusable as retry authority after drift.
+- It does not prove a create-time identity remap or alias event is safe
+  without a fresh live decision at the same write boundary.
 - It does not prove identity remapping on create, plugin-owned allowlist
   coverage, or partial file/DB/plugin side-effect classification.
 - It does not prove plugin data traps are safe just because a fixture-owned

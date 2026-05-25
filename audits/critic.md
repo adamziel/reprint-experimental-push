@@ -2453,3 +2453,15 @@ Additional production-readiness blockers that still need explicit proof:
   mutation executor.
 - Any comparison that lacks those two specifics is historical context only,
   even if the route shape, mount shape, or hash output looks current.
+- Production-ready wording also needs a release gate that fails closed on the
+  following concrete cases:
+  - live remote drift that appears after dry-run but before the first write;
+  - create-time remap or aliasing that changes the identity boundary;
+  - plugin-owned state outside the allowlist, including runtime registries or
+    generated surfaces;
+  - partial file/DB/plugin side effects that cannot be classified durably;
+  - stale manual-review artifacts that still look readable after drift.
+- A release gate that only checks lab route shape, fixture replay, or
+  `finalMatchesLocal` is not a production gate. It must show the preserved
+  remote, the stale rejection point, and the fresh retry scope for each failed
+  case above.
