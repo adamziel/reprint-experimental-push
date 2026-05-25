@@ -25,6 +25,28 @@ The same rule applies to comparison notes: unless the exact upstream revision
 or worktree state is named and this branch reran the same live boundary, the
 note is provenance only and cannot become current retry authority.
 
+Production-readiness language checklist:
+
+1. Name the exact live mutation boundary, the exact drifted remote, and the
+   exact rejection point before mutation.
+2. Show the preserved remote stayed auditable after reject and the stale
+   approval could not be reused as retry authority.
+3. Show the retry artifact is fresh on this branch and was rebuilt from live
+   hashes, not inherited from the old review token.
+4. Classify every touched row, file, relationship-bearing record, and
+   plugin-owned surface as old, new, or blocked before retry starts.
+5. Explicitly list any late-discovered plugin-owned surface and prove it was
+   blocked or separately classified, not folded into the earlier success
+   story.
+6. Treat Reprint, ZS-Sync, and ForkPress notes as historical context unless
+   the exact upstream revision or worktree state is named and the same live
+   boundary was rechecked here.
+7. Treat route shape, package mount, fixture replay, readable review
+   artifacts, and `finalMatchesLocal` as compatibility evidence only.
+8. Fail closed if the wording says "manual resolution" but does not also show
+   the preserved remote, the stale rejection point, and the fresh retry
+   artifact on the same live boundary.
+
 One weak claim still worth tightening explicitly: a production-shaped route,
 package mount, or fixture can still be a copied-lab executor behind the same
 URL family. That means a green smoke, `finalMatchesLocal`, matching mount
