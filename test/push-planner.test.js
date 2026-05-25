@@ -16675,3 +16675,67 @@ test('durable recovery artifacts keep the approved envelope inspectable across f
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
+
+test('durable recovery never escapes the approved post-failure states and blocked recovery always carries artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failAfterDependencyValidation: true,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assertFailureRecoveryState(failure.details.recovery, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'dependencies-validated');
+  assert.equal(JSON.stringify(remote), before);
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted";';
+  const blockedJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const blocked = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      durableJournal: blockedJournal,
+      journal: completed.journal,
+    }),
+  );
+  blockedJournal.close();
+
+  assert.ok(blocked instanceof PushPlanError);
+  assert.equal(blocked.code, 'RECOVERY_BLOCKED');
+  assertFailureRecoveryState(blocked.details.recovery, 'blocked-recovery');
+  assert.ok(blocked.details.recovery.artifacts.remote);
+  assert.ok(blocked.details.recovery.artifacts.journal);
+  assert.equal(blocked.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+});

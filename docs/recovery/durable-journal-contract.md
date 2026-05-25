@@ -1,32 +1,20 @@
-# Durable Recovery Contract
+# Durable Journal Recovery Contract
 
-The no-data-loss lane treats the apply boundary as a durable journal boundary.
-An apply attempt must land in one of three acceptable post-failure states:
+The apply boundary is only acceptable in three post-failure states:
 
-- `old-remote`: no remote mutation escaped, and recovery artifacts prove the
-  plan never crossed the mutation boundary.
-- `fully-updated-remote`: the remote already matches the completed plan, and
-  replay is inert.
-- `blocked-recovery`: the remote may be partially updated, but the recovery
-  artifacts make the partial state inspectable and safe to refuse.
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery`
 
-Acceptable artifacts:
+The release rule is simple:
 
-- `old-remote` and `fully-updated-remote` must carry journal artifacts and must
-  not expose remote artifacts.
-- `blocked-recovery` must carry both journal and remote artifacts so the caller
-  can inspect the partial write before retrying.
+- A failure before any mutation, after staging, or after dependency validation must leave the remote in `old-remote`.
+- A replay of a completed plan must leave the remote in `fully-updated-remote`.
+- Any partial remote mutation must be treated as `blocked-recovery` and must preserve both journal and remote artifacts.
 
-Boundary expectations:
+This contract is intentionally strict:
 
-- Failure before mutation must keep the remote unchanged and leave the journal
-  at the opened state.
-- Failure after staging must still keep the remote unchanged and leave the
-  journal at the staged state.
-- Failure after dependency validation must keep the remote unchanged and leave
-  the journal at the dependencies-validated state.
-- Replaying a completed plan must not duplicate inserts, resurrect stale local
-  data, or append fresh mutation work.
-
-If a partial remote mutation exists without recovery artifacts, that is a
-release blocker.
+- A partial mutation without recovery artifacts is a blocker.
+- A retry must not duplicate inserts.
+- A retry must not resurrect stale local data.
+- Recovery inspection should be possible from the persisted artifacts, not from an in-memory guess.
