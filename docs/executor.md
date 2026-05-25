@@ -269,12 +269,13 @@ recovery inspect through `/wp-json/reprint/v1/push/*`. The CLI can target that
 profile with `--route-profile production-shaped`. This proves route shape and
 request binding over a real local Playground source site, including guarded
 DB/file mutations, same-key different-body conflict refusal, and unmodified
-cross-route receipt refusal before mutation. It is still lab-backed route-shape
-evidence: the route is mounted by the Playground mu-plugin, uses the lab
-signing key derivation, and does not prove tamper-resistant production receipt
-security, credential lifecycle, production nonce/replay retention, durable
-production journal storage, leases/fencing, WordPress graph identity, or
-arbitrary plugin drivers.
+cross-route receipt refusal before mutation. That is compatibility evidence for
+the route and request contract only. It remains lab-backed because the route is
+mounted by the Playground mu-plugin, uses the lab signing key derivation, and
+does not prove tamper-resistant production receipt security, credential
+lifecycle, production nonce/replay retention, durable production journal
+storage, leases/fencing, WordPress graph identity, or arbitrary plugin
+drivers.
 
 Current packaged-plugin note:
 `npm run test:playground:production-plugin-package` builds a temporary
@@ -289,9 +290,10 @@ administrator Application Password are rejected with `401`. It also seeds
 expired and unexpired signed session/nonce option artifacts and proves preflight
 deletes the expired artifacts while retaining unexpired ones. This improves the
 packaging, scoped-credential, and signed-store hygiene proof but is still not
-production readiness: the endpoint internals remain lab-backed until production
-auth, credential lifecycle, durable journal storage, leases/fencing, WordPress
-graph identity, and plugin drivers replace the fixture implementation.
+production readiness: the endpoint internals remain lab-backed until
+production auth, credential lifecycle, durable journal storage, leases/fencing,
+WordPress graph identity, and plugin drivers replace the fixture
+implementation.
 
 ### 3. Remote Snapshot Hash Listing
 
