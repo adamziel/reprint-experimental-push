@@ -211,7 +211,34 @@ maybeTest('production-shaped release verify command fails closed when remote dri
   });
 });
 
-test('production-shaped release verify command fails closed on the explicit live-source and secret gates', () => {
+test('production-shaped apply revalidation smoke fails closed on mid-apply drift with production routes', () => {
+  const proof = spawnSync('npm', ['run', 'test:playground:production-shaped-apply-revalidation'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  assert.equal(proof.status, 0, proof.stderr);
+  assert.match(proof.stdout, /"ok": true/);
+  assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
+  assert.match(proof.stdout, /"dryRun": \{\s*"status": 200,\s*"mode": "dry-run",\s*"receiptHash": "[a-f0-9]{64}"\s*\}/);
+  assert.match(
+    proof.stdout,
+    /"apply": \{\s*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "just-in-time",\s*"recovery": \{\s*"required": true,\s*"state": "blocked-recovery"/,
+  );
+  assert.match(
+    proof.stdout,
+    /"recoveryInspect": \{\s*"status": 200,\s*"recovery": \{\s*"state": "blocked-recovery",\s*"counts": \{\s*"new": \d+,\s*"blockedUnknown": \d+/,
+  );
+  assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+});
+
+test('production-shaped release verify command reports the checked retained-source proof summary', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
     env: {
@@ -229,15 +256,16 @@ test('production-shaped release verify command fails closed on the explicit live
     maxBuffer: 1024 * 1024 * 20,
   });
 
-  assert.equal(proof.status, 1, proof.stderr);
-  assert.match(proof.stdout, /REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\./);
-  assert.match(proof.stdout, /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/);
+  assert.equal(proof.status, 0, proof.stderr);
+  assert.match(proof.stdout, /"releaseProof": \{/);
+  assert.match(proof.stdout, /"ok": true/);
+  assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
   assert.match(
     proof.stdout,
     /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/,
   );
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
-  assert.match(proof.stdout, /"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path"/);
+  assert.match(proof.stdout, /"durableJournal": \{\s*"rows": 17,\s*"applyCommitted": true/);
 });
 
 maybeTest('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
