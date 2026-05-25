@@ -220,6 +220,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-manifest-hash-plus-cached-chunk-receipts-skips-large-upload-publish').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compressed-manifest-hash-plus-cached-chunk-receipts-skips-large-upload-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-manifest-hash-plus-cached-chunk-receipts-skips-large-upload-publish').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('file-hashing'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('live-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('atomic-file-publish'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-publish').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-large-upload-publish').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-large-upload-publish').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-large-upload-publish').violates.includes('backpressure'));
