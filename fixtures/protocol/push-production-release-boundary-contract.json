@@ -1,0 +1,43 @@
+{
+  "contract_id": "push-production-release-boundary-contract-one-remote-one-local",
+  "checked_command": "npm run verify:release",
+  "purpose": "checked supervisor boundary for the production-shaped retained-source proof that must fail closed at the explicit live-source gate before any preflight, dry-run, or apply mutation, while keeping the first remaining production-only boundary visible",
+  "boundary": {
+    "live_source_gate": {
+      "code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
+      "status": 1,
+      "stderr": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.",
+      "checked_output": "exact live-source gate before preflight, dry-run, or apply"
+    },
+    "first_remaining_production_boundary": {
+      "name": "auth/session lifecycle and durable journal semantics",
+      "status": "unimplemented",
+      "verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",
+      "durable_journal": {
+        "storage_lease_fence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",
+        "verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"
+      }
+    }
+  },
+  "pull_to_push_bridge": {
+    "exporter": "discovers the merge base and coverage evidence before any push request exists",
+    "importer": "persists the immutable pull base package as the only origin push may consume",
+    "push_preflight": "binds the persisted pull base package to one live remote identity and one short-lived push session",
+    "push_plan_dry_run": "uploads the canonical plan as a receipt, not a lock",
+    "push_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "push_journal": "records durable evidence without authorizing mutation",
+    "push_recover inspect": "reads the journal and fresh live hashes before any mutating repair"
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "same_remote_identity": true,
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    }
+  }
+}

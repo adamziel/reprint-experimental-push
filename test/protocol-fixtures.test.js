@@ -112,6 +112,7 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   const productionTopology = readJson('fixtures/protocol/push-production-topology-contract.json');
   const authSessionJournalRecoveryInspect = readJson('fixtures/protocol/push-production-auth-session-journal-recovery-inspect-contract.json');
   const journalLeaseRecoveryInspect = readJson('fixtures/protocol/push-production-journal-lease-recovery-inspect-contract.json');
+  const releaseBoundary = readJson('fixtures/protocol/push-production-release-boundary-contract.json');
 
   assert.equal(preflight.contract_id, 'push-preflight-contract-one-remote-one-local');
   assert.equal(preflight.pull_provenance.remote_site_id, 'remote-example');
@@ -165,6 +166,13 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   assert.equal(journalLeaseRecoveryInspect.journal_fence.storage_guard, 'filesystem-compare-rename');
   assert.equal(journalLeaseRecoveryInspect.recovery_inspect.classifies.includes('block'), true);
   assert.ok(journalLeaseRecoveryInspect.required_invariants.includes('journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable'));
+  assert.equal(releaseBoundary.contract_id, 'push-production-release-boundary-contract-one-remote-one-local');
+  assert.equal(releaseBoundary.boundary.live_source_gate.code, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
+  assert.equal(releaseBoundary.boundary.first_remaining_production_boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+  assert.equal(releaseBoundary.boundary.first_remaining_production_boundary.durable_journal.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
+  assert.equal(releaseBoundary.topology.networking.ingress_port, 8080);
+  assert.equal(releaseBoundary.topology.networking.proxy_policy, 'local-only');
+  assert.equal(releaseBoundary.topology.networking.tunnels, 'disallowed');
   assert.ok(
     packageJson.scripts['test:playground:production-shaped-proof'],
     'node ./scripts/playground/production-shaped-proof.mjs',

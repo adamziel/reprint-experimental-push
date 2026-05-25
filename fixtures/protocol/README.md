@@ -72,6 +72,7 @@ The normal production sequence is:
 54. `push-production-route-matrix-contract.json`
 55. `push-protocol-extension-topology-contract.json`
 56. `push-production-missing-secret-contract.json`
+57. `push-production-release-boundary-contract.json`
 
 That sequence is intentionally split into three production phases:
 
@@ -141,6 +142,16 @@ fast with `REPRINT_PUSH_SECRET_REQUIRED` when the real push secret is absent.
 That checked command is also the release-facing proof entry point for the
 explicit missing-secret gate: when the real push secret is unavailable, the
 harness must fail fast before preflight, dry-run, or apply can proceed.
+
+The checked release-boundary contract is:
+
+```json
+push-production-release-boundary-contract.json
+```
+
+It keeps the exact live-source gate separate from the first remaining
+production boundary so the supervisor output can distinguish missing source
+input from the still-unimplemented auth/session and durable-journal proof.
 
 If you want the production-shaped missing-secret proof directly, run:
 
