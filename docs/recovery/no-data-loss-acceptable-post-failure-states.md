@@ -1,40 +1,26 @@
 # No Data Loss Acceptable Post-Failure States
 
-The atomic apply lane only considers three outcomes safe after a failure or
-replay boundary, whether the evidence comes from the lab model or from a
-durable journal:
+The atomic apply flow has only three acceptable outcomes after a failure or replay check:
 
-- `old-remote`
-- `fully-updated-remote`
-- `blocked-recovery` with artifacts
+1. `old-remote`
+2. `fully-updated-remote`
+3. `blocked-recovery`
 
-## Boundary contract
+## Contract
 
-- Failure before mutation must stay `old-remote`.
-- Failure after staging must stay `old-remote`.
-- Failure after dependency validation must stay `old-remote`.
-- Replaying a completed plan must stay `fully-updated-remote` and remain inert.
-- Any partial remote mutation must surface `blocked-recovery` with inspectable
-  journal and remote artifacts.
+- `old-remote` means the remote still matches the before-hash envelope for every planned target.
+- `fully-updated-remote` means the remote matches the after-hash envelope for every planned target and the plan can replay without reapplying mutations.
+- `blocked-recovery` means the remote cannot be classified safely from the journal envelope and must carry recovery artifacts.
 
-## Release blocker
+## Artifact Rule
 
-A partial remote mutation without a durable recovery artifact is not safe.
-Retry must not:
+- `old-remote` and `fully-updated-remote` must carry journal artifacts.
+- `blocked-recovery` must carry both journal artifacts and remote artifacts.
+- A partial remote mutation without recovery artifacts is a release blocker.
 
-- duplicate inserts
-- resurrect stale local data
-- treat partial writes as safe
+## Retry Rule
 
-## Evidence boundary
-
-Planner tests cover the core model cases directly:
-
-- failure before mutation
-- failure after staging
-- failure after dependency validation
-- replaying a completed plan
-
-Production recovery still needs durable journal writes, restart-readable
-artifacts, and fencing around the apply boundary. The model tests prove the
-contract shape; they do not replace durable storage guarantees.
+- Retrying a completed plan must stay idempotent.
+- Retrying must not duplicate inserts.
+- Retrying must not resurrect stale local data.
+- A completed replay that drifts from the journal envelope must be blocked, not treated as safe.
