@@ -173,6 +173,10 @@ The auth floor is not relaxed for the executor:
 - stronger session material is allowed, but it may not weaken that floor
 - journal inspect and recovery use the same auth floor as the write path
 
+That means the executor can rely on the imported pull base package, but it
+must still rebind the live remote identity before any mutating stage and must
+revalidate the live remote again at apply time.
+
 For reviewers, the shortest proof chain is:
 
 1. exporter discovers the merge base and coverage evidence

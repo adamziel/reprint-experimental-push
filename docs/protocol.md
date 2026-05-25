@@ -35,6 +35,14 @@ The production ladder is fixed:
    the action safe with fresh live evidence and the same auth floor as the
    write path.
 
+The auth floor is never relaxed for push:
+
+- push authentication must be at least as strict as current Reprint HMAC
+  usage
+- dry-run, apply, journal inspect, and recovery all stay under that floor
+- stronger session material is allowed only when it does not weaken the write
+  path or the inspect-first recovery path
+
 The pull/export/import pipeline is the only source of immutable push
 provenance:
 
