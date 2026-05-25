@@ -8,7 +8,8 @@ exporter/importer pull pipeline with a safe remote mutation protocol.
 
 The push executor may mutate only after it proves a safe three-way plan from
 the persisted pull base package, the edited local site, and the live remote
-site.
+site. The persisted pull base package is immutable provenance from the pull
+pipeline, not a mutable snapshot cache.
 
 The production ladder is fixed and ordered:
 
@@ -20,12 +21,14 @@ The production ladder is fixed and ordered:
    eligibility receipt, not a lock.
 4. `push_batch_apply` is the first mutation batch apply stage and must
    revalidate fresh live evidence before every batch and again at the storage
-   boundary.
+   boundary. If the revalidation fails, the dry-run receipt does not become a
+   lock.
 5. `push_journal` is read-only durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair.
 7. `push_recover auto|finish|rollback` may mutate only after inspect proves the
-   action safe with fresh live evidence.
+   action safe with fresh live evidence and the same auth floor as the write
+   path.
 
 The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local

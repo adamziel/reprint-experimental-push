@@ -5,7 +5,8 @@ protocol in [protocol.md](protocol.md), how it maps onto the existing pull
 pipeline, and how to test one remote site and one local site.
 
 The pull-to-push mapping is one-way: exporter/importer establish immutable
-provenance, and push consumes it without rewriting it.
+provenance, and push consumes it without rewriting it. The imported pull base
+package is the only starting point for push planning.
 
 The production proof for that mapping is a one-remote, one-local topology:
 
