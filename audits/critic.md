@@ -7799,7 +7799,7 @@ on the same live boundary:
 If any of those facts are missing, the proof is still compatibility evidence
 or historical context, not production-grade push support.
 
-Exact next proof required from `25c4ef54`:
+Exact next proof required from `3089aee2`:
 
 - rerun `npm run test:playground:production-shaped-release-verify` against one
   live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, and treat that
