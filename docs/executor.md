@@ -144,6 +144,13 @@ The same production proof stack is reviewed in this order:
 8. `push-production-executor-flow-contract.json` for the full end-to-end flow
    in one compact bundle.
 
+If you only need the topology boundary, use the smaller pair:
+
+1. `push-deployment-topology-contract.json` for the Docker and Playground
+   one-remote, one-local, one-drift harness.
+2. `push-production-topology-contract.json` for that same harness plus the
+   immutable pull bridge that feeds push.
+
 That topology is the same one-remote, one-local, one-drift proof in both
 environments:
 

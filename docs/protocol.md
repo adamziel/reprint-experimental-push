@@ -200,6 +200,20 @@ Recovery is inspect-first by design:
 - live drift between dry-run and apply is expected, so apply-time revalidation
   is mandatory and separate from dry-run
 
+The review order is fixed when you need the production proof bundle:
+
+1. `push-protocol-extension-contract.json` for the full ladder, pull bridge,
+   auth floor, and one-remote-one-local-one-drift topology.
+2. `push-deployment-topology-contract.json` for the Docker and Playground
+   harness with the sandbox-provided `8080` ingress.
+3. `push-production-topology-contract.json` for the production harness and
+   immutable pull bridge together.
+4. `push-production-auth-session-journal-recovery-inspect-contract.json` for
+   the auth/session/journal/lease/recovery-inspect floor plus the apply-time
+   revalidation boundary.
+5. `push-production-executor-flow-contract.json` for the compact route order
+   from preflight through inspect-first recovery.
+
 The auth floor does not weaken the existing Reprint HMAC model:
 
 - preflight authenticates and mints, but never grants mutation authority
