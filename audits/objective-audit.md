@@ -84,7 +84,7 @@ Current blocker summary:
 
 ## Test Audit
 
-The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. A green `npm test` run makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary. Their main value is negative proof: they show the repo can refuse bad states, not that it can complete the live push safely.
+The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. A green `npm test` run makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary. Their main value is negative proof: they show the repo can refuse bad states, not that it can complete the live push safely. They do not prove no data loss, reliability under crash/replay, or measured speed on the live path.
 
 | Test surface | What it really proves | What it does not prove |
 | --- | --- | --- |
