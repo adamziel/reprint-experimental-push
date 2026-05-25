@@ -279,6 +279,33 @@
       overflow-wrap: anywhere;
     }
 
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    details summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 14px 16px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details[open] summary {
+      border-bottom: 1px solid var(--line);
+    }
+
+    details > .details-body {
+      padding: 0 16px 16px;
+    }
+
     .panel {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -580,6 +607,18 @@
           </ul>
           <p class="note">Detailed caveats and command evidence live in these linked docs. The newest public audit is linked in the header.</p>
         </section>
+
+        <details class="panel" id="recent-public-audits" aria-labelledby="recent-audits">
+          <summary id="recent-audits">Recent Public Audits</summary>
+          <div class="details-body">
+            <ul class="link-list">
+              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-080603">2026-05-25 08:06:03</a></li>
+              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-080514">2026-05-25 08:05:14</a></li>
+              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-080323">2026-05-25 08:03:23</a></li>
+            </ul>
+            <p class="note">Older entries stay in the log; this view keeps the latest public status easy to audit without adding more summary text to the first screen.</p>
+          </div>
+        </details>
 
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Release Gate Checklist</h2>
