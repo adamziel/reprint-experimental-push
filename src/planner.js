@@ -1102,13 +1102,26 @@ function finalizeWordPressGraphDependencies(plan) {
       }
 
       const targetMutation = mutationByResourceKey.get(reference.targetResourceKey);
-      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference)) {
+      if (!isValidSamePlanWordPressGraphTarget(targetMutation, reference, mutation)) {
         plan.blockers.push({
           id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
           class: 'missing-wordpress-graph-dependency',
           resource: mutation.resource,
           resourceKey: mutation.resourceKey,
           reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan target without a matching target create mutation.`,
+          resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
+          references: [reference],
+        });
+        continue;
+      }
+
+      if (isBlockedSamePlanWordPressGraphSource(mutation, reference, mutationByResourceKey)) {
+        plan.blockers.push({
+          id: `blocker-wordpress-graph-dependency-${blockerIndex++}`,
+          class: 'stale-wordpress-graph-identity',
+          resource: mutation.resource,
+          resourceKey: mutation.resourceKey,
+          reason: `WordPress graph mutation ${mutation.resourceKey} references a same-plan thumbnail target from an attachment source without a supported merge policy.`,
           resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
           references: [reference],
         });
@@ -1132,12 +1145,77 @@ function finalizeWordPressGraphDependencies(plan) {
   plan.mutations = orderMutationsByDependencies(plan.mutations);
 }
 
-function isValidSamePlanWordPressGraphTarget(targetMutation, reference) {
-  return Boolean(targetMutation)
-    && targetMutation.action === 'put'
-    && targetMutation.changeKind === 'create'
-    && targetMutation.resourceKey === reference.targetResourceKey
-    && targetMutation.localHash === reference.targetLocalHash;
+function isValidSamePlanWordPressGraphTarget(targetMutation, reference, sourceMutation) {
+  if (
+    !targetMutation
+    || targetMutation.action !== 'put'
+    || targetMutation.changeKind !== 'create'
+    || targetMutation.resourceKey !== reference.targetResourceKey
+    || targetMutation.localHash !== reference.targetLocalHash
+  ) {
+    return false;
+  }
+
+  if (
+    reference.relationshipType === 'featured-image-attachment'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_posts'
+  ) {
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (!targetValue || typeof targetValue !== 'object' || targetValue.post_type !== 'attachment') {
+      return false;
+    }
+    const sourceValue = deserializeResourceValue(sourceMutation?.value);
+    if (sourceValue && typeof sourceValue === 'object' && sourceValue.post_type === 'attachment') {
+      return false;
+    }
+  }
+
+  if (
+    reference.relationshipType === 'post-parent'
+    && reference.sourceTable === 'wp_posts'
+    && reference.sourceRowId
+    && sourceMutation?.resource?.type === 'row'
+    && sourceMutation?.resource?.table === 'wp_posts'
+    && targetMutation.resource.type === 'row'
+    && targetMutation.resource.table === 'wp_posts'
+  ) {
+    const sourceValue = deserializeResourceValue(sourceMutation.value);
+    const targetValue = deserializeResourceValue(targetMutation.value);
+    if (
+      sourceValue
+      && typeof sourceValue === 'object'
+      && sourceValue.post_type === 'attachment'
+      && targetValue
+      && typeof targetValue === 'object'
+      && targetValue.post_type === 'attachment'
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isBlockedSamePlanWordPressGraphSource(sourceMutation, reference, mutationByResourceKey) {
+  if (reference.relationshipType !== 'featured-image-attachment') {
+    return false;
+  }
+  if (sourceMutation?.resource?.type !== 'row' || sourceMutation?.resource?.table !== 'wp_postmeta') {
+    return false;
+  }
+  const sourceValue = deserializeResourceValue(sourceMutation.value);
+  const ownerId = normalizePositiveInteger(sourceValue && typeof sourceValue === 'object' ? sourceValue.post_id : null);
+  if (ownerId == null) {
+    return false;
+  }
+  const ownerResourceKey = `row:${JSON.stringify(['wp_posts', `ID:${ownerId}`])}`;
+  const ownerMutation = mutationByResourceKey.get(ownerResourceKey);
+  if (!ownerMutation || ownerMutation.changeKind !== 'create' || ownerMutation.action !== 'put') {
+    return false;
+  }
+  const ownerValue = deserializeResourceValue(ownerMutation.value);
+  return Boolean(ownerValue && typeof ownerValue === 'object' && ownerValue.post_type === 'attachment');
 }
 
 function orderMutationsByDependencies(mutations) {
