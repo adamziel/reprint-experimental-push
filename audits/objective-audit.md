@@ -40,6 +40,17 @@ Minimum acceptable command shape:
 - `release` is acceptable only if it is the actual default gate and cannot be bypassed by optional helper scripts.
 - Anything that only shells out to `test:playground:*` or `node --test` remains support evidence, not release proof.
 
+## Test Audit Verdict
+
+The test suite is doing the right kind of negative work, but it is still not positive release proof.
+
+- `test/push-planner.test.js` proves directionality, stale-plan refusal, and local mutation ordering in fixture scope. It does not prove lossless mutation on live WordPress storage.
+- `test/recovery-journal.test.js` proves local journal integrity, restart classification, and redaction on temporary files. It does not prove crash durability on production storage or recovery across the live apply boundary.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the repository refuses unsupported throughput claims. They do not measure the live push path, so they cannot support a positive speed claim.
+- `npm test` being green at `89/89` is therefore regression evidence, not release evidence.
+- The strongest production-shaped smokes still report `labBacked: true`, so they remain lab proof even when they look operationally close to release.
+- Any audit language that treats fixture, refusal, or lab-backed passes as proof of no data loss, reliability, or speed would be overstated.
+
 ## Claim Status
 
 | Claim | Current status | Why it is still blocked |
