@@ -5446,11 +5446,15 @@ test('blocks unsupported plugin-owned option updates while preserving matching i
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blockerJson.includes('local-advanced'), false);
+  assert.equal(blockerJson.includes('base cover'), false);
   assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery/cover.txt').decision, 'already-in-sync');
   assert.equal(decisionFor(plan, 'row:["wp_posts","ID:2"]').decision, 'already-in-sync');
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
@@ -5490,11 +5494,15 @@ test('blocks unsupported plugin-owned option updates while preserving matching i
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blockerJson.includes('local-advanced'), false);
+  assert.equal(blockerJson.includes('base cover'), false);
   assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery/cover.txt').decision, 'already-in-sync');
   assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery').decision, 'already-in-sync');
   assert.equal(decisionFor(plan, 'row:["wp_posts","ID:2"]').decision, 'already-in-sync');
