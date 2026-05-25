@@ -25,6 +25,14 @@ export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'blocked-recovery',
 ]);
 
+export function isAcceptableRecoveryState(recoveryState) {
+  return Boolean(
+    recoveryState
+      && typeof recoveryState === 'object'
+      && ACCEPTABLE_RECOVERY_STATES.includes(recoveryState.status),
+  );
+}
+
 export class PushPlanError extends Error {
   constructor(code, message, details = {}) {
     super(message);
@@ -54,6 +62,7 @@ export function applyPlan(remote, plan, options = {}) {
     let replayResult;
     try {
       replayResult = replayCompletedPlan(remote, plan, journal);
+      assertRecoveryStateEnvelope(replayResult.recoveryState);
       recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal);
       return replayResult;
     } catch (error) {
@@ -84,6 +93,7 @@ export function applyPlan(remote, plan, options = {}) {
         },
       };
       try {
+        assertRecoveryStateEnvelope(recoveryState);
         recordDurableReplay(durableJournal, remote, plan, recoveryState, completedJournal);
         recordDurableRecoveryState(durableJournal, remote, plan, recoveryState);
       } catch (error) {
@@ -213,6 +223,16 @@ export function applyPlan(remote, plan, options = {}) {
       },
     },
   };
+}
+
+function assertRecoveryStateEnvelope(recoveryState) {
+  if (!isAcceptableRecoveryState(recoveryState)) {
+    throw new PushPlanError(
+      'RECOVERY_STATE_INVALID',
+      'Recovery state must be old-remote, fully-updated-remote, or blocked-recovery.',
+      { recoveryState },
+    );
+  }
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {

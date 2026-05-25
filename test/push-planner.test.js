@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { ACCEPTABLE_RECOVERY_STATES, applyPlan, PushPlanError } from '../src/apply.js';
+import { ACCEPTABLE_RECOVERY_STATES, applyPlan, isAcceptableRecoveryState, PushPlanError } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
 import {
   appendRecoveryClaimOpened,
@@ -17117,6 +17117,14 @@ test('replaying a completed plan through the durable journal stays fully updated
     persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'fully-updated-remote'),
     true,
   );
+});
+
+test('approved recovery states are limited to the durable old, updated, and blocked envelopes', () => {
+  assert.equal(isAcceptableRecoveryState({ status: 'old-remote' }), true);
+  assert.equal(isAcceptableRecoveryState({ status: 'fully-updated-remote' }), true);
+  assert.equal(isAcceptableRecoveryState({ status: 'blocked-recovery' }), true);
+  assert.equal(isAcceptableRecoveryState({ status: 'unexpected' }), false);
+  assert.equal(isAcceptableRecoveryState(null), false);
 });
 
 test('durable recovery keeps the approved failure envelope and retries do not duplicate inserts', () => {
