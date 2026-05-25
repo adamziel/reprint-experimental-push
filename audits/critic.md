@@ -4,27 +4,26 @@ Current baseline for this critique: the supervised reliable-executor lane
 through remote head `68664884`, with `63a3502f` as an earlier retained-source
 proof point. That lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
-`durableJournal.rows: 17`, is material retained-source lab evidence. It is an
-improvement over route-shape-only proof, but it is still not live retry
-authority unless the same branch also proves the live WordPress auth/session
-boundary, durable journal semantics, graph identity, plugin-driver coverage,
-and leases/fencing on a real-site rerun.
+`durableJournal.rows: 17`, is material retained-source lab evidence.
+
+What improved in the last 12 hours: the retained-source harness now names
+session shape, apply commitment, and journal rows instead of only route shape.
+That is a real gain, but it is still lab evidence unless this worktree can
+rerun the same live boundary on a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL` and preserve the rejected remote for audit and
+retry.
+
 Single strongest blocker: this worktree still lacks a rerunnable live boundary
-against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that
-preserves the rejected remote for audit and retry. Until that exists, every
-production-grade push claim stays compatibility-only.
-Most recent improvement: the retained-source harness now names session shape,
-apply commitment, and journal rows instead of only route shape. The next proof
-must move to one rerunnable live command on a real local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL`, with preserved-remote audit evidence,
-dry-run receipt, apply-time revalidation, and journal/recovery inspection on
-the same boundary.
+that proves the WordPress auth/session write boundary, durable journal
+semantics, graph identity, plugin-driver coverage, and leases/fencing on a
+real-site rerun. Until that exists, every production-grade push claim stays
+compatibility-only.
+
 The retired critique is the one that said no `verify:release` command exists;
-do not reintroduce it on this branch. The lack of a branch-local real-site
-release command is a separate gap, but it is not the main blocker and must not
-be mistaken for the supervised lane's retained-source evidence. Retained-
-source lab evidence can support design review, but it cannot stand in for this
-worktree's own live retry proof.
+do not reintroduce it on this branch. The remaining gap is not the presence of
+`verify:release` in the supervised lane, but the absence of this worktree's own
+live retry proof with preserved-remote audit evidence.
+
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
@@ -34,6 +33,7 @@ new remote head, that does not convert its retained-source result into retry
 authority for this worktree. Any claim that `verify:release` is
 "production-shaped" or "production-ready" must fail closed until that live
 rerun exists on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
+
 On this audit branch, the local script inventory still shows only `plan`,
 `apply`, `test`, and playground/recovery compatibility helpers in
 `package.json`; there is no named real-site release command on this branch
@@ -42,6 +42,7 @@ reliable-executor lane, and it is not the main production blocker by itself;
 the main blocker remains the missing rerunnable live boundary with preserved-
 remote audit evidence on a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL`.
+
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
