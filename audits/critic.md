@@ -16,6 +16,28 @@ boundary. That proof still has to preserve the rejected remote, show apply-time
 revalidation, and keep later-discovered plugin-owned surfaces on their own
 preserve / reject / retry cycle.
 
+Must-change-before-production-grade wording:
+
+- replace retained-source `npm run verify:release` language with one rerunnable
+  live command against a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL` that prints the executor identity, the live
+  auth/session boundary, the preserved remote, the exact rejection point, the
+  dry-run receipt, apply-time revalidation, and journal/recovery inspection;
+- require old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts,
+  including hidden tables, cron rows, runtime registries, generated files,
+  caches, serialized blobs, and plugin-owned files outside the allowlist;
+- treat any later-discovered plugin-owned surface or remapped create target as
+  a new live boundary unless it already had its own preserve / reject / retry
+  cycle before the first write;
+- reject any "manual resolution", "comparison passed", or "production-ready"
+  label unless the preserved remote stayed inspectable after rejection and the
+  retry scope was rebuilt from live hashes on this branch; and
+- treat Reprint, ZS-Sync, and ForkPress as provenance only unless the branch
+  names the exact upstream state, states what each note proves here, states
+  what it does not prove here, and reruns the same live boundary on this
+  worktree.
+
 Before this project can claim production-grade push support, all of the
 following must be true on the same rerunnable live boundary:
 
