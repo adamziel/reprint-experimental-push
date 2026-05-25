@@ -148,6 +148,7 @@ test('push protocol fixture readme keeps the production ladder and topology brid
       'push-production-executor-flow-contract.json` is the compact end-to-end flow for the one-remote, one-local, one-drift topology.',
     ),
   );
+  assert.ok(protocolDocs.includes('That mapping is intentionally one-way'));
   assert.ok(
     protocolReadme.includes(
       'The seven protocol surfaces are the ones the executor must treat as distinct',
@@ -188,6 +189,7 @@ test('push protocol fixture readme keeps the production ladder and topology brid
       'The executor maps the pull pipeline into the push ladder without turning the',
     ),
   );
+  assert.ok(executorDocs.includes('That bridge is one-way'));
   assert.ok(
     executorDocs.includes('The production route surface is intentionally split'),
   );

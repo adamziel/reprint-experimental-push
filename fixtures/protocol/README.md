@@ -944,3 +944,13 @@ The fixture contract is intentionally one remote, one local, one runner:
 exporter/importer pipeline and the push executor. It exists so tests can assert
 that the stored pull base package is read-only provenance, not a hidden lock or
 second export format.
+
+The production push bridge is one-way:
+
+- exporter and importer create the immutable pull base package once
+- preflight is the first live bind after importer persistence
+- snapshot listing is planning-only evidence
+- dry-run is a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage boundary
+- journal inspect stays read-only
+- recovery starts with inspect before any mutating repair

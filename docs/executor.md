@@ -2009,6 +2009,18 @@ The executor needs the same boundary discipline as the protocol:
 - recovery starts with inspect and only mutates when inspect proves the branch
   safe with fresh live evidence
 
+That bridge is one-way:
+
+- exporter and importer create the immutable pull base package once
+- preflight is the first live bind after importer persistence
+- snapshot listing is planning-only evidence
+- dry-run is a receipt, not a lock
+- apply is a separate remote mutation and revalidates fresh live evidence
+  before every batch and at the storage boundary
+- journal inspect stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes still prove the branch safe
+
 The operational recovery order is strict:
 
 - `inspect` first
@@ -2097,6 +2109,8 @@ The bridge from pull to push stays one-way:
 - `push_journal` stays read-only
 - `push_recover inspect` reads the journal and fresh live hashes before any
   mutating repair
+- `push_recover auto|finish|rollback` still requires the same HMAC floor as
+  apply and cannot bypass inspect
 
 ## Canonical Proofs
 

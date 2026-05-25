@@ -33,6 +33,21 @@ The contract is intentionally production-shaped:
   hashes still prove the branch safe
 - authentication must be at least as strict as current Reprint HMAC usage
 
+The production shape is also explicit about what is live and what is only
+planning evidence:
+
+- preflight is the first live binding after importer provenance exists
+- remote snapshot hash listing is planning evidence only and never write
+  authority
+- dry-run uploads the canonical plan and returns a receipt, not a lock
+- apply is a separate remote mutation and must revalidate fresh live evidence
+  before every batch and again at the storage boundary
+- journal inspect is read-only
+- recovery starts with inspect before any mutating repair
+- mutating recovery may proceed only when journal evidence and fresh live
+  hashes still prove the branch safe
+- authentication must be at least as strict as current Reprint HMAC usage
+
 The runtime sequence is fixed and non-overlapping:
 
 1. `push_preflight` binds the persisted pull base package to one live remote identity and one short-lived push session.
@@ -54,6 +69,15 @@ That ladder maps directly onto the pull/export/import pipeline:
 | Durable pull provenance | `push_journal` | Read-only evidence for later recovery. |
 | Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before mutation. |
 | Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only when inspect and auth-floor checks pass. |
+
+That mapping is intentionally one-way:
+
+- exporter and importer create the immutable base package once
+- push consumes that base package through preflight, planning-only hash
+  listing, and dry-run receipt generation
+- apply, journal, and recovery remain fenced by fresh live evidence and
+  inspect-first recovery rules
+- the imported base package is never rewritten into write authority
 
 The fixed test topology is also shared:
 
