@@ -102,6 +102,20 @@ The release-facing wrapper that a supervisor should run is:
 npm run test:playground:production-shaped-proof
 ```
 
+The narrow live-preflight command for a real remote source is:
+
+```sh
+npm run test:playground:production-shaped-live-preflight
+```
+
+When `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_USERNAME`, and
+`REPRINT_PUSH_APPLICATION_PASSWORD` are present, that command exercises the
+real production-shaped preflight handshake. When the source URL or auth is
+missing, it fails with the exact gate the supervisor should check:
+
+- `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`
+- `REPRINT_PUSH_SECRET_REQUIRED`
+
 If `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LAB_AUTH_ADMIN_USER`, and
 `REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD` are set, the same wrapper runs the
 real production-shaped preflight probe instead of only the missing-input gates.

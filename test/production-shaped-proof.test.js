@@ -34,6 +34,25 @@ test('production-shaped proof wrapper emits the checked proof summary and exact 
 });
 
 test('production-shaped live preflight smoke fails fast when the live source or auth inputs are missing', () => {
+  const livePreflightScript = spawnSync('npm', ['run', 'test:playground:production-shaped-live-preflight'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_USERNAME: 'reprint_push_admin',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'reprint-push-admin-app-password',
+    },
+    encoding: 'utf8',
+    shell: false,
+  });
+
+  assert.equal(livePreflightScript.status, 1);
+  assert.equal(
+    livePreflightScript.stderr.trim(),
+    'REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.',
+  );
+
   const missingSource = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-preflight-smoke.mjs'], {
     cwd: repoRoot,
     env: {
