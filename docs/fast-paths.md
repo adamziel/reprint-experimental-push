@@ -748,6 +748,10 @@ under load:
   is rejected because planning evidence and cached file hashes can trim lookup
   and rehash work, but they cannot prove dependency checks, live row compares,
   or the atomic-group barrier survived failure.
+- compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize
+  is rejected because planning evidence and cached file hashes can trim lookup
+  and rehash work, but they cannot prove dependency checks, staged files, or
+  the atomic-group finalize survived failure.
 - compressed-remote-index-and-cached-file-hash-skips-plugin-update-finalize is
   rejected because planning evidence and cached hashes can skip lookup and
   rehash work, but they cannot prove the live compare, staged rows, or the
