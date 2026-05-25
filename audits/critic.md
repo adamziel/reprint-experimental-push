@@ -29,6 +29,10 @@ Release gate for any production wording:
 - Treat route shape, package shape, fixture replay, and `finalMatchesLocal`
   as compatibility evidence only. None of them prove production durability,
   production auth, or production write safety.
+- Even when an upstream note names the exact commit and the same feature
+  vocabulary, that only proves provenance. If this branch did not rerun the
+  same live drift, retry, or create-time identity case at the same mutation
+  boundary, the comparison still cannot authorize production wording.
 
 Must-fix blockers before any production wording:
 
@@ -153,6 +157,10 @@ Release-gate checklist for production-readiness wording:
   live-boundary recheck is still not current proof.
   If the branch-local drift or retry case differs from the upstream note's
   scenario, the citation stays historical context only.
+- Matching route family, package shape, or mount shape still does not upgrade
+  an upstream citation into current proof unless the live executor on this
+  branch rejected stale authority before mutation and preserved the remote
+  for audit.
 - A correct upstream revision plus a route-shaped smoke still does not prove
   production readiness unless the branch also re-exercised the same stale
   remote, create-time identity, plugin-owned surface, or partial-write case
