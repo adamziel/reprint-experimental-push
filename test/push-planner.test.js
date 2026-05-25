@@ -17363,6 +17363,11 @@ test('the durable recovery boundary remains fail-closed until a release-gate com
     undefined,
     'release-gate proof cannot be wired in this repo until verify:release exists',
   );
+  assert.equal(
+    packageJson.scripts['test:recovery:file-journal'],
+    'node ./scripts/recovery/file-journal-restart-smoke.mjs',
+    'file-backed recovery journal smoke is the executable durability proof currently available in this repo',
+  );
 
   const base = baseSite();
   const local = baseSite();
