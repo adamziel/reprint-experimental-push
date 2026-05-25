@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, and the newer `2bdf01a8` proof-contract clarification. That is real progress, but it is still lab evidence. The missing proof is still one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Until that exact boundary exists, the best available status is "lab-verified, production-unproven."
+The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, and the newer `2bdf01a8` proof-contract clarification. That is concrete progress, but it is still lab evidence. The missing proof is still one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Until that exact boundary exists, the best available status is "lab-verified, production-unproven."
 
 ## What still blocks the claim
 
@@ -42,7 +42,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - None of them prove live push safety on this branch.
 - None of the three source notes prove the required production boundary here: the missing proof is still one rerunnable live mutation on one exact source URL with preserved-remote retention, apply-time revalidation, auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage all observed together.
 - The observed anchors in `docs/source-notes.md` are `27c5f25`, `d9334a0`, and `55f9879`; they are historical context only unless this branch reran the same live boundary with preserved-remote evidence, stale-authority rejection before the first write, fresh live hashes, and the same late plugin-owned surfaces.
-- If a comparison does not name the exact upstream state, say what it proves here, and say what it does not prove here, it stays provenance only and cannot be used as production proof by analogy.
+- If a comparison does not name the exact upstream state, says what it proves here, says what it does not prove here, and ties that back to the same live boundary on this branch, it stays provenance only and cannot be used as production proof by analogy.
 
 ## Changes required before production wording is defensible
 
