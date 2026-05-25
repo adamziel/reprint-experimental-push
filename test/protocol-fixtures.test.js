@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (relativePath) =>
   JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
+const packageJson = readJson('package.json');
 const protocolReadme = fs.readFileSync(path.join(repoRoot, 'fixtures/protocol/README.md'), 'utf8');
 const protocolDocs = fs.readFileSync(path.join(repoRoot, 'docs/protocol.md'), 'utf8');
 const executorDocs = fs.readFileSync(path.join(repoRoot, 'docs/executor.md'), 'utf8');
@@ -287,6 +288,10 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   assert.equal(routeMatrix.topology.networking.tunnels, 'disallowed');
   assert.ok(
     executorDocs.includes('## Canonical Proof Set'),
+  );
+  assert.equal(
+    packageJson.scripts['test:playground:production-shaped-proof'],
+    'node --test test/protocol-fixtures.test.js && node ./scripts/playground/production-shaped-missing-secret-smoke.mjs',
   );
   assert.ok(
     executorDocs.replace(/\s+/g, ' ').includes(
