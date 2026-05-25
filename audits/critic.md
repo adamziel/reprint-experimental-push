@@ -6651,6 +6651,11 @@ Release gate for production-grade wording:
 - the claim rejects "manual resolution", "comparison passed", and
   "production-ready" as success labels unless the live rerun, preserved remote,
   rejection point, and per-surface classification are all present together.
+- a fresh-looking manual-resolution note from a later rerun is still audit
+  evidence only unless it names the exact rejected boundary, the preserved
+  remote that stayed inspectable after rejection, and the fresh retry scope
+  rebuilt from live hashes on this branch; polished wording cannot widen the
+  earlier boundary or absorb a later-discovered plugin-owned surface.
 
 Use `audits/critic-release-gate.md` as the compact preflight checklist for
 these requirements before any wording is promoted.
