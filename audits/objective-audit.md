@@ -132,6 +132,10 @@ Test verdict:
 - So the suite is evidence that release remains blocked, not evidence that
   release is safe.
 
+That is the key distinction: the current suite mostly proves conservative
+refusals and fixture behavior. It does not yet prove the live-source boundary
+where no silent data loss, reliability, and speed would have to be shown.
+
 ## Evidence Standard
 
 Only executable evidence at the boundary being claimed counts as proof.
