@@ -231,3 +231,7 @@ Before any production wording, the project must show:
   evidence without the live WordPress auth/session boundary, preserved remote,
   apply-time revalidation, and journal durability on a real local, Playground,
   or Docker source.
+- a retained-source `verify:release` pass is treated as production-grade push
+  evidence unless it also proves live preserved-remote retention, apply-time
+  revalidation, graph identity, and plugin-driver coverage on the same live
+  boundary.
