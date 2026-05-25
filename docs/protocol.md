@@ -39,6 +39,21 @@ with the executor topology:
 - `push-production-executor-flow-contract.json` proves the full preflight
   through inspect-first recovery flow in one compact object.
 
+The same proof set also defines the pull-to-push bridge in production terms:
+
+- exporter/importer create the immutable pull base package before any push
+  request exists
+- `push_preflight` is the first live bind after importer persistence
+- `push_snapshot_hashes` stays planning-only and only lists remote hashes
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not
+  a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` must happen before any mutating repair
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe with the same auth floor as the write path
+
 The extension is the composition of those stages, not a shortcut around them:
 
 - exporter/importer create the immutable pull base package
@@ -134,6 +149,18 @@ The production executor checklist is the same in every harness:
 6. recovery inspect happens before any mutating repair.
 7. recovery mutate runs only when inspect proves the branch safe and the same
    auth floor still holds.
+
+The production topology stays fixed across Docker and Playground:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns the push protocol calls
+- Docker uses one private network
+- Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 
 ## Canonical Proof Set
 

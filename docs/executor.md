@@ -87,6 +87,20 @@ drift production harness:
   through a local-only proxy.
 - Remote tunnels are disallowed in both harnesses.
 
+That topology is the production definition, not just an example:
+
+- `remote-base` and `remote-changed` are the same remote identity observed at
+  different times
+- `local-edited` is the imported local site derived from the persisted pull
+  base package
+- `runner` is the only actor that may call preflight, snapshot listing,
+  dry-run, apply, journal inspect, or recovery
+- Docker and Playground both call the same route names for preflight through
+  recovery mutate
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 The one-remote, one-local, one-drift harness is the production shape:
 
 - `remote-base` seeds the persisted pull base package
@@ -128,6 +142,20 @@ That mapping keeps the pull pipeline separate from the push mutation path:
   repair
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe and the auth floor still holds
+
+The pull bridge and the topology are the same contract in route form:
+
+- exporter/importer establish immutable provenance before push starts
+- `push_preflight` binds that provenance to one live remote identity and one
+  short-lived push session
+- `push_snapshot_hashes` remains planning-only remote hash listing
+- `push_plan_dry_run` returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary
+- `push_journal` stays read-only durable evidence
+- `push_recover inspect` runs before any mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe with the same auth floor as the write path
 
 Docker and Playground prove the same three-site story with different harness
 shapes:
