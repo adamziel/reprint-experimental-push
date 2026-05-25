@@ -118,6 +118,20 @@ test('push protocol fixture readme keeps the production ladder and topology brid
       'push-protocol-extension-contract.json` is the top-level production ladder',
     ),
   );
+  const flow = readJson('fixtures/protocol/push-production-executor-flow-contract.json');
+  assert.equal(flow.lab_topology.remote_base.identity, 'remote-example');
+  assert.equal(flow.lab_topology.local_edited.identity, 'local-dev-site');
+  assert.equal(flow.lab_topology.remote_changed.identity, 'remote-example');
+  assert.deepEqual(flow.lab_topology.runner.allowed_actions, [
+    'preflight',
+    'snapshot-hash-listing',
+    'dry-run',
+    'batch-apply',
+    'journal-inspect',
+    'recovery-inspect',
+    'recovery-mutate',
+  ]);
+  assert.ok(flow.lab_topology.live_drift.proof.includes('dry-run and apply remain separate remote operations'));
 });
 
 test('production topology fixture keeps the pull bridge, dry-run/apply split, and topology proof aligned', () => {

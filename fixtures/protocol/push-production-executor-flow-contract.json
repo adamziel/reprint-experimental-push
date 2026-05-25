@@ -74,6 +74,45 @@
       ]
     }
   },
+  "lab_topology": {
+    "remote_base": {
+      "role": "remote source site",
+      "identity": "remote-example",
+      "produces": "persisted pull base package"
+    },
+    "local_edited": {
+      "role": "imported local site",
+      "identity": "local-dev-site",
+      "has_user_edits": true
+    },
+    "remote_changed": {
+      "role": "same remote source site later in time",
+      "identity": "remote-example",
+      "drift_witness": true
+    },
+    "runner": {
+      "role": "push executor",
+      "identity": "runner",
+      "allowed_actions": [
+        "preflight",
+        "snapshot-hash-listing",
+        "dry-run",
+        "batch-apply",
+        "journal-inspect",
+        "recovery-inspect",
+        "recovery-mutate"
+      ]
+    },
+    "live_drift": {
+      "between": ["remote_base", "remote_changed"],
+      "proof": [
+        "remote-base and remote-changed are the same remote identity observed at different times",
+        "dry-run and apply remain separate remote operations",
+        "apply revalidates fresh live evidence before every batch and again at the storage boundary",
+        "recovery inspect happens before any mutating repair"
+      ]
+    }
+  },
   "required_invariants": [
     "preflight binds the persisted pull base package to one live remote identity and one short-lived push session",
     "remote snapshot hash listing is planning evidence, not write authority",
