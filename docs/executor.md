@@ -257,6 +257,13 @@ contract:
 - the runner owns preflight, snapshot listing, dry-run upload, batched apply,
   journal inspect, and recovery
 
+The topology proof is split across three fixtures so reviews can cite the
+smallest useful contract:
+
+- [`fixtures/protocol/push-deployment-topology-contract.json`](../fixtures/protocol/push-deployment-topology-contract.json) keeps the one-remote, one-local, one-drift deployment proof compact.
+- [`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json) keeps the Docker and Playground stage matrix explicit.
+- [`fixtures/protocol/push-pull-to-topology-contract.json`](../fixtures/protocol/push-pull-to-topology-contract.json) bridges exporter/importer provenance into the production topology and push ladder.
+
 Use the same shape in both harnesses:
 
 | Role | Docker | Playground |

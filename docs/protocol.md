@@ -216,6 +216,15 @@ The machine-readable proofs that back this contract are:
 - [`fixtures/protocol/push-recovery-revalidation-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-revalidation-contract.json)
 - [`fixtures/protocol/push-pull-to-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-to-topology-contract.json)
 
+The topology proofs are intentionally split by concern:
+
+- `push-deployment-topology-contract.json` keeps the one-remote, one-local,
+  one-drift deployment proof compact.
+- `push-topology-matrix.json` keeps the Docker and Playground stage matrix
+  explicit.
+- `push-pull-to-topology-contract.json` bridges exporter/importer provenance
+  into the production topology and push ladder.
+
 Those fixtures keep the production proof compact: exporter/importer establish
 the immutable base package, preflight binds it to one live remote identity and
 one short-lived session, snapshot listing can be paginated without becoming
