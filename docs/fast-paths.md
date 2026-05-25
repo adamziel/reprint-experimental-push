@@ -468,6 +468,9 @@ The rejected examples are not abstract lint. They are concrete failure modes:
 - Backpressure cannot be skipped just because the queue is compressed, because
   pressure relief cannot stand in for the receipts and journal order needed
   after a pause or crash.
+- The performance-model test is meant to stay bounded. If a future edit makes
+  `node --test test/performance-model.test.js` look stuck, isolate the named
+  subtest or cap the newly introduced case before adding more speedup variants.
 
 ## File Hashing
 

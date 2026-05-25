@@ -3421,3 +3421,13 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.ok(blockers.has('production-storage-receipts-not-measured'));
   assert.ok(blockers.has('production-row-batch-executor-not-measured'));
 });
+
+test('benchmark shape stays bounded for the current large fixtures', () => {
+  const model = buildBenchmarkModel();
+  const totalActions = model.schedules.reduce((sum, schedule) => sum + schedule.actions.length, 0);
+
+  assert.ok(model.schedules.length >= 2, 'benchmark keeps multiple workloads in play');
+  assert.ok(totalActions <= 1000, 'benchmark action count stays bounded');
+  assert.ok(model.totals.uploadChunks <= 400, 'upload chunk fanout stays bounded');
+  assert.ok(model.totals.dbBatches <= 100, 'database batch fanout stays bounded');
+});
