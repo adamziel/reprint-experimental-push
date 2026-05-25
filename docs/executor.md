@@ -85,6 +85,14 @@ Use that contract when a test needs the whole production ladder in one proof;
 use `push-deployment-topology-contract.json` when the test only needs the
 topology slice.
 
+The executor topology proof is intentionally narrow:
+
+- one remote source site seeds the persisted pull base
+- one local edited site produces the candidate plan
+- one later observation of the same remote identity proves drift
+- one runner process owns preflight, snapshot listing, dry-run, apply,
+  journal inspect, and recovery
+
 Recovery classifies the attempt into the same four states used by the protocol
 contract:
 
