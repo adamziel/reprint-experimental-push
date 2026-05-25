@@ -41,6 +41,12 @@ Those requirements are the minimum release bar, not aspirational extras.
 
 The current checkout does not yet satisfy those requirements at the release boundary. The closest evidence remains split across fixture tests, lab smokes, and refusal-oriented benchmark models. That means the audit must treat any positive claim as provisional unless it is backed by executable proof on the live-source release path, not by a green default test command or a production-shaped label alone.
 
+Current repo scan on 2026-05-25:
+
+- `package.json` still exposes only opt-in test and smoke scripts; there is no `verify`, `release`, or `verify:release` entrypoint.
+- This checkout still has no checked-in `.github/workflows/*` file, so there is no default CI path to enforce the missing gate.
+- `npm test` remains necessary local evidence, but it still does not cross the live-source boundary required for a release claim.
+
 Latest scan result:
 
 - `package.json` still has no `verify`, `release`, or `verify:release` entrypoint.
