@@ -251,6 +251,9 @@ red flag, not as release authorization.
   packaging behavior. They still report `labBacked: true`, so they are
   explicitly not production proof. They show that the route can look
   production-shaped while still remaining a lab surrogate.
+- Fresh verification on 2026-05-25 shows `npm test` still passes cleanly with
+  89 tests, 0 failures, and 0 skips. That is good regression evidence, but it
+  does not move any claim across the live-source release boundary.
 - `scripts/bench/guarded-executor-benchmark.js` proves the benchmark can block
   unsupported throughput claims. It does not itself measure a live push path,
   set a required threshold, or enforce a release decision unless the claim
