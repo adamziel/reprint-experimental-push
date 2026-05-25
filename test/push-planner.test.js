@@ -5099,6 +5099,67 @@ test('durable mid-apply recovery stays blocked and does not duplicate inserts on
   assert.deepEqual(inspection.counts, { old: 1, new: 1, blockedUnknown: 0 });
 });
 
+test('durable mid-apply recovery after a later mutation remains blocked and replays without duplication', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      mutateRemote: true,
+      failDuringCommitAtMutation: 2,
+      durableJournal,
+    }),
+  );
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal, 'blocked recovery must keep journal artifacts');
+  assert.ok(error.details.recovery.artifacts.remote, 'blocked recovery must keep remote artifacts');
+  assert.equal(error.details.recovery.artifacts.journal.status, 'blocked');
+  assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local";');
+  assert.equal(
+    error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+  );
+  assert.equal(remote.files['index.php'], '<?php echo "local";');
+  assert.equal(remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+
+  const retryRemote = JSON.parse(JSON.stringify(error.details.recovery.artifacts.remote));
+  const retrySnapshot = JSON.stringify(retryRemote);
+  const retry = applyPlan(retryRemote, plan, {
+    journal: error.details.recovery.artifacts.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(retryRemote), retrySnapshot);
+  assert.equal(retry.appliedMutations, 0);
+  assertAcceptableRecoveryState(retry.recoveryState);
+  assertRecoveryStateArtifacts(retry.recoveryState, 'fully-updated-remote');
+  assert.equal(retry.recoveryState.artifacts.remote, undefined);
+  assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(retry.site.files['index.php'], '<?php echo "local";');
+  assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    1,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    true,
+  );
+});
+
 test('recovery boundaries only land in the documented old remote, fully updated remote, or blocked recovery states', () => {
   const base = baseSite();
   const local = baseSite();
