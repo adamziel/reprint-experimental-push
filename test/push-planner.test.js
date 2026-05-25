@@ -16497,3 +16497,47 @@ test('failure before mutation keeps the remote old, leaves an opened journal, an
   assert.equal(remote.files['index.php'], '<?php echo "base";');
   assert.equal(remote.db.wp_posts['ID:2'], undefined);
 });
+
+test('failure after dependency validation keeps the remote old and replays without duplicating inserts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const remoteBefore = JSON.stringify(remote);
+
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failAfterDependencyValidation: true,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assert.equal(failure.code, 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION');
+  assertFailureRecoveryState(failure.details.recovery, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'dependencies-validated');
+  assert.equal(JSON.stringify(remote), remoteBefore);
+
+  const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retry = applyPlan(baseSite(), plan, {
+    durableJournal: retryJournal,
+    journal: failure.details.recovery.artifacts.journal,
+  });
+  retryJournal.close();
+
+  assertAcceptableRecoveryState(retry.recoveryState);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(retry.recoveryState.artifacts.remote, undefined);
+  assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(retry.appliedMutations, plan.mutations.length);
+  assert.equal(retry.site.files['index.php'], '<?php echo "local";');
+  assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
