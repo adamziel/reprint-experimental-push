@@ -4,6 +4,13 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+One weak claim still worth tightening explicitly: a production-shaped route or
+package mount can be a copied-lab executor behind the same URL family. That
+means a green smoke, `finalMatchesLocal`, or matching mount shape must never be
+presented as proof that the live source executor rejected stale authority
+before mutation, preserved the remote for audit, or rebuilt retry scope from
+fresh live hashes.
+
 Release gate for any production wording:
 
 - Name the exact live mutation boundary, the exact stale-remote drift case,
@@ -19,6 +26,9 @@ Release gate for any production wording:
   treated as a safe continuation without fresh live evidence.
 - Show each touched store as old, new, or blocked, and show retry rebuilt
   scope from fresh live evidence instead of inheriting the old decision.
+- Show the release claim is anchored in live-boundary evidence, not a copied
+  lab route, packaged-plugin mount, or fixture replay that only matches the
+  production URL shape.
 - Show that any success wording is not based on a readable review artifact,
   route-shaped smoke, or copied fixture mount that only looked current; the
   claim must prove the live executor rejected stale authority before
