@@ -4204,7 +4204,7 @@ branch proves otherwise:
   stays readable after drift. Missing proof: the artifact remained audit-only,
   could not widen to another row, file, relationship-bearing record, or
   plugin-owned surface, and was replaced by a separately recorded fresh retry
-  artifact.
+  artifact on the same branch.
 - Reprint, ZS-Sync, or ForkPress can still be cited as if they prove current
   safety when they only provide historical context. Missing proof: the exact
   upstream revision or worktree state, the exact live mutation boundary on this
@@ -4226,7 +4226,7 @@ not a generic success label:
   live hashes instead of inherited approval.
 - Stale manual-review artifacts: missing proof is that the artifact stayed
   audit-only after drift, could not authorize a later boundary, and was
-  replaced by a separately recorded fresh retry artifact.
+  replaced by a separately recorded fresh retry artifact on this branch.
 - Reprint, ZS-Sync, or ForkPress comparisons: missing proof is the exact
   upstream revision or worktree state plus branch-local revalidation of the
   same live mutation boundary on this repo.
