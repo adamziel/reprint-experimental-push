@@ -154,6 +154,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const blockedInspect = readJson('fixtures/protocol/push-recovery-inspect-blocked-response.json');
   const recoveryDecision = readJson('fixtures/protocol/push-recovery-decision.json');
   const authSessionJournalProof = readJson('fixtures/protocol/push-auth-session-journal-proof.json');
+  const authSessionRecoveryContract = readJson('fixtures/protocol/push-auth-session-recovery-contract.json');
   const sessionJournalProof = readJson('fixtures/protocol/push-session-journal-proof.json');
   const recoveryPath = readJson('fixtures/protocol/push-recovery-path.json');
   const recoveryBlocked = readJson('fixtures/protocol/push-recovery-blocked-response.json');
@@ -217,6 +218,13 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(authSessionJournalProof.journal_row.claim_generation, 4);
   assert.equal(authSessionJournalProof.inspect.mutates, false);
   assert.ok(authSessionJournalProof.required_invariants.includes('inspect is read-only and must come before any mutating recovery mode'));
+  assert.equal(authSessionRecoveryContract.contract_id, 'push-auth-session-recovery-contract-one-remote-one-local');
+  assert.equal(authSessionRecoveryContract.auth.push_hmac_family, 'hmac-sha256');
+  assert.equal(authSessionRecoveryContract.session.identity_hash, 'sha256:remote-identity');
+  assert.equal(authSessionRecoveryContract.journal_row.storage_guard, 'filesystem-compare-rename');
+  assert.equal(authSessionRecoveryContract.recovery.inspect_mode, 'inspect');
+  assert.equal(authSessionRecoveryContract.recovery.mutates, false);
+  assert.ok(authSessionRecoveryContract.required_invariants.includes('fresh live hashes must still be checked before finish, rollback, or auto'));
   assert.equal(sessionJournalProof.live_evidence.same_remote_identity, true);
   assert.equal(sessionJournalProof.journal_fencing.claim_owner, 'worker-17');
   assert.equal(sessionJournalProof.apply_revalidation.before_each_batch, 'fresh live hashes');
