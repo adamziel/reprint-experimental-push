@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and the newer `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, with the remote now clarifying the release-proof ladder rather than pretending the command surface is absent. That is real progress, but it is still lab evidence. The next missing proof is one rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Wording alone does not close that gap.
+The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and the newer `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict at `889bd37a`, with the remote now clarifying the release-proof ladder rather than pretending the command surface is absent. That is real progress, but it is still lab evidence. The next missing proof is one rerunnable live boundary on one real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote after refusal, revalidates at apply time from fresh live hashes, and proves production auth/session lifecycle, durable journal storage plus lease/fencing on production-like storage, graph identity, and plugin-driver coverage on the same mutation. Wording alone does not close that gap.
 
 ## What still blocks the claim
 
@@ -19,6 +19,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 9. There is still no production proof that the journal can survive a real lease/fencing handoff on durable storage while the same boundary remains rerunnable after rejection.
 10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation.
 11. There is still no single rerunnable live release boundary that ties preserved-remote retention, apply-time revalidation, WordPress auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage to the same source URL, so retry authority remains unproven outside the lab harness.
+12. No retained-source verdict should be treated as production-grade if it does not survive a rerunnable live mutation on the same source URL with the rejected remote still inspectable.
 
 ## Hidden-loss scenarios
 
@@ -80,6 +81,7 @@ Before any doc or status line says "production-grade" or "release-ready", it mus
 - plugin-driver coverage for any plugin-owned surface that appears outside the initial allowlist.
 
 Any claim that skips the live boundary, or replaces it with a retained-source harness or lab fixture, is still not production-grade.
+Any claim that relies on manual resolution, cached approval text, or a retained-source verdict without a rerunnable live boundary is false reliability.
 
 If any one of those bullets is missing, the wording must stay in the lab/prototype bucket.
 
@@ -87,4 +89,4 @@ If any one of those bullets is missing, the wording must stay in the lab/prototy
 
 This worktree still lacks one named, rerunnable live release command on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at apply time, and proves production WordPress auth/session lifecycle, durable journal storage plus lease/fencing, graph identity, and plugin-driver coverage on the same mutation.
 
-Until that boundary exists, any production-grade push wording is false reliability, even though the supervised lane now has better retained-source evidence and an explicit auth/session lifecycle verdict. The current evidence still stops short of production proof because it does not show a preserved remote surviving rejection, a lease/fenced journal on production-like storage, or a rerunnable apply-time retry that can reject stale manual resolution.
+Until that boundary exists, any production-grade push wording is false reliability, even though the supervised lane now has better retained-source evidence and an explicit auth/session lifecycle verdict. The current evidence still stops short of production proof because it does not show a preserved remote surviving rejection, a lease/fenced journal on production-like storage, or a rerunnable apply-time retry that can reject stale manual resolution and late plugin-owned surfaces on the same live source URL.
