@@ -169,6 +169,9 @@ Failure and recovery examples:
   one-local, one-drift topology explicit. It also points at the narrower
   auth/session fencing, recovery-inspect, and liveness proofs so the
   production bundle stays easy to navigate.
+- `push-deployment-topology-contract.json` and `push-pull-to-topology-contract.json`
+  give the deployment and pull-to-push bridge proofs for the same one-remote,
+  one-local, one-drift topology in Docker and Playground.
 - `push-pull-to-topology-contract.json` gives the smallest composite proof that
   links the persisted pull base package to the production push ladder and the
   Docker/Playground topology in one object. Use it when a review wants the

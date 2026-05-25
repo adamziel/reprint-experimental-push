@@ -1530,3 +1530,14 @@ test('push auth session journal proof binds push-scoped auth to journal fencing 
   assert.ok(proof.inspect.blocked_when.includes('fresh live hashes do not match the journaled target'));
   assert.ok(proof.required_invariants.includes('mutating push requests must carry a push session, idempotency key, and canonical push signature'));
 });
+
+test('push fixture index keeps the production proof bundle grouped around the new push ladder', () => {
+  const readme = fs.readFileSync(path.join(repoRoot, 'fixtures/protocol/README.md'), 'utf8').replace(/\s+/g, ' ');
+
+  assert.ok(readme.includes('push-protocol-extension-contract.json'));
+  assert.ok(readme.includes('push-deployment-topology-contract.json'));
+  assert.ok(readme.includes('push-pull-to-topology-contract.json'));
+  assert.ok(readme.includes('preflight, remote snapshot hash listing, dry-run receipt, batched apply, journal inspect, and inspect-first recovery stay on separate liveness boundaries'));
+  assert.ok(readme.includes('one-remote, one-local, one-drift-witness topology'));
+  assert.ok(readme.includes('pull-to-push bridge proofs'));
+});
