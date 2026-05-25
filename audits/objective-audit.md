@@ -426,7 +426,7 @@ Proof buckets used below:
 | No data loss | Local journal sequencing and replay classification | Live-boundary no-loss proof on production storage | Fixture replay is not production durability |
 | Reliability | Auth/session scaffolding, replay rejection, and journal guardrails | One mandatory gate that composes auth/session, journal, leases/fencing, graph identity, and plugin-driver checks | Distributed helper proofs do not close the release decision |
 | Speed | `productionThroughput: 'not-claimed'` and refusal-only benchmark behavior, which is a refusal to overclaim rather than a measured live-path result | A measured live-path threshold or an enforced `speed unclaimed` verdict from a required release command | Refusal is not performance evidence |
-| Mandatory release gate | Optional smokes and `npm test` | A checked-in `verify`, `verify:release`, or `release` command, plus a checked-in workflow or other default entrypoint that invokes it | Optional runs can bypass the live-source verdict, so the missing command remains the top release blocker |
+| Mandatory release gate | Optional smokes, `npm test`, and the local `plan`/`apply` wrapper | A checked-in `verify`, `verify:release`, or `release` command, plus a checked-in workflow or other default entrypoint that invokes it against `REPRINT_PUSH_SOURCE_URL` | Optional runs can bypass the live-source verdict, so the missing command remains the top release blocker |
 
 Bottom line:
 
@@ -464,7 +464,7 @@ That claim is only defensible if the repository has one enforced command that:
 3. fails closed on missing auth/session, durable journal, leases/fencing, graph identity, plugin-driver, or topology proof
 4. emits a machine-checkable speed verdict, including `speed unclaimed` when live-path measurement is absent
 
-Right now none of `npm test`, `plan`, `apply`, or the optional Playground smokes does that. They remain support evidence only, so the release blocker is still the missing required gate, not a lack of additional lab assertions. The repo also still has no `.github` workflow tree in this checkout, so there is no checked-in automation path that could force that gate from the default release surface.
+Right now none of `npm test`, `plan`, `apply`, or the optional Playground smokes does that. They remain support evidence only, and `plan` / `apply` are just local wrappers around the lab path. The repo also still has no `.github` workflow tree in this checkout, so there is no checked-in automation path that could force that gate from the default release surface.
 
 Concrete release-gate target:
 
