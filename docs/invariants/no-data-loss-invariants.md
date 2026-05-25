@@ -22,6 +22,11 @@ This note captures the planner boundary in plain language.
 - A live-preconditioned file delete may still coexist with a matching
   independent file delete, edit, and file type swap, while unrelated
   remote-only plugin drift remains `keep-remote`.
+- A file delete that would hide a live remote descendant must still stop
+  even when a matching independent delete, edit, and file type swap are
+  already in sync and remote-only plugin drift is present; the matching
+  resources stay `already-in-sync`, the plugin drift stays `keep-remote`,
+  and the conflict evidence stays bounded.
 - A live-preconditioned file delete may still coexist with a matching
   independent restore, edit, and file type swap while unrelated remote-only
   plugin drift and removals both remain `keep-remote`.

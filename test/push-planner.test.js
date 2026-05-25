@@ -17925,6 +17925,51 @@ test('keeps remote-only plugin changes while a live-preconditioned file delete a
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('stops a directory delete that would hide a live remote descendant while preserving a matching independent delete, edit, type swap, and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['sidebar.php'] = '<?php echo "base sidebar";';
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+  base.files['wp-content/uploads/cover/keep.txt'] = 'base descendant';
+  base.files['wp-content/uploads/banner'] = 'base banner bytes';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/cover/keep.txt'];
+  delete local.files['sidebar.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/banner'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  remote.files['wp-content/uploads/cover/keep.txt'] = 'remote descendant';
+  delete remote.files['sidebar.php'];
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/banner'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const directoryMutation = mutationFor(plan, 'file:wp-content/uploads/cover');
+  const matchingFileDelete = decisionFor(plan, 'file:sidebar.php');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.conflicts > 0, true);
+  assert.equal(directoryMutation, undefined);
+  assert.equal(matchingFileDelete.decision, 'already-in-sync');
+  assert.equal(matchingFileDelete.change.localChange, 'delete');
+  assert.equal(matchingFileDelete.change.remoteChange, 'delete');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(plan.conflicts[0].class, 'file-conflict');
+  assert.equal(plan.conflicts[0].change.base.state, 'present');
+  assert.equal(plan.conflicts[0].change.remote.state, 'present');
+  assert.equal(JSON.stringify(plan.conflicts[0]).includes('base descendant'), false);
+  assert.equal(JSON.stringify(plan.conflicts[0]).includes('remote-only plugin drift'), false);
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned file delete preserves a matching independent row restore and file type swap', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
