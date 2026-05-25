@@ -11,6 +11,16 @@ move the proof onto a rerunnable live boundary with preserved-remote audit
 evidence. The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
+Source-note comparison stays provenance only:
+
+- Reprint proves staged transport vocabulary and resumable delivery framing,
+  not live preserved-remote safety or retry authority on this branch;
+- ZS-Sync proves bounded discovery and batching vocabulary, not live mutation
+  safety, plugin-owned surface coverage, or stale-authority rejection; and
+- ForkPress proves audit/merge/crash-consistency intent, not a branch-local
+  live rerun with preserved-remote evidence, apply-time revalidation, or
+  later-surface preserve / reject / retry handling.
+
 Evidence classes:
 
 - historical context: source notes, upstream comparisons, and retained-source
@@ -133,6 +143,10 @@ following must be true on the same rerunnable live boundary:
 - any later-discovered plugin-owned surface or remapped create target must
   get its own preserve / reject / retry cycle instead of inheriting the
   earlier approval.
+
+If any of those bullets is missing, the branch may still be claiming progress
+on executor wiring, but it is not yet allowed to use production-grade push
+language.
 
 The old critique that no `verify:release` command exists is retired; the
 current blocker is the lack of a rerunnable live boundary on a real local,
