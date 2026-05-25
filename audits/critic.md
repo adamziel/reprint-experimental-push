@@ -5310,6 +5310,9 @@ False reliability claims to reject:
   than enumerated or blocked live, or when a later-discovered plugin-owned
   surface is folded into the first success story without its own preserved
   remote, rejection point, and fresh retry artifact; and
+- "plugin-safe push" when any plugin-owned table, file, cron row, runtime
+  registry entry, generated asset, cache entry, or serialized blob is outside
+  the allowlist and the branch cannot show it was blocked before write; and
 - "comparison passed" when a Reprint, ZS-Sync, or ForkPress note does not
   name the exact upstream revision or worktree state and does not say what
   the note proves here versus what it does not prove.
@@ -5881,6 +5884,7 @@ False-reliability trap to keep naming explicitly:
 
 - a readable manual-resolution note, source comparison, or review artifact is still not retry authority if the later boundary is a remapped create target, a new row/file/relationship-bearing record, or a plugin-owned surface discovered after the first write;
 - the same route family, package mount, reviewer wording, or historical upstream anchor does not make that later boundary the same boundary; the earlier artifact stays audit-only until the later boundary separately preserves the remote, rejects stale authority before mutation, and rebuilds retry scope from fresh live hashes; and
+- if the remote drifted after dry-run but before apply, that exact drift case must be named and the rejected remote must stay inspectable for audit/retry; otherwise the later apply is a new boundary and the earlier artifact cannot authorize it;
 - if the later surface cannot be named as old, new, or blocked before retry, the branch still lacks production-grade proof even when the earlier artifact is readable and the route looks production-shaped.
 
 Final production-grade deltas still required on this branch:
