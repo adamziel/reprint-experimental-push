@@ -519,6 +519,16 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-update-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-update-finalize').violates.includes('durable-progress'));
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-cached-package-cache-skips-plugin-install-finalize').rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-cache-skips-plugin-install-finalize').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-package-cache-skips-plugin-install-finalize').violates.includes('atomic-groups'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-package-hash-skips-plugin-update-finalize').rejectedGate,
     'group',
   );
