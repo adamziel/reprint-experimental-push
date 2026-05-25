@@ -11,6 +11,7 @@ This note is intentionally narrow: it records the current blockers that keep the
 5. There is no checked-in CI workflow in this checkout, so there is no visible enforced entrypoint that could make the release gate mandatory.
 6. `package.json` still exposes `test`, `plan`, `apply`, and optional playground helpers only. That surface can support release work, but it does not itself define an enforced release verdict.
 7. The current tests are valid regression and refusal evidence, but they stop short of the live-source boundary, so they cannot prove no data loss, reliability under crash/replay, or measured speed on the production path.
+8. There is still no checked-in `verify`, `verify:release`, or `release` command that would force the live-source preflight to run and fail closed when preserved-remote evidence is absent.
 
 ## Required proof before release
 
@@ -19,7 +20,7 @@ This note is intentionally narrow: it records the current blockers that keep the
 - Lease and fencing behavior that blocks stale or concurrent writers on the live boundary.
 - Graph identity behavior for the WordPress data shapes that can be rewritten or preserved.
 - Measured end-to-end speed evidence with an explicit threshold, or a required command that fails when the speed claim is still `not-claimed`.
-- One enforced release gate that fails closed if any of the above is missing or only lab-backed.
+- One enforced release gate that fails closed if any of the above is missing or only lab-backed, and that is the same command CI actually invokes.
 
 ## Audit rule
 
