@@ -13353,11 +13353,15 @@ test('pre-mutation durable recovery stays old-remote and completed replay remain
   );
   assert.equal(
     persistedAfterFailure.records.some((record) => record.type === 'recovery-state'),
-    false,
+    true,
   );
   assert.equal(
     persistedAfterFailure.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
     false,
+  );
+  assert.equal(
+    persistedAfterFailure.records.some((record) => record.type === 'recovery-state' && record.state === 'old-remote'),
+    true,
   );
 
   const replayRemote = baseSite();
@@ -13966,6 +13970,38 @@ test('no-data-loss recovery boundary matrix only allows old-remote before commit
   assert.equal(JSON.stringify(replayRemote), replaySnapshot);
   assert.equal(replay.appliedMutations, 0);
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
+test('no-data-loss recovery replays completed plans without duplicating inserts or reviving stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
