@@ -163,6 +163,37 @@ Production-grade comparison gate:
   only, even if the note matches the same route family, package mount, or
   reviewer wording.
 
+Non-negotiable release gate:
+
+- no production-grade push claim is allowed unless the branch can name the
+  exact drift case, show the preserved remote stayed inspectable after reject,
+  and show the retry scope was rebuilt from fresh live hashes on this branch;
+- no production-grade push claim is allowed unless every touched surface is
+  classified as old, new, or blocked before retry, including mixed file, DB,
+  and plugin side effects;
+- no production-grade push claim is allowed unless create-time identity
+  remap, aliasing, or renumbering is either hard-blocked before write or
+  proven with live identity evidence at the apply boundary;
+- no production-grade push claim is allowed unless plugin-owned state outside
+  the allowlist is enumerated live or hard-blocked, including hidden tables,
+  cron rows, runtime registries, generated files, caches, and serialized
+  blobs;
+- no production-grade push claim is allowed unless later-discovered plugin-
+  owned surfaces are treated as separate live boundaries with their own
+  preserve / reject / retry cycle;
+- no production-grade push claim is allowed unless stale manual-review
+  artifacts stay audit-only after drift and cannot widen to a different row,
+  file, relationship-bearing record, remapped create target, or plugin-owned
+  surface;
+- no production-grade push claim is allowed unless Reprint, ZS-Sync, and
+  ForkPress comparisons explicitly state the exact upstream revision or
+  worktree state, what each note proves here, what it does not prove here, and
+  whether this branch reran the same live boundary; and
+- no production-grade push claim is allowed if the evidence rests only on
+  route shape, package mount shape, fixture replay, readable manual-review
+  artifacts, `finalMatchesLocal`, or a "manual resolution" label without the
+  preserved remote, rejection point, and fresh live-hash retry scope.
+
 Must change before any production-grade push claim:
 
 - prove the live mutation boundary rejects stale authority before the first
