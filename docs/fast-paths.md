@@ -1305,6 +1305,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   publish after a pause and backpressure event, because the hash does not
   prove which acknowledgements survived or that the guarded publish barrier is
   still intact.
+- A compressed remote index plus a cached file hash cannot skip parallel
+  chunk sends and publish after a pause, because the hash does not prove the
+  live publish precondition, which chunk receipts survived the pause, or that
+  extra fan-out preserved the guarded publish barrier.
 - A compressed remote index plus a cached file fingerprint cannot skip
   large-upload resume after a pause, because the fingerprint does not prove
   which chunk acknowledgements survived or restore the guarded publish

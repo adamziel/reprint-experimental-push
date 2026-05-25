@@ -311,6 +311,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'parallel chunk sends still need durable chunk receipts after a pause',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-parallel-chunk-send-publish-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-parallel-chunk-send-publish-after-pause')?.violates.includes('atomic-file-publish'),
+    'cached file hashes still cannot bypass the guarded publish barrier after a paused fan-out',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-parallel-chunk-send-publish-after-pause')?.violates.includes('parallelism-limits'),
+    'cached file hashes still cannot justify unbounded chunk fan-out after a pause',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-batch-parallelism-after-pause')?.rejectedGate,
     'recovery',
   );

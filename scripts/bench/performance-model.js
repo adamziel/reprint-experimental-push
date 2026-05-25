@@ -2879,6 +2879,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-parallel-chunk-send-publish-after-pause',
+    proposal: 'use a compressed remote index plus a cached file hash to skip parallel chunk sends and publish a large upload after a pause',
+    rejectedBecause: 'planning evidence and cached file hashes can trim duplicate hashing, but they cannot prove the live publish precondition, the paused chunk receipts, or the guarded publish barrier survived failure while extra chunk fan-out was in flight',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
     proposal: 'use a compressed remote index plus cached row receipts to skip plugin-update finalize after a pause',
     rejectedBecause: 'planning evidence and cached row receipts can trim replay, but they cannot prove the live row compares, dependency checks, or atomic-group finalize survived failure',
