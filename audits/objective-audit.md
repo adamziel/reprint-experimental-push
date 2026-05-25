@@ -415,7 +415,7 @@ The hard test verdict is:
 
 ## Weakest Current Claim
 
-The weakest claim is not "the suite needs more tests." It is "a green suite can still be mistaken for a release gate even though no checked-in command proves the live-source boundary."
+The weakest claim is not "the suite needs more tests." It is "a green suite can still be mistaken for a release gate even though no checked-in `verify`, `verify:release`, or `release` command proves the live-source boundary."
 
 That claim is only defensible if the repository has one enforced command that:
 
@@ -424,4 +424,4 @@ That claim is only defensible if the repository has one enforced command that:
 3. fails closed on missing auth/session, durable journal, leases/fencing, graph identity, plugin-driver, or topology proof
 4. emits a machine-checkable speed verdict, including `speed unclaimed` when live-path measurement is absent
 
-Right now none of `npm test`, `plan`, `apply`, or the optional Playground smokes does that. They remain support evidence only, so the release blocker is still the missing required gate, not a lack of additional lab assertions.
+Right now none of `npm test`, `plan`, `apply`, or the optional Playground smokes does that. They remain support evidence only, so the release blocker is still the missing required gate, not a lack of additional lab assertions. The repo also still has no `.github` workflow tree in this checkout, so there is no checked-in automation path that could force that gate from the default release surface.
