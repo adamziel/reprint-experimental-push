@@ -6086,6 +6086,58 @@ test('the no-data-loss contract keeps every failure boundary either old remote, 
   assert.ok(staleReplayError.details.recovery.artifacts.remote);
 });
 
+test('replaying a completed plan stays inert, does not duplicate inserts, and blocks stale drift with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+
+  const cleanReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  const cleanReplay = applyPlan(cleanReplayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+
+  const driftedReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedReplayRemote.files['index.php'] = '<?php echo "stale local";';
+  driftedReplayRemote.db.wp_posts['ID:2'].post_title = 'Stale inserted local';
+  const driftedReplayError = captureError(() =>
+    applyPlan(driftedReplayRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(cleanReplay.appliedMutations, 0);
+  assert.equal(cleanReplay.recoveryState.status, 'fully-updated-remote');
+  assert.ok(cleanReplay.recoveryState.artifacts.journal);
+  assert.equal(cleanReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(cleanReplayRemote.files['index.php'], '<?php echo "local";');
+  assert.equal(cleanReplayRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.ok(driftedReplayError instanceof PushPlanError);
+  assert.equal(driftedReplayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(driftedReplayError.details.recovery.artifacts.journal);
+  assert.ok(driftedReplayError.details.recovery.artifacts.remote);
+  assert.equal(driftedReplayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
+  assert.equal(
+    driftedReplayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Stale inserted local',
+  );
+  assert.equal(JSON.stringify(driftedReplayRemote.files['index.php']), JSON.stringify('<?php echo "stale local";'));
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    1,
+  );
+});
+
 test('durable recovery boundaries keep the remote safe and make completed replay inert', () => {
   const base = baseSite();
   const local = baseSite();
