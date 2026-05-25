@@ -1,76 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:02:20 CEST
+Last updated: 2026-05-25 09:03:05 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 09:02:20 CEST
+## 2026-05-25 09:03:05 CEST
 
 - Going well: the page, log, and latest audit note still line up on the blocked snapshot.
 - Not going well: no new production-backed proof landed for auth/session, durable journal writes, leases/fencing, graph identity, integration, or plugin drivers.
-- Progress change: this pass only refreshed the visible status and kept the evidence trail short and linked.
+- Progress change: no evidence delta; this pass only tightened the scan view and refreshed the linked evidence pointer.
 - Next nudge: keep one lane per proof gap, one owner, and one production-backed test.
-- Audit note: [audits/supervisor-note-20260525-090220.md](../audits/supervisor-note-20260525-090220.md) captures this scan pass in one screen.
+- Audit note: [audits/supervisor-note-20260525-090305.md](../audits/supervisor-note-20260525-090305.md) captures this scan pass in one screen.
 
-## 2026-05-25 09:01:33 CEST
+## 2026-05-25 09:02:20 CEST
 
 - Going well: the page, log, and latest audit note still agree on the blocked snapshot.
 - Not going well: no proof gap closed, so the blocker is unchanged.
 - Progress change: this pass only tightened the visible supervisor surfaces and refreshed the linked evidence pointer.
 - Next nudge: keep one lane per proof gap, one owner, and one production-backed test.
 - Audit note: [audits/supervisor-note-20260525-090133.md](../audits/supervisor-note-20260525-090133.md) captures this scan pass in one screen.
-
-## 2026-05-25 08:59:21 CEST
-
-- Going well: the public page, progress log, and latest audit note now point at the same blocked snapshot.
-- Not going well: the proof gaps are unchanged, so the blocker still stands.
-- Progress change: corrected the latest audit pointer and refreshed the visible status date.
-- Next nudge: keep each lane on one missing proof item, one owner, and one production-backed test.
-- Audit note: [audits/supervisor-note-20260525-085921.md](../audits/supervisor-note-20260525-085921.md) captures this alignment pass in one screen.
-
-## 2026-05-25 08:58:07 CEST
-
-- Going well: the page, log, and latest audit note still agree on the blocked state.
-- Not going well: no proof gap closed, so the blocker is unchanged.
-- Progress change: no evidence delta; this pass only refreshed the linked supervisor surfaces.
-- Next nudge: keep one lane per proof gap, one owner, and one production-backed test.
-- Audit note: [audits/supervisor-note-20260525-085807.md](../audits/supervisor-note-20260525-085807.md) captures this pass in one screen.
-
-## 2026-05-25 08:57:12 CEST
-
-- Going well: the page, log, and latest audit note still agree on the blocked state.
-- Not going well: no proof gap closed in this pass, so the blocker is unchanged.
-- Progress change: no evidence delta; this pass only tightened the linked supervisor surfaces.
-- Next nudge: keep one lane per proof gap, one owner, and one production-backed test.
-- Audit note: [audits/supervisor-note-20260525-085712.md](../audits/supervisor-note-20260525-085712.md) captures this pass in one screen.
-
-## 2026-05-25 08:50:27 CEST
-
-- Going well: page, log, and audit note still agree on the blocked state.
-- Not going well: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers still lack proof.
-- Progress change: no evidence delta; the snapshot is current and still scan-first.
-- Next nudge: keep one lane per proof gap, one owner, and one production-backed test.
-
-| Lane | Current nudge |
-| --- | --- |
-| Invariants | Owner: lane. Gap: graph identity on a real site. Next test: prove it against live content. |
-| Recovery | Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill mid-write and inspect restart state. |
-| Reliable executor | Owner: lane. Gap: auth/session and lease behavior in production. Next test: prove the auth/session path on a real endpoint. |
-| Fast paths | Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the benchmark and record the bound. |
-| Audit and critic | Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim. |
-| Progress publisher | Owner: lane. Gap: keep the page dated, concise, and linked to evidence. Next test: keep the page and log aligned after each refresh.
-
-Note: this lane-local page becomes live only after merge to `main`; GitHub Pages lags until then.
-
-Audit note: [audits/supervisor-note-20260525-085112.md](../audits/supervisor-note-20260525-085112.md) captures that alignment pass in one screen.
-
-## 2026-05-25 08:51:12 CEST
-
-- Going well: the visible page still stays scan-first and the proof trail remains linked.
-- Not going well: the same proof gaps remain open, so the blocked assessment does not move.
-- Progress change: no evidence delta; only the supervisor surfaces were tightened.
-- Next nudge: keep each lane pinned to one missing proof item, one owner, and one production-backed test.
 
 <details>
 <summary>Earlier entries</summary>
