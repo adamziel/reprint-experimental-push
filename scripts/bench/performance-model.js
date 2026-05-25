@@ -2178,6 +2178,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
   {
+    id: 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-window-sizing',
+    proposal: 'use a compressed remote index plus a cached manifest hash to skip large-upload window sizing after a pause',
+    rejectedBecause: 'planning evidence and cached manifest hashes can trim duplicate replay, but they cannot prove the next bounded window still matches the live queue order or restore the guarded publish barrier after failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'file-hashing', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
     id: 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers',
     proposal: 'use a compressed remote index to justify unbounded database row parallelism across plugin groups once batching begins',
     rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded row parallelism can still erase the group-owned commit order and backpressure evidence needed to recover a partial failure',

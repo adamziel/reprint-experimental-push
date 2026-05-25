@@ -203,6 +203,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-window-sizing')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-digest-skips-large-upload-publish')?.rejectedGate,
     'recovery',
   );
@@ -213,6 +217,9 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-upload')?.rejectedGate,
     'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-window-sizing')?.violates.includes('file-hashing'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'index-and-compressed-row-batch-completes-plugin-install')?.rejectedGate,
