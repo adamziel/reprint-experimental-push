@@ -1943,6 +1943,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-update-writeback',
+    proposal: 'treat a compressed remote index plus a cached file fingerprint as enough proof to skip plugin update writeback',
+    rejectedBecause: 'planning evidence and cached file fingerprints can trim duplicate lookup work, but they cannot prove the live row compares, metadata writes, or the atomic-group barrier survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-manifest-hash-skips-plugin-update-writeback',
     proposal: 'treat a compressed remote index plus a cached manifest hash as enough proof to skip plugin update writeback',
     rejectedBecause: 'planning evidence and cached manifest hashes can reduce lookup work, but they cannot prove the live compare, staged rows, or the atomic-group writeback survived failure',
