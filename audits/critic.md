@@ -6279,6 +6279,19 @@ Concise release-gate summary:
   boundary separately preserved the remote, rejected stale authority, and
   rebuilt retry scope from live hashes on this branch.
 
+Boundary-transfer rule:
+
+- a readable manual-review artifact or source-note comparison never carries
+  authority from one live boundary to the next, even if the route family,
+  package mount, or reviewer wording is unchanged;
+- if a later boundary introduces a remapped create target, a late-discovered
+  plugin-owned surface, or a new row/file/relationship-bearing record after
+  the first write, the earlier artifact stays historical context only until
+  that later boundary gets its own preserved remote, rejection point, and
+  fresh retry scope rebuilt from live hashes; and
+- a matching surface shape does not prove that the later boundary inherited
+  the earlier retry authority.
+
 Comparison rule:
 
 - Reprint, ZS-Sync, and ForkPress notes remain historical context unless this
