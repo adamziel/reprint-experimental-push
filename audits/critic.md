@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and an explicit `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict. That is real progress, but it is still lab evidence. It does not prove a rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
+The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and an explicit `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict. That is real progress, but it is still lab evidence. It does not prove a rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, and it does not close the release gate for production auth/session lifecycle, durable journal semantics, graph identity, preserved-remote retention, or plugin-driver coverage.
 
 ## What still blocks the claim
 
@@ -25,9 +25,9 @@ The supervised reliable-executor lane now has material retained-source evidence:
 
 ## Source-note comparison
 
-- Reprint contributes the staged transport shape, but not live mutation safety, preserved-remote retry, or auth/session proof.
-- ZS-Sync contributes scanner and batching ideas, but not source-mutation safety, identity remap safety, or plugin-owned surface coverage.
-- ForkPress contributes the strongest reliability vocabulary, but the source notes still do not prove a live WordPress boundary with preserved-remote auditability, lease/fencing, or plugin-driver coverage on this branch.
+- Reprint contributes staged transport and resumable-delivery lineage, but not live mutation safety, preserved-remote retry, or auth/session proof on this branch.
+- ZS-Sync contributes discovery and batching lineage, but not source-mutation safety, identity remap safety, or plugin-owned surface coverage on this branch.
+- ForkPress contributes audit and crash-consistency vocabulary, but the source notes still do not prove a live WordPress boundary with preserved-remote auditability, lease/fencing, or plugin-driver coverage on this branch.
 
 ## Changes required before production wording is defensible
 
