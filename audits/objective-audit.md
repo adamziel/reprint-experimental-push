@@ -24,16 +24,16 @@ The objective implies these minimum release requirements:
 
 ## Requirement Map
 
-| Requirement | Current proof | Missing proof | Release blocker |
-| --- | --- | --- | --- |
-| One-way pull base, then one-way push to live source | Planner and smoke tests model the direction of the flow | No live-source apply path proves the direction on the production boundary | Directional intent is not enough until the live source is mutated in the same run |
-| Live recheck at apply time | Planner tests require live remote preconditions | No production apply gate proves the recheck happens against the real source before mutation | A stale preflight can still pass unless the live boundary is enforced |
-| WordPress shape coverage | Lab tests cover rows, files, plugin ownership, and graph identity modeling | No production-shaped gate proves every touched shape survives on live storage | Partial shape coverage is not a release claim |
-| Crash/retry/replay safety | Recovery and journal tests cover restart classifications | No crash boundary proof on live storage, duplicate-request proof, or stale-lease proof | Restart classes in fixtures do not prove durability on the real source |
-| Auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver | Optional smokes and benchmark fixtures cover pieces of the matrix | No single required command composes all of them at release time | Disconnected coverage cannot be promoted to a release gate |
-| Real remote/local topology | Some smokes exercise lab routes and local aliases | No checked-in required gate proves a real remote/local topology instead of a lab-backed route | Lab topology can satisfy tests while the live source remains unproven |
-| Speed claim or explicit refusal | Benchmark tests refuse unsupported throughput claims | No measured live-path speed result and no enforced `speed unclaimed` release command | Refusal-only evidence blocks overclaiming but does not release the speed claim, and silent omission is not acceptable |
-| Required release entrypoint | None | No `verify`, `release`, or `verify:release` script in `package.json`; this checkout also has no `.github/workflows/` gate, and the benchmark surface still reports `productionThroughput: 'not-claimed'` | Green optional runs can bypass the release decision entirely, so the repo still has no mandatory place where the live-source verdict, `speed unclaimed` refusal, or measured throughput result must appear |
+| Requirement | Executable proof | Lab / fixture proof | Docs-only proof | Missing proof | Release blocker |
+| --- | --- | --- | --- | --- | --- |
+| One-way pull base, then one-way push to live source | Planner tests model directionality | Authenticated and Playground smokes stay `labBacked: true` | Audit prose names the one-way flow | No live-source apply run proves the direction on the production boundary | Directional intent is not enough until the live source is mutated in the same run |
+| Live recheck at apply time | Planner tests require live remote preconditions | Fixture smokes model stale-claim rejection | Audit prose says apply must recheck live state | No production apply gate proves the recheck happens against the real source before mutation | A stale preflight can still pass unless the live boundary is enforced |
+| WordPress shape coverage | Benchmark and journal tests cover modeled rows, files, and graph identity | Playground smokes exercise a subset of those shapes | Audit prose names the shapes that must survive | No production-shaped gate proves every touched shape survives on live storage | Partial shape coverage is not a release claim |
+| Crash/retry/replay safety | Recovery and journal tests cover restart classifications | File-backed journal fixtures simulate restarts and corruption | Audit prose names crash, retry, replay, duplicate, and lease-expiry cases | No crash boundary proof on live storage, duplicate-request proof, or stale-lease proof | Restart classes in fixtures do not prove durability on the real source |
+| Auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver | Benchmark report assembles several evidence slices in one model run | Optional smokes cover pieces of the matrix | Audit prose names the required checks | No single required command composes all of them at release time | Disconnected coverage cannot be promoted to a release gate |
+| Real remote/local topology | Some smokes exercise lab routes and local aliases | Playground routes run against a local fixture topology | Audit prose notes the topology requirement | No checked-in required gate proves a real remote/local topology instead of a lab-backed route | Lab topology can satisfy tests while the live source remains unproven |
+| Speed claim or explicit refusal | Benchmark tests refuse unsupported throughput claims | Benchmark model runs emit `productionThroughput: 'not-claimed'` | Audit prose says `speed unclaimed` is the only defensible wording until measured | No measured live-path speed result and no enforced `speed unclaimed` release command | Refusal-only evidence blocks overclaiming but does not release the speed claim, and silent omission is not acceptable |
+| Required release entrypoint | None | None | Audit prose names a required release command | No `verify`, `release`, or `verify:release` script in `package.json`; this checkout also has no `.github/workflows/` gate | Green optional runs can bypass the release decision entirely, so the repo still has no mandatory place where the live-source verdict, `speed unclaimed` refusal, or measured throughput result must appear |
 
 ## Test Audit
 
@@ -75,6 +75,16 @@ The test gap matters because the current suite has no executable proof of the pr
 - none of them prove the live-source boundary that the objective requires
 
 The test surfaces themselves are not stronger than that evidence boundary. [`audits/test-proof-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/test-proof-audit.md) records the same limit from the test side: the suite proves guardrails and refusals, not no data loss, reliability, or speed at the live-source boundary.
+
+## Evidence Table
+
+| Evidence class | Current proof | Missing proof | Release blocker |
+| --- | --- | --- | --- |
+| Executable proof | `node --test` passes across planner, recovery journal, and guarded benchmark tests | It is still local, model-driven, or fixture-backed | Useful regression coverage only |
+| Lab / fixture proof | Playground smokes and temp-file journal tests exercise auth, journal, and route shapes | The live source, real storage boundary, and release topology are not proven | Cannot close a production release claim |
+| Docs-only proof | Audit text, lane notes, and `labBacked: true` labels describe the intended safety matrix | Descriptions do not mutate the live source or enforce the gate | Informative only |
+| Missing proof | No required `verify` / `release` / `verify:release` script, no checked-in CI workflow, no measured live-path throughput, no live-source mutation proof | The objective requires a mandatory, production-bound release decision | Blocks release |
+| Release blockers | `speed unclaimed` remains unproven by a required command, live-source boundary not exercised, safety matrix not composed in one entrypoint | Any green optional run can still bypass the real release decision | Hard blocker |
 
 Only the first bucket would count as release proof, and it does not exist in this checkout. The current repository only has lab / fixture proof and docs-only proof, so it still falls short of the live-source release boundary. In other words, the suite can reject unsafe states, but it cannot certify a live push, no data loss, or reliable speed on the production path. A passing lab suite here is still compatible with a release that would lose writes, fail under a crash, or have no measured throughput at all.
 
