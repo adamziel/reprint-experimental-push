@@ -14123,3 +14123,64 @@ test('no-data-loss blocked partial recovery keeps inspectable artifacts and stay
   assert.equal(retryError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
   assert.equal(remote.db.wp_posts['ID:2'], undefined);
 });
+
+test('no-data-loss recovery contract only accepts old-remote, fully-updated-remote, or blocked-recovery with artifacts', () => {
+  assert.deepEqual([...ACCEPTABLE_RECOVERY_STATES].sort(), [
+    'blocked-recovery',
+    'fully-updated-remote',
+    'old-remote',
+  ]);
+
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const failureJournalPath = tempRecoveryJournalPath();
+  const failureJournal = openRecoveryJournal(failureJournalPath, { truncate: true, now: fixedNow });
+  const preMutationRemote = baseSite();
+  const preMutationFailure = captureError(() =>
+    applyPlan(preMutationRemote, plan, {
+      durableJournal: failureJournal,
+      failBeforeMutation: true,
+    }),
+  );
+  failureJournal.close();
+
+  assertFailureRecoveryState(preMutationFailure.details.recovery, 'old-remote');
+  assert.equal(preMutationFailure.details.recovery.artifacts.remote, undefined);
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedJournal });
+  completedJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+
+  const partialJournalPath = tempRecoveryJournalPath();
+  const partialJournal = openRecoveryJournal(partialJournalPath, { truncate: true, now: fixedNow });
+  const partialRemote = baseSite();
+  const partialFailure = captureError(() =>
+    applyPlan(partialRemote, plan, {
+      durableJournal: partialJournal,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+  partialJournal.close();
+
+  assertFailureRecoveryState(partialFailure.details.recovery, 'blocked-recovery');
+  assert.ok(partialFailure.details.recovery.artifacts.remote);
+  assert.ok(partialFailure.details.recovery.artifacts.journal);
+});
