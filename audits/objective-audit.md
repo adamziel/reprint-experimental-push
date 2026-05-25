@@ -26,6 +26,14 @@ Current command surface confirms the gap: `package.json` exposes `test`, `plan`,
 
 ## Requirement Map
 
+Proof buckets used below:
+
+- `Executable proof` means a required command or test reaches the live-source boundary and can fail the release.
+- `Lab / fixture proof` means the evidence is real code execution, but it is still scoped to local fixtures, Playground, or model-only storage.
+- `Docs-only proof` means prose, labels, or audit statements with no executable boundary.
+- `Missing proof` means the repo has no current evidence for the requirement at the release boundary.
+- `Release blocker` states why the requirement still cannot be promoted.
+
 | Requirement | Executable proof | Lab / fixture proof | Docs-only proof | Missing proof | Release blocker |
 | --- | --- | --- | --- | --- | --- |
 | One-way pull base, then one-way push to live source | Planner tests model directionality only | Authenticated and Playground smokes stay `labBacked: true` | Audit prose names the one-way flow | No live-source apply run proves the direction on the production boundary | Directional intent is not enough until the live source is mutated in the same run |
@@ -44,6 +52,14 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 - `No data loss`: no current test mutates the live source and then proves the same writes survived the release boundary without loss, duplication, or reordering.
 - `Reliable`: no current test composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks into one enforced release decision against real storage.
 - `Fast`: no current test reports a measured live-path throughput result or a release threshold; [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the opposite only, by asserting `report.throughput.productionThroughput === 'not-claimed'` and by rejecting unsupported production throughput claims. That is useful blocker evidence, but it is not a speed result, so any release command must surface `speed unclaimed` explicitly instead of omitting the claim. A green refusal-only benchmark is not a release verdict.
+
+| Evidence class | Current state | Release reading |
+| --- | --- | --- |
+| Executable proof | Present only for fixture, model, and refusal behavior | Useful for regression and blocker preservation, not for release promotion |
+| Lab / fixture proof | Present in Playground smokes, local journals, and benchmark harnesses | Useful evidence of behavior under controlled inputs, but still not live-source proof |
+| Docs-only proof | Present in audits, progress pages, and blocker notes | Advisory only; cannot close the release gap |
+| Missing proof | Live-source mutation, crash survival on production storage, enforced release entrypoint, measured throughput | These are the missing gates that keep the objective blocked |
+| Release blocker | The repo can still pass without proving the live boundary | No production release claim should be made yet |
 
 | Test surface | What it really proves | What it does not prove | Release reading |
 | --- | --- | --- | --- |
