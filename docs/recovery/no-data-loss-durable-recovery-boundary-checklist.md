@@ -12,6 +12,7 @@ Boundary checklist:
 - failure after staging must leave the remote untouched and record `old-remote`
 - failure after dependency validation must leave the remote untouched and record `old-remote`
 - replay of a completed plan with a matching journal must return `fully-updated-remote`
+- replay of a completed plan must stay `fully-updated-remote` even if replay journaling itself fails
 - replay of a completed plan with remote drift must return `blocked-recovery` with journal and remote artifacts
 - retry after a blocked replay must remain blocked until the remote matches the journaled after state
 - replay of a completed plan must not duplicate inserts or resurrect stale local file content
