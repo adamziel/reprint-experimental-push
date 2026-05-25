@@ -10,7 +10,9 @@ and leases/fencing on a real-site rerun. The retired critique is the one that
 said no `verify:release` command exists; do not reintroduce it on this branch.
 The current blocker on this audit branch is the missing rerunnable live
 boundary with preserved-remote audit evidence on a real local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL`.
+Docker `REPRINT_PUSH_SOURCE_URL`; the absence of a branch-local real-site
+release command is secondary to that missing live proof, not a substitute for
+it.
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
@@ -60,6 +62,9 @@ What still blocks production-grade wording:
   review artifact stays compatibility evidence only until the same live
   boundary is rerun on a real local, Playground, or Docker
   `REPRINT_PUSH_SOURCE_URL`;
+- a completed runtime pass must be replayable as a command with preserved
+  remote and apply-time revalidation evidence, not merely described in review
+  prose or inferred from a successful lab harness; and
 - "manual resolution", "comparison passed", and "production-ready" remain
   false reliability unless the preserved remote stayed inspectable after
   rejection and the retry scope was rebuilt from live hashes on this branch.
