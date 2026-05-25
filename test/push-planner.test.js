@@ -6057,6 +6057,56 @@ test('completed-plan replay reuses the durable journal without duplicating targe
   );
 });
 
+test('completed-plan replay blocks stale drift and keeps the remote inspectable', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  replayRemote.files['index.php'] = '<?php echo "local drift";';
+  const replaySnapshot = JSON.stringify(replayRemote);
+
+  const replayError = captureError(() =>
+    applyPlan(replayRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }));
+
+  const staleReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  staleReplayRemote.files['index.php'] = '<?php echo "stale drift";';
+  const staleReplayError = captureError(() =>
+    applyPlan(staleReplayRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }));
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.ok(replayError instanceof PushPlanError);
+  assertAcceptableRecoveryState(replayError.details.recovery);
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.journal);
+  assert.ok(replayError.details.recovery.artifacts.remote);
+  assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "local drift";');
+  assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(staleReplayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(staleReplayError.details.recovery.artifacts.journal);
+  assert.ok(staleReplayError.details.recovery.artifacts.remote);
+  assert.equal(staleReplayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale drift";');
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    0,
+  );
+});
+
 test('mid-apply failure only leaves blocked recovery with artifacts, never a silent partial remote', () => {
   const base = baseSite();
   const local = baseSite();

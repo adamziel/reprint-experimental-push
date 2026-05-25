@@ -19,6 +19,8 @@ classifiable as unchanged.
 Completed-plan replay is only acceptable when it returns `fully-updated-remote` and stays inert.
 If the replayed remote has drifted since completion, the result must be `blocked-recovery`
 with journal and remote artifacts, not a silent retry.
+That replay contract includes the no-duplication rule for inserts and the
+no-resurrection rule for stale local data.
 
 Durable recovery must make those states inspectable after restart:
 
