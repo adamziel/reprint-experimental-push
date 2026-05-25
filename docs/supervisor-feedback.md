@@ -23,6 +23,9 @@ changed, what is helping, what is not helping, and the next nudge.
 
 Note: this lane's page update becomes live only after merge to `main`.
 
+<details>
+<summary>Older supervisor snapshots</summary>
+
 ## 2026-05-25 03:26:10 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and feedback note still line up.
@@ -184,6 +187,8 @@ Note: this lane's page update becomes live only after merge to `main`.
 | Progress publisher | Owner: lane. Next test: keep the page dated, concise, and linked to evidence. |
 
 Note: this lane's page update becomes live only after merge to `main`.
+
+</details>
 
 ## 2026-05-25 03:07:56 CEST - Supervisor Snapshot
 
