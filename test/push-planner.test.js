@@ -14122,6 +14122,41 @@ test('no-data-loss blocked partial recovery keeps inspectable artifacts and stay
   assertFailureRecoveryState(retryError.details.recovery, 'blocked-recovery');
   assert.equal(retryError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
   assert.equal(remote.db.wp_posts['ID:2'], undefined);
+
+  const insertedJournalPath = tempRecoveryJournalPath();
+  const insertedJournal = openRecoveryJournal(insertedJournalPath, { truncate: true, now: fixedNow });
+  const insertedRemote = baseSite();
+  const insertedFailure = captureError(() =>
+    applyPlan(insertedRemote, plan, {
+      durableJournal: insertedJournal,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 2,
+    }),
+  );
+  insertedJournal.close();
+
+  assert.ok(insertedFailure instanceof PushPlanError);
+  assertFailureRecoveryState(insertedFailure.details.recovery, 'blocked-recovery');
+  assert.equal(
+    Object.keys(insertedFailure.details.recovery.artifacts.remote.db.wp_posts).filter((key) => key === 'ID:2').length,
+    1,
+  );
+
+  const insertedRetryJournal = openRecoveryJournal(insertedJournalPath, { now: fixedNow });
+  const insertedRetry = applyPlan(insertedRemote, plan, {
+    durableJournal: insertedRetryJournal,
+    journal: insertedFailure.details.recovery.artifacts.journal,
+  });
+  insertedRetryJournal.close();
+
+  assert.equal(insertedRetry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(insertedRetry.recoveryState.artifacts.remote, undefined);
+  assert.equal(insertedRetry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    Object.keys(insertedRetry.site.db.wp_posts).filter((key) => key === 'ID:2').length,
+    1,
+  );
+  assert.equal(insertedRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
 test('no-data-loss recovery contract only accepts old-remote, fully-updated-remote, or blocked-recovery with artifacts', () => {
