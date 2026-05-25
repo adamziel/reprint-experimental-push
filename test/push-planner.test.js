@@ -11481,6 +11481,51 @@ test('durable completed replay with stale local data stays inert and keeps the c
   );
 });
 
+test('completed plan replay ignores stale local inserts and keeps the completed recovery envelope', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const staleLocal = JSON.parse(JSON.stringify(local));
+  staleLocal.files['index.php'] = '<?php echo "stale local";';
+  staleLocal.db.wp_posts['ID:2'].post_title = 'Inserted stale locally';
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const reopenedJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: reopenedJournal,
+    journal: completed.journal,
+  });
+  reopenedJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(staleLocal.files['index.php'], '<?php echo "stale local";');
+  assert.equal(staleLocal.db.wp_posts['ID:2'].post_title, 'Inserted stale locally');
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length >= 1,
+    true,
+  );
+});
+
 test('durable recovery keeps append-only retries and completed replays idempotent across the full cycle', () => {
   const base = baseSite();
   const local = baseSite();
