@@ -156,16 +156,16 @@ Conservative comparison summary:
 Historical comparison summary:
 
 - Reprint is the strongest source for staged transport and resumability, but
-  its notes only support push transport shape here. They do not prove live
+  its notes only illustrate push transport shape here. They do not prove live
   mutation safety, identity remap handling, plugin-owned data discovery, or
   partial-write classification on this branch.
-- ZS-Sync is useful for scanner/resource batching and cursoring, but it does
-  not prove write authorization, stale-drift rejection, or retry authority
-  after a live remote changes.
+- ZS-Sync is useful for scanner/resource batching and cursoring, but it only
+  illustrates bounded discovery and does not prove write authorization,
+  stale-drift rejection, or retry authority after a live remote changes.
 - ForkPress is the strongest source for conflict vocabulary and durability
-  language, but it still does not prove that a readable review artifact can
-  be reused safely after drift, or that hidden plugin-owned state outside the
-  allowlist is blocked before retry.
+  language, but it still only illustrates review framing. It does not prove
+  that a readable review artifact can be reused safely after drift, or that
+  hidden plugin-owned state outside the allowlist is blocked before retry.
 
 Most important unresolved trap:
 
@@ -4325,7 +4325,8 @@ Release gate additions needed before production-grade push support:
    branch reruns the same live boundary, records the preserved remote, and
    rebuilds retry scope from fresh live hashes. Matching the note's route
    family, package layout, or reviewer wording does not convert upstream
-   provenance into current retry authority.
+   provenance into current retry authority, and a route-shaped smoke can still
+   mask a stale remote, remapped create target, or late plugin-owned surface.
 8. The release gate must fail closed and record the exact rejection reason
    whenever any of the above proofs is missing; route shape, package mount,
    fixture replay, readable review artifacts, source-note comparison, and
