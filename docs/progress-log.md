@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-# 2026-05-25 - Public Status Audit 11:41:02
+# 2026-05-25 - Public Status Audit 11:42:10
 
-<a id="2026-05-25-public-status-audit-114102"></a>
+<a id="2026-05-25-public-status-audit-114210"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 11:41:02 CEST`) and kept the public anchor on
+  (`2026-05-25 11:42:10 CEST`) and kept the public anchor on
   `npm run verify:release` from commit `3089aee2`.
 - The first screen now tightens the retained-source lab proof in `63a3502f`
   with `authSessionType`, `applyCommitted`, and `durableJournal.rows: 17`,
