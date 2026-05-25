@@ -10023,6 +10023,58 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and fi
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks plugin-owned deletes when a matching independent edit, file type swap, and remote-only plugin drift are present', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery/photo.txt'] = 'base photo';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery/photo.txt'] = { type: 'directory' };
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+      driver: 'wp-option',
+      allowDelete: true,
+    }),
+  };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/gallery/photo.txt'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery/photo.txt');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutation, undefined);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+
+  assert.equal(plan.blockers[0].class, 'stale-plugin-owner-context');
+  assert.equal(plan.blockers[0].resourceKey, resourceKey);
+  assert.equal(plan.blockers[0].ownerContext.some((entry) => entry.resourceKey === 'plugin:forms'), true);
+  assert.equal(plan.blockers[0].ownerContext.some((entry) => entry.resourceKey === 'file:wp-content/plugins/forms/forms.php'), true);
+  assert.equal(JSON.stringify(plan.blockers).includes('remote-only plugin drift'), false);
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete and matching independent restore stay safe with apply verification', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
