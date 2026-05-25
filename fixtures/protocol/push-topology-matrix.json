@@ -28,6 +28,7 @@
       "remote-base and remote-changed are the same remote identity observed at different times",
       "dry-run and apply remain separate remote calls",
       "apply revalidates fresh live evidence before every batch and again at the storage boundary",
+      "journal inspection stays read-only before inspect-first recovery can mutate",
       "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
     ]
   },
@@ -49,6 +50,13 @@
       "the remote changed after the dry-run receipt",
       "the journal cannot prove a safe finish, rollback, or block"
     ]
+  },
+  "dry_run_receipt": {
+    "mode": "dry-run",
+    "mutates": false,
+    "effect": "eligibility evidence only",
+    "not_a_lock": true,
+    "reused_for_apply": false
   },
   "journal_fencing": {
     "claim_generation": 4,

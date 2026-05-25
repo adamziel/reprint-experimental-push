@@ -33,6 +33,8 @@
       "proof": [
         "one private network",
         "remote-base and remote-changed are the same remote identity at different times",
+        "dry-run and apply are separate remote operations",
+        "journal inspection remains read-only before mutating recovery",
         "browser-visible inspection goes through the sandbox-provided 8080 ingress"
       ]
     },
@@ -50,6 +52,8 @@
   },
   "required_invariants": [
     "dry-run and apply are separate remote operations",
+    "remote snapshot hash listing is planning evidence, not write authority",
+    "dry-run is a receipt, not a lock",
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",

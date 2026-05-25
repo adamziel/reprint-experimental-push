@@ -45,6 +45,13 @@ Dry-run and apply are therefore separate remote calls. A valid dry-run receipt
 is not a lock, and a later apply must still fail if the remote changed after
 the snapshot listing or after the plan was accepted.
 
+The dry-run receipt is eligibility-only metadata:
+
+- it records that the proposed plan was acceptable at upload time
+- it does not reserve remote state
+- it does not replace the live hash listing for apply-time revalidation
+- it cannot be replayed as write authority after the remote drifts
+
 The executor also preserves the pull/export/import boundary instead of
 recomputing provenance locally:
 
@@ -93,6 +100,15 @@ The test topology follows the same split:
 - Docker and Playground must prove the same identity twice, not two different sites
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 - remote tunnels are disallowed
+
+The packaging topology is identical in both Docker and Playground:
+
+- one remote source site seeds the persisted pull base
+- one local edited site carries the user changes
+- one later remote snapshot proves the same remote identity drifted between dry-run and apply
+- one runner process owns preflight, planning, upload, inspect, and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
+- no remote tunnel is allowed in either mode
 
 ## Executor Responsibilities
 

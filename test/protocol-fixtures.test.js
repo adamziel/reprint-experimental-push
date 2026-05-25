@@ -417,6 +417,16 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.equal(executorTopologyProof.topology.networking.ingress_port, 8080);
   assert.equal(executorTopologyProof.topology.networking.proxy_policy, 'local-only');
   assert.equal(executorTopologyProof.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    executorTopologyProof.topology.docker.proof.includes(
+      'dry-run and apply are separate remote operations',
+    ),
+  );
+  assert.ok(
+    executorTopologyProof.topology.docker.proof.includes(
+      'journal inspection remains read-only before mutating recovery',
+    ),
+  );
 });
 
 test('push topology fixture encodes one remote, one local, one runner over sandbox ingress only', () => {
@@ -473,6 +483,11 @@ test('push topology fixture encodes one remote, one local, one runner over sandb
       'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
     ),
   );
+  assert.ok(
+    topology.test_topology.drift_proof.includes(
+      'journal inspection stays read-only before inspect-first recovery can mutate',
+    ),
+  );
 });
 
 test('push topology matrix fixture captures the minimal docker and playground proof shape', () => {
@@ -509,6 +524,11 @@ test('push topology matrix fixture captures the minimal docker and playground pr
   assert.equal(matrix.apply_revalidation.before_each_batch, 'fresh live hashes');
   assert.equal(matrix.apply_revalidation.at_storage_boundary, 'fresh live hashes plus storage-guard proof');
   assert.ok(matrix.apply_revalidation.rejected_if.includes('the remote changed after the dry-run receipt'));
+  assert.equal(matrix.dry_run_receipt.mode, 'dry-run');
+  assert.equal(matrix.dry_run_receipt.mutates, false);
+  assert.equal(matrix.dry_run_receipt.effect, 'eligibility evidence only');
+  assert.equal(matrix.dry_run_receipt.not_a_lock, true);
+  assert.equal(matrix.dry_run_receipt.reused_for_apply, false);
   assert.equal(matrix.recovery_inspect.mode, 'inspect');
   assert.equal(matrix.recovery_inspect.mutates, false);
   assert.deepEqual(matrix.recovery_inspect.requires, [
