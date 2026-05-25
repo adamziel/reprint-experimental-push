@@ -114,6 +114,17 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     protocolDocs.includes(
       'it is the canonical machine-readable bridge from the exporter/importer pull pipeline into the push write path',
+      'push-protocol-extension-contract.json` is the most complete production',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'The operator-facing test shape is therefore one remote source, one imported',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'push-protocol-extension-contract.json` is the most complete production',
     ),
   );
   assert.ok(
@@ -154,6 +165,10 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'That order is the production proof stack:',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
       'dry-run and apply remain separate remote operations even when the same',
     ),
   );
@@ -175,6 +190,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'mutating recovery only happens after inspect proves the branch safe',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'The production test topology is therefore one remote source, one imported',
     ),
   );
 });

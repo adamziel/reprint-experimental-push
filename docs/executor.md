@@ -53,7 +53,7 @@ The pull-to-push bridge is one-way:
 | --- | --- | --- |
 | Exporter merge-base scan | `push_preflight` | Bind the immutable base package to one live remote identity and one short-lived session. |
 | Importer persisted base package | `push_snapshot_hashes` | Use it as planning provenance only. |
-| Coverage evidence | `push_plan_dry_run` | Upload the canonical plan as an eligibility receipt. |
+| Coverage evidence | `push_plan_dry_run` | Upload the canonical dry-run plan as an eligibility receipt. |
 | Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
 | Persisted provenance checksum | `push_journal` | Read durable evidence only. |
 | Coverage and lineage replay | `push_recover inspect` | Classify recovery before any mutating repair. |
@@ -172,6 +172,20 @@ The same topology proof stays fixed in both Docker and Playground:
 - `remote-changed` is the same remote identity observed later after drift.
 - `runner` owns preflight, snapshot listing, dry-run upload, apply, journal
   inspect, and recovery.
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy.
+- remote tunnels are disallowed.
+
+The production test topology is therefore one remote source, one imported
+local edit site, and one later drift witness:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` carries the imported local edits.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only actor allowed to preflight, list hashes, dry-run,
+  apply, inspect the journal, or recover.
+- Docker uses one private network.
+- Playground uses separate disposable blueprints.
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy.
 - remote tunnels are disallowed.

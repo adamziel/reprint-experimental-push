@@ -56,7 +56,7 @@ The auth floor is never relaxed for push:
   path or the inspect-first recovery path
 
 The pull/export/import pipeline is the only source of immutable push
-provenance:
+provenance, and push consumes that provenance as immutable input:
 
 - exporter discovers the merge base and coverage evidence
 - importer persists the base package as immutable provenance
@@ -241,6 +241,18 @@ The same topology should be exercised in both harnesses:
 - both harnesses require apply-time revalidation against fresh live hashes
 - both harnesses keep recovery inspect-first and read-only until the branch is
   proven safe
+
+The operator-facing test shape is therefore one remote source, one imported
+local edit site, and one later drift witness of the same remote identity:
+
+- `remote-base` is the remote source site
+- `local-edited` is the imported local edited site
+- `remote-changed` is the later drift witness for the same remote identity
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
 
 The topology proof is the same in both harnesses:
 
