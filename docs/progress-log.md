@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 06:56:43 CEST.
+- Last update: 2026-05-25 06:57:11 CEST.
 - Status: no new proof; the visible page, log, and latest audit note still line up.
-- Trend: the scan view is shorter and easier to audit.
+- Trend: the scan view stays short and easier to audit.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: production auth/session, durable journal writes, leases/fencing, WordPress graph identity, Playground integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) stays compact and keeps the proof trail linked.
 - Pending proof gates: auth/session, durable journal writes, leases/fencing, WordPress graph identity, Playground integration, and plugin drivers.
 - Next nudge: keep the gates blocked until a worker proves one concrete gap at a time, starting with auth/session, journal internals, or graph identity mapping.
 - Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. This lane-local copy becomes live only after merge to `main`; GitHub Pages will lag until then.
-- Audit note: [audits/supervisor-note-20260525-065536.md](../audits/supervisor-note-20260525-065536.md) captures this short alignment pass in one screen.
+- Audit note: [audits/supervisor-note-20260525-065711.md](../audits/supervisor-note-20260525-065711.md) captures this short alignment pass in one screen.
 
 ## 2026-05-25 - Supervisor Follow-up
 
