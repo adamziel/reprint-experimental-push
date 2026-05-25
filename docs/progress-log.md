@@ -4,17 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 13:05:32
+## 2026-05-25 - Public Status Audit 13:18:27
 
-<a id="2026-05-25-public-status-audit-130532"></a>
+<a id="2026-05-25-public-status-audit-131827"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 13:05:32 CEST`) and kept the runtime anchor on
+  (`2026-05-25 13:18:27 CEST`) and kept the runtime anchor on
   `npm run verify:release` from commit `3089aee2`.
-- The first screen now adds `3d8748b6`, which makes the release command fail
-  closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`; `471440b9` still shows
-  `REPRINT_PUSH_SECRET_REQUIRED`, and `889bd37a` keeps
-  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible.
+- The first screen now adds `3d8748b6`, which adds the fail-closed
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` gate; `471440b9` still proves
+  `REPRINT_PUSH_SECRET_REQUIRED` fails closed, and `889bd37a` keeps
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible. Recovery evidence in
+  `d3d04595` now tightens the envelope so `old-remote` and
+  `fully-updated-remote` require journal artifacts, while `blocked-recovery`
+  requires both journal and remote artifacts.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
