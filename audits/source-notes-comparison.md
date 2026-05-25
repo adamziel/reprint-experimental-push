@@ -163,6 +163,9 @@ Release-barrier summary:
   drifted remote.
 - A readable manual-review artifact is audit evidence only until it is shown
   unusable as retry authority after drift.
+- A release gate must fail closed and record the exact rejection reason for
+  every missing proof item; "manual resolution" or "comparison passed" by
+  itself is not enough.
 - A live-looking hash from a fixture-backed or copied-lab path never proves
   the live executor ran.
 - Reprint, ZS-Sync, and ForkPress notes never become current proof just

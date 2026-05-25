@@ -2348,7 +2348,10 @@ Production-readiness checklist:
   boundary; otherwise the note remains historical context only and cannot
   support any production wording.
 - Show a release gate that fails closed when any of the above is missing and
-  that records the exact rejection reason for audit and retry.
+  that records the exact rejection reason for audit and retry. A gate that
+  only logs "manual resolution" or "comparison passed" without the preserved
+  remote, stale-artifact rejection point, and fresh retry scope is not a
+  release gate.
 
 False reliability claims to avoid:
 
@@ -2363,6 +2366,9 @@ False reliability claims to avoid:
 - "Manual resolution succeeded" when the remote was not preserved for audit,
   the stale approval stayed reusable, or the retry was not rebuilt from fresh
   live evidence.
+- "Release gate passed" when the evidence set omits any blocker above but
+  still emits a lab-shaped success marker. Production wording requires the
+  exact rejection reason for every missing proof item.
 - "The plugin is safe" when the proof omits plugin-owned state outside the
   allowlist, including generated files, cron rows, runtime registries, custom
   tables, or other late-discovered side effects.
