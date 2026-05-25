@@ -7,6 +7,18 @@ site, and one later drift observation of the same remote identity. The
 production harness keeps dry-run and apply separate, revalidates at apply
 time, and uses the same `8080`-visible topology in Docker and Playground.
 
+The checked release boundary is the same one-remote, one-local, one-drift
+harness the fixtures model:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits derived from that package
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
 ## Executor Summary
 
 The executor runs one fixed production ladder in both Docker and Playground:
@@ -206,6 +218,20 @@ harness used by the protocol contract:
 - Docker and Playground both keep the route names aligned
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
+
+The checked release command is:
+
+```sh
+npm run verify:release
+```
+
+That command must either exercise the real Playground preflight branch or
+fail closed at the explicit live-source or secret gate before dry-run or apply
+begins. The same checked surface also preserves the first remaining
+production-only boundary verdict:
+
+- `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`
+- `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`
 
 That checked release entrypoint has two exact outputs:
 
