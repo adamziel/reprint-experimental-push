@@ -42,6 +42,8 @@ and one live remote identity that must be revalidated at apply time.
 The same pull-to-push bridge applies here:
 
 - exporter/importer provenance produces the immutable pull base package
+- importer persistence is the only source of the base package that push may
+  bind to, so push never reads from a mutable snapshot cache
 - preflight binds that package to one live remote identity and one short-lived
   push session
 - remote snapshot hash listing stays planning-only and may page through the
@@ -63,6 +65,15 @@ The production test topology is the same in Docker and Playground:
 - one runner process that owns all push protocol calls
 - browser-visible inspection only through the sandbox-provided `8080` ingress
   and a local-only proxy
+
+That gives the minimal remote/local pair the task asks for:
+
+- `remote-base` is the remote site under observation
+- `local-edited` is the imported local site carrying the candidate changes
+- `remote-changed` is the same remote site observed later after drift
+- the runner proves dry-run and apply are separate by taking a fresh snapshot
+  listing, uploading a dry-run plan, and then applying only after live
+  revalidation succeeds
 
 `push-topology-matrix.json`, `push-deployment-topology-contract.json`, and
 `push-remote-liveness-topology-contract.json` are the fixtures that pin that
