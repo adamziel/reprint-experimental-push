@@ -75,6 +75,7 @@ The tests do the right kind of negative work, but they are not positive release 
 Direct command-surface recheck on 2026-05-25:
 
 - [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and optional `test:playground:*` helpers.
+- This checkout still does not expose `verify:release` in its own `package.json`; that command only exists on `origin/lane/reliable-executor` at `2ac32891`.
 - `origin/lane/reliable-executor` at [`2ac32891`](https://github.com/adamziel/reprint-experimental-push/commit/2ac32891) does expose `verify:release` and `test:playground:production-shaped-missing-secret`, and still maps the release verifier to `test:playground:production-shaped-release-verify`, so command absence is no longer the right blocker to cite.
 - The preceding remote tips at [`889bd37a`](https://github.com/adamziel/reprint-experimental-push/commit/889bd37a) and [`9975dfc9`](https://github.com/adamziel/reprint-experimental-push/commit/9975dfc9) sharpen the remaining production boundary with the explicit verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`.
 - This checkout does not carry that release gate in-tree. That removes the old command-absence objection from the blocker list, but the primary release blocker remains the missing production-boundary proof for auth/session lifecycle plus durable journal semantics.
