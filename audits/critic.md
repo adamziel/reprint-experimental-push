@@ -218,6 +218,14 @@ Release-grade checklist:
   looked production-shaped.
 - The live remote drifted between dry-run and apply, and the write failed
   closed before mutation.
+- Any stale manual-review artifact stayed audit-only after drift, and the
+  retry rebuilt scope from fresh live hashes instead of reusing the old
+  approval against a different row, file, relationship-bearing record, or
+  plugin-owned surface.
+- Any Reprint, ZS-Sync, or ForkPress comparison named the exact upstream
+  revision or worktree state and said whether that state was reverified at
+  the same live mutation boundary; otherwise the comparison stayed historical
+  context only.
 - If the live remote drifted, the stale approval was rejected before any
   mutation and the preserved remote remained auditable for retry review.
 - The stale approval stayed auditable but could not authorize a retry, a
