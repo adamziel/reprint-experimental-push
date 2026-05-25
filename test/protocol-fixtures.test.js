@@ -506,6 +506,8 @@ test('push contract fixture binds the pull handoff to the production push sequen
     readJson('fixtures/protocol/push-recovery-inspect-contract.json').session.remote_site_id,
     'remote-example',
   );
+  assert.equal(readJson('fixtures/protocol/push-recovery-inspect-contract.json').journal_fence.claim_generation, 4);
+  assert.equal(readJson('fixtures/protocol/push-recovery-inspect-contract.json').journal_fence.lease_expires_at, '2026-05-24T00:00:09Z');
   assert.equal(
     readJson('fixtures/protocol/push-recovery-inspect-contract.json').live_evidence.same_remote_identity,
     true,
@@ -641,6 +643,20 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     readJson('fixtures/protocol/push-executor-topology-proof.json').required_invariants.includes(
       'pull exporter/importer are the provenance source for push preflight, dry-run, apply, journal, and recovery',
+    ),
+  );
+  const authHeaders = readJson('fixtures/protocol/push-auth-headers.json');
+  assert.equal(authHeaders.read_only_request_headers['X-Auth-Signature'], 'hmac-sha256:export-auth-signature');
+  assert.ok(Object.hasOwn(authHeaders.dry_run_apply_or_mutating_recovery_headers, 'X-Reprint-Push-Session'));
+  assert.ok(authHeaders.canonical_push_signature_parts.includes('push_session'));
+  const authSessionFencing = readJson('fixtures/protocol/push-auth-session-fencing-contract.json');
+  assert.equal(authSessionFencing.session.push_session, 'psh_01j00000000000000000000000');
+  assert.equal(authSessionFencing.journal_row.claim_generation, 4);
+  assert.equal(authSessionFencing.journal_row.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(authSessionFencing.journal_row.storage_guard, 'filesystem-compare-rename');
+  assert.ok(
+    authSessionFencing.required_invariants.includes(
+      'claim generation and lease expiry fence stale workers before mutation',
     ),
   );
   assert.equal(contract.proofs.auth, 'push-auth-headers.json keeps read-only inspection on the existing HMAC family and requires push session, idempotency, and canonical push signature for dry-run, apply, and mutating recovery');
