@@ -3733,6 +3733,55 @@ test('production push topology and recovery fixtures keep auth, journal, lease, 
   assert.ok(protocolExtension.required_invariants.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
 });
 
+test('push protocol extension contract is the top-level production ladder and bridge proof', () => {
+  const protocolExtension = readJson('fixtures/protocol/push-protocol-extension-contract.json');
+
+  assert.equal(protocolExtension.contract_id, 'push-protocol-extension-production-contract');
+  assert.deepEqual(protocolExtension.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    protocolExtension.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.equal(
+    protocolExtension.pull_to_push_mapping.push_preflight,
+    'binds the persisted pull base package to one live remote identity and one short-lived push session',
+  );
+  assert.equal(
+    protocolExtension.production_boundary.remote_snapshot_hash_listing,
+    'planning evidence only and never write authority',
+  );
+  assert.equal(
+    protocolExtension.production_boundary.dry_run_plan_upload,
+    'uploads the canonical plan as an eligibility receipt, not a lock',
+  );
+  assert.equal(
+    protocolExtension.production_boundary.mutation_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run',
+  );
+  assert.equal(
+    protocolExtension.production_boundary.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.ok(
+    protocolExtension.topology.proof.includes(
+      'remote-base and remote-changed are the same remote identity observed at different times',
+    ),
+  );
+  assert.ok(
+    protocolExtension.required_invariants.includes(
+      'remote snapshot hash listing may page large sites but never becomes write authority',
+    ),
+  );
+});
+
 test('push pull mapping fixture preserves the one-way pull-to-push provenance boundary', () => {
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
   const executorTopology = readJson('fixtures/protocol/push-executor-topology-proof.json');
