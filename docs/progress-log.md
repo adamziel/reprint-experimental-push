@@ -4,6 +4,25 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 00:48:36
+
+<a id="2026-05-26-public-status-audit-004836"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-26 00:48:36 CEST`) after the recovery lane advanced to
+  `47b675c0`. The first screen stays concise: evidence progressed, release
+  gates remain `0/4`, and production WordPress auth/session lifecycle plus
+  durable journal storage with lease/fencing remain pending.
+- `c99b19d0` remains the newest release-surface evidence because it fixes the
+  release proof failure branches. `b725b2d3` remains the explicit production
+  auth/session release-boundary evidence; `b9aebe71` and `47b675c0` now cover
+  supporting no-data-loss and recovery proof; `4e13d882`, `63dd27cc`, and
+  `9208c2da` remain the latest critique, fast-path, and audit freshness
+  support.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-26 - Public Status Audit 00:25:18
 
 <a id="2026-05-26-public-status-audit-002518"></a>
