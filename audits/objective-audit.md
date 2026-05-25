@@ -209,6 +209,8 @@ The test suite is useful, but it does not yet prove the release claims it is mos
 - [`npm test`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a sanity check, not a release gate.
 - [`npm run test:playground`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is a lab smoke chain, not a production approval path.
 
+The important distinction is that the suite can reliably prove failure modes and boundary refusals, but it still does not provide one executable success path at the live-source release boundary. That means the strongest current tests are blockers, not approvers: they can tell you when a claim is unsafe, but they cannot yet certify that the claim is safe enough to ship.
+
 Current test verdict:
 
 - Strong at refusal, fixture integrity, and modeled guardrails.
