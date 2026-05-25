@@ -1038,6 +1038,10 @@ would reasonably read as equivalent.
 - Manual resolution is not a success condition unless the remote remains
   preserved for audit and the retry can be replayed safely from fresh live
   evidence.
+- Manual resolution is not a success condition if the remote changed after
+  review, even when the old approval is still readable; the stale artifact
+  must fail closed before write and the retry must start from fresh live
+  evidence.
 - Manual resolution is not production proof by itself; if the remote cannot be
   preserved for audit and the stale approval cannot be rejected in a
   retryable, user-auditable way before any write, the push must fail closed.
@@ -1080,6 +1084,9 @@ would reasonably read as equivalent.
   repo-specific live mutation path, and they must not be treated as current
   upstream evidence unless the upstream revision was rechecked at the same
   commit or worktree state.
+- If a comparison citation does not name the current upstream commit or
+  worktree state, it is historical context only and cannot support production
+  wording.
 - A production claim must also fail closed on five specific live scenarios:
   remote drift between dry-run and apply, create-time identity remapping,
   plugin-owned state outside the declared allowlist, partial file/DB/plugin
