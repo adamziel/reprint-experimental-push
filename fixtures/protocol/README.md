@@ -85,6 +85,9 @@ The production proof bundle is intentionally layered:
 - `push-remote-liveness-topology-contract.json` combines that liveness split
   with the one-remote, one-local, one-drift test topology so a review can
   cite a single compact proof for both sequencing and harness shape.
+- `push-production-push-recovery-contract.json` is the canonical
+  end-to-end production bundle for the pull provenance, push ladder, and
+  one-remote, one-local topology story.
 - `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
   listing clearly in the planning-only lane.

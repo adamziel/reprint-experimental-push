@@ -113,6 +113,10 @@ The topology proof means:
 - Docker and Playground both model the same one-remote, one-local,
   one-drift production proof
 
+The canonical machine-readable bundle for that proof is
+`push-production-push-recovery-contract.json`. Use it when a review needs the
+full pull provenance, push ladder, and topology story in one place.
+
 ## Auth And Recovery
 
 Push auth must be at least as strict as current Reprint HMAC usage. The write
@@ -199,6 +203,9 @@ The executor proof is intentionally split across three levels:
   becomes push planning input without rewriting the persisted base package.
 - `push_deployment_topology_contract` shows the one-remote, one-local, one-
   drift-witness production shape in both Docker and Playground.
+- `push_production_push_recovery_contract` is the canonical end-to-end proof
+  that ties the pull provenance, the production push ladder, and the
+  one-remote, one-local topology into one reviewable object.
 - `push_journal_inspect_contract` isolates the read-only journal boundary from
   mutating recovery and keeps the claim, lease, and live-hash evidence
   separate.

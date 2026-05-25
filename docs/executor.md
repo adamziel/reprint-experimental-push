@@ -189,6 +189,10 @@ The canonical proof stack for that executor story is the same one named in
 - `push-recovery-boundary-contract.json` for the compact inspect-first
   recovery boundary proof with the auth floor and topology in one object
 
+- `push-production-push-recovery-contract.json` for the canonical end-to-end
+  proof that ties the pull provenance, the production push ladder, and the
+  one-remote, one-local topology into one reviewable object
+
 These are the same proof points the protocol contract uses:
 
 - preflight binds imported provenance to one live remote identity and one
