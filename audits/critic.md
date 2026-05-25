@@ -2512,6 +2512,14 @@ these explicit proofs:
    write boundary and the stale-remote case that was reverified on this
    branch.
 
+Production-readiness wording stays blocked unless all of the above are true
+on the same live write path. If the evidence only shows a production-shaped
+route, a packaged mount, a fixture replay, or a matching `finalMatchesLocal`
+hash, the claim is still lab-backed. If the evidence only shows a readable
+manual-review artifact or a source-note comparison, the claim is still
+historical context. If the evidence does not preserve the remote for audit
+after reject, it is not a production-ready push claim.
+
 Source-note comparison summary:
 
 - Reprint proves staged transport and resumable delivery rhythm. It does not
