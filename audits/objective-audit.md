@@ -71,6 +71,7 @@ Release preflight absence:
 
 Release command audit:
 
+- direct command-surface recheck on 2026-05-25: [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still has no `verify`, `verify:release`, or `release` script, so there is still no checked-in release gate to own the live-source verdict
 - `package.json` has no `verify`, `verify:release`, or `release` script
 - `npm test` only executes `node --test`; it does not force a live-source apply boundary
 - `test:playground:*` helpers are optional and lab-scoped
