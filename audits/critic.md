@@ -9,6 +9,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 The missing production proof is now exact: one rerunnable live mutation boundary on one exact source URL must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence, even when the supervised lane has a passing `verify:release`, minted session shape, and release-boundary verdict. A wording change on this branch does not close the gap unless the remote lane shows the preserved rejected remote surviving refusal on that same live boundary, with the rejected source still inspectable after refusal and the auth/session state re-entered on that same rerunnable boundary.
 
 If this branch lacks a command, file, or note that the supervised remote already has, treat that as a branch-local merge gap. Do not upgrade the release claim because of that local gap; the gate only opens when the same rerunnable live boundary exists and preserves the rejected remote.
+The remote lane's retained-source `verify:release` progress still counts as lab evidence, but it does not become production proof until the live WordPress boundary shows preserved-remote retention, fresh apply-time revalidation, lease/fenced journal semantics, graph identity, and plugin-driver coverage together.
 
 ## False reliability claims
 
