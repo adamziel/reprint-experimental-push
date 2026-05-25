@@ -1,5 +1,11 @@
 # Critic Audit
 
+Current baseline: reliable-executor commit `3089aee2`.
+`npm run verify:release` is now material retained-source evidence, but it is
+still local Playground lab evidence unless the branch also proves the live
+production WordPress auth/session boundary, durable journal semantics, graph
+identity, and plugin-driver coverage on a real-site rerun.
+
 ## 2026-05-25 Current Verdict
 
 The branch still cannot claim production-grade push support until one exact,
@@ -7301,13 +7307,12 @@ are true on this worktree:
 
 Lead finding for the current release-proof claim:
 
-- `npm run verify:release` is not a proof command on this branch because there
-  is no matching script entry in `package.json` here; the current surface only
-  exposes `plan`, `apply`, and the various `test:playground:*` flows. Even the
-  new `test:playground:production-shaped-release-verify` path is still only a
-  Playground live-preflight unless it is rerun against a live local,
+- `npm run verify:release` is retained-source evidence on this baseline, but it
+  is still not production proof unless it is rerun against a live local,
   Playground, or Docker `REPRINT_PUSH_SOURCE_URL` and prints the exact
-  preserved-remote boundary on that live source.
+  preserved-remote boundary on that live source together with production
+  WordPress auth/session lifecycle, durable journal semantics, graph identity,
+  and plugin-driver coverage;
 - if the branch cannot print the exact executor identity, the exact live
   source URL, the rejected remote that remained inspectable after rejection,
   and the exact rejection point before the first write in the same run, then
