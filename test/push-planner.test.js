@@ -4258,6 +4258,39 @@ test('allows plugin-owned data when owner plugin context independently matches r
   assertEveryMutationHasLiveRemotePrecondition(plan);
 });
 
+test('keeps remote-only plugin metadata and file drift while a plugin-owned row stays already in sync', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local index";';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = baseSite();
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.changeKind, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files['index.php'], '<?php echo "local index";');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('remote-only plugin removal blocks stale local dependency assumptions', () => {
   const base = baseSite();
   const local = baseSite();
