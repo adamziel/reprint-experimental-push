@@ -21,6 +21,10 @@ This is the short operational version of the planner invariant policy.
   independent edit and file type swap; the matching resources stay
   `already-in-sync`, the delete keeps its own live remote precondition, and
   unrelated remote-only plugin drift stays preserved through apply.
+- The same rule still holds when the remote side has unrelated plugin drift
+  in both its metadata and plugin files: the delete keeps its own live remote
+  precondition, the matching edit and file type swap stay
+  `already-in-sync`, and the plugin drift stays preserved through apply.
 - A live-preconditioned delete may still apply alongside a matching restore;
   the restore stays `already-in-sync`, the delete keeps its own live remote
   precondition, and unrelated remote-only plugin drift stays preserved through
