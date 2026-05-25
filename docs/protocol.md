@@ -174,6 +174,19 @@ It pairs the protocol fixture test with the explicit missing-secret smoke so
 the executable boundary proves both the production ladder and the fast-fail
 auth gate in one checked entry point.
 
+Run the proof command when you need the exact production-shaped boundary:
+
+```sh
+npm run test:playground:production-shaped-proof
+```
+
+That checked command is the one that matters for the release proof:
+
+- it exercises the protocol fixture ladder
+- it fails fast with `REPRINT_PUSH_SECRET_REQUIRED` when the real push secret is absent
+- it keeps dry-run and apply separate
+- it preserves the one-remote, one-local, one-drift topology across the checked entry point
+
 The bridge also preserves the existing pull/export/import provenance chain:
 
 | Pull pipeline object | Push consumer | Result |

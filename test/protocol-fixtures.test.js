@@ -149,6 +149,10 @@ test('preflight and snapshot listing fixtures pin the live bind and planning-onl
   assert.ok(productionTopology.topology.playground.proof.includes('runner uses the same route names as Docker'));
   assert.ok(productionTopology.required_invariants.includes('one remote source site, one imported local site, and one drift witness are enough to prove the production topology'));
   assert.ok(productionTopology.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
+  assert.ok(
+    packageJson.scripts['test:playground:production-shaped-proof'],
+    'node ./scripts/playground/production-shaped-proof.mjs',
+  );
 });
 
 test('push protocol fixture readme keeps the production ladder and topology bridge aligned', () => {
@@ -156,6 +160,9 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     protocolReadme.includes(
       'The production proof bundle is intentionally layered and keeps the same remote',
     ),
+  );
+  assert.ok(
+    protocolDocs.includes('npm run test:playground:production-shaped-proof'),
   );
   assert.ok(
     protocolDocs.includes('## Canonical Proof Set'),

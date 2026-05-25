@@ -87,6 +87,12 @@ The release-facing proof command is the same checked Node test:
 node --test test/protocol-fixtures.test.js
 ```
 
+The release-facing wrapper that a supervisor should run is:
+
+```sh
+npm run test:playground:production-shaped-proof
+```
+
 If the real push secret is missing, the harness must fail fast with
 `REPRINT_PUSH_SECRET_REQUIRED` before preflight, dry-run, or apply can run.
 
