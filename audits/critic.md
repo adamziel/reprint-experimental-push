@@ -8,9 +8,9 @@ Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. `package.json` exposes only
 `plan`, `apply`, and `test:playground:*` entry points, so the current surface
 is still compatibility or preflight evidence unless it also shows preserved
 remote auditability after rejection, apply-time revalidation on the same live
-boundary, dry-run receipt, journal/recovery inspection, auth/session
-lifecycle, graph identity, and plugin-owned surface classification in one
-rerun.
+boundary, dry-run receipt, journal/recovery inspection, production auth/
+session lifecycle, graph identity, and plugin-driver plus plugin-owned
+surface classification in one rerun.
 
 This remains the primary blocker even if the branch has a polished release-
 shaped wrapper. Scenario: a reviewer upgrades a live preflight or lab-shaped
@@ -274,7 +274,9 @@ Release-gate checklist for production wording:
 - preserved remote that stays inspectable after rejection;
 - apply-time revalidation on the same boundary before the first write;
 - journal and recovery inspection that defines retry scope;
-- executor identity plus auth/session boundary before the first write; and
+- executor identity plus auth/session boundary before the first write;
+- plugin-driver coverage for every plugin-owned surface on that same live
+  boundary; and
 - the same run must show which remote was rejected, not just that a retry
   path exists.
 
