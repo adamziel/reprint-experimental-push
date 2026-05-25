@@ -5591,7 +5591,7 @@ Evidence-classification rule:
 
 - if a note, artifact, or smoke does not explicitly say whether it is historical context, compatibility evidence, or live retry proof, the wording is ambiguous and must fail closed;
 - a Reprint, ZS-Sync, or ForkPress citation is historical context unless the exact upstream state and the same live boundary were rerun here;
-- a readable manual-review artifact stays audit evidence only unless it is paired with the preserved remote, the rejection point, and a fresh retry scope rebuilt from live hashes on this branch; and
+- a readable manual-review artifact stays audit evidence only unless it is paired with the preserved remote, the rejection point, and a fresh retry scope rebuilt from live hashes on this branch; a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface still needs its own preserve / reject / retry cycle and cannot inherit that artifact; and
 - a comparison note that only matches route family, package mount, or reviewer wording still cannot become retry authority for a later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface;
 - that same artifact still cannot authorize a later-discovered plugin-owned surface, remapped create target, or different row/file/relationship-bearing record just because the route family, package mount, or reviewer wording stayed the same; and
 - route shape, package mount shape, fixture replay, readable review output, and `finalMatchesLocal` stay compatibility evidence only and cannot be upgraded into proof for a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface.
@@ -5616,7 +5616,7 @@ Must-happen-before-production-grade-push-support checklist:
 - plugin-owned surfaces outside the allowlist: enumerate late-discovered tables, blobs, cron rows, runtime registries, generated files, caches, and plugin-owned files, then either block them or give each its own preserve / reject / retry cycle;
 - partial side effects: show the whole touched set classified old/new/blocked across file, DB, and plugin writes, with no surface silently succeeding while another surface is left in limbo;
 - stale manual-review artifacts: prove a readable review note cannot authorize a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface after drift unless the remote was preserved and the retry scope was rebuilt from live state;
-- production claims: never infer production-grade push support from lab route shape, package layout, fixture replay, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes.
+- production claims: never infer production-grade push support from lab route shape, package layout, fixture replay, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes, and they do not cover a later-discovered surface that appears only after the first write.
 
 Missing-proof matrix for the current design:
 
