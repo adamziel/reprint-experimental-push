@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 11:53:59 CEST.
+- Last update: 2026-05-25 11:56:05 CEST.
 - Status: blocked; the visible page and log still agree.
 - Trend: the lab release harness improved, but the production gate stayed closed.
 - Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
