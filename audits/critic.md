@@ -16,6 +16,9 @@ Release-gate checklist for production-readiness wording:
 - Name the exact upstream revision or worktree state for any Reprint,
   ZS-Sync, or ForkPress comparison, plus the exact live write boundary that
   was reverified here; otherwise the comparison is historical context only.
+- Name the exact failure case that was rechecked on this branch as well; a
+  matching upstream revision without the same branch-local drift or retry
+  case is still historical context, not current proof.
 - Show that the stale approval was rejected before mutation, remained
   readable for audit, and could not be reused as authority for any other
   row, file, relationship-bearing record, plugin-owned surface, or hidden
