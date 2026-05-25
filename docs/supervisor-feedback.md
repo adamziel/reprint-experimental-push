@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 13:00:27 CEST
+Last updated: 2026-05-25 13:20:23 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 13:20:23 CEST
+
+- Going well: `reliable-executor` still has the clearest boundary proof trail, and `progress-publisher` keeps the public surfaces short.
+- Not going well: the production gate is still closed because auth/session lifecycle, durable journal semantics, graph identity, and plugin-driver proof remain unproven outside the lab.
+- Progress delta: none since the last check; this is a same-state decision, not new evidence.
+- Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` should stay quiet until material evidence changes; `critic` and `auditor` should keep rejecting wording-only proof.
+- Note: the lane-local `progress.html` copy becomes live on GitHub Pages only after this lane merges to `main`.
 
 ## 2026-05-25 13:00:27 CEST
 
