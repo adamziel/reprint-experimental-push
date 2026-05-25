@@ -13,6 +13,8 @@ The contract is deliberately strict:
    to prove whether the remote is old, new, or blocked.
 4. The remote must refuse any push it cannot prove is bound to the pulled base
    and to the currently live remote state.
+5. Journal inspection is read-only, and mutating recovery must start with an
+   inspect step before any finish-or-rollback action.
 
 ## Protocol Contract
 
@@ -59,8 +61,8 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 5. `push_plan_dry_run` uploads the canonical plan as eligibility evidence only and returns a receipt, not a lock
 6. `push_batch_apply` revalidates the live remote before every batch and at
    the storage boundary
-7. `push_journal` and `push_recover` inspect durable evidence first, then
-   allow mutating recovery only when fresh live hashes prove the action
+7. `push_journal` and `push_recover inspect` inspect durable evidence first,
+   then allow mutating recovery only when fresh live hashes prove the action
 
 The production push ladder is the same handoff expressed as a runtime flow,
 and the executor must keep each stage distinct:
