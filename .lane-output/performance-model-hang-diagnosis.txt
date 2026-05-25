@@ -14,3 +14,9 @@ passed in under 1 second.
 
 Conclusion:
 The full-file timeout appears pre-existing and not caused by the newest fast-path additions in the guarded-executor test area. The focused guarded-executor test completes, so the hang is not reproducible at that test boundary.
+
+Current iteration full-file check:
+timeout 60s node --test test/performance-model.test.js
+
+Result:
+timed out after printing only `TAP version 13`.
