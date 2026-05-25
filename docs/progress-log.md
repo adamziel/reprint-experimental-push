@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 14:17:39
+
+<a id="2026-05-25-public-status-audit-141739"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:17:39 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and kept `fa491fa6` as the
+  newest recovery-envelope proof.
+- `fa491fa6` keeps the durable recovery envelope artifact-backed while the
+  release gates stay at `0/4`; production WordPress executor/auth plus durable
+  journal semantics remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 14:16:16
 
 <a id="2026-05-25-public-status-audit-141616"></a>
