@@ -1191,6 +1191,15 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(deploymentTopologyContract.topology.remote_changed, 'remote-changed');
   assert.equal(deploymentTopologyContract.topology.runner, 'runner');
   assert.equal(deploymentTopologyContract.topology.same_remote_identity, true);
+  assert.deepEqual(deploymentTopologyContract.topology.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
   assert.equal(deploymentTopologyContract.topology.proof[0], 'remote-base seeds the persisted pull base');
   assert.ok(
     deploymentTopologyContract.topology.proof.includes(
@@ -1210,6 +1219,37 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     deploymentTopologyContract.topology.proof.includes(
       'recovery starts with inspect before any mutating repair',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'authentication is at least as strict as current Reprint HMAC usage',
+    ),
+  );
+  assert.equal(deploymentTopologyContract.auth_floor.required, 'at least as strict as current Reprint HMAC usage');
+  assert.deepEqual(deploymentTopologyContract.auth_floor.read_only_calls, [
+    'snapshot listing',
+    'journal inspect',
+    'recovery inspect',
+  ]);
+  assert.deepEqual(deploymentTopologyContract.auth_floor.mutating_calls, [
+    'dry-run',
+    'apply',
+    'mutating recovery',
+  ]);
+  assert.ok(
+    deploymentTopologyContract.deployment.docker.proof.includes(
+      'dry-run is a receipt, not a lock',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.deployment.docker.proof.includes(
+      'journal inspection is read-only and never authorizes mutation by itself',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.deployment.docker.proof.includes(
+      'recovery must begin with inspect before any mutating repair',
     ),
   );
   assert.ok(

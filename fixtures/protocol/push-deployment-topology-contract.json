@@ -21,6 +21,15 @@
     "remote_changed": "remote-changed",
     "runner": "runner",
     "same_remote_identity": true,
+    "push_sequence": [
+      "push_preflight",
+      "push_snapshot_hashes",
+      "push_plan_dry_run",
+      "push_batch_apply",
+      "push_journal",
+      "push_recover inspect",
+      "push_recover auto|finish|rollback"
+    ],
     "proof": [
       "remote-base seeds the persisted pull base",
       "local-edited is the imported local site with user edits",
@@ -30,6 +39,7 @@
       "apply revalidates fresh live evidence before every batch and at the storage boundary",
       "journal inspect stays read-only",
       "recovery starts with inspect before any mutating repair",
+      "authentication is at least as strict as current Reprint HMAC usage",
       "runner owns preflight, remote snapshot hash listing, dry-run upload, apply, journal inspect, and recovery",
       "remote-base and remote-changed are the same remote identity observed at different times",
       "local-edited is the imported local site that produces the candidate plan"
@@ -44,7 +54,10 @@
       "proof": [
         "remote-base and remote-changed are the same remote identity at different times",
         "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy",
-        "runner is the only process allowed to preflight, list hashes, upload, inspect, revalidate, and recover"
+        "runner is the only process allowed to preflight, list hashes, upload, inspect, revalidate, and recover",
+        "dry-run is a receipt, not a lock",
+        "journal inspection is read-only and never authorizes mutation by itself",
+        "recovery must begin with inspect before any mutating repair"
       ]
     },
     "playground": {
@@ -55,9 +68,25 @@
       "proof": [
         "remote-base and remote-changed are the same remote identity at different times",
         "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
-        "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
+        "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy",
+        "dry-run is a receipt, not a lock",
+        "journal inspection is read-only and never authorizes mutation by itself",
+        "recovery must begin with inspect before any mutating repair"
       ]
     }
+  },
+  "auth_floor": {
+    "required": "at least as strict as current Reprint HMAC usage",
+    "read_only_calls": [
+      "snapshot listing",
+      "journal inspect",
+      "recovery inspect"
+    ],
+    "mutating_calls": [
+      "dry-run",
+      "apply",
+      "mutating recovery"
+    ]
   },
   "test_topology": {
     "shape": "one remote source site, one imported local site, and one later drift observation of the same remote identity",
@@ -69,8 +98,11 @@
         "remote-base seeds the persisted pull base",
         "local-edited is the imported local site with user edits",
         "remote-changed is the same remote identity observed later after drift",
+        "push preflight binds the persisted pull base to the live remote identity before any planning call",
         "dry-run and apply remain separate remote operations",
         "apply revalidates fresh live evidence before every batch and at the storage boundary",
+        "journal inspection is read-only and never authorizes mutation by itself",
+        "recovery must begin with inspect before any mutating repair",
         "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
       ]
     },
@@ -82,7 +114,10 @@
         "remote-base seeds the persisted pull base",
         "local-edited is the imported local site with user edits",
         "remote-changed is the same remote identity observed later after drift",
+        "push preflight binds the persisted pull base to the live remote identity before any planning call",
         "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
+        "journal inspection is read-only and never authorizes mutation by itself",
+        "recovery must begin with inspect before any mutating repair",
         "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
       ]
     }
