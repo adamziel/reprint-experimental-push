@@ -81,11 +81,16 @@ The objective stays blocked for five concrete reasons:
 9. The lab route coverage is still self-described as `labBacked: true` on the strongest push paths, so even the authenticated success cases remain local proof, not production release proof.
 10. No test or smoke in this checkout demonstrates the one-way pull base plus one-way push back to live source under the production storage semantics named by the objective.
 
-The weakest claim is speed, but only because it is the easiest one to describe and the hardest one to prove here. The repository currently has refusal-only throughput evidence, not a measured live-path result, so any claim that the production path is fast enough remains unsupported.
+The weakest claim is speed, and it is not weak because the benchmark is conservative. It is weak because the repository still has only refusal-only throughput evidence, no measured live-path result, and no enforced threshold that would let the project say anything positive about production speed. Until that changes, the only defensible statement is that unsupported throughput claims are rejected.
 
 ## Actionable Next Step
 
-Add a required release entrypoint that fails closed unless it can prove, in one run, the live-source boundary, durable recovery artifacts, leases/fencing, graph identity, plugin data-driver coverage, and a real topology with either a measured live-path throughput result or an explicit refusal to claim throughput.
+Add a required release entrypoint that fails closed unless it can prove, in one run, the live-source boundary, durable recovery artifacts, leases/fencing, graph identity, plugin data-driver coverage, and a real topology with either:
+
+1. a measured live-path throughput result plus an explicit release threshold, or
+2. an intentional refusal to make any production speed claim.
+
+If the repo cannot measure live-path throughput, the gate should say so and block release by default rather than silently passing on refusal-only benchmark evidence.
 
 ## Audit Rule
 
