@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 11:07:41 CEST.
+- Last update: 2026-05-25 11:15:16 CEST.
 - Status: blocked; the visible page and log still agree.
 - Trend: no release-state change; the newest audit note keeps the gate explicit without expanding the proof trail.
 - Supervision: 8 fast/low lanes plus the dedicated live progress watcher remain active.
