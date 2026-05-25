@@ -42,7 +42,7 @@ The repo still needs one enforced release gate that closes the gap between lab e
 5. a real remote/local topology, not a fixture-only or Playground-only alias
 6. either a measured live-path throughput result or an explicit refusal to claim throughput
 
-Until that gate exists and is wired into a default entrypoint, the project can only claim lab proof, not production release readiness.
+Until that gate exists and is wired into a default entrypoint, the project can only claim lab proof, not production release readiness. Any green result from optional smokes, fixture tests, or benchmark refusal paths is still insufficient on its own.
 
 ## Evidence Table
 
@@ -79,6 +79,7 @@ The objective stays blocked for five concrete reasons:
 7. The tests that look strongest are still proving preconditions and refusal behavior, not end-to-end mutation safety under a crash boundary. That is useful, but it is not release evidence.
 8. The current benchmark surfaces are explicitly refusal-oriented; they are acceptable as anti-claim evidence, but they still do not establish a live-path speed claim.
 9. The lab route coverage is still self-described as `labBacked: true` on the strongest push paths, so even the authenticated success cases remain local proof, not production release proof.
+10. No test or smoke in this checkout demonstrates the one-way pull base plus one-way push back to live source under the production storage semantics named by the objective.
 
 ## Actionable Next Step
 
