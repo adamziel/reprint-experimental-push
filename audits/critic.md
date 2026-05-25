@@ -900,6 +900,10 @@ classifies every boundary write.
 A smoke that only ends in `finalMatchesLocal: true` still does not show that
 the remote stayed preserved, that a fresh live snapshot was taken before the
 first write, or that stale review artifacts were rejected.
+Even a route name that matches production and a package mount that looks
+identical to the lab can still be a copied fixture path with no live mutation
+authority, so the comparison remains non-production until the live write
+boundary is exercised and revalidated.
 This comparison is based on the source notes in `docs/source-notes.md`, which
 anchor Reprint to observed commit `27c5f25` and are historical context only.
 If the current upstream revision or worktree was not independently reverified,
@@ -1022,6 +1026,9 @@ the reviewed scope still matches the live hashes at apply time, and the retry
 path can prove it rejected stale scope before any write.
 If the approval artifact cannot be tied to a fresh live snapshot, it must be
 treated as stale evidence, not as permission to continue.
+If a retry only proves that the manual-review UI still looks correct, but does
+not prove the remote stayed preserved and the stale scope was rejected before
+mutation, then the retry is not safe enough for production wording.
 `finalMatchesLocal` does not change that rule; it is still only a fixture
 compatibility signal, not proof of a safe retry after drift.
 Manual resolution only counts when the stale artifact stays audit-only, the
