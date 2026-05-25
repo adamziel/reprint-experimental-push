@@ -5656,7 +5656,7 @@ Source-note comparison rule:
 - Reprint `27c5f25` only supports staged transport, resumability vocabulary, and chunked delivery framing; it does not prove stale remote drift rejection, preserved-remote auditability, create-time remap safety, or late plugin-surface classification on this branch.
 - ZS-Sync `d9334a0` only supports bounded discovery, cursoring, and batched resource selection; it does not prove source mutation safety, retry authority, or recovery from partial side effects on this branch.
 - ForkPress `55f9879` only supports merge-audit vocabulary and crash-consistency intent; it does not prove that a readable review artifact can authorize a later row, file, remapped create target, or plugin-owned surface on this branch.
-- any comparison that does not explicitly say what the note proves here and what it does not prove here is ambiguous and must fail closed.
+- any comparison that does not explicitly say what the note proves here and what it does not prove here is ambiguous and must fail closed; a source note that only names a similar route family, package mount, or reviewer vocabulary is still compatibility context, not production proof.
 
 Evidence-classification rule:
 
@@ -5688,6 +5688,15 @@ Must-happen-before-production-grade-push-support checklist:
 - partial side effects: show the whole touched set classified old/new/blocked across file, DB, and plugin writes, with no surface silently succeeding while another surface is left in limbo;
 - stale manual-review artifacts: prove a readable review note cannot authorize a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface after drift unless the remote was preserved and the retry scope was rebuilt from live state;
 - production claims: never infer production-grade push support from lab route shape, package layout, fixture replay, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes, and they do not cover a later-discovered surface that appears only after the first write.
+
+Release-gate language checklist:
+
+- the text says historical context, compatibility evidence, or live retry proof explicitly rather than implying it;
+- every comparison note names both what the upstream note proves and what it does not prove on this branch;
+- no sentence turns route shape, package layout, fixture replay, or a readable review note into proof of live push safety;
+- no production-grade claim is allowed unless the branch-local live boundary rerun is named together with preserved-remote evidence, stale-authority rejection, and a fresh retry scope from live hashes;
+- any later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface is treated as a new boundary unless it is separately preserved, rejected, and retried; and
+- if any of the above is missing, the wording stays audit-only and cannot claim production-grade push support.
 
 Missing-proof matrix for the current design:
 
