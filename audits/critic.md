@@ -2212,14 +2212,17 @@ Production-readiness checklist:
 
 - Show a live remote drift case that fails closed before the first write.
 - Show a create-time remap, alias, or renumber case that is either reserved
-  durably or blocked before mutation.
+  durably or blocked before mutation, with the live remote identity decision
+  named explicitly rather than inferred from a stable local ID.
 - Show the full plugin-owned surface manifest for the exercised claim, and
   hard-block every unknown or out-of-allowlist surface.
 - Show durable handling for mixed file, DB, or plugin side effects, including
   audit evidence for what was written, what was blocked, and what can be
   retried safely.
 - Show a preserved remote snapshot that can be audited later without letting
-  the stale approval become current retry authority.
+  the stale approval become current retry authority, and without letting a
+  readable manual-review artifact widen to a different row, file, relation, or
+  plugin-owned surface after drift.
 - Show that route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` are only compatibility evidence unless the same live
   write boundary is reverified in this repo.
