@@ -7,6 +7,8 @@ This note summarizes the planner's no-overwrite contract.
 - Local changes when the live remote resource still matches the pull base.
 - Matching independent edits, including creates, updates, deletes, and file
   type swaps that end on the same hash.
+- Matching independent deletes, restores, and file type swaps can coexist with
+  a live-preconditioned delete while remote-only plugin drift stays preserved.
 - Every automatic mutation must still carry a live remote precondition bound to
   the mutation id, resource key, and the hash observed during planning.
 - A live-preconditioned mutation may share a plan with matching independent
