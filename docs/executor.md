@@ -158,6 +158,39 @@ The remote liveness split stays explicit across the whole executor:
 - recovery must begin with inspect before any mutating repair
 - authentication must be at least as strict as current Reprint HMAC usage
 
+## Canonical Proof Set
+
+The executor should be reviewed against the same compact proof set as the
+protocol docs:
+
+1. `push-protocol-extension-contract.json` for the full ladder, pull bridge,
+   auth floor, and topology.
+2. `push-production-pull-bridge-contract.json` for the immutable
+   exporter/importer handoff.
+3. `push-remote-snapshot-listing-contract.json` for planning-only hash
+   listing.
+4. `push-production-revalidation-contract.json` for the dry-run/apply split.
+5. `push-production-auth-session-journal-recovery-inspect-contract.json` for
+   the auth/session/journal/recovery-inspect floor.
+6. `push-production-recovery-inspect-contract.json` for inspect-first
+   recovery.
+7. `push-production-executor-flow-contract.json` for the full production flow
+   on the one-remote, one-local, one-drift harness.
+
+The executor rules that matter most are the same ones the fixtures prove:
+
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning evidence only and never becomes write
+  authority
+- `push_plan_dry_run` returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary, separate from dry-run
+- `push_journal` is read-only durable evidence
+- `push_recover inspect` classifies finish, rollback, retry, or block before
+  any mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe with the same auth floor as the write path
+
 That split is strict enough that a stale dry-run receipt can never act like a
 lock:
 

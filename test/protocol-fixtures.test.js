@@ -54,6 +54,14 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     ),
   );
   assert.ok(
+    protocolDocs.includes('## Canonical Proof Set'),
+  );
+  assert.ok(
+    protocolDocs.replace(/\s+/g, ' ').includes(
+      'push-production-executor-flow-contract.json` is the compact end-to-end flow for the one-remote, one-local, one-drift topology.',
+    ),
+  );
+  assert.ok(
     protocolReadme.includes(
       'The seven protocol surfaces are the ones the executor must treat as distinct',
     ),
@@ -121,6 +129,14 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   assert.ok(
     protocolReadme.includes(
       'The mapping from pull exporter/importer to push surfaces is explicit and',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes('## Canonical Proof Set'),
+  );
+  assert.ok(
+    executorDocs.replace(/\s+/g, ' ').includes(
+      'push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary, separate from dry-run',
     ),
   );
   assert.ok(

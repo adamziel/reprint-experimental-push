@@ -61,6 +61,41 @@ The liveness split is strict:
 - `push_recover inspect` is read-only, must happen first, and classifies
   finish, rollback, retry, or block before any mutating repair.
 
+## Canonical Proof Set
+
+The production push extension is reviewed in a fixed order so the protocol,
+executor, and fixture suite stay aligned:
+
+1. `push-protocol-extension-contract.json` is the top-level production
+   ladder.
+2. `push-production-pull-bridge-contract.json` is the immutable
+   exporter/importer bridge into push.
+3. `push-remote-snapshot-listing-contract.json` is planning-only remote hash
+   listing.
+4. `push-production-revalidation-contract.json` is the dry-run/apply liveness
+   split.
+5. `push-production-auth-session-journal-recovery-inspect-contract.json` is
+   the auth/session/journal/recovery-inspect floor.
+6. `push-production-recovery-inspect-contract.json` is the inspect-first
+   recovery branch.
+7. `push-production-executor-flow-contract.json` is the compact end-to-end
+   flow for the one-remote, one-local, one-drift topology.
+
+That proof set keeps the ladder readable:
+
+- exporter/importer create the immutable pull base package
+- `push_preflight` binds that package to one live remote identity and one
+  short-lived push session
+- `push_snapshot_hashes` stays planning-only
+- `push_plan_dry_run` returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary, separate from dry-run
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe with the same auth floor as the write path
+
 ## Pull Bridge
 
 The pull/export/import pipeline is the immutable source of push provenance:
