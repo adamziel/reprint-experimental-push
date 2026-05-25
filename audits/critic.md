@@ -15,6 +15,7 @@ What still has to change before any production-grade claim is credible:
 - any lab fixture, copied executor, or production-shaped route smoke can still preserve the wrong remote, skip a hidden plugin-owned surface, or replay stale approval, so a matching URL or mount shape is compatibility evidence only and never proof of live push safety;
 - if the route family, package layout, reviewer wording, or fixture shape matches an earlier approval, that only proves surface similarity; the later boundary still needs its own preserved remote, rejection point, and fresh retry scope rebuilt from live hashes;
 - any readable manual-resolution note or comparison summary must not be allowed to retroactively authorize a later-discovered plugin-owned surface, remapped create target, or relationship-bearing record, even if the route family, package layout, or reviewer wording stays identical;
+- any source-note comparison to Reprint, ZS-Sync, or ForkPress is provenance only unless it names the exact upstream state, the exact live boundary, what it proves here, what it does not prove here, and whether this branch reran that same boundary locally; shape similarity alone must never become retry authority;
 - any "manual resolution" or "comparison passed" wording must stay audit-only unless it names the preserved remote, the upstream source-note state, and the same live boundary rerun on this branch; and
 - route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` remain compatibility evidence only; if those are the only proof, the missing evidence is still the live executor boundary itself, plus the rejected remote and fresh retry scope rebuilt from live hashes.
 
@@ -27,6 +28,14 @@ Release-gate checklist for production-grade wording:
 - classify every touched file, DB row, relationship-bearing record, and plugin-owned surface as old, new, or blocked before retry starts, including mixed file/DB/plugin side effects;
 - name the exact upstream state for any Reprint, ZS-Sync, or ForkPress comparison, say what it proves here, say what it does not prove here, and rerun the same live boundary on this branch before treating it as more than historical context; and
 - keep route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` downgraded to compatibility evidence unless the same live boundary also shows preserved-remote evidence and a fresh live-hash retry scope.
+
+Failure classes that still block production wording:
+
+- live remote drift after dry-run but before apply: the missing proof is the actual rejection point before first write plus a preserved remote that stays inspectable for audit and retry;
+- create-time identity remap or aliasing: the missing proof is live identity evidence at the apply boundary, or an explicit hard block before any write;
+- plugin-owned data traps outside the allowlist, including hidden options, serialized blobs, generated files, caches, cron rows, and runtime registries: the missing proof is that each surface was enumerated or blocked before write, not discovered afterwards;
+- partial file, DB, or plugin side effects: the missing proof is old/new/blocked classification for the full touched set before retry starts, so mixed outcomes cannot be relabeled as success; and
+- stale manual-review artifacts: the missing proof is that the artifact stayed audit-only after drift and could not widen to a later boundary, even if the wording still looks fresh.
 
 Source-note comparison audit:
 
