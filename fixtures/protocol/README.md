@@ -17,11 +17,11 @@ The normal sequence is:
 9. `push-journal-request.json`
 10. `push-journal-response.json`
 11. `push-journal-open-response.json`
-12. `push-recovery-request.json`
-13. `push-recovery-response.json`
-14. `push-recovery-inspect-request.json`
-15. `push-recovery-inspect-response.json`
-16. `push-recovery-inspect-blocked-response.json`
+12. `push-recovery-inspect-request.json`
+13. `push-recovery-inspect-response.json`
+14. `push-recovery-inspect-blocked-response.json`
+15. `push-recovery-request.json`
+16. `push-recovery-response.json`
 17. `push-topology.json`
 18. `push-flow.json`
 19. `push-recovery-decision.json`
