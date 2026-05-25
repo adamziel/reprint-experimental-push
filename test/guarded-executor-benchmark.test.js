@@ -63,7 +63,19 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
 test('guarded benchmark refuses production throughput claims until production gaps are measured', () => {
   const report = smallBenchmark();
 
+  assert.notEqual(report.executorCapabilities.fileReceipts, 'production-storage-receipts');
+  assert.notEqual(report.executorCapabilities.productionAtomicCommit, 'production-atomic-group-commit');
+  assert.equal(report.executorCapabilities.rowApply, 'per-row-apply-model');
+  assert.equal(report.throughput.fastPathModeEnabled, false);
+  assert.equal(report.throughput.productionThroughput, 'not-claimed');
+  assert.equal(report.claims.productionThroughput.allowed, false);
   assert.equal(report.claims.productionThroughput.status, 'blocked');
+  assert.equal(
+    report.claims.productionThroughput.status === 'allowed' &&
+      report.executorCapabilities.fileReceipts === 'production-storage-receipts' &&
+      report.executorCapabilities.rowApply === 'production-batched-compare-and-swap',
+    false,
+  );
   assert.ok(
     report.claims.productionThroughput.blockers.includes('production-atomic-group-commit-not-measured'),
   );

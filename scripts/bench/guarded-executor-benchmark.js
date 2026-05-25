@@ -529,6 +529,7 @@ function buildReport({
       labStagedMiBPerSecond: mibPerSecond(stagedFile.bytesMoved, timings.stageFileMs),
       labApplyMutationsPerSecond: perSecond(mutationCount, timings.applyMs),
       productionThroughput: 'not-claimed',
+      fastPathModeEnabled: false,
     },
     executorCapabilities: {
       chunkStaging: 'bench-generated-file-staging',

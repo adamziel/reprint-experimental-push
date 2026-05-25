@@ -42,6 +42,11 @@ Current executable gate:
 
 - `timeout 40s node scripts/bench/guarded-executor-benchmark.js --profile=ci`
 - Current result: `productionThroughput.status === "blocked"`
+- Fast-path mode remains disabled for production claims until the reliable and
+  recovery lanes provide storage receipts, atomic-group commit evidence, and
+  row-batch executor evidence.
+- The release gate does not move on lab throughput alone; the fast-path claim
+  stays off until those release receipts exist and can be replayed.
 - Latest measured lab throughput:
   - `labStagedMiBPerSecond: 59.54`
   - `labApplyMutationsPerSecond: 62.29`
