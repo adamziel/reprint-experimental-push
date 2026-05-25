@@ -1029,6 +1029,13 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.equal(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').rejectedGate, 'recovery');
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure').violates.includes('chunk-receipts'));
+  assert.equal(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate, 'recovery');
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('file-hashing'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('row-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback').violates.includes('atomic-groups'));

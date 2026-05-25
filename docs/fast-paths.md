@@ -911,6 +911,11 @@ under load:
   reduce replay work, but they cannot prove the bounded queue order, the
   surviving acknowledgements, or the guarded publish barrier after a pause or
   crash.
+- compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing
+  is rejected because planning evidence and cached chunk receipts can trim
+  duplicate replay, but they cannot prove the next bounded window still
+  matches the live queue order or restore the guarded publish barrier after
+  failure.
 - compressed-remote-index-and-compressed-chunk-ledger-skips-large-upload-publish
   is rejected because compressed planning evidence and compressed chunk ledgers
   can trim replay work, but they cannot prove which chunk acknowledgements
