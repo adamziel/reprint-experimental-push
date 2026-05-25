@@ -129,6 +129,17 @@ The executor proof is intentionally split across three levels:
   one-local, one-drift harness in Docker and Playground, including the shared
   `8080` ingress rule.
 
+In that harness:
+
+- `remote-base` is the seeded remote source site
+- `local-edited` is the imported local site with user edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may run preflight, snapshot listing,
+  dry-run upload, batched apply, journal inspect, or recovery
+- Docker uses one private network, and Playground uses separate disposable
+  blueprints, but both keep the same route names and the same local-only
+  `8080` browser ingress rule
+
 Use these fixtures as the canonical proof bundle:
 
 - `push-protocol-extension-contract.json` is the end-to-end production ladder

@@ -23,6 +23,21 @@ The pull pipeline is the provenance source for every push stage:
 - recovery begins with inspect and only mutates when the journal plus fresh
   live hashes still prove the branch safe
 
+The pull-to-push bridge is one-way and fixed:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- push preflight binds that persisted package to one live remote identity and
+  one short-lived push session
+- push snapshot hash listing reads the live comparison surface for planning
+  only
+- push dry-run uploads the canonical plan as a receipt, not a lock
+- push batch apply revalidates fresh live evidence before every batch and at
+  the storage boundary
+- push journal stays read-only
+- push recovery starts with inspect and only mutates when the journal and
+  fresh live hashes still prove the branch safe
+
 The executor contract is intentionally linear:
 
 1. bind the persisted pull base package to one live remote identity in
@@ -47,6 +62,15 @@ The canonical topology is fixed across both harnesses:
 | Drift witness | `remote-changed` | `remote-changed` |
 | Runner | `runner` | local test process |
 
+That topology means:
+
+- `remote-base` and `remote-changed` are two observations of the same remote
+  identity
+- `local-edited` is the imported local site derived from the persisted pull
+  base package
+- `runner` is the only actor that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or start recovery
+
 The pull-to-push mapping is one-way: exporter/importer establish immutable
 provenance, and push consumes it without rewriting it. The imported pull base
 package is the only starting point for push planning, and preflight binds that
@@ -65,6 +89,16 @@ The executor keeps the same bridge rules as the protocol:
 - journal inspect stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes still prove the action safe
+
+The same story applies in both Docker and Playground:
+
+- Docker uses one private network with the remote source, the local edited
+  site, and the drift witness all behind the same production-shaped route
+  names.
+- Playground uses separate disposable blueprints, but the route names, proof
+  order, and `8080` ingress rule stay identical.
+- In both harnesses, browser-visible inspection stays local-only and never
+  opens a remote tunnel.
 
 The canonical proof stack for that executor story is the same one named in
 [protocol.md](protocol.md):
