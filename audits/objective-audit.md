@@ -88,9 +88,9 @@ The test surfaces themselves are not stronger than that evidence boundary. [`aud
 
 | Evidence class | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| Executable proof | `node --test` passes across planner, recovery journal, and guarded benchmark tests | It is still local, model-driven, or fixture-backed | Useful regression coverage only |
+| Executable proof | `node --test` passes across planner, recovery journal, and guarded benchmark tests | It is still local, model-driven, or fixture-backed and does not reach the live-source boundary | Useful regression coverage only |
 | Lab / fixture proof | Playground smokes and temp-file journal tests exercise auth, journal, and route shapes | The live source, real storage boundary, and release topology are not proven | Cannot close a production release claim |
-| Docs-only proof | Audit text, lane notes, and `labBacked: true` labels describe the intended safety matrix | Descriptions do not mutate the live source or enforce the gate | Informative only |
+| Docs-only proof | Audit text, lane notes, and `labBacked: true` labels describe the intended safety matrix | Descriptions do not mutate the live source or enforce the gate | Informative only; never release proof |
 | Missing proof | No required `verify` / `release` / `verify:release` script, no checked-in CI workflow, no measured live-path throughput, no live-source mutation proof | The objective requires a mandatory, production-bound release decision | Blocks release |
 | Release blockers | `speed unclaimed` remains unproven by a required command, live-source boundary not exercised, safety matrix not composed in one entrypoint | Any green optional run can still bypass the real release decision | Hard blocker |
 
@@ -119,7 +119,7 @@ Until that gate exists and is wired into a default entrypoint such as `npm run v
 
 ## Evidence Table
 
-The backlog asks for a strict split between executable proof, lab / fixture proof, docs-only proof, missing proof, and release blockers. This table uses those buckets directly so the audit cannot blur them together.
+The backlog asks for a strict split between executable proof, lab / fixture proof, docs-only proof, missing proof, and release blockers. This table uses those buckets directly so the audit cannot blur them together. The important rule is that only executable proof that reaches the live-source boundary can count as release proof; everything else is support evidence, not a release verdict.
 
 | Requirement | Executable proof | Lab / fixture proof | Docs-only proof | Missing proof | Release blocker |
 | --- | --- | --- | --- | --- | --- |
