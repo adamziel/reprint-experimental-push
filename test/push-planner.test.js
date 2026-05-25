@@ -15608,6 +15608,41 @@ test('durable no-data-loss recovery keeps failures old-remote and completed repl
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('recovery inspect classifies durable replay as fully updated and drift as blocked with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayInspection = inspectRecoveryJournal({
+    journal: readRecoveryJournal(journalPath),
+    plan,
+    current: replayRemote,
+  });
+  assert.equal(replayInspection.status, 'fully-updated-remote');
+  assert.equal(replayInspection.reason, 'Every planned target currently matches its journaled after hash.');
+  assert.equal(replayInspection.claim.status, 'none');
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "stale drift";';
+  const blockedInspection = inspectRecoveryJournal({
+    journal: readRecoveryJournal(journalPath),
+    plan,
+    current: driftedRemote,
+  });
+  assert.equal(blockedInspection.status, 'blocked-recovery');
+  assert.equal(blockedInspection.claim.status, 'none');
+  assert.ok(blockedInspection.targets.some((target) => target.state === 'blocked-unknown'));
+  assert.ok(blockedInspection.targets.some((target) => target.reason.includes('outside the before/after recovery envelope')));
+});
+
 test('durable journal replay keeps pre-mutation failures old-remote and completed plans inert on retry', () => {
   const base = baseSite();
   const local = baseSite();
