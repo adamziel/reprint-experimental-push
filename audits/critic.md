@@ -32,6 +32,20 @@ Release-gate checklist for production-readiness wording:
   live mutation boundary; otherwise the comparison is historical context
   only.
 
+Source-note claim gate:
+
+- Treat `docs/source-notes.md` as design input only. It can justify why the
+  branch borrows staged transport, bounded scanning, or reviewed-resolution
+  vocabulary, but it does not prove this repo's live executor, remote-drift
+  rejection, create-time remap handling, or plugin-owned surface coverage.
+- If a claim says a Reprint, ZS-Sync, or ForkPress note is current evidence,
+  it must name the exact upstream commit or worktree state, the exact live
+  write boundary, and the exact drift or retry case that was reverified. If
+  any of those are missing, the note stays historical context only.
+- A matching route shape, package mount, or `finalMatchesLocal` result never
+  upgrades a source note into production proof. Those artifacts only show that
+  a lab-shaped path still looks compatible with the source-note description.
+
 Blocked production claims:
 
 - "production-grade push" is blocked until the live mutation executor, not a
