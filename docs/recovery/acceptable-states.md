@@ -13,6 +13,12 @@ Rules:
 - A replay of a completed plan is only safe when the remote still matches the completed journal.
 - If the remote has drifted, replay must stay blocked and keep inspectable journal and remote artifacts.
 
+Failure boundaries:
+
+- failure before mutation, after staging, and after dependency validation should classify as `old-remote`;
+- replaying a completed plan with a matching remote should classify as `fully-updated-remote`;
+- any partial or drifted remote must classify as `blocked-recovery` and carry artifacts.
+
 Artifact expectations:
 
 - `old-remote` and `fully-updated-remote` must carry journal evidence.
