@@ -164,6 +164,12 @@ The distinction is operational: if a command does not export `REPRINT_PUSH_SOURC
 
 Direct command-surface check on 2026-05-25: [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) still has no `verify`, `verify:release`, or `release` script, so the repo still lacks a checked-in real-site push preflight command that could own the release verdict.
 Direct filesystem check on 2026-05-25: this checkout has no `.github` tree or workflow entrypoint, so there is no checked-in automation path that can compensate for the missing release command.
+Current release-gate absence checklist:
+
+- no checked-in `verify` wrapper that exports `REPRINT_PUSH_SOURCE_URL`
+- no checked-in `verify:release` command that runs against a retained local, Playground, or Docker source endpoint
+- no checked-in command that records preserved-remote evidence in the same invocation
+- no checked-in CI workflow or default entrypoint that can enforce the live-source verdict
 
 The current [`audits/release-proof-matrix.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-proof-matrix.md) is aligned with this table. It is support material, not release proof.
 The point of this table is separation, not synthesis: executable proof, lab / fixture proof, and docs-only proof all stay in their own buckets until one required command reaches the live-source boundary.
