@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+# 2026-05-25 - Public Status Audit 11:51:33
+
+<a id="2026-05-25-public-status-audit-115133"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 11:51:33 CEST`) and kept the public anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- The first screen now keeps the newest retained-source lab proof visible:
+  `68664884` with `durableJournal.rows: 17`, `durableJournal.mutationApplied: 7`,
+  and `durableJournal.idempotencyOpened: 1`, while `63a3502f` still exposes
+  `authSessionType` and `applyCommitted`.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-25 - Public Status Audit 11:50:12
 
 <a id="2026-05-25-public-status-audit-115012"></a>
