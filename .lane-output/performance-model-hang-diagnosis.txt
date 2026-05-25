@@ -1,22 +1,14 @@
 Focused command:
-`timeout 20s node --test --test-name-pattern='guarded executor report keeps the large-upload and plugin-install evidence visible' test/performance-model.test.js`
+timeout 45s node --test --test-name-pattern='guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js
 
 Result:
-Passed in about 4.5 seconds.
-
-Neighboring regression check:
-`timeout 20s node --test --test-name-pattern='safe fast paths retain all gate proofs and stay non-rejectable' test/performance-model.test.js`
-
-Result:
-Passed in about 0.2 seconds.
+Passed in about 27.7s.
 
 Full-file command:
-`timeout 60s node --test test/performance-model.test.js`
+timeout 60s node --test test/performance-model.test.js
 
 Result:
-Timed out after printing only `TAP version 13`.
+Passed in about 35.9s with all 17 tests green.
 
 Diagnosis:
-- The timeout appears pre-existing, not introduced by the newest fast-path coverage.
-- The rejected shortcut proof remains safe to keep.
-- `node --test test/performance-model.test.js` still cannot complete within 60 seconds.
+The earlier 60s timeout was cumulative and pre-existing rather than a deadlock in the latest fast-path coverage.
