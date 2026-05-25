@@ -234,6 +234,130 @@ test('blocks restoring a remote-deleted post after the local copy diverged', () 
   assert.equal(Object.hasOwn(remote.db.wp_posts, 'ID:1'), false);
 });
 
+test('blocks unsupported comment and user graph surfaces in the release-candidate slice', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_comments = {
+    'comment_ID:1': {
+      comment_ID: 1,
+      comment_post_ID: 1,
+      comment_author: 'Local comment',
+    },
+  };
+  local.db.wp_users = {
+    'ID:2': {
+      ID: 2,
+      user_login: 'local-user',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const commentBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_comments","comment_ID:1"]');
+  const userBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_users","ID:2"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(commentBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(commentBlocker.surface, 'comments');
+  assert.match(commentBlocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(userBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(userBlocker.surface, 'users');
+  assert.match(userBlocker.reason, /outside the supported release-candidate slice/);
+});
+
+test('blocks unsupported menu and navigation post graph surfaces in the release-candidate slice', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_type: 'nav_menu_item',
+    post_title: 'Primary menu item',
+  };
+  local.db.wp_posts['ID:11'] = {
+    ID: 11,
+    post_type: 'wp_navigation',
+    post_title: 'Navigation block',
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_posts","ID:10"]');
+  const navigationBlocker = plan.blockers.find((blocker) => blocker.resourceKey === 'row:["wp_posts","ID:11"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(menuBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(menuBlocker.surface, 'nav_menu_item');
+  assert.match(menuBlocker.reason, /outside the supported release-candidate slice/);
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'wp_navigation');
+  assert.match(navigationBlocker.reason, /outside the supported release-candidate slice/);
+});
+
+test('blocks serialized block post content in the release-candidate slice', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_posts['ID:12'] = {
+    ID: 12,
+    post_type: 'post',
+    post_title: 'Block content post',
+    post_content: '<!-- wp:paragraph -->\n<p>Serialized block content</p>\n<!-- /wp:paragraph -->',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === 'row:["wp_posts","ID:12"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'serialized-blocks');
+  assert.match(blocker.reason, /outside the supported release-candidate slice/);
+});
+
+test('blocks post GUID graph surfaces in the release-candidate slice', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_posts['ID:14'] = {
+    ID: 14,
+    post_title: 'Guided post',
+    post_status: 'publish',
+    guid: 'https://example.test/?p=14',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === 'row:["wp_posts","ID:14"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'guid');
+  assert.match(blocker.reason, /outside the supported release-candidate slice/);
+});
+
+test('blocks revision post graph surfaces in the release-candidate slice', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  local.db.wp_posts['ID:13'] = {
+    ID: 13,
+    post_type: 'revision',
+    post_title: 'Post revision',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === 'row:["wp_posts","ID:13"]');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'revision');
+  assert.match(blocker.reason, /outside the supported release-candidate slice/);
+});
+
 test('stops a local directory deletion that would remove a remote-only descendant', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
@@ -695,11 +819,37 @@ test('blocks unknown plugin-owned custom table rows without leaking values', () 
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
-  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-custom-table');
   assert.equal(blocker.pluginOwner, 'forms');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.match(blocker.reason, /outside the supported release-candidate slice/);
   assert.equal(blockerJson.includes('base-private-entry'), false);
   assert.equal(blockerJson.includes('local-private-entry'), false);
+});
+
+test('blocks plugin-owned custom tables even when the plugin stays otherwise unchanged', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:10"]';
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:10': { entry_id: 10, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  const local = baseSite();
+  local.db.wp_forms_entries = {
+    'entry_id:10': { entry_id: 10, payload: 'local-private-entry', __pluginOwner: 'forms' },
+  };
+  const remote = baseSite();
+  remote.plugins.forms = { version: '1.0.0', active: true };
+  remote.db.wp_forms_entries = {
+    'entry_id:10': { entry_id: 10, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-custom-table');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
 });
 
 test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {

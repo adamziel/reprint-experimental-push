@@ -13,6 +13,7 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Local file type swap would hide a remote-only descendant | Plan is `conflict`; no mutation is emitted for the unsafe type swap; remote descendant is preserved; conflict evidence names both paths without file contents. | `stops file type swaps that would hide remote-only descendants` |
 | Local ordinary file edit plus unsafe directory deletion | Plan is `conflict`; the unsafe topology mutation is suppressed, the independent mutation remains hash-preconditioned for audit, and apply refuses the whole non-ready plan. | `keeps independent mutation evidence while suppressing unsafe topology mutations` |
 | Remote and local independently changed a resource to identical content | No mutation is produced; plan records `already-in-sync`. | `recognizes matching independent edits as already in sync` |
+| Local revision post changes | Plan is `blocked`; revision rows stay outside the supported release-candidate slice and do not become ready mutations. | `blocks revision post graph surfaces in the release-candidate slice` |
 | Remote-only plugin metadata or file changed | Remote plugin state is kept; no local mutation is produced. | `preserves remote-only plugin changes` |
 | Remote-only plugin metadata or file changed while local edits an ordinary resource | The ordinary local mutation can be planned with a live remote precondition while remote plugin metadata/files are kept as `keep-remote` decisions. | `combines local ordinary changes while preserving remote-only plugin changes` |
 | Local plugin metadata changed while remote plugin files changed | Plan is `blocked`; the local metadata mutation is not emitted; evidence names the stale remote plugin file context without file contents. | `blocks local plugin metadata changes when remote plugin files changed` |
@@ -133,9 +134,10 @@ The first executable matrix lives in `test/push-planner.test.js`.
   planner proof blocks a local `wp_postmeta.post_id` reference when the target
   `wp_posts` identity changed on the remote since the pull base, and it records
   hash-only relationship evidence. The planner also refuses reference-bearing
-  rows whose targets are absent from the live remote, so same-plan graph
-  identity creates stay blocked. It does not prove safe automatic rewriting for
-  attachments, GUIDs, nav menus, term splitting, serialized blocks,
+  rows whose targets are absent from the live remote, and it blocks post GUIDs
+  alongside revisions, menu/navigation posts, and serialized blocks, so
+  same-plan graph identity creates stay blocked. It does not prove safe
+  automatic rewriting for attachments, nav menus, term splitting,
   `_thumbnail_id`, `post_parent`, `wp_term_relationships`,
   `wp_term_taxonomy`, `wp_termmeta`, cross-table create batches, or production
   importer/exporter identity maps.

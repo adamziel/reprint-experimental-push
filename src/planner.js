@@ -207,6 +207,21 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       }
       const wordpressGraphReferences = graphIdentitySupport.references || [];
 
+      const unsupportedGraphSurface = wordpressGraphUnsupportedSurface(resource, localValue);
+      if (unsupportedGraphSurface) {
+        addWordPressGraphSurfaceBlocker(plan, {
+          resource,
+          surface: unsupportedGraphSurface,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const mutation = {
         id: `mutation-${plan.mutations.length + 1}`,
         resource,
@@ -318,6 +333,22 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
 
   return {
     supportFor(resource, owner) {
+      if (resource.type === 'row' && /^wp_/.test(resource.table)) {
+        const unsupportedCustomTable = !WORDPRESS_GRAPH_TABLE_SUFFIXES.some((suffix) =>
+          resource.table === `wp_${suffix}`)
+          && resource.table !== 'wp_options'
+          && resource.table !== 'wp_postmeta'
+          && resource.table !== 'wp_termmeta'
+          && resource.table !== 'wp_reprint_push_forms_lab';
+        if (unsupportedCustomTable) {
+          return {
+            supported: false,
+            className: 'unsupported-plugin-owned-custom-table',
+            reason: `Plugin-owned custom table ${resource.table} is outside the supported release-candidate slice.`,
+          };
+        }
+      }
+
       const candidates = entries.filter((entry) =>
         entry.resourceKey === resource.key && entry.pluginOwner === owner);
 
@@ -958,6 +989,11 @@ const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
   'terms',
 ];
 
+const UNSUPPORTED_WORDPRESS_GRAPH_TABLE_SUFFIXES = new Set([
+  'comments',
+  'users',
+]);
+
 function wordpressGraphIdentitySupport({
   resource,
   localValue,
@@ -1265,6 +1301,37 @@ function wordpressGraphReferenceEvidence(reference, resources, base, local, remo
   };
 }
 
+function wordpressGraphUnsupportedSurface(resource, value) {
+  if (resource.type !== 'row') {
+    return null;
+  }
+  if (resource.table === 'wp_posts') {
+    const postType = value && typeof value === 'object' ? value.post_type : null;
+    if (postType === 'revision') {
+      return 'revision';
+    }
+    if (postType === 'nav_menu_item' || postType === 'wp_navigation') {
+      return postType;
+    }
+    const guid = value && typeof value === 'object' ? value.guid : null;
+    if (typeof guid === 'string' && guid.length > 0) {
+      return 'guid';
+    }
+    const postContent = value && typeof value === 'object' ? value.post_content : null;
+    if (typeof postContent === 'string' && /<!--\s*wp:[\s\S]*?-->/.test(postContent)) {
+      return 'serialized-blocks';
+    }
+  }
+  if (UNSUPPORTED_WORDPRESS_GRAPH_TABLE_SUFFIXES.has(resource.table.replace(/^wp_/, ''))) {
+    return resource.table.replace(/^wp_/, '');
+  }
+  const suffix = wordpressGraphTableSuffix(resource.table);
+  if (!suffix || !UNSUPPORTED_WORDPRESS_GRAPH_TABLE_SUFFIXES.has(suffix)) {
+    return null;
+  }
+  return suffix;
+}
+
 function wordpressGraphTargetResource({ sourceTable, targetSuffix, id }) {
   const table = wordpressGraphSiblingTable(sourceTable, targetSuffix);
   const idField = wordpressGraphPrimaryIdField(targetSuffix);
@@ -1549,6 +1616,39 @@ function addWordPressGraphIdentityBlocker(plan, {
       remoteHash,
     ),
     references: support.references || [],
+  });
+}
+
+function addWordPressGraphSurfaceBlocker(plan, {
+  resource,
+  surface,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-wordpress-graph-surface-${plan.blockers.length + 1}`,
+    class: 'unsupported-wordpress-graph-surface',
+    resource,
+    resourceKey: resource.key,
+    reason: `WordPress graph mutation ${resource.key} on wp_${surface} is outside the supported release-candidate slice and must stay blocked.`,
+    resolutionPolicy: 'preserve-remote-wordpress-graph-and-stop',
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+    surface,
   });
 }
 
