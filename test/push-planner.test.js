@@ -12866,3 +12866,72 @@ test('keeps remote-only plugin changes while a matching independent plugin-owned
   assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
+
+test('blocks a plugin-owned delete while preserving matching independent edit, file type swap, and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.meta = pluginOwnedResourcePolicy(
+    allowedPluginOwnedResource(resourceKey, 'forms'),
+  );
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base shared title', post_status: 'publish' };
+
+  const local = baseSite();
+  local.meta = pluginOwnedResourcePolicy(
+    allowedPluginOwnedResource(resourceKey, 'forms'),
+  );
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+
+  const remote = baseSite();
+  remote.meta = pluginOwnedResourcePolicy(
+    allowedPluginOwnedResource(resourceKey, 'forms'),
+  );
+  remote.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const rowDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(rowDecision.decision, 'already-in-sync');
+  assert.equal(rowDecision.change.localChange, 'update');
+  assert.equal(rowDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.ownerContextTruncated, false);
+  assert.equal(blocker.ownerContext.length, 2);
+  assert.equal(blocker.ownerContext[0].resourceKey, 'file:wp-content/plugins/forms/forms.php');
+  assert.equal(blocker.ownerContext[1].resourceKey, 'plugin:forms');
+  assert.equal(blocker.reason.includes('forms changed since the pull base'), true);
+  assert.equal(blocker.ownerContext[0].change.remoteChange, 'update');
+  assert.equal(blocker.ownerContext[1].change.remoteChange, 'update');
+  assert.equal(blocker.ownerContext[0].change.localChange, 'unchanged');
+  assert.equal(blocker.ownerContext[1].change.localChange, 'unchanged');
+  assert.equal(plan.mutations.length, 0);
+  assert.equal(plan.preconditions.length, 0);
+  assert.equal(plan.blockers.length, 1);
+});
