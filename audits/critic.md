@@ -41,6 +41,10 @@ Release gate for any production wording:
 - Show the release claim is anchored in live-boundary evidence, not a copied
   lab route, packaged-plugin mount, fixture replay, or lab-shaped route
   family that only matches the production URL shape.
+- Show that a matching upstream commit or worktree state is provenance only
+  unless this branch also reran the same live mutation boundary and the same
+  drift or retry case here; route shape, package shape, fixture replay, and
+  `finalMatchesLocal` still cannot upgrade that comparison into current proof.
 - Show the claim does not collapse a lab-shaped success path into production
   safety just because the route name, response codes, or resource hashes look
   compatible; the missing proof is the live drift case on the real mutation
