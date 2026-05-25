@@ -507,10 +507,10 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Blocked until the real-endpoint proof gap closes. The linked docs hold the proof trail; this page stays scan-first.</p>
-        <time class="update-stamp" datetime="2026-05-25T14:45:18+02:00">Last updated: May 25, 2026, 14:45:18 CEST</time>
+        <p class="lead">Blocked until the production boundary proof gap closes. The linked docs hold the proof trail; this page stays scan-first.</p>
+        <time class="update-stamp" datetime="2026-05-25T15:00:45+02:00">Last updated: May 25, 2026, 15:00:45 CEST</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">Blocked on missing real-endpoint evidence</span>
+          <span class="pill">Blocked on missing production-boundary evidence</span>
           <span class="pill">Lane-local only until merge to main</span>
           <span class="pill">Detailed evidence stays in linked docs</span>
         </div>
@@ -526,7 +526,7 @@
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
         <strong>Blocked</strong>
-        <span>Reliable-executor still has the clearest boundary trail, but the production gate remains closed.</span>
+        <span>Reliable-executor and no-data-loss lanes improved the evidence trail, but the production gate remains closed.</span>
       </div>
       <div class="metric">
         <strong>Live copy</strong>
@@ -549,17 +549,17 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>Reliable-executor kept the release harness fail-closed while no-data-loss-recovery kept adding durable replay evidence, and the 8 fast/low lanes plus the live watcher stay active.</span></li>
+          <li><strong>Going well</strong><span>Reliable-executor made apply-time revalidation fail closed with <code>PRECONDITION_FAILED</code>, and no-data-loss-invariants kept the live release-boundary no-data-loss scenario green.</span></li>
           <li><strong>Not going well</strong><span>Production auth/session lifecycle and durable journal storage with lease/fencing are still unproven, so the shipping gate remains closed.</span></li>
-          <li><strong>Progress delta</strong><span>Lab and recovery evidence improved again, but the real-endpoint boundary is still unproven.</span></li>
-          <li><strong>Next nudge</strong><span>Reliable-executor owns the next production-boundary proof; no-data-loss-recovery should keep tightening durable recovery evidence; progress-publisher should stay quiet unless material evidence changes.</span></li>
+          <li><strong>Progress delta</strong><span>Release-surface and no-data-loss evidence improved again, but this is still lab/replay progress rather than a production boundary proof.</span></li>
+          <li><strong>Next nudge</strong><span>Reliable-executor owns the next production-boundary proof; progress-publisher should keep the page terse and dated; critic and auditor should reject wording-only gate claims.</span></li>
         </ul>
         <details class="lane-nudges">
           <summary>Lane nudges</summary>
           <ul class="compact-list" aria-label="Lane nudges">
-            <li><strong>No data loss invariants</strong><span>Owner: lane. Gap: keep graph identity aligned with the same real-endpoint run.</span></li>
+            <li><strong>No data loss invariants</strong><span>Owner: lane. Gap: keep graph identity aligned with the same production-boundary run.</span></li>
             <li><strong>No data loss recovery</strong><span>Owner: lane. Gap: durable journal storage, lease, and fence behavior across a crash boundary.</span></li>
-            <li><strong>Reliable executor</strong><span>Owner: lane. Gap: own the next production-boundary proof and keep it tied to a real URL/topology.</span></li>
+            <li><strong>Reliable executor</strong><span>Owner: lane. Gap: own the next production-boundary proof and keep it tied to a real endpoint.</span></li>
             <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims.</span></li>
             <li><strong>Independent auditor</strong><span>Owner: lane. Gap: re-audit the next production-backed slice.</span></li>
             <li><strong>Critic</strong><span>Owner: lane. Gap: challenge the weakest proof link.</span></li>

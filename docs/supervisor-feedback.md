@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 14:45:18 CEST
+Last updated: 2026-05-25 15:00:45 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 15:00:45 CEST
+
+- Going well: `reliable-executor` made apply-time revalidation fail closed with `PRECONDITION_FAILED`, and `no-data-loss-invariants` kept the live release-boundary no-data-loss scenario green.
+- Not going well: production auth/session lifecycle and durable journal storage with lease/fencing are still unproven, so the shipping gate remains closed.
+- Progress delta: release-surface and no-data-loss evidence improved again, but this is still lab/replay progress rather than a production boundary proof.
+- Next nudge: `reliable-executor` owns the next production-boundary proof; `progress-publisher` should keep the page terse and dated; `critic` and `auditor` should reject wording-only gate claims.
+- Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 
 ## 2026-05-25 14:45:18 CEST
 

@@ -6,12 +6,12 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 14:45:18 CEST.
+- Last update: 2026-05-25 15:00:45 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: harness/source binding and replay evidence improved again, but the shipping gate is still closed.
+- Trend: apply-time revalidation and live no-data-loss evidence improved again, but the shipping gate is still closed.
 - Scope: 8 fast/low lanes plus the live watcher remain active.
 - Blocker: production auth/session lifecycle and durable journal storage with lease/fencing remain unproven.
-- Next nudge: `reliable-executor` owns the next production-boundary proof; `no-data-loss-recovery` should keep tightening durable recovery evidence; `progress-publisher` should stay quiet unless material evidence changes.
+- Next nudge: `reliable-executor` owns the next production-boundary proof; `progress-publisher` should keep the page terse and dated; `critic` and `auditor` should reject wording-only gate claims.
 - Evidence: [progress.html](../progress.html) shows the visible update date and links out to the detailed evidence; [docs/supervisor-feedback.md](supervisor-feedback.md) holds the newest decision.
 
 ## 2026-05-25 - Supervisor Follow-up
