@@ -249,6 +249,13 @@ worktree state, the exact live write boundary on this branch, the exact
 stale-drift case, and the exact preserved remote that stayed inspectable
 after rejection.
 
+Those anchors are still insufficient if the branch only shows a matching
+route family, package layout, or readable review artifact. For production
+wording, the missing proof is branch-local rerun evidence for the same live
+drift case, with the rejected remote still inspectable after rejection and a
+fresh retry scope rebuilt from live hashes. Without that, `27c5f25`,
+`d9334a0`, and `55f9879` stay provenance only, not retry authority.
+
 Conservative comparison rule:
 
 - Reprint `27c5f25` is historical design input for staged transport and
