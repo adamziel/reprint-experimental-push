@@ -7,9 +7,9 @@ changed, what is helping, what is not helping, and the next nudge.
 
 ## 2026-05-25 02:33:43 CEST - Supervisor Snapshot
 
-- Going well: the visible page, log, and feedback note still align.
+- Going well: the page, log, and feedback note still align.
 - Not going well: production proof is still missing for auth, journal durability, leases, graph identity, integration, and plugin drivers.
-- Progress change: no evidence moved; the scan view stays short and linked.
+- Progress change: no evidence moved; the visible summary stayed short and linked.
 - Next nudge: keep each lane to one proof gap, one test, and one owner.
 
 | Lane | Next nudge |
