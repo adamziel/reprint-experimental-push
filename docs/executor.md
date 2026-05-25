@@ -31,6 +31,17 @@ The production sequence is fixed:
    recovery only proceeds when journal rows plus fresh live hashes prove the
    action.
 
+Recovery classifies the attempt into the same four states used by the protocol
+contract:
+
+- `old`: the journal proves the prior write already committed.
+- `new`: the remote advanced independently and the stale attempt must be
+  discarded or replanned from fresh evidence.
+- `open`: the attempt is still in flight and inspect-first recovery must
+  continue.
+- `blocked`: the journal or fresh live hashes prove finish or rollback would
+  be unsafe.
+
 That sequence is the runtime form of the pull pipeline handoff:
 
 - exporter scans the merge base and coverage evidence
@@ -63,6 +74,10 @@ recomputing provenance locally:
 6. apply revalidates the live remote before every batch and at the storage boundary
 7. journal and recover inspect durable evidence first, then permit mutating
    recovery only when fresh live hashes prove the action
+
+The importer never rewrites the stored base package to match later live
+evidence. It is read-only provenance for later push sessions, not a repair
+mechanism.
 
 That mapping is intentionally one-way:
 

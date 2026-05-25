@@ -395,6 +395,9 @@ The pull exporter/importer handoff is one-way:
 The executor should treat that mapping as the production boundary: the pull
 package stays immutable provenance, while push is a later live mutation path
 that must still refresh remote evidence before every batch.
+The importer never rewrites the stored base package to match later live
+evidence; it only preserves the immutable provenance that preflight binds to
+the remote identity.
 
 That handoff is intentionally asymmetric. Export/import proves the merge base
 and scope coverage. Push consumes that base as provenance, then proves remote
@@ -474,6 +477,17 @@ Recovery is inspect-first:
 2. inspect the live hashes
 3. classify the batch as finishable, rollback-only, retryable, or blocked
 4. only then choose a mutating recovery mode
+
+The inspect result maps the attempt into four recovery states:
+
+- `old` means the journal proves the prior write already committed and no
+  repair is needed.
+- `new` means the remote advanced independently and the stale attempt must be
+  abandoned or replanned from fresh evidence.
+- `open` means the batch is still in flight and the executor must continue
+  inspect-first recovery.
+- `blocked` means the journal or fresh live hashes prove that finish or
+  rollback would be unsafe.
 
 The recovery modes have distinct authority:
 

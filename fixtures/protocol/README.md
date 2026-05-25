@@ -28,15 +28,15 @@ The normal sequence is:
 20. `push-session-journal-proof.json`
 21. `push-auth-session-journal-proof.json`
 22. `push-auth-session-recovery-contract.json`
-23. `push-recovery-path.json`
-24. `push-pull-mapping.json`
-25. `push-contract.json`
-26. `push-topology-matrix.json`
-27. `push-recovery-inspect-contract.json`
-28. `push-snapshot-hashes-page-contract.json`
-29. `push-dry-run-apply-revalidation-contract.json`
-30. `push-production-ladder-contract.json`
-31. `push-executor-topology-proof.json`
+23. `push-pull-mapping.json`
+24. `push-contract.json`
+25. `push-topology-matrix.json`
+26. `push-production-ladder-contract.json`
+27. `push-executor-topology-proof.json`
+28. `push-recovery-path.json`
+29. `push-recovery-inspect-contract.json`
+30. `push-snapshot-hashes-page-contract.json`
+31. `push-dry-run-apply-revalidation-contract.json`
 
 Failure and recovery examples:
 
