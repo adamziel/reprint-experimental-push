@@ -1,6 +1,6 @@
 {
   "mapping_id": "push-pull-handoff-production-map",
-  "purpose": "shows how the persisted pull base package becomes immutable provenance for push",
+  "purpose": "shows how the persisted pull base package becomes immutable provenance for push preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery",
   "pull_exports": {
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance",

@@ -99,6 +99,19 @@ executor already trusts:
 - `push-pull-mapping.json` is the compact contract that maps that immutable pull provenance into preflight, snapshot listing, dry-run, batched apply, journal inspect, and inspect-first recovery
 - `push-protocol-extension-contract.json` is the umbrella contract that ties the pull bridge, auth floor, apply revalidation, and topology proof into one production ladder
 
+The pull/import pipeline maps to the push ladder in the same order the executor runs it:
+
+1. exporter discovers the merge base and coverage evidence.
+2. importer persists the base package as immutable provenance.
+3. `persisted_pull_base_package` becomes the immutable push input.
+4. `push_preflight` is the first live binding after importer persistence.
+5. `push_snapshot_hashes` lists the remote comparison surface for planning only.
+6. `push_plan_dry_run` uploads the canonical plan and returns an eligibility receipt, not a lock.
+7. `push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary.
+8. `push_journal` records durable evidence but never authorizes mutation.
+9. `push_recover inspect` reads the journal and fresh live hashes before any mutating repair.
+10. `push_recover auto|finish|rollback` mutates only after inspect proves the branch safe with the same auth floor as the write path.
+
 ## Production Contract
 
 The push executor may mutate only after it proves a safe three-way plan from
@@ -147,7 +160,7 @@ The production proof bundle is the same one used to review the real push
 extension:
 
 - `push-production-pull-bridge-contract.json` proves the immutable pull-to-push bridge.
-- `push-remote-snapshot-listing-contract.json` proves remote hash listing stays planning-only.
+- `push-remote-snapshot-listing-contract.json` proves planning-only remote hash listing.
 - `push-production-revalidation-contract.json` proves dry-run separation and apply-time revalidation.
 - `push-production-auth-session-journal-recovery-inspect-contract.json` proves the auth/session/journal/recovery floor.
 - `push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.

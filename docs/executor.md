@@ -54,6 +54,8 @@ The executor follows the same production ladder the protocol defines:
 The executor runs that ladder against one persisted pull base package and one
 fixed remote identity:
 
+The pull/import pipeline maps to the executor in the same order:
+
 1. exporter discovers the merge base and coverage evidence.
 2. importer persists the base package as immutable provenance.
 3. `persisted_pull_base_package` is the only pull-derived input the executor

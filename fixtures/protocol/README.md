@@ -115,6 +115,9 @@ identity across `remote-base` and `remote-changed`:
   recovery inspect on the same remote identity.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
+- `push-protocol-extension-contract.json` is the umbrella ladder proof that
+  ties preflight, planning-only snapshot listing, dry-run eligibility,
+  batched apply, journal inspect, and inspect-first recovery into one object.
 - `push-preflight-contract.json` keeps the first live binding explicit: the
   imported base, requested scope, and short-lived session are tied together
   before snapshot listing starts.
