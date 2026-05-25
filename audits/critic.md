@@ -1,22 +1,19 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-fetched remote head `bd9ef3e8`, with earlier retained-source evidence at
-`91ef2b06` still useful as history, not as release proof. The latest explicit
-verdict on that lane is `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the
-lane's completed `npm run verify:release` result, including
-`authSessionType`, minted session shape, `applyCommitted`, and
-`durableJournal.rows: 17`, is material retained-source lab evidence. That is
-real progress, and `2ac32891` tightens the release-proof contract, but it
-still does not prove a live production boundary because the retained-source
-run does not show preserved-remote retention across rejection, live WordPress
-auth/session lifecycle, apply-time revalidation against a fresh real-site
-source, durable journal storage and lease/fencing semantics outside the
-Playground harness, graph identity under remap, or plugin-driver coverage for
-late-discovered plugin-owned surfaces. The supervised lane may now be the best
-available lab evidence, but this branch still lacks a rerunnable live
-boundary that preserves the rejected remote and revalidates from fresh live
-hashes.
+remote head `bd9ef3e8`. The latest explicit verdict on that lane is
+`PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the lane's completed
+`npm run verify:release` result, including `authSessionType`, minted session
+shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
+retained-source lab evidence. That is real progress, but it still does not
+prove a live production boundary because the retained-source run does not
+show preserved-remote retention across rejection, live WordPress auth/session
+lifecycle, apply-time revalidation against a fresh real-site source, durable
+journal storage and lease/fencing semantics outside the Playground harness,
+graph identity under remap, or plugin-driver coverage for late-discovered
+plugin-owned surfaces. The supervised lane may now be the best available lab
+evidence, but this branch still lacks a rerunnable live boundary that
+preserves the rejected remote and revalidates from fresh live hashes.
 Production-grade wording is still false if it relies on lab-session shape,
 retained-source journal rows, or route compatibility as a stand-in for live
 WordPress auth/session durability.
@@ -68,8 +65,8 @@ local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
 - old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface before retry starts.
 
-Until that live boundary exists, `verify:release` is only a retained-source
-lab harness, not evidence that production WordPress push can safely preserve,
+Until that live boundary exists, `verify:release` is only retained-source lab
+evidence, not proof that production WordPress push can safely preserve,
 inspect, and retry a rejected remote on this branch.
 
 ## What improved in the supervised lane
