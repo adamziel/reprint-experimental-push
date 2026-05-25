@@ -86,12 +86,27 @@ Current blocker summary:
 
 The strongest current tests are guardrails, not release proof. They are worth keeping, but they do not close the objective on their own, and they are not a substitute for a required live-source release command. A green `npm test` run makes the evidence sharper rather than safer: the suite is green, yet still stops short of the live-source release boundary. Their main value is negative proof: they show the repo can refuse bad states, not that it can complete the live push safely. They do not prove no data loss, reliability under crash/replay, or measured speed on the live path.
 
+The audit rule here is strict:
+
+- if a test only proves refusal, local ordering, or fixture integrity, it is not a release gate
+- if a smoke is still `labBacked: true`, it is not live-source proof
+- if the benchmark surface keeps `productionThroughput: 'not-claimed'`, it is not a speed claim
+- if no required command composes the evidence in one run, the release boundary is still open
+
 | Test surface | What it really proves | What it does not prove |
 | --- | --- | --- |
 | [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) | Local planning logic, live-remote precondition tracking, conflict detection, and refusal to apply stale or overlapping changes. | It does not mutate the live source boundary, prove no data loss on production storage, or exercise a real remote/local topology. |
 | [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) | File-backed journal sequencing, redaction, restart classification, and recovery state inspection. | It does not prove durable production storage, crash survival on live state, or journal behavior across the real release boundary. |
 | [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) | Guardrail structure for benchmark modeling, refusal of unsupported throughput claims, and internal safety contracts. | It does not measure live-path throughput or establish a release-grade speed claim. |
 | [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) | Tamper detection and explicit refusal of unsupported benchmark claims. | It does not prove that the live push path is fast, nor does it clear a release threshold. |
+
+### Test Claim Matrix
+
+| Claim | Current test proof | Release-grade proof missing |
+| --- | --- | --- |
+| No data loss | Local journal sequencing, replay classification, and planner refusal tests | Live-source apply-time mutation that preserves every touched WordPress data shape end to end |
+| Reliability | Recovery classification, stale-claim refusal, and lab auth/session scaffolding | One mandatory live-source gate covering auth/session, durable journal, leases/fencing, graph identity, plugin-driver, and crash-boundary behavior |
+| Speed | Refusal-only benchmark logic and `productionThroughput: 'not-claimed'` | Measured live-path throughput with an explicit threshold, or a required `speed unclaimed` verdict from the release gate |
 
 ## Test Coverage Verdict
 
