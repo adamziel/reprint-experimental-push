@@ -13,6 +13,7 @@ The missing production proof is now precise: one rerunnable live mutation bounda
 The following should not be described as production-grade until they are proven on the same rerunnable live boundary:
 
 - manual resolution text that does not leave the rejected remote preserved and inspectable;
+- reviewer notes or stale approval text that are not bound to the preserved remote and fresh live hashes on the same rerunnable boundary;
 - auth/session minting without a live WordPress expiry, refresh, nonce or credential renewal, and operator re-entry cycle on the same source URL;
 - durable journal row counts without lease/fencing on production-like storage;
 - graph identity claims without create-time remap coverage and late-discovered relationship-bearing records; and
