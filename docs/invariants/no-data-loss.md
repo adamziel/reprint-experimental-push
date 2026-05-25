@@ -1,8 +1,8 @@
 # No Data Loss Invariants
 
-The push planner may apply local changes automatically only when the live remote
-still matches the pull base for that resource and the mutation can be guarded by
-a live remote precondition.
+The push planner may apply local changes automatically only when the live
+remote still matches the pull base for that resource and the mutation can be
+guarded by a live remote precondition.
 
 What it may apply automatically:
 
