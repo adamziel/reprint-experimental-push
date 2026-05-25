@@ -1,14 +1,21 @@
-Focused command:
-timeout 45s node --test --test-name-pattern='guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js
+Diagnostic date: 2026-05-25
+
+Narrowed command:
+`node --test --test-timeout=5000 test/performance-model.test.js`
 
 Result:
-Passed in about 27.7s.
+The full file times out after 5000ms with Node reporting:
+- `not ok 1 - test/performance-model.test.js`
+- `failureType: 'testTimeoutFailure'`
+- `error: 'test timed out after 5000ms'`
 
-Full-file command:
-timeout 60s node --test test/performance-model.test.js
+Focused subtests checked in the same iteration all passed:
+- `benchmark model covers large uploads and plugin installs`
+- `safety contract covers required speedup areas and terminal states`
+- `fast-path proofs and rejections carry the expected gate metadata`
+- `fast-path fixture isolates the release-safety benchmark shape`
+- `safe fast paths retain all gate proofs and stay non-rejectable`
+- `guarded executor report keeps the large-upload and plugin-install evidence visible`
 
-Result:
-Passed in about 35.9s with all 17 tests green.
-
-Diagnosis:
-The earlier 60s timeout was cumulative and pre-existing rather than a deadlock in the latest fast-path coverage.
+Conclusion:
+The timeout is present on the aggregate full-file run, not on the isolated focused assertions above. I did not add new fast-path cases in this iteration.
