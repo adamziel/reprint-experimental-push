@@ -17728,6 +17728,47 @@ test('durable recovery keeps the approved states across pre-mutation failure, st
   assert.equal(JSON.stringify(replay.site), JSON.stringify(completed.site));
 });
 
+test('durable recovery keeps failure-before-mutation, failure-after-staging, failure-after-validation, and completed replay inside the approved envelope', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const scenarios = [
+    ['before mutation', { failBeforeMutation: true }, 'old-remote', 'opened'],
+    ['after staging', { failAfterStaging: true }, 'old-remote', 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'old-remote', 'dependencies-validated'],
+  ];
+
+  for (const [label, options, expectedState, expectedJournalStatus] of scenarios) {
+    const remote = JSON.parse(JSON.stringify(base));
+    const result = captureError(() => applyPlan(remote, plan, options));
+
+    assert.ok(result instanceof PushPlanError, label);
+    assert.equal(result.details.recovery.status, expectedState, label);
+    assertAcceptableRecoveryState(result.details.recovery);
+    assert.equal(result.details.recovery.artifacts.remote, undefined, label);
+    assert.ok(result.details.recovery.artifacts.journal, label);
+    assert.equal(result.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+  }
+
+  const completed = applyPlan(JSON.parse(JSON.stringify(base)), plan);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, { journal: completed.journal });
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.site.files['index.php'], '<?php echo "local";');
+  assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('durable recovery keeps the accepted post-failure states and replaying a completed plan inert with durable journal artifacts', () => {
   const base = baseSite();
   const local = baseSite();
