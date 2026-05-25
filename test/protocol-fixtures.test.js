@@ -220,6 +220,7 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
   const bridge = readJson('fixtures/protocol/push-production-pull-bridge-contract.json');
   const revalidation = readJson('fixtures/protocol/push-production-revalidation-contract.json');
   const authSession = readJson('fixtures/protocol/push-production-auth-session-journal-recovery-inspect-contract.json');
+  const journalLease = readJson('fixtures/protocol/push-production-journal-lease-recovery-inspect-contract.json');
   const ladder = readJson('fixtures/protocol/push-production-ladder-contract.json');
 
   assert.equal(
@@ -276,6 +277,13 @@ test('production bridge and revalidation fixtures keep the pull handoff and live
   assert.equal(authSession.journal_row.claim_owner, authSession.journal_fence.claim_owner);
   assert.equal(authSession.journal_row.lease_expires_at, authSession.journal_fence.lease_expires_at);
   assert.ok(authSession.recovery_inspect.blocked_when.includes('fresh live hashes do not match the journaled target'));
+
+  assert.equal(journalLease.contract_id, 'push-production-journal-lease-recovery-inspect-contract-one-remote-one-local');
+  assert.ok(journalLease.purpose.includes('journal rows, lease fencing, and read-only recovery inspect'));
+  assert.equal(journalLease.journal_row.claim_generation, 4);
+  assert.equal(journalLease.journal_fence.storage_guard, 'filesystem-compare-rename');
+  assert.ok(journalLease.recovery_inspect.blocked_when.includes('the claim lease has expired and the worker is fenced'));
+  assert.ok(journalLease.required_invariants.includes('claim generation and lease expiry fence stale workers before mutation'));
 
   assert.equal(
     ladder.purpose,

@@ -1225,6 +1225,10 @@ The machine-readable bridge is split across the fixtures:
   the minimum production proof to cite when you need auth floor, push session
   minting, journal rows, lease fencing, and read-only recovery inspect on the
   same remote identity.
+- `push-production-journal-lease-recovery-inspect-contract.json` is the
+  narrower production proof for the journal-row and lease-fence boundary when
+  you only need inspect-first recovery after dry-run and apply have already
+  split.
 - `push-recovery-boundary-contract.json` captures the compact inspect-first
   recovery boundary with the auth floor and Docker/Playground topology in one
   place.

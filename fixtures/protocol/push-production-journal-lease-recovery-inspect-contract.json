@@ -1,0 +1,87 @@
+{
+  "contract_id": "push-production-journal-lease-recovery-inspect-contract-one-remote-one-local",
+  "purpose": "compact production proof that journal rows, lease fencing, and read-only recovery inspect stay aligned with the same remote identity after dry-run and apply have already split",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "persisted_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "base_manifest_hash": "sha256:pull-base-manifest",
+      "base_coverage_hash": "sha256:pull-base-coverage",
+      "remote_site_id": "remote-example"
+    }
+  },
+  "push_sequence": [
+    "push_preflight",
+    "push_snapshot_hashes",
+    "push_plan_dry_run",
+    "push_batch_apply",
+    "push_journal",
+    "push_recover inspect",
+    "push_recover auto|finish|rollback"
+  ],
+  "journal_row": {
+    "journal_cursor": "journal:dry_01j00000000000000000000000:1",
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "before_hash": "sha256:base-index",
+    "staged_hash": "sha256:local-index",
+    "after_hash": "sha256:remote-index",
+    "storage_guard": "filesystem-compare-rename"
+  },
+  "journal_fence": {
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "storage_guard": "filesystem-compare-rename",
+    "proof": "claim generation and lease expiry fence stale workers before mutation"
+  },
+  "recovery_inspect": {
+    "mode": "inspect",
+    "mutates": false,
+    "authorization": "read-only evidence reader that never authorizes mutation by itself",
+    "classifies": [
+      "finish",
+      "rollback",
+      "retry",
+      "block"
+    ],
+    "blocked_when": [
+      "fresh live hashes do not match the journaled target",
+      "the journal cannot prove a safe finish or rollback",
+      "the claim lease has expired and the worker is fenced"
+    ],
+    "proof": "inspect reads the journal row and fresh live hashes before any mutating recovery mode"
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "same_remote_identity": true,
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    },
+    "proof": [
+      "remote-base and remote-changed are the same remote identity observed at different times",
+      "local-edited carries the imported local edits used to build the canonical plan",
+      "runner owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and recovery",
+      "dry-run and apply remain separate remote operations",
+      "journal rows carry claim ownership, claim generation, lease expiry, and recovery fence evidence",
+      "recovery inspect happens before any mutating repair",
+      "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+    ]
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable",
+    "claim generation and lease expiry fence stale workers before mutation",
+    "recovery must begin with inspect before any mutating repair",
+    "fresh live hashes must still be checked before finish, rollback, or auto",
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+  ]
+}

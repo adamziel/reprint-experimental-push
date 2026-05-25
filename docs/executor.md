@@ -963,12 +963,14 @@ The review path is intentionally layered:
 - `push-remote-snapshot-listing-contract.json` is the planning-only hash-listing proof that stays cursorable without becoming write authority.
 - `push-production-revalidation-contract.json` is the compact production proof for preflight, snapshot listing, dry-run eligibility, apply-time revalidation, journal evidence, and inspect-first recovery.
 - `push-production-auth-session-journal-recovery-inspect-contract.json` is the compact proof for the auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect.
+- `push-production-journal-lease-recovery-inspect-contract.json` is the compact proof for the journal-row and lease-fence boundary when you only need inspect-first recovery after the dry-run/apply split.
 - `push-production-topology-contract.json` is the production harness proof for one remote source, one imported local edit site, and one later drift observation of the same remote identity.
 - `push-remote-liveness-topology-contract.json` is the smallest proof for the dry-run/apply separation plus live revalidation boundary.
 
 The inspect-first recovery proof path is intentionally explicit:
 
 - `push-production-auth-session-journal-recovery-inspect-contract.json` is the compact production proof for auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect.
+- `push-production-journal-lease-recovery-inspect-contract.json` is the compact production proof for journal rows, lease fencing, and read-only recovery inspect after the dry-run/apply split.
 - `push-production-recovery-inspect-contract.json` is the production-shaped proof for the same inspect-first boundary when you need the journal row, lease fence, and live drift classification to stay aligned with the write path.
 - `push-production-recovery-drift-contract.json` is the production-shaped proof for recovery inspect after the remote has drifted and the same remote identity still has to be revalidated before mutation.
 

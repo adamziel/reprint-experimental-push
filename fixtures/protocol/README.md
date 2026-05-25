@@ -57,8 +57,9 @@ The normal sequence is:
 49. `push-production-topology-contract.json`
 50. `push-production-auth-session-journal-recovery-inspect-contract.json`
 51. `push-production-pull-bridge-contract.json`
-52. `push-production-executor-flow-contract.json`
-53. `push-protocol-extension-topology-contract.json`
+52. `push-production-journal-lease-recovery-inspect-contract.json`
+53. `push-production-executor-flow-contract.json`
+54. `push-protocol-extension-topology-contract.json`
 
 The seven protocol surfaces are the ones the executor must treat as distinct
 remote boundaries:
@@ -152,6 +153,9 @@ identity across `remote-base` and `remote-changed`:
   the proof to cite when you need the minimum production evidence for auth
   floor, push session minting, journal rows, lease fencing, and read-only
   recovery inspect on the same remote identity.
+- `push-production-journal-lease-recovery-inspect-contract.json` is the
+  narrowest production proof for journal rows, lease fencing, and inspect-
+  first recovery after the dry-run/apply split.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-protocol-extension-contract.json` is the umbrella ladder proof that
@@ -176,6 +180,7 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-executor-flow-contract.json` is the compact end-to-end
   proof for the pull handoff, preflight, planning-only hash listing, dry-run
   receipt, batched apply, journal inspect, and inspect-first recovery.
+- `push-production-journal-lease-recovery-inspect-contract.json` is the compact production proof for journal rows, lease fencing, and read-only recovery inspect after the dry-run/apply split.
 - `push-preflight-contract.json` and `push-remote-snapshot-listing-contract.json`
   are the short-form proofs for the first live binding and the planning-only
   remote hash listing step.
