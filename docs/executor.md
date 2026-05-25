@@ -42,6 +42,24 @@ The pull-to-push bridge is one-way:
 | Persisted provenance checksum | `push_journal` | Read durable evidence only. |
 | Coverage and lineage replay | `push_recover inspect` | Classify recovery before any mutating repair. |
 
+The pull pipeline remains the source of immutable push provenance:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning-only evidence
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any mutating repair
+
+The canonical production proof bundle is `push-protocol-extension-contract.json`:
+
+- it ties exporter/importer provenance to preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery
+- it keeps apply-time revalidation separate from the dry-run receipt
+- it carries the one-remote, one-local, one-drift topology in both Docker and Playground
+- it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
+
 The executor follows the same ordered stages defined in the protocol:
 
 1. `push_preflight` binds the imported pull base package to one live remote

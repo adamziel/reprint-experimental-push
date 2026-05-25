@@ -199,6 +199,11 @@ The machine-readable bridge is split across the fixtures:
   the compact proof that binds auth floor, push session minting, journal
   rows, lease fencing, and read-only recovery inspect to the same remote
   identity and local edit site.
+- `push-protocol-extension-contract.json` is the canonical production ladder
+  bundle. It binds the immutable pull base package to preflight, remote
+  snapshot hash listing, dry-run plan upload, batched apply, journal inspect,
+  and inspect-first recovery on the same one-remote, one-local, one-drift
+  topology.
 
 For review and implementation work, the canonical production push chain is:
 
@@ -215,6 +220,18 @@ For review and implementation work, the canonical production push chain is:
    any mutating recovery branch.
 8. `push_recover auto|finish|rollback` may mutate only when inspect proves
    the branch safe with the same auth floor as the write path.
+
+The reviewable bridge is the same chain rendered as fixture evidence:
+
+- `push-protocol-extension-contract.json` ties the pull pipeline, the push
+  sequence, the auth floor, and the one-remote, one-local topology into one
+  production object
+- `push-remote-liveness-topology-contract.json` keeps dry-run and apply
+  separate while proving apply-time revalidation
+- `push-deployment-topology-contract.json` keeps the `8080` ingress rule and
+  local-only proxy policy explicit
+- `push-pull-to-topology-contract.json` maps immutable pull provenance into
+  the production harness without turning it back into write authority
 
 The compact proof chain is intentionally one-way:
 

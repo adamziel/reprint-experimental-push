@@ -349,6 +349,24 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'preflight binds the persisted pull base package to one live remote identity and one short-lived push session',
     ),
   );
+  assert.deepEqual(protocolExtensionContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.push_batch_apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary, and never reuses the dry-run receipt as a lock',
+  );
+  assert.ok(
+    protocolExtensionContract.topology.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
   assert.equal(contract.topology.networking.ingress_port, 8080);
   assert.equal(contract.topology.networking.proxy_policy, 'local-only');
   assert.equal(contract.topology.networking.tunnels, 'disallowed');
