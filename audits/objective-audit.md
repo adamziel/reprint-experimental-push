@@ -177,10 +177,10 @@ where they are asked to prove production release safety.
 - `scripts/bench/guarded-executor-benchmark.js` proves the benchmark can block
   unsupported throughput claims. It does not itself measure a live push path,
   set a required threshold, or enforce a release decision unless the claim
-  gate is explicitly invoked. That makes it a refusal test, not speed proof.
-  The unit test confirms blocker detection and tamper rejection, but it still
-  never exercises a live source site, a production executor, or a measured
-  threshold.
+  gate is explicitly invoked. That makes it a refusal test, not speed proof or
+  a release authorization. The unit test confirms blocker detection and
+  tamper rejection, but it still never exercises a live source site, a
+  production executor, or a measured threshold.
 
 That splits the suite into three evidence classes:
 
@@ -565,7 +565,8 @@ invocation and can be skipped while `npm test` remains green.
    production storage and row-apply capabilities. That makes the current speed
    story stricter than the docs, but still not releasable: the repository lacks
    the measured end-to-end run, documented environment, and release threshold
-   that would clear those blockers.
+   that would clear those blockers. In audit terms, this is refusal evidence,
+   not speed proof, and it cannot satisfy R15 by itself.
 
 5. **No test proves the no-data-loss claim across the whole WordPress graph.**
    The current evidence can preserve selected posts, options, files, postmeta,
