@@ -238,6 +238,7 @@ What the current tests actually prove:
 - `test/recovery-journal.test.js` proves the file-backed journal keeps monotonic records, redacts raw values, and classifies restart-inspectable failure states in the journal model.
 - `test/performance-model.test.js` proves the benchmark model encodes the intended gates, refusal states, and safe-speedup guardrails.
 - `test/guarded-executor-benchmark.test.js` proves unsupported throughput claims are refused when the model reports missing durable evidence.
+- None of those benchmark tests time the live push path, so they are refusal proof, not speed proof.
 - The `npm run test:playground:*` scripts prove several lab-shaped route and storage slices, but they remain optional and do not collapse into one enforced release decision.
 - `npm test` is therefore a blocker check, not a release approver: it proves local invariants and refusal discipline, but it does not touch the live-source mutation boundary named by the objective.
 
