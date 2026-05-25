@@ -851,6 +851,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+    proposal: 'treat a compressed remote index plus a cached dependency graph as enough proof to skip plugin-update finalize',
+    rejectedBecause: 'planning evidence and a cached dependency graph can reduce lookup work, but they cannot prove the live row compares, member metadata writes, or the atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-row-batch-replaces-atomic-group',
     proposal: 'treat a compressed row batch as the atomic-group commit for a plugin install or update',
     rejectedBecause: 'compression can shrink the batch, but it cannot replace the group commit barrier that keeps coupled files, rows, metadata, and activation state visible together',

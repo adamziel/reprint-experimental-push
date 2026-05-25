@@ -657,6 +657,10 @@ under load:
   rejected because planning evidence and cached hashes can skip lookup and
   rehash work, but they cannot prove the live compare, staged rows, or the
   atomic-group finalize survived failure.
+- compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize
+  is rejected because planning evidence and a cached dependency graph can
+  reduce lookup work, but they cannot prove the live row compares, member
+  metadata writes, or the atomic-group finalize survived failure.
 - compressed-row-batch-skips-batch-receipts is rejected because compression
   can lower queue pressure, but it cannot replace per-row receipts or the
   recovery record needed to classify a partial batch.
