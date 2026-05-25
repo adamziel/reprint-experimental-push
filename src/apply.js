@@ -46,13 +46,18 @@ export function applyPlan(remote, plan, options = {}) {
   let previousJournalState = null;
   let journal = prepareJournal(remote, plan, options.journal);
   if (journal.status === 'completed') {
-    const result = replayCompletedPlan(remote, plan, journal);
+    let replayResult;
     try {
-      recordDurableReplay(durableJournal, remote, plan, result.recoveryState, journal);
+      replayResult = replayCompletedPlan(remote, plan, journal);
+      recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal);
+      return replayResult;
     } catch (error) {
-      throw journalWriteFailureFullyUpdated(error, remote, plan, result.journal, 'journal-replayed');
+      if (error?.details?.recovery?.status === 'blocked-recovery') {
+        recordDurableRecoveryStateBestEffort(durableJournal, remote, plan, error.details.recovery);
+        throw error;
+      }
+      throw journalWriteFailureFullyUpdated(error, remote, plan, replayResult?.journal || journal, 'journal-replayed');
     }
-    return result;
   }
   if (hasPreviousJournal) {
     const observedState = classifyJournalRemote(remote, journal);

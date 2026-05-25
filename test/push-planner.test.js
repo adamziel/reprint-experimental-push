@@ -3144,7 +3144,9 @@ test('stale completed replay on durable journal blocks with journal and remote a
   assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
   assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Drifted after completion');
   assert.equal(persisted.integrity.status, 'ok');
-  assert.equal(persisted.records.length, 0);
+  assert.equal(persisted.records.length, 1);
+  assert.equal(persisted.records[0].type, 'recovery-state');
+  assert.equal(persisted.records[0].state, 'blocked-recovery');
 });
 
 test('replaying a completed plan requires a complete matching journal envelope', () => {
@@ -4242,7 +4244,9 @@ test('durable stale completed replay blocks without duplicating inserts or rewri
   assert.equal(replayError.details.recovery.artifacts.journal.status, 'completed');
   assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Externally edited after completion');
   assert.equal(persisted.integrity.status, 'ok');
-  assert.equal(persisted.records.length, 0);
+  assert.equal(persisted.records.length, 1);
+  assert.equal(persisted.records[0].type, 'recovery-state');
+  assert.equal(persisted.records[0].state, 'blocked-recovery');
 });
 
 test('completed replay stays inert even if the local source diverges after completion', () => {
@@ -5127,7 +5131,9 @@ test('durable stale completed replay blocks with inspectable artifacts instead o
   assert.equal(error.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
   assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(persisted.integrity.status, 'ok');
-  assert.equal(persisted.records.length, 0);
+  assert.equal(persisted.records.length, 1);
+  assert.equal(persisted.records[0].type, 'recovery-state');
+  assert.equal(persisted.records[0].state, 'blocked-recovery');
 });
 
 test('durable completed replay stays inert when local source has stale inserts and edits', () => {
@@ -5476,8 +5482,10 @@ test('durable stale completed replay blocks with inspectable artifacts instead o
   assert.ok(error.details.recovery.artifacts.remote, 'blocked replay must retain remote artifacts');
   assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
   assert.equal(error.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title, 'Drifted after completion');
+  assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state');
+  assert.equal(persisted.records[persisted.records.length - 1].state, 'blocked-recovery');
+  assert.equal(persisted.records[persisted.records.length - 1].reason, error.details.recovery.reason);
   assert.equal(persisted.integrity.status, 'ok');
-  assert.equal(persisted.records.length, 0);
 });
 
 test('mid-apply failure only leaves blocked recovery with artifacts, never a silent partial remote', () => {
