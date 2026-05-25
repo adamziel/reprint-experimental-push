@@ -1,20 +1,21 @@
-Diagnosis for performance-model hang:
+Performance model hang diagnosis
 
-Focused command that isolated the report-heavy area:
-  node --test --test-name-pattern 'parallelism limits and backpressure budgets are explicit|rejected fast paths cover precondition bypasses and atomic group splits|safe fast paths retain all gate proofs and stay non-rejectable' test/performance-model.test.js
-  result: passed quickly
+Date: 2026-05-25
 
-Focused commands that initially looked slow but completed:
-  node --test --test-name-pattern 'production throughput stays blocked until measured storage receipts exist' test/performance-model.test.js
-  result: passed in about 1.6s
-  node --test --test-name-pattern 'guarded executor report keeps the large-upload and plugin-install evidence visible' test/performance-model.test.js
-  result: passed in about 6.8s
-  node --test --test-name-pattern 'guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js
-  result: passed in about 12.6s
+Focused commands:
+- `timeout 20s node --test --test-name-pattern='benchmark model covers large uploads and plugin installs' test/performance-model.test.js`
+  - Result: passed
+- `timeout 20s node --test --test-name-pattern='guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js`
+  - Result: passed
+- `timeout 20s node --test --test-name-pattern='unsafe shortcuts stay rejected when they would bypass live preconditions or atomic groups' test/performance-model.test.js`
+  - Result: passed
 
-Full-file command under the 60-second contract:
-  timeout 60s node --test test/performance-model.test.js
-  result: passed in about 26.7s
+Full-file command:
+- `timeout 60s node --test test/performance-model.test.js`
+  - Result: passed
+  - Timing: `# duration_ms 14594.764972`
 
 Conclusion:
-  The original full-file timeout was not reproducible in this iteration after narrowing. No lane-local failing assertion was identified; the earlier timeout appears pre-existing/intermittent rather than caused by the current fast-path edits.
+- The earlier `TAP version 13` timeout was not reproduced in this iteration.
+- The full-file timeout appears pre-existing or intermittent rather than introduced by the lane's latest work.
+- `node --test test/performance-model.test.js` currently completes in this workspace.
