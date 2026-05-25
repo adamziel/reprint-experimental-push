@@ -22,7 +22,8 @@ half:
 
 - `push_preflight` binds the persisted pull base to one live remote identity
   and one short-lived push session.
-- `push_snapshot_hashes` is a cursorable planning-only hash listing.
+- `push_snapshot_hashes` is a cursorable planning-only hash listing; paging it
+  only advances evidence collection and never grants write authority.
 - `push_plan_dry_run` uploads a canonical plan and returns an eligibility
   receipt, not a lock.
 - `push_batch_apply` is the first write stage and must revalidate live remote
@@ -49,7 +50,7 @@ The production contract is deliberately strict:
 1. Preflight binds the immutable pull base to a live remote identity and a
    short-lived push session.
 2. Snapshot hashes list live remote evidence for planning only and never act as
-   write authority, even when the listing is paged.
+   write authority, even when the listing is paged or resumed from a cursor.
 3. Dry-run and apply are separate remote operations.
 4. Apply revalidates the live remote before every batch and again at the
    storage boundary for each mutation, and fails closed if the remote drifted

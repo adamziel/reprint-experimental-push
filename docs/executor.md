@@ -38,7 +38,7 @@ The production sequence is fixed:
    and a short-lived push session.
 2. `push_snapshot_hashes` lists the live remote comparison set for planning.
    Large sites may require cursoring, but every page remains planning-only and
-   never becomes a lock.
+   never becomes a lock or a write permit.
 3. The local planner builds the canonical three-way plan from base, local, and
    live remote evidence.
 4. `push_plan_dry_run` uploads that canonical plan as eligibility evidence
