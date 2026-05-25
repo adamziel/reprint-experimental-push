@@ -45,6 +45,9 @@ This is the short operational version of the planner invariant policy.
 - Plugin-context and plugin-owned data mutations only when their required live
   remote plugin context still matches the pull base or the local side
   independently matches the live remote context.
+- Plugin-owned deletes only when the owning plugin context still matches the
+  live remote context, or the local side independently matches that live
+  remote owner context.
 - Unsupported plugin-owned resources must stop even when unrelated remote-only
   plugin drift is present; the blocker stays scoped to the owned resource and
   the remote drift remains preserved.
@@ -73,5 +76,7 @@ This is the short operational version of the planner invariant policy.
   not independently match the live remote context.
 - Plugin-context or plugin-owned data mutations when the relevant live remote
   plugin context drifted and the local side did not independently match it.
+- Plugin-owned deletions when the owning plugin context no longer matches the
+  live remote context, even if unrelated remote-only plugin drift is present.
 - Any mutation that lacks a live remote precondition bound to the mutation id,
   resource key, and remote hash observed during planning.

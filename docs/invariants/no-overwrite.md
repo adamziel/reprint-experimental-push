@@ -55,6 +55,9 @@ the live remote immediately before apply.
   matches the live remote context, or the live remote plugin files and metadata
   still match the pull base. Owner plugin context means plugin metadata plus
   files under that plugin's directory.
+- Plugin-owned deletions only when the owning plugin context still matches the
+  live remote context, or the local side independently matches the live remote
+  owner context. Remote-only plugin drift still stays `keep-remote`.
 - Reference-bearing WordPress graph rows only when each referenced target is
   present on the live remote and either that target did not drift since the
   pull base or local has independently reached the same target hash as the live
@@ -83,6 +86,9 @@ the resource key, the live remote hash observed during planning, and the
 - Remote-only owner plugin context changes when local wants to mutate data owned
   by that plugin. The planner must preserve the remote plugin context and refuse
   the stale plugin-owned data mutation.
+- Remote-only plugin drift does not block an unrelated plugin-owned delete when
+  the owning plugin context is still healthy and the delete carries its own
+  live remote precondition.
 - Remote descendants that would be hidden by a local file deletion or type swap
   unless the plan also proves the descendant is an unchanged base resource
   being deleted.
@@ -152,6 +158,8 @@ the resource key, the live remote hash observed during planning, and the
 - Plugin-owned deletions remain blocked even with explicit delete opt-in when
   the remote removed the owning plugin and the local plan still touches that
   owner context. The stale owner context wins over the unrelated safe edit.
+- Plugin-owned deletions when the owning plugin context no longer matches the
+  live remote context, even if unrelated remote-only plugin drift is present.
 - Unrelated remote-only plugin drift does not make a stale plugin-context
   mutation safe. If local touches the same plugin's files or plugin-owned data,
   stop.

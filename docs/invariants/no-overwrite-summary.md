@@ -18,6 +18,9 @@ This lane's planner policy is intentionally narrow:
 - Plugin-owned data updates when the owning plugin context in local matches the
   live remote context, or when the live remote plugin context still matches the
   pull base.
+- Plugin-owned deletions when the owning plugin context still matches the live
+  remote context, or when the local side independently matches the live remote
+  owner context.
 
 Every automatic mutation must carry a live-remote precondition that matches the
 mutation id, resource key, and remote hash observed during planning.
@@ -44,6 +47,8 @@ mutation id, resource key, and remote hash observed during planning.
   changed since the pull base and local does not match that live owner context.
 - File topology conflicts where a local deletion or type swap would overwrite,
   remove, or hide a live remote ancestor or descendant.
+- Plugin-owned deletions when the owning plugin context no longer matches the
+  live remote context, even if unrelated remote-only plugin drift is present.
 - Any mutation that lacks a matching live remote precondition.
 
 Stopping means the planner returns `conflict` or `blocked`, and apply must

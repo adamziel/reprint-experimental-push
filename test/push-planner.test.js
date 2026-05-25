@@ -8747,6 +8747,52 @@ test('blocks plugin-owned deletes when the owner plugin was removed remotely whi
   assert.equal(remote.plugins.forms, undefined);
 });
 
+test('applies plugin-owned deletes when the owner context independently matches and remote-only plugin drift is preserved', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.plugins.forms.description = 'shared forms drift';
+  local.files['wp-content/plugins/forms/forms.php'] = '<?php /* shared forms drift */';
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+      driver: 'wp-option',
+      allowDelete: true,
+    }),
+  };
+  const remote = baseSite();
+  remote.plugins.forms.description = 'shared forms drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* shared forms drift */';
+  remote.plugins.seo = { version: '1.0.0', active: true };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const remoteOnlyPluginDecision = decisionFor(plan, 'plugin:seo');
+  const remoteOnlyPluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutation.action, 'delete');
+  assert.equal(mutation.changeKind, 'delete');
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(pluginDecision.decision, 'already-in-sync');
+  assert.equal(pluginFileDecision.decision, 'already-in-sync');
+  assert.equal(remoteOnlyPluginDecision.decision, 'keep-remote');
+  assert.equal(remoteOnlyPluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.db.wp_options, 'option_name:forms_settings'), false);
+  assert.equal(result.site.plugins.forms.description, 'shared forms drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* shared forms drift */');
+  assert.equal(result.site.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks plugin-owned updates when the owner plugin was removed remotely while preserving unrelated safe edits and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
