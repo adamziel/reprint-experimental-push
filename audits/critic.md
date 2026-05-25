@@ -6,15 +6,16 @@ proof point. `npm run verify:release` is now material retained-source
 evidence, but it is still local Playground lab evidence and not live retry
 authority unless the branch also proves the live production WordPress
 auth/session boundary, durable journal semantics, graph identity, and
-plugin-driver coverage on a real-site rerun. The old "no `verify:release`
-exists" critique is retired; the blocker now is the missing rerunnable live
-boundary with preserved-remote audit evidence on a real local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL`. Keep the supervised lane and this branch
-separate: the former supplies retained-source lab evidence, while the latter
-still lacks the live rerun on the real boundary.
-Any claim that `verify:release` is "production-shaped" or "production-ready"
-must fail closed until that live rerun exists on a real local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL`.
+plugin-driver coverage on a real-site rerun. The retired critique is the one
+that said no `verify:release` command exists; do not reintroduce it on this
+branch. The current blocker is the missing rerunnable live boundary with
+preserved-remote audit evidence on a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL`.
+Keep the supervised lane and this branch separate: the former supplies
+retained-source lab evidence, while the latter still lacks the live rerun on
+the real boundary. Any claim that `verify:release` is "production-shaped" or
+"production-ready" must fail closed until that live rerun exists on a real
+local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
 On this audit branch, the local script inventory still shows only `plan`,
 `apply`, `test`, and playground/recovery compatibility helpers in
 `package.json`; there is no named real-site release command on this branch
@@ -157,6 +158,9 @@ Source-note comparison stays provenance only:
 - ForkPress proves audit/merge/crash-consistency intent, not a branch-local
   live rerun with preserved-remote evidence, apply-time revalidation, or
   later-surface preserve / reject / retry handling.
+- If a comparison note is cited here, it must name the exact upstream state or
+  worktree, state what the note proves on this branch, and state what it does
+  not prove on this branch; otherwise it is historical context only.
 - Even when a comparison note shares the same route family, package mount, or
   reviewer wording as this branch, it remains provenance only unless it names
   the exact upstream state, states what it proves here and what it does not
