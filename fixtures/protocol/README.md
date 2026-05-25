@@ -125,6 +125,15 @@ identity across `remote-base` and `remote-changed`:
   before and after drift. It also pins the shared auth/session floor, the
   journal rows, lease fencing, and inspect-first recovery path so the same
   proof covers dry-run, apply, and recovery.
+
+The top-level ladder is intentionally staged:
+
+1. preflight
+2. remote snapshot hash listing
+3. dry-run plan upload
+4. batched apply with apply-time revalidation
+5. journal inspect
+6. inspect-first recovery
 - `push-production-auth-session-journal-recovery-inspect-contract.json` is
   the compact proof that binds the auth floor, minted push session, journal
   row, lease fence, and read-only recovery inspect into one production-shaped

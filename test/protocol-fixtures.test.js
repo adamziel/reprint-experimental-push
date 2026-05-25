@@ -83,6 +83,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
       'push-production-revalidation-contract.json` is the compact proof that',
     ),
   );
+  assert.ok(
+    protocolReadme.includes(
+      'push-protocol-extension-contract.json` is the top-level production ladder',
+    ),
+  );
 });
 
 test('push protocol docs keep the production ladder, pull bridge, and topology contract aligned', () => {
@@ -107,6 +112,16 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
     ),
   );
   assert.ok(
+    protocolDocs.includes(
+      'The bridge is machine-readable and stage-ordered:',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'push_recover auto|finish|rollback` may mutate only after inspect proves the branch safe with the same auth floor as the write path',
+    ),
+  );
+  assert.ok(
     executorDocs.includes(
       'The canonical production proof bundle is `push-protocol-extension-contract.json`',
     ),
@@ -128,12 +143,22 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     executorDocs.includes(
+      'The bridge is reviewed in a fixed order:',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
       'it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary',
     ),
   );
   assert.ok(
     executorDocs.includes(
       'The pull-to-push bridge is one-way',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'That topology is also the live-drift proof:',
     ),
   );
 });

@@ -79,6 +79,17 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it preserves the one-way mapping from immutable pull provenance to mutable push execution
 - it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`, which are the compact one-remote, one-local, one-drift harness proofs for Docker and Playground
 
+The bridge is reviewed in a fixed order:
+
+1. exporter/importer create the immutable pull base package.
+2. `push_preflight` binds that package to one live remote identity and one short-lived push session.
+3. `push_snapshot_hashes` lists the live remote comparison surface for planning only.
+4. `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and at the storage boundary.
+6. `push_journal` records durable evidence without authorizing mutation.
+7. `push_recover inspect` reads the journal and fresh live hashes before any mutating repair.
+8. `push_recover auto|finish|rollback` may mutate only when inspect proves the branch safe and the auth floor still holds.
+
 The executor consumes that bridge in the same order:
 
 - exporter discovers the merge base and coverage evidence
@@ -150,6 +161,14 @@ The same topology proof stays fixed in both Docker and Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy.
 - remote tunnels are disallowed.
+
+That topology is also the live-drift proof:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` is the imported local site carrying candidate edits.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` keeps dry-run and apply separate and revalidates before every batch.
+- `push_recover inspect` is read-only and must happen before any mutating recovery branch.
 
 That topology is the minimum production-shaped harness:
 

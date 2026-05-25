@@ -173,6 +173,16 @@ The canonical production ladder bundle is `push-protocol-extension-contract.json
 - it preserves the one-way rule that pull provenance is immutable push input, not a mutable snapshot cache
 - it is the umbrella contract that pairs with `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json` so the one remote source, one imported local edit site, and one later drift observation stay explicit in both harnesses
 
+The bridge is machine-readable and stage-ordered:
+
+1. `push_preflight` binds the imported pull base package to one live remote identity and one short-lived push session.
+2. `push_snapshot_hashes` lists the live remote comparison surface for planning only and may page large sites.
+3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an eligibility receipt, not a lock.
+4. `push_batch_apply` revalidates fresh live evidence before every batch and again at the storage boundary.
+5. `push_journal` records durable evidence without authorizing mutation.
+6. `push_recover inspect` reads the journal and fresh live hashes before any mutating repair.
+7. `push_recover auto|finish|rollback` may mutate only after inspect proves the branch safe with the same auth floor as the write path.
+
 The bridge is exactly:
 
 - exporter scans the merge base and coverage evidence
@@ -228,6 +238,14 @@ For review, the canonical one-remote, one-local test topology is:
   through a local-only proxy
 - the pull exporter/importer pipeline remains the provenance source for all
   push stages
+
+The same topology is used to prove live drift handling:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits used to build the canonical plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` keeps dry-run and apply separate and revalidates before mutation
+- `push_recover inspect` stays read-only before any mutating recovery branch
 
 The same topology is reused in both harnesses:
 
