@@ -36,6 +36,22 @@ specific missing proofs:
   retry cannot widen the old approval or turn recovery evidence into current
   authority.
 
+Source-note comparison boundary:
+
+- Reprint proves a staged transport rhythm and resumable delivery shape; it
+  does not prove that this repo has a live remote write boundary that rejects
+  stale authority before mutation.
+- ZS-Sync proves bounded discovery and scoped scanning; it does not prove
+  create-time identity reservation, remote-preserving retry, or plugin-owned
+  write safety.
+- ForkPress proves review and conflict vocabulary; it does not prove that a
+  stale review artifact cannot be reused as write authority after the remote
+  drifts.
+
+Any comparison that omits the exact upstream revision or worktree state being
+reverified remains historical context only, even if it names the same feature
+or route family.
+
 One more claim needs to stay blocked even when the route, mount, or hash looks
 healthy: a stale manual-review artifact is not a success path just because it
 remains readable. If that artifact can still authorize a retry against a new
@@ -110,6 +126,9 @@ Release-grade checklist:
 - The stale approval stayed auditable but could not authorize a retry, a
   different row, a different file, a relationship-bearing record, or a
   plugin-owned surface.
+- Manual resolution stayed audit-visible but could not be reused as current
+  write authority after drift, and the preserved remote remained inspectable
+  for retry review.
 - Create-time identity remapping was either proven safe at the live boundary
   or blocked before any write.
 - Every plugin-owned surface in scope was explicitly enumerated or hard-
