@@ -1,14 +1,16 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `c00eb112`, with `889bd37a` as the prior explicit production
-boundary verdict, `68664884` as the earlier boundary-verdict step, and
-`63a3502f` as an earlier retained-source proof point. The remote lane's
-completed `npm run verify:release` result, including `authSessionType`,
-minted session shape, `applyCommitted`, and `durableJournal.rows: 17`, is
-material retained-source lab evidence. The remote lane also exposes
-`verify:release` in `package.json`, so any remaining absence of that command
-on this checkout is a branch-local merge gap, not a project-wide absence.
+remote head `889bd37a`, which records the explicit boundary verdict
+`PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, with `68664884` as the earlier
+boundary-verdict step, `63a3502f` as an earlier retained-source proof point,
+and `c00eb112` as a later retained-source lab run that still sits below the
+production bar. The remote lane's completed `npm run verify:release` result,
+including `authSessionType`, minted session shape, `applyCommitted`, and
+`durableJournal.rows: 17`, is material retained-source lab evidence. The
+remote lane also exposes `verify:release` in `package.json`, so any remaining
+absence of that command on this checkout is a branch-local merge gap, not a
+project-wide absence.
 
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker
@@ -72,6 +74,9 @@ the following on the same live boundary:
   relationship-bearing records, and plugin-owned surfaces; and
 - plugin-driver coverage for late-discovered plugin-owned data traps outside
   the allowlist.
+
+Until those proofs exist on the same live boundary, any wording that says the
+system is production-ready is a claim without audit-grade support.
 
 Any hidden-loss mode that is not proven there remains a blocker:
 
@@ -143,4 +148,3 @@ Before any production wording, the project must show:
 - a lab or retained-source `verify:release` run is promoted to production
   evidence without the live WordPress auth/session boundary, preserved remote,
   and apply-time revalidation on a real local, Playground, or Docker source.
-
