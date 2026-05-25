@@ -208,7 +208,10 @@ branch, the exact stale-drift case, the preserved remote that stayed
 inspectable after rejection, the rejection point before the first write, and
 old/new/blocked classification for every touched surface. Without all of that,
 the smoke and the note remain compatibility evidence or audit evidence only,
-even when the route family and reviewer wording match the production path.
+even when the route family, package layout, or reviewer wording match the
+production path. A later-discovered plugin-owned surface or remapped create
+target still needs its own preserve / reject / retry cycle; shape similarity
+does not widen the earlier boundary.
 
 Fail-closed wording rule:
 
