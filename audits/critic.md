@@ -48,9 +48,10 @@ evidence and into a production WordPress auth/session lifecycle, with durable
 journal semantics plus explicit graph-identity, plugin-driver, and plugin-
 owned surface coverage on the live boundary. The current blocker is that no
 available command yet proves preserved-remote safety, apply-time
-revalidation, production auth/session lifecycle, graph identity, or
-plugin-driver coverage on a real-site boundary. A wrapper, comparison note,
-or polished smoke name never replaces that proof.
+revalidation, production auth/session lifecycle, graph identity,
+plugin-driver coverage, or plugin-owned surface classification on a
+real-site boundary. A wrapper, comparison note, or polished smoke name never
+replaces that proof.
 The retained-source `npm run verify:release` run can support the design
 history, but it does not become retry authority until the branch reruns the
 same live boundary here and preserves the rejected remote for audit.

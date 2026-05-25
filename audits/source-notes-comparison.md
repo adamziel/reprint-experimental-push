@@ -33,11 +33,11 @@ later-discovered plugin-owned surface was handled as a separate boundary.
 Reprint, ZS-Sync, and ForkPress each fail for a different missing proof:
 Reprint does not prove preserved-remote push safety, production auth/session
 lifecycle, graph identity, or plugin-driver coverage on this branch; ZS-Sync
-does not prove plugin-owned surface coverage, graph identity, or identity-
-remap safety; and ForkPress does not prove stale-review artifacts stay audit-
-only after drift, that plugin-driver coverage can be inferred from audit
-vocabulary alone, or that a later-discovered plugin-owned surface can inherit
-the earlier boundary's authority.
+does not prove plugin-owned surface coverage, plugin-driver coverage, graph
+identity, or identity-remap safety; and ForkPress does not prove stale-review
+artifacts stay audit-only after drift, that plugin-driver coverage can be
+inferred from audit vocabulary alone, or that a later-discovered plugin-owned
+surface can inherit the earlier boundary's authority.
 In other words: a named feature family is not enough. The branch must be able
 to point to the exact upstream commit or worktree state and the exact live
 mutation boundary that was exercised here, or the comparison stays historical
