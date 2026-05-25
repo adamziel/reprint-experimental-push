@@ -1241,6 +1241,11 @@ branch independently reverified the same revision or worktree state.
 If a comparison note is used in a claim, the claim must say whether the exact
 upstream revision or worktree was reverified. If it was not, the note is
 historical context only and cannot support production wording.
+The production release gate below is mandatory for every status note, branch
+note, review comment, and release note. A lab route, package mount,
+`finalMatchesLocal`, or source-note comparison can only remain compatibility
+evidence until the same live write boundary is rechecked against a drifted
+remote and the stale authority is rejected before mutation.
 
 ### Reprint
 
