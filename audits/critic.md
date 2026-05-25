@@ -110,29 +110,33 @@ What still blocks production-grade wording:
 What must change before production-grade wording is defensible:
 
 - one rerunnable live release command must exist and print the exact command
-  string, executor identity, live auth/session boundary, preserved remote,
-  exact rejection point, dry-run receipt, apply-time revalidation, and
-  journal/recovery inspection for the same boundary;
-- that command must also show the preserved remote is still inspectable after
+  string, exact live `REPRINT_PUSH_SOURCE_URL`, executor identity, live
+  auth/session boundary, preserved remote, exact rejection point, dry-run
+  receipt, apply-time revalidation, and journal/recovery inspection for the
+  same boundary;
+- that command must prove the preserved remote is still inspectable after
   rejection, so audit and retry can both be verified instead of only asserted
-  in review prose;
+  in review prose or inferred from route shape;
 - the branch must prove live old/new/blocked classification for every touched
   row, file, relationship-bearing record, and plugin-owned surface before
   retry starts, including any hidden table, cron row, runtime registry,
   generated file, cache entry, serialized blob, or plugin-owned file outside
   the allowlist;
-- create-time identity remaps must be proven at apply time, not assumed from
-  route shape or fixture replay;
+- create-time identity remaps must be proven at apply time on that same live
+  boundary, not assumed from route shape, fixture replay, or source-note
+  comparison;
 - any later-discovered plugin-owned surface, remapped create target, or mixed
   file/DB/plugin side effect must get its own preserve / reject / retry cycle
-  unless it was already enumerated before the first write; and
+  unless it was already enumerated before the first write, and the audit trail
+  must show the earlier remote was preserved instead of overwritten;
 - source-note comparisons to Reprint, ZS-Sync, and ForkPress must stay
   provenance-only unless they name the exact upstream state, state what each
   note proves here, state what it does not prove here, and are backed by a
   rerun of the same live boundary on this worktree; a newer upstream head or
   a completed lab harness run still does not become production retry authority
   on this branch by itself, and the cited note must not be treated as proof of
-  preserved-remote safety or live auth/session lifecycle.
+  preserved-remote safety, live auth/session lifecycle, graph identity, or
+  plugin-driver coverage.
 
 Comparison with the source notes stays conservative:
 
