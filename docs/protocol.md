@@ -64,6 +64,19 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 7. `push_journal` and `push_recover inspect` inspect durable evidence first,
    then allow mutating recovery only when fresh live hashes prove the action
 
+The handoff is intentionally asymmetric:
+
+- exporter/importer prove the immutable base package and coverage evidence
+- push preflight binds that immutable package to the live remote identity and
+  a short-lived session
+- snapshot hashes are planning evidence only and never become write authority
+- dry-run uploads the canonical plan and returns a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect and recovery inspect are evidence reads, not mutations
+- mutating recovery remains blocked until the journal and fresh live hashes
+  prove the action
+
 The production push ladder is the same handoff expressed as a runtime flow,
 and the executor must keep each stage distinct:
 
@@ -375,6 +388,16 @@ This same proof must hold in both packaging modes:
 - mutating push requests require at least the current Reprint HMAC floor plus
   the short-lived push session and canonical push signature
 
+The precise topology contract is the same for Docker and Playground:
+
+- one remote source role seeds the persisted pull base
+- one local edited role builds the candidate plan
+- one drift witness role proves the remote can change between dry-run and apply
+- one runner role performs comparison, upload, journal inspection, and recovery
+- browser-visible inspection must go through the sandbox-provided `8080`
+  ingress with a local-only proxy
+- remote tunnels are disallowed
+
 For Docker, keep the three site roles on one private network and expose only
 browser-visible inspection through the sandbox-provided `8080` ingress via a
 local-only proxy. For Playground, use separate disposable blueprints for the
@@ -388,6 +411,13 @@ The compact machine-readable proof for this boundary lives in
 It binds the pull handoff, protocol sequence, and Docker/Playground topology
 into one contract so tests can assert the production shape without re-parsing
 the full prose spec.
+
+The stage-order proof lives in
+[`fixtures/protocol/push-flow.json`](../fixtures/protocol/push-flow.json), the
+topology proof lives in
+[`fixtures/protocol/push-topology-matrix.json`](../fixtures/protocol/push-topology-matrix.json),
+and the shortest end-to-end packaging proof lives in
+[`fixtures/protocol/push-production-ladder-contract.json`](../fixtures/protocol/push-production-ladder-contract.json).
 
 Recovery is inspect-first:
 

@@ -1352,6 +1352,25 @@ the pull package remains immutable provenance:
   generation and lease expiry, so lost-response retries can tell whether a
   claim is still open or already resolved.
 
+The pull/export/import pipeline is the provenance source for every push run:
+
+1. exporter scans the merge base and coverage evidence
+2. importer persists the base package as immutable provenance
+3. `push_preflight` binds that package to the live remote identity and a
+   short-lived push session
+4. `push_snapshot_hashes` lists the live remote comparison set for planning
+   only
+5. `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
+   lock
+6. `push_batch_apply` revalidates the live remote before every batch and at
+   the storage boundary
+7. `push_journal` and `push_recover inspect` read durable evidence first and
+   never turn old proof into current authority
+
+That mapping is one-way on purpose. The pull package never becomes a lock,
+and a later remote drift is valid evidence that apply must revalidate rather
+than reuse stale dry-run state.
+
 Recovery should always begin with `push_journal` or `push_recover` in
 `inspect` mode before any mutating retry. If the remote cannot prove the same
 claim, session, and live hashes that were present when the batch opened, the
@@ -1379,7 +1398,8 @@ Recommended usage:
 - Pull from `remote-base` into `local-edited`.
 - Store the base manifest in the runner workspace.
 - Bind Playground servers to loopback or container-internal addresses.
-- Route browser access through the single local 8080 proxy if needed.
+- Route browser access through the single local 8080 proxy if needed; do not
+  introduce any remote tunnel.
 - Run signed preflight/dry-run/apply plus authenticated snapshot, journal, and
   recovery inspect through the production route names even when the backing
   implementation is a Playground fixture.
@@ -1387,6 +1407,16 @@ Recommended usage:
   if it diverges after dry-run, the executor must revalidate before apply.
 - The production route names are the same in Docker and Playground; only the
   backing site implementation changes.
+
+The test topology is therefore fixed:
+
+- one remote base site seeds the pull package
+- one local edited site produces the candidate plan
+- one remote-changed site proves live drift between dry-run and apply
+- one runner signs requests, uploads the dry-run plan, inspects the journal,
+  and performs recovery
+- only the sandbox-provided `8080` ingress may be used for browser-visible
+  inspection
 
 Playground is best for protocol, planner, and recovery fixtures. Docker with
 MySQL/MariaDB remains necessary for transaction, lock, and fencing behavior

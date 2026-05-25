@@ -36,6 +36,7 @@ The normal sequence is:
 28. `push-snapshot-hashes-page-contract.json`
 29. `push-dry-run-apply-revalidation-contract.json`
 30. `push-production-ladder-contract.json`
+31. `push-executor-topology-proof.json`
 
 Failure and recovery examples:
 
@@ -117,6 +118,9 @@ Failure and recovery examples:
   that preflight, snapshot listing, dry-run, apply, journal inspect, and
   recovery all stay on the production push ladder while Docker and Playground
   use the same one-remote, one-local topology.
+- `push-executor-topology-proof.json` gives the shortest proof that the
+  executor keeps the pull provenance, push staging, and browser ingress on one
+  production-shaped topology.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
