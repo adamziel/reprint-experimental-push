@@ -90,6 +90,22 @@ preserved remote, exact rejection point, fresh live hashes, and per-surface
 old/new/blocked classification on the same live boundary, the comparison
 remains historical context even when the upstream note is accurate.
 
+Production-readiness language must fail closed until the branch can show, on
+one rerunnable live boundary, all of the following:
+
+- the exact executable command string and the exact live `REPRINT_PUSH_SOURCE_URL`;
+- the live WordPress auth/session boundary before the first write;
+- the preserved remote that stayed inspectable after rejection;
+- the exact rejection point before the first write;
+- dry-run receipt, apply-time revalidation, and journal/recovery inspection;
+- graph identity plus plugin-driver coverage on the live boundary; and
+- old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts.
+
+If any later-discovered plugin-owned surface or remapped create target is not
+individually named in that live boundary, it is a new boundary, not covered by
+the earlier approval.
+
 The practical blocker is unchanged: this branch still has no named real-site
 release command, so any retained-source run, wrapper label, or route-shaped
 smoke remains compatibility evidence only until the same live boundary is
@@ -215,11 +231,11 @@ Treat the upstream notes as provenance only unless this branch reran the same
 live boundary here and preserved the rejected remote for audit.
 
 - Reprint: transport, staged delivery, and resumability vocabulary only; not
-  live push safety, preserved-remote retention, stale-drift rejection, or
-  production auth/session lifecycle on this branch.
+  live push safety, preserved-remote retention, stale-drift rejection,
+  production auth/session lifecycle, or retry authority on this branch.
 - ZS-Sync: discovery, cursoring, and batching vocabulary only; not
-  source-mutation safety, create-time remap handling, or plugin-owned surface
-  coverage on this branch.
+  source-mutation safety, create-time remap handling, plugin-owned surface
+  coverage, or identity-preserving write proofs on this branch.
 - ForkPress: audit, review, and crash-consistency vocabulary only; not retry
   authority, preserved-remote auditability, or authority over later-discovered
   plugin-owned surfaces on this branch.
