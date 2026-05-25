@@ -10,6 +10,9 @@ or comparison-only.
   `finalMatchesLocal` as compatibility evidence only.
 - The proof names the exact live write boundary, the exact stale remote case,
   and the exact preserved remote hash set that was rejected before mutation.
+- The claim does not treat a readable review artifact or source-note
+  comparison as current proof unless the same live boundary was revalidated on
+  this branch.
 - The same request path was re-run against a live remote after drift, and the
   stale attempt failed before any mutation.
 - The claim names the exact stale remote hash set, the rejected approval, the
@@ -22,6 +25,8 @@ or comparison-only.
   The audit trail must show the rejected artifact stayed auditable, but could
   not be widened into a new row, file, relationship-bearing record, or
   plugin-owned surface. A readable stale artifact is not a valid retry token.
+  A stale artifact or comparison note cannot become retry authority for a
+  different row, file, relationship-bearing record, or plugin-owned surface.
   "Manual resolution later" is not success unless the preserved remote, the
   stale rejection point, and the fresh retry artifact are all visible on the
   same live write boundary.
@@ -162,6 +167,8 @@ or comparison-only.
   side-effect classification, or stale approval expiry unless the same live
   write boundary was reverified at the exact upstream revision or worktree
   state.
+- The claim does not let a source-note comparison or readable review artifact
+  become retry authority for any new object after drift.
 - The claim does not let a stale manual-review artifact become retry authority
   just because it is readable; if it can be reused against a new row, file,
   relationship-bearing record, or plugin-owned surface, the claim is not

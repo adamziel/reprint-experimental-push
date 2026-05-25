@@ -14,6 +14,10 @@ and any Reprint, ZS-Sync, or ForkPress citation: unless this branch reran the
 same live mutation boundary against the same drift case and recorded the
 preserved remote, rejection point, and fresh retry scope, the artifact or
 citation remains historical only.
+That warning also covers route-shaped smokes that happen to return live-looking
+hashes or inspectable review output: a matching surface can still mask a stale
+remote, a remapped create target, or a late plugin-owned surface that only
+appears after the first write.
 
 One weak claim still worth tightening explicitly: a production-shaped route,
 package mount, or fixture can still be a copied-lab executor behind the same
@@ -35,6 +39,10 @@ has a concrete failure scenario:
   the preserved remote auditable after reject and the stale approval unusable
   for retry; otherwise a post-dry-run remote change can be overwritten under a
   still-readable approval artifact;
+- a readable approval, review artifact, or comparison note must never become
+  retry authority for a different row, file, relationship-bearing record, or
+  plugin-owned surface after drift; otherwise the claim hides a second-write
+  data-loss mode behind “manual resolution” language;
 - create-time identity remapping has to be either durably proven or hard-
   blocked before mutation, including alias, rename, and renumber cases;
   otherwise a create can land on the wrong identity after a live remap;
@@ -105,6 +113,9 @@ Release gate for any production wording:
   reviewed-resolution vocabulary plus a crash-consistency target. None of
   them proves this branch's live write path, preserved-remote retry, or
   plugin-owned coverage without a same-boundary recheck here.
+- Show that any readable manual-review artifact or source-note comparison is
+  audit-only unless this branch reran the same live boundary and recorded the
+  preserved remote, rejection point, and fresh retry scope on this branch.
 - Show that late-discovered plugin-owned state does not widen the write scope
   silently through cached ownership, fallback behavior, or a second write that
   only appears harmless because the first write already committed.
