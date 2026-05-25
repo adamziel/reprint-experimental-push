@@ -60,6 +60,9 @@ This note is the short form of the planner policy in
   independent edit and file type swap, and the same plan may also preserve
   unrelated remote-only plugin removals or metadata changes without creating
   extra mutations.
+- A live-preconditioned file delete may still apply alongside a matching
+  independent edit and matching file type swap while unrelated remote-only
+  plugin metadata or files stay preserved through apply.
 - The same mixed delete/edit/type-swap boundary still holds when the remote
   side has removed the plugin entirely; the planner keeps that plugin removal
   preserved and does not widen the unrelated deletion precondition.
@@ -100,6 +103,8 @@ mutation id, the resource key, the remote hash observed during planning, and
   conflict evidence stays redacted and the plugin drift stays preserved.
 - Local delete or file type swap when the live remote resource drifted and the
   local side did not independently reach the live remote hash.
+- Any local delete or file type swap that would overwrite a remote-only
+  plugin change instead of preserving it in `keep-remote`.
 - Plugin-owned deletions when the owner context is stale and the local side did
   not independently match the live remote context.
 - Plugin-owned deletions remain blocked even when unrelated matching
