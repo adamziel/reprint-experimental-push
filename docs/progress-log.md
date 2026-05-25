@@ -4,6 +4,45 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 14:44:23
+
+<a id="2026-05-25-public-status-audit-144423"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:44:23 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and moved the first screen
+  to the newest release-surface evidence: `7e0f27f2` now shows the checked
+  apply-time revalidation path failing closed with `PRECONDITION_FAILED` and
+  `recovery.state: "blocked-recovery"` after dry-run succeeds.
+- `35731b11` stays visible with `releaseProof.mode: "apply"` plus preflight,
+  dry-run, apply, recovery inspect, and durable journal readback evidence
+  with `rows: 17`; `ee43e194`, `ee25a9b5`, `4096f3ac`, `692352d7`,
+  `2c37497f`, and `7a9301d4` remain visible supporting evidence. Gates remain
+  `0/4`, and production WordPress auth/session lifecycle plus durable journal
+  storage with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 14:41:56
+
+<a id="2026-05-25-public-status-audit-144156"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:41:56 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and moved the first screen
+  to the newest material release-surface evidence: `ee43e194` now binds the
+  checked verifier to `REPRINT_PUSH_SOURCE_URL`.
+- `ee25a9b5` stays visible as the accepted recovery boundary, `35731b11` still
+  shows `releaseProof.mode: "apply"` plus preflight, dry-run, apply, recovery
+  inspect, and durable journal readback evidence with `rows: 17`, and
+  `4096f3ac` keeps the checked drift-rejection proof visible. Gates remain
+  `0/4`, and production WordPress auth/session lifecycle plus durable journal
+  storage with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 14:39:15
 
 <a id="2026-05-25-public-status-audit-143915"></a>
