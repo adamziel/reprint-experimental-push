@@ -11810,6 +11810,70 @@ test('durable recovery keeps append-only retries and completed replays idempoten
   );
 });
 
+test('durable recovery accepts only old remote, fully updated remote, or blocked recovery with artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const beforeSnapshot = JSON.stringify(base);
+
+  for (const [label, options, expectedJournalStatus] of [
+    ['failure before mutation', { failBeforeMutation: true }, 'opened'],
+    ['failure after staging', { failAfterStaging: true }, 'staged'],
+    ['failure after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+
+    const error = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+
+    durableJournal.close();
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), beforeSnapshot, label);
+    assertAcceptableRecoveryState(error.details.recovery);
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+    assert.ok(error.details.recovery.artifacts.journal, label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+
+    const persisted = readRecoveryJournal(journalPath);
+    assert.equal(
+      persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+      false,
+      label,
+    );
+  }
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('durable mid-apply failures stay blocked with recovery artifacts and never become a safe replay', () => {
   const base = baseSite();
   const local = baseSite();
