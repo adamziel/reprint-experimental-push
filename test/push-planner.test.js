@@ -659,6 +659,54 @@ test('stops a local file delete when the remote turned the same file into a dire
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('stops a local file delete when the remote turned the same file into a directory while preserving a matching independent delete and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery'] = 'base gallery bytes';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.files['about.php'];
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['index.php'] = { type: 'directory' };
+  delete remote.files['about.php'];
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const matchingDelete = decisionFor(plan, 'file:about.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const conflictJson = JSON.stringify(conflict);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.preconditions.length, 0);
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.resourceKey, 'file:index.php');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'type-change');
+  assert.equal(conflictJson.includes('base gallery bytes'), false);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(Object.hasOwn(remote.files, 'index.php'), true);
+  assert.equal(Object.hasOwn(remote.files, 'about.php'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('stops a local row deletion when the remote independently updated the same row while preserving a matching independent file type swap and remote-only plugin drift', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = 'base file bytes';

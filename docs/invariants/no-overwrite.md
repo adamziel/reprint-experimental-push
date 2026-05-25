@@ -190,6 +190,9 @@ the resource key, the live remote hash observed during planning, and the
   require overwriting, removing, or hiding a live remote ancestor or descendant.
   The conflicting file mutation and its precondition must be suppressed rather
   than left as an apply candidate.
+- A file delete that the remote turned into a directory remains blocked even
+  if an unrelated file delete is already matching the live remote and remote
+  plugin drift is otherwise safe to keep.
 - File topology conflicts remain blocked even when other resources are already
   `already-in-sync` and unrelated remote-only plugin drift is preserved. The
   planner must still stop on the hidden file mutation and keep the evidence
