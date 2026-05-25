@@ -74,6 +74,8 @@ here, states what it does not prove here, and reruns the same live boundary on
 this worktree with a preserved remote that stayed inspectable after rejection.
 Route-family, package-mount, or reviewer-wording similarity does not promote a
 historical note to retry authority.
+The compact comparison record lives in
+[`audits/critic-source-notes-matrix.md`](./critic-source-notes-matrix.md).
 An authenticated HTTP or CLI smoke does not upgrade that provenance either:
 if it only proves login success or request authorization, it still does not
 show the live auth/session lifecycle on the write boundary, and it still does
