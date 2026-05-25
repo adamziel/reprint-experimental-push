@@ -2277,6 +2277,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-final-activation-after-pause',
+    proposal: 'treat a compressed remote index plus cached row-batch receipts as enough proof to skip the final plugin install activation step after a pause',
+    rejectedBecause: 'cached planning evidence after a pause still cannot prove the activation state, row preconditions, or the atomic-group barrier survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize',
     proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip plugin install finalize',
     rejectedBecause: 'planning evidence and chunk receipts can reduce replay work, but they cannot prove the dependency checks, staged files, or the atomic-group finalize survived failure',

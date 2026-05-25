@@ -846,6 +846,10 @@ under load:
   activation-after-pause is rejected because cached planning evidence after a
   pause still cannot prove the activation change, row preconditions, or the
   atomic-group barrier survived failure.
+- compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-
+  final-activation-after-pause is rejected because cached planning evidence
+  after a pause still cannot prove the final activation state, row
+  preconditions, or the atomic-group barrier survived failure.
 - compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback
   is rejected because planning evidence and cached row receipts can trim replay
   work, but they cannot prove the plugin metadata writes, per-row compares, or
