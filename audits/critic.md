@@ -6,6 +6,13 @@ proof point. That lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence.
 
+The right reading of that evidence is narrow: it shows the supervised lane has
+advanced, not that this worktree can yet claim production-grade push support.
+The branch still lacks a rerunnable live boundary on a real local, Playground,
+or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote and
+shows apply-time revalidation plus journal/recovery inspection on the same
+mutation.
+
 That retained-source result is real progress, but it still only proves the
 lab harness for the supervised lane. It does not yet prove this branch can
 rerun the same boundary against a live local, Playground, or Docker
