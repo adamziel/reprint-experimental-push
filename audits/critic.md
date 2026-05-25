@@ -51,6 +51,9 @@ Additional proof gaps that still need to be closed:
 - prove create-time identity remapping is either blocked before write or
   recorded with live identity evidence, not just a fixture that preserves the
   same ID while the live remote could still renumber or alias the target;
+- prove any Reprint, ZS-Sync, or ForkPress note is treated as historical
+  context unless the exact upstream revision or worktree state is named and
+  the same live boundary is rerun here with preserved-remote evidence;
 - prove plugin-owned state outside the allowlist is discovered live or
   rejected live, including hidden tables, generated files, cron rows, runtime
   registries, serialized blobs, cache entries, and activation-sensitive

@@ -13,6 +13,9 @@ or comparison-only.
 - The claim does not treat a readable review artifact or source-note
   comparison as current proof unless the same live boundary was revalidated on
   this branch.
+- The claim does not let a Reprint, ZS-Sync, or ForkPress note imply current
+  reliability unless the exact upstream revision or worktree state is named
+  and the same live boundary was rerun here with preserved-remote evidence.
 - The claim does not let "comparison passed" or "manual resolution" become
   current authority unless the preserved remote, stale rejection point, and
   separately recorded fresh retry artifact are all present for the same live
