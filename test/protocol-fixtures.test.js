@@ -244,6 +244,19 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.lab_topology.live_drift.proof[0], 'remote-base and remote-changed are the same remote identity observed at different times');
   assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
   assert.equal(
+    protocolExtensionContract.purpose,
+    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery',
+  );
+  assert.deepEqual(protocolExtensionContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
     protocolExtensionContract.pull_pipeline.bridge_rule,
     'the importer-owned base package is immutable provenance for planning, apply, journal, and recovery',
   );
@@ -284,9 +297,15 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.topology.networking.ingress_port, 8080);
   assert.equal(protocolExtensionContract.topology.networking.proxy_policy, 'local-only');
   assert.equal(protocolExtensionContract.topology.networking.tunnels, 'disallowed');
+  assert.equal(protocolExtensionContract.topology.same_remote_identity, true);
   assert.ok(
     protocolExtensionContract.topology.proof.includes(
       'runner owns preflight, remote snapshot hash listing, dry-run upload, apply, journal inspect, and recovery',
+    ),
+  );
+  assert.ok(
+    protocolExtensionContract.topology.proof.includes(
+      'remote-base and remote-changed are the same remote identity observed at different times',
     ),
   );
   assert.ok(
