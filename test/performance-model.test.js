@@ -398,6 +398,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-barrier')?.rejectedGate,
     'group',
   );
@@ -418,6 +422,15 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause')?.violates.includes('durable-progress'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause')?.violates.includes('remote-index-planning-only'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause')?.violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause')?.violates.includes('atomic-groups'),
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-barrier')?.violates.includes('row-preconditions'),

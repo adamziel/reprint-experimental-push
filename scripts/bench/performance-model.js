@@ -1390,6 +1390,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause',
+    proposal: 'treat a compressed remote index plus cached chunk digests as enough proof to skip plugin-install finalize after a pause',
+    rejectedBecause: 'planning evidence and cached chunk digests can reduce replay work, but they cannot prove dependency checks, chunk receipts, or the atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback',
     proposal: 'treat a compressed remote index plus a cached package hash as enough proof to skip plugin install writeback',
     rejectedBecause: 'planning evidence and cached package hashes can reduce lookup work, but they cannot prove dependency checks, metadata writes, or the atomic-group writeback survived failure',
