@@ -261,7 +261,9 @@ Concrete failure scenarios that still block production wording:
   boundary, the preserved remote for that boundary, and the fresh live-hash
   retry scope for the rerun; a polished note can still hide a second
   boundary, a remapped create target, or a late plugin-owned surface that was
-  never part of the original preserve / reject / retry cycle;
+  never part of the original preserve / reject / retry cycle, and a note
+  that only repeats the upstream wording without naming the branch-local live
+  rerun is still audit-only;
 - false reliability claims: missing proof is that "comparison passed",
   "manual resolution succeeded", or "production-ready" names the rejected
   remote, the rejection point, and the exact live boundary that was retried;
@@ -279,7 +281,9 @@ Concrete failure scenarios that still block production wording:
   readable review artifact reused as authority; if the comparison does not
   name what the note proves here and what it does not prove here, or it only
   repeats the upstream anchor without a branch-local rerun, it stays
-  historical context only and cannot authorize a retry boundary.
+  historical context only and cannot authorize a retry boundary. Matching the
+  upstream prose is not enough; the branch-local live boundary, preserved
+  remote, and fresh retry scope must all be named.
 
 Missing repo proof for the comparisons is still the same live boundary on
 this worktree, rerun against the exact drift case, with:
