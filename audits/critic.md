@@ -4563,6 +4563,24 @@ Release-readiness checklist:
 - route shape, package mount shape, fixture replay, readable review output,
   and `finalMatchesLocal` are treated as compatibility evidence only.
 
+Short fail-closed gate for production wording:
+
+- the same live write boundary was rerun on this branch;
+- the preserved remote stayed auditable after reject, and the stale rejection
+  point is named;
+- the fresh retry scope was rebuilt from live hashes on this branch, not
+  inherited from a readable review artifact or earlier approval;
+- any late-discovered plugin-owned surface was separately classified as old,
+  new, or blocked before retry;
+- the claim does not widen a stale approval into a different row, file,
+  relationship-bearing record, remapped create target, or plugin-owned
+  surface;
+- any Reprint, ZS-Sync, or ForkPress citation names the exact upstream
+  revision or worktree state and says whether it was rerun against the same
+  live boundary here; and
+- route shape, package mount shape, fixture replay, readable review output,
+  and `finalMatchesLocal` stay compatibility evidence only.
+
 False reliability claims to reject:
 
 - "manual resolution succeeded" when the preserved remote, rejection point,
