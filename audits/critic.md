@@ -4,6 +4,25 @@
 
 Verdict: the design still cannot claim production-grade push support.
 
+Release gate for any production wording:
+
+- Name the exact live mutation boundary, the exact stale-remote drift case,
+  and the exact rejection point before mutation.
+- Show the preserved remote stayed auditable after reject and that the stale
+  approval or review artifact could not be reused as retry authority.
+- Show create-time identity handling explicitly, either as a durable remap
+  proof or a hard block before write.
+- Show the full plugin-owned surface for the claim, including anything found
+  late, and hard-block unknown or unvalidated surfaces.
+- Show each touched store as old, new, or blocked, and show retry rebuilt
+  scope from fresh live evidence instead of inheriting the old decision.
+- If Reprint, ZS-Sync, or ForkPress are cited, name the exact upstream
+  revision or worktree state and say whether this branch reverified the same
+  live boundary; otherwise the comparison is historical context only.
+- Treat route shape, package shape, fixture replay, and `finalMatchesLocal`
+  as compatibility evidence only. None of them prove production durability,
+  production auth, or production write safety.
+
 Must-fix blockers before any production wording:
 
 - Live remote drift after dry-run must fail closed on the real write path,
