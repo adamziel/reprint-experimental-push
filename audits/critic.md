@@ -1534,6 +1534,9 @@ would reasonably read as equivalent.
 - A stale manual-review artifact must fail closed on the first live-hash
   mismatch even when the same request path still returns the expected route
   shape or a fixture-level `finalMatchesLocal` result.
+- A plugin-owned surface is not "covered" unless the claim names the exact
+  owned resource set and shows the apply-time revalidation result; route shape,
+  package mount, or fixture success alone cannot stand in for that proof.
 
 ## Reliability Language Gate
 
