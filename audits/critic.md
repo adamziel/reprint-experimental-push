@@ -6450,6 +6450,46 @@ Production-grade wording still needs explicit proof for these failure modes:
   target, or plugin-owned surface must get its own preserve / reject / retry
   cycle and cannot inherit the earlier note.
 
+Must-happen-before-production-grade wording:
+
+- live remote drift between dry-run and apply must be rerun on this branch
+  with the rejected remote still inspectable after rejection, a named
+  rejection point before the first write, and a retry scope rebuilt from
+  fresh live hashes; a readable manual-resolution note is audit evidence
+  only, not proof;
+- create-time identity remapping, aliasing, or renumbering must either be
+  proven with live identity evidence at apply time or hard-blocked before
+  mutation; route shape, package mount, and fixture shape are only
+  compatibility evidence;
+- plugin-owned state outside the allowlist, including hidden tables, cron
+  rows, runtime registries, generated files, caches, serialized blobs, and
+  plugin-owned files, must be enumerated or blocked before write, and any
+  surface discovered after the first write must become a new boundary with
+  its own preserve / reject / retry cycle;
+- partial file, DB, or plugin side effects must be classified old, new, or
+  blocked for the whole touched set before retry starts, so a mixed outcome
+  cannot be relabeled as success after only the committed subset; and
+- comparisons to Reprint, ZS-Sync, or ForkPress must name the exact
+  upstream revision or worktree state, say what the note proves here, say
+  what it does not prove here, and still rerun the same live boundary on
+  this branch; route family, package mount, reviewer wording, and fixture
+  replay are not current proof.
+
+Conservative comparison summary:
+
+- Reprint `27c5f25` supports staged transport, resumability vocabulary, and
+  chunked delivery framing only;
+- ZS-Sync `d9334a0` supports bounded discovery, cursoring, and batched
+  resource selection only; and
+- ForkPress `55f9879` supports merge-audit vocabulary and crash-consistency
+  intent only.
+
+None of those notes proves live push safety on this branch, preserved-remote
+retention after rejection, stale-authority rejection before the first write,
+create-time remap safety, plugin-owned surface coverage, or a fresh retry
+scope rebuilt from live hashes. If a production-grade claim lacks those
+branch-local proofs, the claim must fail closed.
+
 Release-gate wording also needs to stay explicit about what is not proof:
 
 - route shape, package layout, fixture replay, readable review output, and
