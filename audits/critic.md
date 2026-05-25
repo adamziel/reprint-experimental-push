@@ -13,6 +13,13 @@ any remaining absence of that command on this checkout is only a branch-local
 merge gap, not a project-wide absence, and must not be confused with the live
 proof gap this branch still has.
 
+That means the critique target is narrower now: the supervised lane has
+stronger retained-source evidence, but this worktree still lacks a rerunnable
+live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
+that preserves the rejected remote, revalidates at apply time, and proves
+production WordPress auth/session lifecycle, durable journal semantics, graph
+identity, plugin-driver coverage, and leases/fencing on the same mutation.
+
 Exact evidence that improved in the supervised lane: the retained-source run
 now names executor/session/journal details and the boundary verdict is
 explicit instead of route-shape-only. Exact next proof still required here: one
