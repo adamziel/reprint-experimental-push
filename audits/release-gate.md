@@ -10,7 +10,10 @@ support.
 - The claim says whether any comparison to Reprint, ZS-Sync, or ForkPress
   was re-verified against the current upstream commit or worktree state.
 - If that upstream comparison was not re-verified, the claim must label it as
-  historical context only and must not present it as current proof.
+  historical context only and must not present it as current proof. A
+  comparison note that sounds current but lacks re-verification is still a
+  stale assumption about behavior, not evidence for this repo's live write
+  path.
 - The claim shows a live remote drift case between dry-run and apply, and the
   stale attempt fails closed before any mutation.
 - The claim shows create-time identity remapping is either safely represented

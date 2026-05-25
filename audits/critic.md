@@ -1030,6 +1030,9 @@ design still needs proof for each of these failure classes:
 - Comparison notes from Reprint, ZS-Sync, and ForkPress must remain
   historical context unless the exact upstream revision or worktree state was
   reverified and the same live write boundary was exercised in this repo.
+  Without that reverification, a status note can sound current while still
+  inheriting stale upstream assumptions about transport, scanning, or crash
+  language that this repo has not proven at the mutation boundary.
 - Route-shape, packaged-plugin mounting, fixture replay, and `finalMatchesLocal`
   remain lab evidence only; none of them prove live mutation safety on their
   own.
