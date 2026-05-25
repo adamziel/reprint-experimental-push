@@ -98,6 +98,10 @@ reverified and the same live write boundary was exercised in this repo.
 If the claim only shows a route-shaped smoke, package mount, or
 `finalMatchesLocal` result, the note stays historical context and cannot
 stand in for live proof.
+If the claim does not also name a drifted remote that was preserved for
+audit, the stale authority rejection point, and the fresh retry scope built
+from new live hashes, then the comparison is still only design context even
+when the route or fixture replay looks production-shaped.
 If the claim does not name the exact upstream revision or worktree state and
 the exact live mutation boundary, it is not production wording.
 Without that revalidation, the notes cannot backfill missing proof for:
