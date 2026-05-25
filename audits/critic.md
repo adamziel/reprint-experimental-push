@@ -129,6 +129,12 @@ can claim production-grade push support:
 
 ## What Reprint, ZS-Sync, And ForkPress Actually Contribute
 
+| Source note | What it proves | What it does not prove | Missing repo proof |
+| --- | --- | --- | --- |
+| Reprint | Transport stages, resumability, protocol framing, and chunked delivery shape. | Live source overwrite safety, drift rejection at apply time, production auth, or durable write semantics. | A live mutation path that fails closed on stale remote hashes and preserves the remote for audit. |
+| ZS-Sync | Bounded discovery, cursor-driven rescans, and changed-resource enumeration. | Write policy, create-time identity reservation, ownership revalidation, or plugin-side effects. | A mutation policy that maps every scanned resource to a safe write rule or a hard block. |
+| ForkPress | Reviewed-resolution vocabulary, crash-consistency language, and merge audit framing. | Proof that this repo has the same live-remote executor, stale-artifact expiry, or partial-apply recovery. | A durable reviewed-resolution artifact that expires on drift and forces retry from fresh live evidence. |
+
 ### Reprint
 
 Reprint gives the transport skeleton: preflight, chunking, resumability, and
