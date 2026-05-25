@@ -10,12 +10,12 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/no-data-loss-invariants` -> `5b25867b`
 - `origin/lane/no-data-loss-recovery` -> `47b675c0`
 - `origin/lane/fast-paths` -> `9be664b2`
-- `origin/lane/independent-auditor` -> `9de278de`
+- `origin/lane/independent-auditor` -> `7e07b6de`
 - `origin/lane/critic` -> `a9744175`
 - `origin/lane/progress-publisher` -> `7695e1f9`
 - `origin/lane/same-plan-wordpress-graph-create` -> `24c58564`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
-- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `dbae02fa`
+- `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `7923bb55`
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` -> `284ebde9`
 - `origin/main` -> `4b7b47a6`
 
@@ -37,9 +37,9 @@ but it did not change the release conclusion:
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
 - `origin/lane/independent-auditor` now refreshes the audit snapshot at
-  `9de278de`.
+  `7e07b6de`.
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` now
-  refreshes the supervisor evidence snapshot at `dbae02fa`.
+  refreshes the supervisor evidence snapshot at `7923bb55`.
 - `origin/lane/cycle-20260525-mainwindows-2349/progress-followup` now
   records the latest progress handoff at `284ebde9`.
 - `origin/lane/same-plan-wordpress-graph-create` now records a stale term
