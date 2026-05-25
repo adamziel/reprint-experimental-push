@@ -4226,17 +4226,20 @@ resolution" language.
 
 Source-note comparison boundary:
 
-- Reprint proves staged pull delivery, resumability, and transport framing.
-  It does not prove live push mutation, stale remote rejection, create-time
-  remapping, plugin-owned allowlist coverage, or mixed-write classification.
-- ZS-Sync proves bounded scanning, resource discovery, and batching ideas.
-  It does not prove source-site mutation, runtime ownership discovery,
-  apply-time blocking of hidden plugin state, or recovery from a live remote
-  drifted between dry-run and apply.
+- Reprint proves staged pull delivery, resumability, and transport framing
+  in its observed historical state. It does not prove live push mutation,
+  stale remote rejection, create-time remapping, plugin-owned allowlist
+  coverage, or mixed-write classification on this branch.
+- ZS-Sync proves bounded scanning, resource discovery, and batching ideas in
+  its observed historical state. It does not prove source-site mutation,
+  runtime ownership discovery, apply-time blocking of hidden plugin state,
+  or recovery from a live remote drifted between dry-run and apply on this
+  branch.
 - ForkPress proves audit vocabulary, merge-review framing, and crash-
-  consistency intent. It does not prove a live executor, preserved-remote
-  retry authority, or that a readable manual-review artifact can safely
-  authorize a later retry boundary.
+  consistency intent in its observed historical state. It does not prove a
+  live executor, preserved-remote retry authority, or that a readable
+  manual-review artifact can safely authorize a later retry boundary on this
+  branch.
 
 Release gate additions needed before production-grade push support:
 
@@ -4268,4 +4271,5 @@ Release gate additions needed before production-grade push support:
 7. The release gate must fail closed and record the exact rejection reason
    whenever any of the above proofs is missing; route shape, package mount,
    fixture replay, readable review artifacts, source-note comparison, and
-   `finalMatchesLocal` are compatibility evidence only.
+   `finalMatchesLocal` are compatibility evidence only. They do not prove the
+   live executor ran, and they do not replace a live drift-rejection proof.
