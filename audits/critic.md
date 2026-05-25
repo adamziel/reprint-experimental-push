@@ -196,11 +196,12 @@ Additional proof gaps that still need to be closed:
 
 Production-grade push support also needs an explicit anti-trap rule: if the
 first write lands and a later snapshot exposes a plugin-owned table, file,
-registry entry, generated asset, cache entry, or serialized blob that was not
-part of the original live boundary, that later surface is a new boundary. It
-is not acceptable to fold that surface into the earlier "manual resolution"
-story unless the preserve/reject/retry proof is repeated for that later
-surface on this branch.
+registry entry, generated asset, cache entry, serialized blob, or other
+plugin-owned data trap that was not part of the original live boundary, that
+later surface is a new boundary. It is not acceptable to fold that surface
+into the earlier "manual resolution" story, or reuse the earlier readable
+review artifact as retry authority, unless the preserve/reject/retry proof is
+repeated for that later surface on this branch.
 Manual resolution is therefore an audit trail, not a release gate, unless the
 branch can show the preserved remote, the rejection point, and the fresh
 retry artifact for the exact same boundary.
