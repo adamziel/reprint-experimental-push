@@ -295,6 +295,17 @@ Recovery stays inspect-first:
 - `push_recover auto|finish|rollback` is the mutating branch and must never run
   without a prior inspect result.
 
+Apply-time revalidation stays separate from recovery:
+
+- `push_snapshot_hashes` is planning evidence only.
+- `push_plan_dry_run` returns a receipt, not a lock.
+- `push_batch_apply` must revalidate fresh live evidence before every batch and
+  again at the storage boundary.
+- `push_recover inspect` is read-only and must happen before any mutating
+  recovery mode.
+- `push_recover auto|finish|rollback` may mutate only when the journal plus
+  fresh live hashes still prove the branch safe.
+
 The extension is intentionally aligned with the pull pipeline:
 
 - exporter/importer create the immutable pull base package

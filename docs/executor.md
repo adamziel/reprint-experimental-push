@@ -251,6 +251,15 @@ readback:
 - `push_recover auto|finish|rollback` may mutate only after inspect and fresh
   live hashes prove the action safe.
 
+The recovery boundary is deliberately narrower than the apply boundary:
+
+- `push_snapshot_hashes` only feeds planning.
+- `push_plan_dry_run` only returns eligibility evidence.
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary.
+- `push_journal` remains read-only even when recovery is needed.
+- `push_recover inspect` is the first recovery step and cannot itself mutate.
+
 The journal and recovery split is intentionally narrow:
 
 - `push_journal` is durable evidence readback only.
