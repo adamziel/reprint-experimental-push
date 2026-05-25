@@ -87,6 +87,7 @@ The weakest claim is any implication that the current suite can certify the live
 - The suite can still go green without proving live-source mutation, crash survival, replay safety, or throughput on the real path.
 - `speed unclaimed` is the only honest speed posture right now, but it only matters if a required gate prints it and fails closed when live-path measurement is missing.
 - Any release wording that implies no data loss, reliability, or speed from the current suite alone is overstated.
+- A green `node --test` run and green Playground smokes still do not prove no data loss, reliable crash recovery, or measured speed on the live-source path.
 - The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added.
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
 - The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness.
