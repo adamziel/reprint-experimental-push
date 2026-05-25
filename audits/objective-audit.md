@@ -473,6 +473,17 @@ can mean the repository still has no production-backed crash matrix, no live
 lease/fencing proof, and no measured speed threshold, because the strongest
 proofs remain opt-in commands rather than a required release boundary.
 
+The objective requirements are explicit and still not jointly proven:
+
+- one-way pull base capture with stable resource identity and scope evidence
+- three-way planning against current live remote state before any push
+- preservation of remote-only changes unless a deliberate conflict blocks them
+- immediate pre-write preconditions plus storage-boundary or CAS enforcement
+- production auth/session, lease/fencing, and durable journal coverage
+- real WordPress graph and plugin-data-driver coverage, not fixture-only shape
+- measured speed with a documented threshold, not refusal-only benchmark logic
+- one enforced release gate that fails closed when any of the above is missing
+
 ## Test Audit
 
 ### What The Default Tests Prove
@@ -535,6 +546,8 @@ Practical reading of the current suite:
   the live WordPress source boundary.
 - The speed claim is the weakest because the benchmark is explicitly a refusal
   gate; it is not a runtime or memory measurement on the live push path.
+- The default tests are therefore good at stopping overclaiming, but they are
+  not a substitute for the missing release gate or live-source evidence.
 
 Concrete limitation: the default suite can prove a planner rule such as "do not
 drop a remote-only descendant when a local directory disappears" in a model, but
@@ -542,6 +555,12 @@ that is still not the same as proving arbitrary WordPress object graphs survive
 production writes. The same gap applies to the DB journal and performance
 tests: they are evidence for the design, not proof that live source mutation is
 safe, durable, and fast.
+
+The benchmark tests are especially narrow: they prove that unsupported
+throughput claims can be rejected, not that a live executor is fast or that a
+release threshold was met. Until the benchmark is tied to a required release
+command with measured runtime and memory, it remains blocker evidence, not
+speed proof.
 
 ### What The Standalone Smokes Prove
 
