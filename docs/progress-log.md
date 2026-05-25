@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 12:46:32
+
+<a id="2026-05-25-public-status-audit-124632"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 12:46:32 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- Added `471440b9`, which proves `REPRINT_PUSH_SECRET_REQUIRED` fails closed
+  when a source URL is present but production credentials are absent; `889bd37a`
+  still keeps `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 12:37:16
 
 <a id="2026-05-25-public-status-audit-123716"></a>
