@@ -45,6 +45,11 @@ Release gate for any production wording:
   unless this branch also reran the same live mutation boundary and the same
   drift or retry case here; route shape, package shape, fixture replay, and
   `finalMatchesLocal` still cannot upgrade that comparison into current proof.
+- Show that any Reprint, ZS-Sync, or ForkPress citation stays historical
+  context unless this branch names the exact upstream revision or worktree
+  state, rechecks the same live boundary here, and records the same drift or
+  retry case against the current worktree; a matching note without that
+  branch-local rerun is not production evidence.
 - Show the claim does not collapse a lab-shaped success path into production
   safety just because the route name, response codes, or resource hashes look
   compatible; the missing proof is the live drift case on the real mutation
@@ -86,6 +91,10 @@ Must-fix blockers before any production wording:
   a late-discovered plugin-owned surface even if the first write committed
   cleanly; the proof must keep the preserved remote, blocked late surface,
   and fresh retry scope separate.
+- A readable stale manual-review artifact must not be treated as production
+  safety just because it is inspectable, archived, or linked from the audit;
+  if the same live boundary was not rerun here, the artifact is evidence of
+  history, not current authority.
 - A readable stale manual-review artifact must not be described as durable
   retry authority, even when it remains inspectable; if a retry consumed it as
   authority, the proof failed to preserve a clean remote-audit separation.
@@ -119,6 +128,10 @@ Must-fix blockers before any production wording:
 - Route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` remain compatibility evidence only; they do not prove
   production durability, production auth, or production write safety.
+- A copied upstream route shape or worktree state only proves that the lab
+  route still resembles the source note. It does not prove the live executor
+  on this branch rejected stale authority before mutation, preserved the
+  remote for audit, or rebuilt the retry scope from fresh live hashes.
 
 Source-note comparison summary:
 
