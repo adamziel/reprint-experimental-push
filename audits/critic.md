@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `165684f7` release-boundary verdict. That is concrete progress, but it is still lab evidence. This branch-local audit file is not the proof surface; only the supervised remote lane plus a rerunnable live boundary can count.
+The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `4baf67ab` release-boundary verdict. That is concrete progress, but it is still lab evidence. This branch-local audit file is not the proof surface; only the supervised remote lane plus a rerunnable live boundary can count.
 
 The missing production proof is now precise: one rerunnable live mutation boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence.
 
@@ -13,6 +13,7 @@ The presence of `verify:release` on the supervised remote lane is accepted as re
 The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
 
 Reprint, ZS-Sync, and ForkPress only supply provenance for transport, discovery, and crash-consistency vocabulary. Their observed anchors (`27c5f25`, `d9334a0`, `55f9879`) are useful context, but they are not retry authority here: they do not prove preserved-remote retention after rejection, stale-authority rejection before the first write, live auth/session lifecycle, lease/fenced durability, graph identity, or plugin-driver coverage on this branch.
+The source-note anchors are historical design input only; they cannot be promoted to current retry authority unless this branch reran the same live boundary and preserved the rejected remote on that boundary.
 
 - Reprint notes help explain resumable transport and staged delivery, but they do not prove a WordPress auth/session lifecycle or a preserved remote that survives rejection on the same live boundary.
 - ZS-Sync notes help explain discovery and batching, but they do not prove create-time remap handling, graph identity, or late plugin-owned surface classification.
