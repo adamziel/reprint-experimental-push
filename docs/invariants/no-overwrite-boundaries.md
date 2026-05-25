@@ -37,6 +37,9 @@ This note is the short form of the planner policy in
   or file type swap plus unrelated remote-only plugin drift: the safe
   resources stay `already-in-sync`, the plugin drift stays `keep-remote`, and
   the delete still needs its own live remote precondition.
+- The same rule also holds when the matching independent resource is a
+  restore: the delete keeps its own live remote precondition, the restore
+  stays `already-in-sync`, and remote-only plugin drift stays preserved.
 - A live-preconditioned file delete may still apply alongside a matching
   independent edit and file type swap; the matching resources stay
   `already-in-sync`, the delete keeps its own live remote precondition, and
