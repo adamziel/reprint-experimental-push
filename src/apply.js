@@ -469,13 +469,17 @@ function replayCompletedPlan(remote, plan, journal) {
     site: deepClone(remote),
     appliedMutations: 0,
     journal,
-    recoveryState: fullyUpdatedRecoveryState(
-      remote,
-      plan,
-      journal,
-      'Completed plan replayed without reapplying mutations.',
-    ),
+    recoveryState: completedReplayRecoveryState(remote, plan, journal),
   };
+}
+
+function completedReplayRecoveryState(remote, plan, journal) {
+  return fullyUpdatedRecoveryState(
+    remote,
+    plan,
+    journal,
+    'Completed plan replayed without reapplying mutations.',
+  );
 }
 
 function classifyJournalRemote(remote, journal) {
