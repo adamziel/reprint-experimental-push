@@ -110,11 +110,13 @@ boundary and needs its own preserve / reject / retry cycle.
 Source-note bottom line: Reprint, ZS-Sync, and ForkPress notes are useful
 comparative context, but they do not prove the live executor, the preserved
 remote, stale-drift rejection, create-time remap safety, or late-discovered
-plugin-owned surface handling on this branch. A note that only matches route
-shape, package layout, fixture replay, or reviewer wording is compatibility
-evidence only. Even a named upstream state is still historical unless this
-branch reran the same live boundary and can show fresh preserved-remote,
-rejection-point, and retry evidence for that exact case.
+plugin-owned surface handling on this branch. The ForkPress note is the most
+explicit about audit and crash-consistency intent, but it is still only a
+historical design note here. A note that only matches route shape, package
+layout, fixture replay, or reviewer wording is compatibility evidence only.
+Even a named upstream state is still historical unless this branch reran the
+same live boundary and can show fresh preserved-remote, rejection-point, and
+retry evidence for that exact case.
 
 Production-readiness checklist:
 
@@ -195,6 +197,10 @@ Non-negotiable release gate:
   route shape, package mount shape, fixture replay, readable manual-review
   artifacts, `finalMatchesLocal`, or a "manual resolution" label without the
   preserved remote, rejection point, and fresh live-hash retry scope.
+- no production-grade push claim is allowed if any upstream note is described
+  as a proof source instead of historical context, because the branch still
+  needs live boundary evidence for stale drift, remapped create targets,
+  partial side effects, and late plugin-owned surfaces.
 
 Must change before any production-grade push claim:
 
