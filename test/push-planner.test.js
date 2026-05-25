@@ -10813,6 +10813,7 @@ test('durable recovery boundaries stay limited to old remote or fully updated re
   const completed = applyPlan(baseSite(), plan, { durableJournal });
   const replayRemote = JSON.parse(JSON.stringify(completed.site));
   const replaySnapshot = JSON.stringify(replayRemote);
+  const persistedBeforeReplay = readRecoveryJournal(applyJournalPath);
   const replay = applyPlan(replayRemote, plan, {
     journal: completed.journal,
     durableJournal,
@@ -10833,6 +10834,18 @@ test('durable recovery boundaries stay limited to old remote or fully updated re
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
   assert.equal(replayInspection.status, 'fully-updated-remote');
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'target-planned').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'target-planned').length,
+  );
+  assert.equal(
+    replayPersisted.records.filter((record) => record.type === 'mutation-observed').length,
+    persistedBeforeReplay.records.filter((record) => record.type === 'mutation-observed').length,
+  );
+  assert.equal(
+    replayPersisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
 });
 
 test('a partial durable commit stays blocked on retry and does not duplicate staged inserts', () => {
