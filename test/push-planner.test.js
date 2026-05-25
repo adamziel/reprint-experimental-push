@@ -2736,6 +2736,58 @@ test('keeps remote-only plugin removals while a live-preconditioned delete, matc
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete, matching edit, and file type swap stay safe', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/photo.txt'] = {
+    type: 'file',
+    path: 'wp-content/uploads/photo.txt',
+    name: 'photo.txt',
+    contents: 'base photo bytes',
+  };
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Matching independent title', post_status: 'publish' };
+  const local = baseSite();
+
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/photo.txt'] = {
+    type: 'image',
+    path: 'wp-content/uploads/photo.txt',
+    name: 'photo.txt',
+    mimeType: 'image/png',
+  };
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Matching independent title', post_status: 'publish' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/photo.txt'] = {
+    type: 'file',
+    path: 'wp-content/uploads/photo.txt',
+    name: 'photo.txt',
+    contents: 'base photo bytes',
+  };
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Matching independent title', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/photo.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(typeSwapMutation.action, 'put');
+  assert.equal(typeSwapMutation.changeKind, 'type-change');
+  assert.equal(mutationFor(plan, 'row:["wp_posts","ID:2"]'), undefined);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.files['wp-content/uploads/photo.txt'].type, 'image');
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Matching independent title');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('refuses direct conflicts and preserves the remote snapshot', () => {
   const base = baseSite();
   const local = baseSite();
