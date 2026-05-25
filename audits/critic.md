@@ -32,10 +32,12 @@ Concrete failure scenarios that still block production wording:
   row/file/relationship-bearing record/remapped target/plugin surface, and
   was replaced by a fresh retry scope rebuilt from live hashes; and once a
   later plugin-owned data trap appears, it is a new boundary unless it is
-  separately enumerated or blocked before write;
+  separately enumerated or blocked before write, even if the route family,
+  package mount, or reviewer wording looks unchanged;
 - Reprint, ZS-Sync, or ForkPress comparisons: missing proof is the exact
   upstream state plus a rerun of the same live boundary on this branch, not
-  route shape, package layout, reviewer wording, or fixture replay.
+  route shape, package layout, reviewer wording, fixture replay, or a
+  readable review artifact reused as authority.
 
 What must change before any production-grade push claim:
 
@@ -57,7 +59,9 @@ What must change before any production-grade push claim:
   proven safe with live identity evidence or hard-blocked before write;
 - every touched surface must be classified as old, new, or blocked before
   retry, including mixed file, DB, and plugin side effects, because a mixed
-  write cannot be relabeled as success after only the committed part;
+  write cannot be relabeled as success after only the committed part, and any
+  later-discovered boundary still needs its own preserve / reject / retry
+  cycle;
 - every plugin-owned surface outside the allowlist must be enumerated live or
   blocked at apply time, including late-discovered tables, files, cron rows,
   runtime registries, generated assets, caches, and serialized blobs;
