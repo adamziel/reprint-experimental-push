@@ -17,8 +17,9 @@ live boundary is missing, the note is historical context only and cannot be
 used to claim that the live executor, retry path, or manual-review flow is
 safe. A route-shaped smoke, package mount, live-looking hash, or matching
 `finalMatchesLocal` result does not fill that gap, and neither does a later
-manual-resolution label unless the preserved remote stayed auditable and the
-fresh retry scope was rebuilt from live hashes on this branch.
+manual-resolution label unless the preserved remote stayed auditable, the
+stale rejection point is recorded, and the fresh retry scope was rebuilt from
+live hashes on this branch for that same boundary.
 That also means a stale manual-review artifact stays audit evidence only
 unless the remote was preserved for audit, the stale approval was rejected
 before mutation, and the retry rebuilt scope from fresh live hashes.
@@ -175,9 +176,10 @@ revision or worktree state that was reverified, it still cannot be promoted
 from context to proof.
 Readable manual-review wording has the same limit: it only stays audit-only
 if the preserved remote is inspectable, the stale artifact was rejected
-before mutation, and the fresh retry scope was rebuilt from live hashes on
-this branch. Otherwise the comparison note is still historical context, even
-if the label says "manual resolution."
+before mutation, the fresh retry scope was rebuilt from live hashes on this
+branch, and any later-discovered plugin-owned surface got its own separate
+preserve / reject / retry cycle. Otherwise the comparison note is still
+historical context, even if the label says "manual resolution."
 That prohibition also covers "manual resolution" wording: a readable stale
 artifact, a matching route family, or a copied-lab mount does not become
 retry authority unless the preserved remote is auditable, the stale artifact
@@ -219,7 +221,9 @@ not proof that the cited upstream note maps to current production behavior.
 If a manual-review artifact is still readable after drift but has not been
 rejected before write, that readability is audit evidence only, not proof of a
 safe retry. The retry proof must show the preserved remote, the stale artifact
-rejection point, and fresh live hashes used to rebuild scope.
+rejection point, fresh live hashes used to rebuild scope, and separate
+classification for any later plugin-owned surface that appeared after the
+first write.
 If the first write already committed and a later plugin-owned surface only
 appears afterward, that later surface is a new boundary, not a continuation of
 the earlier success story. The comparison stays historical unless it shows a

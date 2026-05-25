@@ -4399,6 +4399,8 @@ show the following with branch-local live evidence, not lab shape:
   inheriting stale approval;
 - any "manual resolution" claim preserved the remote for audit, recorded the
   stale rejection point, and produced a fresh retry artifact on this branch;
+  if a later plugin-owned surface appeared, it had its own separate preserve /
+  reject / retry cycle before the earlier approval could matter again;
 - any readable review artifact, route-shaped smoke, or `finalMatchesLocal`
   result is treated as compatibility evidence only and cannot prove the live
   executor, the preserved remote, or the stale rejection point;
@@ -4421,7 +4423,8 @@ manual resolution "passed" but does not also name the preserved remote, the
 stale rejection point, the fresh retry artifact, and the exact live mutation
 boundary where the new boundary was reclassified. A readable stale artifact
 or a matching upstream note remains audit evidence only until this branch
-shows that it was unusable as retry authority for the later boundary.
+shows that it was unusable as retry authority for the later boundary and any
+later plugin-owned surface received its own separate classification.
 
 If the project wants production-grade push wording, the proof must also show
 that Reprint, ZS-Sync, and ForkPress are being cited as named upstream
