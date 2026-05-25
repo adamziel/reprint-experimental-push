@@ -689,6 +689,7 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
 - it is the canonical bridge from the persisted pull base package into the production push executor
 - it preserves the one-way mapping from immutable pull provenance to mutable push execution
+- it is the top-level production ladder proof, with `push-production-ladder-contract.json` reserved for the compact stage-order citation
 - it is the umbrella contract that sits above `push-production-topology-contract.json` and `push-remote-liveness-topology-contract.json`, which are the compact one-remote, one-local, one-drift harness proofs for Docker and Playground
 
 The executor reviews the compact proofs in this order:

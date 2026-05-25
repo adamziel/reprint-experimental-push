@@ -86,7 +86,8 @@ site, and one later drift observation of the same remote identity:
 
 The machine-readable proof bundle is layered around that same ladder:
 
-- `push-protocol-extension-contract.json` is the umbrella production proof
+- `push-protocol-extension-contract.json` is the top-level production ladder
+  proof
 - `push-protocol-extension-topology-contract.json` is the compact umbrella
   proof that keeps the full ladder aligned with the one-remote, one-local,
   one-drift Docker and Playground topology

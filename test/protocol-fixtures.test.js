@@ -292,6 +292,10 @@ test('umbrella production contract keeps the pull bridge, apply revalidation, re
   const extension = readJson('fixtures/protocol/push-protocol-extension-contract.json');
 
   assert.equal(
+    extension.contract_id,
+    'push-protocol-extension-production-contract',
+  );
+  assert.equal(
     extension.purpose,
     'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping, apply-time revalidation, auth floor parity, and one-remote-one-local-one-drift topology',
   );
@@ -317,6 +321,10 @@ test('umbrella production contract keeps the pull bridge, apply revalidation, re
   assert.equal(extension.topology.networking.tunnels, 'disallowed');
   assert.ok(extension.topology.proof.includes('remote-base and remote-changed are the same remote identity observed at different times'));
   assert.ok(extension.topology.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.equal(
+    extension.bridge_rule,
+    'the importer-owned base package is immutable provenance for planning, apply, journal, and recovery',
+  );
   assert.deepEqual(extension.required_invariants, [
     'dry-run and apply are separate remote operations',
     'remote snapshot hash listing is planning evidence, not write authority',
