@@ -2767,6 +2767,22 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
     rejectedById.get('compressed-remote-index-and-parallel-chunk-and-row-fanout-skips-large-upload-and-plugin-update-recovery-after-pause').violates.includes('atomic-groups'),
   );
   assert.equal(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause').rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause').violates.includes('parallelism-limits'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause').violates.includes('atomic-groups'),
+  );
+  assert.equal(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-windowing').rejectedGate,
     'recovery',
   );
@@ -2969,6 +2985,9 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'durable-receipt-flush')));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'group-staging-finalize')));
   assert.ok(model.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'atomic-group-commit')));
+  assert.ok(
+    model.schedules.flatMap((schedule) => schedule.actions).some((action) => action.type === 'db-row-batch' && action.idempotencyKey),
+  );
   assert.ok(model.schedules.some((schedule) => schedule.totals.uploadChunks > 0));
   assert.ok(model.schedules.some((schedule) => schedule.totals.dbRows > 0));
   assert.ok(model.totals.uploadBytes >= 2 * 1024 * MIB);
@@ -2984,6 +3003,7 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   assert.equal(report.evidence.atomicGroup.successAllTargetsNew, true);
   assert.equal(report.evidence.atomicGroup.productionAtomicCommitMeasured, false);
   assert.equal(report.evidence.recovery.partialCommitBlocksRecovery, true);
+  assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
   assert.equal(report.claims.productionThroughput.status, 'blocked');
   assert.ok(blockers.has('production-atomic-group-commit-not-measured'));

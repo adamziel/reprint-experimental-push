@@ -1305,6 +1305,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+    proposal: 'treat a compressed remote index plus parallel row batches as enough proof to skip plugin-update backpressure after pause',
+    rejectedBecause: 'planning evidence and parallel batches can overlap lookup work, but they cannot prove the paused row receipts, idempotency keys, or atomic-group commit record survived failure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'index-and-compressed-row-batch-skips-live-compare',
     proposal: 'treat a fresh remote index plus a compressed row batch as enough proof to skip the live row compare in a plugin update',
     rejectedBecause: 'planning evidence and compressed batches can reduce lookup and replay work, but they cannot replace the live compare-and-swap predicate on each row',
