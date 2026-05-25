@@ -17510,6 +17510,7 @@ test('the durable recovery boundary remains fail-closed until the release gate w
     }),
   );
   blockedJournal.close();
+  const blockedPersisted = readRecoveryJournal(journalPath);
 
   assert.equal(inspection.status, 'blocked-recovery');
   assert.equal(inspection.journal.integrity.status, 'ok');
@@ -17520,6 +17521,14 @@ test('the durable recovery boundary remains fail-closed until the release gate w
   assert.ok(blocked.details.recovery.artifacts.journal);
   assert.ok(blocked.details.recovery.artifacts.remote);
   assert.equal(blocked.details.recovery.artifacts.remote.files['index.php'], '<?php echo "drifted";');
+  assert.equal(
+    blockedPersisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    true,
+  );
+  assert.equal(
+    blockedPersisted.records.some((record) => record.type === 'journal-replayed'),
+    false,
+  );
 });
 
 test('durable recovery only allows old remote, fully updated remote, or blocked recovery with artifacts across the failure and replay boundary', () => {
