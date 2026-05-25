@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 02:43:46 CEST
+Last updated: 2026-05-25 02:44:19 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 02:43:46 CEST - Supervisor Snapshot
+## 2026-05-25 02:44:19 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and feedback note still line up.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity mapping, integration, and plugin drivers.
-- Progress change: no new evidence landed; this pass just tightened the visible page wording and kept the evidence links first-class.
+- Progress change: no new evidence landed; this pass only trimmed repeated wording and kept the evidence links first-class.
 - Next nudge: keep each lane to one proof gap, one test, and one owner.
 
 | Lane | Next nudge |
