@@ -9206,9 +9206,9 @@ test('durable recovery stays within the accepted post-failure states and complet
   const plan = planFor(base, local, baseSite());
 
   for (const [label, options] of [
-    ['before mutation', { failBeforeMutation: true }],
-    ['after staging', { failAfterStaging: true }],
-    ['after dependency validation', { failAfterDependencyValidation: true }],
+    ['before mutation', { failBeforeMutation: true, expectedJournalStatus: 'opened' }],
+    ['after staging', { failAfterStaging: true, expectedJournalStatus: 'staged' }],
+    ['after dependency validation', { failAfterDependencyValidation: true, expectedJournalStatus: 'dependencies-validated' }],
   ]) {
     const journalPath = tempRecoveryJournalPath();
     const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
@@ -9231,6 +9231,7 @@ test('durable recovery stays within the accepted post-failure states and complet
     assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+    assert.equal(error.details.recovery.artifacts.journal.status, options.expectedJournalStatus, label);
     assert.equal(
       persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'old-remote'),
       true,
