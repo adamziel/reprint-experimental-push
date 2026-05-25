@@ -16250,6 +16250,49 @@ test('completed recovery replay stays inert on repeated retries and preserves th
   assert.equal(Object.keys(retryRemote.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('staging the first mutation before commit keeps the remote old and replays from the staged journal without duplication', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const failure = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failBeforeCommitAtMutation: 1,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(failure instanceof PushPlanError);
+  assertFailureRecoveryState(failure.details.recovery, 'old-remote');
+  assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  assert.equal(failure.details.recovery.artifacts.journal.status, 'staging');
+  assert.equal(failure.details.recovery.artifacts.journal.entries[0].status, 'staged');
+  assert.equal(failure.details.recovery.artifacts.journal.entries[1].status, 'pending');
+  assert.equal(JSON.stringify(remote), before);
+
+  const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const retry = applyPlan(baseSite(), plan, {
+    durableJournal: retryJournal,
+    journal: failure.details.recovery.artifacts.journal,
+  });
+  retryJournal.close();
+
+  assertAcceptableRecoveryState(retry.recoveryState);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(retry.recoveryState.artifacts.remote, undefined);
+  assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(retry.site.files['index.php'], '<?php echo "local";');
+  assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('completed replay blocks drifted remotes and keeps the durable recovery artifacts inspectable', () => {
   const base = baseSite();
   const local = baseSite();
