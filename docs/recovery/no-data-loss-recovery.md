@@ -1,34 +1,23 @@
-# No Data Loss Recovery Contract
+# No Data Loss Recovery
 
-This lane treats every apply outcome as one of three acceptable states:
+This lane treats recovery as a strict state machine:
 
-1. `old-remote`
-   - No remote mutation is allowed to escape without a journal artifact.
-   - The recovery payload must carry the journal snapshot that describes the interrupted plan.
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery`
 
-2. `fully-updated-remote`
-   - The remote already matches the completed plan.
-   - The recovery payload must carry the completed journal artifact.
-   - The replay path must stay inert and must not re-apply inserts or resurrect stale local data.
+Acceptable failure outcomes are limited to:
 
-3. `blocked-recovery`
-   - A partial commit or remote drift was observed.
-   - The recovery payload must carry both journal and remote artifacts so inspection can continue.
-   - This state is the only acceptable outcome for a partial remote mutation.
-   - A stale completed replay also lands here instead of silently reapplying stale local data.
+1. The remote is still old and untouched.
+2. The remote is fully updated and replay is inert.
+3. Recovery is blocked, but the journal and remote artifacts are durable enough to inspect.
 
-Release blocker rule:
+Rules:
 
-- Any partial remote mutation without a recovery artifact is a blocker.
-- Retry logic must not treat a partially written state as safe, and it must not duplicate inserts on replay.
-- A completed replay must stay append-only and inert. If the remote has drifted since completion,
-  the retry must become `blocked-recovery` with artifacts rather than a fresh apply.
+- Failure before mutation must leave the remote old.
+- Failure after staging must still leave the remote old, with journal evidence for the staged boundary.
+- Failure after dependency validation must still leave the remote old, with journal evidence for the validated boundary.
+- A completed plan replay must not reapply mutations or resurrect stale local data.
+- A blocked partial recovery must preserve artifacts so a retry can classify the live remote without guessing.
 
-Durable journal expectation:
-
-- The durable journal should record the boundary that was reached before failure.
-- Recovery inspection should be able to distinguish an untouched remote, a fully completed replay, and a blocked partial commit from persisted artifacts alone.
-- A completed replay should be append-only: it records the replay boundary, does not re-stage mutations, and does not resurrect stale local inserts or edits.
-- Failures before mutation, after staging, and after dependency validation remain `old-remote` even when a durable journal is present.
-- Replaying a completed plan remains `fully-updated-remote` and must not reopen mutation work or rewrite completed inserts.
-- Any partial commit must be classified as `blocked-recovery` with both journal and remote artifacts so retry stays fenced.
+The production contract should treat any partial mutation without a recovery artifact as a release blocker.
