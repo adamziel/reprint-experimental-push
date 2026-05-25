@@ -303,6 +303,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-backpressure-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause')?.rejectedGate,
     'group',
   );
@@ -347,6 +351,12 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-backpressure')?.violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-backpressure-after-pause')?.violates.includes('file-hashing'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-backpressure-after-pause')?.violates.includes('backpressure'),
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause')?.violates.includes('durable-progress'),
