@@ -313,6 +313,10 @@ Claims that must still be rejected as false reliability:
   commit alone; the missing proof is a branch-local recheck of the same live
   mutation boundary and the same drift or retry case, not just provenance for
   a matching route family or mount shape.
+- "The upstream note looks current, so the branch is current" when the note
+  only proves design provenance; the missing proof is a fresh branch-local
+  recheck of the same live write path, the same stale-remote case, and the
+  same rejection point before mutation.
 - A partial apply writes one store but not another, or writes plugin-owned
   state that the core row audit does not mention; the missing proof is durable
   old/new/blocked classification for each touched store, plus a retry rebuilt
@@ -406,7 +410,8 @@ The missing evidence for each one is concrete:
 - For comparison language, the audit needs the exact upstream revision or
   worktree state to be named and reverified at the live write boundary; a
   stale note that only sounds current is historical context, not production
-  proof.
+  proof, and it cannot be used to imply the live executor on this branch was
+  exercised.
 - For create-time identity remapping, the audit needs either a safe remap
   proof or a hard block before mutation when the live remote can rename,
   alias, or reassign the target.
@@ -457,6 +462,9 @@ Current anti-claims:
 - A copied-lab mount does not prove the live executor ran, so it cannot
   justify claims about remote preservation, stale-authority rejection, or
   retry safety.
+- A source note that matches the vocabulary of the current branch does not
+  prove this branch's live boundary; it still needs the explicit local
+  recheck, preserved remote, and stale rejection point.
 - A readable manual-review artifact is not current authority after drift.
   It only counts if the audit shows the preserved remote, the rejection point,
   and the fresh retry scope on the same live write boundary.
