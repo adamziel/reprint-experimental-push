@@ -39,6 +39,19 @@ Until that rerun exists, production wording must fail closed. Route shape,
 fixture replay, manual review notes, and source-note comparisons remain
 compatibility evidence only.
 
+Release-gate checklist for production wording:
+
+- exact branch-local command string, runnable without prose edits;
+- exact live local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- preserved remote that stays inspectable after rejection;
+- apply-time revalidation on the same boundary before the first write;
+- journal and recovery inspection that defines retry scope;
+- executor identity plus auth/session boundary before the first write;
+- old/new/blocked classification for every touched row, file, relationship-
+  bearing record, and plugin-owned surface before retry starts; and
+- separate preserve / reject / retry cycle for any later-discovered plugin-
+  owned surface or remapped create target.
+
 The same run also needs an explicit conflict-policy decision for every touched
 surface. Scenario: a reviewer says "manual resolution" without saying whether a
 surface was blocked, preserved, retried, or sent to manual review after the
@@ -84,6 +97,15 @@ auth/session boundary, the graph-identity evidence, and the classification of
 all plugin-owned surfaces. Until that exact rerun exists, `LIVE_PREFLIGHT_OK`
 remains preflight evidence only.
 
+Scenario: a reviewer reads `LIVE_PREFLIGHT_OK` as if it already covers the
+source-note comparisons to Reprint, ZS-Sync, or ForkPress. Missing proof: the
+upstream notes are still historical design input, and this branch has not yet
+rerun the same live mutation boundary with preserved-remote evidence, stale-
+authority rejection, and a fresh live-hash retry scope. The note can tell us
+what the upstreams prove in their own context; it cannot supply the branch-
+local live boundary or the production auth/session, graph identity, and
+plugin-driver proofs that are still missing here.
+
 ## 2026-05-25 Commit `2b00b189` Is Still A Wrapper, Not Release Proof
 
 Commit `2b00b189` adds a release-shaped wrapper, but the branch still does
@@ -116,6 +138,15 @@ rejection point before the first write, the journal/recovery inspection
 needed to audit retry scope, and the first live executor/auth/preserved-
 remote boundary. Until that exact command exists and is rerun on a real
 remote, commit `2b00b189` stays a compatibility wrapper only.
+
+Scenario: someone points to `npm run test:playground:production-shaped-release-verify`
+and treats it as the named real-site release command. Missing proof: that
+command is only acceptable here if the branch can show the same live boundary
+on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, and it
+still has to prove preserved-remote retention, apply-time revalidation,
+journal/recovery inspect, auth/session lifecycle, graph identity, and
+plugin-owned surface classification in the same rerun. A live preflight label
+without that evidence is still compatibility work.
 
 ## 2026-05-25 Real-Site Command Still Missing
 
