@@ -14009,6 +14009,51 @@ test('no-data-loss recovery replays completed plans without duplicating inserts 
   assert.equal(Object.keys(replay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
 });
 
+test('completed replay stays inert across repeated retries and does not resurrect stale local deletes', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+
+  const firstReplay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  const secondReplay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: firstReplay.journal,
+  });
+
+  replayJournal.close();
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assertAcceptableRecoveryState(firstReplay.recoveryState);
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assertRecoveryStateArtifacts(firstReplay.recoveryState, 'fully-updated-remote');
+  assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(firstReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(firstReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(firstReplay.site.files['index.php'], undefined);
+  assert.equal(secondReplay.site.files['index.php'], undefined);
+  assert.equal(firstReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(secondReplay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+});
+
 test('no-data-loss blocked partial recovery keeps inspectable artifacts and stays blocked on retry', () => {
   const base = baseSite();
   const local = baseSite();
