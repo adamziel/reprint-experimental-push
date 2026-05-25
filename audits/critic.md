@@ -25,6 +25,22 @@ Must-fix blockers before any production wording:
 - Route-shape smokes, packaged-plugin mounts, fixture replay, and
   `finalMatchesLocal` remain compatibility evidence only.
 
+Source-note comparison summary:
+
+- Reprint `27c5f25` proves staged transport and resumable delivery rhythm in
+  the upstream pull pipeline. Missing repo proof: this branch has not shown a
+  live source mutation boundary that rejects stale authority before write,
+  preserves the remote for audit, and rebuilds retry scope from fresh live
+  hashes after drift.
+- ZS-Sync `d9334a0` proves bounded discovery and scoped scanning. Missing
+  repo proof: create-time identity reservation or remap safety, remote-
+  preserving retry, and durable old/new/blocked classification for partial
+  side effects on the live write path.
+- ForkPress `55f9879` proves review and conflict vocabulary plus a crash-
+  consistency target. Missing repo proof: a stale review artifact that stays
+  auditable but cannot authorize retry, widen scope, or silently widen into
+  a new row, file, relationship-bearing record, or plugin-owned surface.
+
 Release-gate checklist for production-readiness wording:
 
 - Name the exact live write path and the exact stale-remote drift case it
