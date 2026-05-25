@@ -847,17 +847,22 @@ push.** Anything stronger is a blocked claim, not a conservative phrasing.
 
 ## Weakest Current Claim
 
-The weakest surviving claim is the one that sounds simplest: that a live
-source WordPress site can be pushed back without data loss. Speed is also
-blocked, but the no-data-loss claim is the broader release blocker because it
-depends on the same write-boundary evidence the repo still lacks. Right now the
-repo only proves that selected fixtures survive selected lab paths, and those
-paths do not yet cover the same auth, storage, journal, and graph boundaries
-as a real source mutation. This means the current evidence is enough to reject
-unsafe optimism, but not enough to authorize a release. The stricter and more
-actionable statement is: the repository does not yet have a non-bypassable
-release boundary, so both the safety claim and the speed claim remain
-non-release claims even when the individual smoke tests pass.
+The weakest surviving claim is not really speed by itself. The broader blocker
+is that a live source WordPress site can be pushed back without silent data
+loss, and the repository still lacks the live write-boundary evidence needed to
+support that claim. Speed remains blocked too, but it is subordinate to the
+same missing release boundary: if the repo cannot prove the guarded write
+matrix on the live path, it also cannot justify a production speed claim for
+that path.
+
+Right now the repo only proves that selected fixtures survive selected lab
+paths, and those paths do not yet cover the same auth, storage, journal, lease,
+fencing, and graph boundaries as a real source mutation. That means the
+current evidence is enough to reject unsafe optimism, but not enough to
+authorize a release. The stricter and more actionable statement is:
+the repository does not yet have a non-bypassable release boundary, so both the
+safety claim and the speed claim remain non-release claims even when the
+individual smoke tests pass.
 
 To make the claim release-grade, the next proof must be a kill matrix that
 covers every guarded write boundary on a real push path, with live before/after
@@ -895,6 +900,8 @@ Practical release blocker summary:
 - no measured end-to-end speed evidence on the release path
 - no proof that the current lab-backed route/package smokes correspond to a
   non-lab production implementation
+- no direct proof that live-source no-data-loss is safe at the WordPress graph
+  boundary
 
 Current bottom line:
 
