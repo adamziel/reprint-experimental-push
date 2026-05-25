@@ -341,6 +341,50 @@ test('production executor flow contract keeps the pull handoff, ladder, and topo
   ]);
 });
 
+test('umbrella protocol extension topology contract keeps the full ladder aligned with the production harness', () => {
+  const extensionTopology = readJson('fixtures/protocol/push-protocol-extension-topology-contract.json');
+
+  assert.equal(
+    extensionTopology.contract_id,
+    'push-protocol-extension-topology-contract-one-remote-one-local',
+  );
+  assert.equal(
+    extensionTopology.purpose,
+    'compact umbrella proof that ties the full production push ladder to the immutable pull provenance bridge and the one-remote-one-local-one-drift Docker and Playground topology',
+  );
+  assert.equal(
+    extensionTopology.pull_pipeline.persisted_pull_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.deepEqual(extensionTopology.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(extensionTopology.topology.same_remote_identity, true);
+  assert.equal(extensionTopology.topology.networking.ingress_port, 8080);
+  assert.equal(extensionTopology.topology.networking.proxy_policy, 'local-only');
+  assert.equal(extensionTopology.topology.networking.tunnels, 'disallowed');
+  assert.ok(extensionTopology.topology.docker.proof.includes('dry-run and apply remain separate remote calls'));
+  assert.ok(extensionTopology.topology.playground.proof.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
+  assert.deepEqual(extensionTopology.required_invariants, [
+    'dry-run and apply are separate remote operations',
+    'remote snapshot hash listing is planning evidence, not write authority',
+    'dry-run is a receipt, not a lock',
+    'apply must revalidate the live remote before every batch and at the storage boundary',
+    'journal inspection is read-only and never authorizes mutation by itself',
+    'recovery must begin with inspect before any mutating repair',
+    'authentication must be at least as strict as current Reprint HMAC usage',
+    'pull exporter/importer establish the immutable base package before push',
+    'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
+    'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+  ]);
+});
+
 test('remote snapshot listing fixture keeps planning-only hash discovery separate from write authority', () => {
   const snapshotListing = readJson('fixtures/protocol/push-remote-snapshot-listing-contract.json');
 

@@ -413,6 +413,9 @@ The top-level production proof is the umbrella contract:
 - `push-protocol-extension-contract.json` binds the pull bridge, the auth
   floor, the dry-run/apply split, the journal boundary, the recovery floor,
   and the one-remote, one-local, one-drift topology in one object
+- `push-protocol-extension-topology-contract.json` is the compact umbrella
+  proof for the full ladder on the same one-remote, one-local, one-drift
+  harness
 - `push-production-pull-bridge-contract.json` is the smaller bridge proof
 - `push-production-revalidation-contract.json` is the smaller dry-run/apply
   separation proof

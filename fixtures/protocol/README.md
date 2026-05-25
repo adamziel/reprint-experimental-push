@@ -58,6 +58,7 @@ The normal sequence is:
 50. `push-production-auth-session-journal-recovery-inspect-contract.json`
 51. `push-production-pull-bridge-contract.json`
 52. `push-production-executor-flow-contract.json`
+53. `push-protocol-extension-topology-contract.json`
 
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
@@ -68,6 +69,9 @@ identity across `remote-base` and `remote-changed`:
   inspect-first recovery story in one object, with dry-run and apply kept
   separate while apply revalidates fresh live evidence before every batch and
   at the storage boundary.
+- `push-protocol-extension-topology-contract.json` is the compact umbrella
+  proof that keeps the same ladder aligned with the one-remote, one-local,
+  one-drift Docker and Playground topology.
 - It is also the canonical machine-readable bridge from the exporter/importer
   pull pipeline into the push write path.
 - `push-production-topology-contract.json` pairs the pull bridge with the
