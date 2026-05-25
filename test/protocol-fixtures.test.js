@@ -49,6 +49,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const mapping = readJson('fixtures/protocol/push-pull-mapping.json');
   const topologyMatrix = readJson('fixtures/protocol/push-topology-matrix.json');
   const deploymentTopologyContract = readJson('fixtures/protocol/push-deployment-topology-contract.json');
+  const protocolExtensionContract = readJson('fixtures/protocol/push-protocol-extension-contract.json');
 
   assert.equal(contract.contract_id, 'push-contract-production-extension');
   assert.equal(contract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
@@ -241,6 +242,55 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.lab_topology.remote_changed.identity, 'remote-example');
   assert.equal(topologyMatrix.lab_topology.live_drift.between[0], 'remote_base');
   assert.equal(topologyMatrix.lab_topology.live_drift.proof[0], 'remote-base and remote-changed are the same remote identity observed at different times');
+  assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
+  assert.deepEqual(protocolExtensionContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.preflight,
+    'binds the persisted pull base to the live remote identity and a short-lived push session',
+  );
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.snapshot_hash_listing,
+    'collects live comparison evidence for planning only',
+  );
+  assert.equal(
+    protocolExtensionContract.pull_to_push_mapping.dry_run_plan_upload,
+    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    protocolExtensionContract.push_guards.remote_liveness,
+    'dry-run and apply are separate remote operations',
+  );
+  assert.equal(
+    protocolExtensionContract.push_guards.apply,
+    'must revalidate the live remote before every batch and at the storage boundary',
+  );
+  assert.equal(protocolExtensionContract.push_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(protocolExtensionContract.topology.networking.ingress_port, 8080);
+  assert.equal(protocolExtensionContract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(protocolExtensionContract.topology.networking.tunnels, 'disallowed');
+  assert.ok(
+    protocolExtensionContract.topology.proof.includes(
+      'runner owns preflight, planning, dry-run upload, apply, journal inspect, and recovery',
+    ),
+  );
+  assert.ok(
+    protocolExtensionContract.topology.docker.proof.includes(
+      'apply revalidates fresh live evidence before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    protocolExtensionContract.topology.playground.proof.includes(
+      'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
   assert.ok(
     topologyMatrix.docker.proof.includes(
       'push preflight mints one short-lived session bound to the persisted base and live remote identity',

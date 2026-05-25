@@ -71,6 +71,13 @@ That split is the core liveness guarantee:
 - recovery starts with inspect and only mutates after journal rows plus fresh
   live hashes prove the action.
 
+For focused production proofs, the compact machine-readable contract is
+[`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json).
+It ties the pull exporter/importer handoff to preflight, remote hash listing,
+dry-run upload, batched apply, journal inspection, inspect-first recovery, and
+the one-remote, one-local, one-drift topology used in both Docker and
+Playground.
+
 Recovery classifies the attempt into the same four states used by the protocol
 contract:
 

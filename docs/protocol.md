@@ -231,6 +231,11 @@ The compact proof objects in `fixtures/protocol/` mirror that ladder:
 
 - `push-pull-mapping.json` is the provenance bridge from exporter/importer to
   preflight, planning, apply, journal inspect, and recovery.
+- `push-protocol-extension-contract.json` is the shortest end-to-end proof
+  that the production push extension maps the pull exporter/importer
+  provenance into preflight, remote hash listing, dry-run upload, batched
+  apply, journal inspection, and inspect-first recovery while keeping the
+  one-remote, one-local, one-drift topology explicit.
 - `push-remote-liveness-contract.json` keeps snapshot listing, dry-run,
   apply, and recovery on separate liveness boundaries.
 - `push-dry-run-apply-revalidation-contract.json` records the stale-between

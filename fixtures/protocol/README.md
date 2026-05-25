@@ -40,6 +40,7 @@ The normal sequence is:
 32. `push-dry-run-apply-revalidation-contract.json`
 33. `push-remote-liveness-contract.json`
 34. `push-deployment-topology-contract.json`
+35. `push-protocol-extension-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -145,6 +146,11 @@ Failure and recovery examples:
   preflight, remote snapshot hash listing, dry-run receipt, batched apply,
   journal inspect, and inspect-first recovery stay on separate liveness
   boundaries.
+- `push-protocol-extension-contract.json` gives the shortest end-to-end proof
+  that the production push extension maps the pull exporter/importer
+  provenance into preflight, snapshot listing, dry-run upload, batched apply,
+  journal inspection, and inspect-first recovery while keeping the one-remote,
+  one-local, one-drift topology explicit.
 - `push-recovery-revalidation-contract.json` gives the compact proof that the
   same drift case still requires fresh live hashes before each apply batch and
   before any mutating recovery path.

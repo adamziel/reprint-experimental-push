@@ -1,0 +1,75 @@
+{
+  "contract_id": "push-protocol-extension-production-contract",
+  "purpose": "compact end-to-end proof for preflight, remote hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery",
+  "push_sequence": [
+    "push_preflight",
+    "push_snapshot_hashes",
+    "push_plan_dry_run",
+    "push_batch_apply",
+    "push_journal",
+    "push_recover inspect",
+    "push_recover auto|finish|rollback"
+  ],
+  "pull_to_push_mapping": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
+    "snapshot_hash_listing": "collects live comparison evidence for planning only",
+    "dry_run_plan_upload": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
+    "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "journal_inspect": "reads durable evidence without authorizing mutation",
+    "recovery": "starts with inspect and only mutates when the journal plus fresh live hashes prove the action"
+  },
+  "push_guards": {
+    "remote_liveness": "dry-run and apply are separate remote operations",
+    "dry_run": "eligibility evidence only and never a lock",
+    "apply": "must revalidate the live remote before every batch and at the storage boundary",
+    "journal": "read-only evidence only",
+    "recovery": "inspect-first and mutates only when journal evidence plus fresh live hashes prove the action",
+    "auth_floor": "at least as strict as current Reprint HMAC usage"
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "same_remote_identity": true,
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    },
+    "proof": [
+      "remote-base and remote-changed are the same remote identity observed at different times",
+      "local-edited carries the imported local edits used to build the canonical plan",
+      "runner owns preflight, planning, dry-run upload, apply, journal inspect, and recovery",
+      "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+    ],
+    "docker": {
+      "network": "one private network",
+      "proof": [
+        "remote-base seeds the persisted pull base",
+        "remote-changed reuses the same remote identity after drift",
+        "apply revalidates fresh live evidence before every batch and at the storage boundary"
+      ]
+    },
+    "playground": {
+      "network": "separate disposable blueprints",
+      "proof": [
+        "remote-base and remote-changed are the same remote identity at different times",
+        "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
+        "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+      ]
+    }
+  },
+  "required_invariants": [
+    "dry-run and apply are separate remote operations",
+    "remote snapshot hash listing is planning evidence, not write authority",
+    "dry-run is a receipt, not a lock",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "pull exporter/importer establish the immutable base package before push"
+  ]
+}
