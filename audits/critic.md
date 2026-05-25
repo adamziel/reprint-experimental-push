@@ -63,6 +63,10 @@ Source-note comparison rule:
 - Reprint, ZS-Sync, and ForkPress notes are historical context unless the
   exact upstream commit or worktree state is named and this branch reran the
   same live mutation boundary with preserved-remote evidence;
+- even when the upstream revision is named correctly, the note still cannot
+  become current retry authority until this branch shows the preserved
+  remote, the rejection point, and the fresh retry scope for the exact same
+  live boundary;
 - route-shape smokes, package mounts, fixture replays, readable review
   artifacts, and `finalMatchesLocal` remain compatibility evidence only even
   when they look production-shaped; and
