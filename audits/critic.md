@@ -37,6 +37,13 @@ Concrete failure scenarios that still disqualify production wording:
   the first write still lands because the stale approval artifact was treated
   as retry authority. The missing proof is a live rejection point that
   preserves the remote for audit and forces fresh hashes before retry.
+- Late-discovered plugin-owned surface: the first write lands on an allowlisted
+  row or file, then a hidden custom table, cron row, runtime registry entry,
+  generated file, serialized blob, or plugin-owned cache entry appears on the
+  next live snapshot. The missing proof is a separate rejection or
+  classification point for that later boundary, plus a preserved remote and
+  fresh retry scope on this branch; without that, the earlier approval can be
+  widened into a second write that was never actually audited.
 - Create-time identity remapping: a create target is renamed, aliased, or
   renumbered between planning and apply, and the write lands on the wrong
   row, file, or relationship-bearing record. The missing proof is a live
@@ -53,7 +60,9 @@ Concrete failure scenarios that still disqualify production wording:
 - Stale manual-review artifacts: a readable review note, approval token, or
   comparison result is reused after drift to justify a second boundary. The
   missing proof is preserved remote evidence plus a fresh branch-local retry
-  artifact for the same live boundary.
+  artifact for the same live boundary; readability alone is audit evidence,
+  not retry authority, and it cannot be widened to a later row, file, or
+  plugin-owned surface.
 
 Conservative comparison summary:
 
