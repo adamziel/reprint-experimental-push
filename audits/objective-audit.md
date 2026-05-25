@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The current blocker is now precise: this checkout still lacks checked, production-boundary proof that auth/session lifecycle and durable journal semantics survive the live apply path. The old "no release command exists" framing is stale. `origin/lane/reliable-executor` does expose `verify:release` at `9975dfc9`, and the remote lane's proof bridge assertions report live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback `rows: 17`, but that remains upstream evidence until this checkout owns an equivalent enforced verdict. Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional gaps; they are still blockers, but they no longer replace the primary auth/session plus journal gap.
+The current blocker is now precise: this checkout still lacks checked, production-boundary proof that auth/session lifecycle and durable journal semantics survive the live apply path. The old "no release command exists" framing is stale. `origin/lane/reliable-executor` does expose `verify:release` at `9975dfc9`, and the remote lane's reported proof bridge assertions cover live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback `rows: 17`, but that remains remote-lane evidence until this checkout owns an equivalent enforced verdict. Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional gaps; they are still blockers, but they no longer replace the primary auth/session plus journal gap.
 
 The gate stays closed until one required invocation proves, in the same run:
 
@@ -67,7 +67,7 @@ The tests do the right kind of negative work, but they are not positive release 
 - [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the guarded benchmark can move staged buffers and row payloads through durable evidence while refusing unsupported throughput claims. It does not prove the live push path is fast or release-ready, so it also cannot support a speed claim.
 - [`test:playground:authenticated-http-push`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:production-shaped-push`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), [`test:playground:production-plugin-package`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json), and the DB journal smokes prove helper- and lab-scoped behavior, including authenticated and production-shaped routes. Upstream release-verifier claims add stronger live drift, dry-run, apply, recovery inspect, and journal readback evidence, but they still do not convert this checkout into a production boundary verdict.
 - `node --test test/push-planner.test.js test/recovery-journal.test.js test/performance-model.test.js test/guarded-executor-benchmark.test.js` was rechecked in this worktree on 2026-05-25 and passed `86/86`. That is regression evidence only. It does not certify no data loss, reliability, or speed on the live source boundary.
-- `origin/lane/reliable-executor` at `9975dfc9` exposes `verify:release` and is the current remote proof that the release wrapper exists. The proof is still upstream and still not enough by itself, because this checkout does not yet own an equivalent live-boundary verdict.
+- `origin/lane/reliable-executor` at `9975dfc9` exposes `verify:release` and is the current remote proof that the release wrapper exists. The proof is still remote-lane evidence and still not enough by itself, because this checkout does not yet own an equivalent live-boundary verdict.
 - The strongest live-boundary claims still missing are not hypothetical. They are the production auth/session lifecycle, durable journal semantics, graph identity mapping, plugin-driver behavior, and preserved-remote drift at apply time. The blocking issue is the incomplete production-boundary verdict, not the mere existence of a wrapper command.
 
 ## Current Command Surface
@@ -83,7 +83,7 @@ Direct command-surface recheck on 2026-05-25:
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone, even if a release wrapper exists upstream and reports passing live preflight, dry-run, apply, recovery inspect, and journal readback.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks live-boundary proof for the remaining production claims, and therefore no green run can be promoted to release proof by interpretation alone, even if a release wrapper exists on `origin/lane/reliable-executor` and reports passing live preflight, dry-run, apply, recovery inspect, and journal readback.
 
 Minimum properties of that gate:
 
