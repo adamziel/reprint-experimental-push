@@ -118,6 +118,9 @@ mutation id, the resource key, the remote hash observed during planning, and
 - Plugin-owned deletions remain blocked even when unrelated matching
   independent restores or edits are safe and remote-only plugin drift still
   needs preserving.
+- Plugin-owned deletions remain blocked even when unrelated matching
+  deletions, edits, file type swaps, and remote-only plugin drift are safe;
+  the blocker must stay bounded and redacted.
 - Plugin-owned deletions remain blocked even when a matching independent edit
   is safe in the same plan and the owner plugin has been removed remotely.
 - Plugin-owned deletions remain blocked even when the local plan carries an
