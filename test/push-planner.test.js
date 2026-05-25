@@ -9431,6 +9431,11 @@ test('durable recovery boundaries keep old remote unchanged and completed replay
       true,
       label,
     );
+    assert.equal(
+      persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+      false,
+      label,
+    );
   }
 
   const applyJournalPath = tempRecoveryJournalPath();
@@ -9457,6 +9462,10 @@ test('durable recovery boundaries keep old remote unchanged and completed replay
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    replayPersisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
   assert.equal(replay.site.files['index.php'], '<?php echo "local";');
   assert.equal(replay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
   assert.equal(
