@@ -185,6 +185,11 @@ The lab identities for that proof are `remote-example` and `local-dev-site`.
 They let the tests assert one remote source, one imported local edit site, and
 the same remote identity again after drift.
 
+The machine-readable bridge between pull provenance and push execution is
+[`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json).
+Use it when a test needs the importer-owned base package, the push stage
+ordering, and the recovery boundary in one compact object.
+
 The machine-readable topology proof is
 [`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json).
 Use it when a test needs the exact Docker/Playground shape for one remote

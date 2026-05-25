@@ -149,6 +149,11 @@ It is the canonical object that binds preflight, remote snapshot hash
 listing, dry-run plan upload, batched apply, journal inspect, and
 inspect-first recovery to the pull/export/import provenance source.
 
+For the direct pull-to-push bridge, use
+[`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json).
+It is the narrow proof that the importer-owned base package stays immutable
+while push preflight, dry-run, apply, journal, and recovery consume it.
+
 The machine-readable topology proof lives in
 [`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json).
 It keeps the Docker and Playground shapes explicit without collapsing the

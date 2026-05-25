@@ -594,6 +594,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(mapping.mapping_id, 'push-pull-handoff-production-map');
   assert.equal(mapping.pull_exports.persisted_base_package.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(mapping.pull_exports.persisted_base_package.remote_site_id, 'remote-example');
+  assert.equal(
+    mapping.push_bindings.push_preflight,
+    'binds the persisted pull base to the live remote identity and a short-lived push session',
+  );
   assert.equal(mapping.push_bindings.push_snapshot_hashes, 'lists the live remote comparison set for planning only');
   assert.equal(
     mapping.push_sequence.snapshot_hash_listing,
@@ -613,6 +617,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(mapping.restart_proof.persisted_evidence.includes('journal_row'), true);
   assert.equal(mapping.restart_proof.persisted_evidence.includes('live_hash_page'), true);
+  assert.ok(mapping.restart_proof.persisted_evidence.includes('push_session'));
   assert.ok(mapping.restart_proof.invariants.includes('dry-run is a receipt, not a lock'));
   assert.ok(
     mapping.restart_proof.invariants.includes(
