@@ -6,19 +6,31 @@ import {
   MIB,
   SAFE_SPEEDUP_AREAS,
 } from '../scripts/bench/performance-model.js';
+import {
+  runGuardedExecutorBenchmark,
+} from '../scripts/bench/guarded-executor-benchmark.js';
 
 test('benchmark model covers large uploads and plugin installs', () => {
   const model = buildBenchmarkModel();
   const largeUpload = model.schedules.find((schedule) => schedule.kind === 'large-upload');
   const pluginInstall = model.schedules.find((schedule) => schedule.kind === 'plugin-install');
+  const pluginUpdate = model.schedules.find((schedule) => schedule.kind === 'plugin-update');
 
   assert.ok(largeUpload, 'large upload workload exists');
   assert.ok(pluginInstall, 'plugin install workload exists');
+  assert.ok(pluginUpdate, 'plugin update workload exists');
   assert.ok(largeUpload.totals.uploadBytes >= 1024 * MIB, 'large upload is at least 1 GiB');
   assert.ok(largeUpload.totals.uploadChunks > 100, 'large upload is chunked enough to exercise resumability');
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
   assert.equal(pluginInstall.atomicGroupId, 'install-commerce-stack');
+  assert.ok(pluginUpdate.totals.uploadBytes >= 16 * MIB, 'plugin update includes substantial file transfer');
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'db-row-batch'),
+    'plugin update includes row batching',
+  );
+  assert.ok(pluginUpdate.atomicGroupId, 'plugin update has an atomic group id');
+  assert.notEqual(pluginUpdate.atomicGroupId, pluginInstall.atomicGroupId);
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
@@ -218,4 +230,14 @@ test('failure injection boundaries include every durable transition in the bench
       entry.beforeState && entry.afterState && entry.recoveryEvidence
     ),
   );
+});
+
+test('production throughput stays blocked until measured storage receipts exist', () => {
+  const report = runGuardedExecutorBenchmark({ profile: 'unit' });
+  const blockers = new Set(report.claims.productionThroughput.blockers);
+
+  assert.equal(report.claims.productionThroughput.status, 'blocked');
+  assert.ok(blockers.has('production-atomic-group-commit-not-measured'));
+  assert.ok(blockers.has('production-storage-receipts-not-measured'));
+  assert.ok(blockers.has('production-row-batch-executor-not-measured'));
 });
