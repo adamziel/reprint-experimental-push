@@ -2788,6 +2788,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'database-row-batching', 'backpressure', 'chunk-receipts', 'row-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
+    proposal: 'use a compressed remote index plus cached row receipts to skip the release-bundle commit barrier after a pause',
+    rejectedBecause: 'planning evidence and cached row receipts can trim replay, but they cannot prove the mixed upload-and-database bundle, live row preconditions, or atomic-group commit barrier survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'chunk-receipts', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
     proposal: 'use a compressed remote index plus compressed database batches to skip the release-bundle commit barrier',
     rejectedBecause: 'planning evidence and batch compression can reduce fsync cost, but they cannot prove the dependent plugin files, database row batches, and atomic-group commit survived failure',
