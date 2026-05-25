@@ -6236,6 +6236,7 @@ Final production-grade deltas still required on this branch:
 - mark mixed file, DB, and plugin writes old/new/blocked across the full touched set before retry, so a partial commit cannot be recast as success after the surviving surfaces are visible;
 - annotate every Reprint, ZS-Sync, or ForkPress citation with the exact upstream commit or worktree state, what it proves here, and what it does not prove here, because the notes are historical design input only unless the same live boundary was rerun on this branch;
 - label every manual-review artifact and source-note comparison with its evidence class, because unlabeled wording can be mistaken for retry authority even when it is only historical context or compatibility evidence;
+- require every production-ready sentence to say whether it is historical context, compatibility evidence, or live retry proof; if the sentence omits that class, it fails closed and cannot justify a production claim;
 - reject any wording that uses `manual resolution`, `comparison passed`, `finalMatchesLocal`, or route-shaped smokes as current proof unless the preserved remote stayed inspectable after rejection and the retry scope was rebuilt from live hashes; and
 - keep the release-gate language explicit that production-grade push support is blocked until the branch can show the live executor, preserved-remote auditability, stale-authority rejection, fresh retry scope, and per-surface classification for every touched boundary.
 
