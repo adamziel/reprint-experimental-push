@@ -4,27 +4,27 @@ Current baseline for this critique: the supervised reliable-executor lane
 through remote head `68664884`, with `63a3502f` as an earlier retained-source
 proof point. That lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
-`durableJournal.rows: 17`, is material retained-source lab evidence, but it
-is still not live retry authority unless the same branch also proves the live
-production WordPress auth/session boundary, durable journal semantics, graph
-identity, plugin-driver coverage, and leases/fencing on a real-site rerun.
-Treat that evidence as a supervised lab harness result, not as proof that a
-production remote stayed preserved, auditable, and safe to retry on this
-worktree.
+`durableJournal.rows: 17`, is material retained-source lab evidence. It is an
+improvement over route-shape-only proof, but it is still not live retry
+authority unless the same branch also proves the live WordPress auth/session
+boundary, durable journal semantics, graph identity, plugin-driver coverage,
+and leases/fencing on a real-site rerun.
+Single strongest blocker: this worktree still lacks a rerunnable live boundary
+against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that
+preserves the rejected remote for audit and retry. Until that exists, every
+production-grade push claim stays compatibility-only.
 Most recent improvement: the retained-source harness now names session shape,
-apply commitment, and journal rows instead of only route shape, but the next
-proof still has to move to a rerunnable live command on a real local,
-Playground, or Docker `REPRINT_PUSH_SOURCE_URL` with preserved-remote audit
-evidence, dry-run receipt, apply-time revalidation, and journal/recovery
-inspection on the same boundary.
+apply commitment, and journal rows instead of only route shape. The next proof
+must move to one rerunnable live command on a real local, Playground, or
+Docker `REPRINT_PUSH_SOURCE_URL`, with preserved-remote audit evidence,
+dry-run receipt, apply-time revalidation, and journal/recovery inspection on
+the same boundary.
 The retired critique is the one that said no `verify:release` command exists;
-do not reintroduce it on this branch. The current blocker on this audit branch
-is the missing rerunnable live boundary with preserved-remote audit evidence
-on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. The lack of
-a branch-local real-site release command is a separate gap, but it is not the
-main blocker and must not be mistaken for the supervised lane's retained-
-source evidence. Retained-source lab evidence can support design review, but
-it cannot stand in for this worktree's own live retry proof.
+do not reintroduce it on this branch. The lack of a branch-local real-site
+release command is a separate gap, but it is not the main blocker and must not
+be mistaken for the supervised lane's retained-source evidence. Retained-
+source lab evidence can support design review, but it cannot stand in for this
+worktree's own live retry proof.
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
@@ -77,6 +77,19 @@ boundary shows all of the following:
 - graph identity and plugin-driver coverage on the live boundary; and
 - old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface before retry starts.
+
+Release-gate phrasing on this branch must stay explicit:
+
+- if the note is about the supervised reliable-executor lane, label it as
+  retained-source lab evidence and do not promote it to retry authority;
+- if the note is about this worktree, require a rerunnable live boundary with
+  the preserved remote still inspectable after rejection;
+- if a later-discovered plugin-owned surface or remapped create target appears
+  after the first write, treat it as a new boundary with its own preserve /
+  reject / retry cycle; and
+- if a comparison to Reprint, ZS-Sync, or ForkPress cannot name the upstream
+  state, what it proves here, and what it does not prove here, it remains
+  provenance only.
 
 Primary critic finding:
 
