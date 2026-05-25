@@ -11,6 +11,14 @@ never production proof here, even if the surface looks production-shaped or
 the same path returns live-looking output from a copied or fixture-backed
 executor.
 
+Anti-trap clarification: a readable manual-review artifact can help audit the
+history of a boundary, but it is not retry authority unless the branch also
+records the preserved remote, the stale rejection point, and a fresh retry
+artifact rebuilt from live hashes for that same live boundary. If a later
+plugin-owned table, file, registry entry, generated asset, cache entry, or
+serialized blob appears after the first write, that later surface is a new
+boundary and needs its own preserve / reject / retry proof.
+
 Must change before any production-grade push claim:
 
 - prove the live mutation boundary rejects stale authority before the first

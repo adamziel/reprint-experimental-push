@@ -64,6 +64,13 @@ Concrete failure modes that still block the claim:
 
 Release wording must also avoid implying that a readable review artifact or comparison note is equivalent to a live retry gate. Those artifacts are audit evidence only until the branch shows the preserved remote, rejection point, and fresh retry scope for the same boundary on this worktree. Manual resolution is not success unless the remote is preserved for audit, the stale artifact stays unusable as retry authority, and the fresh retry artifact is recorded separately on this branch.
 
+Anti-trap wording:
+
+- a lab-shaped route, packaged mount, fixture replay, or `finalMatchesLocal` result can still come from a copied or fixture-backed executor behind the same URL shape, so it is compatibility evidence only and never proof that the live write boundary was production-safe;
+- a readable review artifact can prove auditability, but it does not prove the remote was preserved, that stale authority was rejected before mutation, or that retry scope was rebuilt from fresh live hashes on this branch;
+- a source-note comparison to Reprint, ZS-Sync, or ForkPress is historical context only unless the exact upstream revision or worktree state is named and the same live boundary was rerun here; and
+- any later-discovered plugin-owned surface is a new boundary, not a continuation of the first write, until this branch shows its own preserve / reject / retry cycle.
+
 Production-readiness language checklist:
 
 - name the exact live boundary and the exact stale-drift case;
