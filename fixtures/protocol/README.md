@@ -67,6 +67,8 @@ identity across `remote-base` and `remote-changed`:
   inspect-first recovery story in one object, with dry-run and apply kept
   separate while apply revalidates fresh live evidence before every batch and
   at the storage boundary.
+- It is also the canonical machine-readable bridge from exporter/importer
+  provenance into the push write path.
 - It is the canonical machine-readable bridge from the exporter/importer pull
   pipeline into the push write path.
 - `push-production-topology-contract.json` pairs the pull bridge with the
@@ -141,6 +143,8 @@ identity across `remote-base` and `remote-changed`:
   liveness proof that keeps dry-run and apply separate while apply
   revalidates fresh live evidence before every batch and at the storage
   boundary.
+- `push-production-topology-contract.json` is the compact production proof for
+  the one-remote, one-local, one-drift harness in both Docker and Playground.
 - `push-deployment-topology-contract.json` and
   `push-remote-liveness-topology-contract.json` are the two compact topology
   fixtures to cite when you need one remote source site, one imported local

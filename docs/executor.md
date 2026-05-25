@@ -18,6 +18,26 @@ The concrete production proof shape is fixed:
   through a local-only proxy
 - remote tunnels are disallowed
 
+The executor maps the pull pipeline into the push ladder without turning the
+pull provenance back into a mutable cache:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the only pull-derived input the executor
+  may consume
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` stays planning-only and never becomes write
+  authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary
+- `push_journal` records durable evidence, but never authorizes mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe with the same auth floor as the write path
+
 The production proof stack is fixed and should be read in this order:
 
 1. `push-production-pull-bridge-contract.json` for the immutable
@@ -51,6 +71,23 @@ The executor follows the same production ladder the protocol defines:
    any mutating repair.
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe.
+
+The bridge is reviewed in a fixed order:
+
+1. exporter/importer create the immutable pull base package.
+2. `push_preflight` binds that package to one live remote identity and one
+   short-lived push session.
+3. `push_snapshot_hashes` lists the live remote comparison surface for
+   planning only.
+4. `push_plan_dry_run` uploads the canonical plan and returns a receipt, not
+   a lock.
+5. `push_batch_apply` revalidates fresh live evidence before every batch and
+   at the storage boundary.
+6. `push_journal` records durable evidence without authorizing mutation.
+7. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+8. `push_recover auto|finish|rollback` mutates only after inspect proves the
+   branch safe and the auth floor still holds.
 
 The executor should treat that as one replay-safe boundary:
 
@@ -91,6 +128,22 @@ The pull/import pipeline maps to the executor in the same order:
    any mutating repair.
 10. `push_recover auto|finish|rollback` mutates only after inspect proves the
     branch safe.
+
+The pull pipeline is the only source of immutable push provenance:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable handoff object push consumes
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning evidence only
+- `push_plan_dry_run` is an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary
+- `push_journal` is read-only durable evidence
+- `push_recover inspect` is read-only and must happen before any mutating
+  repair
+- `push_recover auto|finish|rollback` mutates only when inspect proves the
+  branch safe and the auth floor still holds
 
 The executor is therefore not a general remote write loop:
 
@@ -395,6 +448,21 @@ site, and one drift witness:
   dry-run plan, apply batches, inspect the journal, or recover
 - Docker uses one private network for those four roles
 - Playground uses separate disposable blueprints with the same route names
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
+The same one-remote, one-local, one-drift harness is used in Docker and
+Playground:
+
+- Docker uses one private network around `remote-base`, `local-edited`,
+  `remote-changed`, and `runner`
+- Playground uses separate disposable blueprints for the same four roles
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed

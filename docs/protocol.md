@@ -190,13 +190,16 @@ The pull-to-push handoff is explicit in the machine-readable proof:
 - importer persists the base package as immutable provenance
 - `persisted_pull_base_package` is the immutable object the push executor
   consumes after importer persistence
-- preflight is the first live binding after that immutable handoff
-- snapshot hash listing stays planning-only
-- dry-run uploads the canonical plan and returns an eligibility receipt
-- apply is a separate remote operation that revalidates before every batch
-  and at the storage boundary
-- journal inspect is read-only
-- recovery starts with inspect before any mutating repair
+- preflight is the first live binding after that immutable handoff and the
+  first place the pull provenance is tied to a live remote identity
+- `push_snapshot_hashes` stays planning-only and never becomes write authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` is a separate remote operation that revalidates fresh
+  live evidence before every batch and at the storage boundary
+- `push_journal` is read-only durable evidence
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
 
 The production proof bundle is the same one used to review the real push
 extension:
@@ -208,6 +211,16 @@ extension:
 - `push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.
 - `push-remote-liveness-topology-contract.json` proves the one-remote, one-local, one-drift harness plus the liveness split.
 - `push-production-topology-contract.json` proves the Docker and Playground harness shape.
+
+That review order is the production proof stack:
+
+- extension contract for stage order and inspect-first recovery
+- pull bridge contract for immutable provenance handoff
+- remote snapshot listing contract for planning-only live hash discovery
+- production revalidation contract for dry-run separation and apply-time revalidation
+- auth/session/journal/recovery inspect contract for the auth floor and inspect-first boundary
+- remote liveness topology contract for the dry-run/apply split under live drift
+- production topology contract for the one-remote, one-local, one-drift harness proof
 
 The stage contract is intentionally simple:
 
@@ -267,6 +280,21 @@ The pull pipeline maps to push like this:
 | Durable pull provenance | `push_journal` records evidence without authorizing mutation. |
 | Imported pull base package | `push_recover inspect` reads the journal and fresh live hashes before any mutating repair. |
 
+The pull pipeline is therefore the only source of immutable push provenance:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `persisted_pull_base_package` is the immutable handoff object push consumes
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning evidence only
+- `push_plan_dry_run` is an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary
+- `push_journal` is read-only durable evidence
+- `push_recover inspect` is read-only and must happen before any mutating repair
+- `push_recover auto|finish|rollback` mutates only when inspect proves the
+  branch safe and the auth floor still holds
+
 The same pull-to-push bridge is exercised in Docker and Playground:
 
 - exporter scans the merge base and coverage evidence
@@ -312,6 +340,21 @@ The topology proof is fixed and intentionally small:
   apply, inspect the journal, or recover
 - Docker uses one private network
 - Playground uses separate disposable blueprints
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
+The one-remote, one-local, one-drift harness is the same in Docker and
+Playground:
+
+- Docker uses one private network around `remote-base`, `local-edited`,
+  `remote-changed`, and `runner`
+- Playground uses separate disposable blueprints for the same four roles
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
