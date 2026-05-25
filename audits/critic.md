@@ -4,7 +4,7 @@
 
 This design still cannot claim production-grade push support.
 
-The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and an explicit `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict. That is real progress, but it is still lab evidence. It does not prove a rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, and it does not close the release gate for production auth/session lifecycle, durable journal semantics, graph identity, preserved-remote retention, or plugin-driver coverage.
+The supervised reliable-executor lane now has material retained-source evidence: a `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, and an explicit `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict. That is real progress, but it is still lab evidence. The next missing proof is one rerunnable live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at apply time, and proves production auth/session lifecycle, durable journal storage plus lease/fencing, graph identity, and plugin-driver coverage on the same mutation.
 
 ## What still blocks the claim
 
