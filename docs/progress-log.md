@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 04:14:41
+
+<a id="2026-05-25-public-status-audit-041441"></a>
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 04:14:41 CEST`) and kept the visible last-updated stamp current.
+- Kept the public summary concise and conservative: lab proof still leads,
+  0/5 release gates remain proven, and the first screen keeps the blocker and
+  evidence links visible without implying production readiness.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [docs/approach-scorecard.md](approach-scorecard.md), [docs/executor.md](executor.md),
+  [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md),
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
 ## 2026-05-25 - Public Status Audit 04:14:06
 
 <a id="2026-05-25-public-status-audit-041406"></a>
