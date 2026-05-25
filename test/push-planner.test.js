@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -17355,18 +17356,25 @@ test('durable recovery inspect blocks live drift after a completed replay and ke
   );
 });
 
-test('the durable recovery boundary remains fail-closed until a release-gate command exists', () => {
-  const packageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
-  assert.equal(Object.hasOwn(packageJson.scripts, 'verify:release'), false);
+test('the durable recovery boundary remains fail-closed until the release gate wires in durable recovery proof', () => {
+  const packageJson = JSON.parse(
+    execFileSync('git', ['show', 'origin/lane/reliable-executor:package.json'], { encoding: 'utf8' }),
+  );
+  assert.equal(Object.hasOwn(packageJson.scripts, 'verify:release'), true);
   assert.equal(
     packageJson.scripts['verify:release'],
-    undefined,
-    'release-gate proof cannot be wired in this repo until verify:release exists',
+    'npm run test:playground:production-shaped-release-verify',
+    'release verification exists, but it still does not prove durable recovery storage or replay inspection',
+  );
+  assert.equal(
+    packageJson.scripts['verify:release'].includes('test:recovery:file-journal'),
+    false,
+    'the release gate still does not invoke the durable recovery replay proof',
   );
   assert.equal(
     packageJson.scripts['test:recovery:file-journal'],
     'node ./scripts/recovery/file-journal-restart-smoke.mjs',
-    'file-backed recovery journal smoke is the executable durability proof currently available in this repo',
+    'file-backed recovery journal smoke remains the executable durability proof currently available in this repo',
   );
 
   const base = baseSite();
