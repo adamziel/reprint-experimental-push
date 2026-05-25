@@ -15,6 +15,11 @@ remaining issue is that the command still does not prove preserved-remote
 safety, apply-time revalidation, production auth/session lifecycle, graph
 identity, or plugin-driver coverage on a real-site boundary. A wrapper,
 comparison note, or polished smoke name never replaces that proof.
+The comparison rule is equally strict: any Reprint, ZS-Sync, or ForkPress
+note is provenance only unless it names the exact upstream commit or worktree
+state, says what it proves here, says what it does not prove here, and is
+backed by a branch-local rerun of the same live boundary. Shape similarity is
+not retry authority.
 
 ## 2026-05-25 Current Verdict
 
@@ -150,6 +155,11 @@ Release-gate checklist for production wording:
   bearing record, and plugin-owned surface before retry starts; and
 - separate preserve / reject / retry cycle for any later-discovered plugin-
   owned surface or remapped create target.
+
+If any one of those items is missing, the claim is compatibility evidence
+only, not production-grade push support. That includes lab-shaped route
+smokes, production-shaped wrapper names, and review notes that do not
+preserve the rejected remote for audit.
 
 The same run also needs an explicit conflict-policy decision for every touched
 surface. Scenario: a reviewer says "manual resolution" without saying whether a
