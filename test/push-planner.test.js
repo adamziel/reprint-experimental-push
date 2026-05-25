@@ -15974,6 +15974,22 @@ test('durable journal replay keeps pre-mutation failures old-remote and complete
     assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
     assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
     assert.equal(JSON.stringify(remote), snapshot, label);
+
+    const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+    const retry = applyPlan(baseSite(), plan, {
+      durableJournal: retryJournal,
+      journal: failure.details.recovery.artifacts.journal,
+    });
+    retryJournal.close();
+
+    assertAcceptableRecoveryState(retry.recoveryState);
+    assert.equal(retry.recoveryState.status, 'fully-updated-remote', label);
+    assert.equal(retry.recoveryState.artifacts.remote, undefined, label);
+    assert.equal(retry.recoveryState.artifacts.journal.status, 'completed', label);
+    assert.equal(retry.appliedMutations, plan.mutations.length, label);
+    assert.equal(retry.site.files['index.php'], '<?php echo "local";', label);
+    assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally', label);
+    assert.equal(Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1, label);
   }
 
   const completedJournalPath = tempRecoveryJournalPath();
