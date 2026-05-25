@@ -88,7 +88,8 @@ remote boundaries:
 - dry-run plan upload
 - mutation batch apply
 - journal inspect
-- recovery
+- recovery inspect
+- recovery mutate
 
 The production topology proof is the same in Docker and Playground:
 
