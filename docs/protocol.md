@@ -25,7 +25,7 @@ The production push protocol is a fixed ladder:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe with the same auth floor as the write path.
 
-The six protocol surfaces are the ones the executor must treat as distinct
+The seven protocol surfaces are the ones the executor must treat as distinct
 remote boundaries:
 
 | Surface | Contract |

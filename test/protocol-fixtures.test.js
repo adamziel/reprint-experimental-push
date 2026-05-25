@@ -55,7 +55,7 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
-      'The six protocol surfaces are the ones the executor must treat as distinct',
+      'The seven protocol surfaces are the ones the executor must treat as distinct',
     ),
   );
   assert.ok(

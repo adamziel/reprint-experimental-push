@@ -60,7 +60,7 @@ The normal sequence is:
 52. `push-production-executor-flow-contract.json`
 53. `push-protocol-extension-topology-contract.json`
 
-The six protocol surfaces are the ones the executor must treat as distinct
+The seven protocol surfaces are the ones the executor must treat as distinct
 remote boundaries:
 
 - preflight
