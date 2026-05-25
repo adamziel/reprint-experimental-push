@@ -2524,6 +2524,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+    proposal: 'use a compressed remote index plus batched row receipt flushes to skip plugin-install finalize after a pause',
+    rejectedBecause: 'planning evidence and batched row receipts can reduce fsync work, but they cannot prove the live row compares, dependency checks, or the atomic-group finalize survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure',
     proposal: 'use a compressed remote index to justify unbounded hash fanout and skip large-upload backpressure during a resume',
     rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded hashing can still outrun the bounded queue order and journal evidence needed to recover after a pause or crash',

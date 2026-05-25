@@ -299,6 +299,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure')?.rejectedGate,
     'recovery',
   );
