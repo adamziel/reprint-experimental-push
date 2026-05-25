@@ -245,6 +245,17 @@ The uncomfortable but useful reading is that the suite is more trustworthy as a 
 | Release blocker | The best evidence still says `labBacked: true` for the production-shaped route/package smokes, the benchmark path remains refusal-only, and the strongest checks are still opt-in scripts rather than one enforced release path. `package.json` still exposes only `test`, `test:playground`, and standalone smoke commands, and there is still no checked-in workflow file under `.github/workflows`. | Honest refusal to overclaim release readiness | Production no-data-loss, reliability, and speed remain unproven until a required release gate exists and live-source evidence exists, so the release claim still fails closed. |
 | Release blocker | [`src/authenticated-http-push-client.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/src/authenticated-http-push-client.js#L60-L74) still self-identifies the authenticated push profile as `labBacked: true`, and this checkout still has no `.github` workflow file or equivalent checked-in CI entrypoint. | Honest refusal to overclaim release readiness | The release claim still fails closed because the strongest visible authenticated flow remains lab-labeled and there is still no enforced release gate to stop a green default run from bypassing the missing proof. |
 
+## Command Verdict
+
+| Command | Status | Release reading |
+| --- | --- | --- |
+| `npm test` | Executable proof | Useful as a blocker check, but it does not prove the live-source boundary, so it cannot approve release. |
+| `npm run test:playground` | Lab/fixture proof | Useful for local route and storage evidence, but it still leaves the strongest authenticated path labeled `labBacked: true`. |
+| `npm run test:playground:authenticated-http-push` | Lab/fixture proof | Auth and session evidence only; the route profile is still explicitly lab-backed. |
+| `npm run test:playground:production-shaped-push` | Lab/fixture proof | Production-shaped is not production-proven when the release gate itself is missing. |
+| `npm run test:playground:production-plugin-package` | Lab/fixture proof | Packaging and route-shape evidence only; not a release decision. |
+| `npm run verify:release` | Missing proof | This is the required shape of the missing gate, but it does not exist in this checkout. |
+
 ## Release Verdict
 
 The release verdict remains **blocked**.
