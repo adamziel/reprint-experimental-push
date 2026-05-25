@@ -4709,6 +4709,9 @@ true on this branch:
 - any route-shaped smoke, packaged-plugin mount, fixture replay, readable
   review artifact, or `finalMatchesLocal` result is treated as compatibility
   evidence only; and
+- any manual-resolution label is audit-only unless it also preserves the
+  remote for audit, records the stale rejection point before mutation, and
+  rebuilds a fresh retry artifact from live hashes for the same boundary;
 - any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
   revision or worktree state and says what that note proves here and what it
   does not prove.
