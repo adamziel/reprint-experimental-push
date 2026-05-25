@@ -39,3 +39,7 @@ release blocker.
 
 Any partial remote mutation without recovery artifacts is a blocker, not a
 safe retry target.
+
+Durable journal failures do not widen the contract: they must still resolve to
+one of the same three states, with the same artifact requirements, so retrying
+never becomes a license to duplicate inserts or revive stale local data.

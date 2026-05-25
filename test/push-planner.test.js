@@ -3452,21 +3452,29 @@ test('completed replay durable write failure still classifies as fully updated r
   const completed = applyPlan(remote, plan);
   const before = JSON.stringify(completed.site);
   const durableJournal = failingDurableJournal('journal-replayed');
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
 
   const error = captureError(() =>
-    applyPlan(completed.site, plan, {
+    applyPlan(replayRemote, plan, {
       journal: completed.journal,
       durableJournal,
     }));
 
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'JOURNAL_WRITE_FAILED');
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
   assert.equal(JSON.stringify(completed.site), before);
   assertAcceptableRecoveryState(error.details.recovery);
   assert.equal(error.details.recovery.status, 'fully-updated-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
   assert.equal(error.details.recovery.artifacts.remote, undefined);
   assert.equal(error.details.boundary, 'journal-replayed');
+  assert.equal(
+    Object.values(replayRemote.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length,
+    1,
+  );
+  assert.equal(replayRemote.db.wp_posts['ID:2'].post_title, 'Inserted locally');
 });
 
 test('stale completed replay on durable journal blocks with journal and remote artifacts', () => {
