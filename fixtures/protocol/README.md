@@ -216,6 +216,12 @@ Failure and recovery examples:
   Docker/Playground topology in one object. Use it when a review wants the
   pull provenance, live-remote liveness split, auth floor, and 8080/local-only
   ingress rule in a single compact contract.
+- `push-protocol-extension-contract.json` is the best single proof for the
+  full production push extension: preflight, remote hash listing, dry-run
+  receipt, batched apply, journal inspect, and inspect-first recovery.
+- `push-deployment-topology-contract.json` is the clearest topology-only
+  proof for one remote source, one local edited site, and one drift witness in
+  both Docker and Playground.
 - `push-recovery-revalidation-contract.json` gives the compact proof that the
   same drift case still requires fresh live hashes before each apply batch and
   before any mutating recovery path.

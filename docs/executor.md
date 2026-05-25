@@ -30,6 +30,27 @@ That means the executor is not a general remote write loop. It is the
 production write path for one imported base package, one edited local site,
 and one live remote identity that must be revalidated at apply time.
 
+## Stage Semantics
+
+The executor needs the same boundary discipline as the protocol:
+
+- preflight is the first live binding after importer provenance exists
+- remote snapshot hash listing is planning evidence only
+- dry-run uploads the canonical plan and returns a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspection stays read-only
+- recovery starts with inspect and only mutates when inspect proves the branch
+  safe with fresh live evidence
+
+The operational recovery order is strict:
+
+- `inspect` first
+- `finish` or `rollback` only when the journal plus live hashes prove the
+  branch safe
+- `retry` only when the claim is open but still fenced
+- `block` when the evidence cannot prove a safe mutation
+
 ## Pull To Push Mapping
 
 The pull pipeline remains the provenance source for every push stage:
@@ -56,6 +77,19 @@ The bridge is one-way and fixed:
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes still prove the action safe
 
+In other words:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to one live remote identity and one
+  short-lived push session
+- snapshot listing reads the live remote comparison surface only for planning
+- dry-run uploads the canonical plan as a receipt
+- apply revalidates before each batch and again at the storage boundary
+- journal inspection reads durable evidence without authorizing mutation
+- recovery inspection reads the journal and fresh live hashes before any
+  mutating repair
+
 ## Topology
 
 The canonical topology is fixed across both harnesses:
@@ -80,6 +114,18 @@ The practical boundary is unchanged across both environments:
 Docker uses one private network. Playground uses separate disposable
 blueprints. Both keep the same route names, the same protocol order, and the
 same liveness split between planning-only and apply-time evidence.
+
+For test topology, treat Docker and Playground as two harnesses for the same
+three-site proof:
+
+- `remote-base` is the remote source before drift and seeds the persisted
+  pull base package
+- `local-edited` is the imported local site with user edits
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, upload the dry
+  run, apply batches, inspect the journal, or start recovery
+- browser-visible inspection always stays on the sandbox-provided `8080`
+  ingress through a local-only proxy
 
 ## Canonical Proofs
 

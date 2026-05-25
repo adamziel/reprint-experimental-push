@@ -2,7 +2,9 @@
 
 This document defines the production push extension for Reprint. Push is the
 write path that extends the existing exporter/importer pull pipeline with a
-safe remote mutation protocol.
+safe remote mutation protocol. Push never replaces pull provenance: it
+consumes the persisted pull base package as immutable input and revalidates
+the live remote identity at apply time.
 
 ## Production Contract
 
@@ -20,7 +22,8 @@ The production ladder is fixed:
 3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
    eligibility receipt, not a lock.
 4. `push_batch_apply` is the first mutation stage and must revalidate fresh
-   live evidence before every batch and again at the storage boundary.
+   live evidence before every batch and again at the storage boundary. Dry-run
+   and apply are separate remote operations.
 5. `push_journal` is read-only durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair.
@@ -37,6 +40,44 @@ That ladder maps to distinct remote boundaries:
 - journal inspect is read-only
 - recovery starts with inspect and only mutates when journal evidence and
   fresh live hashes still prove the branch safe
+
+## Stage Semantics
+
+Each stage has one job and one boundary:
+
+- `push_preflight` binds the persisted pull base package to one live remote
+  identity, one requested scope, and one short-lived push session. It proves
+  the imported provenance and the current remote target are the same logical
+  site before planning begins.
+- `push_snapshot_hashes` lists the live remote comparison surface for
+  planning only. It may page through large sites, but it never becomes write
+  authority and never extends the session on its own.
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt that
+  proves eligibility only. A dry-run receipt is not a lock, not a lease, and
+  not authorization to mutate remote state.
+- `push_batch_apply` is the first mutation stage. It must revalidate fresh
+  live evidence before every batch and again at the storage boundary so drift
+  between dry-run and apply cannot be ignored.
+- `push_journal` is read-only durable evidence. It records claim, lease,
+  fencing, and recovery facts, but it never authorizes mutation by itself.
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating recovery branch. It classifies finish, rollback, retry, or block.
+- `push_recover auto|finish|rollback` may mutate only after inspect proves
+  the action safe with fresh live evidence and the same auth floor as the
+  write path.
+
+Recovery is intentionally inspect-first:
+
+- `inspect` is the only safe starting point because it can prove whether the
+  journaled target still matches fresh live hashes.
+- `finish` is only safe when the journal row is complete and the live site can
+  still prove the staged target.
+- `rollback` is only safe when the journal row can prove that backing out will
+  restore the imported base package without trampling a newer remote change.
+- `retry` is the only option when the claim is open but still fenced and the
+  remote evidence is not yet contradictory.
+- `block` is the outcome when the journal or live evidence cannot prove a
+  safe mutating recovery path.
 
 The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
@@ -71,6 +112,23 @@ The pull-to-push bridge is intentionally one-way:
 - journal inspect stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes still prove the action safe
+
+This is the operational mapping from the existing exporter/importer pipeline:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to one live remote identity and one
+  short-lived push session
+- snapshot hash listing reads the live remote comparison surface only for
+  planning
+- dry-run uploads the canonical plan and returns a receipt
+- batched apply revalidates the remote before every batch and at the storage
+  boundary
+- journal inspect reads durable evidence without authorizing mutation
+- recovery inspect reads the journal and fresh live hashes before any
+  mutating repair
+- mutating recovery only proceeds when inspect proves the branch is still
+  safe
 
 ## Executor Topology
 
@@ -120,6 +178,17 @@ The proof identities stay fixed across both harnesses:
   dry-run upload, batch apply, journal inspect, or recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
+
+For both Docker and Playground, the test topology is intentionally the same:
+
+- one remote source site provides the persisted pull base package
+- one local edited site carries the imported edits that become the candidate
+  push plan
+- one later observation of the same remote identity proves drift handling
+- one runner process owns preflight, hash listing, dry-run upload, batch
+  apply, journal inspection, and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  and never uses a remote tunnel
 
 Use these fixtures as the canonical proof bundle:
 
