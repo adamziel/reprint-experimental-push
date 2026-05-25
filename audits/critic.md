@@ -6247,6 +6247,11 @@ Production-grade proof still missing on this branch:
 
 - live remote drift is not closed until the rejected remote stays inspectable
   after rejection and the retry scope is rebuilt from fresh live hashes;
+- a production-shaped `/wp-json/reprint/v1/push/*` smoke is not closed
+  until it also proves the rejected remote stayed inspectable after stale
+  drift and that any later-discovered plugin-owned surface was enumerated or
+  blocked before write; route reachability alone is compatibility evidence,
+  not live push proof;
 - create-time identity remap is not closed until apply-time identity evidence
   exists or the remap is blocked before mutation, because matching route
   shape can still hide aliasing or renumbering;
