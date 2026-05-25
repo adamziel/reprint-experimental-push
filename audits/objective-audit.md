@@ -52,7 +52,7 @@ Current command-surface gap:
 
 ## Release Gate Definition
 
-The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone. The actionable fix is not another lab helper; it is a checked-in `verify` or `release` gate that fails closed unless it can prove live-source state at apply time, reject stale claims, and emit a machine-checkable verdict from the same invocation. Until that exists, the strongest evidence remains regression or lab evidence, not release evidence.
+The weakest current claim is not merely that the suite is incomplete. It is that the repository still lacks one enforced command that would be required to make any production claim credible, and therefore no green run can be promoted to release proof by interpretation alone. The actionable fix is not another lab helper; it is a checked-in `verify` or `release` gate, wired into the default automation path, that fails closed unless it can prove live-source state at apply time, reject stale claims, and emit a machine-checkable verdict from the same invocation. Until that exists, the strongest evidence remains regression or lab evidence, not release evidence.
 
 Right now the best available commands are `node --test`, `npm run test:playground`, `plan`, and `apply`. Those are useful, but they are support paths, not a release gate, because none of them force a live-source verdict in the same invocation.
 
@@ -252,7 +252,7 @@ That makes the current green status a regression signal, not a release signal. T
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
 - The weakest current claim is therefore any sentence that reads as if the existing green tests already certify release readiness, or that optional smokes are equivalent to a required release gate.
 - Said differently: the strongest present tests prove that the repository knows how to refuse unsafe claims, not that it can make the objective's positive claims on a live source.
-- The release blocker remains the missing checked-in `verify:release` or `release` command, plus the missing default automation path that would make it mandatory.
+- The release blocker remains the missing checked-in `verify:release` or `release` command, plus the missing default automation path that would make it mandatory and prevent a green non-release run from being mistaken for live-source proof.
 
 Actionable next step:
 
