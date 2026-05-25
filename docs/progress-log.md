@@ -4,6 +4,26 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 14:53:45
+
+<a id="2026-05-25-public-status-audit-145345"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:53:45 CEST`) and made the first screen answer the latest
+  accountability question directly: last 12 hours evidence progressed while
+  release gates remain `0/4`.
+- `7e0f27f2` stays visible as the checked release-surface proof that fails
+  closed on apply-time revalidation with `PRECONDITION_FAILED` and
+  `recovery.state: "blocked-recovery"`; `35731b11` still shows
+  `releaseProof.mode: "apply"` plus preflight, dry-run, apply, recovery
+  inspect, and durable journal readback evidence with `rows: 17`; `ee43e194`
+  keeps the verifier bound to the supplied source URL. Production WordPress
+  auth/session lifecycle and durable journal storage with lease/fencing remain
+  pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 14:47:33
 
 <a id="2026-05-25-public-status-audit-144733"></a>
