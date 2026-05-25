@@ -82,6 +82,10 @@ What must happen before any production-grade push claim:
 - any comparison to Reprint, ZS-Sync, or ForkPress must name the exact
   upstream state, state what the note proves here, state what it does not
   prove here, and be rerun against the same live boundary on this branch; and
+- any source-note comparison that names the upstream anchor but does not say
+  whether this branch reran the same live boundary is still historical
+  context only, even if the route family, package layout, or reviewer
+  wording matches;
 - route shape, package layout, fixture replay, readable review output, and
   `finalMatchesLocal` remain compatibility evidence only unless they are
   paired with the preserved remote and a fresh retry scope rebuilt from live
