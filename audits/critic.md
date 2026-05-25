@@ -4,11 +4,14 @@
 
 The branch still cannot claim production-grade push support until one exact,
 rerunnable real-site command proves the same live boundary on a real local,
-Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. `package.json` now exposes
-multiple production-shaped smoke scripts, but it still does not expose a
-named real-site release command, so the current surface is still
-compatibility or preflight evidence unless it also shows preserved remote
-auditability after rejection, apply-time revalidation on the same live
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. `package.json` currently
+exposes only `plan`, `apply`, `test`, and `test:playground:*` entry points,
+including `test:playground:authenticated-http-push`,
+`test:playground:authenticated-cli-push`,
+`test:playground:production-shaped-push`, and
+`test:playground:production-plugin-package`, so the current surface is still
+compatibility or preflight evidence unless one command also shows preserved
+remote auditability after rejection, apply-time revalidation on the same live
 boundary, dry-run receipt, journal/recovery inspection, production auth/
 session lifecycle, graph identity, and plugin-driver plus plugin-owned
 surface classification in one rerun.
@@ -36,12 +39,13 @@ and a branch-local rerun of the same live boundary. Until that exists, those
 notes are historical context only.
 
 Source-note comparison rule: a citation to Reprint, ZS-Sync, or ForkPress is
-only provenance until it names the exact upstream state, states the exact
-boundary it supports here, states the exact boundary it does not support here,
-and is backed by a branch-local live rerun. If the citation only justifies
-transport vocabulary, discovery vocabulary, or audit vocabulary, it must not
-be used as proof of preserved remote safety, auth/session lifecycle, graph
-identity, or plugin-owned surface coverage.
+only provenance until it names the exact upstream commit or worktree state,
+states the exact boundary it supports here, states the exact boundary it does
+not support here, and is backed by a branch-local live rerun. If the citation
+only justifies transport vocabulary, discovery vocabulary, review vocabulary,
+or audit vocabulary, it must not be used as proof of preserved remote safety,
+auth/session lifecycle, graph identity, create-time remap handling, or
+plugin-owned surface coverage.
 
 ## 2026-05-25 Production Wording Still Fails Without a Real-Site Release Command
 
