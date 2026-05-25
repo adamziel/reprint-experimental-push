@@ -21,6 +21,11 @@ or comparison-only.
   hooks, cron, cache state, and other plugin side effects.
 - The claim shows plugin-owned ownership changes are revalidated at apply time,
   not inherited from stale local metadata.
+- The claim shows a plugin data trap cannot pass as success when a fixture-owned
+  option or table row matches while the real plugin also depends on custom
+  tables, serialized counters, cron rows, generated CSS, roles/caps, activation
+  hooks, migrations, runtime registries, or external side effects outside the
+  allowlist.
 - The claim shows any partial file, DB, or plugin side effect is classified
   durably and that retry starts from fresh evidence rather than reused approval.
 - The claim shows the same live write path rejected stale authority before
@@ -53,6 +58,9 @@ or comparison-only.
   side-effect classification, or stale approval expiry unless the same live
   write boundary was reverified at the exact upstream revision or worktree
   state.
+- The claim does not treat matching route shape plus a green lab smoke as
+  evidence of production safety if the underlying path never revalidated the
+  live remote or the hidden plugin-owned surface at apply time.
 - The claim does not treat manual resolution as success unless the remote is
   preserved, the stale artifact stays auditable but unusable, and the retry
   rebuilds scope from fresh live hashes before any write.
