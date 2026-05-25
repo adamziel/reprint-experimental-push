@@ -23,6 +23,7 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(largeUpload.totals.uploadChunks > 100, 'large upload is chunked enough to exercise resumability');
   assert.ok(pluginInstall.totals.uploadBytes >= 64 * MIB, 'plugin install includes substantial file transfer');
   assert.ok(pluginInstall.totals.dbRows >= 10_000, 'plugin install includes large row batches');
+  assert.ok(pluginInstall.totals.uploadChunks > 10, 'plugin install is chunked enough to exercise chunk receipts');
   assert.equal(pluginInstall.atomicGroupId, 'install-commerce-stack');
   assert.ok(pluginUpdate.totals.uploadBytes >= 16 * MIB, 'plugin update includes substantial file transfer');
   assert.ok(
@@ -280,6 +281,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-file-hash-cache-skips-large-upload-resume-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-file-hash-cache-and-paused-queue-skips-large-upload-publish')?.rejectedGate,
     'recovery',
   );
   assert.equal(
@@ -792,6 +797,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume-after-pause').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume-after-pause').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('compressed-file-hash-cache-and-paused-queue-skips-large-upload-publish').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-file-hash-cache-and-paused-queue-skips-large-upload-publish').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-file-hash-cache-and-paused-queue-skips-large-upload-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('cached-chunk-ledger-skips-large-upload-finalize').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('cached-chunk-ledger-skips-large-upload-finalize').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-receipt-summary-replaces-recovery-log').violates.includes('compression'));
