@@ -223,6 +223,12 @@ Any public-facing claim that the project has production-grade push support must
 explicitly satisfy all of the following. If any item is missing, the wording
 must stay lab-backed or comparison-only.
 
+Separate compatibility evidence from live write-path proof: a route-shaped
+smoke, packaged-plugin mount, `finalMatchesLocal` match, or source-note
+comparison can support context, but none of them prove production mutation
+safety unless the same request path was exercised against a drifted live
+remote and the stale approval failed closed before mutation.
+
 The project also still needs direct proof for these five failure classes before
 any production-grade wording is defensible:
 
@@ -238,6 +244,9 @@ any production-grade wording is defensible:
 - Name the preserved remote snapshot or hash set that made the stale approval
   auditable but unusable for apply.
 - Name the retry scope rebuilt from fresh live evidence after drift.
+- Name the exact request path and repo state used for the drifted-remote proof;
+  a lab-shaped route or package mount is only compatibility evidence unless it
+  exercised that exact boundary.
 - Name the create-time identity case and whether it was safely remapped or
   hard-blocked.
 - Name every plugin-owned surface that was proven safe or explicitly blocked,
@@ -250,6 +259,9 @@ any production-grade wording is defensible:
 - Name the exact upstream Reprint, ZS-Sync, or ForkPress revision or worktree
   state that was reverified, or say that the comparison is historical context
   only.
+- State whether the comparison was reverified at the exact live mutation
+  boundary; if not, it stays historical context and cannot be promoted into
+  current proof by matching route shape or package layout.
 - State whether the stale manual-review artifact stays readable for audit but
   cannot authorize a widened retry after remote drift.
 - Name the exact stale snapshot or live hash set that invalidated the old
