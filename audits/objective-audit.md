@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-That is a release judgment, not a test-pass judgment: the repo still lacks one enforced command that proves the live-source boundary on the real storage and transport path.
+That is a release judgment, not a test-pass judgment: the repo still lacks one enforced command that proves the live-source boundary on the real storage and transport path. Passing local tests still leaves the release claim false.
 
 ## Derived Requirements
 
@@ -31,10 +31,10 @@ Those requirements are the minimum release bar, not aspirational extras.
 
 | Bucket | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| Executable proof | `npm test` passes and covers planner, recovery-journal, benchmark-model, and guarded-benchmark checks | No live-source boundary, no production storage path, no enforced release decision | Yes |
+| Executable proof | `npm test` passes and covers planner, recovery-journal, benchmark-model, and guarded-benchmark checks; the suite is honest about refusal and redaction but stays model/fixture scoped | No live-source boundary, no production storage path, no enforced release decision | Yes |
 | Lab/fixture proof | Playground smokes cover route shape, auth flow, storage guards, stale-claim behavior, journal behavior, and plugin packaging | No production transport/storage proof | Yes |
 | Docs-only proof | `docs/`, `progress.html`, and audit notes describe the intended release flow | No enforcement | Yes |
-| Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json); no checked-in `.github/workflows/*`; no measured live-path benchmark threshold | No mandatory gate that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and speed proof | Yes |
+| Missing proof | No `verify`, `release`, or `verify:release` script in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json#L10-L34); no checked-in `.github/workflows/*`; no measured live-path benchmark threshold | No mandatory gate that composes auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, topology, crash boundary, recovery, and speed proof | Yes |
 | Release blockers | `labBacked: true`, fixture-only scope, benchmark-only evidence, missing live-source proof, missing enforced gate | None of these are acceptable as release proof | Yes |
 
 The current checkout does not yet satisfy those requirements at the release boundary. The closest evidence remains split across fixture tests, lab smokes, and refusal-oriented benchmark models. That means the audit must treat any positive claim as provisional unless it is backed by executable proof on the live-source release path, not by a green default test command or a production-shaped label alone.
