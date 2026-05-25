@@ -46,6 +46,10 @@ This is the short operational version of the planner invariant policy.
 - The same delete rule also holds when the matching resource is a restored file
   and a file type swap appears in the same plan; both matching resources stay
   `already-in-sync` and remote-only plugin drift remains preserved.
+- A file type swap that would hide a live remote descendant must still stop
+  even when the remote side has already removed an unrelated plugin; the
+  unrelated plugin removal stays `keep-remote` and the file-topology evidence
+  stays bounded.
 - Local mutations on unrelated resources while remote-only plugin metadata,
   plugin files, or plugin removals are preserved.
 - Local delete or file type swap only if it preserves remote-only plugin
@@ -73,6 +77,8 @@ This is the short operational version of the planner invariant policy.
   present.
 - File-topology conflict evidence should identify the related descendant or
   ancestor path and stop the unsafe mutation without exposing file contents.
+- File-topology conflict evidence must remain bounded even when unrelated
+  remote-only plugin removals are present.
 
 ## Must Stop
 

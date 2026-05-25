@@ -16,6 +16,9 @@ This note captures the planner boundary in plain language.
   independent file type swap and any unrelated matching row edit, with the
   safe resources remaining `already-in-sync` and remote-only plugin drift
   remaining `keep-remote`.
+- A file type swap that would hide a live remote descendant must still stop
+  even when the remote side removed an unrelated plugin; the unrelated plugin
+  removal stays `keep-remote` and the file-topology evidence stays bounded.
 
 ## Must Preserve
 
@@ -23,6 +26,8 @@ This note captures the planner boundary in plain language.
   removals.
 - Remote descendants that would be hidden by a local delete or file type
   swap.
+- File-topology evidence must stay bounded even when unrelated remote-only
+  plugin removals are present.
 - Conflict and blocker evidence without raw file bodies, row contents, option
   values, or plugin payloads.
 - Matched independent resources in `already-in-sync` state rather than
@@ -37,6 +42,8 @@ This note captures the planner boundary in plain language.
 - Any local delete or file type swap that would overwrite a remote-only
   plugin change instead of preserving it.
 - Any local delete that would hide a live remote descendant.
+- Any file type swap that would hide a live remote descendant, even when the
+  remote side has already removed an unrelated plugin.
 - Plugin-context or plugin-owned data mutations when the relevant live remote
   plugin context drifted and the local side did not independently match it.
 - Plugin-owned deletions when the owner context is stale or missing.
