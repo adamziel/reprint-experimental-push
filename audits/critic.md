@@ -656,6 +656,17 @@ Release gate for production wording:
 - A production-grade push claim must fail if "manual resolution" is used as
   a success label without the preserved remote, the rejection point, and the
   fresh retry artifact all recorded for the same live boundary.
+- A production-grade push claim must fail if a readable manual-review
+  artifact, review token, or comparison note is treated as sufficient proof
+  on its own, because readability only proves the artifact can be inspected;
+  it does not prove the remote stayed preserved, the stale authority was
+  rejected before mutation, or the retry scope was rebuilt from fresh live
+  hashes on this branch.
+- A production-grade push claim must fail if route shape, package mount
+  shape, fixture replay, or `finalMatchesLocal` is used to justify plugin
+  allowlist completeness, because those checks can still miss hidden
+  plugin-owned tables, files, cron rows, runtime registries, generated
+  assets, caches, or serialized blobs that appear only after the first write.
 
 Source-note comparison policy:
 
