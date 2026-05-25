@@ -252,6 +252,7 @@ This matrix keeps the audit aligned with the backlog requirement to separate exe
 | No data loss | Model and fixture checks for restart, redaction, and state recovery | File-backed journal and Playground smokes | Test audit prose explains the gap | No live-storage no-loss proof | Live-source mutation safety remains unproven |
 | Reliability | Guardrail tests for refusal, tamper detection, and classification | Authenticated and production-shaped smokes remain `labBacked: true` | Audit prose lists required gate components | No default release command composes auth/session, journal, leases, identity, and driver checks | The repo can go green without proving the release matrix |
 | Speed | Refusal-only benchmark assertions | Benchmark model stays `productionThroughput: 'not-claimed'` | Audit prose says `speed unclaimed` is the only safe wording | No measured live-path throughput or mandatory release verdict | Throughput cannot be promoted beyond blocker status; the release gate still needs to print `speed unclaimed` or a threshold itself |
+| Mandatory release command | None | Optional `test`, `plan`, `apply`, and playground smokes only | Audit prose and blockers note the missing gate | No checked-in `verify:release`/`release` entrypoint exists | A green default run can still bypass the live-source verdict |
 
 ## Test Audit
 
