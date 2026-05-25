@@ -156,7 +156,8 @@ Must change before any production-grade push claim:
   manual-resolution label, because a hidden table, generated file, cron row,
   runtime registry entry, cache entry, or serialized blob that appears after
   the first write is a new live boundary and must get its own preserved
-  remote, rejection point, and fresh retry scope;
+  remote, rejection point, and fresh retry scope; the preserved remote from
+  the earlier boundary does not widen to that later surface;
 - enumerate or hard-block late-discovered plugin-owned state, including
   custom tables, generated files, cron rows, runtime registries, serialized
   blobs, cache entries, and other hidden side effects; and
@@ -303,7 +304,7 @@ Release-gate checklist:
   audit-only for any later-discovered plugin-owned surface unless that later
   surface has its own preserve / reject / retry evidence on this branch,
   even if the later boundary reuses the same route family, package mount, or
-  reviewer wording;
+  reviewer wording, and even if the earlier remote was preserved for audit;
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface, and cannot be widened just because the
