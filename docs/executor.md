@@ -1415,6 +1415,10 @@ ingress rules together.
 [`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
 ties the production ladder together: preflight, snapshot listing, dry-run,
 batch apply, journal inspect, and inspect-first recovery all stay separate.
+[`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
+is the broader compact contract and now carries the pull handoff, the
+planning-only remote hash listing, the separate dry-run/apply boundary, and
+the inspect-first recovery split in one machine-readable object.
 [`fixtures/protocol/push-recovery-decision.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-decision.json)
 captures the inspect-first recovery gate that keeps mutating repair behind
 fresh live proof.

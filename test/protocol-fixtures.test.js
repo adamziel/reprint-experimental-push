@@ -65,7 +65,19 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(
     contract.pull_handoff.push_batch_apply,
-    'applies mutation batches only after fresh live revalidation before every batch and again at the storage boundary',
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    contract.pull_handoff.push_journal,
+    'reads durable claim, lease, fencing, and recovery evidence without granting write authority',
+  );
+  assert.equal(
+    contract.pull_handoff['push_recover inspect'],
+    'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair',
+  );
+  assert.equal(
+    contract.pull_handoff['push_recover auto|finish|rollback'],
+    'mutates only when the journal row, lease fence, and fresh live hashes prove the action',
   );
   assert.equal(
     contract.production_shape.remote_snapshot_hash_listing,
@@ -95,6 +107,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(
     contract.push_guards.apply_revalidation,
     'refreshes live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    contract.push_guards.recovery_inspect,
+    'must happen before any mutating recovery mode and may block when finish or rollback cannot be proven safe',
   );
   assert.equal(
     contract.production_shape.dry_run_plan_upload,
@@ -166,6 +182,10 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.push_pipeline.journal_inspect, 'reads durable evidence without authorizing mutation');
   assert.equal(topologyMatrix.push_pipeline.recovery_inspect, 'starts with inspect and classifies finish, rollback, retry, or block without mutation');
   assert.equal(topologyMatrix.push_pipeline.recovery, 'allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action');
+  assert.equal(topologyMatrix.apply_revalidation.before_each_batch, 'fresh live hashes');
+  assert.equal(topologyMatrix.apply_revalidation.at_storage_boundary, 'fresh live hashes plus storage-guard proof');
+  assert.equal(topologyMatrix.remote_liveness.dry_run, 'eligibility evidence only and never a lock');
+  assert.equal(topologyMatrix.recovery_inspect.authorization, 'read-only evidence reader that never authorizes mutation by itself');
   assert.equal(topologyMatrix.remote_snapshot_hash_listing, 'cursorable live hash evidence used for planning only and never treated as write authority');
   assert.equal(topologyMatrix.pull_to_push_mapping.exporter, 'scans the merge base and coverage evidence');
   assert.equal(

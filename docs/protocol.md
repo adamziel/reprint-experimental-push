@@ -217,6 +217,12 @@ The compact inspect-first recovery companion at
 ties the minted session, journal row, live drift evidence, and blocked-or-safe
 recovery decision into one proof object.
 
+The compact production contract at
+[`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
+is the broadest fixture summary. It now spells out the pull-to-push handoff,
+the planning-only remote hash listing, the separate dry-run and apply stages,
+and the inspect-first recovery split in one machine-readable object.
+
 The stricter auth-and-session companion at
 [`fixtures/protocol/push-auth-session-recovery-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-recovery-contract.json)
 adds the push HMAC floor, the minted session, claim generation, lease expiry,
