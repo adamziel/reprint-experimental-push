@@ -2183,6 +2183,9 @@ proves all of the following in the same live write boundary:
   mutation boundary;
 - route shape, package shape, fixture replay, and `finalMatchesLocal` are
   treated as compatibility evidence only, not proof of the live executor.
+- any readable manual-review artifact is explicitly audit-only, and the proof
+  shows the remote stayed preserved while a fresh retry rebuilt scope from new
+  live evidence instead of inheriting the old approval.
 
 If any of those notes are cited in production-readiness language, the claim
 must also name the exact upstream revision or worktree state that was
@@ -2245,6 +2248,8 @@ False reliability claims to avoid:
 - "The plugin is safe" when the proof omits plugin-owned state outside the
   allowlist, including generated files, cron rows, runtime registries, custom
   tables, or other late-discovered side effects.
+- "One plugin row was enough" when late-discovered plugin-owned surfaces could
+  still appear under the same plugin prefix, option family, or file tree.
 - "Recovery succeeded" when the apply left mixed file, DB, or plugin state
   but the failure was not durably classified as partial with a fresh retry
   scope.
