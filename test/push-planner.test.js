@@ -8908,6 +8908,16 @@ test('no-data-loss recovery boundaries remain old remote, fully updated remote, 
     assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.equal(error.details.recovery.artifacts.journal.planId, plan.id, label);
+    assert.equal(
+      error.details.recovery.artifacts.journal.status,
+      options.failBeforeMutation ? 'opened' : options.failAfterStaging ? 'staged' : 'dependencies-validated',
+      label,
+    );
+    assert.equal(
+      error.details.recovery.artifacts.journal.status === 'blocked',
+      false,
+      `pre-commit failure should not record a blocked recovery journal for ${label}`,
+    );
     assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Base post', label);
     assert.equal(remote.db.wp_posts['ID:2'], undefined, label);
   }
