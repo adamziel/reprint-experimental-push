@@ -33,8 +33,12 @@ Current critic bar for this baseline:
 
 - `3089aee2` is retained-source evidence only; it does not authorize
   production wording by itself.
-- The next acceptable proof must be one rerunnable live command against a
-  real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
+- The next acceptable proof must move from local retained-source evidence to
+  production WordPress auth/session lifecycle and durable journal semantics,
+  with graph identity and plugin-driver coverage explicit on the same live
+  boundary.
+- That proof must be one rerunnable live command against a real local,
+  Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
 - That command must show the executor identity, live auth/session boundary,
   preserved remote, exact rejection point, dry-run receipt, apply-time
   revalidation, journal/recovery inspection, graph identity, plugin-driver
@@ -53,6 +57,8 @@ What still must be proved before production wording is allowed:
   Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
 - the same command proves the live WordPress auth/session lifecycle on the
   write boundary, not just login or request authorization;
+- the same command proves durable journal semantics outside the retained-
+  source Playground lab path, not just a local `verify:release` replay;
 - the preserved remote stays inspectable after rejection, so audit and retry
   are both possible without losing the original remote state;
 - every touched row, file, relationship-bearing record, and plugin-owned

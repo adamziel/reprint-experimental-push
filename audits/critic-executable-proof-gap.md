@@ -15,7 +15,10 @@ Primary finding:
   proves the live boundary on an actual remote. Until one exact executable
   release command can be rerun on demand and capture the first real
   executor/auth/preserved-remote boundary, any production-grade push wording
-  is false reliability and must fail closed;
+  is false reliability and must fail closed. The next acceptable proof must
+  move from local retained-source evidence to production WordPress
+  auth/session lifecycle and durable journal semantics, with graph identity
+  and plugin-driver coverage made explicit on that same live boundary;
 
 Supporting failures:
 
