@@ -8,7 +8,7 @@ The suite is useful, but it is still not release proof.
 
 | Test surface | What it proves | What it does not prove | Release value |
 | --- | --- | --- | --- |
-| `npm test` / `test/push-planner.test.js` | Planner refusal, remote-change protection, local deletion blocking, and fixture-level conflict handling | No live-source mutation, no production storage boundary, no end-to-end no-loss proof | Blocker evidence only |
+| `test/push-planner.test.js` and `npm test` | Planner refusal, remote-change protection, local deletion blocking, plugin-owned data blocking, and fixture-level conflict handling | No live-source mutation, no production storage boundary, no end-to-end no-loss proof, no real remote/local topology | Blocker evidence only |
 | `test/recovery-journal.test.js` | File-backed journal monotonicity, redaction, restart classification, and blocked recovery states | No durable production journal, no lease/fencing regime, no real crash recovery on the source boundary | Blocker evidence only |
 | `test/performance-model.test.js` | Benchmark shape, guardrails, refusal discipline, and safe-fast-path modeling | No measured throughput, no memory ceiling, no runtime threshold on a live push path | Blocker evidence only |
 | `test/guarded-executor-benchmark.test.js` | Explicit refusal of unsupported throughput claims and tamper detection for benchmark evidence | No positive speed claim, no production-shaped timing result, no live-path benchmark threshold | Blocker evidence only |
@@ -25,6 +25,7 @@ That means the current suite can support these statements:
 - journal redaction and replay shape are preserved in local files
 - unsupported speed claims are refused
 - lab routes still identify themselves as lab-backed
+- plugin-owned data and file/database fixtures remain protected by local-only guards
 
 It cannot yet support these statements:
 
