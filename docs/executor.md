@@ -24,11 +24,11 @@ The executor follows the same ordered stages defined in the protocol:
 1. `push_preflight` binds the imported pull base package to one live remote
    identity and one short-lived push session.
 2. `push_snapshot_hashes` lists the live remote comparison surface for
-   planning only.
+   planning only and may page large sites.
 3. `push_plan_dry_run` uploads the canonical plan as a receipt, not a lock.
 4. `push_batch_apply` revalidates fresh live evidence before every batch and
    at the storage boundary. Apply must not reuse the dry-run receipt as
-   authority or as a session substitute.
+   authority, as a lease, or as a session substitute.
 5. `push_journal` stays read-only.
 6. `push_recover inspect` classifies finish, rollback, retry, or block before
    any mutating recovery and keeps the same auth floor as the write path.
@@ -62,7 +62,7 @@ keep the same remote identity across planning, apply, and recovery:
 - preflight binds that package to one live remote identity and one short-lived
   push session
 - snapshot hash listing reads the live remote comparison surface only for
-  planning
+  planning and may paginate large sites
 - dry-run uploads the canonical plan and returns a receipt
 - apply revalidates before every batch and again at the storage boundary
 - journal inspect reads durable evidence without authorizing mutation

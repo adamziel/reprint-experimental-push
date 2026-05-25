@@ -24,7 +24,8 @@ The production ladder is fixed and each stage keeps its own boundary:
 4. `push_batch_apply` is the first mutation stage and must revalidate fresh
    live evidence before every batch and again at the storage boundary. Dry-run
    and apply are separate remote operations, and apply must not trust the
-   dry-run receipt as a lock or as a liveness lease.
+   dry-run receipt as a lock, a lease, or a substitute for fresh live
+   evidence.
 5. `push_journal` is read-only durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating repair.
@@ -47,7 +48,7 @@ The canonical proof points for this production extension are:
 - `push_preflight` is the first live binding after the importer has already
   persisted the immutable pull base package
 - `push_snapshot_hashes` lists the live remote comparison surface for
-  planning only
+  planning only and may page large sites
 - `push_plan_dry_run` uploads the canonical plan and returns an eligibility
   receipt, not a lock
 - `push_batch_apply` revalidates fresh live evidence before every batch and
@@ -164,6 +165,17 @@ shape, use `push-pull-to-topology-contract.json`.
 
 For the explicit Docker/Playground topology proof, use
 `push-deployment-topology-contract.json` or `push-topology-matrix.json`.
+
+The executor topology is intentionally fixed:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits used to form the canonical
+  push plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or run recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
 
 ## Auth And Recovery
 

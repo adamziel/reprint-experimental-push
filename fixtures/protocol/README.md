@@ -100,7 +100,8 @@ identity across `remote-base` and `remote-changed`:
   before and after drift.
 - `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
   and `push-snapshot-hashes-page-contract.json` keep the live remote hash
-  listing clearly in the planning-only lane.
+  listing clearly in the planning-only lane, including cursoring for larger
+  sites.
 - `push-auth-headers.json`, `push-auth-session-journal-proof.json`, and
   `push-auth-session-fencing-contract.json` show the auth floor that is at
   least as strict as current Reprint HMAC usage and keep the session, lease
@@ -135,6 +136,9 @@ identity across `remote-base` and `remote-changed`:
   persisted pull base, `local-edited` holds the imported local edits,
   `remote-changed` is the same remote identity after drift, and `runner`
   owns the push protocol calls.
+- The browser-visible proof path stays on the sandbox-provided `8080`
+  ingress through a local-only proxy; remote tunnels are not part of the test
+  topology.
 - `push-executor-topology-proof.json` is the shortest proof that the executor
   keeps the same remote identity, the same route names, and the
   sandbox-provided `8080` ingress rule aligned across Docker and Playground.
