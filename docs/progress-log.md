@@ -4,35 +4,178 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 13:19:38
+## 2026-05-25 - Public Status Audit 13:31:06
 
-<a id="2026-05-25-public-status-audit-131938"></a>
+<a id="2026-05-25-public-status-audit-133106"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 13:19:38 CEST`) and kept the runtime anchor on
+  (`2026-05-25 13:31:06 CEST`) and kept the runtime anchor on
   `npm run verify:release` from commit `3089aee2`.
-- The first screen now adds `3d8748b6`, which adds the fail-closed
-  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` gate; `471440b9` still proves
-  `REPRINT_PUSH_SECRET_REQUIRED` fails closed, and `889bd37a` keeps
-  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible. Recovery evidence in
-  `d3d04595` now tightens the envelope so `old-remote` and
-  `fully-updated-remote` require journal artifacts, while `blocked-recovery`
-  requires both journal and remote artifacts.
+- `6fc3ab64` widens the checked recovery smoke, while `3d8748b6`,
+  `471440b9`, `889bd37a`, and `d3d04595` keep the fail-closed production
+  boundary and artifact-backed recovery evidence explicit.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
 
-## 2026-05-25 - Public Status Audit 12:49:23
+## 2026-05-25 - Public Status Audit 13:29:14
 
-<a id="2026-05-25-public-status-audit-124923"></a>
+<a id="2026-05-25-public-status-audit-132914"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 12:49:23 CEST`) and kept the runtime anchor on
+  (`2026-05-25 13:29:14 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- `6fc3ab64` widens the checked release surface with the retained
+  `test:recovery:file-journal` smoke; `3d8748b6`, `471440b9`, and
+  `889bd37a` still mark the fail-closed production boundary.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 13:28:23
+
+<a id="2026-05-25-public-status-audit-132823"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:28:23 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- `6fc3ab64` widens the checked release surface with the retained
+  `test:recovery:file-journal` smoke, while `3d8748b6`, `471440b9`, and
+  `889bd37a` still mark the fail-closed production boundary.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 13:19:03
+
+<a id="2026-05-25-public-status-audit-131903"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:19:03 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- `3d8748b6` keeps the release command fail-closed on
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` still proves
+  `REPRINT_PUSH_SECRET_REQUIRED` fails closed, `889bd37a` keeps
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible, and `d3d04595`
+  tightens the lab recovery envelope so artifact-backed states are required.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 13:17:48
+
+<a id="2026-05-25-public-status-audit-131748"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:17:48 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- Recovery evidence in `d3d04595` tightens the lab/model envelope so
+  `old-remote` and `fully-updated-remote` require journal artifacts, while
+  `blocked-recovery` requires both journal and remote artifacts; this is not
+  production durable journal storage/lease/fencing proof.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 13:16:02
+
+<a id="2026-05-25-public-status-audit-131602"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:16:02 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- New recovery evidence in `d3d04595` tightens the acceptance envelope so
+  `old-remote` and `fully-updated-remote` require journal artifacts, while
+  `blocked-recovery` now requires both journal and remote artifacts.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 13:05:21
+
+<a id="2026-05-25-public-status-audit-130521"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:05:21 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- The first screen now carries `3d8748b6`, which adds the fail-closed
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` gate; `471440b9` still proves
+  `REPRINT_PUSH_SECRET_REQUIRED` fails closed, and `889bd37a` keeps
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 13:04:01
+
+<a id="2026-05-25-public-status-audit-130401"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:04:01 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- The first screen now carries `3d8748b6`, which makes the release command
+  fail closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`; `471440b9` still proves
+  `REPRINT_PUSH_SECRET_REQUIRED` fails closed, and `889bd37a` keeps
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 13:02:47
+
+<a id="2026-05-25-public-status-audit-130247"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:02:47 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- The first screen now adds `3d8748b6`, which makes the release command fail
+  closed on `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`; `471440b9` still shows
+  `REPRINT_PUSH_SECRET_REQUIRED`, and `889bd37a` keeps
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 12:49:20
+
+<a id="2026-05-25-public-status-audit-124920"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 12:49:20 CEST`) and kept the runtime anchor on
   `npm run verify:release` from commit `3089aee2`.
 - The first screen now adds `471440b9`, which proves
-  `REPRINT_PUSH_SECRET_REQUIRED` fails closed without production credentials;
-  `889bd37a` still marks `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` as the
-  remaining production boundary.
+  `REPRINT_PUSH_SECRET_REQUIRED` fails closed without production credentials,
+  while `889bd37a` still marks `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`
+  as the remaining production boundary.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 12:47:20
+
+<a id="2026-05-25-public-status-audit-124720"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 12:47:20 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- The first screen now surfaces `889bd37a` with the exact production boundary
+  verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`; `5de7ee40` and
+  `981236d8` keep the durable-journal executable boundary and `447/447`
+  planner tests visible.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 12:46:32
+
+<a id="2026-05-25-public-status-audit-124632"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 12:46:32 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- Added `471440b9`, which proves `REPRINT_PUSH_SECRET_REQUIRED` fails closed
+  when a source URL is present but production credentials are absent; `889bd37a`
+  still keeps `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` visible.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
