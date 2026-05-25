@@ -67,7 +67,17 @@ Direct command-surface recheck on `origin/lane/reliable-executor` at `e7de778c`:
 
 ## Release Gate Definition
 
-The weakest current claim is not that the suite is incomplete. It is that this checkout still lacks an in-tree live-boundary verdict for the remaining production claims, so green regression runs cannot be promoted to release proof by interpretation alone. The exact missing proof that would move one gate is a checked command from this checkout that prints the same live-boundary verdict as the remote lane: a successful production auth/session + durable-journal result at apply time, with preserved-remote drift and recovery evidence from the same invocation. Until then, graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift stay unclosed.
+The weakest current claim is not test coverage. It is that this checkout still lacks an in-tree live-boundary verdict for the remaining production claims, so green regression runs cannot be promoted to release proof by interpretation alone.
+
+The exact proof that would move one gate is a checked command from this checkout that produces all of the following in one invocation:
+
+1. apply-time auth/session validation against the retained live source,
+2. durable journal readback from the same run,
+3. recovery inspect evidence from the same run,
+4. preserved-remote drift evidence from the same run, and
+5. an explicit machine-checkable verdict for graph identity, plugin-driver behavior, and leases/fencing.
+
+Until then, graph identity, plugin-driver behavior, leases/fencing, and preserved-remote drift stay unclosed.
 
 Minimum properties of the gate:
 
@@ -83,6 +93,6 @@ The repository has strong local regression, refusal, and journaling evidence. It
 
 ## 12h Delta
 
-The last 12 hours changed the remote evidence, not the release gate or next owner. Current remote heads are `origin/lane/reliable-executor=e7de778c` and `origin/lane/independent-auditor=c827d349`. The reliable-executor lane kept the release verifier on the remote side and sharpened the boundary/topology framing, but the remaining boundary verdict is still `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and this checkout still lacks an in-tree checked pass.
+The last 12 hours did not change the release gate or next owner. Current remote heads are `origin/lane/reliable-executor=e7de778c` and `origin/lane/independent-auditor=d82245d8`. The reliable-executor lane still keeps the release verifier on the remote side, and the remaining boundary verdict is still `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`.
 
-Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The exact proof that would move one gate is a checked command from this checkout that prints the same live-boundary verdict as the remote lane, including apply-time auth/session validation, durable journal readback, and recovery evidence from the same invocation.
+Release gates stay `0/4` because the proof is still upstream-only and still does not establish production auth/session lifecycle, durable journal semantics, graph identity, plugin-driver behavior, leases/fencing, or preserved-remote drift at the live boundary. The one proof that would move a gate is a checked command from this checkout that emits the same live-boundary verdict as the remote lane, with apply-time auth/session validation, durable journal readback, and recovery evidence from the same invocation.
