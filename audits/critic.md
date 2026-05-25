@@ -5310,7 +5310,8 @@ Production-grade release gate:
   continuation of the earlier readable artifact;
 - show each Reprint, ZS-Sync, or ForkPress comparison names the exact
   upstream state, states what the note proves here, and states what it does
-  not prove here.
+  not prove here; a named upstream state is historical provenance only until
+  this branch reruns the same live boundary with preserved-remote evidence.
 
 Single-sentence release gate:
 
