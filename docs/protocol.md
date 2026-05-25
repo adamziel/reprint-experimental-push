@@ -48,6 +48,16 @@ The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
 site, and one live remote identity that must be revalidated at apply time.
 
+The executor proof is intentionally split across three levels:
+
+- `push_pull_mapping` shows how exporter/importer provenance becomes push
+  planning input without rewriting the persisted base package.
+- `push_protocol_extension_contract` shows the ordered production ladder from
+  preflight through inspect-first recovery.
+- `push_topology` and `push_executor_topology_proof` show the one-remote,
+  one-local, one-drift harness in Docker and Playground, including the shared
+  `8080` ingress rule.
+
 ## Pull To Push Mapping
 
 Push consumes immutable provenance from the existing pull pipeline. The
@@ -90,6 +100,18 @@ The pull-to-push bridge is intentionally one-way:
 - journal inspect stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes prove the action
+
+The same bridge applies to the live mutation stages:
+
+- `push_snapshot_hashes` reads the live remote comparison surface for planning
+  only.
+- `push_plan_dry_run` uploads the canonical plan as an eligibility receipt,
+  not a lock.
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  at the storage boundary.
+- `push_journal` is durable evidence only and never authorizes mutation.
+- `push_recover inspect` reads journal and live evidence before any mutating
+  repair can start.
 
 The boundary rules are one-way:
 
@@ -202,6 +224,13 @@ harnesses:
   fresh live evidence before every batch and at the storage boundary
 - journal inspect is read-only, and recovery begins with inspect before any
   mutating repair
+
+That topology is the one the harness matrix must keep stable:
+
+| Harness | Remote source | Local edited site | Drift witness | Runner |
+| --- | --- | --- | --- | --- |
+| Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
+| Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
 
 ## Production Proof
 

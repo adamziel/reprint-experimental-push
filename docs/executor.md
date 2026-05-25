@@ -51,6 +51,16 @@ The production proof for that mapping is a one-remote, one-local topology:
 - `runner` is the only actor that may preflight, list hashes, upload the dry
   run plan, apply batches, inspect the journal, or start recovery
 
+The executor treats that proof as the operational topology for both harnesses:
+
+- `remote-base` seeds the persisted pull base package from `remote-example`
+- `local-edited` is the imported local site that produces the candidate plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, remote snapshot hash listing, dry-run upload,
+  batched apply, journal inspect, and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+
 Docker and Playground both use the same route names, the same `8080` ingress
 rule for browser-visible inspection, and the same live-drift story: the remote
 is observed once as the seeded base site and again as the drift witness after
@@ -123,12 +133,33 @@ The executor follows the same boundary order as the protocol:
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes prove the repair safe
 
+The harness matrix that exercises that boundary order is fixed:
+
+| Harness | Remote source | Local edited site | Drift witness | Runner |
+| --- | --- | --- | --- | --- |
+| Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
+| Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
+
 The auth boundary is part of that same executor contract:
 
 - read-only inspection may stay on the existing HMAC family
 - dry-run, apply, and mutating recovery must carry the push session plus the
   canonical push signature and idempotency key
 - the push session scopes the write path, but it never reserves remote state
+
+The corresponding pull-to-push mapping stays one-way:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to the live remote identity and
+  requested scope
+- snapshot hash listing reads the live comparison set for planning only
+- dry-run uploads the canonical plan as a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect reads durable evidence without authorizing mutation
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes prove the branch safe
 
 That boundary order maps directly to the pull pipeline:
 
