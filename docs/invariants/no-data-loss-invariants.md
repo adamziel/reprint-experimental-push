@@ -45,6 +45,9 @@ This note captures the planner boundary in plain language.
 - A ready delete plan at the live release boundary may still preserve a
   remote-only plugin removal and refuse late plugin drift on re-apply while
   keeping the delete precondition live and bounded.
+- A ready delete plan at the live release boundary may still preserve
+  remote-only plugin removals and refuse late removal drift on re-apply while
+  keeping the delete precondition live and bounded.
 - A ready delete plan at the live release boundary may still preserve a
   matching independent delete while remote-only plugin drift remains
   `keep-remote` and late drift is refused on re-apply.
@@ -71,6 +74,9 @@ This note captures the planner boundary in plain language.
 - A live-preconditioned file delete may still coexist with a matching
   independent file delete, edit, and file type swap while remote-only plugin
   drift remains `keep-remote`.
+- A ready delete plan may still preserve remote-only plugin removals at the
+  live release boundary while same-remote graph identity stays intact and
+  late removal drift is refused on re-apply.
 - A live-preconditioned file delete and file type swap may still coexist with
   a matching independent edit while unrelated remote-only plugin changes stay
   `keep-remote`.
