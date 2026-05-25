@@ -17363,13 +17363,8 @@ test('the durable recovery boundary remains fail-closed until the release gate w
   assert.equal(Object.hasOwn(packageJson.scripts, 'verify:release'), true);
   assert.equal(
     packageJson.scripts['verify:release'],
-    'npm run test:playground:production-shaped-release-verify',
-    'release verification exists upstream, but it still does not prove durable recovery storage, journal replay, or recovery inspection',
-  );
-  assert.equal(
-    packageJson.scripts['verify:release'].includes('test:recovery:file-journal'),
-    false,
-    'the release gate still does not invoke the durable recovery replay proof',
+    'npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',
+    'release verification exists upstream, but it still does not prove durable recovery inspection or release-path recovery replay wiring',
   );
   assert.equal(
     packageJson.scripts['test:recovery:file-journal'],
@@ -17377,14 +17372,14 @@ test('the durable recovery boundary remains fail-closed until the release gate w
     'file-backed recovery journal smoke remains the executable durability proof currently available in this repo',
   );
   assert.equal(
-    packageJson.scripts['verify:release'].includes('recovery-journal'),
-    false,
-    'the release gate still does not wire the durable journal replay or inspect boundary into release verification',
-  );
-  assert.equal(
     packageJson.scripts['verify:release'].includes('test:playground:production-shaped-live-protocol-proof'),
     false,
     'the release gate still does not prove the live protocol path that carries durable journal replay and recovery-inspect semantics',
+  );
+  assert.equal(
+    packageJson.scripts['verify:release'].includes('test:playground:production-shaped-live-preflight'),
+    false,
+    'the release gate still does not wire the durable recovery inspect proof into the release preflight path',
   );
 
   const base = baseSite();
