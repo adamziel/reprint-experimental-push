@@ -4966,3 +4966,10 @@ worktree:
   ForkPress comparison, plus an explicit statement of what that note proves
   here and what it does not prove, including whether it says anything about a
   later boundary or only the original one.
+
+Do not let a lab-shaped route, package mount, fixture replay, or
+`finalMatchesLocal` output stand in for the live boundary above. Those signals
+can show compatibility with the expected URL shape or review flow while the
+real production executor is still copied, fixture-backed, or missing the
+preserve / reject / retry cycle for a drifted remote, a remapped create target,
+or a late-discovered plugin-owned surface.
