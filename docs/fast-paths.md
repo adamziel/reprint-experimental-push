@@ -970,6 +970,9 @@ under load:
 - compressed-row-batch-skips-group-finalize is rejected because compressed row
   batches still cannot prove the dependency checks held, the group finalize
   ran, or the atomic-group visibility boundary survived failure.
+- compressed-receipt-log-completes-apply is rejected because compressed
+  receipts can shrink recovery evidence, but they cannot prove the live
+  compare, row preconditions, or atomic-group commit survived failure.
 - index-and-compressed-buffer-completes-chunk-resume is rejected because
   compressed buffers and planning evidence cannot prove which chunk receipts
   survived a crash or pause.

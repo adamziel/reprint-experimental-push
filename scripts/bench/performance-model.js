@@ -970,6 +970,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'chunk-receipts', 'row-preconditions', 'durable-progress'],
   },
   {
+    id: 'compressed-receipt-log-completes-apply',
+    proposal: 'treat a compressed receipt log as proof that apply or finalize already completed',
+    rejectedBecause: 'compressed receipts can shrink recovery evidence, but they cannot prove the live compare, row preconditions, or atomic-group commit survived failure',
+    rejectedGate: 'recovery',
+    violates: ['compression', 'live-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'queue-empty-means-complete',
     proposal: 'advance an upstream producer because the queue is empty even though receipts are missing',
     rejectedBecause: 'an empty queue is not proof that the remote acknowledged the work',
