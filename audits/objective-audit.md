@@ -72,6 +72,7 @@ For this audit:
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is as refusal evidence, not as release evidence. They demonstrate that the suite knows how to say "not yet"; they do not demonstrate that the production boundary is safe.
 That is not a small wording issue. The suite can falsify bad claims, but it still cannot certify the good claims the objective needs because the strongest push path remains labeled `labBacked: true`, the recovery tests stay fixture-scoped, and the benchmark checks stop at refusal rather than timing a real live-source push.
+The implication is straightforward: the current tests are credible blockers, but they are not release approvers. A green run can still coexist with an unproven live-source push boundary, unmeasured throughput, and an absent enforced gate.
 
 That distinction matters for the objective claims:
 
@@ -88,6 +89,8 @@ That distinction matters for the objective claims:
 - `test/playground-snapshot-lib.test.js` proves the PHP helper rejects unsupported fixture resources and table names. That is useful input validation, not release evidence for production plugin data drivers or live graph identity.
 - `test/performance-model.test.js` proves the benchmark model keeps proof obligations attached to the proposed fast paths, large-upload and plugin-install shapes, atomic-group staging, and guardrails. `test/guarded-executor-benchmark.test.js` proves the refusal path on tampered evidence and blocked production throughput claims. Together they prove refusal discipline and model shape, not speed. They do not measure a production push path, set an actual runtime or memory threshold, or prove that the live source topology is fast.
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` are therefore blocker tests, not release-speed evidence. They can tell you when a throughput claim is unsupported, but they cannot tell you that the live push path is actually fast enough to ship.
+- `test/performance-model.test.js` is a model audit. It proves the benchmark shape, guardrails, and refusal structure. It does not measure elapsed time, memory consumption, or a production source site.
+- `test/guarded-executor-benchmark.test.js` is a claims gate. It proves the benchmark refuses unsupported throughput assertions and still exports `productionThroughput: 'not-claimed'` unless evidence is already present. That is useful negative proof, but it is still not an end-to-end performance measurement.
 - Their refusal behavior is only a guardrail. It proves the suite can reject unsupported speed claims, but it does not define a measured runtime, memory ceiling, or release threshold for the production-shaped path.
 - `test/guarded-executor-benchmark.test.js` in particular proves that `productionThroughput` stays `not-claimed` and that the benchmark gate throws when a claim is forced. That is valuable negative proof, but it is still not a measured production benchmark.
 - The authenticated push smokes are still labeled `labBacked: true`, so even a green run there is a lab pass, not release proof.
