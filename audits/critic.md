@@ -2937,3 +2937,9 @@ Source-note proof boundary, restated:
 - A correct upstream commit or worktree state is provenance, not current
   authority. If the branch did not re-run the same live drift, retry, or
   create-time identity case here, the comparison must stay historical.
+- Production-grade wording must also fail closed when the only remaining
+  evidence is a readable stale manual-review artifact or a route-shaped
+  smoke. Readability is audit value only; it does not prove the stale record
+  was rejected before mutation, cannot widen to another row or plugin-owned
+  surface, or was separated from fresh retry authority backed by new live
+  hashes.
