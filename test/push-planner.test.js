@@ -6038,6 +6038,59 @@ test('the no-data-loss contract keeps every failure boundary either old remote, 
   assert.ok(staleReplayError.details.recovery.artifacts.remote);
 });
 
+test('durable recovery boundaries keep the remote safe and make completed replay inert', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+
+  for (const [label, options] of [
+    ['before mutation', { failBeforeMutation: true }],
+    ['after staging', { failAfterStaging: true }],
+    ['after dependency validation', { failAfterDependencyValidation: true }],
+  ]) {
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, plan, { ...options, durableJournal }));
+
+    assert.ok(error instanceof PushPlanError, label);
+    assert.equal(JSON.stringify(remote), before, label);
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.ok(error.details.recovery.artifacts.journal, label);
+    assert.equal(error.details.recovery.artifacts.remote, undefined, label);
+  }
+
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  assert.equal(completed.recoveryState.status, 'fully-updated-remote');
+  assert.ok(completed.recoveryState.artifacts.journal);
+  assert.equal(completed.recoveryState.artifacts.remote, undefined);
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayBefore = JSON.stringify(replayRemote);
+  const replay = applyPlan(replayRemote, plan, {
+    journal: completed.journal,
+    durableJournal,
+  });
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replayBefore);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.ok(replay.recoveryState.artifacts.journal);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    1,
+  );
+});
+
 test('completed-plan replay reuses the durable journal without duplicating target records', () => {
   const base = baseSite();
   const local = baseSite();
