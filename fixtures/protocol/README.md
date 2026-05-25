@@ -42,6 +42,7 @@ The normal sequence is:
 34. `push-remote-liveness-contract.json`
 35. `push-deployment-topology-contract.json`
 36. `push-protocol-extension-contract.json`
+37. `push-pull-to-topology-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -164,6 +165,11 @@ Failure and recovery examples:
   one-local, one-drift topology explicit. It also points at the narrower
   auth/session fencing and recovery-inspect proofs so the production bundle
   stays easy to navigate.
+- `push-pull-to-topology-contract.json` gives the smallest composite proof that
+  links the persisted pull base package to the production push ladder and the
+  Docker/Playground topology in one object. Use it when a review wants the
+  pull provenance, live-remote liveness split, auth floor, and 8080/local-only
+  ingress rule in a single compact contract.
 - `push-recovery-revalidation-contract.json` gives the compact proof that the
   same drift case still requires fresh live hashes before each apply batch and
   before any mutating recovery path.

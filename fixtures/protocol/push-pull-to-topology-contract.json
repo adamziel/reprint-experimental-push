@@ -1,0 +1,87 @@
+{
+  "contract_id": "push-pull-to-topology-contract-one-remote-one-local",
+  "purpose": "ties the immutable pull base package to the production push ladder and the one-remote-one-local topology proof",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "persisted_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "remote_site_id": "remote-example"
+    }
+  },
+  "push_sequence": [
+    "push_preflight",
+    "push_snapshot_hashes",
+    "push_plan_dry_run",
+    "push_batch_apply",
+    "push_journal",
+    "push_recover inspect",
+    "push_recover auto|finish|rollback"
+  ],
+  "push_guards": {
+    "remote_liveness": "dry-run and apply are separate remote operations",
+    "apply": "must revalidate the live remote before every batch and at the storage boundary",
+    "auth_floor": "at least as strict as current Reprint HMAC usage"
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "same_remote_identity": true,
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    },
+    "proof": [
+      "remote-base seeds the persisted pull base",
+      "remote-base and remote-changed are the same remote identity observed at different times",
+      "local-edited is the imported local site with user edits",
+      "push preflight binds the persisted pull base to the live remote identity",
+      "push snapshot hashes stay planning-only",
+      "push dry-run returns a receipt, not a lock",
+      "push batch apply revalidates live evidence before every batch and at the storage boundary",
+      "push journal stays read-only",
+      "push recovery inspect happens before any mutating repair",
+      "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
+    ],
+    "docker": {
+      "network": "one private network",
+      "proof": [
+        "remote-base and remote-changed are the same remote identity at different times",
+        "runner owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and recovery"
+      ]
+    },
+    "playground": {
+      "network": "separate disposable blueprints",
+      "proof": [
+        "push preflight, dry-run, apply, journal, and recovery use the same route names as Docker",
+        "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
+      ]
+    }
+  },
+  "lab_topology": {
+    "remote_base": {
+      "role": "remote source site",
+      "identity": "remote-example"
+    },
+    "local_edited": {
+      "role": "imported local site",
+      "identity": "local-dev-site"
+    },
+    "remote_changed": {
+      "role": "same remote source site later in time",
+      "identity": "remote-example"
+    }
+  },
+  "required_invariants": [
+    "pull exporter/importer establish the immutable base package before push",
+    "dry-run and apply are separate remote operations",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+  ]
+}

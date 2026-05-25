@@ -705,6 +705,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const executorTopologyProof = readJson('fixtures/protocol/push-executor-topology-proof.json');
   const recoveryRevalidationContract = readJson('fixtures/protocol/push-recovery-revalidation-contract.json');
   const remoteLivenessContract = readJson('fixtures/protocol/push-remote-liveness-contract.json');
+  const pullToTopologyContract = readJson('fixtures/protocol/push-pull-to-topology-contract.json');
 
   assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightRequest.remote_site_id, 'remote-example');
@@ -777,6 +778,39 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(remoteLivenessContract.required_invariants.includes('dry-run and apply are separate remote operations'));
   assert.ok(remoteLivenessContract.required_invariants.includes('journal inspection is read-only and never authorizes mutation by itself'));
   assert.ok(remoteLivenessContract.required_invariants.includes('authentication must be at least as strict as current Reprint HMAC usage'));
+  assert.equal(pullToTopologyContract.contract_id, 'push-pull-to-topology-contract-one-remote-one-local');
+  assert.equal(pullToTopologyContract.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
+  assert.deepEqual(pullToTopologyContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(pullToTopologyContract.push_guards.remote_liveness, 'dry-run and apply are separate remote operations');
+  assert.equal(pullToTopologyContract.push_guards.apply, 'must revalidate the live remote before every batch and at the storage boundary');
+  assert.equal(pullToTopologyContract.push_guards.auth_floor, 'at least as strict as current Reprint HMAC usage');
+  assert.equal(pullToTopologyContract.topology.networking.ingress_port, 8080);
+  assert.equal(pullToTopologyContract.topology.networking.proxy_policy, 'local-only');
+  assert.equal(pullToTopologyContract.topology.networking.tunnels, 'disallowed');
+  assert.ok(pullToTopologyContract.topology.proof.includes('remote-base seeds the persisted pull base'));
+  assert.ok(
+    pullToTopologyContract.topology.proof.includes(
+      'remote-base and remote-changed are the same remote identity observed at different times',
+    ),
+  );
+  assert.ok(
+    pullToTopologyContract.topology.proof.includes(
+      'push recovery inspect happens before any mutating repair',
+    ),
+  );
+  assert.ok(
+    pullToTopologyContract.required_invariants.includes(
+      'pull exporter/importer establish the immutable base package before push',
+    ),
+  );
   assert.equal(authSessionRecoveryContract.recovery.inspect_mode, 'inspect');
   assert.equal(authSessionRecoveryContract.recovery.mutates, false);
   assert.ok(authSessionRecoveryContract.recovery.blocked_when.includes('fresh live hashes do not match the journaled target'));
