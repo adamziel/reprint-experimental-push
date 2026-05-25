@@ -75,6 +75,10 @@ manual-resolution comment, or comparison summary stays audit-only unless it
 also proves the exact rejected boundary, the preserved remote that remained
 inspectable after rejection, and the fresh retry scope for that same live
 boundary on this worktree.
+If the wording says "comparison passed", "manual resolution succeeded", or
+"production-ready" without naming the preserved remote and the boundary that
+was rejected before write, that wording is false reliability and must fail
+closed.
 
 Concrete failure scenarios that still block production wording:
 
