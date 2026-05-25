@@ -4,13 +4,13 @@ Evidence checked:
 - `git fetch origin --prune`
 - `git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' refs/remotes/origin/lane | sort`
 - `audits/objective-audit.md`
-- `scripts/supervision/status.sh`
-- `scripts/supervision/accountability.sh`
 - `git status --short --branch`
+- `git rev-parse --abbrev-ref HEAD`
+- `git log --oneline -1`
 - `git diff -- audits/objective-audit.md`
 
 What I found:
-- `origin/lane/independent-auditor` is now at `b3da0cee`, and the audit now matches the refreshed remote head list.
+- `origin/lane/independent-auditor` is now at `369fdd07`, and the audit now matches the refreshed remote head list.
 - `origin/lane/same-plan-wordpress-graph-create` remains at `70925d88`, and the audit still records that its silent smoke blocker falls short of release-grade proof.
 - The overall release verdict is unchanged: the repository is still not releasable as a production WordPress push path.
 - No new production-backed mutation, recovery, or measured-speed evidence appeared in this pass.
