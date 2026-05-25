@@ -28,9 +28,12 @@ The production proof stack is fixed and should be read in this order:
    apply-time revalidation.
 4. `push-production-auth-session-journal-recovery-inspect-contract.json` for
    the auth/session/journal/inspect-first recovery floor.
-5. `push-remote-liveness-topology-contract.json` for the one-remote,
+5. `push-production-recovery-inspect-contract.json` for the inspect-first
+   recovery branch that stays aligned with the journal row, lease fence, and
+   fresh live hashes.
+6. `push-remote-liveness-topology-contract.json` for the one-remote,
    one-local, one-drift harness plus the liveness split.
-6. `push-production-topology-contract.json` for the Docker and Playground
+7. `push-production-topology-contract.json` for the Docker and Playground
    harness shape.
 
 The executor follows the same production ladder the protocol defines:
@@ -275,8 +278,9 @@ The executor reviews the compact proof set in this order:
 2. `push-remote-snapshot-listing-contract.json` for planning-only remote hash listing.
 3. `push-production-revalidation-contract.json` for dry-run separation and apply-time revalidation.
 4. `push-production-auth-session-journal-recovery-inspect-contract.json` for auth, session, journal, and inspect-first recovery.
-5. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology.
-6. `push-production-topology-contract.json` for the Docker and Playground harness proof.
+5. `push-production-recovery-inspect-contract.json` for the inspect-first recovery branch and its journal-row, lease-fence, and fresh-live proof.
+6. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology.
+7. `push-production-topology-contract.json` for the Docker and Playground harness proof.
 
 The pull-to-push bridge is one-way:
 

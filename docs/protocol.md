@@ -150,6 +150,7 @@ extension:
 - `push-remote-snapshot-listing-contract.json` proves remote hash listing stays planning-only.
 - `push-production-revalidation-contract.json` proves dry-run separation and apply-time revalidation.
 - `push-production-auth-session-journal-recovery-inspect-contract.json` proves the auth/session/journal/recovery floor.
+- `push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.
 - `push-remote-liveness-topology-contract.json` proves the one-remote, one-local, one-drift harness plus the liveness split.
 - `push-production-topology-contract.json` proves the Docker and Playground harness shape.
 

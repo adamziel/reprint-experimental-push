@@ -99,6 +99,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     ),
   );
   assert.ok(
+    protocolReadme.replace(/\s+/g, ' ').includes(
+      'push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.',
+    ),
+  );
+  assert.ok(
     protocolReadme.includes(
       'push-production-pull-bridge-contract.json` pairs with',
     ),
@@ -228,6 +233,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     protocolDocs.includes(
       'The compact auth/session proof is `push-production-auth-session-journal-recovery-inspect-contract.json`',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.',
     ),
   );
   assert.ok(

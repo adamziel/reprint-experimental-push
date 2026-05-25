@@ -91,6 +91,9 @@ identity across `remote-base` and `remote-changed`:
 - `push-production-recovery-inspect-contract.json` is the compact proof that
   recovery inspect stays read-only while the journal row, lease fence, live
   evidence, auth floor, and `8080` topology still match the write path.
+- `push-production-recovery-inspect-contract.json` proves the inspect-first
+  recovery branch stays aligned with the journal row, lease fence, and fresh
+  live hashes.
 - `push-production-recovery-drift-contract.json` is the compact proof that
   recovery inspect stays read-only after live drift while the persisted pull
   base, journal row, auth floor, and one-remote, one-local topology still
