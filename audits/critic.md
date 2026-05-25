@@ -65,11 +65,14 @@ The next production proof must be one rerunnable live boundary on a real local, 
 
 ## Source-note comparison
 
-- Reprint source notes are provenance only. The observed upstream anchor `27c5f25` supports staged transport and resumable-delivery vocabulary, but it does not prove a live mutation boundary, preserved-remote retry authority, or WordPress auth/session lifecycle on this branch.
-- ZS-Sync source notes are provenance only. The observed upstream anchor `d9334a0` supports discovery and batching vocabulary, but it does not prove source-mutation safety, create-time remap safety, graph identity, or plugin-owned surface coverage on this branch.
-- ForkPress source notes are provenance only. The observed local anchor `55f9879` supports audit and crash-consistency vocabulary, but it does not prove a live WordPress boundary, preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
-- None of them prove live push safety on this branch, and none should be read as production evidence without the rerunnable live boundary described above.
-- The missing proof is still one rerunnable live mutation on one exact source URL with preserved-remote retention, apply-time revalidation, auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage all observed together. The remote `4096f3ac` drift-rejection proof and `7e0f27f2` apply-revalidation proof are useful, but they remain separate retained-source steps until the same live boundary preserves the rejected remote and survives retry on production-like state. The current `4baf67ab` verdict is useful release-boundary evidence, but it still only proves the retained-source auth/session gate and not the full production WordPress boundary.
+Treat the three source-note families as historical context, not retry authority:
+
+- Reprint (`27c5f25`) proves resumable transport and staged delivery vocabulary only. It does not prove a live mutation boundary, preserved-remote retention after rejection, or WordPress auth/session lifecycle on this branch.
+- ZS-Sync (`d9334a0`) proves discovery and batching vocabulary only. It does not prove source-mutation safety, create-time remap safety, graph identity, or plugin-owned surface coverage on this branch.
+- ForkPress (`55f9879`) proves audit and crash-consistency vocabulary only. It does not prove a live WordPress boundary, durable journal lease/fencing, preserved-remote auditability, or plugin-driver coverage on this branch.
+
+None of the three source-note sets prove live push safety on this branch, and none should be read as production evidence without the rerunnable live boundary described above.
+The missing proof is still one rerunnable live mutation on one exact source URL with preserved-remote retention, apply-time revalidation, auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage all observed together. The remote `4096f3ac` drift-rejection proof and `7e0f27f2` apply-revalidation proof are useful, but they remain separate retained-source steps until the same live boundary preserves the rejected remote and survives retry on production-like state. The current `4baf67ab` verdict is useful release-boundary evidence, but it still only proves the retained-source auth/session gate and not the full production WordPress boundary.
 
 ## Changes required before production wording is defensible
 
