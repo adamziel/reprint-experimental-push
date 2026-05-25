@@ -4909,11 +4909,12 @@ true on this branch:
   rebuilds a fresh retry artifact from live hashes for the same boundary;
 - any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
   revision or worktree state and says what that note proves here and what it
-  does not prove.
+  does not prove, including whether it applies only to the original boundary
+  or is being stretched to a later one.
 - any Reprint, ZS-Sync, or ForkPress note that merely matches the same route
   family, package layout, or reviewer wording is still historical context
-  only and cannot be recast as live proof, even if the cited upstream commit
-  is named correctly;
+  only and cannot be recast as live proof for this branch or a later
+  boundary, even if the cited upstream commit is named correctly;
 - the proof for the first boundary is not being recycled for a later
   boundary just because the route family, package mount, fixture replay, or
   reviewer wording still looks the same, or because the later boundary uses
@@ -5194,7 +5195,8 @@ Release-gate checklist for production-grade wording:
   "manual resolution" phrase may be used as proof without the live boundary
   above.
 If any box is unchecked, the branch must not claim production-grade push
-support.
+support, because route shape and upstream comparison can still be
+compatibility evidence only.
 
 Failure scenarios and missing proof:
 
