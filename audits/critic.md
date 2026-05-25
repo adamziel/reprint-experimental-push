@@ -15,6 +15,22 @@ or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote and
 shows apply-time revalidation plus journal/recovery inspection on the same
 mutation.
 
+Before this project can claim production-grade push support, it must show:
+
+- one named real-site release command that can be rerun unchanged on the same
+  live boundary;
+- a preserved remote that remains inspectable after rejection, so audit and
+  retry are both verifiable;
+- live WordPress auth/session lifecycle evidence before the first write;
+- apply-time revalidation plus journal/recovery inspection on the same
+  boundary;
+- graph identity coverage, including create-time remaps and late-discovered
+  surfaces;
+- plugin-driver coverage for hidden plugin-owned data traps outside the
+  allowlist; and
+- old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts.
+
 That retained-source result is real progress, but it still only proves the
 lab harness for the supervised lane. It does not yet prove this branch can
 rerun the same boundary against a live local, Playground, or Docker
@@ -25,8 +41,9 @@ What improved in the last 12 hours: the retained-source harness now names
 session shape, apply commitment, and journal rows instead of only route shape.
 That is a real gain, but it is still lab evidence unless this worktree can
 rerun the same live boundary on a real local, Playground, or Docker
-`REPRINT_PUSH_SOURCE_URL` and preserve the rejected remote for audit and
-retry.
+`REPRINT_PUSH_SOURCE_URL`, preserve the rejected remote, and show exact
+rejection, dry-run receipt, apply-time revalidation, and journal/recovery
+inspection on the same mutation.
 
 Single strongest blocker: this worktree still lacks a rerunnable live boundary
 that proves the WordPress auth/session write boundary, durable journal
