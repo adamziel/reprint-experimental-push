@@ -18,10 +18,10 @@ production boundary because the retained-source run does not show
 preserved-remote retention across rejection, live auth/session lifecycle on
 WordPress, apply-time revalidation against a fresh real-site source, durable
 journal storage and lease/fencing semantics outside the Playground harness,
-or plugin-driver coverage for late-discovered plugin-owned surfaces.
-Production-grade wording also remains false if it relies on lab-session shape,
-retained-source journal rows, or route compatibility as a stand-in for live
-WordPress auth/session durability.
+graph identity under remap, or plugin-driver coverage for late-discovered
+plugin-owned surfaces. Production-grade wording also remains false if it
+relies on lab-session shape, retained-source journal rows, or route
+compatibility as a stand-in for live WordPress auth/session durability.
 
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
@@ -100,6 +100,8 @@ the following on the same live boundary:
 - journal/recovery inspection that proves retry scope from fresh live hashes,
   durable storage, and lease/fencing behavior under retry on production
   WordPress state, not just retained-source lab state;
+- graph identity proof for create-time remaps and late-discovered
+  relationship-bearing records;
 - explicit old/new/blocked classification for touched rows, files,
   relationship-bearing records, and plugin-owned surfaces; and
 - plugin-driver coverage for late-discovered plugin-owned data traps outside
@@ -141,6 +143,9 @@ Any hidden-loss mode that is not proven there remains a blocker:
 - partial file, DB, and plugin side effects must never be reported as success
   without a preserved-remote receipt that lets a reviewer audit and retry the
   exact rejected boundary.
+- a plugin-driver or allowlist gap discovered after preflight must be treated
+  as a new preserve / reject / retry decision, not folded into an earlier
+  manual resolution note.
 
 Manual resolution is not success unless the remote is preserved and the user
 can safely audit and retry the exact boundary.
@@ -180,6 +185,8 @@ worktree.
 - ForkPress `55f9879` explains audit and crash-consistency vocabulary; it
   does not prove live remote preservation, durable journal semantics on this
   branch, leases/fencing, or later-surface preserve / reject / retry handling.
+  It also does not prove that a preserved remote can be safely retried after a
+  plugin-owned surface is discovered late.
 
 The upstream anchors recorded in `docs/source-notes.md` remain provenance
 only until this branch reruns the same live boundary and states what each note
