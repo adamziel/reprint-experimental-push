@@ -69,6 +69,20 @@ The production sequence is fixed:
    recovery only proceeds when journal rows plus fresh live hashes prove the
    action.
 
+The remote API is split by evidence class, not just by route name:
+
+- `push_preflight` binds the persisted pull base to one live remote identity
+  and one short-lived push session.
+- `push_snapshot_hashes` is cursorable planning evidence only and never
+  becomes write authority.
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock.
+- `push_batch_apply` is the first write stage and must revalidate live remote
+  evidence before every batch and again at the storage boundary.
+- `push_journal` is read-only.
+- `push_recover inspect` starts before any mutating recovery and may block
+  until fresh live hashes prove the repair path.
+
 The executor must keep the live remote split explicit:
 
 - snapshot hashes are planning evidence only

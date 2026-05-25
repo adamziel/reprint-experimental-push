@@ -32,6 +32,20 @@ half:
 - `push_recover` starts with `inspect`; mutating recovery is only allowed
   after inspect proves the action safe with fresh live hashes.
 
+The remote API is deliberately split by evidence class:
+
+- `push_preflight` binds the persisted pull base to one live remote identity
+  and one short-lived push session.
+- `push_snapshot_hashes` is cursorable planning evidence only. Paging it
+  collects more evidence; it never widens write authority.
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock.
+- `push_batch_apply` is the first write stage and must revalidate live remote
+  evidence before every batch and again at the storage boundary.
+- `push_journal` is read-only.
+- `push_recover` starts with `inspect`; mutating recovery is only allowed
+  after inspect proves the action safe with fresh live hashes.
+
 The production stage names are intentionally explicit:
 
 - preflight
@@ -215,6 +229,11 @@ The production test topology can be written as a short matrix:
 The same matrix is the proof that the same remote identity is observed twice,
 not that two different remotes were involved. It also expresses the local
 edited site as an imported clone rather than a second remote source.
+
+The lab identities for the machine-readable proof are `remote-example` and
+`local-dev-site`. They let tests assert one remote source, one imported local
+edit site, and the same remote identity again after drift without inventing a
+new topology vocabulary.
 
 The smallest machine-readable proof for that topology is
 [`fixtures/protocol/push-deployment-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-deployment-topology-contract.json).
