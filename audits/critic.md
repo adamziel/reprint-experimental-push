@@ -6242,6 +6242,11 @@ The design still has not closed the following production-grade gaps:
   artifact was preserved but the later boundary introduced a new plugin-owned
   surface, because the new surface needs its own preserve / reject / retry
   cycle before any success wording is allowed; and
+- a readable approval that predates a later-discovered plugin-owned surface or
+  remapped create target still cannot authorize the later boundary just because
+  the route family, package mount, reviewer wording, or fixture shape matches;
+  the later boundary still needs its own preserved remote, rejection point,
+  and fresh retry scope rebuilt from live hashes; and
 - the conservative comparison rule is:
   - Reprint notes can justify transport, staged delivery, or resumability
     vocabulary, but they do not prove a live push executor, preserved remote,
