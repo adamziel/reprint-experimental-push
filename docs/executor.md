@@ -162,7 +162,10 @@ only difference is where the runner lives:
 | `runner` | `runner` | local test process |
 
 Both harnesses keep browser-visible inspection on the sandbox-provided `8080`
-ingress through a local-only proxy. Remote tunnels remain disallowed.
+ingress through a local-only proxy. Remote tunnels remain disallowed. The
+same topology proof uses `remote-example` as the remote source site,
+`local-dev-site` as the edited local site, and the same remote identity again
+for the drift witness.
 
 The dry-run receipt is eligibility-only metadata:
 

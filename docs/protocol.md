@@ -111,8 +111,9 @@ holds the imported local edits, `remote-changed` is the same remote identity
 observed later after drift, and `runner` is the only process allowed to
 compare, upload, inspect, and recover. That is the compact end-to-end proof
 that dry-run and apply are separate remote operations, apply revalidates live
-evidence, and recovery starts with inspect. Browser-visible inspection must
-stay on the sandbox-provided `8080` ingress through a local-only proxy.
+evidence before every batch and at the storage boundary, and recovery starts
+with inspect before any mutating repair. Browser-visible inspection must stay
+on the sandbox-provided `8080` ingress through a local-only proxy.
 The same proof shape is captured in
 [`fixtures/protocol/push-protocol-extension-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-protocol-extension-contract.json)
 where `remote-example` and `local-dev-site` act as the concrete lab sites for
@@ -276,7 +277,8 @@ The compact proof objects in `fixtures/protocol/` mirror that ladder:
   that the production push extension maps the pull exporter/importer
   provenance into preflight, remote hash listing, dry-run upload, batched
   apply, journal inspection, and inspect-first recovery while keeping the
-  one-remote, one-local, one-drift topology explicit.
+  one-remote, one-local, one-drift topology explicit and naming the concrete
+  `remote-example` and `local-dev-site` lab identities.
 - `push-remote-liveness-contract.json` keeps snapshot listing, dry-run,
   apply, and recovery on separate liveness boundaries.
 - `push-dry-run-apply-revalidation-contract.json` records the stale-between
