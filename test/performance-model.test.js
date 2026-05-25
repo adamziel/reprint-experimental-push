@@ -821,6 +821,17 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-large-upload-publish').violates.includes('live-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-large-upload-publish').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-upload-queue-skips-large-upload-publish').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').rejectedGate,
+    'recovery',
+  );
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('live-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('atomic-file-publish'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-compressed-upload-buffer-completes-large-upload').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('index-and-compressed-row-batch-skips-backpressure').violates.includes('backpressure'));
   assert.ok(rejectedById.get('index-and-compressed-row-batch-skips-backpressure').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('index-and-compressed-row-batch-skips-live-compare').violates.includes('live-preconditions'));
