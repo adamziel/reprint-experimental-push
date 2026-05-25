@@ -70,6 +70,13 @@ the production handshake from preflight through inspect-first recovery, and
 the explicit missing-secret failure contract that blocks preflight, dry-run,
 and apply when the real push secret is unavailable.
 
+The release-facing proof command that combines the protocol fixture test with
+the explicit missing-secret gate is:
+
+```sh
+npm run test:playground:production-shaped-proof
+```
+
 The release-facing proof command is the same checked Node test:
 
 ```sh

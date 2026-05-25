@@ -244,6 +244,13 @@ The checked command that exercises this protocol shape in the repo is:
 node --test test/protocol-fixtures.test.js
 ```
 
+The release-facing command that also proves the explicit missing-secret gate
+is:
+
+```sh
+npm run test:playground:production-shaped-proof
+```
+
 The direct production-shaped missing-secret gate is:
 
 ```sh

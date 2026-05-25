@@ -119,6 +119,16 @@ It exercises the production executor flow contract, the route matrix, the pull
 bridge, the live revalidation contract, and the inspect-first recovery boundary
 as a single production-shaped proof.
 
+For the release-facing production-shaped proof that also pins the explicit
+missing-secret gate, run:
+
+```sh
+npm run test:playground:production-shaped-proof
+```
+
+That command runs the protocol fixture test and then proves the harness fails
+fast with `REPRINT_PUSH_SECRET_REQUIRED` when the real push secret is absent.
+
 That checked command is also the release-facing proof entry point for the
 explicit missing-secret gate: when the real push secret is unavailable, the
 harness must fail fast before preflight, dry-run, or apply can proceed.
