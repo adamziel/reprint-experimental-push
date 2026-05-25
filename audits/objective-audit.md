@@ -31,6 +31,7 @@ The objective implies these minimum release requirements:
 Top release blocker:
 
 - there is still no checked-in real-site push preflight command that owns the release verdict
+- there is still no checked-in live-source harness or `verify:release` command that sets `REPRINT_PUSH_SOURCE_URL`, runs against a retained local, Playground, or Docker source endpoint, and records preserved-remote evidence in the same invocation
 - until that command exists, fixture-only and lab-backed work can keep passing without proving the live-source boundary
 
 Requirement mapping rule:
