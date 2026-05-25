@@ -660,7 +660,9 @@ Release gate for any production wording:
 - Name the exact live mutation boundary, the exact stale-remote drift case,
   and the exact rejection point before mutation.
 - Show the preserved remote stayed auditable after reject and that the stale
-  approval or review artifact could not be reused as retry authority.
+  approval or review artifact could not be reused as retry authority for a
+  different row, file, relationship-bearing record, remapped create target,
+  or plugin-owned surface.
 - Show the live rerun on this branch, not just the upstream family name, and
   show that the retry scope was rebuilt from fresh live hashes on the same
   boundary after the reject.
