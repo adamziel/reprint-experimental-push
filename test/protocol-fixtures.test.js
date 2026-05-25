@@ -408,6 +408,11 @@ test('top-level extension contract pins the production ladder and topology split
 
   assert.equal(extension.pull_pipeline.persisted_base_package.remote_site_id, 'remote-example');
   assert.equal(extension.session.remote_site_id, 'remote-example');
+  assert.equal(extension.production_boundary.preflight, 'first live binding after importer provenance exists');
+  assert.equal(extension.production_boundary.remote_snapshot_hash_listing, 'planning evidence only and never write authority');
+  assert.equal(extension.production_boundary.dry_run_plan_upload, 'uploads the canonical plan as an eligibility receipt, not a lock');
+  assert.equal(extension.production_boundary.journal_inspect, 'reads durable evidence without authorizing mutation');
+  assert.equal(extension.production_boundary.recovery_inspect, 'starts with inspect and classifies finish, rollback, retry, or block before any mutating repair');
   assert.deepEqual(extension.push_sequence, [
     'push_preflight',
     'push_snapshot_hashes',
@@ -434,6 +439,7 @@ test('top-level extension contract pins the production ladder and topology split
   assert.ok(extension.required_invariants.includes('recovery inspect stays read-only and classifies finish, rollback, retry, or block before any mutating repair'));
   assert.ok(extension.required_invariants.includes('browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy'));
   assert.ok(extension.topology.proof.includes('journal inspect is read-only'));
+  assert.ok(extension.required_invariants.includes('stale dry-run evidence never becomes recovery authority'));
 });
 
 test('production recovery drift contract keeps inspect-first recovery aligned after live drift', () => {
