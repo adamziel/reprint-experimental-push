@@ -1,116 +1,22 @@
 # Acceptable Post-Failure States
 
-This lane treats durable recovery as valid only when an interrupted apply lands in one of these states:
+The atomic apply model only allows three outcomes after a failure or retry:
 
 1. `old-remote`
-1. `fully-updated-remote`
-1. `blocked-recovery` with artifacts
+   - No remote mutation happened.
+   - The durable journal still records the attempted plan and the recovery
+     boundary.
+   - Retry is only safe if it replays from the original remote snapshot.
 
-These are the only acceptable post-failure states for the atomic apply boundary.
-Anything else is a recovery blocker, even if the local attempt log looks complete.
+2. `fully-updated-remote`
+   - Every planned mutation is already present on the remote.
+   - A completed journal may be replayed without mutating the remote again.
+   - Retry must not duplicate inserts or revive stale local data.
 
-The atomic apply boundaries that must stay on the `old-remote` side are:
+3. `blocked-recovery`
+   - A partial mutation escaped the current attempt and cannot be treated as
+     safe.
+   - The recovery artifact must include both remote and journal evidence.
+   - Retry must inspect the artifacts instead of assuming the remote is safe.
 
-- failure before mutation
-- failure after staging
-- failure after dependency validation
-
-Completed-plan replay is only valid when it returns `fully-updated-remote` and stays inert.
-If the replayed remote has drifted since completion, recovery must become `blocked-recovery`
-with journal and remote artifacts instead of silently reapplying the plan.
-
-The named failure boundaries in this lane are pre-commit boundaries:
-
-- failure before mutation
-- failure after staging
-- failure after dependency validation
-
-Those checkpoints must still classify as `old-remote` even if the journal has
-already recorded staging or dependency validation. The remote itself must stay
-unchanged, or the recovery must stop as blocked.
-
-Completed-plan replay is only acceptable when it returns `fully-updated-remote`
-and stays inert. If the replayed remote has drifted since completion, the
-result must be `blocked-recovery` with journal and remote artifacts, not a
-silent retry. That replay contract includes the no-duplication rule for
-inserts and the no-resurrection rule for stale local data.
-
-Durable recovery must make those states inspectable after restart:
-
-- `old-remote` needs a journal record that explains where the apply stopped.
-- `fully-updated-remote` needs a completed journal record and no fresh mutation work.
-- `blocked-recovery` needs both journal and remote artifacts so the partial or stale state can be inspected.
-
-## Old remote
-
-The remote remains unchanged from the last known good state.
-
-Required artifacts:
-
-- Journal evidence showing where the apply stopped.
-- No committed remote mutation is required.
-
-This state is acceptable for failures before any remote mutation is committed, including failures:
-
-- before mutation
-- after staging
-- after dependency validation
-
-A partial remote mutation without a durable recovery artifact is never acceptable.
-
-## Fully updated remote
-
-The remote matches the completed plan and replay is inert.
-
-Required artifacts:
-
-- Journal evidence proving the plan was already completed.
-- No new mutation work should be produced by replay.
-
-Retry must not:
-
-- apply the same insert twice
-- resurrect stale local data
-- create new mutation work
-
-## Blocked recovery with artifacts
-
-The remote is partially or suspiciously updated and must not be treated as safe to replay.
-
-Required artifacts:
-
-- Durable journal evidence.
-- Remote-state evidence describing the observed drift or partial commit.
-
-This is the release-blocker state if a retry would otherwise risk:
-
-- duplicate inserts
-- stale data resurrection
-- silent partial write reuse without a recovery artifact
-
-The artifact pair must make inspection possible:
-
-- Durable journal evidence.
-- Remote-state evidence describing the observed drift or partial commit.
-- The blocked state must remain inspectable after restart.
-
-## Operational rule
-
-Any failure path must end in one of the three states above.
-
-If the remote is not fully old or fully updated, the recovery result must be blocked and inspectable.
-
-## Production caution
-
-The JSON-lab recovery model is useful because it proves the state contract, but
-it is not the same as a production durable journal. Production still needs
-restart-readable DB rows or files, fsync or equivalent flush guarantees,
-plugin activation fencing or leases, and durable recovery artifacts before a
-partial remote mutation can be treated as safely recoverable.
-
-## Production note
-
-The JSON and in-memory lab fixtures validate the model. Production recovery still needs
-durable journal storage, sync guarantees, restart-readable recovery artifacts,
-and explicit recovery inspection paths before any partial remote mutation can
-be considered recoverable.
+Any partial remote mutation without a recovery artifact is a release blocker.
