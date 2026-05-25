@@ -117,6 +117,11 @@ Release gate for any production wording:
 - Show that a claim does not upgrade route shape, package mount, fixture
   replay, or a readable review artifact into production safety unless the
   branch-local live drift rerun and stale rejection are recorded here.
+- Show that a matching upstream revision or worktree state never becomes
+  current retry authority by itself, even when it matches the feature family
+  or route shape described in Reprint, ZS-Sync, or ForkPress source notes;
+  without the same live boundary rerun here, the comparison stays historical
+  context only.
 - Show that any plugin-owned surface discovered only after the first write
   is classified as blocked, not retroactively folded into a success claim or
   treated as a safe continuation without fresh live evidence.
