@@ -19289,3 +19289,54 @@ test('durable recovery inspect sees the interruption cuts as old-remote and comp
   assert.equal(JSON.stringify(replayRemote), JSON.stringify(completed.site));
   assert.equal(replayInspection.status, 'fully-updated-remote');
 });
+
+test('durable recovery preserves plan identity across interruption cuts and completed replay', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [options, expectedJournalStatus] of [
+    [{ failBeforeMutation: true }, 'opened'],
+    [{ failAfterStaging: true }, 'staged'],
+    [{ failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const failure = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+    durableJournal.close();
+
+    assert.equal(failure.details.recovery.planId, plan.id);
+    assert.equal(failure.details.recovery.status, 'old-remote');
+    assert.equal(failure.details.recovery.artifacts.journal.planId, plan.id);
+    assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus);
+    assert.equal(failure.details.recovery.artifacts.remote, undefined);
+  }
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedDurableJournal = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedDurableJournal });
+  completedDurableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replayJournal = openRecoveryJournal(completedJournalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: replayJournal,
+    journal: completed.journal,
+  });
+  replayJournal.close();
+
+  assert.equal(replay.recoveryState.planId, plan.id);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.journal.planId, plan.id);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.appliedMutations, 0);
+});
