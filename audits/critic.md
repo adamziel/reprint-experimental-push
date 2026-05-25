@@ -5322,6 +5322,10 @@ Release-gate checklist for production-grade wording:
   the note is otherwise well formed;
 - any later-discovered plugin-owned surface is treated as a new boundary
   unless it gets its own preserve / reject / retry cycle on this branch; and
+- any later boundary that reuses the same route family, mount layout, or
+  reviewer vocabulary is still a fresh live boundary, so it needs its own
+  preserved remote, stale-artifact rejection, and retry scope rebuilt from
+  live hashes; and
 - no route-shape smoke, package-mount match, `finalMatchesLocal`, or
   "manual resolution" phrase may be used as proof without the live boundary
   above.

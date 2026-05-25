@@ -11,6 +11,7 @@ Do not use production wording unless the branch has all of the following for the
 - any stale manual-review artifact cannot become retry authority for a later-discovered plugin-owned surface that appears only after the first write, even if the later surface looks like the earlier one;
 - any stale manual-review artifact cannot become retry authority for a remapped create target or later-discovered plugin-owned surface that appears only after the first write, even if the later boundary reuses the same route family, package mount, or reviewer wording;
 - any stale manual-review artifact cannot be widened to a later boundary just because the route family, package mount, or reviewer wording stayed the same;
+- any later boundary that reuses the same route family, package mount, or reviewer wording is still a fresh live boundary and must have its own preserved remote, stale-artifact rejection, and retry scope rebuilt from live hashes;
 - the fresh retry artifact is rebuilt from live hashes on this branch, not inherited from the earlier approval;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified as old, new, or blocked before retry starts;
 - any late-discovered plugin-owned surface is separately blocked or classified, not folded into the earlier success story;
