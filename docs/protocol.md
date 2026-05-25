@@ -4,7 +4,13 @@ This document defines the production push extension for Reprint. Push is not a
 separate synchronization system. It is the write path that extends the existing
 exporter/importer pull pipeline with a safe remote mutation protocol.
 
-The contract is deliberately strict:
+## Contract
+
+Push is allowed only when the executor can prove that the persisted pull base,
+the edited local site, and the live remote site still form a safe three-way
+plan.
+
+The production contract is deliberately strict:
 
 1. Dry-run and apply are separate remote operations.
 2. Apply revalidates the live remote before every batch and again at the
@@ -15,24 +21,9 @@ The contract is deliberately strict:
    and to the currently live remote state.
 5. Journal inspection is read-only, and mutating recovery must start with an
    inspect step before any finish-or-rollback action.
+6. Authentication must be at least as strict as current Reprint HMAC usage.
 
-## Protocol Contract
-
-The push protocol adds mutating endpoints to the existing Reprint source-site
-API. Pull remains the way a local site gets its merge base. Push is allowed
-only when the executor can prove that the pull base, the edited local site, and
-the live remote site still form a safe three-way plan.
-
-The production topology is intentionally one remote source site, one edited
-local site, and one runner. `remote-base` seeds the persisted pull base,
-`local-edited` carries the user edits, `remote-changed` is the same remote
-after independent drift, and `runner` is the only actor allowed to compare,
-upload, inspect, and recover. That role split is the same for Docker and
-Playground. Browser-visible inspection must use only the sandbox-provided
-`8080` ingress through a local-only proxy, and remote tunnels are disallowed.
-The proof is only valid when `remote-base` and `remote-changed` are the same
-remote identity observed at two different times, because that is what
-demonstrates apply-time revalidation instead of replaying dry-run evidence.
+## Runtime Stages
 
 The production push extension has six ordered remote stages:
 
@@ -54,29 +45,25 @@ Production liveness is split on purpose:
 - `push_batch_apply` must re-read live remote evidence before every batch and
   again at the storage boundary.
 - `push_journal` and `push_recover inspect` are read-only evidence readers.
-- mutating recovery only proceeds after the journal and fresh live hashes prove
-  the action.
+- Mutating recovery only proceeds after the journal and fresh live hashes
+  prove the action.
 
-Authentication is at least as strict as the current Reprint HMAC floor:
-
-- read-only inspection keeps the existing HMAC family
-- dry-run, apply, and mutating recovery require the push session, canonical
-  push signature, and idempotency key on top of that floor
-- a remote that cannot prove the same identity and session lineage must reject
-  the request rather than weakening the read/write boundary
+## Pull Handoff
 
 The pull/export/import pipeline maps to push as a one-way provenance handoff:
 
-1. exporter scans the merge base and coverage evidence
-2. importer persists the base package as immutable provenance
+1. Exporter scans the merge base and coverage evidence.
+2. Importer persists the base package as immutable provenance.
 3. `push_preflight` binds that package to the live remote identity and a
-   short-lived push session
+   short-lived push session.
 4. `push_snapshot_hashes` lists the live remote comparison set for planning
-5. `push_plan_dry_run` uploads the canonical plan as eligibility evidence only and returns a receipt, not a lock
+   only.
+5. `push_plan_dry_run` uploads the canonical plan as eligibility evidence only
+   and returns a receipt, not a lock.
 6. `push_batch_apply` revalidates the live remote before every batch and at
-   the storage boundary
+   the storage boundary.
 7. `push_journal` and `push_recover inspect` inspect durable evidence first,
-   then allow mutating recovery only when fresh live hashes prove the action
+   then allow mutating recovery only when fresh live hashes prove the action.
 
 That map is intentionally one-way: the importer creates the immutable base
 package, and push consumes it without ever rewriting it to make a stale remote
@@ -84,55 +71,24 @@ look current. The live snapshot hash listing is planning evidence only, the
 dry-run receipt is eligibility evidence only, and apply must re-read live
 state before every batch even when the dry-run receipt is still valid.
 
-The handoff is intentionally asymmetric:
+## Authentication
 
-- exporter/importer prove the immutable base package and coverage evidence
-- push preflight binds that immutable package to the live remote identity and
-  a short-lived session
-- snapshot hashes are planning evidence only and never become write authority
-- dry-run uploads the canonical plan and returns a receipt, not a lock
-- apply revalidates fresh live evidence before every batch and at the storage
-  boundary
-- journal inspect and recovery inspect are evidence reads, not mutations
-- mutating recovery remains blocked until the journal and fresh live hashes
-  prove the action
+Authentication is at least as strict as the current Reprint HMAC floor:
 
-The production push ladder is the same handoff expressed as a runtime flow,
-and the executor must keep each stage distinct:
+- Read-only inspection keeps the existing HMAC family.
+- Dry-run, apply, and mutating recovery require the push session, canonical
+  push signature, and idempotency key on top of that floor.
+- A remote that cannot prove the same identity and session lineage must reject
+  the request rather than weakening the read/write boundary.
 
-1. preflight binds the persisted pull base to the live remote identity and
-   mints a short-lived session
-2. snapshot hash listing reads the live comparison set for planning only
-3. dry-run plan upload records eligibility and returns a receipt, not a lock
-4. mutation batch apply revalidates fresh live evidence before every batch and
-   again at the storage boundary
-5. journal inspect reads durable evidence without authorizing mutation
-6. recovery inspect comes first, and recovery may only mutate when the
-   journal and fresh live hashes prove the action
-
-That handoff is one-way on purpose:
-
-- exporter/importer create immutable provenance for the later push run
-- push preflight binds that provenance to the live remote identity and a
-  short-lived session
-- push snapshot hashes are planning evidence only
-- push dry-run uploads the canonical plan as eligibility evidence only
-- push batch apply revalidates the live remote before every batch and again
-  at the storage boundary
-- push journal and push recover read durable evidence first and only allow
-  mutating recovery when the journal plus fresh live hashes prove the action
+## Machine-Readable Proofs
 
 The machine-readable companion at
 [`fixtures/protocol/push-pull-mapping.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-mapping.json)
-captures that one-way handoff in compact form. Tests can use it to prove the
+captures the one-way handoff in compact form. Tests can use it to prove the
 base package stays immutable provenance while push adds session, snapshot,
 dry-run, journal, and recovery evidence on top.
-In that handoff, exporter/importer own the persisted pull base package and
-push consumes it in order: preflight binds the package to the live remote
-identity, snapshot hashes enumerate live comparison evidence, dry-run uploads
-the canonical plan as eligibility evidence, apply revalidates before every
-batch and at the storage boundary, and journal inspect plus recovery inspect
-stay read-only until fresh live hashes prove a mutating repair is safe.
+
 The compact auth-and-recovery proof at
 [`fixtures/protocol/push-auth-session-journal-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-journal-proof.json)
 shows the stricter mutating request floor: push-scoped HMAC auth, a short-lived
@@ -142,36 +98,40 @@ recovery. The corresponding
 fixture keeps read-only inspection on the existing HMAC family while dry-run,
 apply, and mutating recovery require the push session plus canonical push
 signature.
+
 The compact inspect-first recovery companion at
 [`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json)
 ties the minted session, journal row, live drift evidence, and blocked-or-safe
 recovery decision into one proof object.
+
 The stricter auth-and-session companion at
 [`fixtures/protocol/push-auth-session-recovery-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-recovery-contract.json)
 adds the push HMAC floor, the minted session, claim generation, lease expiry,
 and inspect-first recovery fencing into one recovery proof.
+
 The cursoring companion at
 [`fixtures/protocol/push-snapshot-hashes-page-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-snapshot-hashes-page-contract.json)
 keeps the live snapshot listing in the planning-only lane even when the remote
 must be paged.
+
 The dry-run/apply boundary companion at
 [`fixtures/protocol/push-dry-run-apply-revalidation-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-dry-run-apply-revalidation-contract.json)
 keeps the planning receipt, live revalidation, and storage-boundary proof
 separate when the remote drifts between dry-run and apply.
+
 The compact topology fixture at
 [`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
 captures the same one-remote, one-local, one-drift-witness test shape for
 Docker and Playground. Both packaging modes must preserve the same proof
-boundary and the same stage order:
+boundary and the same stage order.
 
 The executor-topology companion at
 [`fixtures/protocol/push-executor-topology-proof.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-executor-topology-proof.json)
-binds the pull pipeline, push stages, and ingress policy into one compact
-proof object. It is the shortest machine-readable summary of the production
-push contract and the one-remote/one-local test topology. Its `push_pipeline`
-block pins the runtime order directly: preflight, snapshot listing, dry-run,
-batch apply, journal inspect, and inspect-first recovery with mutating modes
-allowed only after fresh live proof.
+binds the pull pipeline, push stages, and ingress policy into one compact proof
+object. It is the shortest machine-readable summary of the production push
+contract and the one-remote/one-local test topology.
+
+## Topology
 
 - Docker uses one private network and browser-visible inspection through the
   sandbox-provided `8080` ingress with a local-only proxy.
@@ -181,22 +141,18 @@ allowed only after fresh live proof.
   at two different times, not two different sites.
 
 The topology matrix is the canonical machine-readable representation of that
-deployment shape. It names the remote-base, local-edited, remote-changed, and
-runner roles directly, records the `8080` ingress rule, and keeps Docker and
-Playground on the same evidence boundaries so tests can prove the same
+deployment shape. It names the `remote-base`, `local-edited`, `remote-changed`,
+and `runner` roles directly, records the `8080` ingress rule, and keeps Docker
+and Playground on the same evidence boundaries so tests can prove the same
 identity was observed twice.
 It also carries explicit apply-revalidation and inspect-first recovery proofs
 so the production boundary stays visible in one fixture instead of being
 inferred from prose.
-It now also names the journal fence itself: claim generation, lease expiry,
-and storage-guard proof are part of the same recovery contract, because a
-mutating recovery request is only safe when the executor can prove the worker
-is fenced before any repair runs.
+
 The end-to-end companion at
 [`fixtures/protocol/push-production-ladder-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-production-ladder-contract.json)
 ties the pull provenance, push ladder, and Docker/Playground topology into a
-single production contract that spans preflight through inspect-first
-recovery.
+single production contract that spans preflight through inspect-first recovery.
 
 For machine-readable verification, the compact contract fixture at
 [`fixtures/protocol/push-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-contract.json)
@@ -206,6 +162,8 @@ binds the pull base to one remote identity and one short-lived session,
 snapshot listing is planning evidence only, dry-run is a receipt not a lock,
 apply revalidates fresh live evidence at every batch and storage boundary, and
 recovery inspect must happen before any mutating repair.
+
+## Read/Write Split
 
 Push is split into a read-only planning phase and a write phase:
 
