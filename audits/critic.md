@@ -7484,6 +7484,9 @@ Must-happen-before-production-grade-push-support checklist:
   stale-authority rejection before the first write, and a fresh retry scope
   rebuilt from live hashes.
 
+The canonical production-readiness checklist for this branch lives in
+[`audits/critic-production-checklist.md`](./critic-production-checklist.md).
+
 False-reliability trap to reject:
 
 - a stale manual-review artifact, source-note comparison, or live preflight
