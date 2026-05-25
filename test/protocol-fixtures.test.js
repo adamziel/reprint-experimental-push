@@ -309,6 +309,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     protocolDocs.includes(
+      'push-production-push-recovery-contract.json` proves the full preflight',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
       'push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.',
     ),
   );
@@ -386,6 +391,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'push-production-auth-session-journal-recovery-inspect-contract.json` is the compact proof for the auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect',
+    ),
+  );
+  assert.ok(
+    executorDocs.replace(/\s+/g, ' ').includes(
+      'push-production-push-recovery-contract.json` is the smaller full recovery ladder proof',
     ),
   );
   assert.ok(

@@ -89,6 +89,9 @@ The production proof bundle is intentionally layered around that contract:
   apply-time revalidation
 - `push-production-auth-session-journal-recovery-inspect-contract.json` proves
   the auth/session/journal/recovery floor
+- `push-production-push-recovery-contract.json` proves the full preflight
+  through mutating recovery ladder while keeping the pull bridge, dry-run/apply
+  split, and inspect-first recovery boundary aligned
 - `push-production-recovery-inspect-contract.json` proves inspect-first
   recovery stays aligned with the journal row, lease fence, and fresh live
   hashes
@@ -223,8 +226,9 @@ The canonical production proof bundle is reviewed in this order:
 2. `push-remote-snapshot-listing-contract.json` for planning-only remote hash listing.
 3. `push-production-revalidation-contract.json` for dry-run separation and apply-time revalidation.
 4. `push-production-auth-session-journal-recovery-inspect-contract.json` for the auth/session/journal/recovery boundary.
-5. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology.
-6. `push-production-topology-contract.json` for the Docker and Playground harness proof.
+5. `push-production-push-recovery-contract.json` for the full preflight-through-recovery ladder.
+6. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology.
+7. `push-production-topology-contract.json` for the Docker and Playground harness proof.
 
 The machine-readable bridge is carried by the same pull/import artifacts the
 executor already trusts:
@@ -302,6 +306,7 @@ extension:
 - `push-remote-snapshot-listing-contract.json` proves planning-only remote hash listing.
 - `push-production-revalidation-contract.json` proves dry-run separation and apply-time revalidation.
 - `push-production-auth-session-journal-recovery-inspect-contract.json` proves the auth/session/journal/recovery floor.
+- `push-production-push-recovery-contract.json` proves the full push ladder from preflight through mutating recovery.
 - `push-production-recovery-inspect-contract.json` proves the inspect-first recovery branch stays aligned with the journal row, lease fence, and fresh live hashes.
 - `push-remote-liveness-topology-contract.json` proves the one-remote, one-local, one-drift harness plus the liveness split.
 - `push-production-topology-contract.json` proves the Docker and Playground harness shape.
@@ -665,7 +670,8 @@ For review and test planning, the production proof stack is:
 1. `push-protocol-extension-contract.json` for the full production ladder.
 2. `push-production-pull-bridge-contract.json` for the immutable pull-to-push provenance bridge.
 3. `push-remote-liveness-topology-contract.json` for the one-remote, one-local, one-drift topology plus dry-run/apply separation.
-4. `push-production-topology-contract.json` for the compact topology and provenance bundle.
+4. `push-production-push-recovery-contract.json` for the full preflight-through-recovery ladder.
+5. `push-production-topology-contract.json` for the compact topology and provenance bundle.
 
 Those four proofs are the canonical production sequence:
 
