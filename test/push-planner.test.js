@@ -6497,6 +6497,60 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin removals while a live-preconditioned delete, matching independent restore, and matching type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery/cover.txt'] = 'base cover';
+  base.files['wp-content/uploads/gallery/cover.txt/keep.txt'] = 'base keep';
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Base post title',
+    post_status: 'publish',
+  };
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/gallery/cover.txt'];
+  local.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  delete local.files['wp-content/uploads/gallery/cover.txt/keep.txt'];
+  local.files['about.php'] = '<?php echo "restored";';
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Matched post title',
+    post_status: 'publish',
+  };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  delete remote.files['wp-content/uploads/gallery/cover.txt/keep.txt'];
+  remote.files['about.php'] = '<?php echo "restored";';
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Matched post title',
+    post_status: 'publish',
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery/cover.txt').action, 'delete');
+  assert.equal(decisionFor(plan, 'file:about.php').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'row:["wp_posts","ID:2"]').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery').decision, 'already-in-sync');
+  assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/uploads/gallery/cover.txt'), false);
+  assert.equal(result.site.files['wp-content/uploads/gallery'].type, 'directory');
+  assert.equal(result.site.files['about.php'], '<?php echo "restored";');
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Matched post title');
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
   const base = baseSite();
