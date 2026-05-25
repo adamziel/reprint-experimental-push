@@ -4,7 +4,9 @@
 
 Primary finding: this branch still does not expose a single named real-site
 preflight/release command. `package.json` still only offers `plan`, `apply`,
-and `test:playground:*`, so every production-shaped smoke remains lab or
+and `test:playground:*`, and the claimed `npm run
+test:playground:production-shaped-release-proof` command does not exist in the
+repo surface. That means every production-shaped smoke remains lab or
 compatibility evidence only. A script name like `authenticated`,
 `authenticated-cli-push`, `authenticated-http-push`, `production-shaped-push`,
 or `production-plugin-package` is still not proof of a live release boundary
@@ -14,9 +16,12 @@ the rejected remote inspectable for audit and retry.
 The next missing proof is concrete: the branch still has not produced a named
 command string that was run against a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` and recorded the executor identity, the preserved
-remote, and the exact rejection point before the first write. Until that
-command exists and can be rerun, any production-readiness wording is still
-just a wrapper around compatibility evidence.
+remote, and the exact rejection point before the first write. The next
+acceptable command must be a real-site release/preflight invocation that
+prints those three facts, can be rerun on demand, and preserves the rejected
+remote for audit. Until that command exists and can be rerun, any
+production-readiness wording is still just a wrapper around compatibility
+evidence.
 
 This is still the current answer to the loop focus: there is no branch-local
 command that has been run against a real local, Playground, or Docker
