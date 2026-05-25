@@ -1604,6 +1604,17 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback').violates.includes('durable-progress'));
+  assert.equal(
+    rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback').rejectedGate,
+    'group',
+  );
+  assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize').violates.includes('backpressure'));

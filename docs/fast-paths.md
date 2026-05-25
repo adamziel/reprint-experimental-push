@@ -842,6 +842,10 @@ under load:
   is rejected because planning evidence and batched receipts can reduce fsync
   work, but they cannot prove the live compare, staged rows, or the atomic-group
   writeback survived failure.
+- compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback
+  is rejected because planning evidence and batched receipts can reduce fsync
+  work, but they cannot prove dependency checks, staged metadata, or the
+  atomic-group writeback survived failure.
 - compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation
   is rejected because planning evidence and cached batch receipts can reduce
   replay work, but they cannot prove the activation change, dependency checks,

@@ -1723,6 +1723,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-writeback',
+    proposal: 'treat a compressed remote index plus batched receipt flushes as enough proof to skip plugin install writeback',
+    rejectedBecause: 'planning evidence and batched receipts can reduce fsync work, but they cannot prove dependency checks, staged metadata, or the atomic-group writeback survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-update',
     proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip a plugin update',
     rejectedBecause: 'compression can shrink planning traffic and cached hashes can skip duplicate hashing, but neither can prove plugin dependency checks, staged metadata writes, or the atomic-group commit survived failure',
