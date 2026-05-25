@@ -4,6 +4,22 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 09:00:22
+
+<a id="2026-05-25-public-status-audit-090022"></a>
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 09:00:22 CEST`) and kept the visible last-updated stamp current.
+- Tightened the first screen so the public view reads as a release-gate snapshot
+  with the newest audit, log, and checklist linked together.
+- No new production evidence was added; the real WordPress executor/auth,
+  recovery journal, Docker/Playground integration, and plugin drivers remain
+  pending until proven.
+- Evidence trail: [progress.html](../progress.html),
+  [audits/objective-audit.md](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates),
+  [newest audit](../progress.html#recent-public-audits).
+
 ## 2026-05-25 - Public Status Audit 08:59:22
 
 <a id="2026-05-25-public-status-audit-085922"></a>
