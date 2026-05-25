@@ -5,16 +5,17 @@ through remote head `68664884`, with `63a3502f` as an earlier retained-source
 proof point. That lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence.
-It is stronger than this branch's own local state, but it is still not
-branch-local retry authority and it does not close the live-boundary gap on
-this worktree.
+It is a real improvement over the earlier route-shape-only claims, but it is
+still not branch-local retry authority and it does not close the live-boundary
+gap on this worktree.
 
 What improved in the supervised lane: the retained-source handoff now carries
 session shape, commit application, and journal row evidence instead of only
-route-shape claims. What remains unproven on this branch: a rerunnable live
-release command against a real local, Playground, or Docker
-`REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote, revalidates at
-apply time, and inspects recovery/journal state on the same mutation.
+route-shape claims. What remains unproven on this branch is the next required
+proof: a rerunnable live release command against a real local, Playground, or
+Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote,
+revalidates at apply time, and inspects recovery/journal state on the same
+mutation.
 
 Treat that result as a stronger lab baseline, not as production retry
 authority: it still does not prove this branch can rerun the same live
@@ -97,7 +98,9 @@ compatibility-only.
 The retired critique is the one that said no `verify:release` command exists;
 do not reintroduce it on this branch. The remaining gap is not the presence of
 `verify:release` in the supervised lane, but the absence of this worktree's own
-live retry proof with preserved-remote audit evidence.
+live retry proof with preserved-remote audit evidence and production
+WordPress auth/session lifecycle, durable journal semantics, graph identity,
+and plugin-driver coverage.
 
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
