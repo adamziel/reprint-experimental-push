@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 08:09:53 CEST
+Last updated: 2026-05-25 08:10:41 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 08:09:53 CEST - Supervisor Snapshot
+## 2026-05-25 08:10:41 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and audit note still agree on the blocked state.
 - Not going well: proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no new evidence landed; the visible surfaces stay scan-first and linked to the audit trail.
+- Progress change: no new evidence landed; the visible surfaces are cleaner and still point at the audit trail.
 - Next nudge: keep each lane on one proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
@@ -28,6 +28,7 @@ Audit note: [audits/supervisor-note-20260525-080033.md](../audits/supervisor-not
 <details>
 <summary>Earlier entries</summary>
 
+  - 2026-05-25 08:10:41 CEST: kept the blocked assessment aligned and trimmed the visible wording without changing the evidence state.
   - 2026-05-25 07:47:52 CEST: kept the blocked assessment aligned and pointed the scan view at the newer audit note.
 - 2026-05-25 07:45:03 CEST: kept the blocked assessment, proof links, and lane nudges aligned while the scan view stayed terse.
 - 2026-05-25 07:37:17 CEST: tightened the public scan view to remove repeated wording while keeping the blocked assessment and proof links intact.
