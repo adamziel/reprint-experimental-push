@@ -19,8 +19,13 @@ This note summarizes the planner's no-overwrite contract.
 - Remote descendants that would be hidden by a local delete or file type swap.
 - Even when an unrelated change is safe to apply, topology-sensitive deletes and
   file type swaps must stop if they would hide a live remote descendant.
+- If the matching descendant is also deleted locally, the planner may only
+  proceed when that descendant still matches the live remote hash; any remote
+  drift on the descendant keeps the parent delete or type swap blocked.
 - Conflict and blocker evidence without raw file bodies, row contents, plugin
   payloads, or other secret values.
+- Conflict evidence should stay bounded to the local change kind plus the live
+  remote outcome; it must not expand into raw descendant bytes or plugin data.
 - Independent resources that already match the remote hash should stay
   `already-in-sync` instead of being rewritten as mutations.
 - File-topology conflicts should name the related descendant or ancestor path

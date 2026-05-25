@@ -563,6 +563,42 @@ test('allows a file type swap when the descendant is deleted in the same plan fr
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
+test('stops a file type swap when the descendant delete drifts remotely', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['wp-content/uploads/gallery/keep.txt'] = 'base descendant';
+  const local = JSON.parse(JSON.stringify(base));
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  delete local.files['wp-content/uploads/gallery/keep.txt'];
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/keep.txt'] = 'remote-only descendant bytes';
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const conflictJson = JSON.stringify(conflict);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery/keep.txt');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.relatedResourceKey, undefined);
+  assert.equal(conflict.relatedChange, null);
+  assert.equal(conflictJson.includes('remote-only descendant bytes'), false);
+  assert.equal(conflictJson.includes('remote-private-forms-code'), false);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['wp-content/uploads/gallery/keep.txt'], 'remote-only descendant bytes');
+  assert.equal(remote.plugins.forms.version, '1.1.0');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
 test('keeps remote-only plugin changes while a local directory delete and matching descendant delete stay safe', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
