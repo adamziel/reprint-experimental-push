@@ -38,6 +38,9 @@ Release-gate checklist for production-readiness wording:
   upstream revision or worktree state and the exact live write boundary that
   was reverified here; otherwise the comparison is historical context only,
   even if the route family, package shape, or feature vocabulary matches.
+- Show that a stale manual-review artifact cannot be reused as retry
+  authority for any plugin-owned surface or hidden side effect that was not
+  already classified on the first pass.
 - Show the create-time identity decision explicitly: either a durable remap
   proof or a hard block before write.
 - Show the complete plugin-owned surface list for the claim, including any
@@ -109,6 +112,9 @@ Blocked production claims:
   classified old, new, or blocked and the retry rebuilds scope from fresh
   live evidence instead of inheriting the old approval or widening a partial
   success into a broader claim.
+- "manual resolution later" is blocked if the stale review artifact can still
+  authorize retry for a plugin-owned surface or hidden side effect that was
+  not already part of the audited scope.
 - "current upstream proof" is blocked for any Reprint, ZS-Sync, or ForkPress
   comparison unless the exact cited upstream revision or worktree state was
   reverified at the same live mutation boundary and the comparison names the
