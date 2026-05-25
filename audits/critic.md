@@ -86,7 +86,8 @@ Production-grade comparison gate:
   boundary rerun here, the preserved remote after reject, the stale rejection
   point, and the fresh retry scope rebuilt from live hashes; if any one of
   those proof points is missing, the upstream comparison is historical context
-  only.
+  only, even if the note matches the same route family, package mount, or
+  reviewer wording.
 
 Must change before any production-grade push claim:
 
@@ -5021,7 +5022,10 @@ worktree:
   later boundary or only the original one.
 If the branch cannot name those items for the exact live boundary, then any
 "manual resolution succeeded" wording is still false reliability, even when the
-route shape, fixture replay, or review artifact looks production-shaped.
+route shape, fixture replay, or review artifact looks production-shaped. The
+same is true if a later-discovered plugin-owned surface or remapped create
+target is folded into the first approval without its own preserve / reject /
+retry cycle on this branch.
 
 Release-readiness filter:
 
