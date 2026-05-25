@@ -39,6 +39,15 @@ Until that rerun exists, production wording must fail closed. Route shape,
 fixture replay, manual review notes, and source-note comparisons remain
 compatibility evidence only.
 
+The same run also needs an explicit conflict-policy decision for every touched
+surface. Scenario: a reviewer says "manual resolution" without saying whether a
+surface was blocked, preserved, retried, or sent to manual review after the
+remote was audited. Missing proof: later readers cannot tell whether the old
+remote, a remapped create target, or a plugin-owned data trap was intentionally
+left untouched, so the remote cannot be safely audited or retried. Any
+production-grade claim that omits the policy for old/new/blocked surfaces must
+fail closed.
+
 ## 2026-05-25 Commit `25c4ef54` Is Live Preflight Only, Not Production Proof
 
 Commit `25c4ef54` adds `npm run
