@@ -5,6 +5,8 @@ through remote head `68664884`, with `63a3502f` as an earlier retained-source
 proof point. That lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence.
+It is not branch-local retry authority and it does not close the live-boundary
+gap on this worktree.
 
 The right reading of that evidence is narrow: it shows the supervised lane has
 advanced, not that this worktree can yet claim production-grade push support.
