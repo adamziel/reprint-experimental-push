@@ -7,15 +7,15 @@ source evidence anchored at `63a3502f` and the explicit verdict
 retained-source `npm run verify:release` lineage, a broader command-topology
 proof, and the lab-session details `authSessionType`, minted session shape,
 `applyCommitted`, and `durableJournal.rows: 17`. That retires any stale claim
-that there is no retained-source `verify:release` evidence. It does not prove
-a live production boundary because the branch still lacks preserved-remote
-retention after rejection, apply-time revalidation against a fresh live
-source, production WordPress auth/session lifecycle, durable journal storage
-with lease/fencing outside the Playground harness, graph identity under
-remap, and plugin-driver coverage for late-discovered plugin-owned surfaces.
-Production wording is still false if it treats lab-session shape,
-retained-source journal rows, route compatibility, or command-topology proof
-as a substitute for a rerunnable live mutation boundary.
+that there is no retained-source `verify:release` evidence. It still does not
+prove a live production boundary because this branch lacks preserved-remote
+retention after rejection, apply-time revalidation against fresh live hashes,
+production WordPress auth/session lifecycle, durable journal storage with
+lease/fencing outside the Playground harness, graph identity under remap, and
+plugin-driver coverage for late-discovered plugin-owned surfaces. Production
+wording is false if it treats lab-session shape, retained-source journal
+rows, route compatibility, or command-topology proof as a substitute for a
+rerunnable live mutation boundary on this branch.
 
 Source-note comparison, kept conservative and non-authoritative unless this branch reran the same live boundary:
 
@@ -37,9 +37,10 @@ The latest remote evidence is strong enough to retire stale "no
 `verify:release` exists" critiques on this audit branch. It is not strong
 enough to unlock production wording, because no rerunnable live boundary on a
 real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` has yet proven
-preserved-remote retention, apply-time revalidation, production auth/session
-lifecycle, durable journal storage with lease/fencing, graph identity, and
-plugin-driver coverage on the same mutation.
+preserved-remote retention after rejection, apply-time revalidation from
+fresh live hashes, production auth/session lifecycle, durable journal storage
+with lease/fencing, graph identity, and plugin-driver coverage on the same
+mutation.
 
 Before the project can claim production-grade push support, the proof set
 must include all of the following on one rerunnable live boundary:
@@ -133,13 +134,13 @@ Before production-grade push support can be claimed, the project still needs:
 
 This worktree still has no rerunnable live boundary on a real local,
 Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that proves preserved-remote
-retention, fresh live-hash revalidation, production WordPress auth/session
-lifecycle, durable journal storage with lease/fencing, graph identity, and
-plugin-driver coverage on the same mutation. That is a branch-local gap, not a
-project-wide absence: the supervised lane already has `verify:release`,
-retained-source evidence, a durable-journal smoke, a broader command-topology
-proof, and the explicit `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict,
-but this checkout does not yet expose the same live boundary.
+retention after rejection, fresh live-hash revalidation, production WordPress
+auth/session lifecycle, durable journal storage with lease/fencing, graph
+identity, and plugin-driver coverage on the same mutation. That is a
+branch-local gap, not a project-wide absence: the supervised lane already has
+`verify:release`, retained-source evidence, a durable-journal smoke, a broader
+command-topology proof, and the explicit `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`
+verdict, but this checkout does not yet expose the same live boundary.
 
 The production claim is blocked until one rerunnable boundary here shows all of
 the following on the same mutation:
