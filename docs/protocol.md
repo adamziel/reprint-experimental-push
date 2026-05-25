@@ -62,6 +62,19 @@ The pull/export/import pipeline maps to push as a one-way provenance handoff:
 7. `push_journal` and `push_recover` inspect durable evidence first, then
    allow mutating recovery only when fresh live hashes prove the action
 
+The push extension therefore has five production stages that the executor
+must keep separate:
+
+- preflight binds the persisted pull base to the live remote identity and
+  mints a short-lived session
+- remote snapshot hash listing is a read-only planning view of live remote
+  state
+- dry-run plan upload records eligibility and returns a receipt, not a lock
+- mutation batch apply revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- journal inspect and recovery inspect read durable evidence first; mutating
+  recovery only happens after inspect proves the action is safe
+
 That handoff is one-way on purpose:
 
 - exporter/importer create immutable provenance for the later push run
@@ -154,6 +167,12 @@ cursorable for large sites, and fresh enough only for planning. The executor
 may use it to build the dry-run plan, but apply must still re-read live
 evidence before every batch and again at the storage boundary. A valid
 snapshot listing never upgrades a dry-run receipt into write authority.
+
+`push_journal` is the read-only inspection endpoint for durable evidence.
+`push_recover` must enter through `inspect` first, and only then may a
+mutating mode proceed when the journal plus fresh live hashes prove the
+action. This keeps lost-response recovery and crash recovery on the evidence
+side of the protocol until the remote proves it is safe to mutate.
 
 Minimal wire shapes:
 

@@ -1292,6 +1292,16 @@ remote identity observed at different times. That is the proof that dry-run
 and apply are separate and that apply revalidates live state instead of
 reusing stale planning evidence.
 
+The executor should treat the protocol as six ordered checks on that single
+remote identity:
+
+1. preflight binds the persisted pull base to the live remote
+2. remote snapshot hash listing stays planning-only
+3. dry-run plan upload returns a receipt, not a lock
+4. mutation batch apply revalidates before every batch and at the storage boundary
+5. journal inspect resolves lost-response ambiguity without mutating state
+6. recovery begins with inspect and only then may finish, roll back, or auto-advance
+
 Use the topology to prove the remote and local roles are separate and that
 the pull package remains immutable provenance:
 
