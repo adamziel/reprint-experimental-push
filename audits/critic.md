@@ -199,6 +199,11 @@ branch. A retained-source replay is not the same as a live rerun that preserves
 the rejected remote and revalidates apply-time behavior from fresh live hashes
 on production WordPress auth/session state.
 
+The Reprint, ZS-Sync, and ForkPress notes remain provenance only unless this
+branch reran the same live boundary here. Matching route family, package
+layout, or reviewer wording is not enough to promote those notes from design
+input to retry authority.
+
 ## Release Gate Checklist
 
 Production-grade push support can only be claimed after the project has all of
