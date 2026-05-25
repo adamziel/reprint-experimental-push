@@ -3734,12 +3734,43 @@ If any one of those proof points is missing, the wording is still
 compatibility-only or historical-context-only, not production-grade push
 support.
 
+Release gate checklist for any production-readiness wording:
+
+1. The claim names the exact live mutation boundary and the exact stale
+   drift case it rechecked here.
+2. The claim shows the reject happened before mutation and that the
+   preserved remote remained auditable after reject.
+3. The claim shows the stale approval or review artifact could not become
+   retry authority for a different row, file, relationship-bearing record, or
+   plugin-owned surface.
+4. The claim shows create-time identity remapping, aliasing, or renumbering
+   was either proven safe with live identity evidence or hard-blocked before
+   write.
+5. The claim shows every touched surface was classified as old, new, or
+   blocked before retry started, including any late-discovered plugin-owned
+   surface.
+6. The claim shows any plugin-owned state outside the allowlist was
+   enumerated live or blocked at apply time, not inferred from a fixture or
+   source note.
+7. The claim shows any partial file, DB, or plugin side effect was recorded
+   durably and rebuilt from fresh live hashes rather than inherited approval.
+8. The claim names any Reprint, ZS-Sync, or ForkPress comparison with the
+   exact upstream revision or worktree state, and says what that note
+   proves here and what it does not prove.
+9. The claim does not promote route shape, package mount shape,
+   fixture replay, `finalMatchesLocal`, or a readable review artifact into
+   production proof.
+10. The claim does not treat "manual resolution" as success unless the
+    preserved remote, stale rejection point, and fresh retry artifact are all
+    recorded on this branch for the same boundary.
+
 Do not let success wording outrun the evidence:
 
 - "manual resolution succeeded" is not acceptable unless the branch shows
   the preserved remote stayed auditable after reject, the stale approval was
-  unusable for retry, and the fresh retry artifact was recorded on this
-  branch for the same live boundary;
+  unusable for retry, the fresh retry artifact was recorded on this branch
+  for the same live boundary, and any late-discovered plugin-owned surface
+  was classified separately rather than folded into the first write;
 - "production-ready push support" is not acceptable if the only supporting
   evidence is a route-shaped smoke, fixture replay, readable review
   artifact, `finalMatchesLocal`, or a matching upstream note without branch-
