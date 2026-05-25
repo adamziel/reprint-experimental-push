@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 15:00:55
+## 2026-05-25 - Public Status Audit 15:02:21
 
-<a id="2026-05-25-public-status-audit-150055"></a>
+<a id="2026-05-25-public-status-audit-150221"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 15:00:55 CEST`) so the visible update time stays aligned with
+  (`2026-05-25 15:02:21 CEST`) so the visible update time stays aligned with
   the newest public audit and the first screen keeps answering the
   accountability question directly: last 12 hours evidence progressed while
   release gates remain `0/4`.
@@ -21,7 +21,7 @@ linked implementation artifacts.
   URL. Production WordPress auth/session lifecycle and durable journal
   storage with lease/fencing remain pending.
 - The live GitHub Pages URL is still serving the older `Last updated: May 25,
-  2026, 14:59:49 CEST` snapshot, so public promotion is still pending.
+  2026, 15:00:55 CEST` snapshot, so public promotion is still pending.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
