@@ -76,6 +76,7 @@ The executor should cite the same proof chain as the protocol document:
 6. `push-production-journal-lease-recovery-inspect-contract.json`
 7. `push-production-executor-flow-contract.json`
 8. `push-production-route-matrix-contract.json`
+9. `push-production-missing-secret-contract.json`
 
 That set keeps the executor review path short without hiding any boundary:
 
@@ -86,6 +87,7 @@ That set keeps the executor review path short without hiding any boundary:
 - apply revalidates fresh live evidence before every batch and at the storage boundary
 - journal and recovery inspect remain read-only
 - mutating recovery still requires the HMAC floor, the live hashes, and the inspect result
+- if the real push secret is missing, the executor must fail fast with an explicit error before preflight, dry-run, or apply can proceed
 
 ## Canonical Executor Contract
 

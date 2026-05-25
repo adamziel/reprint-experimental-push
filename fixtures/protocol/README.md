@@ -61,6 +61,7 @@ The normal production sequence is:
 53. `push-production-executor-flow-contract.json`
 54. `push-production-route-matrix-contract.json`
 55. `push-protocol-extension-topology-contract.json`
+56. `push-production-missing-secret-contract.json`
 
 That sequence is intentionally split into three production phases:
 
@@ -70,6 +71,8 @@ That sequence is intentionally split into three production phases:
   and again at the storage boundary
 - journal inspect and recovery stay read-only until inspect proves the branch
   safe
+- if the real push secret is unavailable, the harness must fail fast with an
+  explicit missing-secret error before preflight, dry-run, or apply can run
 
 For production review, the shortest path is:
 

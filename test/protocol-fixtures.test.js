@@ -245,12 +245,22 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   );
   assert.ok(
     protocolReadme.includes(
+      'if the real push secret is unavailable, the harness must fail fast with an',
+    ),
+  );
+  assert.ok(
+    protocolReadme.includes(
       'The mapping from pull exporter/importer to push surfaces is explicit and',
     ),
   );
   assert.ok(
     protocolDocs.includes(
       'The executor should treat that bridge as immutable evidence',
+    ),
+  );
+  assert.ok(
+    protocolDocs.replace(/\s+/g, ' ').includes(
+      'push-production-missing-secret-contract.json` for the explicit failure path when real push credentials are unavailable',
     ),
   );
   const routeMatrix = readJson('fixtures/protocol/push-production-route-matrix-contract.json');
@@ -271,6 +281,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   assert.equal(routeMatrix.topology.networking.tunnels, 'disallowed');
   assert.ok(
     executorDocs.includes('## Canonical Proof Set'),
+  );
+  assert.ok(
+    executorDocs.replace(/\s+/g, ' ').includes(
+      'push-production-missing-secret-contract.json',
+    ),
   );
   assert.ok(
     executorDocs.replace(/\s+/g, ' ').includes(

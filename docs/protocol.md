@@ -149,6 +149,7 @@ The production proof inventory is intentionally layered:
 4. `push-production-journal-lease-recovery-inspect-contract.json` for journal rows, lease fencing, and inspect-first recovery
 5. `push-production-executor-flow-contract.json` for the shortest full flow proof
 6. `push-production-route-matrix-contract.json` for the shared Docker and Playground route names, ingress, and proxy policy
+7. `push-production-missing-secret-contract.json` for the explicit failure path when real push credentials are unavailable
 
 Those fixtures should read as one chain:
 
@@ -160,6 +161,7 @@ Those fixtures should read as one chain:
 - journal inspect is read-only
 - recovery must start with inspect and may mutate only when fresh live evidence and journal evidence still agree
 - the auth floor is at least as strict as current Reprint HMAC usage
+- when real credentials are unavailable, the harness must fail fast with an explicit missing-secret error before preflight, dry-run, or apply
 
 The bridge also preserves the existing pull/export/import provenance chain:
 
