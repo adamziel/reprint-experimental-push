@@ -194,6 +194,11 @@ It is the same checked supervisor entry point when you want a single command
 that either exercises a supplied live source preflight or emits the explicit
 missing-secret and missing-live-source gates with exact output.
 
+The live-source verify command is `npm run test:playground:production-shaped-release-verify`.
+It starts a local Playground remote source, feeds it into the release proof
+with production-shaped auth, and prints the exact live preflight result plus
+the release-proof status.
+
 When a live source URL and production-shaped credentials are present, that
 same wrapper switches to `npm run test:playground:production-shaped-live-preflight`
 and exercises the real preflight handshake instead of only the gate checks.

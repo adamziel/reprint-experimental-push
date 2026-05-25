@@ -112,6 +112,15 @@ The release-facing wrapper that a supervisor should run is:
 npm run test:playground:production-shaped-proof
 ```
 
+For a supervisor-run live-source proof, use:
+
+```sh
+npm run test:playground:production-shaped-release-verify
+```
+
+That wrapper starts a local Playground remote source, injects production-shaped
+auth, and prints the exact live preflight branch plus the release-proof status.
+
 The narrow live-preflight command for a real remote source is:
 
 ```sh

@@ -147,6 +147,24 @@ test('production-shaped release proof runs the live preflight branch against a l
   });
 });
 
+test('production-shaped release verify command runs the live preflight branch with a local Playground source and reports the checked wrapper summary', () => {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  assert.equal(proof.status, 0, proof.stderr);
+  assert.match(proof.stdout, /"ok": true/);
+  assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
+  assert.match(proof.stdout, /"releaseProofOutput": "/);
+  assert.match(proof.stdout, /LIVE_PREFLIGHT_OK/);
+});
+
 test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-topology-proof.mjs'], {
     cwd: repoRoot,

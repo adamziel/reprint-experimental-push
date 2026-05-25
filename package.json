@@ -25,6 +25,7 @@
     "test:playground:production-shaped-missing-secret": "node ./scripts/playground/production-shaped-missing-secret-smoke.mjs",
     "test:playground:production-shaped-missing-live-source": "node ./scripts/playground/production-shaped-live-source-gate-smoke.mjs",
     "test:playground:production-shaped-live-preflight": "node ./scripts/playground/production-shaped-live-preflight-smoke.mjs",
+    "test:playground:production-shaped-release-verify": "node ./scripts/playground/production-shaped-release-verify.mjs",
     "test:playground:production-shaped-proof": "node ./scripts/playground/production-shaped-proof.mjs",
     "test:playground:production-plugin-package": "node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:plugin-atomic-install": "node ./scripts/playground/plugin-atomic-install-smoke.mjs",
