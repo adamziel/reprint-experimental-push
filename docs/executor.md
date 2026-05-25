@@ -37,6 +37,16 @@ rule for browser-visible inspection, and the same live-drift story: the remote
 is observed once as the seeded base site and again as the drift witness after
 the dry-run receipt exists.
 
+The one-remote, one-local proof is fixed and reusable:
+
+- `remote-base` and `remote-changed` are the same remote identity at different
+  times
+- `local-edited` is the only imported local edit site
+- `runner` is the only process that may preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or start recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+
 ## Executor Contract
 
 The executor has one production shape:
@@ -141,6 +151,7 @@ The canonical proof stack for that scope is:
 | [`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json) | The same fence when recovery needs to prove finish, rollback, or block before mutating. |
 | [`fixtures/protocol/push-recovery-inspect-contract.json`](../fixtures/protocol/push-recovery-inspect-contract.json) | Inspect reads the journal row and fresh live hashes before classifying finish, rollback, retry, or block. |
 | [`fixtures/protocol/push-recovery-revalidation-contract.json`](../fixtures/protocol/push-recovery-revalidation-contract.json) | Mutating recovery still requires fresh live hashes plus journal evidence after inspect proves the branch is safe. |
+| [`fixtures/protocol/push-pull-to-topology-contract.json`](../fixtures/protocol/push-pull-to-topology-contract.json) | The one-remote, one-local topology that keeps the pull handoff, drift witness, and `8080` ingress proof aligned across Docker and Playground. |
 
 If a review needs the finer-grained auth and restart proof, add:
 

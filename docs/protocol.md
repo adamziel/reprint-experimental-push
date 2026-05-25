@@ -133,6 +133,15 @@ The test topology is intentionally identical in Docker and Playground:
 - both harnesses rely on the sandbox-provided `8080` ingress for browser
   inspection through a local-only proxy
 
+In both harnesses the remote source is observed twice:
+
+- `remote-base` seeds the persisted pull package
+- `remote-changed` proves that the same remote identity can drift after the
+  dry-run receipt exists
+- `local-edited` is the imported local site that produces the candidate plan
+- `runner` is the only actor allowed to preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or start recovery
+
 That identity mapping is fixed:
 
 - `remote-base` and `remote-changed` both represent `remote-example`
@@ -191,6 +200,7 @@ The machine-readable proofs that back this contract are:
 - [`fixtures/protocol/push-auth-session-recovery-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-auth-session-recovery-contract.json)
 - [`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json)
 - [`fixtures/protocol/push-recovery-revalidation-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-revalidation-contract.json)
+- [`fixtures/protocol/push-pull-to-topology-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-pull-to-topology-contract.json)
 
 Those fixtures keep the production proof compact: exporter/importer establish
 the immutable base package, preflight binds it to one live remote identity and
