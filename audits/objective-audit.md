@@ -40,12 +40,13 @@ refuses an unsupported throughput claim by listing blockers such as missing
 durable chunk receipts, missing live remote preconditions, missing durable
 journal integrity, missing graph-identity evidence, missing recovery evidence,
 and non-production storage or row-apply capabilities. That is useful refusal
-logic, but it is not a release gate and it does not measure a production-shaped
-runtime or memory ceiling. `npm test` and `npm run test:playground` remain
-green even when the strongest checks are skipped, so the repo can look healthy
-while the objective remains unproven. The current test story is therefore
-strongest as a blocker generator, not as release-grade proof of no data loss,
-reliability, or speed.
+logic, but it is still only refusal logic: it does not measure a production-
+shaped runtime or memory ceiling, and it cannot substitute for a required
+release command. `npm test` and `npm run test:playground` remain green even
+when the strongest checks are skipped, so the repo can look healthy while the
+objective remains unproven. The current test story is therefore strongest as a
+blocker generator, not as release-grade proof of no data loss, reliability, or
+speed.
 The next actionable gap is a required `verify:release`-style command, wired
 into CI or an equivalent enforced entrypoint, that fails closed on
 `labBacked: true`, fixture-only scope, missing live-topology evidence, or an
@@ -171,7 +172,7 @@ where they are asked to prove production release safety.
 - `scripts/bench/guarded-executor-benchmark.js` proves the benchmark can block
   unsupported throughput claims. It does not itself measure a live push path,
   set a required threshold, or enforce a release decision unless the claim
-  gate is explicitly invoked.
+  gate is explicitly invoked. That makes it a refusal test, not speed proof.
 
 That splits the suite into three evidence classes:
 
@@ -234,6 +235,7 @@ the release blocker is a missing required gate, not just a missing test case.
 | No data loss | The repo proves selected planner rules, fixture-scoped protected writes, replay refusal, and a production-shaped lab route that still reports `labBacked: true`. | It does not prove a live WordPress graph survives a failed push without losing or duplicating posts, postmeta, attachments, taxonomy links, menus, users, plugin-owned rows, or serialized plugin payloads. | Missing live crash coverage at every guarded DB/file/plugin boundary. |
 | Reliability | The repo proves some journal, replay, stale-claim, and process-kill states are classified and blocked in local Playground fixtures. | It does not prove restart safety, leases, fencing, rollback, or exactly-once behavior on a live source site across all mutation types. | Missing production-backed kill matrix plus durable journal evidence. |
 | Speed | The repo proves benchmark guards and model checks exist, and the benchmark harness fails closed on unsupported throughput claims. | It does not measure throughput or memory on a production-shaped executor or on a production-backed push path, so it cannot support a release claim that the path is fast. | Missing measured end-to-end benchmark on the real push path with a release threshold. |
+| Release gate | The repo has many targeted smoke scripts, and some docs describe a desired release sequence. | It does not have one required command that chains auth/session, durable journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and performance checks and fails closed when any one is still lab-backed or fixture-scoped. | Missing enforced release gate. |
 ## Evidence Table
 
 Evidence classes used below:
