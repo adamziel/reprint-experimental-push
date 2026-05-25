@@ -101,6 +101,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed remote index plus a paused row queue still cannot skip plugin install finalize, because planning evidence and backpressure state cannot prove dependency checks, row preconditions, or the atomic-group finalize survived failure.
 - A compressed remote index plus cached chunk receipts still cannot skip plugin install finalize, because planning evidence and chunk acknowledgements cannot prove dependency checks, staged files, or the atomic-group finalize survived failure.
 - A compressed remote index plus cached row-batch receipts still cannot skip plugin update finalize, because planning evidence and cached batch receipts cannot prove dependency checks, per-row preconditions, or the atomic-group finalize survived failure.
+- A compressed remote index plus a compressed row batch still cannot skip plugin update finalize, because planning compression and batch compression cannot prove dependency checks, live row compares, or the atomic-group finalize survived failure.
 - A compressed remote index plus cached row receipts still cannot skip plugin-update finalize, because planning evidence and cached row receipts cannot prove the live row compares, dependency checks, or the atomic-group finalize survived failure.
 - A compressed remote index plus cached row receipts still cannot skip plugin-update activation, because planning evidence and cached row receipts cannot prove the activation change, dependency checks, or the atomic-group commit survived failure.
 - A compressed remote index plus a cached package hash still cannot skip plugin update finalize, because planning evidence and cached package identity cannot prove dependency checks, metadata writes, staged rows, or the atomic-group finalize survived failure.
@@ -705,6 +706,10 @@ under load:
   rejected because planning evidence and cached hashes can skip lookup and
   rehash work, but they cannot prove the live compare, staged rows, or the
   atomic-group finalize survived failure.
+- compressed-remote-index-and-compressed-row-batch-skips-plugin-update-finalize
+  is rejected because planning compression and batch compression can reduce
+  replay work, but they cannot prove the dependency checks, live row compares,
+  or the atomic-group finalize survived failure.
 - compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize
   is rejected because planning evidence and a cached dependency graph can
   reduce lookup work, but they cannot prove the live row compares, member
