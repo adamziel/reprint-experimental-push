@@ -212,21 +212,25 @@ attempt.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.
-It pins `npm run verify:release` as the supervisor entrypoint, the one-remote,
-one-local, one-drift topology, and the first remaining production boundary:
-`auth/session lifecycle and durable journal semantics`.
-Its `pull_to_push_bridge.push_ladder_mapping` block maps each push step back to
-the existing pull/export/import provenance in the same order the executor runs
-it.
-The runnable proof now asserts that the live preflight response minted a
-session, that the auth/session type matches the production-shaped handshake,
-and that the journal readback still contains durable apply-committed rows
-after apply and recovery inspect.
+It pins `npm run verify:release` as the supervisor entrypoint, the
+one-remote, one-local, one-drift topology, and the first remaining
+production boundary: `auth/session lifecycle and durable journal semantics`.
+Its `pull_to_push_bridge.push_ladder_mapping` block maps each push step back
+to the existing pull/export/import provenance in the same order the executor
+runs it.
+The runnable proof asserts that the live preflight response minted a session,
+that the auth/session type matches the production-shaped handshake, and that
+the journal readback still contains durable apply-committed rows after apply
+and recovery inspect.
 It also emits the checked boundary verdict
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` so the supervisor can tell the
 lab-shaped proof from the still-missing production boundary.
 The checked boundary object also names the still-unproven durable-journal
 storage/lease/fence gap with `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
+When the live source or credentials are missing, the same checked entrypoint
+must fail closed with the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
+`REPRINT_PUSH_SECRET_REQUIRED` gate before any preflight, dry-run, or apply
+attempt.
 
 The same checked contract defines the production push topology used by both
 Docker and Playground:
@@ -238,6 +242,17 @@ Docker and Playground:
   apply, journal inspect, and inspect-first recovery
 - one browser-visible ingress on sandbox port `8080` through a local-only
   proxy
+
+The release surface stays tied to the same checked command:
+
+```sh
+npm run verify:release
+```
+
+That command is the supervisor proof for the production push boundary. It
+must either print the live preflight evidence for the supplied source and
+credentials or fail closed at the explicit missing-source or missing-secret
+gate.
 - no remote tunnels
 
 The live release command stays separate from the protocol prose and is the

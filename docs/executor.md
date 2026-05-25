@@ -185,12 +185,28 @@ at the explicit live-source or secret gate before dry-run or apply begins.
 The command also runs the file-journal restart smoke, so the durable journal
 storage/lease/fence proof stays part of the same checked surface.
 
+The checked release topology is the same one-remote, one-local, one-drift
+harness used by the protocol contract:
+
+- `remote-base` is the initial remote source
+- `local-edited` is the imported local edit site
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and inspect-first recovery
+- Docker and Playground both keep the route names aligned
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+
 That checked release entrypoint has two exact outputs:
 
 - with live source and production-shaped auth, it prints the live preflight
   proof and a JSON envelope whose `releaseProof.code` is `LIVE_PREFLIGHT_OK`
 - without a live source, it fails with
   `REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.`
+
+The same command also fails closed on the missing-secret gate when source
+credentials are not present, which keeps the release surface from treating a
+lab source as a production auth/session proof.
 
 The narrow live-preflight command for a real remote source is:
 
