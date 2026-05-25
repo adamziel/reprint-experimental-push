@@ -6834,6 +6834,10 @@ are true on this worktree:
   and the retry scope was rebuilt from live hashes; if the proof still comes
   only from `plan`, `apply`, `test:playground:*`, route-smoke output, or
   source-note comparison, the claim is still lab-only;
+- any script branded `production-shaped`, `authenticated`, or
+  `production-plugin-package` is still just a smoke unless it reruns the same
+  live boundary on an actual remote and preserves the rejected remote for
+  audit; a production-sounding name does not create production proof;
 - the branch has a single executable preflight/release command that can be
   run against a real remote on this branch, and its output proves the exact
   live boundary, preserved remote, stale rejection point, and fresh retry
