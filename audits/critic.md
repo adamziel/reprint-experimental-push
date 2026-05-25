@@ -17,6 +17,11 @@ preserved-remote proof. Until that command exists and is named here, any doc,
 PR, or review wording is still lab-backed or comparison-only, no matter how
 production-shaped the route or reviewer language looks.
 
+That missing command is not a wording gap. It is visible in the actual script
+surface today: there is no `real-site` or equivalent release entry point in
+`package.json`, so the branch cannot yet point to an executable proof path for
+operators to rerun on an actual remote.
+
 That absence matters because the branch still has no executable surface that
 can be handed to a real-site operator, rerun after drift, and independently
 prove the preserved remote was still inspectable when the write was rejected.
