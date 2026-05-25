@@ -2163,6 +2163,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'file-hashing', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-batched-receipt-flush-skips-large-upload-backpressure',
+    proposal: 'use a compressed remote index and batched receipt flushes to skip backpressure pauses during large-upload resume',
+    rejectedBecause: 'planning evidence and receipt batching can reduce fsync cost, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
