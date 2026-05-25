@@ -4,6 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 01:11:15
+
+<a id="2026-05-26-public-status-audit-011115"></a>
+
+- Refreshed [progress.html](../progress.html) after a fresh remote-head sync: `critic` moved to `e2511560` and `progress-publisher` moved to `7695e1f9`. The first screen still stays conservative: release gates remain `0/4`, and production WordPress auth/session lifecycle plus durable journal storage with lease/fencing remain pending.
+- The unchanged heads still matter for context: `reliable-executor` remains at `0c4fd10f`, `independent-auditor` remains at `33b839f0`, `no-data-loss-recovery` remains at `47b675c0`, and `no-data-loss-invariants` remains at `fa0ce3ea`. This is a coordination correction only, not a release-gate change.
+- Evidence trail: [progress.html](../progress.html), [release-gate checklist](../progress.html#proof-gates), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Public Status Audit 01:06:00
 
 <a id="2026-05-26-public-status-audit-010600"></a>
