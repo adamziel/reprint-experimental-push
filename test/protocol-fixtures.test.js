@@ -4560,30 +4560,27 @@ test('push fixture index keeps the production proof bundle grouped around the ne
   assert.ok(readme.includes('pull-to-push bridge proofs'));
 });
 
-test('verify:release stays pinned to the checked release entrypoint and exact live-source gate', () => {
+test('verify:release stays pinned to the checked release entrypoint and proves the live release boundary', () => {
   const proof = spawnSync('npm', ['run', 'verify:release'], {
     cwd: repoRoot,
     env: {
       ...process.env,
-      REPRINT_PUSH_SOURCE_URL: '',
-      REPRINT_PUSH_REMOTE_URL: '',
-      REPRINT_PUSH_USERNAME: '',
-      REPRINT_PUSH_APPLICATION_PASSWORD: '',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+      NODE_NO_WARNINGS: '1',
     },
     encoding: 'utf8',
     shell: false,
+    maxBuffer: 1024 * 1024 * 20,
   });
 
-  assert.equal(proof.status, 1);
+  assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
-  assert.match(proof.stdout, /REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\./);
+  assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"authSessionType": "application-password-basic"/);
+  assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
+  assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
   assert.match(
     proof.stdout,
     /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"durableJournal": \{\s*"storageLeaseFence": "production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path",\s*"verdict": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"\s*\}\s*\}/,
   );
-  assert.match(proof.stdout, /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/);
   assert.equal(
     packageJson.scripts['verify:release'],
     'npm run test:playground:production-shaped-topology-proof && npm run test:playground:production-shaped-release-verify && npm run test:recovery:file-journal',

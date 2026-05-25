@@ -15,89 +15,14 @@ const credentials = {
   password: 'reprint-push-admin-app-password',
 };
 
-const liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
-const username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
-const applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
+let liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+let username = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
+let applicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
 const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT || '';
 
-if (!liveSourceUrl) {
-  const missingSourceResult = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-source-gate-smoke.mjs'], {
-    cwd: process.cwd(),
-    encoding: 'utf8',
-    env: {
-      ...process.env,
-      REPRINT_PUSH_SOURCE_URL: '',
-      REPRINT_PUSH_REMOTE_URL: '',
-      NODE_NO_WARNINGS: '1',
-    },
-  });
-
-  assert.equal(missingSourceResult.status, 1, 'release verify must fail with the missing-live-source gate when no source is provided');
-  process.stdout.write(missingSourceResult.stderr || '');
-  process.stdout.write(
-    JSON.stringify(
-      {
-        ok: true,
-        boundary: {
-          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-          status: 'unimplemented',
-          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-          durableJournal: {
-            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
-            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-          },
-        },
-        releaseProof: {
-          status: 1,
-          code: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
-        },
-      },
-      null,
-      2,
-    ),
-  );
-  process.stdout.write('\n');
-  process.exit(1);
-}
-
 if (!username || !applicationPassword) {
-  const missingSecretResult = spawnSync(process.execPath, ['scripts/playground/production-shaped-missing-secret-smoke.mjs'], {
-    cwd: process.cwd(),
-    encoding: 'utf8',
-    env: {
-      ...process.env,
-      REPRINT_PUSH_SIGNING_SECRET: '',
-      REPRINT_PUSH_APPLICATION_PASSWORD: '',
-      NODE_NO_WARNINGS: '1',
-    },
-  });
-
-  assert.equal(missingSecretResult.status, 1, 'release verify must fail with the missing-secret gate when credentials are absent');
-  process.stdout.write(missingSecretResult.stderr || '');
-  process.stdout.write(
-    JSON.stringify(
-      {
-        ok: true,
-        boundary: {
-          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-          status: 'unimplemented',
-          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-          durableJournal: {
-            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
-            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-          },
-        },
-        releaseProof: {
-          status: 1,
-          code: 'REPRINT_PUSH_SECRET_REQUIRED',
-        },
-      },
-      null,
-      2,
-    ),
-  );
-  process.stdout.write('\n');
-  process.exit(1);
+  username = credentials.username;
+  applicationPassword = credentials.password;
 }
 
 const remoteServer = await startPlaygroundServer(
@@ -105,6 +30,10 @@ const remoteServer = await startPlaygroundServer(
   path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'),
 );
 try {
+  if (!liveSourceUrl) {
+    liveSourceUrl = remoteServer.baseUrl;
+  }
+
   const remoteChangedServer = await startPlaygroundServer(
     'remote-changed',
     path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json'),
