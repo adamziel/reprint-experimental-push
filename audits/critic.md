@@ -164,6 +164,38 @@ statement of what the note proves here and what it does not prove here. Without
 those facts, the comparison remains historical context only and cannot support
 production wording.
 
+Conservative comparison summary:
+
+- Reprint proves transport, staged delivery, and resumability vocabulary in the
+  observed upstream commit; it does not prove live push safety, preserved-
+  remote auditability, stale-drift rejection, create-time identity remap
+  handling, or plugin-owned surface coverage on this branch.
+- ZS-Sync proves bounded discovery, cursored rescans, and resource batching in
+  the observed upstream commit; it does not prove source mutation safety,
+  conflict policy, late-discovered plugin data trap handling, or retry
+  authority on this branch.
+- ForkPress proves audit vocabulary, merge-review framing, and crash-
+  consistency intent in the observed upstream commit; it does not prove that a
+  readable artifact can authorize a later live boundary, preserve the rejected
+  remote for audit, or safely widen to remapped create targets or plugin-owned
+  surfaces.
+
+Before the project can claim production-grade push support, it still needs:
+
+- a named real-site release command that can be rerun unchanged against a real
+  local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- preserved-remote evidence that survives rejection and remains inspectable for
+  audit;
+- apply-time revalidation on the same live boundary before the first write;
+- dry-run receipt evidence that is auditable before any write is finalized;
+- journal and recovery inspection that defines retry scope from live hashes;
+- explicit old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts;
+- a separate preserve / reject / retry cycle for any later-discovered plugin-
+  owned surface or remapped create target; and
+- production auth/session lifecycle proof on the same live boundary, not just
+  route-shape or wrapper-shape evidence.
+
 ## 2026-05-25 Commit `08edc2e4` Still Needs Live-Rerun Proof
 
 Commit `08edc2e4` may now prove release topology, but topology is not
