@@ -112,6 +112,27 @@ test('production-shaped live topology proof runs preflight against a local Playg
   assert.match(proof.stdout, /"indexStatus": 200/);
 });
 
+test('production-shaped live protocol proof runs the real preflight plus snapshot, dry-run, and apply boundary', () => {
+  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-protocol-proof.mjs'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  assert.equal(proof.status, 0, proof.stderr);
+  assert.match(proof.stdout, /"ok": true/);
+  assert.match(proof.stdout, /"mode": "apply"/);
+  assert.match(proof.stdout, /"routeProfile": \{\s*"profile": "production-shaped"/);
+  assert.match(proof.stdout, /"session": \{\s*"id": "[A-Za-z0-9_-]{32,160}"/);
+  assert.match(proof.stdout, /"dryRun": \{/);
+  assert.match(proof.stdout, /"apply": \{/);
+  assert.match(proof.stdout, /"dbJournal": \{/);
+});
+
 test('production-shaped topology proof wrapper emits the fixed one-remote one-local one-drift harness', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-topology-proof.mjs'], {
     cwd: repoRoot,
