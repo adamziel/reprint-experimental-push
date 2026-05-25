@@ -32,6 +32,15 @@ Minimum properties of that gate:
 4. it must print a machine-checkable verdict for speed, including an explicit `speed unclaimed` refusal when no live-path measurement exists
 5. it must be the command CI or another default entrypoint actually invokes
 
+## Claim Status
+
+| Claim | Current status | Why it is still blocked |
+| --- | --- | --- |
+| No data loss | Unproven | The current passing suite proves local ordering, replay classification, and journal guardrails, but it does not prove live-source mutation on production storage preserves every touched WordPress data shape end to end. |
+| Reliability | Unproven | Auth/session, journal, lease/fencing, graph identity, and plugin-driver checks exist only as distributed helpers and smokes, not as one mandatory live-source release gate. |
+| Speed | Unproven | `productionThroughput` remains `not-claimed`, and the benchmark surface is refusal-only. There is still no required live-path measurement or enforced `speed unclaimed` release verdict. |
+| Release readiness | Blocked | There is no checked-in command that reaches the live-source boundary, rechecks apply-time state, and fails closed on missing proof. |
+
 ## Evidence Table
 
 Evidence buckets used below:
