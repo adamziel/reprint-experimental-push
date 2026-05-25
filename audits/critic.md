@@ -14,6 +14,24 @@ What still has to change before any production-grade claim is credible:
 - any "manual resolution" or "comparison passed" wording must stay audit-only unless it names the preserved remote, the upstream source-note state, and the same live boundary rerun on this branch; and
 - route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` remain compatibility evidence only.
 
+Source-note comparison audit:
+
+- Reprint (`docs/source-notes.md`, observed commit `27c5f25`) proves staged
+  pull delivery, resumability vocabulary, and transport framing. It does not
+  prove live push safety here, preserved-remote retention after rejection,
+  stale-drift rejection before the first write, create-time identity remap
+  handling, or late plugin-owned surface handling on this branch.
+- ZS-Sync (`docs/source-notes.md`, observed commit `d9334a0`) proves bounded
+  scanning, resource discovery, and batching ideas. It does not prove source
+  mutation safety, plugin-owned allowlist coverage, stale-authority rejection,
+  or partial file, DB, and plugin side-effect classification before retry on
+  this branch.
+- ForkPress (`docs/source-notes.md`, observed worktree `55f9879`) proves
+  audit vocabulary, merge-review framing, and crash-consistency intent. It
+  does not prove that a readable manual-review artifact can authorize a later
+  boundary, preserve the rejected remote for audit, or become retry authority
+  for a remapped create target or plugin-owned surface on this branch.
+
 Scope note: this audit only accepts production wording when the same live
 boundary on this worktree shows preserved-remote evidence, stale authority
 rejection before the first write, fresh retry scope rebuilt from live hashes,
