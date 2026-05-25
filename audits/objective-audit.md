@@ -8,8 +8,8 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `778f4c35`
-- `origin/lane/no-data-loss-recovery` -> `47bbfa74`
-- `origin/lane/fast-paths` -> `7d029264`
+- `origin/lane/no-data-loss-recovery` -> `47b675c0`
+- `origin/lane/fast-paths` -> `9be664b2`
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `f8591f9d`
 - `origin/lane/progress-publisher` -> `7695e1f9`
@@ -33,10 +33,10 @@ but it did not change the release conclusion:
   entries at `778f4c35`, and the newer `63ebcc84` proof extends that blocker
   coverage to socket-like special files and hard-link special files.
 - `origin/lane/no-data-loss-recovery` now tightens the durable journal
-  production gate at `47bbfa74` while preserving the earlier recovery
+  production gate at `47b675c0` while preserving the earlier recovery
   evidence.
 - `origin/lane/fast-paths` now tightens blocked production-claim diagnostics at
-  `7d029264`.
+  `9be664b2`.
 - `origin/lane/critic` now refreshes the critic head snapshot at `f8591f9d`.
 - `origin/lane/progress-publisher` now refreshes the public progress evidence
   at `7695e1f9`.
