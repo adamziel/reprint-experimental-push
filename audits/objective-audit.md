@@ -438,3 +438,10 @@ That claim is only defensible if the repository has one enforced command that:
 4. emits a machine-checkable speed verdict, including `speed unclaimed` when live-path measurement is absent
 
 Right now none of `npm test`, `plan`, `apply`, or the optional Playground smokes does that. They remain support evidence only, so the release blocker is still the missing required gate, not a lack of additional lab assertions. The repo also still has no `.github` workflow tree in this checkout, so there is no checked-in automation path that could force that gate from the default release surface.
+
+Concrete release-gate target:
+
+- add one checked-in command that exports `REPRINT_PUSH_SOURCE_URL`, hits a retained live-source or locally retained source endpoint, and rechecks apply-time state in the same invocation
+- make that command fail closed unless it can prove auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, and preserved-remote evidence on the live boundary
+- require it to emit either a measured speed verdict or an explicit `speed unclaimed` refusal, so throughput never slides in as an implicit assumption
+- wire that command into the repository's default release path so optional lab helpers cannot stand in for release proof
