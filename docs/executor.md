@@ -11,6 +11,19 @@ and one later observation of the same remote identity after drift. In both
 Docker and Playground, that proof keeps browser-visible inspection on the
 sandbox-provided `8080` ingress through a local-only proxy.
 
+That topology stays aligned with the pull-to-push bridge:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` stays planning-only and may page large sites
+- `push_plan_dry_run` returns an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal, fresh live hashes, and the
+  recovery fence before any mutating repair
+
 The pull pipeline is the immutable provenance source:
 
 - exporter discovers the merge base and coverage evidence
@@ -41,7 +54,7 @@ The canonical push ladder is:
 | `push_plan_dry_run` | Upload the canonical dry-run plan and get an eligibility receipt. | Receipt only; not a lock or lease. |
 | `push_batch_apply` | Mutate in batches after fresh validation. | Revalidate before every batch and again at the storage boundary. |
 | `push_journal` | Record durable evidence. | Read-only. |
-| `push_recover inspect` | Classify finish, rollback, retry, or block before repair. | Inspect first; read-only. |
+| `push_recover inspect` | Classify finish, rollback, retry, or block before repair using the journal, fresh live hashes, and the recovery fence. | Inspect first; read-only. |
 | `push_recover auto|finish|rollback` | Perform a recovery branch only when inspect proves it safe. | Same auth floor as the write path. |
 
 The executor uses the same stage contract as the protocol:

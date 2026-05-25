@@ -114,11 +114,13 @@ The write path is deliberately one-way:
 
 The recovery proof chain is also one-way:
 
-- journal rows carry claim ownership, generation, and lease expiry
-- inspect reads the journal row and fresh live hashes before any repair
+- journal rows carry claim ownership, generation, lease expiry, and the
+  recovery fence that prevents stale reuse
+- inspect reads the journal row, the recovery fence, and fresh live hashes
+  before any repair
 - finish, rollback, retry, and block are the only recovery classifications
-- mutating recovery may proceed only when the journal row and fresh live
-  hashes prove the branch safe
+- mutating recovery may proceed only when the journal row, recovery fence,
+  and fresh live hashes prove the branch safe
 - stale dry-run evidence never becomes recovery authority
 
 For implementation and review, the bridge should be read in the same order as

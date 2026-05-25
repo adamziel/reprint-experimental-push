@@ -138,6 +138,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
     ),
   );
   assert.ok(
+    protocolDocs.includes(
+      'journal rows carry claim ownership, generation, lease expiry, and the',
+    ),
+  );
+  assert.ok(
     executorDocs.includes(
       'The canonical production proof bundle is `push-protocol-extension-contract.json`',
     ),
@@ -190,6 +195,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'mutating recovery only happens after inspect proves the branch safe',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'push_recover inspect` reads the journal, fresh live hashes, and the',
     ),
   );
   assert.ok(
