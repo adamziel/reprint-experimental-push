@@ -5595,3 +5595,13 @@ Must-happen-before-production-grade-push-support checklist:
 - partial side effects: show the whole touched set classified old/new/blocked across file, DB, and plugin writes, with no surface silently succeeding while another surface is left in limbo;
 - stale manual-review artifacts: prove a readable review note cannot authorize a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface after drift unless the remote was preserved and the retry scope was rebuilt from live state;
 - production claims: never infer production-grade push support from lab route shape, package layout, fixture replay, or `finalMatchesLocal`; those only prove compatibility until the live boundary is rerun with preserved-remote evidence and fresh live hashes.
+
+Missing-proof matrix for the current design:
+
+- live remote drift after preflight: missing proof is the exact rejection point before the first mutation, plus an inspectable preserved remote and a retry scope rebuilt from fresh live hashes on this branch;
+- create-time identity remapping, aliasing, or renumbering: missing proof is live identity evidence for the remapped target at apply time, or a hard block before write; route family and fixture shape are not proof;
+- plugin-owned data traps outside the allowlist: missing proof is live enumeration or explicit blocking of every hidden table, cron row, runtime registry, generated file, cache entry, serialized blob, and plugin-owned file, including surfaces discovered only after the first write;
+- partial file, DB, or plugin side effects: missing proof is old/new/blocked classification for the whole touched set before retry, so a mixed commit cannot be relabeled as success after only the committed part;
+- stale manual-review artifacts: missing proof is that the artifact stayed audit-only after drift, could not authorize a different row/file/remapped target/plugin surface, and was replaced by a fresh retry scope rebuilt from live hashes;
+- Reprint, ZS-Sync, and ForkPress comparisons: missing proof is the exact upstream state plus a rerun of the same live boundary here, with an explicit statement of what the note proves here and what it does not prove here; matching route shape, package layout, or reviewer wording only proves historical context; and
+- production-grade wording: missing proof is the same live boundary on this worktree showing preserved-remote evidence, stale-authority rejection before the first write, fresh retry scope rebuilt from live hashes, and per-surface old/new/blocked classification.
