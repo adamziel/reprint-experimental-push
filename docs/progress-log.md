@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 03:29:46 CEST.
+- Last update: 2026-05-25 03:30:24 CEST.
 - Status: Lab/model evidence still holds; production proof is still blocked by missing evidence.
 - Trend: the visible page, this log, and the newest supervisor note still line up and stay scan-friendly.
 - Supervision: the same-plan graph lane remains active and unmerged.
@@ -14,7 +14,7 @@ linked implementation artifacts.
 - Visible page: [progress.html](../progress.html) keeps the blocked state compact and links to the proof trail.
 - Pending proof gates: production auth/session storage, durable journal ownership, leases/fencing, full WordPress graph identity mapping, Docker/full Playground integration, and arbitrary plugin drivers.
 - Next nudge: keep production gates blocked until a worker proves production auth/session/journal internals and graph identity mapping.
-- Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. The published copy still lags until this lane merges to `main`.
+- Public page: [progress.html](../progress.html) carries the visible update date and links to the proof trail. The published copy becomes live only after this lane merges to `main`.
 
 <details>
 <summary>Earlier progress entries</summary>
