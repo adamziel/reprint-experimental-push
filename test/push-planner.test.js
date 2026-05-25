@@ -7557,6 +7557,16 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
   assertAcceptableRecoveryState(replay.recoveryState);
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(
+    replay.site.db.wp_posts['ID:2'].post_title,
+    'Inserted locally',
+    'completed replay must preserve the inserted row',
+  );
+  assert.equal(
+    Object.values(replay.site.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length,
+    1,
+    'completed replay must not duplicate inserted rows',
+  );
 });
 
 test('stale completed replay blocks when the remote drifts outside the completed journal envelope', () => {
@@ -7587,6 +7597,11 @@ test('stale completed replay blocks when the remote drifts outside the completed
   assert.ok(replayError.details.recovery.artifacts.remote, 'stale replay must keep remote artifacts');
   assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
   assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+  assert.equal(
+    Object.values(replayError.details.recovery.artifacts.remote.db.wp_posts).filter((row) => row.post_title === 'Inserted locally').length,
+    0,
+    'blocked stale replay must not resurrect the inserted row',
+  );
 });
 
 test('durable stale completed replay stays blocked and preserves the drifted remote artifacts', () => {
