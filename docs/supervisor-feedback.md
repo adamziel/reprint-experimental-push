@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 06:09:16 CEST
+Last updated: 2026-05-25 06:10:12 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -24,6 +24,26 @@ changed, what is helping, what is not helping, and the next nudge.
 Note: this lane's page update becomes live only after merge to `main`; GitHub Pages lags until then.
 
 Audit note: [audits/supervisor-note-20260525-060916.md](../audits/supervisor-note-20260525-060916.md) records this no-delta pass in one screen.
+
+## 2026-05-25 06:10:12 CEST - Supervisor Snapshot
+
+- Going well: the page is now easier to scan, and the log still matches it.
+- Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
+- Progress change: no evidence delta; this pass only tightened the public surface and kept the live-vs-merged note explicit.
+- Next nudge: have each lane prove one gap with one concrete test, starting with auth/session or crash-safe journal evidence.
+
+| Lane | Current nudge |
+| --- | --- |
+| Invariants | Owner: lane. Gap: graph identity mapping on a real site. Next test: prove the mapping against live content. |
+| Recovery | Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill the process mid-write and inspect restart state. |
+| Reliable executor | Owner: lane. Gap: auth, session, and lease behavior in production. Next test: prove the full auth/session path on a real endpoint. |
+| Fast paths | Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the large-site benchmark and record the bound. |
+| Audit and critic | Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim. |
+| Progress publisher | Owner: lane. Gap: keep the page dated, concise, and linked to evidence. Next test: keep the visible page and log aligned. |
+
+Note: this lane-local page update becomes live only after merge to `main`; GitHub Pages lags until then.
+
+Audit note: [audits/supervisor-note-20260525-061012.md](../audits/supervisor-note-20260525-061012.md) records this no-delta pass in one screen.
 
 ## 2026-05-25 06:05:21 CEST - Supervisor Snapshot
 
