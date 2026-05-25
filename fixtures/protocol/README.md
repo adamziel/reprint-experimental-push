@@ -136,6 +136,13 @@ identity across `remote-base` and `remote-changed`:
   journal rows, lease fencing, and inspect-first recovery path so the same
   proof covers dry-run, apply, and recovery.
 
+The compact topology proof pair for review is:
+
+- `push-deployment-topology-contract.json` for the Docker and Playground
+  topology-only shape
+- `push-production-topology-contract.json` for the pull bridge plus the
+  one-remote, one-local, one-drift production harness
+
 The operational model is the same in every production proof:
 
 - exporter discovers the merge base and coverage evidence

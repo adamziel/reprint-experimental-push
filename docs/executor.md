@@ -172,7 +172,7 @@ The same topology proof stays fixed in both Docker and Playground:
 - `remote-changed` is the same remote identity observed later after drift.
 - `runner` owns preflight, snapshot listing, dry-run upload, apply, journal
   inspect, and recovery.
-- `push-production-topology-contract.json` pairs the pull bridge with the
+- `push-production-topology-contract.json` is the canonical pull-bridge plus
   one-remote, one-local, one-drift harness proof.
 - `push-deployment-topology-contract.json` is the smaller Docker and
   Playground topology-only proof when you only need the one-remote,
@@ -215,7 +215,7 @@ That topology is the minimum production-shaped harness:
   proven safe
 - the compact proof pair for this harness shape is
   `push-deployment-topology-contract.json` plus
-  `push-remote-liveness-topology-contract.json`
+  `push-production-topology-contract.json`
 
 Use this as the standard one-remote, one-local production proof shape:
 
