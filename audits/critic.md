@@ -6,6 +6,12 @@ proof point. That lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence.
 
+That retained-source result is real progress, but it still only proves the
+lab harness for the supervised lane. It does not yet prove this branch can
+rerun the same boundary against a live local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL` and preserve the rejected remote for audit and
+retry.
+
 What improved in the last 12 hours: the retained-source harness now names
 session shape, apply commitment, and journal rows instead of only route shape.
 That is a real gain, but it is still lab evidence unless this worktree can
@@ -164,6 +170,21 @@ What must change before production-grade wording is defensible:
   on this branch by itself, and the cited note must not be treated as proof of
   preserved-remote safety, live auth/session lifecycle, graph identity, or
   plugin-driver coverage.
+
+Production-grade push support can only be claimed after the project has all
+of these on the same live boundary:
+
+- production WordPress auth/session lifecycle proof, not just minted lab
+  session shape;
+- durable journal semantics outside Playground, including recovery and retry
+  inspection;
+- graph identity proof that survives create-time remaps and late-discovered
+  surfaces;
+- plugin-driver coverage for hidden plugin-owned data traps, not just
+  allowlisted fixtures;
+- preserved-remote evidence that stays inspectable after rejection; and
+- an executable rerun that classifies every touched surface old, new, or
+  blocked before retry starts.
 
 Production-grade wording is still invalid if any of the following are true:
 
