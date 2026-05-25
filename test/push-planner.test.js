@@ -4281,6 +4281,32 @@ test('keeps remote-only plugin changes while a live-preconditioned delete, match
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('stops a local file delete conflict while preserving unrelated remote-only plugin drift and bounded evidence', () => {
+  const base = baseSite();
+  const local = baseSite();
+  delete local.files['index.php'];
+  const remote = baseSite();
+  remote.files['index.php'] = '<?php echo "remote changed";';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === 'file:index.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.conflicts, 1);
+  assert.equal(conflict.class, 'file-conflict');
+  assert.equal(conflict.reason, 'Local and remote both changed this resource after the pull base.');
+  assert.equal(conflict.change.local.state, 'absent');
+  assert.equal(conflict.change.remote.state, 'present');
+  assert.equal(conflict.change.remote.contents, undefined);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete, matching edit, and file type swap stay safe', () => {
   const base = baseSite();
   base.files['wp-content/uploads/photo.txt'] = {
