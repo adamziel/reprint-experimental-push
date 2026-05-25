@@ -373,11 +373,12 @@ here and the preserved remote remains auditable and retryable.
 ## Current verdict
 
 The strongest blocker is still the missing rerunnable live boundary on this
-branch. The supervised reliable-executor lane now gives stronger retained-
-source evidence, but that evidence only upgrades the lab harness, not the
-release claim. Until this branch can show preserved-remote auditability plus
-live auth/session, journal, graph, and plugin-driver proof on the same
-mutation, production-grade push support is not a defensible statement.
+branch. That is a branch-local gap, not a project-wide absence: the supervised
+reliable-executor lane already gives stronger retained-source evidence, but
+that evidence only upgrades the lab harness, not the release claim. Until
+this branch can show preserved-remote auditability plus live auth/session,
+journal, graph, and plugin-driver proof on the same mutation, production-
+grade push support is not a defensible statement.
 
 If a claim cites one of those notes as if it were production proof, it must be
 rejected unless the claim also names the exact live boundary and the preserved
