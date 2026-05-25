@@ -1,15 +1,15 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 07:23:30 CEST
+Last updated: 2026-05-25 07:24:06 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 07:23:30 CEST - Supervisor Snapshot
+## 2026-05-25 07:24:06 CEST - Supervisor Snapshot
 
 - Going well: the page, log, and latest audit note still agree on the blocked state.
 - Not going well: production proof is still missing for auth/session, journal durability, leases/fencing, graph identity, integration, and plugin drivers.
-- Progress change: no new production evidence landed; the public surfaces stay short and link out instead of repeating the audit text.
+- Progress change: no new production evidence landed; the public surfaces now stay short and link out instead of repeating the audit text.
 - Next nudge: keep each lane to one proof gap, one owner, and one production-backed test.
 
 | Lane | Current nudge |
@@ -26,8 +26,9 @@ Note: this lane-local page update becomes live only after merge to `main`; GitHu
 Audit note: [audits/supervisor-note-20260525-072330.md](../audits/supervisor-note-20260525-072330.md) captures the latest alignment pass in one screen.
 
 <details>
-<summary>2026-05-25 07:23:30 CEST and earlier</summary>
+<summary>2026-05-25 07:24:06 CEST and earlier</summary>
 
+- 2026-05-25 07:24:06 CEST: tightened the public page copy so it stays scan-first without repeating the audit text.
 - 2026-05-25 07:23:30 CEST: kept the blocked state terse and refreshed the linked audit pointer.
 - 2026-05-25 07:22:35 CEST: kept the blocked state terse and trimmed repeated page/log wording.
 - 2026-05-25 07:21:42 CEST: kept the blocked state terse and collapsed older notes under the current snapshot.
