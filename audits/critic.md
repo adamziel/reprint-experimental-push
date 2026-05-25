@@ -8,6 +8,16 @@ The supervised reliable-executor lane now has material retained-source evidence:
 
 The missing production proof is now precise: one rerunnable live mutation boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that happens, the retained-source proofs remain useful but non-production evidence.
 
+## False reliability claims
+
+The following should not be described as production-grade until they are proven on the same rerunnable live boundary:
+
+- manual resolution text that does not leave the rejected remote preserved and inspectable;
+- auth/session minting without a live WordPress expiry, refresh, and operator re-entry cycle on the same source URL;
+- durable journal row counts without lease/fencing on production-like storage;
+- graph identity claims without create-time remap coverage and late-discovered relationship-bearing records; and
+- plugin support claims without coverage for late plugin-owned surfaces that fall outside the initial allowlist.
+
 The presence of `verify:release` on the supervised remote lane is accepted as real lab progress, so command shape is no longer the blocker. The blocker is that the same rerunnable live boundary has not yet demonstrated production WordPress auth/session lifecycle, preserved-remote retention after rejection, durable journal lease/fencing on production-like storage, graph identity under create-time remap, and plugin-driver coverage together.
 
 The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
