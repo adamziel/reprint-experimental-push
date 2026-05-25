@@ -6591,3 +6591,26 @@ Concrete production-grade blockers to keep naming:
 - partial file, DB, or plugin side effects: missing proof is old/new/blocked
   classification for the whole touched set before retry, so a mixed write
   cannot be relabeled as success after only the committed subset.
+
+Release gate for production-grade wording:
+
+- the claim names the exact live boundary, the exact stale-drift case, and the
+  rejection point before the first write;
+- the claim names the preserved remote that stayed inspectable after
+  rejection, and that remote is still audit evidence only until a fresh retry
+  scope is rebuilt from live hashes on this branch;
+- the claim names every touched row, file, relationship-bearing record, and
+  plugin-owned surface, with each one classified old, new, or blocked before
+  retry starts;
+- the claim explicitly blocks or enumerates every plugin-owned surface outside
+  the allowlist, including hidden tables, cron rows, runtime registries,
+  generated files, cache entries, serialized blobs, and plugin-owned files;
+- the claim treats any later-discovered plugin-owned surface or remapped
+  create target as a separate live boundary unless it already had its own
+  preserve / reject / retry cycle before the first write;
+- the claim says what each source note proves here and what it does not prove
+  here, so Reprint, ZS-Sync, and ForkPress stay provenance unless this branch
+  reran the same live boundary with fresh live hashes; and
+- the claim rejects "manual resolution", "comparison passed", and
+  "production-ready" as success labels unless the live rerun, preserved remote,
+  rejection point, and per-surface classification are all present together.
