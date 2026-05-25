@@ -11843,8 +11843,24 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
     assert.equal(error.details.recovery.artifacts.remote, undefined, label);
     assert.ok(error.details.recovery.artifacts.journal, label);
     assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(
+      error.details.recovery.artifacts.journal.entries.every((entry) => entry.status === 'pending' || entry.status === 'staged'),
+      true,
+      label,
+    );
 
     const persisted = readRecoveryJournal(journalPath);
+    assert.equal(persisted.records.some((record) => record.type === 'journal-opened'), true, label);
+    assert.equal(
+      persisted.records.some((record) => record.type === 'apply-staged'),
+      expectedJournalStatus !== 'opened',
+      label,
+    );
+    assert.equal(
+      persisted.records.some((record) => record.type === 'dependencies-validated'),
+      expectedJournalStatus === 'dependencies-validated',
+      label,
+    );
     assert.equal(
       persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
       false,
@@ -11872,6 +11888,10 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
   assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    replay.recoveryState.artifacts.journal.entries.every((entry) => entry.status === 'applied'),
+    true,
+  );
 });
 
 test('durable mid-apply failures stay blocked with recovery artifacts and never become a safe replay', () => {
