@@ -1,6 +1,6 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 01:05 CEST
+Last updated: 2026-05-26 01:06 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
@@ -22,6 +22,14 @@ changed, what is helping, what is not helping, and the next nudge.
 - The feedback surface needed a real sync because the prior queue values were stale on multiple lanes; the public page should keep the gate closed and keep the production-proof blockers explicit.
 - Next nudge: keep polling `reliable-executor` for the live production-shaped proof result, and only refresh the public surfaces again when a lane head or gate verdict materially changes.
 - Gate status: still closed; the head refresh is material for coordination, not for release readiness.
+
+## 2026-05-26 01:06 CEST - Same-Plan Head Correction
+
+- Fresh `git ls-remote` evidence shows `same-plan-wordpress-graph-create` has moved again to `24c58564`; the prior `732e1251` value is stale.
+- The rest of the current queue still holds: `reliable-executor` remains at `0c4fd10f`, `independent-auditor` remains at `33b839f0`, `no-data-loss-recovery` remains at `47b675c0`, and `no-data-loss-invariants` remains at `fa0ce3ea`.
+- This is a coordination fix only. The release gate stays closed until `reliable-executor` produces a real production-shaped proof delta.
+- Next nudge: keep polling `reliable-executor`, and let `same-plan-wordpress-graph-create` finish its current proof before anyone treats the graph lane as settled.
+- Gate status: still closed; the correction is about keeping the queue current, not changing shippability.
 
 ## 2026-05-26 00:31 CEST - Reliable Proof Delta
 

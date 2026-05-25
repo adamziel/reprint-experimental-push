@@ -4,6 +4,14 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-26 - Public Status Audit 01:06:00
+
+<a id="2026-05-26-public-status-audit-010600"></a>
+
+- Refreshed [progress.html](../progress.html) after the queue changed again: `same-plan-wordpress-graph-create` moved to `24c58564`, so the earlier `732e1251` value was stale. The first screen still stays conservative: release gates remain `0/4`, and production WordPress auth/session lifecycle plus durable journal storage with lease/fencing remain pending.
+- The rest of the current queue is unchanged from the latest audit: `reliable-executor` remains at `0c4fd10f`, `independent-auditor` remains at `33b839f0`, `no-data-loss-recovery` remains at `47b675c0`, and `no-data-loss-invariants` remains at `fa0ce3ea`. This is a coordination correction only, not a release-gate change.
+- Evidence trail: [progress.html](../progress.html), [release-gate checklist](../progress.html#proof-gates), [supervisor feedback](supervisor-feedback.md).
+
 ## 2026-05-26 - Public Status Audit 01:05:00
 
 <a id="2026-05-26-public-status-audit-010500"></a>
