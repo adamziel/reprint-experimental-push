@@ -26,6 +26,20 @@ real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` has yet proven
 preserved-remote retention, apply-time revalidation, and production
 auth/session lifecycle on the same mutation.
 
+Before the project can claim production-grade push support, the proof set
+must include all of the following on one rerunnable live boundary:
+
+- exact stale-drift rejection before the first write;
+- preserved remote still inspectable after rejection;
+- dry-run receipt and apply-time revalidation on the same mutation;
+- journal and recovery inspection that survives retry;
+- graph identity proof for create-time remaps and late-discovered
+  relationship-bearing records;
+- plugin-driver coverage for late-discovered plugin-owned surfaces outside
+  the initial allowlist; and
+- auditable retry scope rebuilt from fresh live hashes rather than manual
+  resolution text.
+
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
 that preserves the rejected remote, revalidates at apply time, and proves
