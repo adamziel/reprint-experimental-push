@@ -30,7 +30,10 @@ retained-source evidence for those shapes, but that evidence is not enough to
 claim production-grade push support here unless the same live boundary is
 runnable on this branch and the rejected remote remains auditable and retryable.
 If the only available proof is a retained-source or fixture replay, the claim
-must stay at "lab progress" rather than "production-ready."
+must stay at "lab progress" rather than "production-ready." On this audit
+branch specifically, the gap is the absence of the named real-site release
+command and rerunnable live boundary; do not generalize that branch-local gap
+into a claim that the supervised lane lacks the command.
 The next acceptable proof is not another replay of the retained-source lane;
 it must be a live WordPress auth/session boundary with preserved-remote
 retention, apply-time revalidation, and journal/recovery inspection that can
@@ -41,7 +44,7 @@ be rerun and audited from this branch.
 This worktree still has no named real-site release command that can be rerun
 unchanged on the same live boundary. Until that exact boundary exists here,
 production-grade push wording is false reliability, even if the supervised
-lane has stronger retained-source evidence.
+lane has stronger retained-source evidence and an explicit boundary verdict.
 
 The next acceptable proof must be one rerunnable live command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
