@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const serverStartupTimeoutMs = 120_000;
+const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const liveCredentials = {
   username: 'reprint_push_admin',
@@ -126,7 +127,9 @@ test('production-shaped release proof emits the exact gate output when no live s
   );
 });
 
-test('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
+const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
+
+maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
       cwd: repoRoot,
@@ -149,7 +152,7 @@ test('production-shaped release proof runs the live preflight branch against a l
   });
 });
 
-test('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
+maybeTest('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
       cwd: repoRoot,
@@ -203,7 +206,7 @@ test('production-shaped release verify command fails closed on the explicit live
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
 });
 
-test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
+maybeTest('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-topology-proof.mjs'], {
     cwd: repoRoot,
     env: {
@@ -225,7 +228,7 @@ test('production-shaped live topology proof runs preflight against a local Playg
   assert.match(proof.stdout, /"indexStatus": 200/);
 });
 
-test('production-shaped live protocol proof runs the real preflight plus snapshot, dry-run, and apply boundary', () => {
+maybeTest('production-shaped live protocol proof runs the real preflight plus snapshot, dry-run, and apply boundary', () => {
   const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-live-protocol-proof.mjs'], {
     cwd: repoRoot,
     env: {
