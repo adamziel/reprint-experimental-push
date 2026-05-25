@@ -6,6 +6,7 @@ import {
   DEFAULT_LIMITS,
   MIB,
   SAFE_SPEEDUP_AREAS,
+  FAST_PATH_GATES,
 } from '../scripts/bench/performance-model.js';
 import {
   runGuardedExecutorBenchmark,
@@ -230,6 +231,17 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
       fastPath.splitsAtomicGroup === false &&
       fastPath.publishesStagedDataEarly === false,
     ),
+  );
+  assert.deepEqual(
+    FAST_PATH_GATES.map((gate) => gate.id),
+    ['skip', 'live', 'group', 'recovery'],
+    'benchmark gate order stays aligned with the fast-path contract',
+  );
+  assert.ok(
+    model.safeFastPaths.every((fastPath) =>
+      Object.keys(fastPath.gateProofs).sort().join(',') === 'group,live,recovery,skip'
+    ),
+    'every safe fast path carries exactly the four gate proofs',
   );
   assert.ok(
     model.rejectedFastPaths.every((fastPath) =>
