@@ -22,6 +22,10 @@ or comparison-only.
   The audit trail must show the rejected artifact stayed auditable, but could
   not be widened into a new row, file, relationship-bearing record, or
   plugin-owned surface. A readable stale artifact is not a valid retry token.
+  This includes late-discovered plugin-owned surfaces such as a hidden custom
+  table, generated file, cron row, runtime registry entry, or serialized blob;
+  if the stale artifact can still authorize any one of those, the claim is not
+  production-grade.
   "Manual resolution later" is not a success state until the remote-preserving
   reject, the audit-only artifact, and the fresh-scope retry are all visible on
   the same live write boundary.
