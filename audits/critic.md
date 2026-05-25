@@ -126,6 +126,8 @@ The next acceptable proof is one rerunnable live mutation boundary on one exact 
 
 Without that single boundary, manual resolution stays a label, not retry authority.
 
+The source-note comparisons stay historical until that same boundary is rerun here with the rejected remote preserved and inspectable; route shape, package layout, and reviewer wording are not substitute evidence for live retry authority.
+
 ## Release gate checklist
 
 Before any doc or status line says "production-grade" or "release-ready", it must point to a rerunnable live boundary that shows:
