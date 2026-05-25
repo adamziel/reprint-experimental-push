@@ -17,6 +17,21 @@ The production extension has one non-negotiable shape:
 - recovery must begin with inspect before any mutating finish or rollback
 - authentication must be at least as strict as current Reprint HMAC usage
 
+The pull/export/import pipeline is the provenance source for every push run:
+
+1. exporter scans the merge base and coverage evidence.
+2. importer persists the base package as immutable provenance.
+3. preflight binds that persisted base package to the live remote identity and
+   a short-lived push session.
+4. snapshot hash listing collects planning-only live evidence.
+5. dry-run uploads the canonical plan and returns an eligibility receipt, not
+   a lock.
+6. apply revalidates fresh live evidence before every batch and again at the
+   storage boundary.
+7. journal inspect is read-only.
+8. recovery begins with inspect and only mutates when the journal plus fresh
+   live hashes prove the action safe.
+
 The executor has one production ladder:
 
 1. `push_preflight` binds the persisted pull base to one live remote identity
@@ -47,6 +62,16 @@ The shortest way to read the production ladder is this:
 
 That ladder keeps dry-run and apply separate, keeps journal inspection read-only,
 and keeps recovery inspect-first even when the remote is cursorable or drifted.
+
+The production topology proof stays just as explicit:
+
+- one remote source site seeds the persisted pull base
+- one imported local site produces the candidate plan
+- one later observation of the same remote identity proves drift
+- one runner owns preflight, hash listing, dry-run, apply, journal inspect,
+  and recovery
+- the Docker and Playground proofs keep browser-visible inspection on the
+  sandbox-provided `8080` ingress through a local-only proxy
 
 The remote write path is deliberately split into a planning half and a write
 half:

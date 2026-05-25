@@ -192,6 +192,18 @@ Both harnesses preserve the same remote identity across the base and drift
 observations, and both keep browser-visible inspection on the sandbox-provided
 `8080` ingress through a local-only proxy.
 
+The executor proof is easiest to read as a fixed ladder:
+
+1. exporter/importer establish immutable provenance.
+2. preflight binds that provenance to one live remote identity and one
+   short-lived push session.
+3. remote snapshot hash listing stays planning-only.
+4. dry-run uploads a receipt, not a lock.
+5. apply revalidates before every batch and at the storage boundary.
+6. journal inspect is read-only.
+7. recovery starts with inspect and only mutates when journal evidence plus
+   fresh live hashes prove the action safe.
+
 Use the same shape in both harnesses:
 
 | Role | Docker | Playground |
