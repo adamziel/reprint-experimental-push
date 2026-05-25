@@ -18,7 +18,7 @@ Latest supervision evidence narrows the remaining gap, but does not close it:
 `origin/lane/reliable-executor` is still at `0c4fd10f`,
 `origin/lane/no-data-loss-invariants` is now at `fa0ce3ea`,
 `origin/lane/no-data-loss-recovery` is still at `47b675c0`,
-`origin/lane/fast-paths` is now at `7f7f9b6c`,
+`origin/lane/fast-paths` is now at `b54f1b34`,
 `origin/lane/independent-auditor` is now at `33b839f0`,
 `origin/lane/feedback-supervisor` is now at `f386dfa6`,
 `origin/lane/progress-publisher` is now at `7695e1f9`,
