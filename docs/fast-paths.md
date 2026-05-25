@@ -236,6 +236,9 @@ The rejected examples are not abstract lint. They are concrete failure modes:
   state.
 - A compressed hash cannot stand in for canonical content state because wire
   encoding and resource identity are different facts.
+- A cached file hash cannot skip plugin install finalization because the hash
+  can narrow duplicate hashing but cannot prove dependency checks, staged files,
+  or the atomic-group commit survived failure.
 - Parallel commits cannot be widened across atomic groups because the commit
   barrier is the visibility boundary.
 - Parallel staging cannot be merged into one wider commit across atomic groups
