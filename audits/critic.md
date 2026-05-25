@@ -248,7 +248,9 @@ prove this branch preserved the remote, rejected the stale artifact before
 mutation, or rebuilt retry authority from fresh live hashes. If the claim
 only shows a route-shaped smoke, packaged mount, fixture replay, readable
 manual-review artifact, or `finalMatchesLocal`, the comparison remains
-non-authoritative for production wording.
+non-authoritative for production wording. Even a correctly named upstream
+commit stays historical unless this branch replays the same live boundary and
+preserves the remote for audit.
 Even when the exact upstream revision is named, the note stays historical
 unless this branch also rechecked the same live boundary here, preserved the
 remote after reject, and separately proved any late-discovered plugin-owned
@@ -4590,7 +4592,8 @@ False reliability claims to reject:
   happens to match the same route family, package layout, or reviewer
   wording; shape similarity is compatibility evidence only and does not
   prove the live executor, preserved remote, or fresh retry scope on this
-  branch.
+  branch. A named upstream note is still historical until this branch reruns
+  the same live boundary and keeps the remote auditable.
 - "manual resolution succeeded" when the preserved remote, rejection point,
   and fresh retry artifact are not all recorded for the same live boundary.
 
