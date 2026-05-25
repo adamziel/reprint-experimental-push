@@ -52,6 +52,7 @@ The normal sequence is:
 44. `push-recovery-boundary-contract.json`
 45. `push-production-push-recovery-contract.json`
 46. `push-production-recovery-inspect-contract.json`
+47. `push-production-recovery-drift-contract.json`
 
 The production proof bundle is intentionally layered:
 
@@ -69,6 +70,10 @@ The production proof bundle is intentionally layered:
 - `push-production-recovery-inspect-contract.json` is the compact proof that
   recovery inspect stays read-only while the journal row, lease fence, auth
   floor, and `8080` topology still match the write path.
+- `push-production-recovery-drift-contract.json` is the compact proof that
+  recovery inspect stays read-only after live drift while the persisted pull
+  base, journal row, auth floor, and one-remote, one-local topology still
+  line up for a safe mutating recovery branch.
 - `push-pull-mapping.json` and `push-contract.json` map the immutable pull
   provenance into the push protocol.
 - `push-preflight-contract.json` keeps the first live binding explicit: the
@@ -300,6 +305,9 @@ inspect fence can be asserted independently or together:
   classification.
 - `push-recovery-revalidation-contract.json` shows the same drift case still
   requires fresh live hashes before apply or mutating recovery.
+- `push-production-recovery-drift-contract.json` shows the recovery case
+  after drift while keeping the pull provenance, journal evidence, and
+  one-remote, one-local topology aligned.
 - `push-recovery-boundary-contract.json` gives the compact proof that keeps
   inspect-first recovery, the auth floor, and the Docker/Playground topology
   together in one object.

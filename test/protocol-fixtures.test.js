@@ -61,6 +61,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   const productionRecoveryInspectContract = readJson(
     'fixtures/protocol/push-production-recovery-inspect-contract.json',
   );
+  const productionRecoveryDriftContract = readJson(
+    'fixtures/protocol/push-production-recovery-drift-contract.json',
+  );
   const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
   const snapshotHashesPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
   const authSessionJournalRecoveryContract = readJson(
@@ -358,6 +361,37 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'journal inspection is read-only and never authorizes mutation by itself',
     ),
   );
+  assert.equal(
+    productionRecoveryDriftContract.contract_id,
+    'push-production-recovery-drift-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionRecoveryDriftContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.equal(
+    productionRecoveryDriftContract.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(productionRecoveryDriftContract.journal_row.claim_generation, 4);
+  assert.equal(productionRecoveryDriftContract.live_evidence.same_remote_identity, true);
+  assert.equal(productionRecoveryDriftContract.recovery.inspect_mode, 'inspect');
+  assert.deepEqual(productionRecoveryDriftContract.recovery.classification, [
+    'finish',
+    'rollback',
+    'retry',
+    'block',
+  ]);
+  assert.equal(
+    productionRecoveryDriftContract.recovery.inspect_proof,
+    'inspect reads the journal row and live hashes before classifying finish, rollback, retry, or block',
+  );
+  assert.ok(
+    productionRecoveryDriftContract.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
+    ),
+  );
+  assert.equal(productionRecoveryDriftContract.topology.networking.ingress_port, 8080);
   assert.ok(
     productionRevalidationContract.topology.networking.tunnels === 'disallowed',
   );

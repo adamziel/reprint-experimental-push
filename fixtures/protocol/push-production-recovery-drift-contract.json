@@ -1,0 +1,85 @@
+{
+  "contract_id": "push-production-recovery-drift-contract-one-remote-one-local",
+  "purpose": "compact proof for inspect-first recovery after live drift while preserving pull provenance, the auth floor, and the one-remote one-local production topology",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance",
+    "persisted_base_package": {
+      "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "base_manifest_hash": "sha256:pull-base-manifest",
+      "base_coverage_hash": "sha256:pull-base-coverage",
+      "remote_site_id": "remote-example"
+    }
+  },
+  "auth_and_session": {
+    "required_floor": "at least as strict as current Reprint HMAC usage",
+    "preflight_binding": "mints one short-lived push session bound to one remote identity and one persisted pull base",
+    "mutating_calls": "dry-run, apply, and mutating recovery require the push session, canonical push signature, and idempotency key"
+  },
+  "journal_row": {
+    "journal_cursor": "journal:dry_01j00000000000000000000000:1",
+    "claim_owner": "worker-17",
+    "claim_generation": 4,
+    "lease_expires_at": "2026-05-24T00:00:09Z",
+    "before_hash": "sha256:base-index",
+    "staged_hash": "sha256:local-index",
+    "after_hash": "sha256:remote-index",
+    "storage_guard": "filesystem-compare-rename"
+  },
+  "live_evidence": {
+    "snapshot_id": "snap_01j00000000000000000000000",
+    "remote_changed_snapshot_id": "snap_01j00000000000000000000001",
+    "same_remote_identity": true,
+    "coverage_hash": "sha256:remote-coverage"
+  },
+  "recovery": {
+    "inspect_mode": "inspect",
+    "mutating_modes": [
+      "finish",
+      "rollback",
+      "auto"
+    ],
+    "classification": [
+      "finish",
+      "rollback",
+      "retry",
+      "block"
+    ],
+    "inspect_proof": "inspect reads the journal row and live hashes before classifying finish, rollback, retry, or block",
+    "mutates_only_when": "the journal row, lease fence, and fresh live hashes still prove the action safe",
+    "blocked_when": [
+      "fresh live hashes do not match the journaled target",
+      "the journal cannot prove a safe finish or rollback",
+      "the claim lease has expired and the worker is fenced"
+    ]
+  },
+  "topology": {
+    "remote_base": "remote-base",
+    "local_edited": "local-edited",
+    "remote_changed": "remote-changed",
+    "runner": "runner",
+    "same_remote_identity": true,
+    "networking": {
+      "ingress_port": 8080,
+      "proxy_policy": "local-only",
+      "tunnels": "disallowed"
+    },
+    "proof": [
+      "remote-base and remote-changed are the same remote identity observed at different times",
+      "local-edited carries the imported local edits used to build the canonical plan",
+      "runner owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and recovery",
+      "recovery inspect stays read-only before any mutating recovery mode",
+      "dry-run and apply remain separate remote calls",
+      "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+    ]
+  },
+  "required_invariants": [
+    "pull exporter/importer establish the immutable base package before push",
+    "preflight binds the persisted pull base package to one live remote identity and one short-lived push session",
+    "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery must begin with inspect before any mutating repair",
+    "fresh live hashes must still be checked before finish, rollback, or auto",
+    "authentication must be at least as strict as current Reprint HMAC usage",
+    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+  ]
+}

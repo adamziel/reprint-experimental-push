@@ -207,6 +207,9 @@ The executor proof is intentionally split across three levels:
   `8080` ingress rule.
 - `push_remote_liveness_topology_contract` keeps the liveness split and the
   one-remote, one-local, one-drift harness aligned in one compact proof.
+- `push_production_recovery_drift_contract` adds the inspect-first recovery
+  proof after live drift while preserving pull provenance, the auth floor, and
+  the one-remote, one-local production topology.
 
 The canonical test topology is fixed across both harnesses:
 
