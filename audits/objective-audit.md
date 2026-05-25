@@ -48,6 +48,8 @@ For this audit, the proof buckets are strict:
 - `Missing proof` is the specific production evidence still absent.
 - `Release blocker` is the reason the objective remains unreleasable.
 
+The current checkout still has no executable proof at the live-source release boundary. Everything strongest today is either model-level, fixture-scoped, or explicit refusal evidence, so the audit remains in the "blocked" state until that changes.
+
 For this audit:
 
 - `Executable proof` means the test or command exercises the claimed behavior directly at the claimed boundary.
@@ -226,3 +228,4 @@ Minimum acceptance rule for the gate:
 - `npm run test:playground` is a useful lab smoke, not a proof of production safety.
 - No current test in this checkout proves no data loss, reliability, or speed at the live source boundary. The suite can reject unsafe claims, but it still cannot certify the positive release claims the objective needs.
 - The suite is evidence that release remains blocked, not evidence that release is safe.
+- The strongest current proof is still split across optional commands and lab-labeled routes, so there is still no single required command that can convert the suite from blocker evidence into release evidence.
