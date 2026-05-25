@@ -27,6 +27,10 @@ note is provenance only unless it names the exact upstream commit or worktree
 state, says what it proves here, says what it does not prove here, and is
 backed by a branch-local rerun of the same live boundary. Shape similarity is
 not retry authority.
+Missing repo proof is still the live rerun on this branch: without the
+preserved remote, exact rejection point, fresh live hashes, and per-surface
+old/new/blocked classification on the same live boundary, the comparison
+remains historical context even when the upstream note is accurate.
 
 Must-change-before-production wording:
 
