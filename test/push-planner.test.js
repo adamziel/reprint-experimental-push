@@ -2336,6 +2336,45 @@ test('durable retry after dependency validation preserves the recovery artifact 
   );
 });
 
+test('durable failure in the pre-write commit hook stays old-remote and does not observe a mutation', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      beforeMutation({ mutationIndex }) {
+        if (mutationIndex === 1) {
+          throw new Error('hook failure before first remote write');
+        }
+      },
+    }),
+  );
+
+  durableJournal.close();
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'JOURNAL_WRITE_FAILED');
+  assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'blocked-recovery');
+  assert.ok(error.details.recovery.artifacts.journal, 'hook failure should keep journal artifacts');
+  assert.ok(error.details.recovery.artifacts.remote, 'hook failure should keep remote artifacts');
+  assert.equal(
+    persisted.records.some((record) => record.type === 'mutation-observed'),
+    false,
+    'hook failure before first write must not observe a mutation',
+  );
+});
+
 test('durable retry after an old-remote failure reopens append-only without duplicating targets', () => {
   const base = baseSite();
   const local = baseSite();
