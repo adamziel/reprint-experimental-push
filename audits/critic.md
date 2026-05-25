@@ -10,6 +10,11 @@ Must change before any production-grade push claim:
   write, preserves the remote for audit, and rebuilds retry scope from fresh
   live hashes on this branch; without that, "manual resolution" is only a
   post-hoc label, not retry proof;
+- prove this branch is using live boundary evidence rather than a lab-shaped
+  route family, packaged mount, fixture replay, readable review artifact, or
+  `finalMatchesLocal` result that only looks production-shaped while still
+  masking a stale remote, remapped create target, or late plugin-owned
+  surface;
 - prove the claim is rerun on the same live drift case here; a matching
   route family, package mount, fixture replay, readable review artifact, or
   `finalMatchesLocal` result is compatibility evidence only and cannot
@@ -25,6 +30,10 @@ Must change before any production-grade push claim:
   blobs, cache entries, and other hidden side effects; and
 - classify partial file, DB, and plugin side effects as old, new, or blocked
   before retry so a mixed write cannot be relabeled as success.
+- reject any wording that treats a readable comparison note or route-shaped
+  smoke as current retry authority unless the preserved remote, rejection
+  point, and fresh retry scope are all recorded on this branch for the exact
+  same boundary.
 
 Source-note comparison rule:
 
