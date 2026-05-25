@@ -32,8 +32,8 @@ narrow storage-boundary guards for selected fixture DB rows and upload files,
 and a production-shaped `/wp-json/reprint/v1/push/*` route mounted through a
 temporary plugin package. That route still reports `labBacked: true`. This is
 good negative evidence, but it is still not direct proof for the objective:
-pushing local edits back to a live source WordPress site without losing
-concurrent source changes, while remaining reliable and fast.
+one-way pull from base, then one-way push back to a live source WordPress site
+without losing concurrent source changes, while remaining reliable and fast.
 
 The current release wiring is still just optional scripts. `package.json`
 exposes `npm test`, a bundled `npm run test:playground` chain, and several
@@ -46,7 +46,7 @@ entrypoint that composes the strongest checks and fails closed.
 
 | Requirement | Current proof | Missing proof | Release blocker |
 | --- | --- | --- | --- |
-| One-way pull base, one-way push to live source | Planner and fixture smokes preserve remote-only changes and reject unsafe overwrites. | A live-source push boundary that mutates the real source site after a pull-base snapshot. | Yes: the boundary remains lab-backed. |
+| One-way pull base, one-way push to live source | Planner and fixture smokes preserve remote-only changes and reject unsafe overwrites. | A live-source push boundary that mutates the actual source site after a pull-base snapshot. | Yes: the boundary remains lab-backed. |
 | No silent data loss | Model and fixture tests cover row/file/plugin-data conflicts, recovery labels, and stale claims. | Exhaustive live-source coverage for DB rows, files, plugin-owned data, and mid-apply restarts. | Yes: indirect evidence is insufficient. |
 | Reliability under crash/retry/replay/duplicate requests | Process-kill, stale-claim, idempotency, and replay smokes exist. | Production-backed journal durability and crash recovery on the real transport and storage path. | Yes: recovery is still fixture-scoped. |
 | Auth, session, lease, fencing, journal, graph identity, plugin-driver gates | Authenticated local Playground routes, DB journal slices, and graph-identity assertions exist in lab scope. | A required production release gate that enforces all of them together. | Yes: no enforced gate exists. |
@@ -54,7 +54,7 @@ entrypoint that composes the strongest checks and fails closed.
 | Speed claim | Benchmark refusal tests block unsupported throughput claims. | A measured runtime or memory result from the production-shaped push path. | Yes: speed is unproven. |
 | Required release command | Optional npm scripts and opt-in smokes exist. | One mandatory `verify:release`-style entrypoint that fails closed. | Yes: no mandatory gate or CI workflow. |
 
-Executable proof is concentrated in `npm test`, `test/recovery-journal.test.js`, and the Playground smokes. The default suite still passes at 89/89 on 2026-05-25. Those tests do prove useful local properties: monotonic journal sequences, no raw-value leakage in journal records, crash/restart classification, idempotency replay refusal, storage-boundary CAS failures, and guarded file/database mutations. They do **not** prove that the real live-source boundary preserves all WordPress data during production auth/session, journal, lease/fencing, graph-identity, and plugin-driver execution.
+Executable proof is concentrated in `npm test`, `test/recovery-journal.test.js`, and the Playground smokes. The default suite still passes at 89/89 on 2026-05-25. Those tests do prove useful local properties: monotonic journal sequences, no raw-value leakage in journal records, crash/restart classification, idempotency replay refusal, storage-boundary CAS failures, and guarded file/database mutations. They do **not** prove that the live-source push boundary preserves all WordPress data during production auth/session, journal, lease/fencing, graph-identity, and plugin-driver execution.
 
 A fresh repo scan on 2026-05-25 also found no checked-in `.github` workflow
 directory and no enforced CI entrypoint that could serve as a required release
