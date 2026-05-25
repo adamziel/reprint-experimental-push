@@ -4983,7 +4983,10 @@ branch still needs a separate preserve / reject / retry cycle for that exact
 boundary. Missing proof: the preserved remote stayed inspectable after
 rejection, the stale authority was rejected before mutation, and the later
 surface was either blocked or given its own live-hash retry scope on this
-worktree.
+worktree. A readable review note, comparison note, or route-shaped smoke does
+not close that gap unless it is paired with the preserved remote, the exact
+rejection point, and the fresh retry artifact rebuilt from live hashes for the
+same boundary.
 
 Before the project can claim production-grade push support, the audit must be
 able to name all of the following for the exact same live boundary on this
@@ -5002,6 +5005,9 @@ worktree:
   ForkPress comparison, plus an explicit statement of what that note proves
   here and what it does not prove, including whether it says anything about a
   later boundary or only the original one.
+If the branch cannot name those items for the exact live boundary, then any
+"manual resolution succeeded" wording is still false reliability, even when the
+route shape, fixture replay, or review artifact looks production-shaped.
 
 Release-readiness filter:
 
@@ -5017,6 +5023,9 @@ Release-readiness filter:
   and
 - if a comparison note is used as proof, it must name the exact upstream
   state and state plainly what it does not prove here.
+If any claim depends on a historical Reprint, ZS-Sync, or ForkPress note, the
+note must stay historical context only unless this branch separately reran the
+same live boundary and preserved the remote that actually drifted.
 
 Do not let a lab-shaped route, package mount, fixture replay, or
 `finalMatchesLocal` output stand in for the live boundary above. Those signals
@@ -5056,3 +5065,5 @@ Minimum evidence still missing for production wording:
 - source-note comparisons that name the exact upstream state, say what the
   note proves here and what it does not prove here, and stay historical unless
   the same live boundary was rerun on this branch.
+Any production-grade push claim that lacks one of those proofs must be treated
+as incomplete, not "close enough for manual resolution."
