@@ -275,7 +275,7 @@ these release requirements:
 | R12 | Make apply idempotent and resumable across duplicate requests, chunks, process failures, stale claims, and operator retries. |
 | R13 | Prove behavior against real WordPress data shapes: uploads, posts, postmeta, terms, users, options, plugin tables, plugin activation, schemas, and multisite if in scope. |
 | R14 | Redact raw private data from plans, journals, conflict reports, recovery reports, and test artifacts. |
-| R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets, a documented measurement environment, and a release threshold that cannot be skipped by accident. A model that only refuses unsupported claims is not enough. |
+| R15 | Prove speed with measured large-site benchmarks while preserving every no-data-loss and reliability guard, with explicit runtime and memory targets, a documented measurement environment, and a release threshold that cannot be skipped by accident. A model that only refuses unsupported claims is not enough, and neither are lab-only timing checks. |
 | R16 | Provide one enforced release gate that runs the safety, recovery, auth/session, storage, plugin-data-driver, graph-identity, real topology, crash-boundary, and performance checks in a required order before any public or production claim is allowed. Optional helper scripts are not enough, and a green default suite is not a substitute. A release path that requires manual script assembly, or that is not wired into CI or another enforced entrypoint, is still not a release gate. |
 
 The most important release requirement is not one individual check; it is the
@@ -283,6 +283,8 @@ end-to-end enforcement of the full safety matrix before any live-source push is
 allowed. Without that, the remaining proof stays advisory, even when several
 individual smokes pass. The repo currently does not enforce that matrix, so
 the release blocker is a missing required gate, not just a missing test case.
+If the gate is absent, the evidence can only justify continued blocking, not
+release authorization.
 
 ### Claim Audit
 
@@ -290,7 +292,7 @@ the release blocker is a missing required gate, not just a missing test case.
 | --- | --- | --- | --- |
 | No data loss | The repo proves selected planner rules, fixture-scoped protected writes, replay refusal, and a production-shaped lab route that still reports `labBacked: true`. | It does not prove a live WordPress graph survives a failed push without losing or duplicating posts, postmeta, attachments, taxonomy links, menus, users, plugin-owned rows, or serialized plugin payloads. The strongest crash tests are still fixture-scoped or lab-backed, so they cannot stand in for production semantics. The tests are negative evidence and fixture evidence, not live-source proof. | Missing live crash coverage at every guarded DB/file/plugin boundary. |
 | Reliability | The repo proves some journal, replay, stale-claim, and process-kill states are classified and blocked in local Playground fixtures. | It does not prove restart safety, leases, fencing, rollback, or exactly-once behavior on a live source site across all mutation types. The current tests show blocked recovery states, but they do not prove the production write path survives restart churn without corruption or duplicate application. | Missing production-backed kill matrix plus durable journal evidence. |
-| Speed | The repo proves benchmark guards and model checks exist, and the benchmark harness fails closed on unsupported throughput claims. | It does not measure throughput or memory on a production-shaped executor or on a production-backed push path, so it cannot support a release claim that the path is fast. The benchmark tests prove refusal logic and staged-evidence invariants, not the live release path. | Missing measured end-to-end benchmark on the real push path with a release threshold. |
+| Speed | The repo proves benchmark guards and model checks exist, and the benchmark harness fails closed on unsupported throughput claims. | It does not measure throughput or memory on a production-shaped executor or on a production-backed push path, so it cannot support a release claim that the path is fast. The benchmark tests prove refusal logic and staged-evidence invariants, not the live release path. They are blockers, not measurements. | Missing measured end-to-end benchmark on the real push path with a release threshold. |
 | Release gate | The repo has many targeted smoke scripts, and some docs describe a desired release sequence. | It does not have one required command that chains auth/session, durable journal, storage, graph identity, plugin-data-driver, real topology, crash-boundary, recovery, and performance checks and fails closed when any one is still lab-backed or fixture-scoped. | Missing enforced release gate. |
 ## Evidence Table
 
