@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `889bd37a` on `origin/lane/reliable-executor`, with the retained-
+remote head `68664884` on `origin/lane/reliable-executor`, with the retained-
 source evidence anchored at `63a3502f`. The latest remote evidence includes a
 completed retained-source `npm run verify:release` lineage with
 `authSessionType`, minted session shape, `applyCommitted`, and
@@ -267,7 +267,7 @@ or production auth/session lifecycle.
 The remote reliable-executor head now gives better lab evidence, not release
 proof:
 
-- `889bd37a` and the retained-source point `63a3502f` keep the release
+- `68664884` and the retained-source point `63a3502f` keep the release
   boundary explicit and confirm the retained-source verifier path is still
   being tightened, but it still stays inside the supervised lane's lab
   harness.
