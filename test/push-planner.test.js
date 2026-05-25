@@ -6162,6 +6162,61 @@ test('completed-plan replay keeps stale remote data blocked and safe retries rem
   );
 });
 
+test('completed-plan replay stays blocked across repeated drifted retries and preserves the same recovery artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.files['index.php'] = '<?php echo "drifted local";';
+  driftedRemote.db.wp_posts['ID:2'].post_title = 'Drifted inserted local';
+  const driftedSnapshot = JSON.stringify(driftedRemote);
+
+  const firstRetryError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  const secondRetryError = captureError(() =>
+    applyPlan(driftedRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(driftedRemote), driftedSnapshot);
+  assert.ok(firstRetryError instanceof PushPlanError);
+  assert.ok(secondRetryError instanceof PushPlanError);
+  assert.equal(firstRetryError.details.recovery.status, 'blocked-recovery');
+  assert.equal(secondRetryError.details.recovery.status, 'blocked-recovery');
+  assert.ok(firstRetryError.details.recovery.artifacts.journal);
+  assert.ok(secondRetryError.details.recovery.artifacts.journal);
+  assert.ok(firstRetryError.details.recovery.artifacts.remote);
+  assert.ok(secondRetryError.details.recovery.artifacts.remote);
+  assert.equal(
+    firstRetryError.details.recovery.artifacts.remote.files['index.php'],
+    '<?php echo "drifted local";',
+  );
+  assert.equal(
+    secondRetryError.details.recovery.artifacts.remote.db.wp_posts['ID:2'].post_title,
+    'Drifted inserted local',
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-replayed').length,
+    0,
+  );
+});
+
 test('stale recovery claims stay blocked with artifacts and do not become a safe retry', () => {
   const base = baseSite();
   const local = baseSite();
