@@ -17,6 +17,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 7. The design still leaves hidden-loss modes where partial file, DB, cache, cron, and plugin side effects can mix without a production recovery artifact that cleanly classifies what committed, what was blocked, and what must remain preserved for audit or retry.
 8. There is still no proof of a single rerunnable boundary that can preserve the rejected remote, reject stale authority before the first write, rerun apply-time revalidation after fresh hashes are rebuilt, and cover plugin-owned surfaces that appear late on the same mutation.
 9. There is still no production proof that the journal can survive a real lease/fencing handoff on durable storage while the same boundary remains rerunnable after rejection.
+10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation.
 
 ## Hidden-loss scenarios
 
@@ -26,6 +27,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - If a retry reuses stale manual-resolution text, it must not authorize a new mutation. The design does not yet show an auditable artifact that binds the approval to fresh live hashes and the preserved remote, so the retry path can still misrepresent a rejected remote as resolved.
 - If a retry boundary can be rerun but does not re-derive authority from the fresh live remote state at apply time, then the boundary is still a lab replay, not production retry authority.
 - If the remote is rejected but not preserved, the workflow cannot support safe audit or safe retry, so "manual resolution" remains a label, not proof.
+- If the auth/session lifecycle is only demonstrated in retained-source harness output, the design still has no proof that a real WordPress session, nonce, or operator credential survives the same rejection and retry semantics as the push itself.
 
 ## Source-note comparison
 
@@ -34,6 +36,7 @@ The supervised reliable-executor lane now has material retained-source evidence:
 - ForkPress source notes contribute audit and crash-consistency vocabulary, but not a live WordPress boundary with preserved-remote auditability, durable journal lease/fencing, or plugin-driver coverage on this branch.
 - The three families are useful as lineage context only: Reprint helps with staged delivery vocabulary, ZS-Sync with scanning/batching vocabulary, and ForkPress with recovery/audit vocabulary; none of them prove the branch preserved the rejected remote, rebuilt retry scope from live hashes, or covered plugin-owned surfaces on a rerunnable live boundary.
 - In other words: Reprint is delivery lineage, ZS-Sync is discovery lineage, ForkPress is recovery lineage, and this branch still needs a live push boundary to prove authority, fencing, and retry safety.
+- The comparison also does not prove graph identity or live auth/session lifecycle; those remain missing from the production claim even if the lineage vocabulary is correct.
 - Any comparison to those notes must name the exact upstream revision or worktree state, say what the note proves here, and say what it does not prove here. If it only supports historical vocabulary, it stays provenance only and cannot be used as production proof by analogy.
 
 ## Changes required before production wording is defensible
