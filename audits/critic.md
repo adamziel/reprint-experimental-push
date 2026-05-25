@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `68664884` on `origin/lane/reliable-executor`. The latest explicit
+remote head `bd9ef3e8` on `origin/lane/reliable-executor`. The latest explicit
 verdict on that lane is `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the
 lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
@@ -13,7 +13,7 @@ against a fresh real-site source, durable journal storage and lease/fencing
 semantics outside the Playground harness, graph identity under remap, or
 plugin-driver coverage for late-discovered plugin-owned surfaces. The
 supervised lane is stronger lab evidence, not release evidence for this
-branch, because it still does not demonstrate a runnable live boundary that
+branch, because it still does not demonstrate a rerunnable live boundary that
 preserves the rejected remote and revalidates from fresh live hashes.
 Production-grade wording is still false if it relies on lab-session shape,
 retained-source journal rows, or route compatibility as a stand-in for live
@@ -198,7 +198,9 @@ that this branch is release-ready:
 Those notes are strongest when they are treated as input to the design, not as
 evidence that the current branch already satisfies release gating. Route shape
 similarity, package layout similarity, or a matching review phrase is not proof
-of preserved-remote safety.
+of preserved-remote safety, and none of the three source notes prove a live
+mutation on this branch with preserved-remote auditability, retry authority,
+or production auth/session lifecycle.
 
 ## Why the latest remote lane still does not unlock release
 
