@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 08:20:00 CEST.
+- Last update: 2026-05-25 08:21:03 CEST.
 - Status: blocked; the visible page, log, and latest audit note line up.
-- Trend: no proof delta; the visible lane nudges are shorter and the live-copy note stays explicit.
+- Trend: no proof delta; the page stays terse and the live-copy note remains explicit.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) stays compact and keeps the proof trail linked.
