@@ -1,22 +1,21 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane
-through remote head `9975dfc9`, with `68664884` and `63a3502f` as earlier
-retained-source proof points. That lane's completed `npm run verify:release`
-result, including `authSessionType`, minted session shape, `applyCommitted`,
-and `durableJournal.rows: 17`, is material retained-source lab evidence, but
-it is still not live retry authority unless the same branch also proves the
-live production WordPress auth/session boundary, durable journal semantics,
-graph identity, plugin-driver coverage, and leases/fencing on a real-site
-rerun. The retired critique is the one that said no `verify:release` command
-exists; do not reintroduce it on this branch. The current blocker on this
-audit branch is the missing rerunnable live boundary with preserved-remote
-audit evidence on a real local, Playground, or Docker
-`REPRINT_PUSH_SOURCE_URL`. The lack of a branch-local real-site release
-command is a separate gap, but it is not the main blocker and must not be
-mistaken for the supervised lane's retained-source evidence. Retained-source
-lab evidence can support design review, but it cannot stand in for this
-worktree's own live retry proof.
+through remote head `68664884`, with `63a3502f` as an earlier retained-source
+proof point. That lane's completed `npm run verify:release` result, including
+`authSessionType`, minted session shape, `applyCommitted`, and
+`durableJournal.rows: 17`, is material retained-source lab evidence, but it
+is still not live retry authority unless the same branch also proves the live
+production WordPress auth/session boundary, durable journal semantics, graph
+identity, plugin-driver coverage, and leases/fencing on a real-site rerun.
+The retired critique is the one that said no `verify:release` command exists;
+do not reintroduce it on this branch. The current blocker on this audit branch
+is the missing rerunnable live boundary with preserved-remote audit evidence
+on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. The lack of
+a branch-local real-site release command is a separate gap, but it is not the
+main blocker and must not be mistaken for the supervised lane's retained-
+source evidence. Retained-source lab evidence can support design review, but
+it cannot stand in for this worktree's own live retry proof.
 Keep the supervised lane and this branch separate: the former supplies
 retained-source lab evidence, while the latter still lacks the live rerun on
 the real boundary. Reprint, ZS-Sync, and ForkPress are provenance only here
@@ -176,7 +175,8 @@ Current critic bar for this baseline:
 
 - `3089aee2` remains retained-source evidence only; it does not authorize
   production wording by itself, and the newer supervised reliable-executor
-  remote head still does not replace the required live rerun on this branch.
+  remote head `68664884` still does not replace the required live rerun on
+  this branch.
 - The next acceptable proof must move from local retained-source evidence to
   production WordPress auth/session lifecycle and durable journal semantics,
   with graph identity and plugin-driver coverage explicit on the same live
