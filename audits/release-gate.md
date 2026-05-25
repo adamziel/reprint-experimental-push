@@ -13,6 +13,10 @@ or comparison-only.
 - The claim does not treat a readable review artifact or source-note
   comparison as current proof unless the same live boundary was revalidated on
   this branch.
+- The claim does not let "comparison passed" or "manual resolution" become
+  current authority unless the preserved remote, stale rejection point, and
+  separately recorded fresh retry artifact are all present for the same live
+  boundary.
 - The claim does not let a readable review artifact become retry authority
   after drift unless the preserved remote, rejection point, and fresh retry
   scope are all recorded on this branch for the same live boundary.
