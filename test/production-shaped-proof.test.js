@@ -232,7 +232,7 @@ test('production-shaped apply revalidation smoke fails closed on mid-apply drift
   );
   assert.match(
     proof.stdout,
-    /"recoveryInspect": \{\s*"status": 200,\s*"recovery": \{\s*"state": "blocked-recovery",\s*"counts": \{\s*"new": \d+,\s*"blockedUnknown": \d+/,
+    /"recoveryInspect": \{\s*"status": 200,\s*"recovery": \{\s*"schemaVersion": 1,\s*"scope": "lab-only inspect evidence; not durable process-kill recovery",\s*"state": "blocked-recovery",\s*"counts": \{\s*"old": \d+,\s*"new": \d+,\s*"blockedUnknown": \d+,\s*"total": \d+/,
   );
   assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
@@ -265,7 +265,8 @@ test('production-shaped release verify command reports the checked retained-sour
     /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/,
   );
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
-  assert.match(proof.stdout, /"durableJournal": \{\s*"rows": 17,\s*"applyCommitted": true/);
+  assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
+  assert.match(proof.stdout, /"rows": 17,\s*"applyCommitted": true,\s*"mutationApplied": 7,\s*"idempotencyOpened": 1/);
 });
 
 maybeTest('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
