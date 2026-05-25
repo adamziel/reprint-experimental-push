@@ -16,6 +16,10 @@ Release gate for any production wording:
   late, and hard-block unknown or unvalidated surfaces.
 - Show each touched store as old, new, or blocked, and show retry rebuilt
   scope from fresh live evidence instead of inheriting the old decision.
+- Show that any success wording is not based on a readable review artifact,
+  route-shaped smoke, or copied fixture mount that only looked current; the
+  claim must prove the live executor rejected stale authority before
+  mutation and preserved the remote for audit.
 - If Reprint, ZS-Sync, or ForkPress are cited, name the exact upstream
   revision or worktree state and say whether this branch reverified the same
   live boundary; otherwise the comparison is historical context only.
@@ -38,6 +42,9 @@ Must-fix blockers before any production wording:
 - A readable stale manual-review artifact must stay audit-only after drift
   and must not widen into another row, file, relationship-bearing record, or
   plugin-owned surface.
+- A readable stale manual-review artifact must not be described as durable
+  retry authority, even when it remains inspectable; if a retry consumed it as
+  authority, the proof failed to preserve a clean remote-audit separation.
 - Reprint, ZS-Sync, and ForkPress comparisons stay historical unless the
   exact upstream revision or worktree state and the same live mutation
   boundary were reverified on this branch.
@@ -496,7 +503,8 @@ Release-go/no-go scenarios:
 - If plugin-owned state exists outside the explicit allowlist, apply-time
   revalidation must either enumerate it or block it. A matching option row,
   generated file, or custom-table sample does not prove the rest of the
-  plugin-owned graph is safe.
+  plugin-owned graph is safe, and any late-discovered store becomes a data
+  trap unless the proof blocks it at apply time.
 - If one store commits and another does not, the failure must be classified
   durably as partial side effects with fresh retry scope. Manual resolution
   only counts when the remote is preserved, the stale artifact is rejected as
