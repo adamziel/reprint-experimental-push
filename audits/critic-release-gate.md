@@ -65,6 +65,10 @@ Do not use production wording unless the branch has all of the following for the
   same; the later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface still needs its own preserved remote,
   rejection point, and fresh retry artifact rebuilt from live hashes.
+- any fresh-looking review note, comparison summary, or manual-resolution
+  artifact stays audit-only unless it names the rejected boundary, the
+  preserved remote for that boundary, and the branch-local live rerun; a
+  polished note cannot retroactively authorize a later boundary.
 - a source-note comparison is only historical context unless it names the exact upstream state, states what it proves here, states what it does not prove here, and this branch reran the same live boundary; the anchors in `docs/source-notes.md` are provenance only, not current retry authority.
 
 Evidence classes:
