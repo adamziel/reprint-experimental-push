@@ -154,7 +154,9 @@ Failure and recovery examples:
   that the production push extension maps the pull exporter/importer
   provenance into preflight, snapshot listing, dry-run upload, batched apply,
   journal inspection, and inspect-first recovery while keeping the one-remote,
-  one-local, one-drift topology explicit.
+  one-local, one-drift topology explicit. It also points at the narrower
+  auth/session fencing and recovery-inspect proofs so the production bundle
+  stays easy to navigate.
 - `push-recovery-revalidation-contract.json` gives the compact proof that the
   same drift case still requires fresh live hashes before each apply batch and
   before any mutating recovery path.
