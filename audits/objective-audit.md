@@ -221,6 +221,8 @@ The strongest unresolved claim is therefore live-boundary correctness, not
 raw throughput. Speed remains unproven, but the release blocker is broader:
 the repository still lacks executable proof that the live WordPress source
 graph survives guarded writes without silent loss or duplication.
+That also means the current suite can veto a bad release, but it cannot
+authorize a good one.
 
 That splits the suite into three evidence classes:
 
