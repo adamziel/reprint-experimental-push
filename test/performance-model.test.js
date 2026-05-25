@@ -327,6 +327,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'journal-flush-only',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'batch-durable-receipt-flushes-within-bounded-journal-lag')?.failureEvidence,
+    'batched journal record plus raw durable receipts',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-durable-receipt-logs-with-stable-receipt-keys')?.failureEvidence,
     'compressed receipt log plus original durable receipt key',
   );
@@ -336,6 +340,20 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-row-batch-replaces-atomic-group')?.violates.includes('atomic-groups'),
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'batched-receipt-journal-flush')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply')?.violates.includes('atomic-groups'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply')?.violates.includes('live-preconditions'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize')?.rejectedGate,

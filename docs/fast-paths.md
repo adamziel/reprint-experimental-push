@@ -1008,6 +1008,9 @@ Rejected fast paths stay rejected even when they look fast on paper:
 - Compression cannot make encoded bytes the canonical resource value.
 - Parallelism cannot bypass the atomic group commit barrier.
 - Parallelism cannot finalize large uploads or plugin installs from multiple atomic groups at once, because the combined drain hides which group owns the partial failure and which receipts still need replay.
+- Parallelism limits still matter even when chunk hashing or row batching is
+  already guarded by receipts; unbounded fanout can still outrun the journal
+  and make a retry ambiguous after a pause.
 - Unbounded upload parallelism cannot skip backpressure just because chunk
   receipts exist or the remote index was compressed.
 - Unbounded database parallelism cannot skip atomic group barriers just because
@@ -1016,5 +1019,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   ability to classify the remote state.
 - A drained queue cannot prove that the remote acknowledged every staged chunk
   or row.
+- A batched receipt flush can save fsyncs, but it cannot replace the raw
+  receipts or move the commit boundary that keeps a plugin install or large
+  upload recoverable.
+- A compressed receipt log can reduce recovery storage, but it cannot authorize
+  apply or collapse the atomic-group boundary that still guards plugin writes.
 - Cached row receipts cannot skip plugin-install writeback, because the
   metadata writes and atomic-group barrier still need durable proof.
