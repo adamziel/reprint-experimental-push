@@ -520,6 +520,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'group',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-activation')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize')?.rejectedGate,
     'group',
   );
@@ -534,6 +538,15 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish').violates.includes('durable-progress'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-activation').violates.includes('row-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-activation').violates.includes('plugin-preconditions'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-activation').violates.includes('atomic-groups'),
   );
 });
 
