@@ -122,9 +122,12 @@ or comparison-only.
 - If that comparison was not re-verified at the exact live write boundary, or
   the branch cannot name the exact upstream revision or worktree state, the
   comparison is historical context only.
-- A source-note comparison never becomes current proof by itself; the claim
-  must name the exact upstream revision or worktree state, the exact live
-  mutation boundary, and the exact stale remote-drift case that failed closed.
+- A source-note comparison never becomes current proof or retry authority by
+  itself; the claim must name the exact upstream revision or worktree state,
+  the exact live mutation boundary, and the exact stale remote-drift case that
+  failed closed. If the comparison cannot also prove the late-discovered
+  plugin-owned surface stayed blocked or separately classified, it remains
+  historical context only.
 - The claim does not rely on route shape, packaged-plugin mounting,
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
   production proof unless the same live write boundary was reverified against a
