@@ -21,6 +21,25 @@ state, says what it proves here, says what it does not prove here, and is
 backed by a branch-local rerun of the same live boundary. Shape similarity is
 not retry authority.
 
+Must-change-before-production wording:
+
+- move the proof boundary from retained-source `npm run verify:release`
+  evidence to a rerun against a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL` that prints the executor identity, auth/session
+  boundary, preserved remote, and exact rejection point before the first
+  write;
+- require that the same rerun show dry-run receipt, apply-time revalidation,
+  journal/recovery inspection, graph identity, and plugin-driver coverage on
+  the live boundary instead of inferring them from route shape or wrapper
+  naming;
+- classify every touched row, file, relationship-bearing record, and
+  plugin-owned surface old, new, or blocked before retry starts, and treat any
+  later-discovered plugin-owned surface or remapped create target as a new
+  live boundary with its own preserve / reject / retry cycle; and
+- keep Reprint, ZS-Sync, and ForkPress notes as historical provenance unless
+  the branch reran the same live boundary here and the note says exactly what
+  it proves here and what it does not prove here.
+
 ## 2026-05-25 Current Verdict
 
 The branch still cannot claim production-grade push support until one exact,
