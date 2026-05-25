@@ -66,6 +66,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   const preflightContract = readJson('fixtures/protocol/push-preflight-contract.json');
   const snapshotHashesPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
+  const remoteSnapshotListingContract = readJson(
+    'fixtures/protocol/push-remote-snapshot-listing-contract.json',
+  );
   const authSessionJournalRecoveryContract = readJson(
     'fixtures/protocol/push-auth-session-journal-recovery-contract.json',
   );
@@ -210,6 +213,24 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     contract.topology.playground.proof.includes(
       'push recovery inspect happens before any mutating repair',
+    ),
+  );
+  assert.equal(
+    remoteSnapshotListingContract.contract_id,
+    'push-remote-snapshot-listing-contract-one-remote-one-local',
+  );
+  assert.equal(
+    remoteSnapshotListingContract.snapshot_listing.pageable,
+    true,
+  );
+  assert.ok(
+    remoteSnapshotListingContract.snapshot_listing.evidence.includes(
+      'returns live remote comparison evidence for planning only',
+    ),
+  );
+  assert.ok(
+    remoteSnapshotListingContract.required_invariants.includes(
+      'remote snapshot hash listing is planning evidence, not write authority',
     ),
   );
   assert.equal(contract.topology.docker.remote_base, 'remote-base');

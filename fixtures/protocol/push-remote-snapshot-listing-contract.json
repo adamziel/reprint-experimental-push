@@ -1,0 +1,36 @@
+{
+  "contract_id": "push-remote-snapshot-listing-contract-one-remote-one-local",
+  "purpose": "proves the live remote hash listing is planning-only, cursorable for larger scopes, and never becomes write authority",
+  "pull_pipeline": {
+    "exporter": "scans the merge base and coverage evidence",
+    "importer": "persists the base package as immutable provenance"
+  },
+  "snapshot_listing": {
+    "scope_source": "the importer-owned base package plus the live remote identity",
+    "pageable": true,
+    "cursor": "snapcursor:remote-example:1",
+    "response": {
+      "snapshot_id": "snap_01j00000000000000000000001",
+      "cursor": "snapcursor:remote-example:2",
+      "complete": false
+    },
+    "evidence": [
+      "returns live remote comparison evidence for planning only",
+      "may page through large sites",
+      "never upgrades into write authority",
+      "dry-run receipts must not promote a snapshot cursor into a lock",
+      "apply must revalidate fresh live evidence before every batch and at the storage boundary"
+    ]
+  },
+  "auth_floor": {
+    "required": "at least as strict as current Reprint HMAC usage",
+    "read_only_call": "snapshot hash listing"
+  },
+  "required_invariants": [
+    "remote snapshot hash listing is planning evidence, not write authority",
+    "snapshot hash listing is cursorable for large sites",
+    "dry-run is a receipt, not a lock",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "authentication must be at least as strict as current Reprint HMAC usage"
+  ]
+}

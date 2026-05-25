@@ -43,16 +43,17 @@ The normal sequence is:
 35. `push-snapshot-hashes-page-contract.json`
 36. `push-dry-run-apply-revalidation-contract.json`
 37. `push-remote-liveness-contract.json`
-38. `push-deployment-topology-contract.json`
-39. `push-protocol-extension-contract.json`
-40. `push-pull-to-topology-contract.json`
-41. `push-preflight-contract.json`
-42. `push-remote-liveness-topology-contract.json`
-43. `push-production-revalidation-contract.json`
-44. `push-recovery-boundary-contract.json`
-45. `push-production-push-recovery-contract.json`
-46. `push-production-recovery-inspect-contract.json`
-47. `push-production-recovery-drift-contract.json`
+38. `push-remote-snapshot-listing-contract.json`
+39. `push-deployment-topology-contract.json`
+40. `push-protocol-extension-contract.json`
+41. `push-pull-to-topology-contract.json`
+42. `push-preflight-contract.json`
+43. `push-remote-liveness-topology-contract.json`
+44. `push-production-revalidation-contract.json`
+45. `push-recovery-boundary-contract.json`
+46. `push-production-push-recovery-contract.json`
+47. `push-production-recovery-inspect-contract.json`
+48. `push-production-recovery-drift-contract.json`
 
 The production proof bundle is intentionally layered and keeps the same remote
 identity across `remote-base` and `remote-changed`:
@@ -91,6 +92,9 @@ identity across `remote-base` and `remote-changed`:
 - `push-remote-liveness-contract.json`, `push-dry-run-apply-revalidation-contract.json`,
   and `push-recovery-revalidation-contract.json` keep the liveness split and
   inspect-first recovery rules explicit.
+- `push-remote-snapshot-listing-contract.json` isolates the planning-only
+  remote hash listing and keeps its cursorability separate from write
+  authority.
 - `push-remote-liveness-topology-contract.json` combines that liveness split
   with the one-remote, one-local, one-drift test topology so a review can
   cite a single compact proof for both sequencing and harness shape.
