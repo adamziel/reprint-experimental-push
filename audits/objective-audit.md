@@ -54,7 +54,7 @@ Required properties for the gate:
 1. Run from one checked-in command.
 2. Fail closed on any `labBacked: true`, fixture-only, benchmark-only, or missing-live-source claim.
 3. Include the auth/session, durable journal, lease/fencing, graph identity, plugin-data-driver, topology, crash-boundary, and speed checks in the same decision.
-4. Print the first or last failing proof bucket so the blocker is explicit.
+4. Report the final failing proof bucket while still failing closed on the first unmet gate.
 5. Be wired into CI or another default entrypoint so a green default run cannot bypass it.
 
 Current state:
