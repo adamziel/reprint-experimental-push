@@ -13,10 +13,12 @@ or comparison-only.
 - The same request path was re-run against a live remote after drift, and the
   stale attempt failed before any mutation.
 - The claim names the exact stale remote hash set, the rejected approval, the
-  retry scope, and the proof that the remote was preserved for audit.
+  retry scope, the fresh retry artifact, and the proof that the remote was
+  preserved for audit.
 - The claim shows the stale manual-review artifact remains readable for audit
   but is unusable for apply after drift, and server-side rejection forces the
   next retry to start from fresh live hashes rather than inherited approval.
+  The proof must include the fresh retry artifact, not only the stale reject.
   The audit trail must show the rejected artifact stayed auditable, but could
   not be widened into a new row, file, relationship-bearing record, or
   plugin-owned surface. A readable stale artifact is not a valid retry token.
@@ -129,7 +131,8 @@ or comparison-only.
   production-safe.
 - The claim does not let "manual resolution later" count as success unless the
   remote was preserved, the stale artifact stayed unusable, and the next retry
-  rebuilt scope from fresh live evidence.
+  rebuilt scope from fresh live evidence and is recorded as a distinct fresh
+  retry artifact.
 - The claim does not let "manual resolution later" stand in for success unless
   the remote was preserved for audit, the stale artifact stayed unusable, and
   the retry rebuilt scope from fresh live evidence on the same live write

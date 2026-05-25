@@ -23,7 +23,8 @@ Release-gate checklist for production-readiness wording:
   asset, custom table write, or plugin-owned file that only surfaced after
   the first write.
 - Show that the retry rebuilt scope from fresh live hashes after drift,
-  instead of inheriting the old decision or a stale manual-review artifact.
+  and that the fresh retry artifact is recorded separately instead of
+  inheriting the old decision or a stale manual-review artifact.
 - Show that any readable stale manual-review artifact stayed audit-only after
   drift, could not authorize a retry, and could not be widened into a new
   row, file, relationship-bearing record, or plugin-owned surface.
@@ -153,8 +154,9 @@ The failure scenarios that still need explicit proof are:
 - A manual-review artifact stays readable after drift; the missing proof is
   that it becomes audit-only, cannot authorize retry, and forces the next
   attempt to rebuild scope from fresh live evidence after the remote was
-  preserved for audit instead of widening to a different row or file, or
-  targeting a relationship-bearing or plugin-owned surface.
+  preserved for audit, with a fresh retry artifact recorded instead of
+  widening to a different row or file, or targeting a relationship-bearing or
+  plugin-owned surface.
 - A live remote drift is detected only after the first write has already
   started; the missing proof is a fail-closed pre-write boundary, not a
   post-hoc "partial recovery" story that rebrands a mixed write as success.
