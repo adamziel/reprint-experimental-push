@@ -6325,6 +6325,10 @@ Release gate for this branch:
 - no production-grade push claim unless the evidence is live-boundary proof,
   not route shape, package mount, fixture replay, readable review output,
   lab-shaped route smoke, copied executor output, or `finalMatchesLocal`.
+- no production-grade push claim unless any lab-shaped route smoke or
+  fixture-shaped smoke also shows the preserved remote, the rejection point,
+  and the fresh live-hash retry scope for the same boundary; otherwise the
+  smoke may only be a copied or fixture-backed executor behind the same URL.
 - if any item above is missing, the wording stays audit-only and cannot be
   promoted to production-grade push support.
 
