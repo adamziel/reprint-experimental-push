@@ -9,6 +9,21 @@ and one later observation of the same remote identity after drift. In both
 Docker and Playground, that proof keeps browser-visible inspection on the
 sandbox-provided `8080` ingress through a local-only proxy.
 
+The executor contract is intentionally linear:
+
+1. bind the persisted pull base package to one live remote identity in
+   `push_preflight`
+2. list live snapshot hashes for planning only in `push_snapshot_hashes`
+3. upload a canonical dry-run plan and return a receipt, not a lock, in
+   `push_plan_dry_run`
+4. revalidate fresh live evidence before every batch and at the storage
+   boundary in `push_batch_apply`
+5. read durable evidence only in `push_journal`
+6. inspect the journal and fresh live hashes before any mutating recovery in
+   `push_recover inspect`
+7. mutate only when the inspect result and auth floor still prove the branch
+   safe in `push_recover auto|finish|rollback`
+
 The pull-to-push mapping is one-way: exporter/importer establish immutable
 provenance, and push consumes it without rewriting it. The imported pull base
 package is the only starting point for push planning, and preflight binds that
@@ -79,6 +94,14 @@ The executor test topology is fixed:
 | Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
 | Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
 
+The topology identifiers are fixed:
+
+- `remote-base` and `remote-changed` are the same remote identity observed at
+  different times
+- `local-edited` is the imported local site that produces the candidate plan
+- `runner` is the only actor that may preflight, list hashes, upload the dry
+  run plan, apply batches, inspect the journal, or start recovery
+
 The test topology is intentionally the same in both harnesses so the executor
 proof stays aligned with the pull pipeline:
 
@@ -146,6 +169,7 @@ The auth boundary is part of that same executor contract:
 - dry-run, apply, and mutating recovery must carry the push session plus the
   canonical push signature and idempotency key
 - the push session scopes the write path, but it never reserves remote state
+- the auth floor must be at least as strict as current Reprint HMAC usage
 
 The corresponding pull-to-push mapping stays one-way:
 

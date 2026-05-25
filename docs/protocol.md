@@ -48,6 +48,36 @@ The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
 site, and one live remote identity that must be revalidated at apply time.
 
+The wire contract is intentionally small and ordered:
+
+1. `push_preflight` binds immutable pull provenance to one live remote
+   identity, one requested scope, and one short-lived session.
+2. `push_snapshot_hashes` lists the live remote comparison surface for
+   planning only.
+3. `push_plan_dry_run` uploads a canonical plan and returns an eligibility
+   receipt, not a lock.
+4. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+5. `push_journal` is read-only durable evidence.
+6. `push_recover inspect` reads the journal and live hashes before any
+   mutating repair.
+7. `push_recover auto|finish|rollback` may mutate only when inspect proves
+   the branch safe and the write-path auth floor still holds.
+
+That ordering matters because the pull pipeline stays the provenance source:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the pull base package as immutable provenance
+- preflight binds that package to one live remote identity and one short-lived
+  push session
+- snapshot hash listing reads the live comparison surface for planning only
+- dry-run produces a receipt, not a lock
+- batch apply revalidates fresh live evidence before every batch and at the
+  storage boundary
+- journal inspect is read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes still prove the action safe
+
 The executor proof is intentionally split across three levels:
 
 - `push_pull_mapping` shows how exporter/importer provenance becomes push
@@ -173,6 +203,15 @@ The same shape is mirrored in both harnesses:
 | Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
 | Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
 
+The proof identifiers are fixed:
+
+- `remote-base` and `remote-changed` are two observations of the same remote
+  identity, separated by drift
+- `local-edited` is the imported local clone derived from the persisted pull
+  base package
+- `runner` is the only actor allowed to preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or start recovery
+
 The harness differences are only orchestration details:
 
 - Docker uses one private network behind the runner
@@ -180,44 +219,13 @@ The harness differences are only orchestration details:
 - both harnesses keep browser-visible inspection on the sandbox-provided
   `8080` ingress through a local-only proxy
 
-The concrete lab identities used in the proof are `remote-example` for the
-remote source site and `local-dev-site` for the imported local site. The same
-remote identity is observed again after drift so the topology proves one
-remote site, one local edited site, and one runner without introducing a
-second remote authority.
+The concrete lab identities are fixed as well:
 
-In both harnesses the remote source is observed twice:
-
-- `remote-base` seeds the persisted pull package
-- `remote-changed` proves that the same remote identity can drift after the
-  dry-run receipt exists
-- `local-edited` is the imported local site that produces the candidate plan
-- `runner` is the only actor allowed to preflight, list hashes, upload the
-  dry-run plan, apply batches, inspect the journal, or start recovery
-
-That identity mapping is fixed:
-
-- `remote-base` and `remote-changed` both represent `remote-example`
-- `local-edited` represents `local-dev-site`
-- `runner` is the only actor that may preflight, list hashes, upload the dry
-  run plan, apply mutation batches, inspect the journal, or start recovery
-
-| Role | Docker | Playground |
-| --- | --- | --- |
-| `remote-base` | `remote-base` | `remote-base` |
-| `local-edited` | `local-edited` | `local-edited` |
-| `remote-changed` | `remote-changed` | `remote-changed` |
-| `runner` | `runner` | local test process |
-
-This is enough to prove one remote identity observed twice, one imported local
-edit site, and one shared ingress rule without inventing extra topology.
-
-The production proof maps to the same one-remote, one-local shape in both
-harnesses:
-
-- `remote-base` seeds the persisted pull base package from `remote-example`
-- `local-edited` is the imported local site that produces the candidate plan
-- `remote-changed` is the same remote identity observed later after drift
+- `remote-example` is the source identity behind both `remote-base` and
+  `remote-changed`
+- `local-dev-site` is the imported local site behind `local-edited`
+- `runner` is the executor process in Docker or the local test process in
+  Playground
 - `runner` owns preflight, remote snapshot hash listing, dry-run upload,
   batched apply, journal inspect, and recovery
 - dry-run and apply stay separate remote operations, and apply revalidates
