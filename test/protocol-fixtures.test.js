@@ -293,11 +293,35 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(deploymentTopologyContract.topology.remote_changed, 'remote-changed');
   assert.equal(deploymentTopologyContract.topology.runner, 'runner');
   assert.equal(deploymentTopologyContract.topology.same_remote_identity, true);
+  assert.equal(deploymentTopologyContract.topology.proof[0], 'remote-base seeds the persisted pull base');
+  assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'dry-run and apply remain separate remote operations',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'apply revalidates fresh live evidence before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'journal inspect stays read-only',
+    ),
+  );
+  assert.ok(
+    deploymentTopologyContract.topology.proof.includes(
+      'recovery starts with inspect before any mutating repair',
+    ),
+  );
   assert.ok(
     deploymentTopologyContract.topology.proof.includes(
       'remote-changed is the same remote identity observed later after drift',
     ),
   );
+  assert.equal(deploymentTopologyContract.deployment.docker.ingress_port, 8080);
+  assert.equal(deploymentTopologyContract.deployment.docker.proxy_policy, 'local-only');
+  assert.equal(deploymentTopologyContract.deployment.docker.tunnels, 'disallowed');
   assert.ok(
     deploymentTopologyContract.deployment.docker.proof.includes(
       'browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy',
@@ -306,6 +330,40 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.ok(
     deploymentTopologyContract.deployment.playground.proof.includes(
       'push preflight, dry-run, apply, journal, and recovery use the same route names as Docker',
+    ),
+  );
+  assert.equal(deploymentTopologyContract.pull_to_push_mapping.exporter, 'scans the merge base and coverage evidence');
+  assert.equal(
+    deploymentTopologyContract.pull_to_push_mapping.importer,
+    'persists the base package as immutable provenance',
+  );
+  assert.equal(
+    deploymentTopologyContract.pull_to_push_mapping.preflight,
+    'binds that persisted base package to the live remote identity and a short-lived session',
+  );
+  assert.equal(
+    deploymentTopologyContract.pull_to_push_mapping.snapshot_hashes,
+    'lists the live remote comparison set for planning only',
+  );
+  assert.equal(
+    deploymentTopologyContract.pull_to_push_mapping.dry_run,
+    'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock',
+  );
+  assert.equal(
+    deploymentTopologyContract.pull_to_push_mapping.apply,
+    'revalidates fresh live evidence before every batch and again at the storage boundary',
+  );
+  assert.equal(
+    deploymentTopologyContract.pull_to_push_mapping.journal,
+    'reads durable evidence without authorizing mutation',
+  );
+  assert.equal(
+    deploymentTopologyContract.pull_to_push_mapping.recovery_inspect,
+    'starts with inspect and classifies finish, rollback, retry, or block without mutation',
+  );
+  assert.ok(
+    deploymentTopologyContract.required_invariants.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
     ),
   );
   assert.ok(
