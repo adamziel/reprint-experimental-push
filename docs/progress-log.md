@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-25 - Current Supervisor Snapshot
 
-- Last update: 2026-05-25 08:03:50 CEST.
+- Last update: 2026-05-25 08:04:29 CEST.
 - Status: blocked; the visible page, log, and latest audit note line up.
 - Trend: no proof gap closed; the public page stays tight and easier to scan.
 - Supervision: the feedback-supervisor lane remains active.
