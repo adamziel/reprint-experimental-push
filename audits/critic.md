@@ -49,16 +49,15 @@ Blocked production claims:
   comparison unless the exact cited upstream revision or worktree state was
   reverified at the same live mutation boundary.
 
-The protocol is stronger than a generic sync sketch: it has dry-run/apply
-separation, live-remote revalidation, idempotency keys, a recovery vocabulary,
-and hash-only evidence for several lab slices. That is still not enough to
-claim production push on a live WordPress source site. The missing proofs are
-not cosmetic. They are the exact points where a partial write, hidden plugin
-side effect, stale retry, or graph rewrite can silently lose remote state while
-the system reports a plausible success. A route-shaped smoke, copied-lab mount,
-or fixture-backed hash never upgrades to production proof unless it exercised
-the live mutation executor against a drifted remote and rejected stale
-authority before mutation.
+The protocol has useful lab properties: dry-run/apply separation, live-remote
+revalidation, idempotency keys, a recovery vocabulary, and hash-only evidence
+for several lab slices. None of that is production proof. The missing proofs
+are not cosmetic. They are the exact points where a partial write, hidden
+plugin side effect, stale retry, or graph rewrite can silently lose remote
+state while the system reports a plausible success. A route-shaped smoke,
+copied-lab mount, or fixture-backed hash never upgrades to production proof
+unless it exercised the live mutation executor against a drifted remote and
+rejected stale authority before mutation.
 In particular, a green lab result never counts as production proof unless the
 same live write path was exercised against a drifted remote and the audit shows
 the stale approval was rejected before mutation.
