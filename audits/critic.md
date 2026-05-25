@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `91ef2b06`, with earlier retained-source proof steps `2ac32891`,
+current remote head `91ef2b06`, with earlier retained-source proof steps `2ac32891`,
 `889bd37a`, and `63a3502f` still useful as history, not as release proof.
 The latest explicit verdict on that lane is
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the lane's completed
@@ -72,7 +72,8 @@ inspect, and retry a rejected remote on this branch.
 
 ## What improved in the supervised lane
 
-The evidence improved, but only in the lab-harness sense:
+The evidence improved, but only in the lab-harness sense, and only on the
+current remote head:
 
 - `verify:release` now exists in the remote lane and is exercised as a
   retained-source run rather than route-shape-only smoke.
