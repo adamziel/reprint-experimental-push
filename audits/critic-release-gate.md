@@ -33,12 +33,12 @@ Do not use production wording unless the branch has all of the following for the
   preserved remote that stayed inspectable after rejection, the exact
   rejection point before the first write, and the journal/recovery inspection
   needed to audit retry scope;
-- commit `3089aee2` and a completed `npm run verify:release` run are
+- commit `bd9ef3e8` and a completed `npm run verify:release` run are
   retained-source evidence on this baseline, but they still do not satisfy
   production proof until the same branch shows live WordPress auth/session
   lifecycle, durable journal semantics, graph identity, and plugin-driver
   coverage on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
-- the supervised reliable-executor lane at remote head `68664884` is stronger
+- the supervised reliable-executor lane at remote head `bd9ef3e8` is stronger
   retained-source lab evidence than the baseline, but it still does not prove
   production-grade push support on this branch unless the same live boundary is
   rerun here against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
@@ -55,6 +55,7 @@ Do not use production wording unless the branch has all of the following for the
 - if no branch-local command has yet been run against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, then the branch has not proven the first executor/auth/preserved-remote boundary and every production-grade claim must stay blocked;
 - if a claim points to `npm run test:playground:production-shaped-release-proof` or any similarly named wrapper without a matching `package.json` entry and a rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, treat that claim as setup-only and fail closed;
 - if a later plugin-owned surface appears after the first write, the earlier approval does not cover it unless the boundary separately preserved the remote, rejected stale authority, and rebuilt retry scope from fresh live hashes for that later surface;
+- if the recovery artifact cannot show which rows, files, relationship-bearing records, and plugin-owned surfaces committed before journal finalize, the apply is still mixed and must fail closed;
 - the next acceptable proof from reliable-executor must be a live rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that records the exact executable command string, the executor identity, the preserved remote that remained inspectable after rejection, the exact rejection point before the first write, and the journal/recovery inspection needed to audit retry scope; without those facts from one rerun, the branch still has compatibility evidence only;
 - the next proof must name the exact executable command string that produced those facts; if the evidence is only a wrapper around setup, a route-shaped smoke, or a review note, it does not count as a live rerun of the boundary;
 - if the claim cannot name the exact command string and the exact live source URL in the same sentence, it has not identified a rerunnable release gate and must not be described as production-ready;
@@ -128,6 +129,7 @@ Source-note comparisons remain provenance only:
 - a matching route family, package mount, production-shaped URL, or lab fixture route can still be served by a copied or fixture-backed executor, so route shape is compatibility evidence only and never proof of the live write boundary or production safety by itself;
 - a lab-shaped route smoke or fixture-shaped smoke can still be served by a copied or fixture-backed executor behind the same URL, so it remains compatibility evidence only unless it also names the preserved remote, the rejection point, and the fresh retry scope for the same boundary;
 - any source-note comparison to Reprint, ZS-Sync, or ForkPress is historical context only unless it names the exact upstream revision or worktree state, says what the note supports here, says what it does not support here, and the same live boundary was rerun on this branch; use the observed anchors from `docs/source-notes.md` (`27c5f25`, `d9334a0`, `55f9879`) as provenance only, because the note still cannot become current retry authority without preserved-remote evidence and a fresh live-hash retry scope;
+- none of the source notes prove production auth/session lifecycle or durable journal semantics outside the Playground harness; they are design inputs, not release evidence;
 - any source-note comparison must label itself explicitly as historical context, compatibility evidence, or live retry proof; if it does not say which class it is, it fails closed and cannot be used for production wording;
 - any manual-review artifact must likewise label itself as historical context, compatibility evidence, or live retry proof; unlabeled wording is audit-only and cannot become retry authority;
 - any source-note comparison that only proves route shape, package mount shape, production-shaped URL, reviewer wording, or fixture replay stays compatibility evidence only, even if it names the upstream revision; and

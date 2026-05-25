@@ -19,6 +19,13 @@ Production-grade wording is still false if it relies on lab-session shape,
 retained-source journal rows, or route compatibility as a stand-in for live
 WordPress auth/session durability.
 
+The latest remote evidence is strong enough to retire stale "no
+`verify:release` exists" critiques. It is not strong enough to unlock
+production wording, because no rerunnable live boundary on a real local,
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL` has yet proven preserved-
+remote retention, apply-time revalidation, and production auth/session
+lifecycle on the same mutation.
+
 The critique target is therefore narrow: this worktree still lacks a rerunnable
 live boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`
 that preserves the rejected remote, revalidates at apply time, and proves
@@ -129,6 +136,10 @@ Any hidden-loss mode that is not proven there remains a blocker:
 - remote drift after dry-run but before apply must be rejected without losing
   the original remote state, and retry scope must be rebuilt from fresh live
   hashes rather than manual judgment;
+- drift discovered after dry-run receipt but before journal finalize must not
+  turn a partial apply into success; if the recovery artifact cannot show
+  which rows, files, relationships, and plugin-owned surfaces committed, the
+  remote is still mixed and the mutation is blocked;
 - stale auth/session reuse after identity or role drift must be proven safe
   only if the branch shows lease/fencing behavior; a preflight-minted session
   or refreshed credential that can still authorize a later apply against a
@@ -150,6 +161,10 @@ Any hidden-loss mode that is not proven there remains a blocker:
   if the system cannot prove that the same logical object is still the same
   row, file, or relationship-bearing record after remap, the "retry" is a
   new mutation, not a safe continuation;
+- mixed file, DB, and plugin side effects must be classified per surface
+  before retry; a partially applied plugin option, cron row, file publish, or
+  metadata rewrite cannot be relabeled as success just because the plan
+  eventually converged;
 - partial file, DB, and plugin side effects must never be reported as success
   without a preserved-remote receipt that lets a reviewer audit and retry the
   exact rejected boundary.
@@ -176,6 +191,9 @@ that this branch is release-ready:
   observed upstream commit; it does not prove this branch can preserve the
   rejected remote, classify plugin-owned side effects, or rerun the same live
   boundary with fresh live hashes.
+- None of the source notes prove production auth/session lifecycle or durable
+  journal semantics outside the Playground harness; they are design inputs,
+  not release evidence.
 
 Those notes are strongest when they are treated as input to the design, not as
 evidence that the current branch already satisfies release gating. Route shape
