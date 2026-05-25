@@ -86,6 +86,7 @@ await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playgrou
             sourceUrl: remoteServer.baseUrl,
             dryRun: proof.dryRun,
             apply: proof.apply,
+            recoveryInspect: proof.recoveryInspect,
             after: proof.after,
             dbJournal: proof.dbJournal,
           },

@@ -86,7 +86,8 @@ one-remote, one-local, one-drift topology with real HTTP output.
 
 The release-facing live protocol proof is `npm run test:playground:production-shaped-live-protocol-proof`.
 Use it when you need the same live topology plus the snapshot, dry-run, and
-apply revalidation boundary on the real Playground remote.
+apply revalidation boundary, recovery inspect, and journal readback on the
+real Playground remote.
 
 The release-facing checked command is `npm run test:playground:production-shaped-proof`.
 Use it when you need one executable entry point that proves both the protocol

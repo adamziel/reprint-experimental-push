@@ -181,8 +181,8 @@ HTTP output.
 The live protocol proof is `npm run test:playground:production-shaped-live-protocol-proof`.
 That command starts the same one-remote, one-local, one-drift Playground
 topology, proves the production-shaped preflight/session bind, then carries
-the live remote through snapshot planning, dry-run receipt generation, and
-apply-time revalidation.
+the live remote through snapshot planning, dry-run receipt generation,
+apply-time revalidation, recovery inspect, and journal readback.
 
 The release-facing proof command is `npm run test:playground:production-shaped-proof`.
 It pairs the protocol fixture test with the explicit missing-secret smoke so

@@ -130,6 +130,7 @@ test('production-shaped live protocol proof runs the real preflight plus snapsho
   assert.match(proof.stdout, /"session": \{\s*"id": "[A-Za-z0-9_-]{32,160}"/);
   assert.match(proof.stdout, /"dryRun": \{/);
   assert.match(proof.stdout, /"apply": \{/);
+  assert.match(proof.stdout, /"recoveryInspect": \{/);
   assert.match(proof.stdout, /"dbJournal": \{/);
 });
 
