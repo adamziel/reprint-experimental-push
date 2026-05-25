@@ -43,6 +43,10 @@ has a concrete failure scenario:
   retry authority for a different row, file, relationship-bearing record, or
   plugin-owned surface after drift; otherwise the claim hides a second-write
   data-loss mode behind “manual resolution” language;
+- "manual resolution" only counts when the remote is preserved for audit,
+  the retry is recorded as a fresh artifact on this branch, and the stale
+  approval cannot be widened to another row, file, relationship-bearing
+  record, or plugin-owned surface;
 - create-time identity remapping has to be either durably proven or hard-
   blocked before mutation, including alias, rename, and renumber cases;
   otherwise a create can land on the wrong identity after a live remap;
