@@ -1321,6 +1321,87 @@ test('keeps the durable replay contract intact when failure happens after depend
   assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote');
 });
 
+test('durable pre-commit failures stay old-remote and a completed replay stays fully-updated', () => {
+  const scenarios = [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ];
+
+  for (const [label, options, expectedStatus] of scenarios) {
+    const base = baseSite();
+    const local = baseSite();
+    local.files['index.php'] = '<?php echo "local";';
+    local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+    const plan = planFor(base, local, baseSite());
+
+    const journalPath = tempRecoveryJournalPath();
+    const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+    const remote = baseSite();
+    const before = JSON.stringify(remote);
+
+    const failure = captureError(() =>
+      applyPlan(remote, plan, {
+        durableJournal,
+        ...options,
+      }),
+    );
+
+    durableJournal.close();
+
+    assert.ok(failure instanceof PushPlanError, label);
+    assertRemoteUnchanged(remote, before);
+    assert.equal(
+      failure.code,
+      options.failBeforeMutation
+        ? 'INJECTED_FAILURE_BEFORE_MUTATION'
+        : options.failAfterStaging
+          ? 'INJECTED_FAILURE_AFTER_STAGING'
+          : 'INJECTED_FAILURE_AFTER_DEPENDENCY_VALIDATION',
+      label,
+    );
+    assertAcceptableRecoveryState(failure.details.recovery);
+    assertRecoveryStateArtifacts(failure.details.recovery, 'old-remote');
+    assert.equal(failure.details.recovery.artifacts.journal.status, expectedStatus, label);
+    assert.equal(failure.details.recovery.artifacts.remote, undefined);
+
+    const persisted = readRecoveryJournal(journalPath);
+    assert.equal(persisted.records[0].type, 'journal-opened');
+    assert.equal(
+      persisted.records.some((record) => record.type === 'apply-staged'),
+      options.failBeforeMutation ? false : true,
+      label,
+    );
+    assert.equal(
+      persisted.records.some((record) => record.type === 'dependencies-validated'),
+      options.failAfterDependencyValidation ? true : false,
+      label,
+    );
+    assert.equal(
+      persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'old-remote'),
+      true,
+      label,
+    );
+
+    const retryRemote = baseSite();
+    const retryJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+    const retry = applyPlan(retryRemote, plan, {
+      durableJournal: retryJournal,
+      journal: failure.details.recovery.artifacts.journal,
+    });
+    retryJournal.close();
+
+    assert.equal(retry.appliedMutations, plan.mutations.length, label);
+    assert.equal(retry.site.files['index.php'], '<?php echo "local";', label);
+    assert.equal(retry.site.db.wp_posts['ID:2'].post_title, 'Inserted locally', label);
+    assert.equal(Object.keys(retry.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1, label);
+    assertAcceptableRecoveryState(retry.recoveryState);
+    assertRecoveryStateArtifacts(retry.recoveryState, 'fully-updated-remote');
+    assert.equal(retry.recoveryState.artifacts.remote, undefined);
+    assert.equal(retry.recoveryState.artifacts.journal.status, 'completed');
+  }
+});
+
 test('keeps the durable old-remote contract intact when failure happens before mutation', () => {
   const base = baseSite();
   const local = baseSite();
