@@ -695,10 +695,28 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(dryRunApplyContract.required_invariants.includes('the dry-run receipt never becomes a lock'));
   assert.ok(dryRunApplyContract.required_invariants.includes('the remote may drift between dry-run and apply'));
   assert.equal(recoveryRevalidationContract.contract_id, 'push-recovery-revalidation-contract-one-remote-one-local');
+  assert.equal(
+    recoveryRevalidationContract.purpose,
+    'proves dry-run stays separate from apply and inspect-first recovery still depends on fresh live hashes',
+  );
   assert.equal(recoveryRevalidationContract.stale_to_live_flow.recovery.inspect_mode, 'inspect');
   assert.ok(recoveryRevalidationContract.stale_to_live_flow.recovery.requires.includes('read journal'));
   assert.ok(recoveryRevalidationContract.stale_to_live_flow.recovery.requires.includes('inspect live hashes'));
+  assert.equal(
+    recoveryRevalidationContract.stale_to_live_flow.apply_revalidation.at_storage_boundary,
+    'fresh live hashes plus storage-guard proof',
+  );
   assert.ok(recoveryRevalidationContract.required_invariants.includes('inspect is read-only and must happen before any mutating recovery'));
+  assert.ok(
+    recoveryRevalidationContract.required_invariants.includes(
+      'apply must revalidate the live remote before every batch and at the storage boundary',
+    ),
+  );
+  assert.ok(
+    recoveryRevalidationContract.required_invariants.includes(
+      'auth must be at least as strict as current Reprint HMAC usage',
+    ),
+  );
   assert.equal(recoveryRevalidationContract.stale_to_live_flow.apply_revalidation.rejects_without_fresh_live_evidence, true);
   assert.equal(remoteLivenessContract.contract_id, 'push-remote-liveness-contract');
   assert.equal(remoteLivenessContract.push_liveness.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');

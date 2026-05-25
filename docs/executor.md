@@ -107,6 +107,7 @@ The canonical proof stack for that scope is:
 | [`fixtures/protocol/push-auth-session-fencing-contract.json`](../fixtures/protocol/push-auth-session-fencing-contract.json) | The push-session boundary, journal-row fence, and read-only recovery inspect rule. |
 | [`fixtures/protocol/push-auth-session-recovery-contract.json`](../fixtures/protocol/push-auth-session-recovery-contract.json) | The same fence when recovery needs to prove finish, rollback, or block before mutating. |
 | [`fixtures/protocol/push-recovery-inspect-contract.json`](../fixtures/protocol/push-recovery-inspect-contract.json) | Inspect reads the journal row and fresh live hashes before classifying finish, rollback, retry, or block. |
+| [`fixtures/protocol/push-recovery-revalidation-contract.json`](../fixtures/protocol/push-recovery-revalidation-contract.json) | Mutating recovery still requires fresh live hashes plus journal evidence after inspect proves the branch is safe. |
 
 If a review needs the finer-grained auth and restart proof, add:
 
@@ -209,8 +210,9 @@ The proof stack is the canonical review order:
 6. `push-auth-session-fencing-contract.json`
 7. `push-auth-session-recovery-contract.json`
 8. `push-recovery-inspect-contract.json`
-9. `push-snapshot-hashes-page-contract.json`
-10. `push-dry-run-apply-revalidation-contract.json`
+9. `push-recovery-revalidation-contract.json`
+10. `push-snapshot-hashes-page-contract.json`
+11. `push-dry-run-apply-revalidation-contract.json`
 
 The pull-to-push bridge is easiest to review through the fixtures:
 
@@ -230,6 +232,8 @@ The pull-to-push bridge is easiest to review through the fixtures:
   `push-auth-session-recovery-contract.json`, and
   `push-recovery-inspect-contract.json` prove the session fence, journal row
   fence, and inspect-first recovery boundary.
+- `push-recovery-revalidation-contract.json` shows the same drift case still
+  requires fresh live hashes plus journal evidence before mutating repair.
 
 ## Recovery States
 
