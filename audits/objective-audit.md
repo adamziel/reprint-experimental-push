@@ -160,6 +160,12 @@ The table below is strict by design:
 
 The current tests are strongest where they reject unsafe claims, and weakest where they are asked to prove production release safety on the live push path. Their strongest value today is refusal evidence, not approval evidence.
 
+That distinction matters for the objective itself:
+
+- No data loss is still unproven because the suite never exercises a real live-source mutation boundary and then verifies every affected WordPress shape after an apply-time recheck.
+- Reliability is still unproven because the crash, retry, replay, duplicate-request, stale-claim, lease-expiry, and restart scenarios are only shown in fixtures or lab routes, not on the production storage and transport path.
+- Speed is still unproven because the benchmark surface refuses unsupported throughput claims instead of timing the live push path against a release threshold.
+
 For the objective's headline claims, the evidence is still negative proof only:
 
 - No data loss is not proven by planner, replay, or journal-model tests unless they reach the live source boundary and verify every affected WordPress shape survives apply-time rechecks.
