@@ -115,6 +115,15 @@ The lab identities for that proof are `remote-example` and `local-dev-site`.
 They let the executor point at one remote source, one imported local edit
 site, and the same remote identity again after drift.
 
+The machine-readable topology proof lives in
+[`fixtures/protocol/push-topology.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology.json).
+It keeps the Docker and Playground shapes explicit without collapsing the
+remote source, local edit site, and drift witness into one ambiguous role.
+The related recovery fence proof lives in
+[`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json),
+which is the compact inspect-first evidence for stale-session rejection,
+lease fencing, and live-hash revalidation.
+
 The executor keeps the same security envelope in Docker and Playground:
 
 - the sandbox-provided `8080` ingress is the only browser-visible path

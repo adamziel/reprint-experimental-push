@@ -417,6 +417,23 @@ test('push contract fixture binds the pull handoff to the production push sequen
     readJson('fixtures/protocol/push-executor-topology-proof.json').pull_to_push_mapping.preflight,
     'binds that persisted base package to the live remote identity and a short-lived session',
   );
+  const topology = readJson('fixtures/protocol/push-topology.json');
+  assert.equal(topology.topology_id, 'push-topology-one-remote-one-local');
+  assert.equal(topology.remote_identity.site_id, 'remote-example');
+  assert.equal(topology.remote_identity.same_remote_identity, true);
+  assert.equal(topology.roles.remote_base.examples.docker, 'remote-base');
+  assert.equal(topology.roles.local_edited.examples.playground, 'local-edited');
+  assert.equal(topology.roles.runner.examples.playground, 'local test process');
+  assert.ok(
+    topology.docker.shape.includes(
+      'push_journal and push_recover inspect are read-only evidence readers, while mutating recovery modes require fresh live proof',
+    ),
+  );
+  assert.ok(
+    topology.playground.shape.includes(
+      'use only the sandbox-provided 8080 ingress through a local-only proxy when browser-visible inspection is needed',
+    ),
+  );
   assert.equal(deploymentTopologyContract.contract_id, 'push-deployment-topology-contract');
   assert.equal(deploymentTopologyContract.topology.remote_base, 'remote-base');
   assert.equal(deploymentTopologyContract.topology.local_edited, 'local-edited');
