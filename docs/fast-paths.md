@@ -640,6 +640,10 @@ under load:
   rejected because planning evidence and cached hashes can skip lookup and
   rehash work, but they cannot prove dependency checks, staged files, or the
   atomic-group commit survived failure.
+- compressed-remote-index-and-cached-manifest-hash-skips-plugin-install-writeback
+  is rejected because planning evidence and cached manifest hashes can reduce
+  lookup work, but they cannot prove dependency checks, staged files, or the
+  atomic-group commit survived failure.
 - compressed-remote-index-and-cached-file-hash-skips-plugin-update-finalize is
   rejected because planning evidence and cached hashes can skip lookup and
   rehash work, but they cannot prove the live compare, staged rows, or the
