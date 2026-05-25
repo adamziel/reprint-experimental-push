@@ -25,6 +25,13 @@ entry point, and none of them has shown the live executor/auth/preserved-
 remote boundary on an actual remote here. Without that rerun, the scripts are
 smoke coverage only, even if they are useful for compatibility checks.
 
+Scenario: a review note upgrades one of those smoke names into a
+"production-shaped live protocol proof" without naming a real-site command.
+Missing proof: `package.json` still exposes only lab and playground scripts,
+so the note is still relying on shape-matching, not a rerun of the live
+boundary with preserved-remote evidence and retry scope rebuilt from live
+hashes.
+
 Scenario: an operator sees a green smoke, a polished review note, or a
 production-sounding script name and assumes push support is ready. Missing
 proof: there is still no branch-local command that can be rerun against a real
