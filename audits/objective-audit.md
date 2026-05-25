@@ -56,6 +56,7 @@ The current tests are strongest where they reject unsafe claims, and weakest whe
 - `npm run test:playground:production-shaped-push` and `npm run test:playground:production-plugin-package` prove route shape and packaging behavior. They still report `labBacked: true`, so they are explicitly not production proof.
 - `test/recovery-journal.test.js` proves file-backed JSONL append/restart behavior, monotonic sequences, no raw journal values, and restart classification. It does not prove production storage durability, cross-process lease handling, or a real remote/local crash boundary.
 - `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the benchmark model keeps proof obligations attached to the proposed fast paths and that unsupported throughput claims are blocked. They do not measure a production push path or establish a real runtime/memory threshold.
+- All of the optional smokes can pass at once and still leave the objective blocked, because none of them is mandatory and none of them is the single enforced decision point the release bar needs.
 
 ## Test Claim Audit
 
@@ -128,6 +129,12 @@ Actionable release gate requirement:
 1. Add one required command, such as `npm run verify:release`, that runs the auth/session, durable journal, leases/fencing, graph identity, plugin-data-driver, real topology, crash-boundary, and benchmark checks in a fixed order.
 2. Make that command exit non-zero if any step reports `labBacked: true`, fixture-only scope, skipped live-source proof, or an unsupported throughput claim.
 3. Wire that command into CI or the release pipeline as the only accepted release entrypoint, and keep the optional smokes as contributors to that gate rather than as substitute release evidence.
+
+Minimum acceptance rule for the gate:
+
+- A green `npm test` or green `npm run test:playground` result must not be enough to clear release.
+- The gate must fail if the proof set lacks a live remote/local topology, a durable journal on the real storage path, or a measured production-shaped speed result.
+- If any subcheck is still a lab fixture, the release command must say so and stop.
 
 ## Test Verdict
 
