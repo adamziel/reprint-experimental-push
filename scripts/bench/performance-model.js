@@ -2858,6 +2858,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'backpressure', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-and-large-upload-recovery-after-pause',
+    proposal: 'use a compressed remote index plus a cached file hash to skip plugin-install and large-upload recovery after a pause',
+    rejectedBecause: 'planning evidence and cached file hashes can trim duplicate rehashing, but they cannot prove the live row compares, chunk acknowledgements, or atomic-group commit barriers survived the pause',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-resume-after-pause',
     proposal: 'use a compressed remote index plus a cached file fingerprint to skip large-upload resume after a pause',
     rejectedBecause: 'planning evidence and cached fingerprints can trim duplicate rehashing, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier',

@@ -1339,6 +1339,10 @@ Rejected fast paths stay rejected even when they look fast on paper:
   bundle commit after a pause, because planning evidence and cached hashes do
   not prove the chunk receipts, row receipts, backpressure state, or
   atomic-group commit barrier survived failure.
+- A compressed remote index plus a cached file hash cannot skip plugin-install
+  and large-upload recovery after a pause, because planning evidence and cached
+  hashes do not prove the live row compares, chunk acknowledgements, or
+  atomic-group commit barriers survived failure.
 
 The common failure mode across these rejections is the same: the shortcut
 removes either a live precondition check, a durable receipt, or the atomic
