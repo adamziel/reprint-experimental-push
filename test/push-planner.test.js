@@ -24016,6 +24016,74 @@ test('keeps remote-only plugin drift at the live release boundary while a ready 
   assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* late plugin drift */');
 });
 
+test('keeps remote-only plugin drift at the live release boundary while a ready delete plan preserves a matching independent edit, a matching plugin-owned resource, and remote-only plugin removal evidence', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+  delete local.files['wp-content/plugins/forms/forms.php'];
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingPluginOwned = decisionFor(plan, 'row:["wp_options","option_name:forms_settings"]');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingPluginOwned.decision, 'already-in-sync');
+  assert.equal(matchingPluginOwned.change.localChange, 'update');
+  assert.equal(matchingPluginOwned.change.remoteChange, 'update');
+  assert.equal(pluginFileDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(completed.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(completed.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'shared');
+  assert.equal(Object.hasOwn(completed.site.files, 'wp-content/plugins/forms/forms.php'), false);
+  assert.equal(completed.site.plugins.forms.description, 'remote-only plugin drift');
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode = 'late plugin-owned drift';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode, 'late plugin-owned drift');
+  assert.equal(driftedRemote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('keeps remote-only plugin drift at the live release boundary while a ready delete plan preserves a matching independent delete, matching independent edit, and matching file type swap and refuses late drift on re-apply', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
