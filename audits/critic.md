@@ -2486,17 +2486,21 @@ False reliability claims to avoid:
 
 Additional production-readiness blockers that still need explicit proof:
 
-- Hidden data-loss modes must be named and closed, including live remote
-  drift, create-time identity remap, plugin-owned side effects outside the
-  allowlist, partial file/DB/plugin writes, and stale review artifacts that
-  remain readable after drift.
-- Ambiguous conflict policy must be removed. Every manual-resolution path
-  must say whether the remote was preserved, whether the stale artifact was
-  rejected as authority before mutation, and what fresh live evidence
-  rebuilt the retry scope from the preserved remote.
+- Hidden data-loss modes must be named and closed, including a dry-run/apply
+  drift where the live remote changes before the first write, a create-time
+  identity remap or alias that points at a different live target, plugin-owned
+  state outside the allowlist, partial file/DB/plugin writes, and stale review
+  artifacts that remain readable after drift.
+- Ambiguous conflict policy must be removed. Every manual-resolution path must
+  say whether the remote was preserved, whether the stale artifact was rejected
+  as authority before mutation, and what fresh live evidence rebuilt the retry
+  scope from the preserved remote. "Manual resolution" is not a success label
+  unless the remote stayed auditable and the retry was rebuilt from fresh live
+  hashes.
 - Plugin data traps must be proven safe or blocked with an explicit surface
-  list. A single allowlisted option, row, generated file, or plugin route does
-  not prove the rest of the plugin-owned graph is safe.
+  list. A single allowlisted option, row, generated file, cache entry, cron
+  row, runtime registry, serialized blob, or plugin route does not prove the
+  rest of the plugin-owned graph is safe.
 - False reliability claims must be barred from release wording, including any
   statement that route shape, package mount, fixture replay, or
   `finalMatchesLocal` proves production safety; those are compatibility checks
@@ -2506,9 +2510,12 @@ Additional production-readiness blockers that still need explicit proof:
   it may describe design context, but it does not become current proof unless
   the exact upstream revision or worktree state and the exact live mutation
   boundary were both reverified for this repo's claim on the same live
-  mutation executor.
+  mutation executor. If either one is missing, the comparison is historical
+  context only.
 - Any comparison that lacks those two specifics is historical context only,
-  even if the route shape, mount shape, or hash output looks current.
+  even if the route shape, mount shape, or hash output looks current. A
+  matching hash or mount tells us the lab shape is compatible; it does not
+  prove the live executor, stale rejection point, or preserved remote.
 - A claim that only says the upstream citation is "correct" is still not
   production proof unless it also shows the branch-local recheck at the same
   live boundary. A correct citation without a same-boundary recheck is just a
@@ -2517,15 +2524,17 @@ Additional production-readiness blockers that still need explicit proof:
   following concrete cases:
   - live remote drift that appears after dry-run but before the first write;
   - create-time remap or aliasing that changes the identity boundary;
-  - plugin-owned state outside the allowlist, including runtime registries or
-    generated surfaces;
-  - partial file/DB/plugin side effects that cannot be classified durably;
+  - plugin-owned state outside the allowlist, including runtime registries,
+    generated surfaces, cron rows, caches, or serialized blobs;
+  - partial file/DB/plugin side effects that cannot be classified durably as
+    old, new, or blocked;
   - stale manual-review artifacts that still look readable after drift.
 - A release gate that only checks lab route shape, fixture replay, or
   `finalMatchesLocal` is not a production gate. It must show the preserved
   remote, the stale rejection point, and the fresh retry scope for each failed
   case above, plus the exact plugin-owned surfaces that were discovered or
-  hard-blocked.
+  hard-blocked. If the gate cannot name the exact failure scenario it survived,
+  it is not a production gate.
 
 Before this project can claim production-grade push support, it still needs
 these explicit proofs:
@@ -2555,6 +2564,14 @@ these explicit proofs:
    audit, the stale artifact was rejected before mutation, and the retry scope
    was rebuilt from fresh live evidence rather than inherited from the old
    review token.
+
+The release gate is intentionally strict because the unsafe failures are not
+theoretical. A route can return current-looking hashes while still hiding a
+different live target behind a create-time remap, a plugin can write a cron row
+or runtime registry entry that the main row audit never mentions, and a
+readable review artifact can keep looking legitimate after drift while no
+longer being safe authority. If the branch cannot prove which of those failure
+modes it survived, the claim stays lab-backed.
 
 Production-readiness wording stays blocked unless all of the above are true
 on the same live write path. If the evidence only shows a production-shaped
