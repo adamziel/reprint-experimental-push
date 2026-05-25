@@ -34,7 +34,8 @@ The production proof stack is fixed and should be read in this order:
 6. `push-remote-liveness-topology-contract.json` for the one-remote,
    one-local, one-drift harness plus the liveness split.
 7. `push-production-topology-contract.json` for the Docker and Playground
-   harness shape.
+   harness shape, including the one-remote, one-local, one-drift roles, the
+   `8080` ingress rule, and the journal-row/recovery-inspect boundary.
 
 The executor follows the same production ladder the protocol defines:
 

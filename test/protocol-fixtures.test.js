@@ -142,6 +142,7 @@ test('production topology fixture keeps the pull bridge, dry-run/apply split, an
     'journal inspection is read-only and never authorizes mutation by itself',
     'recovery must begin with inspect before any mutating repair',
     'authentication must be at least as strict as current Reprint HMAC usage',
+    'journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable',
     'one remote source site, one imported local site, and one drift witness are enough to prove the production topology',
   ]);
 });

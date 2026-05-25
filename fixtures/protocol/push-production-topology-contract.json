@@ -65,6 +65,7 @@
         "dry-run and apply remain separate remote calls",
         "apply revalidates fresh live evidence before every batch and at the storage boundary",
         "journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch",
+        "recovery inspection happens before any mutating repair and uses the same auth floor as the write path",
         "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
       ]
     },
@@ -75,6 +76,7 @@
         "local-edited is the imported local site derived from the persisted pull base package",
         "runner uses the same route names as Docker",
         "journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch",
+        "recovery inspection happens before any mutating repair and uses the same auth floor as the write path",
         "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy",
         "dry-run and apply remain separate remote calls",
         "apply revalidates fresh live evidence before every batch and at the storage boundary"
@@ -87,6 +89,7 @@
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
     "authentication must be at least as strict as current Reprint HMAC usage",
+    "journal rows must keep claim ownership, claim generation, lease expiry, and recovery fence evidence durable",
     "one remote source site, one imported local site, and one drift witness are enough to prove the production topology"
   ]
 }
