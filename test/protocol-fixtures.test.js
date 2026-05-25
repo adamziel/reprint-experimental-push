@@ -392,6 +392,41 @@ test('push contract fixture binds the pull handoff to the production push sequen
     ),
   );
   assert.equal(productionRecoveryDriftContract.topology.networking.ingress_port, 8080);
+  assert.equal(
+    productionPushRecoveryContract.contract_id,
+    'push-production-push-recovery-contract-one-remote-one-local',
+  );
+  assert.equal(
+    productionPushRecoveryContract.pull_pipeline.persisted_base_package.remote_site_id,
+    'remote-example',
+  );
+  assert.deepEqual(productionPushRecoveryContract.push_sequence, [
+    'push_preflight',
+    'push_snapshot_hashes',
+    'push_plan_dry_run',
+    'push_batch_apply',
+    'push_journal',
+    'push_recover inspect',
+    'push_recover auto|finish|rollback',
+  ]);
+  assert.equal(
+    productionPushRecoveryContract.auth_and_session.required_floor,
+    'at least as strict as current Reprint HMAC usage',
+  );
+  assert.equal(
+    productionPushRecoveryContract.journal_and_recovery.lease_fence,
+    'claim generation and lease expiry fence stale workers before mutation',
+  );
+  assert.ok(
+    productionPushRecoveryContract.required_invariants.includes(
+      'recovery must begin with inspect before any mutating repair',
+    ),
+  );
+  assert.ok(
+    productionPushRecoveryContract.topology.proof.includes(
+      'browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy',
+    ),
+  );
   assert.ok(
     productionRevalidationContract.topology.networking.tunnels === 'disallowed',
   );

@@ -162,6 +162,9 @@ The canonical proof stack for that executor story is the same one named in
 - `push-production-recovery-drift-contract.json` for the compact proof that
   recovery inspect stays read-only after live drift while pull provenance,
   auth, and the one-remote, one-local topology still line up
+- `push-production-push-recovery-contract.json` for the compact end-to-end
+  proof that ties pull provenance, the production push ladder, and inspect-
+  first recovery into one reviewable object
 - `push-pull-to-topology-contract.json` for the pull-to-push bridge
 - `push-deployment-topology-contract.json` for the smallest topology-only
   contract that still proves the same remote identity twice, the imported

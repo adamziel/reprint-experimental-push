@@ -210,6 +210,9 @@ The executor proof is intentionally split across three levels:
 - `push_production_recovery_drift_contract` adds the inspect-first recovery
   proof after live drift while preserving pull provenance, the auth floor, and
   the one-remote, one-local production topology.
+- `push_production_push_recovery_contract` ties the pull provenance, the
+  production push ladder, and the one-remote, one-local topology into one
+  reviewable object for the full preflight-to-recovery story.
 
 The canonical test topology is fixed across both harnesses:
 
