@@ -9,11 +9,11 @@ Fresh remote heads at audit time, checked on May 26, 2026:
 - `origin/lane/reliable-executor` -> `0c4fd10f`
 - `origin/lane/no-data-loss-invariants` -> `29bfcd55`
 - `origin/lane/no-data-loss-recovery` -> `134d0401`
-- `origin/lane/fast-paths` -> `7565d5c8`
+- `origin/lane/fast-paths` -> `ff1915fb`
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `26d2697a`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/same-plan-wordpress-graph-create` -> `ddb47bf6`
+- `origin/lane/same-plan-wordpress-graph-create` -> `383bb025`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bbda11b7`
 - `origin/main` -> `4b7b47a6`
@@ -29,8 +29,9 @@ but it did not change the release conclusion:
   at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` now adds an atomic plugin bundle
   invariant proof at `29bfcd55`.
-- `origin/lane/same-plan-wordpress-graph-create` now adds same-plan termmeta
-  proof at `ddb47bf6`.
+- `origin/lane/fast-paths` now adds refreshed fast-path evidence at `ff1915fb`.
+- `origin/lane/same-plan-wordpress-graph-create` now adds same-plan term
+  taxonomy proof at `383bb025`.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
