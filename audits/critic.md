@@ -19,7 +19,7 @@ The next production proof must be one rerunnable boundary, not another wording p
 7. The design still leaves hidden-loss modes where partial file, DB, cache, cron, and plugin side effects can mix without a production recovery artifact that cleanly classifies what committed, what was blocked, what must remain preserved for audit, and what must be retried.
 8. There is still no proof of a single rerunnable boundary that can preserve the rejected remote, reject stale authority before the first write, rerun apply-time revalidation after fresh hashes are rebuilt, and cover plugin-owned surfaces that appear late on the same mutation.
 9. There is still no production proof that the journal can survive a real lease/fencing handoff on durable storage while the same boundary remains rerunnable after rejection.
-10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation.
+10. The reliable lane’s auth/session evidence stops at retained-source minting and verdicts; it does not yet prove a live WordPress session lifecycle that survives the same rejection/retry boundary as the mutation, including credential expiry, refresh, and operator re-entry on the same rerunnable source URL.
 11. There is still no single rerunnable live release boundary that ties preserved-remote retention, apply-time revalidation, WordPress auth/session lifecycle, durable journal lease/fencing, graph identity, and plugin-driver coverage to the same source URL, so retry authority remains unproven outside the lab harness.
 12. The remote proof contract is clearer now, but it still does not supply the live WordPress session lifecycle, durable storage/fencing, or plugin-driver boundary needed for a production claim.
 13. No retained-source verdict should be treated as production-grade if it does not survive a rerunnable live mutation on the same source URL with the rejected remote still inspectable.
@@ -33,7 +33,7 @@ The next production proof must be one rerunnable boundary, not another wording p
 - If a retry boundary can be rerun but does not re-derive authority from the fresh live remote state at apply time, then the boundary is still a lab replay, not production retry authority.
 - If the remote is rejected but not preserved, the workflow cannot support safe audit or safe retry, so "manual resolution" remains a label, not proof.
 - If a live boundary does not rerun on the same source URL after rejection, then preserved-remote retention, fresh-hash revalidation, and plugin-driver coverage are still disconnected proofs and cannot authorize production wording.
-- If the auth/session lifecycle is only demonstrated in retained-source harness output, the design still has no proof that a real WordPress session, nonce, or operator credential survives the same rejection and retry semantics as the push itself.
+- If the auth/session lifecycle is only demonstrated in retained-source harness output, the design still has no proof that a real WordPress session, nonce, credential refresh, expiry, or operator re-entry survives the same rejection and retry semantics as the push itself.
 
 ## Source-note comparison
 
@@ -77,7 +77,7 @@ The next acceptable proof is not another wording pass. It is a rerunnable live m
 
 - preserved rejected remote, still inspectable after refusal;
 - apply-time revalidation from fresh live hashes;
-- live WordPress auth/session lifecycle on the same request flow;
+- live WordPress auth/session lifecycle on the same request flow, including expiry and refresh behavior across the rejection/retry boundary;
 - durable journal storage with lease/fencing on production-like storage that remains inspectable after rejection;
 - graph identity under create-time remap and late-discovered relationship-bearing records; and
 - plugin-driver coverage for late plugin-owned surfaces outside the initial allowlist.
@@ -92,7 +92,7 @@ Before any doc or status line says "production-grade" or "release-ready", it mus
 - the rejected remote preserved and still inspectable after the refusal;
 - a dry-run receipt that is not reused as retry authority;
 - apply-time revalidation against fresh live hashes from the same boundary;
-- WordPress auth/session lifecycle that survives the real boundary, not just a lab-shaped session mint;
+- WordPress auth/session lifecycle that survives the real boundary, not just a lab-shaped session mint, including expiry and refresh;
 - durable journal storage with lease/fencing on production-like storage;
 - graph identity for create-time remaps and late-discovered relationship-bearing records; and
 - plugin-driver coverage for any plugin-owned surface that appears outside the initial allowlist on the same mutation boundary.
