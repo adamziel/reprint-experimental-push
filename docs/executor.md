@@ -220,6 +220,7 @@ The packaging rule is the same in both environments:
 - one local edited site produces the candidate plan
 - one later remote observation proves independent drift on the same identity
 - one runner process owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery
+- `push_snapshot_hashes` stays planning-only in both Docker and Playground
 
 The packaging topology is identical in both Docker and Playground:
 
@@ -227,6 +228,7 @@ The packaging topology is identical in both Docker and Playground:
 - one local edited site carries the user changes
 - one later remote snapshot proves the same remote identity drifted between dry-run and apply
 - one runner process owns preflight, planning, upload, inspect, and recovery
+- remote snapshot hash listing stays planning-only and never becomes a lock
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 - no remote tunnel is allowed in either mode
 

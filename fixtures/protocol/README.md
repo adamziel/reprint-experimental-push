@@ -47,6 +47,9 @@ The production proof bundle is intentionally layered:
 - `push-remote-liveness-contract.json`, `push-dry-run-apply-revalidation-contract.json`,
   and `push-recovery-revalidation-contract.json` keep the liveness split and
   inspect-first recovery rules explicit.
+- `push-snapshot-hashes-request.json`, `push-snapshot-hashes-response.json`,
+  and `push-snapshot-hashes-page-contract.json` keep the live remote hash
+  listing clearly in the planning-only lane.
 - `push-auth-headers.json`, `push-auth-session-journal-proof.json`, and
   `push-auth-session-recovery-contract.json` show the auth floor that is at
   least as strict as current Reprint HMAC usage.
