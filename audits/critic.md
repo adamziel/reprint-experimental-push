@@ -11,6 +11,13 @@ or `production-plugin-package` is still not proof of a live release boundary
 unless it reruns the exact remote mutation path on an actual remote and leaves
 the rejected remote inspectable for audit and retry.
 
+The next missing proof is concrete: the branch still has not produced a named
+command string that was run against a real local, Playground, or Docker
+`REPRINT_PUSH_SOURCE_URL` and recorded the executor identity, the preserved
+remote, and the exact rejection point before the first write. Until that
+command exists and can be rerun, any production-readiness wording is still
+just a wrapper around compatibility evidence.
+
 This is still the current answer to the loop focus: there is no branch-local
 command that has been run against a real local, Playground, or Docker
 `REPRINT_PUSH_SOURCE_URL` and recorded the first executor/auth/preserved-

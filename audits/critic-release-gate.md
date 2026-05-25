@@ -11,6 +11,7 @@ Do not use production wording unless the branch has all of the following for the
 - if the branch has not yet shown the exact first executor/auth/preserved-remote boundary on a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, then production wording must also fail closed on production auth/session lifecycle, recovery-journal durability, graph identity, and plugin-driver coverage; those are not implied by route shape, script naming, or review wording;
 - if no branch-local command has yet been run against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, then the branch has not proven the first executor/auth/preserved-remote boundary and every production-grade claim must stay blocked;
 - the next acceptable proof from reliable-executor must be a live rerun against a real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that records the executor identity, the preserved remote that remained inspectable after rejection, and the exact rejection point before the first write; without those three facts, the branch still has compatibility evidence only;
+- the next proof must name the exact executable command string that produced those facts; if the evidence is only a wrapper around setup, a route-shaped smoke, or a review note, it does not count as a live rerun of the boundary;
 - if there is no named real-site release command yet, that missing command is the primary blocker; lab-shaped success cannot be promoted into production wording by route shape, fixture replay, or review-artifact polish;
 - if a smoke script is named `production-shaped`, `authenticated`, `authenticated-cli-push`, `authenticated-http-push`, or `production-plugin-package` while the repo still lacks a named real-site release command, that label is false reliability unless the script itself reruns the exact live boundary on an actual remote and preserves the rejected remote for audit;
 - if that smoke also reports `labBacked: true`, the label is compatibility evidence only and cannot be read as a production executor, production auth/session lifecycle proof, or preserved-remote proof;
@@ -178,6 +179,11 @@ False success to reject:
   approval was rejected before the first write, the retry scope was rebuilt
   from fresh live hashes, and every touched surface was classified old, new,
   or blocked; a readable note by itself is audit evidence only.
+- "manual resolution" is also false reliability if it does not name the exact
+  live command and exact `REPRINT_PUSH_SOURCE_URL` that produced the evidence;
+  without those, the note cannot be audited, rerun, or safely widened to a
+  later row, file, relationship-bearing record, remapped create target, or
+  plugin-owned surface.
 - "manual resolution" is also false reliability if the first write only
   covered a subset of touched surfaces and the remaining file, DB,
   relationship-bearing, or plugin-owned surfaces were discovered later; mixed
