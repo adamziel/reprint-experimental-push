@@ -55,11 +55,22 @@ try {
 
       assert.equal(proof.ok, true, JSON.stringify(proof, null, 2));
       assert.equal(proof.preflight.status, 200);
+      assert.equal(preflight.body.auth.session.type, 'application-password-basic');
+      assert.equal(preflight.body.session.type, 'lab-signed-push-session');
+      assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
       assert.equal(proof.dryRun.status, 200);
       assert.equal(proof.apply.status, 200);
       assert.equal(proof.recoveryInspect.status, 200);
       assert.equal(proof.after.status, 200);
       assert.equal(proof.after.finalMatchesLocal, true);
+      assert.ok(proof.dryRun.receiptHash, 'dry-run receipt hash missing');
+      assert.equal(proof.dbJournal.status, 200);
+      assert.ok(proof.dbJournal.rows > 0, 'journal readback must return durable rows');
+      assert.equal(proof.dbJournal.applyCommitted, true, 'journal readback must show an apply-committed row');
+      assert.ok(
+        proof.dbJournal.mutationApplied > 0 || proof.dbJournal.idempotencyOpened > 0,
+        'journal readback must show durable mutation evidence',
+      );
 
       const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
       const remoteBaseSnapshot = await exportSnapshot('remote-base', remoteServer.baseUrl);
@@ -86,11 +97,18 @@ try {
             },
             preflight: {
               status: preflight.status,
+              authSessionType: preflight.body.auth.session.type,
               routeProfile: preflight.body.routeProfile,
               session: {
                 id: preflight.body.session.id,
                 type: preflight.body.session.type,
               },
+            },
+            durableJournal: {
+              rows: proof.dbJournal.rows,
+              applyCommitted: proof.dbJournal.applyCommitted,
+              mutationApplied: proof.dbJournal.mutationApplied,
+              idempotencyOpened: proof.dbJournal.idempotencyOpened,
             },
             releaseProof: proof,
           },

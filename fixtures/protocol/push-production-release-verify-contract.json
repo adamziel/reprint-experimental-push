@@ -1,6 +1,6 @@
 {
   "contract_id": "push-production-release-verify-contract-one-remote-one-local",
-  "purpose": "checked supervisor entrypoint for the production-shaped retained-source proof that exercises live preflight, dry-run, apply revalidation, journal readback, and the first remaining production-only boundary",
+  "purpose": "checked supervisor entrypoint for the production-shaped retained-source proof that exercises live preflight, dry-run, apply revalidation, durable journal readback, and the first remaining production-only boundary",
   "checked_command": "npm run verify:release",
   "pull_to_push_bridge": {
     "exporter": "discovers the merge base and coverage evidence before any push request exists",
@@ -33,7 +33,7 @@
     "dry_run": "canonical dry-run receipt",
     "snapshot_hash_listing": "planning-only remote hash listing",
     "apply": "fresh live revalidation before every batch and at the storage boundary",
-    "journal": "durable journal readback",
+    "journal": "durable journal readback with apply-committed evidence",
     "recovery": "inspect-first recovery readback",
     "boundary": {
       "first_remaining_production_boundary": "auth/session lifecycle and durable journal semantics",
@@ -46,6 +46,8 @@
     "journal inspection is read-only and never authorizes mutation by itself",
     "recovery must begin with inspect before any mutating repair",
     "authentication must be at least as strict as current Reprint HMAC usage",
+    "durable journal rows must remain readable after apply and recovery inspect",
+    "the checked release proof must show preflight auth-session type, session minting, and apply-committed journal evidence",
     "one remote source site, one imported local site, and one drift witness are enough to prove the production topology",
     "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
   ]

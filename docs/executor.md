@@ -143,6 +143,9 @@ The checked release-verify contract is
 It pins `npm run verify:release` as the supervisor entrypoint, the one-remote,
 one-local, one-drift topology, and the first remaining production boundary:
 `auth/session lifecycle and durable journal semantics`.
+That checked command now fails if the live preflight does not mint the
+expected session types or if the journal readback does not preserve durable
+apply-committed evidence after apply and recovery inspect.
 
 That checked release entrypoint has two exact outputs:
 
