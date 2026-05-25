@@ -5,7 +5,8 @@ Current baseline: reliable-executor commit `3089aee2`.
 still local Playground lab evidence and not live retry authority unless the
 branch also proves the live production WordPress auth/session boundary,
 durable journal semantics, graph identity, and plugin-driver coverage on a
-real-site rerun.
+real-site rerun. The canonical release-gate checklist lives in
+[`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 That means the next acceptable proof must move off retained-source lab
 evidence and into a production WordPress auth/session lifecycle, with durable
 journal semantics plus explicit graph-identity, plugin-driver, and plugin-
