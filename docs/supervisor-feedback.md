@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:09:17 CEST
+Last updated: 2026-05-25 09:10:15 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 09:10:15 CEST
+
+- Going well: the page, log, and latest audit note still agree on the blocked snapshot.
+- Not going well: the same proof gaps remain open, so production readiness is still blocked.
+- Progress change: no evidence delta; the public page and log are now a little less repetitive.
+- Next nudge: keep one owner per proof gap and require one production-backed test before any readiness claim.
+- Audit note: this pass only tightened the scan view; the live page still updates after merge to `main`.
 
 ## 2026-05-25 09:09:17 CEST
 
