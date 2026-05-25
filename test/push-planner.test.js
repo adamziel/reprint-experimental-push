@@ -10986,3 +10986,43 @@ test('durable recovery artifacts only surface remote state when recovery is actu
   assert.ok(blockedError.details.recovery.artifacts.remote);
   assert.ok(blockedError.details.recovery.artifacts.journal);
 });
+
+test('reopened durable journals keep completed replays inert and do not resurrect stale local data', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const persistedCompleted = readRecoveryJournal(journalPath);
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const replaySnapshot = JSON.stringify(replayRemote);
+  const reopenedJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const replay = applyPlan(replayRemote, plan, {
+    durableJournal: reopenedJournal,
+    journal: completed.journal,
+  });
+  reopenedJournal.close();
+
+  const persistedReplay = readRecoveryJournal(journalPath);
+
+  assert.equal(JSON.stringify(replayRemote), replaySnapshot);
+  assert.equal(replay.appliedMutations, 0);
+  assertAcceptableRecoveryState(replay.recoveryState);
+  assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(replay.recoveryState.artifacts.journal.status, 'completed');
+  assert.equal(
+    persistedReplay.records.filter((record) => record.type === 'journal-replayed').length,
+    persistedCompleted.records.filter((record) => record.type === 'journal-replayed').length + 1,
+  );
+  assert.equal(
+    persistedReplay.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
+    false,
+  );
+});
