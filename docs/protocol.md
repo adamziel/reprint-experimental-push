@@ -212,6 +212,9 @@ proof: it must either print the live preflight evidence or fail closed with
 the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
 `REPRINT_PUSH_SECRET_REQUIRED` gate before any preflight, dry-run, or apply
 attempt.
+The live release summary now also surfaces the remote snapshot hash listing
+from the live source so the checked command proves the planning-only hash
+boundary instead of only implying it through the local plan.
 
 The checked release-verify contract is
 `fixtures/protocol/push-production-release-verify-contract.json`.

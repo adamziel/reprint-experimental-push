@@ -102,6 +102,7 @@ export async function runAuthenticatedHttpPush({
     summary.snapshot = summarizeResponse(remoteSnapshot);
     return summary;
   }
+  summary.remoteSnapshot = summarizeSnapshot(remoteSnapshot, local);
 
   const plan = createPushPlan({
     base,

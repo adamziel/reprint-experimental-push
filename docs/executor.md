@@ -168,6 +168,8 @@ also asserts the durable journal summary fields directly: `rows`,
 exact boundary verdict `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` so the
 supervisor output distinguishes the lab-shaped proof from the missing
 production boundary.
+The same checked output now includes the live remote snapshot hash listing so
+the runner proves the planning-only hash boundary before dry-run and apply.
 
 The production topology used by Docker and Playground is fixed:
 
