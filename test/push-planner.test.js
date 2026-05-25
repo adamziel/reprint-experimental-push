@@ -7520,3 +7520,33 @@ test('durable recovery accepts only old remote, fully updated remote, or blocked
   assertRecoveryStateArtifacts(replay.recoveryState, 'fully-updated-remote');
   assert.equal(replay.recoveryState.artifacts.remote, undefined);
 });
+
+test('stale completed replay blocks when the remote drifts outside the completed journal envelope', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  const staleReplayRemote = JSON.parse(JSON.stringify(completed.site));
+  staleReplayRemote.files['index.php'] = '<?php echo "stale local";';
+  delete staleReplayRemote.db.wp_posts['ID:2'];
+
+  const replayError = captureError(() =>
+    applyPlan(staleReplayRemote, plan, {
+      journal: completed.journal,
+      durableJournal,
+    }),
+  );
+  durableJournal.close();
+
+  assert.ok(replayError instanceof PushPlanError);
+  assert.equal(replayError.details.recovery.status, 'blocked-recovery');
+  assert.ok(replayError.details.recovery.artifacts.journal, 'stale replay must keep journal artifacts');
+  assert.ok(replayError.details.recovery.artifacts.remote, 'stale replay must keep remote artifacts');
+  assert.equal(replayError.details.recovery.artifacts.remote.files['index.php'], '<?php echo "stale local";');
+  assert.equal(replayError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
+});
