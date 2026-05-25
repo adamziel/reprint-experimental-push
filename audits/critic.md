@@ -208,6 +208,24 @@ Must change before the project can claim production-grade push support:
   live boundary, and whether any later-discovered plugin-owned surface is in
   scope or explicitly excluded.
 
+Source-note release gate, for avoidance of doubt:
+
+- Reprint source notes prove staged pull vocabulary and transport framing in
+  the observed upstream commit. They do not prove this branch has a live push
+  executor, preserved-remote auditability after reject, create-time remap
+  safety, or late plugin-surface classification.
+- ZS-Sync source notes prove bounded discovery and scanning patterns in the
+  observed upstream commit. They do not prove this branch enumerates every
+  plugin-owned surface before mutation, preserves the remote for audit after
+  drift, or rebuilds retry scope from fresh live hashes.
+- ForkPress source notes prove audit and crash-consistency vocabulary in the
+  observed upstream commit. They do not prove this branch can safely reuse a
+  readable review artifact as retry authority for a later boundary, nor do
+  they prove preserved-remote rejection on this branch.
+- Any note that omits the exact upstream state, the exact live boundary on
+  this worktree, and the exact boundary it does not cover is compatibility
+  evidence only. It cannot support production-grade push support wording.
+
 Important boundary: a lab-shaped route family, packaged mount, fixture replay,
 or `finalMatchesLocal` result can still be compatible without proving the
 live executor, preserved remote, or fresh retry scope. Route shape alone is
