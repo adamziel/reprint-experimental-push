@@ -14,7 +14,7 @@ What still has to change before any production-grade claim is credible:
 - if the route family, package layout, reviewer wording, or fixture shape matches an earlier approval, that only proves surface similarity; the later boundary still needs its own preserved remote, rejection point, and fresh retry scope rebuilt from live hashes;
 - any readable manual-resolution note or comparison summary must not be allowed to retroactively authorize a later-discovered plugin-owned surface, remapped create target, or relationship-bearing record, even if the route family, package layout, or reviewer wording stays identical;
 - any "manual resolution" or "comparison passed" wording must stay audit-only unless it names the preserved remote, the upstream source-note state, and the same live boundary rerun on this branch; and
-- route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` remain compatibility evidence only.
+- route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` remain compatibility evidence only; if those are the only proof, the missing evidence is still the live executor boundary itself, plus the rejected remote and fresh retry scope rebuilt from live hashes.
 
 Source-note comparison audit:
 
@@ -23,7 +23,8 @@ Source-note comparison audit:
   prove live push safety here, preserved-remote retention after rejection,
   stale-drift rejection before the first write, create-time identity remap
   handling, hidden plugin-owned state outside the allowlist, or late
-  plugin-owned surface handling on this branch.
+  plugin-owned surface handling on this branch. A route-family match or
+  reviewer-phrase match is historical context only, not retry authority.
 - ZS-Sync (`docs/source-notes.md`, observed commit `d9334a0`) proves bounded
   scanning, resource discovery, and batching ideas. It does not prove source
   mutation safety, plugin-owned allowlist coverage, stale-authority rejection,
@@ -33,7 +34,9 @@ Source-note comparison audit:
   audit vocabulary, merge-review framing, and crash-consistency intent. It
   does not prove that a readable manual-review artifact can authorize a later
   boundary, preserve the rejected remote for audit, or become retry authority
-  for a remapped create target or plugin-owned surface on this branch.
+  for a remapped create target or plugin-owned surface on this branch. Even a
+  perfect wording match stays audit-only unless this branch reran the same
+  live boundary with live hashes.
 
 Comparison gap summary:
 
