@@ -1,25 +1,20 @@
-# No Data Loss Acceptable Post-Failure States
+# Acceptable Post-Failure States
 
-`applyPlan()` must land in exactly one of these recoverable outcomes after a failure:
+The durable apply path is only allowed to leave the system in one of three recovery states:
 
 1. `old-remote`
-   - No remote mutation is allowed to escape without durable recovery artifacts.
-   - This is the expected outcome for failures before mutation, after staging, or after dependency validation.
-   - The journal may record an opened, staged, or dependencies-validated boundary.
-   - The remote artifact must be absent.
+   - No remote mutation has been committed.
+   - The journal may show `opened`, `staged`, or `dependencies-validated`.
+   - Recovery remains inspectable from artifacts, but the remote must remain unchanged.
 
 2. `fully-updated-remote`
-   - The plan has already completed and replay is inert.
-   - Replaying a completed plan must not duplicate inserts or resurrect stale local data.
-   - The journal must show a completed recovery state.
-   - The remote artifact must be absent.
+   - Every planned mutation has been committed.
+   - Replay of the same completed plan is inert.
+   - The journal must be marked `completed` and replay must not duplicate inserts or revive stale local data.
 
 3. `blocked-recovery`
-   - A partial write was observed or recovery replay cannot be trusted.
-   - Durable artifacts must include both the journal and the remote snapshot.
-   - This is the only acceptable state for a partial remote mutation.
+   - A partial remote mutation exists and the plan cannot be safely replayed.
+   - Both the journal and the current remote must be preserved as artifacts.
+   - This is the only acceptable state for a partial commit without a clean completion record.
 
-Release blocker rule:
-
-- Any partial remote mutation without a recovery artifact is a release blocker.
-- Retry must not duplicate inserts, resurrect stale local data, or treat partial writes as safe.
+Release rule: any partial remote mutation without a blocked recovery artifact is a blocker.
