@@ -33,6 +33,10 @@ or comparison-only.
   because a fixture-owned option or table row matches the expected shape while
   the real plugin also owns custom tables, serialized counters, cron rows,
   generated assets, runtime registries, or external side effects.
+- The claim names the exact plugin-owned surface exercised and shows the
+  apply-time revalidation result for that surface, or it says the surface was
+  blocked. A matching fixture row by itself is not evidence that the broader
+  plugin-owned graph is safe.
 - The claim shows unknown plugin-owned state is not being widened into a
   success case through fallback behavior, stale metadata, or a copied-lab
   route that happens to hit the same URL shape.
@@ -83,6 +87,10 @@ or comparison-only.
   side-effect classification, or stale approval expiry unless the same live
   write boundary was reverified at the exact upstream revision or worktree
   state.
+- The claim includes the exact upstream revision or worktree state for any
+  Reprint, ZS-Sync, or ForkPress comparison, and says whether that state was
+  reverified at the same live write boundary. If not, the comparison is
+  historical context only.
 - The claim does not let Reprint, ZS-Sync, or ForkPress notes imply current
   upstream reliability unless the exact upstream revision or worktree state was
   reverified and the live mutation boundary was exercised in this repo.
