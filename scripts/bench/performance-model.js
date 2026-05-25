@@ -1187,6 +1187,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-compressed-upload-queue-skips-backpressure',
+    proposal: 'treat a compressed remote index plus a compressed upload queue as enough proof to skip backpressure pauses on a large upload',
+    rejectedBecause: 'planning evidence and smaller queued buffers can reduce request volume, but they cannot prove which chunk acknowledgements or journal records survived failure, so the sender still has to pause under pressure',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
+  },
+  {
     id: 'compressed-upload-queue-replaces-chunk-receipts',
     proposal: 'treat a compressed upload queue as a substitute for chunk receipts after a failed upload',
     rejectedBecause: 'queue compression can lower pressure, but it cannot replace the durable per-chunk acknowledgements needed to classify partial failure or resume safely',
