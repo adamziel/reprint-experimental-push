@@ -17,7 +17,7 @@ The next production proof must be one rerunnable live boundary on a real local, 
 ## What still blocks the claim
 
 1. Production WordPress auth/session lifecycle is not proven on a live mutation boundary, including expiry, refresh, and operator re-entry after rejection.
-2. Preserved-remote retention after rejection is not proven, so manual resolution is not auditable retry authority.
+2. Preserved-remote retention after rejection is not proven, so manual resolution is not auditable retry authority and cannot be reused as a later boundary's approval.
 3. Apply-time revalidation from fresh live hashes is not proven on the same mutation that produced the rejection, so stale approval can still masquerade as retry authority.
 4. Durable journal storage with lease/fencing is only proven in retained-source or lab harness form, not on production-like storage that survives rejection and retry.
 5. Graph identity under create-time remap is not proven for relationship-bearing WordPress rows and late-discovered records.
@@ -35,7 +35,7 @@ The next production proof must be one rerunnable live boundary on a real local, 
 - If a plugin-owned option, table, cron row, cache entry, generated file, or activation side effect appears late, the push must classify it before any write lands and before any stale approval or cached retry can be reused. There is no coverage proof for that trap on a rerunnable live boundary.
 - If a retry reuses stale manual-resolution text, it must not authorize a new mutation. The design does not yet show an auditable artifact that binds the approval to fresh live hashes and the preserved remote, so the retry path can still misrepresent a rejected remote as resolved.
 - If a retry boundary can be rerun but does not re-derive authority from the fresh live remote state at apply time, then the boundary is still a lab replay, not production retry authority.
-- If the conflict policy is left to "manual resolution" without preserved-remote retention, fresh-hash revalidation, and a blocked/unblocked classification for each touched surface, then the policy is ambiguous and can silently widen scope.
+- If the conflict policy is left to "manual resolution" without preserved-remote retention, fresh-hash revalidation, and a blocked/new/retained classification for each touched surface, then the policy is ambiguous and can silently widen scope.
 - If the remote is rejected but not preserved, the workflow cannot support safe audit or safe retry, so "manual resolution" remains a label, not proof.
 - If a live boundary does not rerun on the same source URL after rejection, then preserved-remote retention, fresh-hash revalidation, and plugin-driver coverage are still disconnected proofs and cannot authorize production wording.
 - If the auth/session lifecycle is only demonstrated in retained-source harness output, the design still has no proof that a real WordPress session, nonce, credential refresh, expiry, or operator re-entry survives the same rejection and retry semantics as the push itself.
@@ -100,7 +100,7 @@ Before any doc or status line says "production-grade" or "release-ready", it mus
 - plugin-driver coverage for any plugin-owned surface that appears outside the initial allowlist on the same mutation boundary.
 
 Any claim that skips the live boundary, or replaces it with a retained-source harness or lab fixture, is still not production-grade.
-Any claim that relies on manual resolution, cached approval text, or a retained-source verdict without a rerunnable live boundary is false reliability.
+Any claim that relies on manual resolution, cached approval text, or a retained-source verdict without a rerunnable live boundary is false reliability. The preserved remote must remain inspectable after rejection, or the claim is not auditable retry authority.
 
 If any one of those bullets is missing, the wording must stay in the lab/prototype bucket.
 
