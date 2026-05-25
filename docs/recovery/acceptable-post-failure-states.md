@@ -20,6 +20,12 @@ Completed-plan replay is only acceptable when it returns `fully-updated-remote` 
 If the replayed remote has drifted since completion, the result must be `blocked-recovery`
 with journal and remote artifacts, not a silent retry.
 
+Durable recovery must make those states inspectable after restart:
+
+- `old-remote` needs a journal record that explains where the apply stopped.
+- `fully-updated-remote` needs a completed journal record and no fresh mutation work.
+- `blocked-recovery` needs both journal and remote artifacts so the partial or stale state can be inspected.
+
 ## Old remote
 
 The remote remains unchanged from the last known good state.
