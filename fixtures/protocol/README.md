@@ -127,6 +127,49 @@ identity across `remote-base` and `remote-changed`:
   journal rows, lease fencing, and inspect-first recovery path so the same
   proof covers dry-run, apply, and recovery.
 
+The protocol extension itself is intentionally stage-ordered:
+
+1. `push_preflight` binds the persisted pull base package to one live remote
+   identity and one short-lived push session.
+2. `push_snapshot_hashes` lists the live remote comparison surface for
+   planning only and never becomes write authority.
+3. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+4. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+5. `push_journal` records durable evidence without authorizing mutation.
+6. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+7. `push_recover auto|finish|rollback` may mutate only after inspect proves
+   the branch safe with the same auth floor as the write path.
+
+The pull/export/import pipeline is the only source of immutable push
+provenance:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` is planning evidence only
+- `push_plan_dry_run` is an eligibility receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and
+  again at the storage boundary
+- `push_journal` is read-only evidence
+- `push_recover inspect` is read-only and must happen before any mutating
+  repair
+- `push_recover auto|finish|rollback` may mutate only when inspect proves the
+  branch safe and the auth floor still holds
+
+The shared auth/session/journal proof path is also explicit:
+
+- push authentication must be at least as strict as current Reprint HMAC
+  usage
+- mutating calls use the minted push session plus the canonical push
+  signature and idempotency key
+- journal rows carry the claim, lease, and fencing evidence that inspect
+  reads back before any repair branch
+- stale dry-run evidence never becomes recovery authority
+- recovery stays inspect-first even when the journal is present
+
 The top-level ladder is intentionally staged:
 
 1. preflight
@@ -226,6 +269,16 @@ The top-level ladder is intentionally staged:
 - `push-pull-to-topology-contract.json` is the smallest bridge from pull
   provenance into the production push topology when a review needs the proof
   chain in compact form.
+
+When you need the minimum review order, cite these four objects together:
+
+1. `push-protocol-extension-contract.json` for the full stage ladder.
+2. `push-production-pull-bridge-contract.json` for exporter/importer to push
+   mapping.
+3. `push-remote-liveness-topology-contract.json` for dry-run/apply separation
+   with apply-time revalidation.
+4. `push-deployment-topology-contract.json` for the one-remote, one-local,
+   one-drift harness and the `8080` ingress rule.
 
 The canonical topology proof is always one remote source, one imported local
 edited site, and one later drift observation of the same remote identity:
