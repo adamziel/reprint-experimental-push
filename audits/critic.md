@@ -29,7 +29,10 @@ The missing proof is not just "the route works" or "the reviewer can
 manually inspect the result." The branch still needs live evidence that the
 preserved remote survives reject, that stale approval cannot be widened into a
 new boundary, and that every touched surface has a durable old/new/blocked
-classification before the next retry starts.
+classification before the next retry starts. If a later plugin-owned surface
+appears after the first write, the branch must show a separate preserve /
+reject / retry cycle for that later boundary; the earlier manual-review note
+cannot be reused as authority for it.
 
 Required proof pack before the claim can move from compatibility wording to
 production wording:
