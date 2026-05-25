@@ -130,6 +130,10 @@ from new live hashes, then the comparison is still only design context even
 when the route or fixture replay looks production-shaped.
 If the claim does not name the exact upstream revision or worktree state and
 the exact live mutation boundary, it is not production wording.
+If the only apparent match is the same route family, package layout, or
+reviewer wording, that is still historical context only; shape similarity
+does not prove the live executor, preserved remote, or retry authority on
+this branch.
 Without that revalidation, the notes cannot backfill missing proof for:
 
 - live remote drift rejection,

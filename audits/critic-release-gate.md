@@ -14,6 +14,7 @@ Do not use production wording unless the branch has all of the following for the
 - any manual-resolution note, route-shaped smoke, fixture replay, or `finalMatchesLocal` result is treated as compatibility evidence only unless it is paired with the preserved remote, the rejection point, and the fresh retry artifact for that same boundary;
 - any source-note comparison to Reprint, ZS-Sync, or ForkPress is treated as historical context only unless it names the exact upstream revision or worktree state and the same live boundary; and
 - any source-note comparison that merely matches the same route family, package layout, or reviewer wording is still historical context only and cannot be treated as live proof; and
+- any claim of "production-grade push support" is rejected unless the same live boundary shows preserved-remote evidence, stale-authority rejection, fresh retry scope, and per-surface old/new/blocked classification; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
 - any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success.
 
