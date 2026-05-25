@@ -17203,6 +17203,8 @@ test('keeps same-remote graph identity at the live release boundary while a read
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(plan.preconditions.length, 1);
+  assert.equal(plan.preconditions[0].resourceKey, 'file:index.php');
 
   const completed = applyPlan(remote, plan);
   assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
