@@ -10,6 +10,10 @@ lineage, but it cannot prove the live executor boundary, preserved-remote
 auditability, or retry authority unless this branch reran the same live
 boundary here and preserved the rejected remote for audit.
 
+The upstream anchors recorded in `docs/source-notes.md` are `27c5f25`
+for Reprint, `d9334a0` for ZS-Sync, and `55f9879` for ForkPress. Those
+anchors are provenance only, not retry authority.
+
 ## Reprint
 
 - Proves: staged transport, resumability vocabulary, and chunked delivery
