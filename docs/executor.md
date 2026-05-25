@@ -136,6 +136,10 @@ soon as a fresh remote listing shows new live state. Apply-time revalidation is
 therefore mandatory before every batch, even when the dry-run receipt is still
 present.
 
+On restart, the remote snapshot hash listing is the first live evidence to
+refresh when planning state is ambiguous. A cached listing can explain a prior
+dry-run, but it cannot prove the same live remote is still safe to apply.
+
 The executor treats the push protocol as a three-sided merge:
 
 - local edited site
@@ -168,6 +172,11 @@ local edited site, and one drift witness:
   after independent drift between dry-run and apply
 - `runner` is the only process that may run preflight, snapshot listing,
   dry-run, apply, journal inspection, and recovery
+
+That same shape appears in both Docker and Playground: one remote identity
+observed twice, one local edited clone, and one runner that owns the full
+push lifecycle. The proof is about identity stability plus fresh live
+revalidation, not about container count.
 
 That proof must hold in both Docker and Playground:
 
