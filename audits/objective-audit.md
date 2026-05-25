@@ -4,7 +4,7 @@
 
 The project is **not releasable as a production WordPress push path**.
 
-The current blocker is now precise: this checkout still lacks checked, production-boundary proof that auth/session lifecycle and durable journal semantics survive the live apply path. The old "no release command exists" framing is stale. `origin/lane/reliable-executor` does expose `verify:release` at `9975dfc9`, and the remote lane's proof bridge assertions report live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback `rows: 17`, but that remains upstream evidence until this checkout owns an equivalent enforced verdict. Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional gaps, but they do not displace the main blocker.
+The current blocker is now precise: this checkout still lacks checked, production-boundary proof that auth/session lifecycle and durable journal semantics survive the live apply path. The old "no release command exists" framing is stale. `origin/lane/reliable-executor` does expose `verify:release` at `9975dfc9`, and the remote lane's proof bridge assertions report live preflight `200`, dry-run `200`, apply `200`, recovery inspect `200`, and journal readback `rows: 17`, but that remains upstream evidence until this checkout owns an equivalent enforced verdict. Graph identity, plugin-driver coverage, leases/fencing, preserved-remote drift, and live-source topology remain additional gaps; they are still blockers, but they no longer replace the primary auth/session plus journal gap.
 
 The gate stays closed until one required invocation proves, in the same run:
 
@@ -26,7 +26,7 @@ The objective implies these minimum release requirements:
 2. Apply-time revalidation against the live source before mutating it. A stale preflight is not enough.
 3. End-to-end preservation of touched WordPress data shapes, including rows, files, plugin-owned data, serialized payloads, and graph identity.
 4. Survival of crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes.
-5. Production auth/session lifecycle and durable journal semantics proven at the release boundary, not only in helpers or optional smokes. Leases/fencing, graph identity, plugin-driver behavior, and preserved-remote drift also need release-boundary proof, but they remain secondary to the missing auth/session plus journal verdict.
+5. Production auth/session lifecycle and durable journal semantics proven at the release boundary, not only in helpers or optional smokes. Leases/fencing, graph identity, plugin-driver behavior, preserved-remote drift, and real topology also need release-boundary proof, but they remain secondary to the missing auth/session plus journal verdict.
 6. Real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or storage abstraction.
 7. Either a measured live-path speed claim with an explicit threshold or an explicit refusal to claim speed.
 8. One required release command that fails closed when any safety gate is still lab-backed, fixture-only, benchmark-only, or missing live-source proof.
