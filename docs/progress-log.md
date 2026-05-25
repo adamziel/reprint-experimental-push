@@ -4,6 +4,58 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 14:24:59
+
+<a id="2026-05-25-public-status-audit-142459"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:24:59 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and restored the newest
+  release-surface evidence: `d6285b18`, `66830e6f`, `fa491fa6`, and
+  `86acf294`.
+- `d6285b18` makes the checked runner emit the live remote snapshot hash
+  listing before planning/dry-run/apply; `66830e6f` keeps stale remote drift
+  fail-closed with `PRECONDITION_FAILED`; `fa491fa6` keeps the recovery
+  envelope tests green; `86acf294` keeps the bounded performance model inside
+  `timeout 60s`. Gates remain `0/4`, and production WordPress executor/auth
+  plus durable journal storage with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 14:18:48
+
+<a id="2026-05-25-public-status-audit-141848"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:18:48 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and surfaced
+  `3d8748b6`/`471440b9`/`889bd37a` as the newest fail-closed release-boundary
+  evidence.
+- `3d8748b6` keeps the release command fail-closed on
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `471440b9` keeps
+  `REPRINT_PUSH_SECRET_REQUIRED` visible, and `889bd37a` still emits
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`; gates stay `0/4`, and durable
+  journal storage with lease/fencing remains pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 14:17:39
+
+<a id="2026-05-25-public-status-audit-141739"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:17:39 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and kept `fa491fa6` as the
+  newest recovery-envelope proof.
+- `fa491fa6` keeps the durable recovery envelope artifact-backed while the
+  release gates stay at `0/4`; production WordPress executor/auth plus durable
+  journal semantics remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 14:16:16
 
 <a id="2026-05-25-public-status-audit-141616"></a>
