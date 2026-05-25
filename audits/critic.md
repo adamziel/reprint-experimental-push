@@ -1694,6 +1694,11 @@ worktree was reverified and the same live write boundary was exercised in this
 repo. If the claim omits that revalidation, the comparison stays historical
 context and cannot fill any gap in drift rejection, create remap handling,
 plugin-owned allowlist coverage, or partial side-effect classification.
+Treat any comparison citation as frozen evidence until the cited upstream
+state is reverified at the same live mutation boundary; a matching route shape
+or package layout does not upgrade the citation into proof, and a stale manual
+review artifact does not become current authority just because the upstream
+note sounds conservative.
 
 The release gate is not satisfied by "looks production-shaped" evidence. A
 route that mounts in the right package, returns live-looking hashes, or passes
@@ -1741,6 +1746,10 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   unusable as authority as soon as the live hashes change; readability alone
   is not a success condition, and the retry must rebuild scope from fresh
   live evidence rather than inheriting the old approval.
+- If an operator can still “approve” a stale artifact after drift without a
+  fresh live snapshot, the design is not production-grade: the missing proof is
+  rejection-before-write plus a preserved remote that the reviewer can audit
+  and retry from, not a second manual click.
 - Reprint, ZS-Sync, and ForkPress notes are comparison evidence only; they do
   not prove current upstream behavior today, and they do not prove this repo's
   live mutation boundary unless the same upstream revision or worktree was
