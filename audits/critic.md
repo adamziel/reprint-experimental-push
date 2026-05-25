@@ -12,6 +12,9 @@ Must change before any production-grade push claim:
 - prove a stale approval or readable review artifact cannot be widened into
   a different row, file, relationship-bearing record, or plugin-owned
   surface after drift;
+- prove a readable manual-review artifact is audit-only unless the preserved
+  remote, rejection point, and fresh retry scope are all recorded on this
+  branch for the same live boundary;
 - enumerate or hard-block late-discovered plugin-owned state, including
   custom tables, generated files, cron rows, runtime registries, serialized
   blobs, and other hidden side effects; and
@@ -92,6 +95,10 @@ audit-only and cannot be widened into retry authority for the new boundary.
 The same rule applies to comparison notes: unless the exact upstream revision
 or worktree state is named and this branch reran the same live boundary, the
 note is provenance only and cannot become current retry authority.
+If that note or review artifact is the only proof, it is still not enough to
+claim production-grade push support because it does not show the preserved
+remote, the stale rejection point, or the fresh retry scope for the live
+write path on this branch.
 
 One concrete failure mode still needs to be named more sharply: if the first
 write succeeds and a late plugin-owned surface appears on the next live
@@ -247,6 +254,10 @@ also prove all of the following on the live mutation boundary:
   auditable after reject;
 - the same stale artifact cannot become authority for a different row, file,
   relationship-bearing record, or plugin-owned surface on retry;
+- a manual-review artifact, route-shaped smoke, or source-note comparison
+  does not become retry authority unless the branch rechecked the same live
+  boundary and recorded the preserved remote, rejection point, and fresh
+  retry scope here;
 - late-discovered plugin-owned state is classified explicitly, not folded into
   a successful manual-resolution story after the first write;
 - partial DB/file/plugin side effects are recorded as old, new, or blocked so
