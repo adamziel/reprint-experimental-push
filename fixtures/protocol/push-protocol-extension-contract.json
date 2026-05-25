@@ -1,6 +1,6 @@
 {
   "contract_id": "push-protocol-extension-production-contract",
-  "purpose": "compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping",
+  "purpose": "compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping and apply-time revalidation",
   "pull_pipeline": {
     "exporter": "scans the merge base and coverage evidence",
     "importer": "persists the base package as immutable provenance",
@@ -24,8 +24,8 @@
     "preflight": "binds the persisted pull base package to one live remote identity and one short-lived push session",
     "snapshot_hash_listing": "reads the live remote comparison surface for planning only and never becomes write authority",
     "dry_run_upload": "uploads the canonical plan as an eligibility receipt, not a lock",
-    "batch_apply": "revalidates fresh live evidence before every batch and at the storage boundary",
-    "journal_inspect": "reads durable claim, lease, and fencing evidence without authorizing mutation",
+    "batch_apply": "revalidates fresh live evidence before every batch and at the storage boundary, and remains separate from dry-run",
+    "journal_inspect": "reads durable claim, lease, fencing, and apply-boundary evidence without authorizing mutation",
     "recovery_inspect": "runs before any mutating recovery branch and classifies finish, rollback, retry, or block",
     "recovery_mutate": "may mutate only after inspect proves the branch safe with fresh live evidence and the same auth floor as the write path"
   },
@@ -35,12 +35,12 @@
     "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
     "push_snapshot_hashes": "performs the remote snapshot hash listing for planning only and never becomes write authority",
     "push_plan_dry_run": "uploads the canonical dry-run plan as eligibility evidence and returns a receipt, not a lock",
-    "push_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "push_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary, and never reuses the dry-run receipt as a lock",
     "push_journal": "reads durable evidence without authorizing mutation",
     "push_recover inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair",
     "push_recover auto|finish|rollback": "mutates only when the journal plus fresh live hashes prove the action"
   },
-  "push_guards": {
+    "push_guards": {
     "snapshot_hash_listing": "returns live remote comparison evidence for planning only and never upgrades into write authority",
     "dry_run_receipt": "proves eligibility only and cannot be reused as a liveness lock",
     "apply_revalidation": "refreshes live evidence before every batch and again at the storage boundary",

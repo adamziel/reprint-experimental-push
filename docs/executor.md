@@ -38,7 +38,7 @@ The same pull-to-push bridge applies here:
 - remote snapshot hash listing stays planning-only
 - dry-run uploads a canonical plan receipt and never becomes a lock
 - batched apply revalidates fresh live evidence before every batch and again
-  at the storage boundary
+  at the storage boundary, and is a separate remote operation from dry-run
 - journal inspection stays read-only
 - inspect-first recovery is the only safe starting point for mutating
   recovery
@@ -51,7 +51,7 @@ The executor needs the same boundary discipline as the protocol:
 - remote snapshot hash listing is planning evidence only
 - dry-run uploads the canonical plan and returns a receipt, not a lock
 - apply revalidates fresh live evidence before every batch and again at the
-  storage boundary
+  storage boundary, and does not reuse the dry-run receipt as a lock
 - journal inspection stays read-only
 - recovery starts with inspect and only mutates when inspect proves the branch
   safe with fresh live evidence
@@ -123,6 +123,8 @@ The practical boundary is unchanged across both environments:
   run plan, apply batches, inspect the journal, or start recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
+- Docker and Playground both model the same one-remote, one-local, one-drift
+  production proof
 
 This topology is the production proof shape, not an arbitrary test fixture:
 

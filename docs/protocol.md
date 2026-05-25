@@ -35,6 +35,7 @@ That ladder maps to distinct remote boundaries:
 
 - preflight is the first live binding after importer provenance exists
 - snapshot hash listing is planning evidence only
+- dry-run is an eligibility receipt, not a lock, and cannot become write authority
 - dry-run is an eligibility receipt, not a lock
 - batch apply revalidates before every batch and again at the storage boundary
 - journal inspect is read-only
@@ -57,7 +58,8 @@ Each stage has one job and one boundary:
   not authorization to mutate remote state.
 - `push_batch_apply` is the first mutation stage. It must revalidate fresh
   live evidence before every batch and again at the storage boundary so drift
-  between dry-run and apply cannot be ignored.
+  between dry-run and apply cannot be ignored. Dry-run and apply are separate
+  remote operations even when the same runner performs both.
 - `push_journal` is read-only durable evidence. It records claim, lease,
   fencing, and recovery facts, but it never authorizes mutation by itself.
 - `push_recover inspect` reads the journal and fresh live hashes before any
@@ -78,6 +80,8 @@ Recovery is intentionally inspect-first:
   remote evidence is not yet contradictory.
 - `block` is the outcome when the journal or live evidence cannot prove a
   safe mutating recovery path.
+- journal rows must persist the claim, lease, fencing state, and apply-time
+  evidence that inspect reads before any recovery mutation.
 
 The push protocol extension is therefore not a general remote write API. It is
 the production write path for one imported base package, one edited local
@@ -137,7 +141,7 @@ The pull-to-push bridge is intentionally one-way:
   only
 - dry-run uploads the canonical plan as a receipt, not a lock
 - apply revalidates fresh live evidence before every batch and again at the
-  storage boundary
+  storage boundary, and it is a separate remote operation from dry-run
 - journal inspect stays read-only
 - recovery starts with inspect and only mutates when the journal and fresh
   live hashes still prove the action safe
@@ -220,6 +224,8 @@ For both Docker and Playground, the test topology is intentionally the same:
   apply, journal inspection, and recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   and never uses a remote tunnel
+- Docker and Playground both model the same one-remote, one-local, one-drift
+  production proof
 
 The push half of the story is intentionally separate from pull execution:
 

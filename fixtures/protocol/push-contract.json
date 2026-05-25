@@ -17,7 +17,7 @@
     "push_preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
     "push_snapshot_hashes": "lists the live remote comparison set for planning only and never acts as a lock",
     "push_plan_dry_run": "uploads the canonical plan as eligibility evidence and returns a receipt without mutating target resources",
-    "push_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "push_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary, and never reuses the dry-run receipt as a lock",
     "push_journal": "reads durable claim, lease, fencing, and recovery evidence without granting write authority",
     "push_recover inspect": "starts with inspect and classifies finish, rollback, retry, or block before any mutating repair",
     "push_recover auto|finish|rollback": "mutates only when the journal row, lease fence, and fresh live hashes prove the action",

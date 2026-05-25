@@ -80,7 +80,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(
     contract.pull_handoff.push_batch_apply,
-    'revalidates fresh live evidence before every batch and again at the storage boundary',
+    'revalidates fresh live evidence before every batch and again at the storage boundary, and never reuses the dry-run receipt as a lock',
   );
   assert.equal(
     contract.pull_handoff.push_journal,
@@ -139,7 +139,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(
     protocolExtensionContract.push_phases.batch_apply,
-    'revalidates fresh live evidence before every batch and at the storage boundary',
+    'revalidates fresh live evidence before every batch and at the storage boundary, and remains separate from dry-run',
   );
   assert.equal(
     protocolExtensionContract.push_phases.recovery_mutate,
@@ -229,7 +229,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_batch_apply,
-    'revalidates fresh live evidence before every batch and again at the storage boundary',
+    'revalidates fresh live evidence before every batch and again at the storage boundary, and never reuses the dry-run receipt as a lock',
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping['push_recover inspect'],
@@ -321,7 +321,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(topologyMatrix.push_pipeline.preflight, 'binds the persisted pull base to the live remote identity and a short-lived push session');
   assert.equal(topologyMatrix.push_pipeline.snapshot_hash_listing, 'returns the live remote comparison set for planning only');
   assert.equal(topologyMatrix.push_pipeline.dry_run_plan_upload, 'uploads the canonical plan as eligibility evidence and returns a receipt, not a lock');
-  assert.equal(topologyMatrix.push_pipeline.mutation_batch_apply, 'revalidates fresh live evidence before every batch and again at the storage boundary');
+  assert.equal(topologyMatrix.push_pipeline.mutation_batch_apply, 'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run');
   assert.equal(topologyMatrix.push_pipeline.journal_inspect, 'reads durable evidence without authorizing mutation');
   assert.equal(topologyMatrix.push_pipeline.recovery_inspect, 'starts with inspect and classifies finish, rollback, retry, or block without mutation');
   assert.equal(topologyMatrix.push_pipeline.recovery, 'allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action');
@@ -446,7 +446,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(protocolExtensionContract.contract_id, 'push-protocol-extension-production-contract');
   assert.equal(
     protocolExtensionContract.purpose,
-    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping',
+    'compact end-to-end proof for preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery with explicit pull provenance mapping and apply-time revalidation',
   );
   assert.equal(protocolExtensionContract.pull_pipeline.exporter, 'scans the merge base and coverage evidence');
   assert.equal(protocolExtensionContract.pull_pipeline.importer, 'persists the base package as immutable provenance');
@@ -495,7 +495,7 @@ test('push contract fixture binds the pull handoff to the production push sequen
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_batch_apply,
-    'revalidates fresh live evidence before every batch and again at the storage boundary',
+    'revalidates fresh live evidence before every batch and again at the storage boundary, and never reuses the dry-run receipt as a lock',
   );
   assert.equal(
     protocolExtensionContract.pull_to_push_mapping.push_journal,
@@ -1655,7 +1655,7 @@ test('push topology matrix fixture captures the minimal docker and playground pr
   );
   assert.equal(
     matrix.push_pipeline.mutation_batch_apply,
-    'revalidates fresh live evidence before every batch and again at the storage boundary',
+    'revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run',
   );
   assert.equal(matrix.test_topology.runner, 'the only actor allowed to run the push protocol');
   assert.deepEqual(matrix.test_topology.proof_order, [

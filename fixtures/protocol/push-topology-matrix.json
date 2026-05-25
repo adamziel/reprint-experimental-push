@@ -5,7 +5,7 @@
     "preflight": "binds the persisted pull base to the live remote identity and a short-lived push session",
     "snapshot_hash_listing": "returns the live remote comparison set for planning only",
     "dry_run_plan_upload": "uploads the canonical plan as eligibility evidence and returns a receipt, not a lock",
-    "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary",
+    "mutation_batch_apply": "revalidates fresh live evidence before every batch and again at the storage boundary, separate from dry-run",
     "journal_inspect": "reads durable evidence without authorizing mutation",
     "recovery_inspect": "starts with inspect and classifies finish, rollback, retry, or block without mutation",
     "recovery": "allows mutating repair only when the journal row, lease fence, and fresh live hashes prove the action"
@@ -29,6 +29,7 @@
       "exporter/importer establish the immutable pull base package",
       "dry-run and apply remain separate remote calls",
       "apply revalidates fresh live evidence before every batch and again at the storage boundary",
+      "dry-run and apply remain separate remote operations",
       "journal inspection stays read-only before inspect-first recovery can mutate",
       "browser-visible inspection uses the sandbox-provided 8080 ingress through a local-only proxy"
     ]
