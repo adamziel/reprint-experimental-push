@@ -66,6 +66,10 @@ The compact inspect-first recovery companion at
 [`fixtures/protocol/push-recovery-inspect-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-recovery-inspect-contract.json)
 ties the minted session, journal row, live drift evidence, and blocked-or-safe
 recovery decision into one proof object.
+The cursoring companion at
+[`fixtures/protocol/push-snapshot-hashes-page-contract.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-snapshot-hashes-page-contract.json)
+keeps the live snapshot listing in the planning-only lane even when the remote
+must be paged.
 The compact topology fixture at
 [`fixtures/protocol/push-topology-matrix.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-1/reliable-executor/fixtures/protocol/push-topology-matrix.json)
 captures the same one-remote, one-local, one-drift-witness test shape for

@@ -158,6 +158,7 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   const recoveryPath = readJson('fixtures/protocol/push-recovery-path.json');
   const recoveryBlocked = readJson('fixtures/protocol/push-recovery-blocked-response.json');
   const inspectContract = readJson('fixtures/protocol/push-recovery-inspect-contract.json');
+  const snapshotPageContract = readJson('fixtures/protocol/push-snapshot-hashes-page-contract.json');
 
   assert.equal(preflightRequest.base_manifest_id, 'pull-2026-05-24T00:00:00Z');
   assert.equal(preflightRequest.remote_site_id, 'remote-example');
@@ -238,6 +239,23 @@ test('push auth fixture requires push-scoped headers for mutating calls and keep
   assert.ok(
     inspectContract.required_invariants.includes(
       'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
+  assert.equal(snapshotPageContract.contract_id, 'push-snapshot-hashes-page-contract-one-remote-one-local');
+  assert.equal(snapshotPageContract.request.cursor, 'snapcursor:remote-example:1');
+  assert.equal(snapshotPageContract.request.batch_size, 2);
+  assert.equal(snapshotPageContract.response.cursor, 'snapcursor:remote-example:2');
+  assert.equal(snapshotPageContract.response.complete, false);
+  assert.equal(snapshotPageContract.response.coverage.complete, true);
+  assert.equal(snapshotPageContract.response.coverage.blocked.length, 0);
+  assert.ok(
+    snapshotPageContract.required_invariants.includes(
+      'snapshot hash listing is cursorable for large sites',
+    ),
+  );
+  assert.ok(
+    snapshotPageContract.required_invariants.includes(
+      'partial listings remain planning evidence, not write authority',
     ),
   );
 });

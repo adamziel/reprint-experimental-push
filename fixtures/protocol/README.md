@@ -32,6 +32,7 @@ The normal sequence is:
 24. `push-contract.json`
 25. `push-topology-matrix.json`
 26. `push-recovery-inspect-contract.json`
+27. `push-snapshot-hashes-page-contract.json`
 
 Failure and recovery examples:
 
@@ -92,6 +93,9 @@ Failure and recovery examples:
 - `push-topology-matrix.json` gives the shortest machine-readable proof of the
   one-remote, one-local, one-drift-witness topology used by both Docker and
   Playground test harnesses.
+- `push-snapshot-hashes-page-contract.json` gives the compact cursoring proof
+  for large remote sites and keeps partial snapshot listings clearly in the
+  planning-only lane.
 
 Fixture values such as `sha256:plan` are placeholders. Tests that execute the
 protocol should replace them with canonical hashes generated from the exact
@@ -196,6 +200,9 @@ The fixture set is meant to be read as one production contract:
   identity and a short-lived push session.
 - `push-snapshot-hashes-*` fixtures show the cursorable live planning view and
   the coverage proof for the requested scope.
+- `push-snapshot-hashes-page-contract.json` makes the partial-listing boundary
+  explicit so tests can prove cursorable planning without treating a page as a
+  lock.
 - `push-dry-run-*` fixtures show the canonical plan upload and the resulting
   eligibility receipt, not a lock.
 - `push-apply-batch-*` fixtures prove apply-time live revalidation on a batch

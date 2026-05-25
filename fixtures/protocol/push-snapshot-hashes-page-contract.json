@@ -1,0 +1,51 @@
+{
+  "contract_id": "push-snapshot-hashes-page-contract-one-remote-one-local",
+  "purpose": "proves the live remote hash listing is cursorable and planning-only for large scopes",
+  "request": {
+    "push_session": "psh_01j00000000000000000000000",
+    "cursor": "snapcursor:remote-example:1",
+    "batch_size": 2,
+    "scope": {
+      "files": ["wp-content/plugins", "wp-content/themes", "wp-content/uploads"],
+      "tables": ["wp_options", "wp_posts", "wp_postmeta"]
+    },
+    "include_absent_for_base_keys": [
+      "file:wp-content/plugins/forms/forms.php",
+      "row:[\"wp_posts\",\"ID:1\"]"
+    ]
+  },
+  "response": {
+    "snapshot_id": "snap_01j00000000000000000000001",
+    "cursor": "snapcursor:remote-example:2",
+    "complete": false,
+    "coverage": {
+      "coverage_hash": "sha256:remote-coverage",
+      "complete": true,
+      "blocked": [],
+      "excluded": [
+        {
+          "resource_key": "runtime:transients",
+          "reason": "generated-cache"
+        }
+      ]
+    },
+    "resources": [
+      {
+        "resource_key": "file:index.php",
+        "hash": "sha256:base-index",
+        "storage_guard": "filesystem-compare-rename"
+      },
+      {
+        "resource_key": "row:[\"wp_posts\",\"ID:1\"]",
+        "hash": "sha256:base-post-1",
+        "storage_guard": "mysql-transaction-row-lock"
+      }
+    ]
+  },
+  "required_invariants": [
+    "snapshot hash listing is cursorable for large sites",
+    "partial listings remain planning evidence, not write authority",
+    "apply must revalidate the live remote before every batch and at the storage boundary",
+    "dry-run receipts must not promote a snapshot cursor into a lock"
+  ]
+}

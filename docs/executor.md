@@ -17,6 +17,8 @@ The production sequence is fixed:
 1. `push_preflight` binds the persisted pull base to a live remote identity
    and a short-lived push session.
 2. `push_snapshot_hashes` lists the live remote comparison set for planning.
+   Large sites may require cursoring, but every page remains planning-only and
+   never becomes a lock.
 3. The local planner builds the canonical three-way plan from base, local, and
    live remote evidence.
 4. `push_plan_dry_run` uploads that canonical plan as eligibility evidence
