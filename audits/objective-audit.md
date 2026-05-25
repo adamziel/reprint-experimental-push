@@ -31,6 +31,13 @@ Current proof must be judged against the live-source release boundary, not again
 - route smokes that still report `labBacked: true`
 - any proof that does not exercise the one-way pull base to one-way push to live source loop
 
+The strongest current runnable evidence still falls into two classes:
+
+- executable lab proof: `npm test` and the fixture-backed or file-backed smokes
+- non-executable proof: prose in `README.md`, `progress.html`, and the supervisor/audit notes
+
+Neither class proves the live-source release boundary by itself.
+
 ## Required Release Gate
 
 The repo still needs one enforced release gate that closes the gap between lab evidence and a releasable live push path. That gate must fail closed unless it can prove, in the same run, all of the following:
@@ -64,7 +71,7 @@ The current tests are useful, but they are not proof of no data loss, reliabilit
 | [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) | File-backed journal monotonicity, redaction, restart classification, and blocked recovery states | No durable production journal, no lease/fencing regime, no real crash recovery on the source boundary, no duplicate/write-loss proof on live storage, and no evidence that a live apply is replay-safe under the production storage semantics named by the objective | Blocker evidence only |
 | [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) | Benchmark shape, guardrails, refusal discipline, and safe-fast-path modeling | No measured throughput, no memory ceiling, no runtime threshold on a live push path, no production timing evidence, no proof that the speed story is anything more than a model or refusal gate | Blocker evidence only |
 | [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) | Explicit refusal of unsupported throughput claims and tamper detection for benchmark evidence | No positive speed claim, no production-shaped timing result, no live-path benchmark threshold, no real live-source throughput measurement, no proof that a production release is fast enough, and no enforced default entrypoint that turns the refusal into a release gate | Blocker evidence only |
-| `npm run test:playground:*` optional smokes, including `http-push` | Lab/fixture route shape, auth/session scaffolding, storage guard behavior, stale-claim classification, and journal smoke paths | No real remote/local topology, no production storage path, no enforced release gate, and no release decision because the smokes remain optional | Lab evidence only |
+| `npm run test:playground:*` optional smokes, including `http-push` and `authenticated-http-push` | Lab/fixture route shape, auth/session scaffolding, storage guard behavior, stale-claim classification, and journal smoke paths | No real remote/local topology, no production storage path, no enforced release gate, and no release decision because the smokes remain optional; the client and route still label themselves `labBacked: true` | Lab evidence only |
 
 These tests can justify a cautious lab narrative. They do not justify a release narrative for the one-way pull base plus one-way push back to the live source.
 
