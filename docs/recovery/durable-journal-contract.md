@@ -21,6 +21,8 @@ Acceptable post-failure states are narrow by design:
 - `fully-updated-remote` means all planned mutations are committed and replay is inert
 - `blocked-recovery` means the remote may be partially changed, but durable artifacts exist so the operator can inspect and recover safely
 
+The inspectable recovery contract must be able to classify a plan into exactly one of those states after restart. If the journal cannot support that classification, the result is blocked recovery, not a best-effort guess.
+
 Anything that leaves a partially mutated remote without recovery artifacts is a release blocker.
 
 Retry safety rules:

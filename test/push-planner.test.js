@@ -140,17 +140,19 @@ function assertAcceptableRecoveryState(recoveryState) {
   }
 }
 
-function assertRecoveryStateArtifacts(recoveryState, expectedStatus) {
+function assertFailureRecoveryState(recoveryState, expectedStatus) {
   assertAcceptableRecoveryState(recoveryState);
   assert.equal(recoveryState.status, expectedStatus);
-  if (expectedStatus === 'old-remote') {
-    assert.ok(recoveryState.artifacts?.journal, 'old remote recovery must carry journal artifacts');
+  assert.ok(recoveryState.artifacts?.journal, `${expectedStatus} recovery must carry journal artifacts`);
+  if (expectedStatus === 'blocked-recovery') {
+    assert.ok(recoveryState.artifacts?.remote, 'blocked recovery must carry remote artifacts');
+  } else {
     assert.equal(recoveryState.artifacts.remote, undefined);
   }
-  if (expectedStatus === 'fully-updated-remote') {
-    assert.ok(recoveryState.artifacts?.journal, 'fully updated recovery must carry journal artifacts');
-    assert.equal(recoveryState.artifacts.remote, undefined);
-  }
+}
+
+function assertRecoveryStateArtifacts(recoveryState, expectedStatus) {
+  assertFailureRecoveryState(recoveryState, expectedStatus);
 }
 
 function assertRemoteUnchanged(remote, snapshot) {
@@ -13939,9 +13941,7 @@ test('no-data-loss recovery boundary matrix only allows old-remote before commit
     durableJournal.close();
 
     assert.ok(failure instanceof PushPlanError, label);
-    assert.equal(failure.details.recovery.status, 'old-remote', label);
-    assert.equal(failure.details.recovery.artifacts.remote, undefined, label);
-    assert.ok(failure.details.recovery.artifacts.journal, label);
+    assertFailureRecoveryState(failure.details.recovery, 'old-remote');
     assert.equal(failure.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
     assert.equal(JSON.stringify(remote), snapshot, label);
 
@@ -14074,10 +14074,7 @@ test('no-data-loss blocked partial recovery keeps inspectable artifacts and stay
   durableJournal.close();
 
   assert.ok(failure instanceof PushPlanError);
-  assert.equal(failure.details.recovery.status, 'blocked-recovery');
-  assertRecoveryStateArtifacts(failure.details.recovery, 'blocked-recovery');
-  assert.ok(failure.details.recovery.artifacts.journal, 'blocked partial recovery must keep journal artifacts');
-  assert.ok(failure.details.recovery.artifacts.remote, 'blocked partial recovery must keep remote artifacts');
+  assertFailureRecoveryState(failure.details.recovery, 'blocked-recovery');
 
   const inspection = inspectRecoveryJournal({
     journal: readRecoveryJournal(journalPath),
@@ -14096,9 +14093,7 @@ test('no-data-loss blocked partial recovery keeps inspectable artifacts and stay
   retryJournal.close();
 
   assert.ok(retryError instanceof PushPlanError);
-  assert.equal(retryError.details.recovery.status, 'blocked-recovery');
-  assertRecoveryStateArtifacts(retryError.details.recovery, 'blocked-recovery');
-  assert.ok(retryError.details.recovery.artifacts.remote, 'retry should keep remote artifacts');
+  assertFailureRecoveryState(retryError.details.recovery, 'blocked-recovery');
   assert.equal(retryError.details.recovery.artifacts.remote.db.wp_posts['ID:2'], undefined);
   assert.equal(remote.db.wp_posts['ID:2'], undefined);
 });
