@@ -14,6 +14,7 @@ Do not use production wording unless the branch has all of the following for the
 - any later boundary that reuses the same route family, package mount, or reviewer wording is still a fresh live boundary and must have its own preserved remote, stale-artifact rejection, and retry scope rebuilt from live hashes;
 - the fresh retry artifact is rebuilt from live hashes on this branch, not inherited from the earlier approval;
 - every touched row, file, relationship-bearing record, and plugin-owned surface is classified as old, new, or blocked before retry starts;
+- any surviving partial file, DB, or plugin side effect remains separately auditable and cannot be treated as success until the next retry scope is rebuilt from live hashes;
 - any late-discovered plugin-owned surface is separately blocked or classified, not folded into the earlier success story;
 - any partial file, DB, or plugin side effect is durably classified before retry so a mixed write cannot be relabeled as success; and
 - any manual-resolution note, route-shaped smoke, fixture replay, or `finalMatchesLocal` result is treated as compatibility evidence only unless it is paired with the preserved remote, the rejection point, the stale-artifact rejection, the fresh retry artifact rebuilt from live hashes, and the same live boundary on this worktree;
@@ -24,6 +25,7 @@ Do not use production wording unless the branch has all of the following for the
 - any claim that a readable artifact, route-shaped smoke, or comparison note is enough after drift must fail closed unless the remote stayed preserved, the stale approval was rejected before the first write, and the fresh retry scope was rebuilt from live hashes for the same boundary; and
 - any late-discovered plugin-owned surface that appears only after the first write is treated as a new boundary until it is separately rejected or classified, with its own preserved remote and fresh retry scope; and
 - any remapped create target discovered during retry is treated as a new boundary until it is separately preserved, rejected, and retried with fresh live hashes; and
+- any surviving partial file, DB, or plugin side effect from the earlier boundary stays audit-only until the next retry scope is rebuilt from fresh live hashes; and
 - any claim that a historical Reprint, ZS-Sync, or ForkPress note proves a later live boundary must fail closed unless the note names the exact upstream state, says what it proves here, says what it does not prove here, and the same live boundary was rerun on this branch; and
 - proof for one live boundary does not transfer to a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface, even if the route family, package mount, fixture replay, or reviewer wording is the same; and
 - any partial file, DB, or plugin side effect is classified before retry so mixed writes cannot be relabeled as success; and
