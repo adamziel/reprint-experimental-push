@@ -139,15 +139,22 @@ plugin-driver coverage on the same mutation. That is a branch-local gap, not a
 project-wide absence: the supervised lane already has `verify:release`,
 retained-source evidence, a durable-journal smoke, a broader command-topology
 proof, and the explicit `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict,
-but this checkout does not yet expose the same live boundary. Until that exact
-boundary exists here, production-grade push wording is false reliability, even
-if the supervised lane has stronger retained-source evidence and an explicit
-boundary verdict.
+but this checkout does not yet expose the same live boundary.
 
-The single strongest proof gap is still production WordPress auth/session
-lifecycle plus preserved-remote auditability on one rerunnable live boundary.
-Until that is shown with exact remote preservation and retry evidence on this
-branch, the retained-source `verify:release` lineage remains lab evidence only.
+The production claim is blocked until one rerunnable boundary here shows all of
+the following on the same mutation:
+
+- preserved remote still inspectable after rejection;
+- apply-time revalidation against fresh live hashes;
+- production WordPress auth/session lifecycle;
+- durable journal storage with lease/fencing semantics;
+- graph identity across create-time remaps and relationship-bearing records;
+- plugin-driver coverage for late-discovered plugin-owned surfaces; and
+- auditable retry scope that survives manual-review text without trusting it.
+
+Until that exact boundary exists here, production-grade push wording is false
+reliability, even if the supervised lane has stronger retained-source evidence
+and an explicit boundary verdict.
 
 The next acceptable proof must be one rerunnable live command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
