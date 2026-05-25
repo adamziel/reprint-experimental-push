@@ -16,6 +16,13 @@ Use the same logical harness in Docker and Playground:
 | Drift witness | `remote-changed` | Reuses the same remote identity after drift. |
 | Runner | `runner` | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
 
+The topology is intentionally minimal:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns the push protocol calls
+
 The topology rules are fixed:
 
 - Docker uses one private network.
@@ -30,6 +37,18 @@ That is the production topology in compact form:
 - one imported local edit site, `local-edited`
 - one later drift observation of the same remote identity, `remote-changed`
 - one runner, `runner`, that owns the push protocol calls
+
+The harness routes stay identical across both environments:
+
+| Route | Docker | Playground |
+| --- | --- | --- |
+| Preflight | `preflight` | `preflight` |
+| Snapshot hashes | `snapshot-hashes` | `snapshot-hashes` |
+| Dry-run | `dry-run` | `dry-run` |
+| Apply | `apply` | `apply` |
+| Journal | `journal` | `journal` |
+| Recovery inspect | `recovery-inspect` | `recovery-inspect` |
+| Recovery mutate | `recovery-mutate` | `recovery-mutate` |
 
 Docker and Playground prove the same three-site story with different harness
 shapes:

@@ -214,6 +214,21 @@ The pull/export/import pipeline maps to the push ladder one step at a time:
 - `push_recover auto|finish|rollback` may mutate only when inspect proves the
   branch safe and the auth floor still holds
 
+Read as a route-by-route production ladder, the same bridge is:
+
+- `push_preflight` is the first live binding after importer persistence
+- `push_snapshot_hashes` lists the live remote comparison surface for
+  planning only and never becomes write authority
+- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+  receipt, not a lock
+- `push_batch_apply` revalidates fresh live evidence before every batch and at
+  the storage boundary
+- `push_journal` records durable evidence without authorizing mutation
+- `push_recover inspect` reads the journal and fresh live hashes before any
+  mutating repair
+- `push_recover auto|finish|rollback` mutates only after inspect proves the
+  branch safe with the same auth floor as the write path
+
 That bridge is the production mapping the executor consumes:
 
 - one exported merge base becomes one persisted pull base package
