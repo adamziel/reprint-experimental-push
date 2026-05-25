@@ -184,6 +184,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         }
       }
 
+      const navigationSupport = unsupportedNavigationResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!navigationSupport.supported) {
+        addUnsupportedNavigationResourceBlocker(plan, {
+          resource,
+          support: navigationSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const graphIdentitySupport = wordpressGraphIdentitySupport({
         resource,
         localValue,
@@ -1433,6 +1453,37 @@ function addWordPressGraphIdentityBlocker(plan, {
   });
 }
 
+function addUnsupportedNavigationResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-navigation-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-navigation-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Navigation and menu graph resource ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function boundEvidenceList(items, limit) {
   return items.slice(0, limit);
 }
@@ -1476,6 +1527,23 @@ function addConflict(plan, {
     relatedResourceKey: relatedResource?.key,
     relatedChange,
   });
+}
+
+function unsupportedNavigationResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_posts') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT || candidate.post_type !== 'wp_navigation') {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-navigation-resource',
+    reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+  };
 }
 
 function addFileTopologyConflicts(plan, resources, base, local, remote) {

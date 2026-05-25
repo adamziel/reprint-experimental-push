@@ -539,7 +539,9 @@ The plain-language invariant note lives in
 | Local WordPress graph row references a missing live remote post identity | Plan is `blocked`; the local `wp_posts` mutation is not emitted; blocker evidence records the missing `post_parent` relationship without raw post content. | `blocks local post-parent references to a missing live remote post identity` |
 | Local WordPress graph row references a missing live remote taxonomy identity | Plan is `blocked`; the local `wp_term_relationships` mutation is not emitted; blocker evidence records the missing `term_taxonomy_id` relationship without raw term or relationship payload values. | `blocks local term-relationship references when the live remote taxonomy identity disappears` |
 | Local WordPress graph row references a missing live remote taxonomy identity while remote-only plugin drift exists elsewhere | Plan is `blocked`; the local `wp_term_relationships` mutation is not emitted; blocker evidence records the missing `term_taxonomy_id` relationship without raw term or relationship payload values; unrelated remote-only plugin drift stays `keep-remote`. | `blocks local term-relationship references when the live remote taxonomy identity disappears while preserving remote-only plugin drift` |
-| Menu/nav graph references remain unproven in the current planner model | Pending proof; the current planner does not yet encode nav menu identity or rewrites, so the matrix must not claim automatic apply behavior for menu graph edges. | `menu/nav graph references remain unproven in the current planner model` |
+| Local WordPress graph row references a missing live remote post identity | Plan is `conflict`; the local `wp_term_relationships` mutation is not emitted; conflict evidence records the missing `object_id` relationship without raw relationship or post payload values; unrelated remote-only plugin drift stays `keep-remote`. | `blocks local term-relationship object references when the live remote post identity disappears while preserving remote-only plugin drift` |
+| Local WordPress graph row references a missing live remote term identity | Plan is `blocked`; the local `wp_termmeta` mutation is not emitted; blocker evidence records the missing `term_id` relationship without raw term meta payload values. | `blocks local termmeta references when the live remote term identity disappears` |
+| Local WordPress navigation graph resources are unsupported | Plan is `blocked`; the navigation row mutation is not emitted; blocker evidence records that menu/nav graph resources are not yet supported by the planner while unrelated remote-only plugin drift stays `keep-remote`. | `blocks local navigation graph resources while preserving remote-only plugin drift` |
 | Atomic plugin install is missing dependency | Plan is `blocked`; apply refuses. | `blocks an atomic plugin install when dependencies are absent` |
 | Atomic plugin dependency metadata includes private fields | Plan evidence records only normalized plugin dependency audit fields and omits raw dependency payloads from blockers and atomic-group dependencies. | `redacts raw plugin dependency metadata from blocker evidence` |
 | Plugin install and dependency are included together | All files, plugin metadata, and options apply as one atomic group. | `applies an atomic plugin install when dependencies are included in the same plan` |
@@ -645,8 +647,8 @@ The plain-language invariant note lives in
   rows whose targets are absent from the live remote, so same-plan graph
   identity creates stay blocked. It does not prove safe automatic rewriting for
   attachments, GUIDs, nav menus, term splitting, serialized blocks,
-  `_thumbnail_id`, `post_parent`, `wp_term_relationships`,
-  `wp_term_taxonomy.parent`, `wp_termmeta`, cross-table create batches, or
+  `_thumbnail_id`, `post_parent`,
+  `wp_term_taxonomy.parent`, cross-table create batches, or
   production importer/exporter identity maps.
 - Production DB-table journal and kill-process recovery tests around every
   durable WordPress boundary. The current DB journal/idempotency/process-kill
