@@ -7,13 +7,13 @@ The project is **not releasable as a production WordPress push path**.
 Fresh remote heads at audit time, checked on May 26, 2026:
 
 - `origin/lane/reliable-executor` -> `0c4fd10f`
-- `origin/lane/no-data-loss-invariants` -> `f37ffc94`
+- `origin/lane/no-data-loss-invariants` -> `29bfcd55`
 - `origin/lane/no-data-loss-recovery` -> `134d0401`
 - `origin/lane/fast-paths` -> `7565d5c8`
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/critic` -> `26d2697a`
 - `origin/lane/progress-publisher` -> `7695e1f9`
-- `origin/lane/same-plan-wordpress-graph-create` -> `a72c2789`
+- `origin/lane/same-plan-wordpress-graph-create` -> `ddb47bf6`
 - `origin/lane/cycle-20260525-mainwindows-2357/no-data-loss-invariants-graph-proof` -> `98c0ce26`
 - `origin/lane/cycle-20260525-mainwindows-2349/feedback-supervisor` -> `bbda11b7`
 - `origin/main` -> `4b7b47a6`
@@ -27,10 +27,10 @@ but it did not change the release conclusion:
 
 - `origin/lane/reliable-executor` now retries the release-proof port handling
   at `0c4fd10f`.
-- `origin/lane/no-data-loss-invariants` now adds a plugin-owned delete blocker
-  proof at `f37ffc94`.
-- `origin/lane/same-plan-wordpress-graph-create` now adds an attachment proof
-  for same-plan graph handling at `a72c2789`.
+- `origin/lane/no-data-loss-invariants` now adds an atomic plugin bundle
+  invariant proof at `29bfcd55`.
+- `origin/lane/same-plan-wordpress-graph-create` now adds same-plan termmeta
+  proof at `ddb47bf6`.
 
 Those changes strengthen the lab evidence for protocol safety and no-loss
 planning, but they still do not prove the production-backed push path.
