@@ -268,7 +268,7 @@ Production-readiness language checklist:
    story.
 6. Treat Reprint, ZS-Sync, and ForkPress notes as historical context unless
    the exact upstream revision or worktree state is named and the same live
-   boundary was rechecked here.
+   boundary was rechecked here with preserved-remote evidence.
 7. Treat route shape, package mount, fixture replay, readable review
    artifacts, and `finalMatchesLocal` as compatibility evidence only.
 8. Fail closed if the wording says "manual resolution" but does not also show
