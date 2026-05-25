@@ -79,7 +79,7 @@ Without that command, every passing test remains support evidence only.
 
 ## Weakest Current Claim
 
-The weakest claim is the production release verdict itself.
+The weakest claim is any implication that the current suite can certify the live-source release boundary.
 
 - No required command exists that must reach the live-source boundary and emit a machine-checkable release decision.
 - The suite can still go green without proving live-source mutation, crash survival, replay safety, or throughput on the real path.
@@ -88,7 +88,7 @@ The weakest claim is the production release verdict itself.
 - The current test suite can reject unsafe states, but it cannot prove the objective's positive claim unless a mandatory live-source verdict is added.
 - Because that verdict is still missing from the command surface, the current evidence can only support a regression or lab narrative. It cannot close release.
 
-Actionably: the next release gate must be a checked-in command that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims."
+Actionably: the next release gate must be a checked-in command that (1) revalidates live remote state at apply time, (2) requires auth/session plus durable journal plus leases/fencing plus graph identity plus plugin-driver proof, (3) touches the live-source boundary in the same run, and (4) fails closed unless it can emit a machine-checkable release verdict. Until that exists, the strongest defensible statement is not "safe enough to release" but "safe enough to refuse unsafe claims." Any future claim of no data loss, reliability, or speed must point at that gate, not at `node --test` or the lab smokes.
 
 ## Proof Boundary
 
