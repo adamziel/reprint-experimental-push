@@ -218,16 +218,17 @@ That distinction matters for the objective claims:
 
 The weakest current claim is still the release gate itself. The repo needs one required executable entrypoint that:
 
-1. Runs the release-relevant auth, journal, lease/fencing, graph identity, plugin-driver, topology, crash-boundary, and benchmark checks together.
+1. Runs the release-relevant auth/session, durable journal, lease/fencing, graph identity, plugin-data-driver, topology, crash-boundary, and benchmark checks together.
 2. Fails closed when any proof bucket is only `labBacked: true`, fixture-only, benchmark-only, or missing live-source evidence.
 3. Prints the last failing proof bucket so the operator can see which claim is still unproven.
 4. Is wired into CI or another default enforced path so a green casual run cannot bypass it.
+5. Treats live-source proof as mandatory, not optional, so a successful lab smoke cannot satisfy the release bar by itself.
 
 Without that single unskippable gate, the current proof remains split across optional lab commands and model checks, which is exactly the bypass the objective must eliminate.
 
 Until that exists, the strongest tests in this checkout remain useful audits of behavior, but they do not establish release readiness.
 - The current test surface is therefore honest about risk, but honesty is not enough: it proves that the suite can refuse unsafe claims, not that the live release path is safe. The separate [`audits/release-evidence-gap.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/audits/release-evidence-gap.md) note captures the same split in a shorter form. Until one checked-in command composes the full safety matrix and fails closed on the first missing bucket, every passing test remains audit evidence rather than release approval.
-- The concrete next proof gap is a mandatory release command that fails closed on the first unproven bucket and surfaces the bucket name in its output, so operators cannot miss whether the blocker is live-source proof, durability, topology, or speed.
+- The concrete next proof gap is a mandatory release command that fails closed on the first unproven bucket and surfaces the bucket name in its output, so operators cannot miss whether the blocker is live-source proof, durability, topology, graph identity, or speed.
 - In practical terms, the suite currently proves "we refuse to overclaim" much better than it proves "we can safely release."
 - Green output from the current suite can still coexist with an unproven live push path, so a passing test run is not evidence that the objective has been met.
 
