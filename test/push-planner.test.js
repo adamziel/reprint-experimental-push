@@ -19039,7 +19039,7 @@ test('atomic apply keeps only the approved recovery states across the failure cu
     assert.equal(persisted.records[persisted.records.length - 1].type, 'recovery-state', label);
     assert.equal(persisted.records[persisted.records.length - 1].state, 'old-remote', label);
     if (label === 'before mutation') {
-      assertJournalTailTypes(persisted.records, ['journal-opened', 'recovery-state'], label);
+      assertJournalTailTypes(persisted.records, ['target-planned', 'recovery-state'], label);
     } else if (label === 'after staging') {
       assertJournalTailTypes(persisted.records, ['apply-staged', 'recovery-state'], label);
     } else {
