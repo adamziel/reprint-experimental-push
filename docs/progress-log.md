@@ -4,6 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Live Progress Refresh 04:12
+
+- Last update: 2026-05-25 04:12:17 CEST.
+- Status: `89` Node tests still pass, the supervised swarm remains active, and
+  production push is still blocked.
+- Trend: the newest lane evidence at 04:11:22 CEST kept recovery, protocol,
+  critic, and objective-audit evidence aligned, so the release posture stays
+  flat.
+- Blocker: production auth/session binding, durable journal storage, graph
+  identity, plugin drivers, live Docker/Playground topology, recovery
+  boundaries, and release-gate evidence remain unproven.
+- Public page: [progress.html](../progress.html) now shows the refreshed
+  visible timestamp and keeps the first screen succinct and conservative.
+
 ## 2026-05-25 - Live Progress Refresh 04:08
 
 - Last update: 2026-05-25 04:08:51 CEST.
