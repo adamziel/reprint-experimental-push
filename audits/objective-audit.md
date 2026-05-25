@@ -52,6 +52,15 @@ The test suite is doing the right kind of negative work, but it is still not pos
 - The strongest production-shaped smokes still report `labBacked: true`, so they remain lab proof even when they look operationally close to release.
 - Any audit language that treats fixture, refusal, or lab-backed passes as proof of no data loss, reliability, or speed would be overstated.
 
+Claim summary:
+
+| Claim | Current proof type | Missing proof | Release blocker |
+| --- | --- | --- | --- |
+| No data loss | Local fixture ordering, redaction, and replay classification | Live-source end-to-end mutation on production storage across all touched WordPress data shapes | No mandatory live-source durability verdict |
+| Reliability | Stale-plan refusal, auth/session scaffolding, journal guardrails, and lab smokes | One required gate that composes auth/session, durable journal, leases/fencing, graph identity, and plugin-driver checks at apply time | No single fail-closed release command |
+| Speed | Refusal-only benchmark proof that keeps `productionThroughput` unclaimed | A measured live-path throughput result or an enforced `speed unclaimed` verdict from the release gate | No mandatory throughput verdict |
+| Release readiness | Regression and lab evidence only | A checked-in release command that reaches the live-source boundary and fails closed on missing proof | Optional helpers can still bypass the release boundary |
+
 ## Claim Status
 
 | Claim | Current status | Why it is still blocked |
