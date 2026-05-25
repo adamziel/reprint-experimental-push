@@ -22,6 +22,7 @@
     "test:playground:production-shaped-live-topology-proof": "node ./scripts/playground/production-shaped-live-topology-proof.mjs",
     "test:playground:production-shaped-live-protocol-proof": "node ./scripts/playground/production-shaped-live-protocol-proof.mjs",
     "test:playground:production-shaped-release-proof": "node ./scripts/playground/production-shaped-release-proof.mjs",
+    "test:playground:production-shaped-live-source-gate": "node ./scripts/playground/production-shaped-live-source-gate-smoke.mjs",
     "test:playground:production-shaped-apply-revalidation": "node ./scripts/playground/production-shaped-apply-revalidation-smoke.mjs",
     "test:playground:production-shaped-missing-secret": "node ./scripts/playground/production-shaped-missing-secret-smoke.mjs",
     "test:playground:production-shaped-missing-live-source": "node ./scripts/playground/production-shaped-live-source-gate-smoke.mjs",
