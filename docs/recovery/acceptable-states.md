@@ -9,6 +9,8 @@ The atomic apply path is only allowed to end in one of three states after a fail
 Release-blocking rule:
 
 - A partial remote mutation without a recovery artifact is not acceptable.
+- `old-remote` and `fully-updated-remote` carry journal evidence only.
+- `blocked-recovery` must carry both journal evidence and inspectable remote artifacts.
 
 Retry rule:
 
