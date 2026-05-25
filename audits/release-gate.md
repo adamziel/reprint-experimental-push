@@ -13,8 +13,10 @@ or comparison-only.
   retry scope, and the proof that the remote was preserved for audit.
 - The claim shows the stale manual-review artifact remains readable for audit
   but is unusable for apply after drift, and the next retry starts from fresh
-  live hashes rather than inherited approval. A readable stale artifact is not
-  a valid retry token.
+  live hashes rather than inherited approval. The audit trail must show the
+  rejected artifact stayed auditable, but could not be widened into a new row,
+  file, relationship-bearing record, or plugin-owned surface. A readable stale
+  artifact is not a valid retry token.
 - The claim shows create-time identity remapping is either safely represented
   or hard-blocked before write.
 - The claim shows plugin-owned state outside the allowlist is either discovered
@@ -68,7 +70,9 @@ or comparison-only.
   live remote or the hidden plugin-owned surface at apply time.
 - The claim does not treat manual resolution as success unless the remote is
   preserved, the stale artifact stays auditable but unusable, and the retry
-  rebuilds scope from fresh live hashes before any write.
+  rebuilds scope from fresh live hashes before any write. "Manual resolution
+  later" is still a failure state until the rejected snapshot cannot be reused
+  as authority.
 - The claim does not treat "manual resolution later" as a success state unless
   the preserved remote is still auditable, the stale artifact cannot authorize
   a retry, and the next attempt starts from fresh live evidence rather than the
