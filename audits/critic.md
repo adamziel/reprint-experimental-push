@@ -9,9 +9,9 @@ auth/session boundary, durable journal semantics, graph identity, and
 plugin-driver coverage on a real-site rerun. The old "no `verify:release`
 exists" critique is retired; the blocker now is the missing rerunnable live
 boundary with preserved-remote audit evidence on a real local, Playground, or
-Docker `REPRINT_PUSH_SOURCE_URL`. Do not reintroduce the retired missing-
-command critique; the current failure mode is that the branch still lacks
-that live rerun on the real boundary.
+Docker `REPRINT_PUSH_SOURCE_URL`. Keep the supervised lane and this branch
+separate: the former supplies retained-source lab evidence, while the latter
+still lacks the live rerun on the real boundary.
 Any claim that `verify:release` is "production-shaped" or "production-ready"
 must fail closed until that live rerun exists on a real local, Playground, or
 Docker `REPRINT_PUSH_SOURCE_URL`.
@@ -19,7 +19,7 @@ On this audit branch, the local script inventory still shows only `plan`,
 `apply`, `test`, and playground/recovery compatibility helpers in
 `package.json`; there is no named real-site release command on this branch
 yet. That is a branch-local gap, not a contradiction of the supervised
-reliable-executor lane.
+reliable-executor lane, and it is not the main production blocker by itself.
 The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
 
