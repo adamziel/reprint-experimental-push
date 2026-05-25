@@ -7275,3 +7275,31 @@ If the rerun cannot produce those facts from one executable command on one
 live source URL, the claim stays compatibility-only and no production-grade
 wording is allowed. Route topology, lab preflight, and a polished script name
 do not close the gap.
+
+Must-happen-before-production-grade-push-support checklist:
+
+- the branch must show a live remote that was actually rejected and still
+  remains inspectable for audit and retry; a "manual resolution" label is not
+  enough unless the remote was preserved and the user can safely retry from it;
+- the branch must show apply-time revalidation on the same live boundary that
+  produced the rejection, not on a fixture or replayed boundary, or the proof
+  is still lab-only;
+- the branch must show the exact conflict policy for every touched surface:
+  old, new, or blocked, including late-discovered plugin-owned tables, cron
+  rows, runtime registries, generated files, caches, serialized blobs, and
+  plugin-owned files; if a surface appears after the first write, it is a new
+  boundary and needs its own preserve / reject / retry cycle;
+- the branch must show that identity remaps on create, aliasing, and
+  renumbering are either proven on the live boundary or blocked before any
+  mutation, because silent remaps are hidden data-loss modes;
+- the branch must show dry-run receipt and journal/recovery inspection in the
+  same run so the retry scope is auditable instead of inferred from a
+  successful smoke;
+- the branch must distinguish provenance from proof for each Reprint,
+  ZS-Sync, and ForkPress comparison: what the note proves here, what it does
+  not prove here, and the exact upstream revision or worktree state used; and
+- the branch must not imply production-grade push support from route shape,
+  package layout, readable artifacts, or "comparison passed" wording unless the
+  same live boundary on this worktree also shows preserved-remote evidence,
+  stale-authority rejection before the first write, and a fresh retry scope
+  rebuilt from live hashes.
