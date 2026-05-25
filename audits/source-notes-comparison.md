@@ -144,6 +144,11 @@ and stale-authority rejection at the current write boundary, the comparison
 remains context only. If the claim cannot also name the exact upstream
 revision or worktree state that was reverified, it still cannot be promoted
 from context to proof.
+Readable manual-review wording has the same limit: it only stays audit-only
+if the preserved remote is inspectable, the stale artifact was rejected
+before mutation, and the fresh retry scope was rebuilt from live hashes on
+this branch. Otherwise the comparison note is still historical context, even
+if the label says "manual resolution."
 That prohibition also covers "manual resolution" wording: a readable stale
 artifact, a matching route family, or a copied-lab mount does not become
 retry authority unless the preserved remote is auditable, the stale artifact

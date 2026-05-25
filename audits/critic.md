@@ -448,6 +448,10 @@ Release gate for any production wording:
   current proof unless the branch also names the late-discovered
   plugin-owned surface, the preserved remote, and the rejection point for
   that later boundary on this repo.
+- Show that a readable manual-review artifact remains audit-only unless the
+  preserved remote is inspectable, the stale artifact was rejected before
+  mutation, and the fresh retry scope was rebuilt from live hashes on this
+  branch; readability alone is not retry authority.
 - Show that an inspectable manual-review artifact or source-note comparison
   still does not prove production safety when the route shape, package mount,
   or `finalMatchesLocal` output matches; unless this branch reran the same
