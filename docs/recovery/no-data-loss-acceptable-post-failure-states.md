@@ -16,6 +16,7 @@ The atomic apply flow has only three acceptable outcomes after a failure or repl
 - A completed replay that sees drift must stop as `blocked-recovery`, not silently fall back to `old-remote`.
 - Failure before mutation, after staging, and after dependency validation are only acceptable when they still report `old-remote`.
 - A partial remote mutation without recovery artifacts is a release blocker.
+- The production journal must make the same classification using durable rows or files, not only in-memory test fixtures.
 
 ## Artifact Rule
 
@@ -25,6 +26,7 @@ The atomic apply flow has only three acceptable outcomes after a failure or repl
 - A completed replay should remain read-only even when retried against the same completed journal.
 - JSON fixtures and lab-only journal files are evidence, not the production contract.
 - Production recovery still needs durable journal rows or files with crash-safe persistence before a partial write can be treated as recoverable.
+- Durable recovery must preserve enough evidence to inspect the remote after restart without guessing which mutation boundary was crossed.
 
 ## Retry Rule
 
