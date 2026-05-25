@@ -97,6 +97,16 @@ The production route surface is intentionally split:
 | `recovery-inspect` | `recovery-inspect` | Recovery is classified before any mutation. |
 | `recovery-mutate` | `recovery-mutate` | Mutation is allowed only after inspect and the HMAC floor still hold. |
 
+The shared route matrix is the same in Docker and Playground:
+
+- `preflight` maps to the first live bind against the persisted pull base package.
+- `snapshot-hashes` maps to planning-only remote hash listing.
+- `dry-run` maps to the canonical plan upload and eligibility receipt.
+- `apply` maps to batched mutation with fresh live revalidation before every batch and at the storage boundary.
+- `journal` maps to read-only durability evidence.
+- `recovery-inspect` maps to read-only classification of finish, rollback, retry, or block.
+- `recovery-mutate` maps to the mutating recovery branch that still respects inspect and the HMAC floor.
+
 The executor maps those stages to the pull pipeline directly:
 
 - exporter discovers the merge base and coverage evidence

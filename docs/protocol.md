@@ -124,6 +124,7 @@ The production proof inventory is intentionally layered:
 3. `push-production-revalidation-contract.json` for auth, session, journal, lease, and apply-time revalidation
 4. `push-production-journal-lease-recovery-inspect-contract.json` for journal rows, lease fencing, and inspect-first recovery
 5. `push-production-executor-flow-contract.json` for the shortest full flow proof
+6. `push-production-route-matrix-contract.json` for the shared Docker and Playground route names, ingress, and proxy policy
 
 Those fixtures should read as one chain:
 
