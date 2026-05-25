@@ -1,10 +1,11 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `2ac32891`, with earlier retained-source proof steps `889bd37a`
-and `63a3502f` still useful as history, not as release proof. The latest
-explicit verdict on that lane is `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`,
-and the lane's completed `npm run verify:release` result, including
+remote head `3d8748b6`, with earlier retained-source proof steps `2ac32891`,
+`889bd37a`, and `63a3502f` still useful as history, not as release proof.
+The latest explicit verdict on that lane is
+`PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the lane's completed
+`npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence. That is
 real progress, and `2ac32891` tightens the release-proof contract, but it
@@ -163,6 +164,25 @@ The source notes are still useful, but only as design input:
   observed upstream commit; it does not prove this branch can preserve the
   rejected remote, classify plugin-owned side effects, or rerun the same live
   boundary with fresh live hashes.
+
+## Release gate
+
+Production-grade push support remains blocked until a rerunnable live boundary
+on this branch proves, on the same mutation:
+
+- preserved-remote retention after rejection, with exact audit/retry evidence;
+- production WordPress auth/session lifecycle, not just retained-source
+  session shape;
+- apply-time revalidation against a fresh live source hash set;
+- durable journal semantics that survive outside the Playground harness;
+- graph identity across create-time remaps and late-discovered records; and
+- plugin-driver coverage for plugin-owned surfaces outside the initial
+  allowlist.
+
+The reliable-executor lane's retained-source `verify:release` run is still
+useful lab evidence, but it is not production proof for this branch until the
+same live boundary is rerun here and the preserved remote remains auditable
+and retryable.
 
 If a claim cites one of those notes as if it were production proof, it must be
 rejected unless the claim also names the exact live boundary and the preserved
