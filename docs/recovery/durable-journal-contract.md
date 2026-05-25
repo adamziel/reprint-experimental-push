@@ -1,15 +1,42 @@
 # Durable Recovery Contract
 
-The recovery model in `src/apply.js` treats atomic apply as one of three post-failure states:
+This lane treats recovery as a no-data-loss problem, not just a successful test-model replay.
 
-- `old-remote`: nothing was committed remotely; the journal is the recovery artifact.
-- `fully-updated-remote`: every planned mutation is already present; the journal is the replay artifact.
-- `blocked-recovery`: the remote drifted or partially applied outside the recoverable envelope; both journal and remote artifacts are required.
+## Acceptable post-failure states
 
-The contract is intentionally strict:
+After any push attempt, the remote must end up in one of these states:
 
-- A pre-commit failure may stage or validate work, but it must not leave a partially mutated remote without journal evidence.
-- A completed replay must stay inert, return zero applied mutations, and not resurrect stale local data.
-- A partial remote mutation without recovery artifacts is a blocker, not a safe retry target.
+1. `old-remote`
+   - No mutation reached the remote.
+   - Recovery artifacts may exist, but they must describe the untouched remote.
+2. `fully-updated-remote`
+   - Every planned mutation is visible on the remote.
+   - A completed journal may be replayed inertly.
+3. `blocked-recovery`
+   - A partial or drifted state exists.
+   - Recovery must preserve artifacts for inspection and retry fencing.
 
-This lane's tests treat the journal as the source of truth for recovery classification and verify that the allowed states remain stable across failure injection and replay.
+Anything else is a data-loss bug.
+
+## What the lab model can prove
+
+The JSON test model is good at proving:
+
+- mutation ordering
+- idempotent completed replay
+- rejection of stale or drifted replay
+- preservation of remote evidence after injected failures
+
+It cannot by itself prove production durability.
+
+## What production still needs
+
+To make the contract real outside the test model, the runtime needs:
+
+- durable journal rows
+- fsync or equivalent flush semantics
+- explicit plugin activation and ownership tracking
+- fencing or leases so stale workers cannot continue
+- recovery inspection that can classify `old-remote`, `fully-updated-remote`, and `blocked-recovery`
+
+If a partial remote mutation exists without a durable recovery artifact, the system has already violated the contract.
