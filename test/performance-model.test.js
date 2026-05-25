@@ -87,6 +87,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
     'plugin update models backpressure pauses',
   );
   assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'compression-decision' && action.transportEncoding === 'zstd'),
+    'plugin update models transport-only compression for compressible assets',
+  );
+  assert.ok(
     pluginUpdate.actions.some((action) => action.type === 'durable-receipt-flush'),
     'plugin update models bounded durable-receipt flushing',
   );
@@ -121,6 +125,10 @@ test('benchmark model covers large uploads and plugin installs', () => {
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'backpressure-pause'),
     'plugin install models backpressure pauses',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'remote-index-probe' && action.applyMustRevalidate === true),
+    'plugin install keeps remote-index planning separate from apply authorization',
   );
   assert.ok(
     pluginInstall.actions.some((action) => action.type === 'durable-receipt-flush'),
@@ -313,6 +321,16 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-fingerprint-skips-large-upload-backpressure-after-pause')?.rejectedGate,
     'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause')?.violates.includes('chunk-receipts'),
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause')?.violates.includes('backpressure'),
   );
   assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause')?.rejectedGate,
