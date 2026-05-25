@@ -205,6 +205,26 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'live',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-file-hash-cache-skips-large-upload-resume')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-file-hash-cache-skips-large-upload-resume-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-queue-drains-means-complete')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-upload-parallelism-skips-backpressure')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-unbounded-db-parallelism-skips-atomic-group-barriers')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-skip-unchanged-file-hash-planning')?.failureEvidence,
     'planning cursor plus cached digest and guarded file-publish record',
   );
@@ -219,6 +239,18 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'parallelize-independent-owner-index-scans-within-site-budgets')?.visibilityBoundary,
     'planning-only-with-site-budgets',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'compress-transport-frames-with-canonical-uncompressed-digest')?.failureEvidence,
+    'canonical digest plus encoded payload digest',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'run-independent-staging-work-within-per-site-and-per-kind-budgets')?.visibilityBoundary,
+    'atomic-group-commit-barrier',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'pause-upstream-producers-when-ack-or-journal-budgets-are-hit')?.visibilityBoundary,
+    'none-pause-only',
   );
   assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-and-dependency-graph-to-presize-bounded-plugin-install-batches')?.failureEvidence,

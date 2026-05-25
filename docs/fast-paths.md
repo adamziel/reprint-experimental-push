@@ -68,6 +68,12 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed payload can reduce wire bytes, but it cannot stand in for the canonical uncompressed hash.
 - A remote index cursor can guide planning, but it cannot authorize a live write.
 - A compressed remote index response can reduce planning traffic, but it still cannot authorize a live write.
+- A cached file hash can skip duplicate hashing, but it cannot replace the live publish compare.
+- A chunk upload can overlap or compress transit, but it cannot make staged bytes visible before the guarded finalize step.
+- A database batch can reuse statement shapes, but it cannot cross atomic-group boundaries or skip row preconditions.
+- A remote index can compress planning traffic, but it cannot become a lock or a live mutation authorization.
+- Compression can reduce wire bytes and receipt-log size, but it cannot change the canonical hash or recover missing receipts.
+- Parallelism can overlap independent staging, but it cannot widen a commit barrier or merge group finalization.
 - Extra parallelism is only safe while it preserves the same preconditions, receipts, and atomic barrier.
 - Backpressure must pause producers; it cannot claim success by draining evidence into memory.
 - A backpressure pause cannot mean completion, because the paused work still needs chunk receipts, row receipts, and the atomic-group commit record to survive failure.
@@ -81,6 +87,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed remote index plus a cached file hash still cannot skip the guarded publish step for a large upload, because planning evidence and cached hashes do not prove chunk receipts or the live compare survived failure.
 - A compressed remote index plus a cached file digest still cannot skip the guarded publish step for a large upload, because planning evidence and cached digests do not prove chunk acknowledgements, the live compare, or the guarded publish record survived failure.
 - A compressed remote index plus a cached chunk ledger still cannot skip the guarded publish step for a large upload, because planning evidence and cached ledgers do not prove which chunk acknowledgements survived failure or that the live compare still holds.
+- A large upload cannot publish staged bytes just because compression made the queue smaller, because transport savings do not prove chunk acknowledgements or the guarded publish boundary.
 - A batched journal flush can reduce fsync overhead, but it still cannot replace the raw chunk, row, or group receipts needed for recovery.
 - A fresh remote index plus a cached plugin package hash still cannot skip dependency checks, metadata writes, or the atomic-group barrier.
 - A compressed package cache still cannot skip plugin dependency checks or the atomic-group barrier, because package identity and transport compression do not prove group commit completion.
@@ -154,6 +161,9 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - Compressed chunk receipts still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
 - A fresh remote index plus compressed chunk receipts still cannot prove a plugin update finished, because chunk acknowledgements do not replace dependency checks, row receipts, or the atomic-group commit.
 - A fresh remote index plus compressed chunk receipts still cannot prove a dependency-heavy plugin update finished, because dependency checks, staged rows, and the atomic-group commit still need durable evidence.
+- A dependency-heavy plugin update cannot publish rows early just because the remote index looked fresh, because the dependency graph is planning evidence only.
+- Backpressure cannot treat a drained compressed queue as proof of completion, because queue size is not the same as durable acknowledgement.
+- Parallelism cannot publish multiple atomic groups together, because recovery must still identify which group owns each partial failure.
 - A fresh remote index plus compressed chunk receipts still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need durable evidence.
 - A compressed remote index plus cached chunk receipts still cannot skip the guarded publish step for a large upload, because planning evidence and cached receipts cannot prove the live compare or publish barrier survived failure.
 - A local fingerprint match still cannot skip the live file compare before publish, because size, mtime, inode, or mode can only skip a rehash and cannot authorize the mutation boundary.
