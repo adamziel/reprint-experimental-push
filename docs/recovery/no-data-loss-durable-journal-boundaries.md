@@ -22,6 +22,8 @@ The safe failure boundaries that must remain distinguishable are:
 2. failure after staging
 3. failure after dependency validation
 4. replay of a completed plan
+5. failure during commit, which must be blocked-recovery with artifacts if any
+   remote mutation can already be observed
 
 The acceptable post-failure states are strict:
 
