@@ -35,25 +35,10 @@ The production ladder is fixed:
    the action safe with fresh live evidence and the same auth floor as the
    write path.
 
-The pull/export/import pipeline remains the only source of immutable push
+The pull/export/import pipeline is the only source of immutable push
 provenance:
 
 - exporter discovers the merge base and coverage evidence
-- importer persists the base package as immutable provenance
-- `push_preflight` is the first live binding after importer persistence
-- `push_snapshot_hashes` is read-only planning evidence and may page large
-  sites, but it never becomes write authority
-- `push_plan_dry_run` uploads the canonical plan and returns an eligibility
-  receipt, not a lock
-- `push_batch_apply` is a separate remote operation that revalidates fresh
-  live evidence before every batch and again at the storage boundary
-- `push_journal` is durable evidence only and never authorizes mutation
-- `push_recover inspect` reads the journal and fresh live hashes before any
-  mutating recovery branch
-
-The pull pipeline is the provenance source for each push stage:
-
-- exporter scans the merge base and coverage evidence
 - importer persists the base package as immutable provenance
 - `push_preflight` is the first live binding after importer persistence
 - `push_snapshot_hashes` is read-only planning evidence and may page large
@@ -125,9 +110,9 @@ local, one drift witness:
 
 For the harness shape, keep the topology pair together:
 
-- `push-deployment-topology-contract.json` is the smallest topology-only proof
-  for one remote source site, one imported local edited site, and one later
-  drift observation of the same remote identity, with the sandbox-only
+- `push-deployment-topology-contract.json` is the smallest topology-only
+  proof for one remote source site, one imported local edited site, and one
+  later drift observation of the same remote identity, with the sandbox-only
   `8080` ingress policy spelled out
 - `push-remote-liveness-topology-contract.json` adds the dry-run/apply
   liveness split to the same one-remote, one-local, one-drift harness

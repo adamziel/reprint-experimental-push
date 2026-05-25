@@ -74,6 +74,10 @@ The executor boundary is intentionally production-shaped:
 - journal inspect is read-only
 - recovery starts with inspect before any mutating repair
 
+Dry-run and apply remain separate remote operations, and apply must
+revalidate fresh live evidence before each batch and again at the storage
+boundary.
+
 The pull/export/import handoff remains the provenance source for every push
 stage:
 
