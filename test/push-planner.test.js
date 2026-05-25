@@ -2878,8 +2878,10 @@ test('completed replay durable write failure still classifies as fully updated r
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'JOURNAL_WRITE_FAILED');
   assert.equal(JSON.stringify(completed.site), before);
+  assertAcceptableRecoveryState(error.details.recovery);
   assert.equal(error.details.recovery.status, 'fully-updated-remote');
   assert.equal(error.details.recovery.artifacts.journal.status, 'completed');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
   assert.equal(error.details.boundary, 'journal-replayed');
 });
 
