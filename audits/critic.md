@@ -513,6 +513,9 @@ Treat the following as hard blockers for production wording:
   authority just because the route still looks healthy. The proof must show
   the exact live snapshot that invalidated it, the remote-preserving audit
   trail, and the fresh retry scope.
+- Audit visibility is not retry authority: if the stale artifact can still be
+  reused against a different row, file, relationship-bearing record, or
+  plugin-owned surface after drift, then the claim is not production-grade.
 - A release-gate proof that a stale review artifact remains readable for
   audit but cannot authorize apply after the remote changes, cannot be
   widened to a different row, file, or plugin-owned surface, and is
