@@ -239,16 +239,16 @@ boundary without trusting stale review text.
 The source notes are still useful, but only as design input and not as proof
 that this branch is release-ready:
 
-- Reprint proves resumable pull transport and stage framing in the observed
-  upstream commit; it does not prove live push safety, preserved-remote
-  retention, or WordPress auth/session lifecycle on this branch.
-- ZS-Sync proves bounded discovery and cursoring in the observed upstream
-  commit; it does not prove source mutation safety, plugin-driver coverage, or
-  retry authority on this branch.
-- ForkPress proves merge audit vocabulary and crash-consistency intent in the
-  observed upstream commit; it does not prove this branch can preserve the
-  rejected remote, classify plugin-owned side effects, or rerun the same live
-  boundary with fresh live hashes.
+- Reprint `27c5f25` proves resumable pull transport and stage framing in the
+  observed upstream commit; it does not prove live push safety, preserved-
+  remote retention, or WordPress auth/session lifecycle on this branch.
+- ZS-Sync `d9334a0` proves bounded discovery and cursoring in the observed
+  upstream commit; it does not prove source mutation safety, plugin-owned
+  surface coverage, or retry authority on this branch.
+- ForkPress `55f9879` proves merge audit vocabulary and crash-consistency
+  intent in the observed upstream commit; it does not prove this branch can
+  preserve the rejected remote, classify plugin-owned side effects, or rerun
+  the same live boundary with fresh live hashes.
 - None of the source notes prove production auth/session lifecycle or durable
   journal semantics outside the Playground harness; they are design inputs,
   not release evidence.
@@ -394,6 +394,8 @@ Before any production wording, the project must show:
 - a "manual resolution" note covers the first conflict, then a later
   plugin-owned table, cron row, generated file, cache entry, serialized blob,
   or remapped create target appears after the first write;
+- a late-discovered plugin-owned data trap is silently folded into a prior
+  approval because the first readable artifact still looks valid;
 - a comparison note says Reprint, ZS-Sync, or ForkPress "covers" the branch
   because the route family or package mount looks similar, but it does not
   name the exact upstream state or the exact live boundary on this worktree;
