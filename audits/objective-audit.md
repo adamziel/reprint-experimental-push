@@ -119,6 +119,9 @@ This pass treats docs and script names as leads, not proof. Fresh local
 verification on 2026-05-25:
 
 - `npm test` passed with 89 tests, 0 failures, and 0 skips.
+- `package.json` still splits the suite into a shallow default command, a
+  partial bundled lab chain, and many opt-in smokes. That means the strongest
+  proof is still outside any required release path.
 - `npm run test:playground:production-shaped-push` is a stronger route smoke,
   but it is still lab-backed by design and therefore remains evidence, not a
   release gate.
