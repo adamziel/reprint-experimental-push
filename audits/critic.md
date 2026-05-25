@@ -1,5 +1,30 @@
 # Critic Audit
 
+## 2026-05-25 Current Verdict
+
+The branch still cannot claim production-grade push support until one exact,
+rerunnable real-site command proves the same live boundary on a real local,
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. `package.json` exposes only
+`plan`, `apply`, and `test:playground:*` entry points, so the current surface
+is still compatibility or preflight evidence unless it also shows preserved
+remote auditability after rejection, apply-time revalidation on the same live
+boundary, dry-run receipt, journal/recovery inspection, auth/session
+lifecycle, graph identity, and plugin-owned surface classification in one
+rerun.
+
+Scenario: a reviewer upgrades a live Playground or lab-shaped script name into
+production proof. Missing proof: the branch still has not shown the exact
+executor/auth boundary before the first write, the rejected remote that
+remains inspectable after rejection, the exact rejection point, or the fresh
+retry scope rebuilt from live hashes. Without those facts from one rerun,
+production wording must fail closed.
+
+Scenario: someone cites Reprint, ZS-Sync, or ForkPress as current retry
+authority. Missing proof: the citation still needs the exact upstream state,
+an explicit statement of what it proves here and what it does not prove here,
+and a branch-local rerun of the same live boundary. Until that exists, those
+notes are historical context only.
+
 ## 2026-05-25 Production Wording Still Fails Without a Real-Site Release Command
 
 The branch still cannot claim production-grade push support because there is
