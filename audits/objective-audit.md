@@ -14,7 +14,7 @@ The objective implies these minimum release requirements:
 2. Recheck the live source at apply time before mutating it. A stale preflight is not enough.
 3. Preserve every WordPress data shape the push can touch, including rows, files, plugin-owned data, serialized payloads, and graph identity, at the live-source boundary.
 4. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary.
-5. Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes. The current `package.json` exposes many `test:playground:*` helpers, plus `plan` and `apply`, but it still does not define a required `verify`, `verify:release`, or `release` command, so there is no mandatory gate that composes those checks into one verdict. Optional scripts such as `test:playground:*` and the raw `node --test` suite do not change that, and they cannot substitute for a release gate that fails closed when any proof remains `labBacked: true`, fixture-only, or `productionThroughput: 'not-claimed'`.
+5. Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes. The current `package.json` exposes many `test:playground:*` helpers, plus `plan` and `apply`, but it still does not define a required `verify`, `verify:release`, or `release` command, so there is no mandatory gate that composes those checks into one verdict. Optional scripts such as `test:playground:*` and the raw `node --test` suite do not change that, and they cannot substitute for a release gate that fails closed when any proof remains `labBacked: true`, fixture-only, or `productionThroughput: 'not-claimed'`. If a candidate gate does not touch the live-source boundary in the same invocation, it is still not release proof.
 6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or any storage abstraction that can satisfy the tests without touching live source storage or a real apply-time mutation. The current helpers and smokes do not satisfy this because the production-shaped routes still label themselves `labBacked: true`.
 7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one. Refusal-only benchmarks are not a speed claim, and release language must not drift into implied speed confidence without live-path measurement.
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
@@ -101,7 +101,7 @@ One more uncomfortable point: the repository already has enough evidence to desc
 | Missing release proof | Live-source mutation, crash survival on production storage, required auth/session plus journal plus lease/fencing plus graph identity plus plugin-data-driver gate, and a measured live-path speed verdict or enforced `speed unclaimed` refusal emitted by a mandatory release command. |
 | Release blocker | There is no mandatory `verify`, `verify:release`, or `release` command that can fail closed when any of those proofs are absent, and no checked-in workflow entrypoint closes that gap. |
 
-Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict. The blocker is structural: no required command owns the live-source verdict, so every green result still depends on optional evidence rather than a mandatory release gate.
+Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict. The blocker is structural: no required command owns the live-source verdict, so every green result still depends on optional evidence rather than a mandatory release gate. If the release decision is not forced through the live-source path, the repository still cannot claim no data loss, reliability, or speed.
 
 ## Actionable Gate
 
@@ -148,7 +148,7 @@ The strongest current runnable evidence still falls into four classes:
 - docs-only proof: prose in `README.md`, `progress.html`, `audits/release-blockers.md`, and the supervisor/audit notes
 - missing proof: live-source apply-time mutation, durable crash survival on production storage, measured live-path throughput, an enforced `speed unclaimed` verdict when measurement is absent, and a required release gate that can fail closed when those proofs are absent
 
-The uncomfortable conclusion is that the current tests are good enough to block overclaiming, but not good enough to support the release statements the objective asks for. They prove the suite knows how to refuse unsafe claims. They do not prove the live push path is lossless, reliable, or fast enough.
+The uncomfortable conclusion is that the current tests are good enough to block overclaiming, but not good enough to support the release statements the objective asks for. They prove the suite knows how to refuse unsafe claims. They do not prove the live push path is lossless, reliable, or fast enough on the real source boundary.
 
 ## Requirement Map
 
