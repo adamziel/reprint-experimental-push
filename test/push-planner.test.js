@@ -3555,6 +3555,53 @@ test('keeps remote-only plugin changes while a live-preconditioned row delete, m
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned delete, matching independent row deletion, edit, and type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['contact.php'] = '<?php echo "base contact";';
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.files['contact.php'];
+  delete local.db.wp_posts['ID:1'];
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+  local.files['wp-content/uploads/gallery/cover.txt'] = 'shared nested asset';
+  const remote = JSON.parse(JSON.stringify(base));
+  delete remote.db.wp_posts['ID:1'];
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared independent title', post_status: 'publish' };
+  remote.files['wp-content/uploads/gallery/cover.txt'] = 'shared nested asset';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:contact.php');
+  const matchingRowDelete = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(matchingRowDelete.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+  assert.equal(Object.hasOwn(result.site.files, 'contact.php'), false);
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Shared independent title');
+  assert.equal(result.site.files['wp-content/uploads/gallery'], 'shared replacement file');
+  assert.equal(result.site.files['wp-content/uploads/gallery/cover.txt'], 'shared nested asset');
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned delete, matching independent edit, and file type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
