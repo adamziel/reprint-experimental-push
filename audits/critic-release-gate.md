@@ -148,6 +148,19 @@ Concrete failure modes that still block the claim:
 Release wording must also avoid implying that a readable review artifact or comparison note is equivalent to a live retry gate. Those artifacts are audit evidence only until the branch shows the preserved remote, rejection point, and fresh retry scope for the same boundary on this worktree. Manual resolution is not success unless the remote is preserved for audit, the stale artifact stays unusable as retry authority, and the fresh retry artifact is recorded separately on this branch.
 If a later review rerun produces a fresh-looking manual-resolution note, it still does not inherit the earlier note unless it re-proves the same live boundary here with the preserved remote, the stale rejection point, and a retry scope rebuilt from live hashes.
 
+Production-grade claim blockers that must be named explicitly:
+
+- live remote drift after dry-run but before apply: the branch must show the exact reject point before the first write, the preserved remote that stayed inspectable after rejection, and a fresh retry scope rebuilt from live hashes on this worktree;
+- create-time identity remapping, aliasing, or renumbering: the branch must show live identity evidence for the remapped target at apply time, or hard-block the remap before any write; route family, package mount, and fixture shape are not proof;
+- plugin-owned data traps outside the allowlist: the branch must enumerate or block hidden tables, cron rows, runtime registries, generated files, caches, serialized blobs, and plugin-owned files before write, including late-discovered surfaces that only appear after the first write; and
+- partial file, DB, or plugin side effects: the branch must classify the whole touched set as old, new, or blocked before retry starts, so a mixed outcome cannot be relabeled as success after the committed subset.
+
+Source-note comparisons must stay conservative:
+
+- Reprint notes can justify transport, staged delivery, or resumability vocabulary, but they do not prove live push safety on this branch;
+- ZS-Sync notes can justify discovery or cursoring vocabulary, but they do not prove source-mutation safety, retry authority, or partial-side-effect recovery here; and
+- ForkPress notes can justify review or durability vocabulary, but they do not prove that a readable artifact can authorize a later row, file, remapped create target, or plugin-owned surface.
+
 Anti-trap wording:
 
 - a lab-shaped route, packaged mount, fixture replay, or `finalMatchesLocal` result can still come from a copied or fixture-backed executor behind the same URL shape, so it is compatibility evidence only and never proof that the live write boundary was production-safe;

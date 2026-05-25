@@ -6159,3 +6159,28 @@ Production-grade proof still missing on this branch:
 - Reprint, ZS-Sync, and ForkPress comparisons are not closed until each one
   names the exact upstream state, the exact live boundary, what the note
   proves here, and what it does not prove here.
+
+Concise release-gate summary:
+
+- any claim of production-grade push support still fails until the branch can
+  show the exact stale-drift case, the preserved remote that remained
+  inspectable after rejection, and a fresh retry scope rebuilt from live
+  hashes on this worktree;
+- any create-time identity remap still needs live identity evidence or a hard
+  block before write, because route shape, package mount shape, and fixture
+  shape are compatibility signals only;
+- any plugin-owned surface outside the allowlist still needs explicit
+  enumeration or blocking before write, including late-discovered hidden
+  tables, cron rows, runtime registries, generated files, caches, serialized
+  blobs, and plugin-owned files; and
+- any partial file, DB, or plugin side effect still needs old/new/blocked
+  classification for the full touched set before retry starts, so a mixed
+  outcome cannot be relabeled as success.
+
+Comparison rule:
+
+- Reprint, ZS-Sync, and ForkPress notes remain historical context unless this
+  branch reran the same live boundary with preserved-remote evidence and a
+  fresh retry scope rebuilt from live hashes; matching route family,
+  package mount, or reviewer wording is not enough to promote the note to
+  current proof.
