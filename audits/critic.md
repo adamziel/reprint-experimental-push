@@ -4440,6 +4440,11 @@ Release gate additions needed before production-grade push support:
    live executor ran, and they do not replace a live drift-rejection proof.
    They also do not prove that a production-shaped URL family or package
    layout was safe on the live boundary.
+9. Any late-discovered plugin-owned surface must be treated as a separate
+   live boundary with its own preserved remote, rejection point, and fresh
+   retry scope. A proof for the first write does not authorize that later
+   surface, even if the route shape, package mount, or `finalMatchesLocal`
+   result is unchanged.
 
 False reliability claims to reject:
 
@@ -4457,6 +4462,9 @@ False reliability claims to reject:
 - "comparison passed" when a Reprint, ZS-Sync, or ForkPress note does not
   name the exact upstream revision or worktree state and does not say what
   the note proves here versus what it does not prove.
+- "production-safe route" when the only evidence is a production-shaped URL
+  family or package layout but the branch has not proven the live executor,
+  the preserved remote, and the fresh retry scope on this branch.
 
 Production wording must also satisfy the release gate in
 [`audits/release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/release-gate.md).
