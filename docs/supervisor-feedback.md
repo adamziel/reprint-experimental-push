@@ -9,7 +9,7 @@ changed, what is helping, what is not helping, and the next nudge.
 
 - Going well: `reliable-executor` still has the clearest lab/release-harness proof trail.
 - Not going well: the production gate is still closed because durable journal storage with lease/fencing, preserved-remote/apply-time revalidation, auth/session lifecycle, graph identity, and plugin drivers remain unproven outside the lab.
-- Progress delta: no new release evidence landed, so this is still a same-state decision.
+- Progress delta: no new release evidence landed in the last 12 hours, so the release state did not move.
 - Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` should stay quiet unless material evidence changes; `critic` and `auditor` should keep rejecting wording-only proof.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 

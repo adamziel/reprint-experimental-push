@@ -8,7 +8,7 @@ linked implementation artifacts.
 
 - Last update: 2026-05-25 13:53:01 CEST.
 - Status: blocked; the visible page and log still agree.
-- Trend: no new release evidence landed, so the same-state blocker remains.
+- Trend: no new release evidence landed in the last 12 hours, so the same-state blocker remains.
 - Scope: 8 fast/low lanes plus the dedicated live progress watcher remain active.
 - Blocker: durable journal storage with lease/fencing, preserved-remote/apply-time revalidation, auth/session lifecycle, graph identity, and plugin drivers remain unproven outside the lab.
 - Next nudge: `reliable-executor` owns the next real-site release command; `progress-publisher` should stay quiet unless material evidence changes; `critic` and `auditor` should keep rejecting wording-only proof.
