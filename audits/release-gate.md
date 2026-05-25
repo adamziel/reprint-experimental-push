@@ -47,6 +47,9 @@ support.
 - The claim shows any partial file, DB, or plugin side effect is classified
   durably and that retry starts from fresh evidence rather than reused
   approval.
+- The claim shows the same live write path rejected stale authority before
+  mutation; a route-shaped smoke or packaged-plugin mount is only relevant
+  if it exercised that exact boundary against the drifted remote.
 - The claim shows a manual-resolution artifact remains readable for audit but
   cannot authorize a widened retry after the live snapshot changes.
 - The claim includes the exact live hashes, the rejected stale approval, the

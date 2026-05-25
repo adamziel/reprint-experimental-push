@@ -1494,6 +1494,10 @@ of the following in the same evidence set:
 - Any Reprint, ZS-Sync, or ForkPress comparison is marked historical unless
   the exact upstream revision or worktree was reverified at the same live
   mutation boundary.
+- A route-shape smoke, fixture replay, or `finalMatchesLocal` result is not
+  enough to upgrade a historical source-note comparison into current proof;
+  the claim still needs the live write boundary, stale-authority rejection,
+  and preserved remote evidence for the current repository state.
 
 Until then, the project is a strong lab for the right invariants, not
 production-grade source-site push support.
