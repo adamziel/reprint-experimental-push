@@ -767,6 +767,10 @@ under load:
   activation is rejected because planning evidence and a cached dependency
   graph can reduce lookup work, but they cannot prove activation writes,
   dependency checks, or the atomic-group commit survived failure.
+- compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-
+  finalize is rejected because planning evidence and a cached dependency
+  graph can reduce lookup work, but they cannot prove staged metadata,
+  dependency checks, or the atomic-group finalize survived failure.
 - compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation
   is rejected because planning evidence and cached package hashes can reduce
   planning and lookup work, but they cannot prove dependency checks,
