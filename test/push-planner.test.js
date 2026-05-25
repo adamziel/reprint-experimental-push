@@ -13528,6 +13528,66 @@ test('keeps remote-only plugin changes while a live-preconditioned file delete a
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent delete, restore, edit, and type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/cover'] = 'base cover bytes';
+  base.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Base post 2', post_status: 'publish' };
+  base.db.wp_posts['ID:3'] = { ID: 3, post_title: 'Base post 3', post_status: 'publish' };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  delete local.files['about.php'];
+  local.files['wp-content/uploads/cover'] = { type: 'directory' };
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared post 2', post_status: 'publish' };
+  local.db.wp_posts['ID:3'] = { ID: 3, post_title: 'Shared post 3', post_status: 'publish' };
+
+  const remote = baseSite();
+  delete remote.files['about.php'];
+  remote.files['wp-content/uploads/cover'] = { type: 'directory' };
+  remote.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Shared post 2', post_status: 'publish' };
+  remote.db.wp_posts['ID:3'] = { ID: 3, post_title: 'Shared post 3', post_status: 'publish' };
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const fileDelete = mutationFor(plan, 'file:index.php');
+  const matchingDelete = decisionFor(plan, 'file:about.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover');
+  const rowEditDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const rowRestoreDecision = decisionFor(plan, 'row:["wp_posts","ID:3"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(fileDelete.action, 'delete');
+  assert.equal(fileDelete.changeKind, 'delete');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(rowEditDecision.decision, 'already-in-sync');
+  assert.equal(rowEditDecision.change.localChange, 'update');
+  assert.equal(rowEditDecision.change.remoteChange, 'update');
+  assert.equal(rowRestoreDecision.decision, 'already-in-sync');
+  assert.equal(rowRestoreDecision.change.localChange, 'update');
+  assert.equal(rowRestoreDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'about.php'), false);
+  assert.equal(result.site.files['wp-content/uploads/cover'].type, 'directory');
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Shared post 2');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_title, 'Shared post 3');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('keeps remote-only plugin changes while a live-preconditioned file delete, matching independent file edit, and matching independent type swap stay safe with apply verification', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';

@@ -19,6 +19,8 @@ It may apply automatically when:
 
 It must preserve:
 
+- independent matches for deletes, restores, edits, and file type swaps even
+  when unrelated remote-only plugin drift is present
 - remote-only plugin metadata and plugin-owned content that the local change does
   not own
 - matching independent edits, deletes, restores, and file type swaps that land
@@ -29,6 +31,7 @@ It must preserve:
 It must stop when:
 
 - a mutation would overwrite a live remote change without a live precondition
+- a local delete, restore, or type swap would hide a live remote descendant
 - a local delete conflicts with a live remote same-file edit
 - a file or directory topology change would hide a live remote descendant
 - plugin-owned data lacks the ownership context needed to prove the mutation is
