@@ -202,6 +202,10 @@ or comparison-only.
   `finalMatchesLocal` result stand in for live remote drift rejection, stale
   approval expiry, create-time remap handling, plugin-owned allowlist
   coverage, or partial side-effect classification.
+- The claim does not let a lab-shaped route or mount hide a later plugin-owned
+  surface that only appears after the first write; if the later table, file,
+  registry entry, generated asset, cache entry, or serialized blob was not
+  separately blocked or classified, the claim is still not production-grade.
 - The claim does not treat a green route-shaped smoke, packaged mount, or
   fixture replay as proof that partial file, DB, or plugin side effects were
   safely contained; the audit must show the mixed-write classification, not

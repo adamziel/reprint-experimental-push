@@ -247,17 +247,22 @@ Production-readiness language checklist:
     `finalMatchesLocal` as compatibility checks only; they do not prove the
     live executor ran, the remote was preserved, or the retry scope was
     rebuilt from fresh hashes.
-12. Treat Reprint, ZS-Sync, and ForkPress comparisons as historical context
+12. Treat a lab-shaped route or mount as unable to hide a later plugin-owned
+    surface that appears only after the first write; if that later table,
+    file, registry entry, generated asset, cache entry, or serialized blob
+    was not separately blocked or classified, the earlier success story is
+    not production-grade.
+13. Treat Reprint, ZS-Sync, and ForkPress comparisons as historical context
     unless the exact upstream revision or worktree state is named and this
     branch reran the same live mutation boundary here.
-13. Treat any readable review artifact or comparison note as audit evidence
+14. Treat any readable review artifact or comparison note as audit evidence
     only unless it is paired with the preserved remote and a fresh retry
     artifact on the same live boundary; readability alone is not retry
     authority.
-14. Treat any late-discovered plugin-owned surface as a new boundary unless
+15. Treat any late-discovered plugin-owned surface as a new boundary unless
     the branch proves it was blocked or separately classified with its own
     preserved remote and fresh retry artifact.
-15. Treat partial file/DB/plugin side effects as data-loss risk unless every
+16. Treat partial file/DB/plugin side effects as data-loss risk unless every
     touched surface is durably marked old, new, or blocked before retry.
 
 Release gate for production wording:
