@@ -149,6 +149,7 @@ The canonical production proof bundle is `push-protocol-extension-contract.json`
 
 - it ties exporter/importer provenance to preflight, snapshot hash listing, dry-run upload, batched apply, journal inspect, and inspect-first recovery
 - it keeps dry-run and apply separate while apply revalidates fresh live evidence before every batch and at the storage boundary
+- it maps the persisted pull base package into the push ladder without turning the pull provenance back into a mutable cache
 - it carries the one-remote, one-local, one-drift topology in both Docker and Playground
 - it keeps the sandbox-provided `8080` ingress rule and local-only proxy policy explicit
 - it is the canonical bridge from the persisted pull base package into the production push executor
@@ -175,6 +176,11 @@ That ladder maps directly to the production harness:
 - Playground uses separate disposable blueprints
 - browser-visible inspection stays on the sandbox-provided `8080` ingress through a local-only proxy
 - remote tunnels are disallowed
+
+The same topology is the one used by the Docker and Playground contract pair:
+
+- `push-deployment-topology-contract.json` is the smallest topology-only proof for the one-remote, one-local, one-drift harness and the `8080` ingress rule
+- `push-remote-liveness-topology-contract.json` adds the dry-run/apply separation and live revalidation boundary on top of that same harness
 
 The review path is intentionally layered:
 

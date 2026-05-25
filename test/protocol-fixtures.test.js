@@ -84,6 +84,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     ),
   );
   assert.ok(
+    protocolReadme.includes(
+      'The production proof bundle is intentionally layered and keeps the same remote',
+    ),
+  );
+  assert.ok(
     protocolReadme.replace(/\s+/g, ' ').includes(
       'push-production-auth-session-journal-recovery-inspect-contract.json` is the proof to cite when you need the minimum production evidence for auth floor, push session minting, journal rows, lease fencing, and read-only recovery inspect on the same remote identity.',
     ),
@@ -145,13 +150,12 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     protocolDocs.includes(
-      'The Docker and Playground topology contract is intentionally one remote, one',
+      'The canonical production ladder bundle is `push-protocol-extension-contract.json`',
     ),
   );
   assert.ok(
     protocolDocs.includes(
-      'it is the canonical machine-readable bridge from the exporter/importer pull pipeline into the push write path',
-      'push-protocol-extension-contract.json` is the most complete production',
+      'it maps the persisted pull base package into preflight, remote snapshot hash listing, dry-run plan upload, batched apply, journal inspect, and inspect-first recovery',
     ),
   );
   assert.ok(
@@ -186,6 +190,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   );
   assert.ok(
     protocolDocs.includes(
+      'The bridge is machine-readable and stage-ordered:',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
       'journal rows carry claim ownership, generation, lease expiry, and the',
     ),
   );
@@ -203,6 +212,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'The canonical production proof bundle is `push-protocol-extension-contract.json`',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'it maps the persisted pull base package into the push ladder without turning the pull provenance back into a mutable cache',
     ),
   );
   assert.ok(
@@ -233,6 +247,11 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
   assert.ok(
     executorDocs.includes(
       'it is the umbrella contract that sits above `push-deployment-topology-contract.json` and `push-remote-liveness-topology-contract.json`',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'push-deployment-topology-contract.json` is the smallest topology-only proof for the one-remote, one-local, one-drift harness and the `8080` ingress rule',
     ),
   );
   assert.ok(
