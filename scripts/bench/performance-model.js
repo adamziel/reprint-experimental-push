@@ -2356,6 +2356,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-cached-row-summary-skips-plugin-update-finalize',
+    proposal: 'use a compressed remote index and a cached row summary to skip plugin-update finalize',
+    rejectedBecause: 'planning evidence and row summaries can reduce lookup work, but they cannot prove the live row compares, dependency checks, or the atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {

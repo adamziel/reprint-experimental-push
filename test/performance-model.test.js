@@ -250,6 +250,13 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause')?.rejectedGate,
     'group',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-summary-skips-plugin-update-finalize')?.rejectedGate,
+    'group',
+  );
+  assert.ok(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-row-summary-skips-plugin-update-finalize')?.violates.includes('atomic-groups'),
+  );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause')?.violates.includes('remote-index-planning-only'),
   );
