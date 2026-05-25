@@ -690,6 +690,26 @@ test('push protocol docs keep the production ladder, pull bridge, and topology c
     ),
   );
   assert.ok(
+    executorDocs.replace(/\s+/g, ' ').includes(
+      'The one-remote, one-local, one-drift harness is fixed in both Docker and Playground:',
+    ),
+  );
+  assert.ok(
+    executorDocs.replace(/\s+/g, ' ').includes(
+      'Docker and Playground both call the same route names for preflight through recovery mutate.',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'Browser-visible inspection stays on the sandbox-provided `8080` ingress.',
+    ),
+  );
+  assert.ok(
+    executorDocs.includes(
+      'Remote tunnels are disallowed in both harnesses.',
+    ),
+  );
+  assert.ok(
     executorDocs.includes(
       'The executor treats each write-path step as a separate remote boundary:',
     ),

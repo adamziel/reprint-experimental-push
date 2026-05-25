@@ -50,6 +50,20 @@ The harness routes stay identical across both environments:
 | Recovery inspect | `recovery-inspect` | `recovery-inspect` |
 | Recovery mutate | `recovery-mutate` | `recovery-mutate` |
 
+The route matrix is the contract boundary for the one-remote, one-local, one-
+drift production harness:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` carries the imported local edits derived from that package.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover.
+- Docker and Playground both call the same route names for preflight through
+  recovery mutate.
+- Browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy.
+- Remote tunnels are disallowed in both harnesses.
+
 Docker and Playground prove the same three-site story with different harness
 shapes:
 
