@@ -17683,6 +17683,7 @@ test('keeps remote-only plugin changes while matching independent delete, edit, 
   const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/cover');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.mutations, 1);
@@ -17700,4 +17701,10 @@ test('keeps remote-only plugin changes while matching independent delete, edit, 
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'index.php'), false);
+  assert.equal(result.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(result.site.files['wp-content/uploads/cover'].type, 'directory');
+  assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:4'), false);
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
