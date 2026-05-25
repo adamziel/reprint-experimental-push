@@ -47,6 +47,7 @@ The test suite is still an audit harness, not a release harness.
 - It does not prove speed because the benchmark code refuses unsupported claims instead of timing the live push path.
 - It does not prove a release-safe default because no checked-in command forces the whole proof matrix.
 - It does not prove a default release path because all stronger checks remain opt-in scripts.
+- It does not prove that any `npm run test:playground:*` command is release-safe; those scripts are still evidence collectors, not release approvers.
 - It does not yet prove the production graph identity, plugin-data-driver, or topology claims that the objective requires at release time.
 
 Minimal gate contract:
