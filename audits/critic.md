@@ -258,6 +258,14 @@ Release gate for any production wording:
 - Show that a lab-shaped smoke, fixture replay, or package mount is not
   treated as production proof unless the live executor on this branch was
   rechecked at the same boundary and the stale rejection was observed here.
+
+One more claim must stay explicitly out of production language until this
+branch proves it: "manual resolution" is not reliable unless the remote is
+preserved for audit, the stale rejection point is recorded, the retry scope is
+rebuilt from fresh live hashes, and any later-discovered plugin-owned surface
+is either blocked or separately classified before the next write. If any one of
+those pieces is missing, the phrase describes a review artifact, not a safe
+push path.
 - Show that a stale manual-review artifact cannot become retry authority for
   a late-discovered plugin-owned surface just because the first write already
   succeeded on a narrower surface set; the proof must keep the preserved
