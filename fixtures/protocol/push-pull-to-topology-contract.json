@@ -6,6 +6,8 @@
     "importer": "persists the base package as immutable provenance",
     "persisted_base_package": {
       "base_manifest_id": "pull-2026-05-24T00:00:00Z",
+      "base_manifest_hash": "sha256:pull-base-manifest",
+      "base_coverage_hash": "sha256:pull-base-coverage",
       "remote_site_id": "remote-example"
     }
   },
@@ -20,7 +22,11 @@
   ],
   "push_guards": {
     "remote_liveness": "dry-run and apply are separate remote operations",
+    "snapshot_listing": "remote snapshot hash listing is planning evidence and never write authority",
+    "dry_run": "dry-run is a receipt, not a lock",
     "apply": "must revalidate the live remote before every batch and at the storage boundary",
+    "journal": "journal inspection is read-only and never authorizes mutation by itself",
+    "recovery": "recovery must begin with inspect before any mutating repair",
     "auth_floor": "at least as strict as current Reprint HMAC usage"
   },
   "topology": {

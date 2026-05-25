@@ -47,6 +47,18 @@ The one-remote, one-local proof is fixed and reusable:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 
+The executor follows the same boundary order as the protocol:
+
+- preflight is the first live binding from immutable pull provenance to one
+  remote identity and one short-lived session
+- snapshot hash listing is planning evidence only and feeds the local planner
+- dry-run uploads a receipt, not a lock
+- apply must revalidate fresh live evidence before every batch and at the
+  storage boundary
+- journal inspect stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes prove the repair safe
+
 ## Executor Contract
 
 The executor has one production shape:
