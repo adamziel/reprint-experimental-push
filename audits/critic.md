@@ -6,7 +6,10 @@ point. That lane's completed `npm run verify:release` result, including
 `authSessionType`, minted session shape, `applyCommitted`, and
 `durableJournal.rows: 17`, is material retained-source lab evidence. It is a
 real improvement over the earlier route-shape-only claims, but it is still not
-branch-local retry authority.
+branch-local retry authority. The remote lane now also exposes
+`verify:release` in `package.json`, so any remaining absence of that command on
+this checkout must be read as a branch-local merge gap, not a project-wide
+absence.
 
 Single strongest blocker: this worktree still has no rerunnable live release
 command that proves the first executor/auth/preserved-remote boundary on a
@@ -109,8 +112,8 @@ compatibility-only.
 
 The retired critique is the one that said no `verify:release` command exists;
 do not reintroduce it on this branch. The remaining gap is not the presence of
-`verify:release` in the supervised lane, but the absence of this worktree's own
-live retry proof with preserved-remote audit evidence and production
+`verify:release` in the supervised lane, but this worktree's lack of a rerun of
+that live boundary with preserved-remote audit evidence and production
 WordPress auth/session lifecycle, durable journal semantics, graph identity,
 and plugin-driver coverage.
 
