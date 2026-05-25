@@ -37,6 +37,7 @@ the safe list even when they improve a throughput metric.
 | --- | --- | --- |
 | File hashing | Cache strong file hashes behind a local fingerprint such as size, mtime, inode, mode, and the previous digest. Stream only uncached or fingerprint-changed files, and keep per-chunk hashes for large files so resume can skip work safely. | Size, mtime, or inode can only skip a rehash when they match a cached strong digest. The apply precondition remains the live remote resource hash. |
 | File hashing | Reuse plan-scoped chunk digests for large-file resume so the sender can skip recomputing chunk hashes that already have durable receipts. | Cached chunk digests are only resume evidence. They do not replace the live publish compare or the guarded file-publish record. |
+| File hashing | Reuse a cached chunk ledger for large-file resume so duplicate chunk hashing can be skipped when the ledger matches the plan-scoped receipt set. | The chunk ledger only trims duplicate hashing. The live publish compare and guarded publish record still decide visibility. |
 | Chunk upload | Upload large file bodies to plan-scoped staging objects in digest-addressed chunks, then assemble or publish the file with one compare-and-swap finalize step. | Chunk writes must not mutate the live path. Each chunk needs a checksum, idempotency key, and durable journal entry before the sender advances. |
 | Chunk upload | Pipeline independent chunk sends within a plan-scoped byte and receipt budget so retry-only chunks can overlap while final visibility stays on the same guarded publish step. | Pipelining may overlap chunk sends, but it cannot widen the visibility boundary or skip the complete durable receipt set required by finalize. |
 | Database row batching | Group row mutations by table and operation shape, then execute bounded batches in stable primary-key order with one precondition per row. | Every row in the batch still needs its expected remote hash, and the batch must commit atomically or be replayable with the same idempotency key. |
@@ -101,6 +102,7 @@ Concrete failure modes stay rejected even when the throughput gain looks temptin
 - A compressed file-hash cache still cannot skip missing chunk receipts during large-upload resume, because hash compression cannot prove which acknowledgements survived a crash or restore the guarded publish barrier.
 - A compressed file-hash cache plus a paused queue still cannot skip missing chunk receipts during large-upload resume, because backpressure relief cannot prove which acknowledgements survived the pause or restore the guarded publish barrier.
 - A cached chunk ledger still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
+- A cached chunk ledger still cannot skip the guarded publish finalize for a large upload, because the ledger can narrow duplicate hashing but cannot prove the live compare or publish barrier survived failure.
 - A compressed manifest hash still cannot skip the live file compare before a large upload publish, because compression can shrink recovery data but cannot prove the live object still matches the publish precondition after a crash or retry.
 - Compressed chunk receipts still cannot prove a large upload finished, because the live compare, guarded publish, and every chunk acknowledgement still need to survive failure.
 - A fresh remote index plus compressed chunk receipts still cannot prove a plugin update finished, because chunk acknowledgements do not replace dependency checks, row receipts, or the atomic-group commit.
@@ -142,6 +144,8 @@ fails in a different way:
   live remote compare is still required.
 - File hashing cannot treat a cached chunk ledger as publish authority when the
   live compare and guarded publish record are still required.
+- File hashing can reuse a cached chunk ledger to skip duplicate hashing, but
+  it still cannot skip the live publish compare or guarded publish record.
 - Chunk upload cannot treat a visible staging object or a matching digest as a
   substitute for the durable receipt and guarded finalize step.
 - Chunk upload for large archives cannot treat a cached manifest or archive hash

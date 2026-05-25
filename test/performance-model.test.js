@@ -187,6 +187,8 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume').violates.includes('chunk-receipts'));
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume-after-pause').violates.includes('backpressure'));
   assert.ok(rejectedById.get('compressed-file-hash-cache-skips-large-upload-resume-after-pause').violates.includes('chunk-receipts'));
+  assert.ok(rejectedById.get('cached-chunk-ledger-skips-large-upload-finalize').violates.includes('live-preconditions'));
+  assert.ok(rejectedById.get('cached-chunk-ledger-skips-large-upload-finalize').violates.includes('atomic-file-publish'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('remote-index-planning-only'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('compression'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-file-hash-skips-large-upload-resume').violates.includes('chunk-receipts'));
@@ -261,6 +263,12 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
       fastPath.gateProofs.live &&
       fastPath.gateProofs.group &&
       fastPath.gateProofs.recovery
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'reuse-cached-chunk-ledger-for-resume-with-live-publish-check' &&
+      fastPath.gateProofs.recovery.includes('publish record')
     ),
   );
   assert.ok(

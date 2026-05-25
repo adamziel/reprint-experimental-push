@@ -87,6 +87,26 @@ export const SAFE_FAST_PATHS = Object.freeze([
     publishesStagedDataEarly: false,
   },
   {
+    area: 'file-hashing',
+    reduces: ['duplicate-chunk-rehash-work', 'resume-recompute-time'],
+    allowedShortcut: 'reuse-cached-chunk-ledger-for-resume-with-live-publish-check',
+    guardrails: [
+      'chunk-ledger-is-resume-evidence-only',
+      'live-publish-still-compares-remote-resource-hash',
+    ],
+    gateProofs: {
+      skip: 'a cached chunk ledger can skip duplicate chunk rehashing only when every chunk digest matches the plan-scoped ledger',
+      live: 'the final publish still compares the live remote resource hash against the expected file precondition',
+      group: 'ledger reuse stays inside one file boundary and never widens an atomic group',
+      recovery: 'the chunk ledger is advisory; durable chunk receipts and the publish record still classify whether the upload survived failure',
+    },
+    visibilityBoundary: 'plan-staging-reuse-only',
+    failureEvidence: 'cached chunk ledger plus guarded file-publish record',
+    bypassesLivePreconditions: false,
+    splitsAtomicGroup: false,
+    publishesStagedDataEarly: false,
+  },
+  {
     area: 'chunk-upload',
     reduces: ['duplicate-body-transfer', 'lost-response-retries'],
     allowedShortcut: 'resume-plan-scoped-chunks-with-matching-receipts',
@@ -966,6 +986,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedBecause: 'chunk-ledger reuse can skip duplicate hashing, but it cannot prove the live compare, guarded publish, or every chunk acknowledgement survived failure',
     rejectedGate: 'recovery',
     violates: ['file-hashing', 'chunk-receipts', 'live-preconditions', 'durable-progress', 'atomic-file-publish'],
+  },
+  {
+    id: 'cached-chunk-ledger-skips-large-upload-finalize',
+    proposal: 'treat a cached chunk ledger as enough proof to skip the guarded publish finalize for a large upload',
+    rejectedBecause: 'a cached ledger can skip duplicate hashing, but it cannot prove the live compare or guarded publish record survived failure',
+    rejectedGate: 'recovery',
+    violates: ['file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
     id: 'compressed-chunk-receipts-complete-large-upload',
