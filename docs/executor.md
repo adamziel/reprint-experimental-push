@@ -115,6 +115,10 @@ Those boundaries are not interchangeable:
 - `recovery-mutate` only proceeds when inspect proves the branch safe and the
   auth floor still holds.
 
+That means the executor never treats snapshot hashes or a dry-run receipt as
+write authority. The live remote must be revalidated again during apply, and
+recovery still starts with read-only inspect before any mutation branch.
+
 The production route surface is intentionally split:
 
 | Stage | Route | What it proves |

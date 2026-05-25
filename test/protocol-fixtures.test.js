@@ -192,6 +192,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
     executorDocs.includes('The production route surface is intentionally split'),
   );
   assert.ok(
+    executorDocs.includes(
+      'the executor never treats snapshot hashes or a dry-run receipt as',
+    ),
+  );
+  assert.ok(
     protocolReadme.includes(
       'push-remote-liveness-topology-contract.json` is the smallest topology plus',
     ),
@@ -239,6 +244,11 @@ test('push protocol fixture readme keeps the production ladder and topology brid
   assert.ok(
     protocolReadme.includes(
       'The mapping from pull exporter/importer to push surfaces is explicit and',
+    ),
+  );
+  assert.ok(
+    protocolDocs.includes(
+      'The executor should treat that bridge as immutable evidence',
     ),
   );
   const routeMatrix = readJson('fixtures/protocol/push-production-route-matrix-contract.json');

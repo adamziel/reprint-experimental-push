@@ -149,6 +149,18 @@ The bridge also preserves the existing pull/export/import provenance chain:
 | Immutable provenance plus fresh live hashes | `push_recover inspect` | Read-only classification before any mutating repair. |
 | Importer-owned provenance plus live drift evidence | `push_recover auto|finish|rollback` | Mutating recovery only when inspect and auth-floor checks pass. |
 
+The executor should treat that bridge as immutable evidence, not as a
+write-authority chain:
+
+- exporter/importer produce the base package once
+- preflight binds that package to one live remote identity and one short-lived session
+- remote hash listing stays planning-only evidence
+- dry-run returns a receipt, not a lock
+- apply is a separate remote operation and revalidates before every batch and at the storage boundary
+- journal inspect stays read-only
+- recovery inspect must happen before any mutating repair
+- mutating recovery still requires fresh live evidence plus the same HMAC floor as apply
+
 The same extension is exercised in one fixed topology:
 
 - one remote source site, `remote-base`
@@ -160,6 +172,13 @@ The same extension is exercised in one fixed topology:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+
+This is the minimum production proof for the push extension:
+
+- `remote-base` and `remote-changed` are the same remote identity observed at different times
+- `local-edited` is the imported local site derived from the persisted pull base package
+- `runner` owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and inspect-first recovery
+- Docker and Playground keep the same route names so the proof carries across both harnesses
 
 The execution proof is intentionally split between three distinct remote
 boundaries:
