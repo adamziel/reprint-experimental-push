@@ -6120,6 +6120,11 @@ The design still has not closed the following production-grade gaps:
   but before retry; the later boundary must be named separately and cannot
   inherit the earlier preserved remote or review note just because the route
   family, package mount, or reviewer wording matches;
+- a readable stale manual-review artifact is still not retry authority even
+  when it survives drift intact; if the first write already committed and a
+  later boundary appears, the artifact can remain audit evidence only, while
+  the new row, file, relationship-bearing record, remapped target, or
+  plugin-owned surface must get its own preserve / reject / retry cycle;
 - comparisons to Reprint, ZS-Sync, or ForkPress still overclaim if they are
   used as proof instead of historical context; missing proof is the exact
   upstream state, what the note proves here, what it does not prove here, and
