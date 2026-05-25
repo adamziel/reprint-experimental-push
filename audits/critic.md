@@ -5559,3 +5559,14 @@ Evidence-classification rule:
 - a readable manual-review artifact stays audit evidence only unless it is paired with the preserved remote, the rejection point, and a fresh retry scope rebuilt from live hashes on this branch; and
 - that same artifact still cannot authorize a later-discovered plugin-owned surface, remapped create target, or different row/file/relationship-bearing record just because the route family, package mount, or reviewer wording stayed the same; and
 - route shape, package mount shape, fixture replay, readable review output, and `finalMatchesLocal` stay compatibility evidence only and cannot be upgraded into proof for a later row, file, relationship-bearing record, remapped create target, or plugin-owned surface.
+
+Production-grade blocker summary:
+
+- live remote drift is still unproven if the branch cannot show the exact apply boundary that rejected stale authority before the first write, preserved the remote for audit, and rebuilt retry scope from fresh live hashes;
+- create-time identity remapping is still unproven if the branch only matches route shape or fixture shape; the proof must either show live identity evidence for the remapped target or hard-block the remap before write;
+- plugin-owned data traps are still unproven if any hidden table, serialized blob, cron row, runtime registry, generated file, cache entry, or plugin-owned file can appear after the first write and be folded into the earlier approval without its own preserve / reject / retry cycle;
+- partial file, DB, or plugin side effects are still unproven if any touched surface can be committed while another surface remains blocked, because old/new/blocked classification must cover the whole touched set before retry;
+- stale manual-review artifacts are still unsafe if they can be reused after drift against a different row, file, relationship-bearing record, remapped create target, or plugin-owned surface; a readable artifact is audit evidence only until the live boundary is rerun with the preserved remote and fresh live hashes; and
+- Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress `55f9879` remain historical context only. They can justify transport framing, discovery framing, or review vocabulary, but they do not prove live push safety, preserved-remote auditability, create-time remap safety, plugin-owned surface coverage, or a fresh retry scope on this branch.
+
+Before any production-grade wording is allowed, the evidence must name the exact live boundary, the exact stale-drift case, the preserved remote that stayed inspectable after rejection, the fresh retry scope rebuilt from live hashes, and the old/new/blocked status for every touched surface. If any late-discovered plugin-owned surface appears after the first write, it becomes a new boundary until it is separately enumerated or hard-blocked.
