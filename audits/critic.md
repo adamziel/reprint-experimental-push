@@ -37,8 +37,9 @@ The latest remote evidence is strong enough to retire stale "no
 `verify:release` exists" critiques on this audit branch. It is not strong
 enough to unlock production wording, because no rerunnable live boundary on a
 real local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL` has yet proven
-preserved-remote retention, apply-time revalidation, and production
-auth/session lifecycle on the same mutation.
+preserved-remote retention, apply-time revalidation, production auth/session
+lifecycle, durable journal storage with lease/fencing, graph identity, and
+plugin-driver coverage on the same mutation.
 
 Before the project can claim production-grade push support, the proof set
 must include all of the following on one rerunnable live boundary:
@@ -132,14 +133,16 @@ Before production-grade push support can be claimed, the project still needs:
 
 This worktree still has no rerunnable live boundary on a real local,
 Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that proves preserved-remote
-retention and fresh live-hash revalidation on the same mutation. That is a
-branch-local gap, not a project-wide absence: the supervised lane already has
-`verify:release`, retained-source evidence, a durable-journal smoke, a
-broader command-topology proof, and the explicit
-`PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, but this checkout does
-not yet expose the same live boundary. Until that exact boundary exists here,
-production-grade push wording is false reliability, even if the supervised
-lane has stronger retained-source evidence and an explicit boundary verdict.
+retention, fresh live-hash revalidation, production WordPress auth/session
+lifecycle, durable journal storage with lease/fencing, graph identity, and
+plugin-driver coverage on the same mutation. That is a branch-local gap, not a
+project-wide absence: the supervised lane already has `verify:release`,
+retained-source evidence, a durable-journal smoke, a broader command-topology
+proof, and the explicit `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict,
+but this checkout does not yet expose the same live boundary. Until that exact
+boundary exists here, production-grade push wording is false reliability, even
+if the supervised lane has stronger retained-source evidence and an explicit
+boundary verdict.
 
 The single strongest proof gap is still production WordPress auth/session
 lifecycle plus preserved-remote auditability on a live boundary. Until that is
