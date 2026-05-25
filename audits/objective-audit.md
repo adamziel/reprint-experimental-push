@@ -83,7 +83,7 @@ The user-facing claims fail for the same reason: the suite stops at guarded mode
 - `Reliable`: the tests prove refusal behavior, restart states, and local journal integrity, but they do not prove the one-way pull base plus one-way push back to live source is durable under the production storage semantics named by the objective, nor that stale claims and mid-apply restarts are safe on live storage.
 - `Fast`: the benchmark suite is intentionally refusal-first. It can reject unsupported throughput claims, but it does not report a measured live-path throughput result or a release threshold for production speed. Until that changes, release-facing copy should not imply positive throughput.
 
-The weakest claim remains speed, and it is currently weaker than the rest of the release story because the repo has no measured live-path number at all. That means even a perfect lab auth/journal story would still leave the production speed claim blocked. The audit should treat any future throughput language as release-blocked until it is tied to the live-source boundary and an explicit threshold.
+The weakest claim remains speed, and it is currently weaker than the rest of the release story because the repo has no measured live-path number, no release threshold, and no enforced gate that fails closed on the missing measurement. That means even a perfect lab auth/journal story would still leave the production speed claim blocked. The audit should treat any future throughput language as release-blocked until it is tied to the live-source boundary, an explicit threshold, and a required command that fails when `productionThroughput` is still `not-claimed`.
 
 ## Release Blockers
 
@@ -103,7 +103,7 @@ The objective stays blocked for five concrete reasons:
 
 The weakest claim is speed, and the audit should keep treating it as blocked until there is a measured live-path number with a threshold. The practical consequence is simple: do not convert the current refusal-only benchmark into release language. If the repo cannot measure production throughput yet, the release gate should fail closed on that missing measurement instead of implying performance confidence from models or smokes. A refusal-only benchmark is useful because it prevents overclaiming, but it is not evidence that the live push path is fast enough.
 
-The repository still has only refusal-only throughput evidence, no measured live-path result, and no enforced threshold that would let the project say anything positive about production speed. Until that changes, the only defensible statement is that unsupported throughput claims are rejected.
+The repository still has only refusal-only throughput evidence, no measured live-path result, and no enforced threshold that would let the project say anything positive about production speed. Until that changes, the only defensible statement is that unsupported throughput claims are rejected. The release gate should therefore require a positive live-path measurement or fail the run, rather than allowing a green benchmark refusal to masquerade as performance proof.
 
 ## Actionable Next Step
 
@@ -112,7 +112,7 @@ Add a required release entrypoint that fails closed unless it can prove, in one 
 1. a measured live-path throughput result plus an explicit release threshold, or
 2. an intentional refusal to make any production speed claim.
 
-If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured.
+If the repo cannot measure live-path throughput, the gate should say so, block release by default, and keep any production-facing speed language out of the release claim rather than silently passing on refusal-only benchmark evidence. A release gate that only replays fixture checks, optional smokes, or benchmark refusals is still not a release gate. The actionable next step for this branch is to keep the release copy and gate language explicit that throughput is unclaimed, not merely unmeasured, and to encode that rule in a required command.
 
 ## Audit Rule
 
