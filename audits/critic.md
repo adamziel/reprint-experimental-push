@@ -35,6 +35,17 @@ or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected remote and
 shows apply-time revalidation plus journal/recovery inspection on the same
 mutation.
 
+Source-note comparisons stay in the provenance class only:
+
+- Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress `55f9879` explain why
+  staged delivery, bounded discovery, and crash-consistency vocabulary are
+  relevant design inputs here, but they do not prove live push safety on this
+  branch.
+- Those notes do not prove preserved-remote auditability, stale-authority
+  rejection before the first write, create-time remap safety, plugin-owned
+  surface coverage, or a rerunnable live boundary with fresh live hashes on
+  this worktree.
+
 That is the current blocker, and it is the one that matters for production
 language: without a rerunnable live boundary on this branch, every claim about
 push safety remains compatibility-only, even if the remote supervised lane has
