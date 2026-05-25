@@ -21,6 +21,22 @@ from fresh live hashes. Production-grade wording is still false if it relies on
 lab-session shape, retained-source journal rows, or route compatibility as a
 stand-in for live WordPress auth/session durability.
 
+Source-note comparison, kept conservative:
+
+- Reprint proves the intended push surface, compare-and-swap framing, and
+  replayable protocol shape, but the current evidence still stops at lab or
+  retained-source boundaries rather than a live production WordPress
+  auth/session lifecycle with preserved-remote recovery.
+- ZS-Sync proves scanner and batching value, but not source mutation safety on
+  its own; it does not close the atomicity, identity remap, or plugin-owned
+  surface traps that this project must prove before push can be called
+  production-grade.
+- ForkPress contributes the strongest audit and crash-recovery story, but the
+  source notes still do not supply proof for this branch's required live
+  WordPress boundary, durable storage and lease/fencing semantics outside the
+  lab harness, or plugin-driver coverage for late-discovered plugin-owned
+  surfaces.
+
 The latest remote evidence is strong enough to retire stale "no
 `verify:release` exists" critiques on this audit branch. It is not strong
 enough to unlock production wording, because no rerunnable live boundary on a
@@ -117,6 +133,11 @@ but this checkout does not yet expose the same live boundary. Until that exact
 boundary exists here, production-grade push wording is false reliability, even
 if the supervised lane has stronger retained-source evidence and an explicit
 boundary verdict.
+
+The single strongest proof gap is still production WordPress auth/session
+lifecycle plus preserved-remote auditability on a live boundary. Until that is
+shown with exact remote preservation and retry evidence, the retained-source
+`verify:release` lineage remains lab evidence only.
 
 The next acceptable proof must be one rerunnable live command against a real
 local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`, with:
