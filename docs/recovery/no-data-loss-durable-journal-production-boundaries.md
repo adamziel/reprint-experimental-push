@@ -26,6 +26,16 @@ append-only JSON journal records:
 That is enough to validate the model, but it is not enough to claim production
 durability.
 
+The acceptable post-failure states are still only:
+
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery` with artifacts
+
+The first three boundaries above must stay `old-remote`. A completed replay
+must stay `fully-updated-remote`. Any partial remote mutation without
+inspectable recovery artifacts is a release blocker.
+
 ## What Production Must Provide
 
 Production recovery needs the same state machine, plus durable evidence:
