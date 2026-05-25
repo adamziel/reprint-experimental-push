@@ -83,6 +83,9 @@ or comparison-only.
 - The claim does not treat a fixture-backed or copied-lab mount as production
   proof, even if it returns live-looking hashes through a production-shaped
   route.
+- The claim does not treat a green hash, endpoint match, or `finalMatchesLocal`
+  result from a copied-lab or fixture-backed path as proof that the live
+  mutation executor ran.
 - The claim does not let a route-shape smoke, packaged-plugin mount, or
   `finalMatchesLocal` result stand in for live remote drift rejection, stale
   approval expiry, create-time remap handling, plugin-owned allowlist

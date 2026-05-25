@@ -10,7 +10,10 @@ and hash-only evidence for several lab slices. That is still not enough to
 claim production push on a live WordPress source site. The missing proofs are
 not cosmetic. They are the exact points where a partial write, hidden plugin
 side effect, stale retry, or graph rewrite can silently lose remote state while
-the system reports a plausible success.
+the system reports a plausible success. A route-shaped smoke, copied-lab mount,
+or fixture-backed hash never upgrades to production proof unless it exercised
+the live mutation executor against a drifted remote and rejected stale
+authority before mutation.
 In particular, a green lab result never counts as production proof unless the
 same live write path was exercised against a drifted remote and the audit shows
 the stale approval was rejected before mutation.
@@ -35,6 +38,9 @@ specific missing proofs:
 - partial file, DB, or plugin side effects must be durably classified so a
   retry cannot widen the old approval or turn recovery evidence into current
   authority.
+- a fixture-backed or copied-lab route cannot be treated as production proof
+  just because it returns current-looking hashes, names the right endpoint, or
+  matches `finalMatchesLocal`.
 
 Source-note comparison boundary:
 
@@ -128,6 +134,8 @@ Release-grade checklist:
 
 - The exercised path was the live mutation executor, not a lab-backed route
   shape, fixture replay, or copied package mount.
+- The proof did not come from a fixture-backed or copied-lab mount that only
+  looked production-shaped.
 - The live remote drifted between dry-run and apply, and the write failed
   closed before mutation.
 - The stale approval stayed auditable but could not authorize a retry, a
