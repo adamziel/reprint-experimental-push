@@ -18,6 +18,17 @@ The repo still lacks one required command that proves the one-way pull base plus
 
 Current reading: the repo can already refuse unsafe states, but it cannot yet issue a production release verdict.
 
+## Evidence At A Glance
+
+The current audit separates proof into four buckets so the release gap stays uncomfortable and actionable:
+
+| Bucket | Current proof | Missing proof | Release blocker |
+| --- | --- | --- | --- |
+| Executable proof | Local tests and helpers prove refusal behavior, journal integrity, and modelled recovery states. | Nothing in the current executable set reaches the live-source boundary. | A passing local suite can still leave the release verdict unresolved. |
+| Lab / fixture proof | Playground smokes, authenticated lab flows, and benchmark harnesses exercise the intended shapes. | They remain `labBacked: true`, fixture-backed, or model-backed. | Lab evidence cannot prove production no-loss, reliability, or speed. |
+| Docs-only proof | Audits and progress notes accurately describe the intended release path. | Documentation cannot recheck live state or mutate production storage. | Prose cannot close the release gate. |
+| Missing proof | Live-source apply-time recheck, durable crash survival, topology fidelity, and a measured live-path speed verdict. | These are still absent from the mandatory command surface. | The repo has no enforced release verdict. |
+
 ## Explicit Requirements
 
 The objective implies these minimum release requirements:
@@ -66,6 +77,14 @@ The strongest current tests are guardrails, not release proof. They are worth ke
 - `No data loss`: the planner and recovery suites prove classification behavior, restart envelopes, and redaction, but they do not mutate live source storage and then re-read the same production boundary to prove writes survived without loss, duplication, or reordering.
 - `Reliable`: no current test composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks into one enforced release decision against real storage. The current passes are distributed across helper paths, not concentrated in a required gate.
 - `Fast`: no current test reports a measured live-path throughput result or a release threshold; [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) proves the opposite only, by asserting `report.throughput.productionThroughput === 'not-claimed'` and by rejecting unsupported production throughput claims. That is useful blocker evidence, but it is not a performance release proof. The missing release verdict is still operationally missing because no mandatory command exists that must print `speed unclaimed` or a measured threshold in the same run.
+
+Test readout, in release terms:
+
+| Claim | What the tests actually prove | What they do not prove |
+| --- | --- | --- |
+| No data loss | Fixture and journal replay classifications, redaction, and restart-state handling | Live-source mutation survival, no-loss recovery on production storage, or duplicate/replay safety at the live boundary |
+| Reliable | Refusal behavior, precondition modelling, and local journal integrity | A mandatory release gate that composes auth/session, durable journal, leases/fencing, graph identity, and plugin-data-driver checks on the real path |
+| Fast | Unsupported throughput claims are refused and `productionThroughput` stays `not-claimed` | Any positive live-path throughput claim, threshold, or machine-checkable release verdict |
 
 The test surface also reveals a structural gap in how release evidence is collected. `npm test` proves the negative cases stay negative, but the repo has no required `verify`/`release`/`verify:release` entrypoint to force the live-source verdict. Optional Playground commands and local journal tests can keep improving confidence, but they remain optional and therefore cannot be the final release decision.
 
