@@ -649,6 +649,19 @@ test('push contract fixture binds the pull handoff to the production push sequen
       'inspect is read-only and must come before any mutating recovery mode',
     ),
   );
+  const sessionJournalProof = readJson('fixtures/protocol/push-session-journal-proof.json');
+  assert.equal(sessionJournalProof.session.push_session, 'psh_01j00000000000000000000000');
+  assert.equal(sessionJournalProof.journal_fencing.claim_generation, 4);
+  assert.equal(sessionJournalProof.journal_fencing.lease_expires_at, '2026-05-24T00:00:09Z');
+  assert.equal(sessionJournalProof.recovery.inspect_mode, 'inspect');
+  assert.ok(
+    sessionJournalProof.recovery.blocked_when.includes('the journal cannot prove a safe finish or rollback'),
+  );
+  assert.ok(
+    sessionJournalProof.required_invariants.includes(
+      'claim generation and lease expiry fence stale workers before mutation',
+    ),
+  );
   assert.equal(
     readJson('fixtures/protocol/push-executor-topology-proof.json').pull_to_push_mapping.preflight,
     'binds that persisted base package to the live remote identity and a short-lived session',
