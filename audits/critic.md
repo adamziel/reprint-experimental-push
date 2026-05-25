@@ -4814,7 +4814,10 @@ boundary-specific, not wording-specific:
   cycle for each later-discovered boundary, because a readable artifact is
   audit evidence only until the branch proves it cannot authorize a different
   row, file, relationship-bearing record, remapped create target, or plugin-
-  owned surface; and
+  owned surface. If a later plugin-owned table, file, registry entry,
+  generated asset, cache entry, serialized blob, or cron row appears after
+  the first write, the earlier artifact stays audit-only and cannot cover the
+  new surface without its own preserve / reject / retry cycle; and
 - Reprint, ZS-Sync, and ForkPress notes still need to be treated as source-note
   provenance only unless the exact upstream state is named and this branch
   reran the same live boundary with preserved-remote evidence.
@@ -4837,7 +4840,8 @@ worktree:
 - the old/new/blocked classification for every touched row, file,
   relationship-bearing record, and plugin-owned surface;
 - the separate classification or block for any late-discovered plugin-owned
-  surface that appeared only after the first write; and
+  surface that appeared only after the first write, plus a fresh preserve /
+  reject / retry cycle if that surface is writable; and
 - the exact upstream revision or worktree state for any Reprint, ZS-Sync, or
   ForkPress comparison, plus an explicit statement of what that note proves
   here and what it does not prove.
