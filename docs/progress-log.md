@@ -4,6 +4,46 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 14:47:33
+
+<a id="2026-05-25-public-status-audit-144733"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:47:33 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and moved the first screen
+  to the newest material evidence: `7a9301d4` now leads with the 528/528
+  no-data-loss planner proof for the live release-boundary scenario.
+- `7e0f27f2` remains visible as the checked release-surface proof that fails
+  closed on apply-time revalidation with `PRECONDITION_FAILED` and
+  `recovery.state: "blocked-recovery"`; `35731b11` still shows
+  `releaseProof.mode: "apply"` plus preflight, dry-run, apply, recovery
+  inspect, and durable journal readback evidence with `rows: 17`. Gates remain
+  `0/4`, and production WordPress auth/session lifecycle plus durable journal
+  storage with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+## 2026-05-25 - Public Status Audit 14:45:51
+
+<a id="2026-05-25-public-status-audit-144551"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 14:45:51 CEST`), kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`, and surfaced `7a9301d4` as
+  the newest material evidence with a 528/528 no-data-loss planner result for
+  the live release-boundary scenario.
+- `7e0f27f2` stays visible as the checked release-surface proof that fails
+  closed on apply-time revalidation with `PRECONDITION_FAILED` and
+  `recovery.state: "blocked-recovery"`; `35731b11` still shows
+  `releaseProof.mode: "apply"` plus preflight, dry-run, apply, recovery
+  inspect, and durable journal readback evidence with `rows: 17`. Gates remain
+  `0/4`, and production WordPress auth/session lifecycle plus durable journal
+  storage with lease/fencing remain pending.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 14:44:23
 
 <a id="2026-05-25-public-status-audit-144423"></a>
