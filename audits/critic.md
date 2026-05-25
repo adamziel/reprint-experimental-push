@@ -1,5 +1,41 @@
 # Critic Audit
 
+## 2026-05-25 Real-Site Command Still Missing
+
+Primary finding: this branch still does not expose a single named real-site
+preflight/release command. `package.json` still only offers `plan`, `apply`,
+and `test:playground:*`, so every production-shaped smoke remains lab or
+compatibility evidence only. A script name like `authenticated`,
+`authenticated-cli-push`, `authenticated-http-push`, `production-shaped-push`,
+or `production-plugin-package` is still not proof of a live release boundary
+unless it reruns the exact remote mutation path on an actual remote and leaves
+the rejected remote inspectable for audit and retry.
+
+Scenario: an operator sees a green smoke, a polished review note, or a
+production-sounding script name and assumes push support is ready. Missing
+proof: there is still no branch-local command that can be rerun against a real
+`REPRINT_PUSH_SOURCE_URL`, record the first executor/auth/preserved-remote
+boundary, and keep the rejected remote auditable after rejection. Without that
+command, stale-drift rejection, create-time identity remap handling, and
+plugin-owned surface classification remain claims, not release proof.
+
+What still has to be shown before production wording is credible:
+
+- the exact real-site command name, not just a Playground or lab smoke;
+- the exact live boundary and exact stale-drift case that was rerun here;
+- the exact rejection point before the first write;
+- preserved-remote evidence that stays inspectable after rejection;
+- old/new/blocked classification for every touched file, DB row,
+  relationship-bearing record, and plugin-owned surface before retry starts;
+- a separate preserve/reject/retry cycle for any later-discovered plugin-owned
+  surface or remapped create target; and
+- a conflict-policy statement that says whether the next action is block,
+  preserve, retry, or manual review, while still preserving the remote for
+  audit and retry.
+
+If those items are absent, then route shape, package layout, reviewer wording,
+fixture replay, and `finalMatchesLocal` remain compatibility evidence only.
+
 ## 2026-05-25 Real-Site Release Command Gap
 
 Primary finding: this branch still does not expose a single named real-site
