@@ -1,7 +1,7 @@
 Refreshed the critic audit snapshot for the current remote heads and kept the verdict unchanged.
 
 Evidence checked:
-- `origin/lane/critic` matches `HEAD` at `a9744175`.
+- `origin/lane/critic` matches `HEAD` at `eb1df3dd`.
 - `origin/lane/reliable-executor` is at `0c4fd10f`.
 - `origin/lane/no-data-loss-invariants` is at `5b25867b`.
 - `origin/lane/no-data-loss-recovery` is at `47b675c0`.
