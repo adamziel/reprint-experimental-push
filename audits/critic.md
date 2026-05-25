@@ -12,6 +12,19 @@ The presence of `verify:release` on the supervised remote lane is accepted as re
 
 The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
 
+## Immediate blocker for release wording
+
+The only acceptable transition to production wording is one rerunnable live WordPress boundary that proves all of these together:
+
+- rejected remote preserved and auditable after refusal;
+- fresh live hashes re-derived at apply time on the same boundary;
+- auth/session expiry, refresh, and operator re-entry on the same source URL;
+- durable journal storage with lease/fencing on production-like storage;
+- graph identity preserved across create-time remap and late-discovered relationship-bearing records; and
+- plugin-driver coverage for late plugin-owned surfaces outside the initial allowlist.
+
+If any of those are only shown in retained-source harness output, the release claim stays false.
+
 Reprint, ZS-Sync, and ForkPress only supply provenance for transport, discovery, and crash-consistency vocabulary. Their observed anchors (`27c5f25`, `d9334a0`, `55f9879`) are useful context, but they are not retry authority here: they do not prove preserved-remote retention after rejection, stale-authority rejection before the first write, live auth/session lifecycle, lease/fenced durability, graph identity, or plugin-driver coverage on this branch.
 The source-note anchors are historical design input only; they cannot be promoted to current retry authority unless this branch reran the same live boundary and preserved the rejected remote on that boundary.
 
