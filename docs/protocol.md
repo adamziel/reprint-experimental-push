@@ -154,7 +154,8 @@ The machine-readable bridge is split across the fixtures:
   bundle. It ties the persisted pull base to preflight, remote snapshot hash
   listing, dry-run plan upload, batched apply, journal inspect, and
   inspect-first recovery in one object.
-- `push-production-topology-contract.json` keeps the same topology and the
+- `push-production-topology-contract.json` is the compact production topology
+  proof for the same one-remote, one-local, one-drift harness and keeps the
   full push stage sequence in one compact production object.
 - `push-production-push-recovery-contract.json` and
   `push-production-recovery-inspect-contract.json` are the production-shaped
