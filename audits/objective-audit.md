@@ -173,11 +173,11 @@ The uncomfortable conclusion is that the current tests are good enough to block 
 
 | Test surface | Current proof | Unproven release claim |
 | --- | --- | --- |
-| `test/push-planner.test.js` | Directionality, precondition checking, and stale-plan refusal in fixture scope | A live-source push boundary, no-data-loss release proof, and remote/local topology proof |
+| `test/push-planner.test.js` | Directionality, precondition checking, and stale-plan refusal in fixture scope | A live-source push boundary, no-data-loss proof across WordPress data shapes, and real remote/local topology proof |
 | `test/recovery-journal.test.js` | Local journal sequencing, redaction, restart classification, and recovery inspection | Durable production storage, crash survival on live state, and live-boundary replay safety |
 | `test/performance-model.test.js` | Benchmark guardrails and refusal of unsupported throughput claims | Measured live-path throughput and any positive speed claim |
-| `test/guarded-executor-benchmark.test.js` | Tamper detection and refusal to upgrade unsupported benchmark claims | A release-grade performance verdict on the real push path |
-| `npm test` as a whole | The repository can reject unsafe claims in lab or fixture scope | A mandatory live-source verdict that can certify no data loss, reliability, or speed |
+| `test/guarded-executor-benchmark.test.js` | Tamper detection, graph-identity bookkeeping, and refusal to upgrade unsupported benchmark claims | A release-grade performance verdict on the real push path |
+| `npm test` as a whole | The repository can reject unsafe claims in lab, fixture, and model scope | A mandatory live-source verdict that can certify no data loss, reliability, or speed |
 
 ## Requirement Map
 
@@ -209,3 +209,10 @@ The current test mix is therefore best read as negative evidence:
 - it does not prove that production durability, retry safety, or performance have been measured on the real boundary
 
 The practical audit conclusion is therefore narrower than "the tests are incomplete": the repo lacks a mandatory live-source release gate, so the existing tests cannot be upgraded into release proof by interpretation alone. Until one checked-in command owns the live-source mutation and the speed verdict in the same run, every passing test remains support evidence only.
+
+The hard test verdict is:
+
+- `test/push-planner.test.js` proves the planner can model directionality, keep remote-only edits, and reject stale or conflicting local plans. It does not prove the live apply boundary preserves all production WordPress data shapes without loss.
+- `test/recovery-journal.test.js` proves local-file journal ordering, redaction, restart classification, and corruption detection. It does not prove crash durability on production storage or recovery across a live mutation.
+- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the repository refuses to overclaim speed. They do not measure real throughput on the live push path, so they cannot support a positive performance claim.
+- `npm test` therefore proves refusal discipline, not release readiness. It is compatible with a release that still lacks live-source durability, topology, or throughput proof.
