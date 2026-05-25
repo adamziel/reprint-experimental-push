@@ -74,6 +74,21 @@ The pull pipeline remains the source of truth for immutable provenance:
 - recovery begins with inspect and only mutates when the journal plus fresh
   live hashes still prove the action safe
 
+The pull-to-push bridge is intentionally one-way:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to one live remote identity, one
+  requested scope, and one short-lived push session
+- snapshot hash listing reads the live remote comparison surface for planning
+  only
+- dry-run uploads the canonical plan as a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes prove the action
+
 The boundary rules are one-way:
 
 - exporter/importer establish immutable provenance
@@ -118,20 +133,34 @@ The minimum production-shaped topology is the same in Docker and Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 
+The concrete test topology is one remote source site and one local edited
+site:
+
+- `remote-base` seeds the persisted pull base
+- `local-edited` is the imported local site that produces the candidate plan
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` is the only actor allowed to preflight, list hashes, upload the
+  dry-run plan, apply batches, inspect the journal, or start recovery
+
+The same shape is mirrored in both harnesses:
+
+| Environment | Remote source | Local edited site | Drift witness | Runner |
+| --- | --- | --- | --- | --- |
+| Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
+| Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
+
+The harness differences are only orchestration details:
+
+- Docker uses one private network behind the runner
+- Playground uses separate disposable blueprints
+- both harnesses keep browser-visible inspection on the sandbox-provided
+  `8080` ingress through a local-only proxy
+
 The concrete lab identities used in the proof are `remote-example` for the
 remote source site and `local-dev-site` for the imported local site. The same
 remote identity is observed again after drift so the topology proves one
 remote site, one local edited site, and one runner without introducing a
 second remote authority.
-
-The test topology is intentionally identical in Docker and Playground:
-
-- Docker runs the remote source, local edited site, and drift witness on one
-  private network behind the runner
-- Playground uses disposable blueprints, but the same route names and the same
-  remote identity mapping
-- both harnesses rely on the sandbox-provided `8080` ingress for browser
-  inspection through a local-only proxy
 
 In both harnesses the remote source is observed twice:
 

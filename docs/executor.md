@@ -9,6 +9,20 @@ provenance, and push consumes it without rewriting it. The imported pull base
 package is the only starting point for push planning, and preflight binds that
 package to one live remote identity plus one short-lived session.
 
+The executor keeps the same bridge rules as the protocol:
+
+- exporter discovers the merge base and coverage evidence
+- importer persists the base package as immutable provenance
+- preflight binds that persisted package to one live remote identity, one
+  requested scope, and one short-lived push session
+- snapshot hash listing is planning-only
+- dry-run uploads a receipt, not a lock
+- apply revalidates fresh live evidence before every batch and at the storage
+  boundary
+- journal inspect stays read-only
+- recovery starts with inspect and only mutates when the journal and fresh
+  live hashes still prove the action safe
+
 That handoff is the same one defined in [protocol.md](protocol.md):
 
 - exporter discovers the merge base and coverage evidence
@@ -46,6 +60,17 @@ The one-remote, one-local proof is fixed and reusable:
   dry-run plan, apply batches, inspect the journal, or start recovery
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
+
+The harness matrix is the same in both environments:
+
+| Environment | Remote source | Local edited site | Drift witness | Runner |
+| --- | --- | --- | --- | --- |
+| Docker | `remote-base` | `local-edited` | `remote-changed` | `runner` |
+| Playground | `remote-base` | `local-edited` | `remote-changed` | local test process |
+
+That matrix is the concrete proof the executor should cite when it needs to
+show one remote source site, one local edited site, and one later drift
+observation without introducing a second remote authority.
 
 The executor follows the same boundary order as the protocol:
 
