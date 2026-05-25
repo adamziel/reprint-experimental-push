@@ -38,15 +38,15 @@ specific missing proofs:
 
 Source-note comparison boundary:
 
-- Reprint proves a staged transport rhythm and resumable delivery shape; it
-  does not prove that this repo has a live remote write boundary that rejects
-  stale authority before mutation.
-- ZS-Sync proves bounded discovery and scoped scanning; it does not prove
-  create-time identity reservation, remote-preserving retry, or plugin-owned
-  write safety.
-- ForkPress proves review and conflict vocabulary; it does not prove that a
-  stale review artifact cannot be reused as write authority after the remote
-  drifts.
+- Reprint at `27c5f25` proves a staged transport rhythm and resumable
+  delivery shape; it does not prove that this repo has a live remote write
+  boundary that rejects stale authority before mutation.
+- ZS-Sync at `d9334a0` proves bounded discovery and scoped scanning; it does
+  not prove create-time identity reservation, remote-preserving retry, or
+  plugin-owned write safety.
+- ForkPress at `55f9879` proves review and conflict vocabulary; it does not
+  prove that a stale review artifact cannot be reused as write authority after
+  the remote drifts.
 
 Any comparison that omits the exact upstream revision or worktree state being
 reverified remains historical context only, even if it names the same feature
@@ -69,6 +69,10 @@ The missing evidence for each one is concrete:
 - For stale review artifacts, the audit needs proof that the artifact stays
   readable for inspection but cannot authorize a retry, widen to a different
   row or file, or be reused against a plugin-owned surface.
+- For comparison language, the audit needs the exact upstream revision or
+  worktree state to be named and reverified at the live write boundary; a
+  stale note that only sounds current is historical context, not production
+  proof.
 - For create-time identity remapping, the audit needs either a safe remap
   proof or a hard block before mutation when the live remote can rename,
   alias, or reassign the target.
@@ -99,6 +103,9 @@ Changes that must happen before any production-grade push claim:
 - Reverify any Reprint, ZS-Sync, or ForkPress comparison against the exact
   upstream commit or worktree state being cited and the exact live mutation
   boundary being claimed, or label it historical only.
+- Reverify the cited Reprint `27c5f25`, ZS-Sync `d9334a0`, and ForkPress
+  `55f9879` notes against the live boundary or stop treating them as current
+  evidence.
 
 Production-grade wording requires the claim to name all of the following, or
 it stays non-production regardless of route shape, package mount, or
