@@ -2804,3 +2804,8 @@ False reliability claims to avoid:
 - "Recovery succeeded" when only one store committed and the others were
   merely observed, because mixed side effects still need durable old/new/blocked
   classification.
+- "The artifact still looks valid, so retry can proceed" when the readable
+  manual-review note or source-note comparison is only audit context. If the
+  remote drifted, that artifact stays audit-only and cannot authorize a retry
+  against any different row, file, relationship-bearing record, or
+  plugin-owned surface.
