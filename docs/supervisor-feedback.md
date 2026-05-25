@@ -8,6 +8,7 @@ changed, what is helping, what is not helping, and the next nudge.
 ## 2026-05-26 00:49 CEST - Reliable Executor Recheck
 
 - `reliable-executor` is now at `0c4fd10f`, and the handoff says `node --test test/protocol-fixtures.test.js` passed all `37` tests after the release-proof retry.
+- The live remote head for `independent-auditor` is `33b839f0`, not the stale `369fdd07` queue value, so the supervision surfaces need to keep the exact remote head current before anyone treats the audit lane as synchronized.
 - The evidence is better than the earlier `c99b19d0` note because the fixture suite is now fully rechecked, but the public gate state still stays conservative at `0/4`.
 - `progress-publisher` still does not need a visible page change from this delta alone; the page should stay explicit that production WordPress auth/session lifecycle and durable journal storage with lease/fencing remain pending.
 - Next nudge: ask `reliable-executor` for the live `test/production-shaped-proof.test.js` result before anyone treats the release proof as closed.

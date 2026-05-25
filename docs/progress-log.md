@@ -17,7 +17,7 @@ linked implementation artifacts.
 <a id="2026-05-26-public-status-audit-004900"></a>
 
 - Refreshed [progress.html](../progress.html) so the visible last-updated date can stay aligned with the newest reliable-executor recheck at `0c4fd10f`. The first screen still stays conservative: release gates remain `0/4`, and production WordPress auth/session lifecycle plus durable journal storage with lease/fencing remain pending.
-- `0c4fd10f` is the newest fixture-suite evidence: `node --test test/protocol-fixtures.test.js` passed all `37` tests after the release-proof retry, and the live production-shaped proof is still running. The earlier `c99b19d0` failure-shape delta remains useful context, but the newer pass is the evidence now visible on the feedback surfaces.
+- `0c4fd10f` is the newest fixture-suite evidence: `node --test test/protocol-fixtures.test.js` passed all `37` tests after the release-proof retry, and the live production-shaped proof is still running. The latest remote lane audit also shows `independent-auditor` at `33b839f0`, so the supervision surfaces should keep that head exact rather than the stale `369fdd07` queue value. The earlier `c99b19d0` failure-shape delta remains useful context, but the newer pass is the evidence now visible on the feedback surfaces.
 - Evidence trail: [progress.html](../progress.html), [release-gate checklist](../progress.html#proof-gates), [supervisor feedback](supervisor-feedback.md).
 
 ## 2026-05-25 - Public Status Audit 23:44:06
