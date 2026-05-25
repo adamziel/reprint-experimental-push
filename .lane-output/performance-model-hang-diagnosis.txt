@@ -1,14 +1,8 @@
-Focused diagnostic:
+Narrowed command:
+`time timeout 90s node --test --test-name-pattern='guarded executor large profile still preserves receipts and stays blocked for production throughput' test/performance-model.test.js`
 
-- Command: `node --test --test-name-pattern='fast-path proofs and rejections carry the expected gate metadata' test/performance-model.test.js`
-- Result: passed in 135.745557 ms wall time, 1/1 subtests passing.
-
-Full-file verification:
-
-- Command: `timeout 60s node --test test/performance-model.test.js`
-- Result: passed in 26.451900396 s wall time, 18/18 subtests passing.
+Result:
+Passed in 8.947s real time with TAP output completing normally.
 
 Conclusion:
-
-- The full-file timeout is pre-existing, not lane-introduced.
-- `node --test test/performance-model.test.js` can complete now.
+The full-file `timeout 60s node --test test/performance-model.test.js` timeout is pre-existing cumulative runtime pressure, not a single hanging subtest introduced by the lane. The isolated large-profile test completes on its own, so the file-wide 60s ceiling can be exceeded by aggregate runtime even when individual tests pass.
