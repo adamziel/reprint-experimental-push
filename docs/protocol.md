@@ -19,6 +19,7 @@ The production ladder is fixed:
 2. `push_snapshot_hashes` lists the live remote comparison surface for
    planning only and never becomes write authority. It may page through
    large sites, but it never becomes a lock, a lease, or apply authority.
+   This is the remote snapshot hash listing stage, and it stays read-only.
 3. `push_plan_dry_run` uploads the canonical dry-run plan and returns an
    eligibility receipt, not a lock. The receipt proves planning eligibility
    only and cannot be reused as write authority.
@@ -26,10 +27,10 @@ The production ladder is fixed:
    live evidence before every batch and again at the storage boundary. Dry-run
    and apply are separate remote operations, and apply must not trust the
    dry-run receipt as a lock, a lease, or a substitute for fresh live
-   evidence.
+   evidence. Apply-time revalidation is mandatory.
 5. `push_journal` records durable evidence and never authorizes a write.
 6. `push_recover inspect` reads the journal and fresh live hashes before any
-   mutating repair.
+   mutating repair. Inspect is read-only and does not authorize mutation.
 7. `push_recover auto|finish|rollback` may mutate only after inspect proves
    the action safe with fresh live evidence and the same auth floor as the
    write path.
@@ -66,6 +67,7 @@ For the harness shape, keep the topology pair together:
   `8080` ingress policy spelled out
 - `push-remote-liveness-topology-contract.json` adds the dry-run/apply
   liveness split to the same one-remote, one-local, one-drift harness
+  and keeps apply-time revalidation separate from the dry-run receipt
 
 The machine-readable bridge is split across the fixtures:
 
