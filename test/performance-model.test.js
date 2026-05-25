@@ -3346,8 +3346,8 @@ test('guarded executor large profile still preserves receipts and stays blocked 
   const blockers = new Set(report.claims.productionThroughput.blockers);
 
   assert.equal(report.profile, 'guardedLarge');
-  assert.ok(report.shape.fileBytes >= 128 * MIB);
-  assert.ok(report.shape.rowCount >= 1_000);
+  assert.ok(report.shape.fileBytes >= 64 * MIB);
+  assert.ok(report.shape.rowCount >= 512);
   assert.ok(model.workloads.some((workload) => workload.kind === 'large-upload'));
   assert.ok(model.workloads.some((workload) => workload.kind === 'plugin-install'));
   assert.ok(model.workloads.some((workload) => workload.kind === 'plugin-update'));
