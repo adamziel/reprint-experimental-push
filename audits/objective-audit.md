@@ -15,6 +15,8 @@ Derived release requirements from the objective:
 7. One required release command that fails closed if any safety gate still reports `labBacked: true`, fixture-only scope, or missing live-source evidence.
 8. A release gate that is mandatory in CI or an equivalent enforced entrypoint, not just a script name, so a green default run cannot bypass auth/session, journal durability, lease/fencing, graph identity, plugin-driver, crash-boundary, or benchmark proof.
 
+Those requirements are the minimum release bar, not aspirational extras.
+
 Release interpretation:
 
 - The objective requires proof at the live-source push boundary, not just proof that the planner or lab smokes are conservative.
@@ -90,6 +92,10 @@ The test audit is therefore uncomfortable but clear:
 - None of the current tests prove no data loss, reliability, or speed for the
   live source boundary. They are evidence that those claims remain blocked,
   not evidence that the claims are ready to ship.
+
+The strongest executable checks are still split between the default suite and
+manual Playground opt-ins. That split matters because the green path is still
+allowed to stop before the enforced release boundary that actually matters.
 
 The current test story also fails a simpler release-bar test: the repository
 does not define one required release command that chains the stronger checks.
