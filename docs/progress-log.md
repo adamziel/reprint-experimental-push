@@ -4,12 +4,12 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Audit 14:55:19
+## 2026-05-25 - Public Status Audit 14:56:16
 
-<a id="2026-05-25-public-status-audit-145519"></a>
+<a id="2026-05-25-public-status-audit-145616"></a>
 
 - Refreshed [progress.html](../progress.html) to the current `date` output
-  (`2026-05-25 14:55:19 CEST`) so the visible update time stays aligned with
+  (`2026-05-25 14:56:16 CEST`) so the visible update time stays aligned with
   the newest public audit.
 - `7a9301d4` remains the newest material evidence with the 528/528
   no-data-loss planner proof for the live release-boundary scenario; `7e0f27f2`
@@ -19,6 +19,8 @@ linked implementation artifacts.
   inspect, and durable journal readback evidence with `rows: 17`; `ee43e194`
   keeps the verifier bound to the supplied source URL. Release gates remain
   `0/4`.
+- The live GitHub Pages URL is still serving the older `Last updated: May 25,
+  2026, 14:45:51 CEST` snapshot, so public promotion is still pending.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
