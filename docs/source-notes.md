@@ -24,7 +24,8 @@ Relevant evidence:
 Design implication for push: keep the transport resumable and chunked, but do
 not mirror pull blindly. Push mutates the source, so each chunk needs a compare
 precondition, rollback story, and audit record. This is a design requirement,
-not proof that any live mutation boundary is already safe.
+not proof that any live mutation boundary is already safe or that staged pull
+behavior alone covers drift, partial write, or identity-remap failure modes.
 
 ## ZS-Sync
 
@@ -45,7 +46,7 @@ Design implication for push: ZS-Sync's scanner/resource model is useful for
 detecting what changed since the pull base, but Reprint push needs source-site
 mutation and conflict policy. The scanner is input to planning, not the whole
 push solution, and it does not prove stale-authority rejection, create-time
-remap handling, or partial-side-effect classification.
+remap handling, plugin-owned coverage, or partial-side-effect classification.
 
 ## ForkPress
 
@@ -66,8 +67,9 @@ Relevant evidence:
   failure, the system must know whether the target is old, new, or blocked with
   recovery artifacts; it must not silently report success after a partial merge.
 
-Design implication for push: ForkPress has the strongest model for merge
-auditability and crash consistency. Reprint push should borrow the invariants,
-not necessarily the full COW branch runtime. That comparison is still
-historical unless the exact upstream state and the live mutation boundary were
-reverified here.
+Design implication for push: ForkPress has the strongest source-note model for
+merge auditability and crash consistency. Reprint push should borrow the
+invariants, not necessarily the full COW branch runtime. That comparison is
+still historical unless the exact upstream state and the live mutation
+boundary were reverified here, and it does not prove the live executor or
+manual-resolution safety on this branch.
