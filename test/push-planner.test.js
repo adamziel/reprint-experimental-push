@@ -17120,6 +17120,70 @@ test('keeps same-remote graph identity at the live release boundary while a read
   assert.equal(driftedRemote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('keeps same-remote graph identity at the live release boundary while a ready delete plan preserves a matching plugin-owned resource and remote-only plugin removals', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'basic' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+  remote.plugins.seo = { version: '2.0.0', active: false };
+  remote.files['wp-content/plugins/seo/seo.php'] = '<?php /* remote-only plugin removals */';
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const pluginOwnedDecision = decisionFor(plan, 'row:["wp_options","option_name:forms_settings"]');
+  const pluginDecision = decisionFor(plan, 'plugin:seo');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(pluginOwnedDecision.decision, 'already-in-sync');
+  assert.equal(pluginOwnedDecision.change.localChange, 'update');
+  assert.equal(pluginOwnedDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(completed.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(completed.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'shared');
+  assert.equal(completed.site.db.wp_options['option_name:forms_settings'].__pluginOwner, 'forms');
+  assert.equal(completed.site.plugins.seo.version, '2.0.0');
+  assert.equal(completed.site.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin removals */');
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode = 'late drift';
+  driftedRemote.plugins.seo.version = '2.1.0';
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode, 'late drift');
+  assert.equal(driftedRemote.plugins.seo.version, '2.1.0');
+});
+
 test('keeps remote-only plugin changes while live-preconditioned file and row deletes preserve matching independent edit and type swap', () => {
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
