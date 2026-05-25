@@ -262,3 +262,14 @@ Until that command exists, `speed unclaimed` is not a deferment; it is the curre
 ## Audit Rule
 
 Treat fixture tests, refusal tests, route-shape smokes, benchmark models, and `labBacked: true` labels as useful but insufficient. They do not count as release proof unless they exercise the same live-source boundary named by the objective.
+
+## Actionable Gap
+
+The current weak point is not another missing assertion inside the existing suite. It is the absence of one mandatory release command that can fail closed in the same run on all of these conditions:
+
+1. live-source apply-time recheck not proven
+2. auth/session, durable journal, leases/fencing, graph identity, or plugin-data-driver missing
+3. real remote/local topology not exercised
+4. `productionThroughput` still `not-claimed` without an explicit `speed unclaimed` verdict
+
+Until that command exists, the repo has blocker evidence only. It does not have release proof.
