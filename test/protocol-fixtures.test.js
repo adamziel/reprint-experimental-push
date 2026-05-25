@@ -4549,10 +4549,8 @@ test('verify:release stays pinned to the checked release entrypoint and exact li
 
   assert.equal(proof.status, 0);
   assert.match(proof.stdout, /"ok": true/);
-  assert.match(proof.stdout, /"releaseProof": \{/);
-  assert.match(proof.stdout, /"dryRun": \{/);
-  assert.match(proof.stdout, /"apply": \{/);
-  assert.match(proof.stdout, /"recoveryInspect": \{/);
-  assert.match(proof.stdout, /"dbJournal": \{/);
+  assert.match(proof.stdout, /REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply\./);
+  assert.match(proof.stdout, /"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"status": "unimplemented",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"\s*\}/);
+  assert.match(proof.stdout, /"releaseProof": \{\s*"status": 1,\s*"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/);
   assert.equal(packageJson.scripts['verify:release'], 'npm run test:playground:production-shaped-release-verify');
 });
