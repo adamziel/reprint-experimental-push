@@ -652,6 +652,10 @@ The deterministic model in `scripts/bench/performance-model.js` captures these
 benchmark shapes without touching a live site. It should stay aligned with the
 planner invariants: speedups can reduce bytes, round trips, and duplicate work,
 but cannot remove preconditions or split atomic groups.
+The executable benchmark should still prove remote-index planning, compression
+choices, and backpressure pauses on the large-upload, plugin-install, and
+plugin-update workloads, so a fast path never hides the failure boundaries it
+is meant to preserve.
 
 The model intentionally treats receipts, cursors, and pressure budgets as
 first-class fields. A benchmark that only proves fewer requests were made is not

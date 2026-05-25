@@ -31,6 +31,31 @@ test('benchmark model covers large uploads and plugin installs', () => {
   );
   assert.ok(pluginUpdate.atomicGroupId, 'plugin update has an atomic group id');
   assert.notEqual(pluginUpdate.atomicGroupId, pluginInstall.atomicGroupId);
+
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'compression-decision'),
+    'large upload models compression decisions',
+  );
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'backpressure-pause'),
+    'large upload models backpressure pauses',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'remote-index-probe'),
+    'plugin install models remote-index planning',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'compression-decision'),
+    'plugin install models compression decisions',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'remote-index-probe'),
+    'plugin update models remote-index planning',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'backpressure-pause'),
+    'plugin update models backpressure pauses',
+  );
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {
