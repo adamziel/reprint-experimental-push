@@ -19772,3 +19772,81 @@ test('keeps remote-only plugin drift while a live-preconditioned file delete pre
   assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
+
+test('keeps remote-only plugin removals at the live release boundary while a ready delete plan preserves a matching plugin-owned resource and refuses late drift on re-apply', () => {
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+  base.db.wp_posts['ID:9'] = { ID: 9, post_title: 'Base post 9', post_status: 'draft' };
+  base.plugins.seo = { version: '1.0.0', active: false };
+  base.files['wp-content/plugins/seo/seo.php'] = '<?php /* base seo */';
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+  local.db.wp_posts['ID:9'] = { ID: 9, post_title: 'Shared post 9', post_status: 'publish' };
+  local.plugins.seo = { version: '1.0.0', active: false };
+  local.files['wp-content/plugins/seo/seo.php'] = '<?php /* base seo */';
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'shared' },
+    __pluginOwner: 'forms',
+  };
+  remote.db.wp_posts['ID:9'] = { ID: 9, post_title: 'Shared post 9', post_status: 'publish' };
+  delete remote.plugins.seo;
+  delete remote.files['wp-content/plugins/seo/seo.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:index.php');
+  const pluginOwnedDecision = decisionFor(plan, 'row:["wp_options","option_name:forms_settings"]');
+  const rowDecision = decisionFor(plan, 'row:["wp_posts","ID:9"]');
+  const pluginDecision = decisionFor(plan, 'plugin:seo');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/seo/seo.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(pluginOwnedDecision.decision, 'already-in-sync');
+  assert.equal(pluginOwnedDecision.change.localChange, 'update');
+  assert.equal(pluginOwnedDecision.change.remoteChange, 'update');
+  assert.equal(rowDecision.decision, 'already-in-sync');
+  assert.equal(rowDecision.change.localChange, 'update');
+  assert.equal(rowDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const completed = applyPlan(remote, plan);
+
+  assert.equal(Object.hasOwn(completed.site.files, 'index.php'), false);
+  assert.equal(completed.site.files['about.php'], '<?php echo "shared about";');
+  assert.equal(completed.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'shared');
+  assert.equal(completed.site.db.wp_options['option_name:forms_settings'].__pluginOwner, 'forms');
+  assert.equal(completed.site.db.wp_posts['ID:9'].post_title, 'Shared post 9');
+  assert.equal(Object.hasOwn(completed.site.plugins, 'seo'), false);
+  assert.equal(Object.hasOwn(completed.site.files, 'wp-content/plugins/seo/seo.php'), false);
+
+  const driftedRemote = deepClone(completed.site);
+  driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode = 'late drift';
+
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.equal(driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode, 'late drift');
+  assert.equal(Object.hasOwn(driftedRemote.plugins, 'seo'), false);
+  assert.equal(Object.hasOwn(driftedRemote.files, 'wp-content/plugins/seo/seo.php'), false);
+});
