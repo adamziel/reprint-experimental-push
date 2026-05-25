@@ -204,6 +204,46 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const commentsUsersSupport = unsupportedCommentsUsersResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!commentsUsersSupport.supported) {
+        addUnsupportedCommentsUsersResourceBlocker(plan, {
+          resource,
+          support: commentsUsersSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
+      const serializedBlocksSupport = unsupportedSerializedBlocksSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!serializedBlocksSupport.supported) {
+        addUnsupportedSerializedBlocksBlocker(plan, {
+          resource,
+          support: serializedBlocksSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       const graphIdentitySupport = wordpressGraphIdentitySupport({
         resource,
         localValue,
@@ -1484,6 +1524,68 @@ function addUnsupportedNavigationResourceBlocker(plan, {
   });
 }
 
+function addUnsupportedCommentsUsersResourceBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-comments-users-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-comments-users-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Comments and users graph resource ${resource.key} is not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
+function addUnsupportedSerializedBlocksBlocker(plan, {
+  resource,
+  support,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-unsupported-serialized-blocks-resource-${plan.blockers.length + 1}`,
+    class: support.className || 'unsupported-serialized-blocks-resource',
+    resource,
+    resourceKey: resource.key,
+    reason: support.reason || `Serialized block references in ${resource.key} are not yet supported by the planner.`,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
 function boundEvidenceList(items, limit) {
   return items.slice(0, limit);
 }
@@ -1543,6 +1645,44 @@ function unsupportedNavigationResourceSupport({ resource, baseValue, localValue,
     supported: false,
     className: 'unsupported-navigation-resource',
     reason: 'Navigation and menu graph resources are not yet supported by the planner.',
+  };
+}
+
+function unsupportedCommentsUsersResourceSupport({ resource, baseValue, localValue, remoteValue }) {
+  if (resource.type !== 'row' || !['wp_comments', 'wp_users'].includes(resource.table)) {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-comments-users-resource',
+    reason: 'Comments and users graph resources are not yet supported by the planner.',
+  };
+}
+
+function unsupportedSerializedBlocksSupport({ resource, baseValue, localValue, remoteValue }) {
+  if (resource.type !== 'row' || resource.table !== 'wp_posts') {
+    return { supported: true };
+  }
+
+  const candidate = localValue !== ABSENT ? localValue : (baseValue !== ABSENT ? baseValue : remoteValue);
+  if (!candidate || candidate === ABSENT || typeof candidate.post_content !== 'string') {
+    return { supported: true };
+  }
+
+  if (!candidate.post_content.includes('<!-- wp:')) {
+    return { supported: true };
+  }
+
+  return {
+    supported: false,
+    className: 'unsupported-serialized-blocks-resource',
+    reason: 'Serialized block references are not yet supported by the planner.',
   };
 }
 

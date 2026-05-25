@@ -10657,6 +10657,52 @@ test('blocks plugin-owned resources when the declared driver does not match the 
   assert.equal(blockerJson.includes('local-private-meta'), false);
 });
 
+test('blocks plugin-owned resources when the declared driver does not match the table while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {
+    'meta_id:7': {
+      meta_id: 7,
+      post_id: 1,
+      meta_key: '_forms_payload',
+      meta_value: 'base-private-meta',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_postmeta['meta_id:7'].meta_value = 'local-private-meta';
+  local.pushIntents = [
+    {
+      id: 'update-forms-postmeta',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      ),
+    },
+  ];
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.driver, 'wp-option');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(blockerJson.includes('base-private-meta'), false);
+  assert.equal(blockerJson.includes('local-private-meta'), false);
+});
+
 test('allows plugin-owned postmeta-like rows with explicit push intent policy', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
   const base = baseSite();
@@ -12023,7 +12069,7 @@ test('blocks local postmeta references to stale remote-created post identity', (
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
@@ -12554,6 +12600,92 @@ test('blocks local navigation graph resources while preserving remote-only plugi
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local navigation content'), false);
   assert.equal(planJson.includes('Base navigation content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks local comments and users graph resources while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:9"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:9': {
+      comment_ID: 9,
+      comment_post_ID: 7,
+      comment_content: 'Base comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_ID:9': {
+      comment_ID: 9,
+      comment_post_ID: 7,
+      comment_content: 'Local comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comments and users graph resources are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local comment content'), false);
+  assert.equal(planJson.includes('Base comment content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
+test('blocks local serialized block references while preserving remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_posts","ID:57"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:57'] = {
+    ID: 57,
+    post_title: 'Base block post',
+    post_content: '<!-- wp:paragraph -->Base block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:57'] = {
+    ID: 57,
+    post_title: 'Local block post',
+    post_content: '<!-- wp:paragraph -->Local block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:57'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:57']));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local block content'), false);
+  assert.equal(planJson.includes('Base block content'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
