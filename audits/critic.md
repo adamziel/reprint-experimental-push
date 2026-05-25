@@ -237,6 +237,13 @@ manual-resolution comment, or comparison summary stays audit-only unless it
 also proves the exact rejected boundary, the preserved remote that remained
 inspectable after rejection, and the fresh retry scope for that same live
 boundary on this worktree.
+The same rule applies to "release support" wording: if a PR description,
+status comment, or source-note comparison does not name the exact real-site
+preflight/release command and the exact live boundary it reran, it cannot
+authorize later rows, files, relationship-bearing records, remapped create
+targets, or plugin-owned surfaces. A note that proves only the earlier
+boundary is not a license to expand scope to a later one, even if the route
+family, package layout, or reviewer wording is unchanged.
 If the wording says "comparison passed", "manual resolution succeeded", or
 "production-ready" without naming the preserved remote and the boundary that
 was rejected before write, that wording is false reliability and must fail
