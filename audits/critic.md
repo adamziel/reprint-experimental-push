@@ -3304,6 +3304,10 @@ Production release gate checklist:
 
 - Live remote drift after dry-run must be rejected on the live write path,
   before mutation, with the preserved remote still auditable after reject.
+- "Manual resolution" is not success unless the remote was preserved for
+  audit, the stale authority was rejected before mutation, and the next
+  retry rebuilt scope from fresh live hashes instead of inheriting the old
+  decision.
 - Any create-time rename, alias, or renumber must be either durably
   represented or hard-blocked before write; if the claim only shows a
   fixture identity map, it is not enough.
@@ -3320,6 +3324,9 @@ Production release gate checklist:
 - Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
   revision or worktree state and show branch-local revalidation of the same
   live boundary; otherwise it is historical context only.
+- Any source-note comparison that only matches route shape, package layout,
+  or `finalMatchesLocal` is still compatibility evidence only until it names
+  the exact live mutation boundary and the preserved remote after reject.
 - Any claim that relies on route shape, packaged-plugin mount, fixture
   replay, or `finalMatchesLocal` must say explicitly that those are
   compatibility checks, not production proof.
