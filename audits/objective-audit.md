@@ -18,11 +18,19 @@ The objective implies these minimum release requirements:
 2. Recheck the live source at apply time before mutating it. A stale preflight is not enough.
 3. Preserve every WordPress data shape the push can touch, including rows, files, plugin-owned data, serialized payloads, and graph identity, at the live-source boundary.
 4. Survive crash, retry, replay, duplicate request, stale claim, lease expiry, and mid-apply restart cases without dropping, duplicating, or reordering writes at the live push boundary.
-5. Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes. The current `package.json` exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and many `test:playground:*` helpers, but it still does not define a required `verify`, `verify:release`, or `release` command, so there is no mandatory gate that composes those checks into one verdict. Optional scripts such as `test:recovery:file-journal`, `test:playground:*`, and the raw `node --test` suite do not change that, and they cannot substitute for a release gate that fails closed when any proof remains `labBacked: true`, fixture-only, or `productionThroughput: 'not-claimed'`. If a candidate gate does not touch the live-source boundary in the same invocation, it is still not release proof, even if it also exercises auth, journal, or recovery logic.
-6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or any storage abstraction that can satisfy the tests without touching live source storage or a real apply-time mutation. The current helpers and smokes do not satisfy this because the production-shaped routes still label themselves `labBacked: true`.
-7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one. Refusal-only benchmarks are not a speed claim, and release language must not drift into implied speed confidence without live-path measurement.
+5. Enforce auth/session, durable journal, leases/fencing, storage, graph identity, and plugin-data-driver checks at the release boundary, not only in helper scripts or optional smokes.
+6. Prove the real remote/local topology, not just a local Playground route, fixture mount, hostname alias, or any storage abstraction that can satisfy the tests without touching live source storage or a real apply-time mutation.
+7. Either publish a measured speed claim from the live push path with an explicit threshold or explicitly refuse to make one.
 8. Expose one required release command that fails closed when any safety gate is still `labBacked: true`, fixture-only, benchmark-only, or missing live-source proof.
-9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix. This checkout has no `.github/` workflow directory, and nothing in `package.json` compensates for that gap. `npm run test:playground` is an optional lab chain, not an enforced release path.
+9. Wire that release command into CI or another enforced entrypoint so a green default run cannot bypass the safety matrix.
+
+Current command-surface gap:
+
+- `package.json` exposes `test`, `plan`, `apply`, `test:recovery:file-journal`, and many `test:playground:*` helpers.
+- It still does not define a required `verify`, `verify:release`, or `release` command.
+- Optional scripts such as `test:recovery:file-journal`, `test:playground:*`, and the raw `node --test` suite do not substitute for a release gate.
+- If a candidate gate does not touch the live-source boundary in the same invocation, it is still not release proof, even if it also exercises auth, journal, or recovery logic.
+- The current production-shaped routes still label themselves `labBacked: true`, so the real remote/local topology is still unproven.
 
 ## Release Gate Definition
 
@@ -49,8 +57,9 @@ Minimum acceptable command shape:
 The test suite is doing the right kind of negative work, but it is still not positive release proof.
 
 - `test/push-planner.test.js` proves directionality, stale-plan refusal, and local mutation ordering in fixture scope. It does not prove lossless mutation on live WordPress storage.
-- `test/recovery-journal.test.js` proves local journal integrity, restart classification, and redaction on temporary files. It does not prove crash durability on production storage or recovery across the live apply boundary.
-- `test/performance-model.test.js` and `test/guarded-executor-benchmark.test.js` prove the repository refuses unsupported throughput claims. They do not measure the live push path, so they cannot support a positive speed claim.
+- `test/recovery-journal.test.js` proves local journal integrity, restart classification, redaction, and restart-inspection behavior on temporary files. It does not prove crash durability on production storage or recovery across the live apply boundary.
+- `test/performance-model.test.js` proves the benchmark model carries safety gates, still treats `productionThroughput` as unclaimed, and encodes safe-speedup refusal logic. It does not measure the live push path, so it cannot support a positive speed claim.
+- `test/guarded-executor-benchmark.test.js` proves the guarded benchmark can move staged buffers and row payloads through durable evidence while refusing to promote unsupported throughput claims. It does not prove the live push path is fast or release-ready.
 - `test/playground-snapshot-lib.test.js` and the Playground smokes prove that the fixture gates and lab routes can reject unsupported resources and exercise production-shaped paths. They still do not prove the live-source boundary, so they remain support evidence only.
 - `npm test` being green at `89/89` is therefore regression evidence, not release evidence.
 - The strongest production-shaped smokes still report `labBacked: true`, so they remain lab proof even when they look operationally close to release.
@@ -123,7 +132,7 @@ The audit rule here is strict:
 | [`test/push-planner.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/push-planner.test.js) | Local planning logic, live-remote precondition tracking, conflict detection, and refusal to apply stale or overlapping changes. | It does not mutate the live source boundary, prove no data loss on production storage, or exercise a real remote/local topology. |
 | [`test/recovery-journal.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/recovery-journal.test.js) | File-backed journal sequencing, redaction, restart classification, and recovery state inspection. | It does not prove durable production storage, crash survival on live state, or journal behavior across the real release boundary. |
 | [`test/performance-model.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/performance-model.test.js) | Guardrail structure for benchmark modeling, refusal of unsupported throughput claims, and internal safety contracts. | It does not measure live-path throughput or establish a release-grade speed claim. |
-| [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) | Tamper detection and explicit refusal of unsupported benchmark claims. | It does not prove that the live push path is fast, nor does it clear a release threshold. |
+| [`test/guarded-executor-benchmark.test.js`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/test/guarded-executor-benchmark.test.js) | Durable lab evidence for staged buffers, row payloads, graph-identity bookkeeping, and refusal to upgrade unsupported benchmark claims. | It does not prove that the live push path is fast, nor does it clear a release threshold. |
 
 ### Test Claim Matrix
 
