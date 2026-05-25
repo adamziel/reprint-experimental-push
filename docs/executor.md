@@ -164,6 +164,26 @@ The same release path also names the durable storage gap explicitly with
 `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`, which keeps the auth/session
 lifecycle boundary separate from the storage/lease/fence boundary.
 
+The production topology used by Docker and Playground is fixed:
+
+- `remote-base` seeds the persisted pull base package
+- `local-edited` carries the imported local edits derived from that package
+- `remote-changed` is the same remote identity observed later after drift
+- `runner` owns preflight, snapshot listing, dry-run, apply, journal inspect,
+  and recovery
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels are disallowed
+
+The checked release command is the same entrypoint the supervisor should run:
+
+```sh
+npm run verify:release
+```
+
+It must either exercise the real Playground preflight branch or fail closed
+at the explicit live-source or secret gate before dry-run or apply begins.
+
 That checked release entrypoint has two exact outputs:
 
 - with live source and production-shaped auth, it prints the live preflight

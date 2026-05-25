@@ -231,6 +231,28 @@ lab-shaped proof from the still-missing production boundary.
 The checked boundary object also names the still-unproven durable-journal
 storage/lease/fence gap with `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
 
+The same checked contract defines the production push topology used by both
+Docker and Playground:
+
+- one remote source site, `remote-base`
+- one imported local edit site, `local-edited`
+- one later drift observation of the same remote identity, `remote-changed`
+- one runner, `runner`, that owns preflight, remote hash listing, dry-run,
+  apply, journal inspect, and inspect-first recovery
+- one browser-visible ingress on sandbox port `8080` through a local-only
+  proxy
+- no remote tunnels
+
+The live release command stays separate from the protocol prose:
+
+```sh
+npm run verify:release
+```
+
+That command must either reach a real Playground source preflight or fail
+closed with the explicit `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
+`REPRINT_PUSH_SECRET_REQUIRED` gate before dry-run or apply starts.
+
 The release entrypoint has two exact checked outcomes:
 
 - when live source and auth are present, it prints the live preflight proof and

@@ -115,6 +115,16 @@ Use that pair when you need the one-remote, one-local, one-drift proof plus the
 shared route matrix, ingress rule, and local-only proxy policy in one review
 path.
 
+For the release-facing production proof, use:
+
+```sh
+npm run verify:release
+```
+
+That command must either reach a supplied Playground source preflight or fail
+closed with the exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` or
+`REPRINT_PUSH_SECRET_REQUIRED` gate before preflight, dry-run, or apply.
+
 The checked command for the topology proof is:
 
 ```sh
