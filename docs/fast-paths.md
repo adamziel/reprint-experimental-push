@@ -759,6 +759,10 @@ under load:
   is rejected because planning evidence and cached package caches can reduce
   lookup work, but they cannot prove dependency checks, metadata writes, or
   the atomic-group barrier survived failure.
+- compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-
+  dependency-checks is rejected because planning evidence and a cached
+  dependency graph can reduce lookup work, but they cannot prove dependency
+  checks, metadata writes, or the atomic-group barrier survived failure.
 - compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation
   is rejected because planning evidence and cached package hashes can reduce
   planning and lookup work, but they cannot prove dependency checks,
