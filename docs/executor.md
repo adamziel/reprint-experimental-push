@@ -143,6 +143,9 @@ The checked release-verify contract is
 It pins `npm run verify:release` as the supervisor entrypoint, the one-remote,
 one-local, one-drift topology, and the first remaining production boundary:
 `auth/session lifecycle and durable journal semantics`.
+The same contract now carries the push-ladder mapping back to the pull/export/
+import provenance so the checked release proof stays aligned with the executor
+order rather than only the prose.
 The same checked boundary object also names the unproven durable-journal
 storage/lease/fence gap with `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
 That checked command now fails if the live preflight does not mint the

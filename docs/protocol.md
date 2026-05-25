@@ -210,6 +210,9 @@ The checked release-verify contract is
 It pins `npm run verify:release` as the supervisor entrypoint, the one-remote,
 one-local, one-drift topology, and the first remaining production boundary:
 `auth/session lifecycle and durable journal semantics`.
+Its `pull_to_push_bridge.push_ladder_mapping` block maps each push step back to
+the existing pull/export/import provenance in the same order the executor runs
+it.
 The runnable proof now asserts that the live preflight response minted a
 session, that the auth/session type matches the production-shaped handshake,
 and that the journal readback still contains durable apply-committed rows
@@ -288,6 +291,7 @@ The same extension is exercised in one fixed topology:
 - one remote source site, `remote-base`
 - one imported local edit site, `local-edited`
 - one later drift observation of the same remote identity, `remote-changed`
+- one browser-visible ingress on sandbox port `8080` with local-only proxying
 - one runner, `runner`, that owns the push protocol calls
 - Docker uses one private network
 - Playground uses separate disposable blueprints

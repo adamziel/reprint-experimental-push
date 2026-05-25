@@ -5,7 +5,16 @@
   "pull_to_push_bridge": {
     "exporter": "discovers the merge base and coverage evidence before any push request exists",
     "importer": "persists the immutable pull base package as the only origin push may consume",
-    "persisted_pull_base_package": "the immutable provenance object that preflight binds to one live remote identity and one short-lived push session"
+    "persisted_pull_base_package": "the immutable provenance object that preflight binds to one live remote identity and one short-lived push session",
+    "push_ladder_mapping": {
+      "push_preflight": "pull exporter/importer provenance becomes a live remote binding and session mint",
+      "push_snapshot_hashes": "importer provenance becomes planning-only remote hash discovery",
+      "push_plan_dry_run": "the immutable base package becomes a receipt-only plan with no mutation authority",
+      "push_batch_apply": "the persisted base package plus live drift evidence revalidate before every batch and at the storage boundary",
+      "push_journal": "durable pull provenance becomes read-only recovery evidence",
+      "push_recover inspect": "immutable provenance plus fresh live hashes classify recovery before mutation",
+      "push_recover auto|finish|rollback": "mutating recovery requires inspect plus fresh live evidence and the same HMAC floor as apply"
+    }
   },
   "protocol_ladder": [
     "push_preflight",
@@ -22,6 +31,7 @@
     "remote_changed": "remote-changed",
     "runner": "runner",
     "same_remote_identity": true,
+    "one_remote_one_local": true,
     "networking": {
       "ingress_port": 8080,
       "proxy_policy": "local-only",
