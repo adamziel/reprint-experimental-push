@@ -33,21 +33,26 @@ Must-fix blockers before any production wording:
 Source-note comparison summary:
 
 - Reprint `27c5f25` proves staged transport and resumable delivery rhythm in
-  the upstream pull pipeline. Missing repo proof: this branch has not shown a
-  live source mutation boundary that rejects stale authority before write,
-  preserves the remote for audit, and rebuilds retry scope from fresh live
-  hashes after drift. A matching route family or packaged mount is still not
-  production proof.
-- ZS-Sync `d9334a0` proves bounded discovery and scoped scanning. Missing
-  repo proof: create-time identity reservation or remap safety, remote-
-  preserving retry, and durable old/new/blocked classification for partial
-  side effects on the live write path. A bounded scan is not evidence that a
-  live write cannot alias, remap, or lose state.
+  the upstream pull pipeline. It does not prove production auth, live-write
+  safety, remote-preserving retry, or stale-authority rejection on this
+  branch. Missing repo proof: this branch has not shown a live source mutation
+  boundary that rejects stale authority before write, preserves the remote for
+  audit, and rebuilds retry scope from fresh live hashes after drift. A
+  matching route family or packaged mount is still not production proof.
+- ZS-Sync `d9334a0` proves bounded discovery and scoped scanning. It does not
+  prove create-time identity remap safety, remote-preserving retry, partial
+  side-effect classification, or plugin-owned surface coverage. Missing repo
+  proof: create-time identity reservation or remap safety, remote-preserving
+  retry, and durable old/new/blocked classification for partial side effects
+  on the live write path. A bounded scan is not evidence that a live write
+  cannot alias, remap, or lose state.
 - ForkPress `55f9879` proves review and conflict vocabulary plus a crash-
-  consistency target. Missing repo proof: a stale review artifact that stays
-  auditable but cannot authorize retry, widen scope, or silently widen into
-  a new row, file, relationship-bearing record, or plugin-owned surface. A
-  readable review note is not proof of safe retry authority.
+  consistency target. It does not prove stale manual-review artifacts can stay
+  readable without becoming retry authority, nor does it prove plugin-owned
+  side effects are covered. Missing repo proof: a stale review artifact that
+  stays auditable but cannot authorize retry, widen scope, or silently widen
+  into a new row, file, relationship-bearing record, or plugin-owned surface.
+  A readable review note is not proof of safe retry authority.
 
 Release-gate checklist for production-readiness wording:
 
