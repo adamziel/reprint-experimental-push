@@ -8,7 +8,7 @@ linked implementation artifacts.
 
 - Last update: 2026-05-25 07:05:51 CEST.
 - Status: blocked; the visible page, log, and latest audit note still line up.
-- Trend: no evidence delta landed; the visible page keeps the live-copy caveat explicit and stays short enough to scan.
+- Trend: no evidence delta landed; the visible page keeps the proof trail linked and stays short enough to scan.
 - Supervision: the feedback-supervisor lane remains active.
 - Blocker: production auth/session, durable journal writes, leases/fencing, graph identity, integration, and plugin drivers remain unproven.
 - Visible page: [progress.html](../progress.html) stays compact and keeps the proof trail linked.
