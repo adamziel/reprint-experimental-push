@@ -1,7 +1,7 @@
 # Critic Audit
 
 Current baseline for this critique: the supervised reliable-executor lane at
-remote head `bd9ef3e8`. The latest explicit verdict on that lane is
+remote head `bd9ef3e8` on `origin/lane/reliable-executor`. The latest explicit verdict on that lane is
 `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`, and the lane's completed
 `npm run verify:release` result, including `authSessionType`, minted session
 shape, `applyCommitted`, and `durableJournal.rows: 17`, is material
@@ -159,7 +159,8 @@ boundary without trusting stale review text.
 
 ## What the source notes prove, and do not prove
 
-The source notes are still useful, but only as design input:
+The source notes are still useful, but only as design input and not as proof
+that this branch is release-ready:
 
 - Reprint proves resumable pull transport and stage framing in the observed
   upstream commit; it does not prove live push safety, preserved-remote
