@@ -206,6 +206,22 @@ old/new/blocked classification for every touched surface. Without all of that,
 the smoke and the note remain compatibility evidence or audit evidence only,
 even when the route family and reviewer wording match the production path.
 
+Fail-closed wording rule:
+
+- compatibility evidence: route shape, package layout, fixture replay,
+  production-shaped URLs, readable review output, and `finalMatchesLocal`
+  show at most that the executor can mimic the expected surface;
+- audit evidence: a readable manual-resolution note, comparison summary, or
+  reviewer comment shows what someone believed happened, but not that the
+  live boundary was retried safely;
+- live retry proof: only the same live boundary on this branch, the preserved
+  remote that stayed inspectable after rejection, the exact stale-drift case,
+  the rejection point before the first write, and per-surface old/new/blocked
+  classification prove production-grade push safety; and
+- if any wording blurs those classes together, it is false reliability and
+  must fail closed, even when the route family, package layout, or reviewer
+  wording looks production-shaped.
+
 Concrete failure scenarios that still block production wording:
 
 - live remote drift after dry-run but before apply: missing proof is the
