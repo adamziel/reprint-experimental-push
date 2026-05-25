@@ -54,6 +54,8 @@ The upstream source notes remain provenance only until the same live boundary is
 
 Treat those notes as source notes for vocabulary only. They do not prove the live WordPress auth/session lifecycle, durable journal storage plus lease/fencing, preserved rejected-remote retention after refusal, apply-time revalidation, graph identity, or plugin-driver coverage on the same rerunnable boundary.
 
+If a comparison to Reprint, ZS-Sync, or ForkPress does not name the exact upstream revision or worktree state and the exact live mutation boundary that was rerun here, then it is historical context only. Route shape, package layout, retained-source verdicts, or review wording do not upgrade those notes into retry authority.
+
 Conservatively, the comparison is:
 
 - Reprint proves staged transport vocabulary and a retained-source compatibility harness, not a production retry boundary with preserved-remote auditability or live auth/session re-entry.
@@ -216,6 +218,8 @@ Use the upstream notes conservatively:
 - ForkPress can justify review and crash-consistency vocabulary, but it does not prove retry authority, preserved-remote auditability, or authority over a later live boundary discovered after rejection.
 
 Any stronger reading of those notes is false reliability until this branch reruns the same live boundary and preserves the rejected remote.
+
+The comparison can only support production wording if it can also answer, for the same rerunnable live boundary, what the upstream note proves here, what it does not prove here, and how the rejected remote stayed preserved for audit after refusal. Anything weaker remains design context only.
 
 ## Exact next proof
 
