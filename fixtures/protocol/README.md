@@ -369,6 +369,27 @@ The canonical end-to-end bundle for the push extension is:
 | `push-auth-session-journal-recovery-contract.json` | Compact auth, session, journal-row, lease-fence, and inspect-first recovery proof. |
 | `push-recovery-revalidation-contract.json` | Mutating recovery still requires fresh live hashes after inspect. |
 
+## Canonical Topology
+
+The production topology is always the same one-remote, one-local, one-drift
+shape:
+
+| Role | Fixture name | Meaning |
+| --- | --- | --- |
+| `remote-base` | remote source site | Seeds the persisted pull base package. |
+| `local-edited` | imported local site | Carries the imported local edits. |
+| `remote-changed` | later remote observation | Is the same remote identity observed after drift. |
+| `runner` | protocol runner | Owns preflight, snapshot listing, dry-run, apply, journal inspect, and recovery. |
+
+The harness rules are fixed:
+
+- Docker uses one private network for the four roles.
+- Playground uses separate disposable blueprints for the same roles.
+- Browser-visible inspection stays on the sandbox-provided `8080` ingress.
+- Local-only proxying is allowed; remote tunnels are not.
+- Dry-run and apply stay separate remote calls, and apply revalidates fresh
+  live evidence before every batch and at the storage boundary.
+
 Failure and recovery examples:
 
 - `push-precondition-failed-response.json` shows apply-time liveness
