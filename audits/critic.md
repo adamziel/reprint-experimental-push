@@ -6,6 +6,8 @@ This design still cannot claim production-grade push support.
 
 The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the newer `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and the current remote head `165684f7` release-boundary verdict. That is concrete progress, but it is still lab evidence. It does not prove a live WordPress auth/session lifecycle, preserved-remote retention after rejection, lease/fenced durable journal storage on production-like storage, graph identity, or plugin-driver coverage on one rerunnable live mutation boundary with the rejected remote still inspectable.
 
+The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
+
 Reprint, ZS-Sync, and ForkPress only supply provenance for transport, discovery, and crash-consistency vocabulary. Their notes are useful context, but they are not retry authority here: they do not prove preserved-remote retention after rejection, stale-authority rejection before the first write, live auth/session lifecycle, lease/fenced durability, graph identity, or plugin-driver coverage on this branch.
 
 - Reprint notes help explain resumable transport and staged delivery, but they do not prove a WordPress auth/session lifecycle or a preserved remote that survives rejection on the same live boundary.
@@ -17,7 +19,7 @@ The next production proof must be one rerunnable live boundary on a real local, 
 ## What still blocks the claim
 
 1. Production WordPress auth/session lifecycle is not proven on a live mutation boundary, including expiry, refresh, and operator re-entry after rejection.
-2. Preserved-remote retention after rejection is not proven, so manual resolution is not auditable retry authority and cannot be reused as a later boundary's approval.
+2. Preserved-remote retention after rejection is not proven on the same live boundary, so manual resolution is not auditable retry authority and cannot be reused as a later boundary's approval.
 3. Apply-time revalidation from fresh live hashes is not proven on the same mutation that produced the rejection, so stale approval can still masquerade as retry authority.
 4. Durable journal storage with lease/fencing is only proven in retained-source or lab harness form, not on production-like storage that survives rejection and retry.
 5. Graph identity under create-time remap is not proven for relationship-bearing WordPress rows and late-discovered records.
