@@ -12511,6 +12511,45 @@ test('completed replay stays fully-updated even when replay journaling fails', (
   assert.equal(replayError.details.recovery.artifacts.journal.entries.length, plan.mutations.length);
 });
 
+test('replaying a completed plan stays inert across repeated retries and does not duplicate inserted rows', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal });
+  durableJournal.close();
+
+  const replayRemote = JSON.parse(JSON.stringify(completed.site));
+  const firstReplayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const firstReplay = applyPlan(replayRemote, plan, {
+    durableJournal: firstReplayJournal,
+    journal: completed.journal,
+  });
+  firstReplayJournal.close();
+
+  const secondReplayRemote = JSON.parse(JSON.stringify(firstReplay.site));
+  const secondReplayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const secondReplay = applyPlan(secondReplayRemote, plan, {
+    durableJournal: secondReplayJournal,
+    journal: firstReplay.journal,
+  });
+  secondReplayJournal.close();
+
+  assert.equal(firstReplay.appliedMutations, 0);
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(JSON.stringify(secondReplay.site), JSON.stringify(firstReplay.site));
+  assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(secondReplay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
+});
+
 test('durable recovery boundary matrix keeps pre-commit failures old-remote and completed replay inert', () => {
   const base = baseSite();
   const local = baseSite();
