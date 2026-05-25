@@ -1,16 +1,17 @@
 # Critic Audit
 
-Current baseline: reliable-executor commit `3089aee2`.
-`npm run verify:release` is now material retained-source evidence, but it is
-still local Playground lab evidence and not live retry authority unless the
-branch also proves the live production WordPress auth/session boundary,
-durable journal semantics, graph identity, and plugin-driver coverage on a
-real-site rerun. The old "no `verify:release` exists" critique is retired;
-the blocker now is the missing rerunnable live boundary with preserved-remote
-audit evidence on a real local, Playground, or Docker
-`REPRINT_PUSH_SOURCE_URL`. Do not reintroduce the retired missing-command
-critique; the current failure mode is that the branch still lacks that live
-rerun on the real boundary.
+Current baseline for this critique: the supervised reliable-executor lane
+through remote head `68664884`, with `63a3502f` as the earlier retained-source
+proof point. `npm run verify:release` is now material retained-source
+evidence, but it is still local Playground lab evidence and not live retry
+authority unless the branch also proves the live production WordPress
+auth/session boundary, durable journal semantics, graph identity, and
+plugin-driver coverage on a real-site rerun. The old "no `verify:release`
+exists" critique is retired; the blocker now is the missing rerunnable live
+boundary with preserved-remote audit evidence on a real local, Playground, or
+Docker `REPRINT_PUSH_SOURCE_URL`. Do not reintroduce the retired missing-
+command critique; the current failure mode is that the branch still lacks
+that live rerun on the real boundary.
 Any claim that `verify:release` is "production-shaped" or "production-ready"
 must fail closed until that live rerun exists on a real local, Playground, or
 Docker `REPRINT_PUSH_SOURCE_URL`.
@@ -52,8 +53,9 @@ What must change before production-grade wording is defensible:
 
 Current critic bar for this baseline:
 
-- `3089aee2` is retained-source evidence only; it does not authorize
-  production wording by itself.
+- `3089aee2` remains retained-source evidence only; it does not authorize
+  production wording by itself, and the newer supervised reliable-executor
+  remote head still does not replace the required live rerun on this branch.
 - The next acceptable proof must move from local retained-source evidence to
   production WordPress auth/session lifecycle and durable journal semantics,
   with graph identity and plugin-driver coverage explicit on the same live
