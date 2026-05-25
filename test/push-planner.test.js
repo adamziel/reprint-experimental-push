@@ -898,6 +898,44 @@ test('blocks a directory delete that would hide a live remote descendant while p
   assert.equal(JSON.stringify(remote), remoteBefore);
 });
 
+test('blocks a directory delete that would hide a live remote descendant while preserving matching independent delete and remote-only plugin drift', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  const local = JSON.parse(JSON.stringify(base));
+  delete local.files['wp-content/uploads/gallery'];
+  delete local.db.wp_posts['ID:1'];
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['wp-content/uploads/gallery/remote-only.jpg'] = 'remote private image bytes';
+  delete remote.db.wp_posts['ID:1'];
+  remote.plugins.forms = { version: '1.1.0', active: false };
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const conflict = plan.conflicts[0];
+  const deleteDecision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const remoteBefore = JSON.stringify(remote);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(deleteDecision.change.localChange, 'delete');
+  assert.equal(deleteDecision.change.remoteChange, 'delete');
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery');
+  assert.equal(conflict.relatedResourceKey, 'file:wp-content/uploads/gallery/remote-only.jpg');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(JSON.stringify(conflict).includes('remote private image bytes'), false);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+});
+
 test('recognizes matching independent edits as already in sync', () => {
   const base = baseSite();
   const local = baseSite();
