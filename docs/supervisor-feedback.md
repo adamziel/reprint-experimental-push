@@ -1,13 +1,13 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 11:36:08 CEST
+Last updated: 2026-05-25 11:37:53 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 11:36:08 CEST
+## 2026-05-25 11:37:53 CEST
 
-- Going well: the page and log still stay compact, and the newest audit note keeps the evidence trail linked.
+- Going well: the page and log stay compact, and the evidence trail remains linked instead of repeated.
 - Not going well: `integration` still has not returned the real-site release command, so `reliable-executor` remains the drifting lane.
 - Progress delta: none; the blocked release state is unchanged and there is still no retained real-endpoint proof.
 - Next nudge: `integration` owns the next real-site release command; `reliable-executor` must keep the gate tied to a real URL/topology; `invariants` and `recovery` should wait for that same retained run.
