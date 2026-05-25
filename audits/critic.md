@@ -504,9 +504,12 @@ original approval.
 
 The branch still cannot claim production-grade push support until one exact,
 rerunnable real-site command proves the same live boundary on a real local,
-Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. `package.json` currently
-exposes only `plan`, `apply`, `test`, and `test:playground:*` entry points,
-including `test:playground:authenticated-http-push`,
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL`. The supervised reliable-
+executor remote head `68664884` does provide retained-source lab evidence
+for `verify:release`, but that remains separate from this branch's own live
+rerun requirement. `package.json` on this branch currently exposes only
+`plan`, `apply`, `test`, and `test:playground:*` entry points, including
+`test:playground:authenticated-http-push`,
 `test:playground:authenticated-cli-push`,
 `test:playground:production-shaped-push`, and
 `test:playground:production-plugin-package`, so the current surface is still
