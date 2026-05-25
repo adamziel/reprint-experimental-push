@@ -239,6 +239,25 @@ Changes that must happen before any production-grade push claim:
   was reverified; a local note file does not upgrade itself into production
   proof.
 
+Current anti-claims:
+
+- A route-shaped smoke does not prove production push support, even if the
+  endpoint name, mount path, or hash output matches the expected lab shape.
+- A copied-lab mount does not prove the live executor ran, so it cannot
+  justify claims about remote preservation, stale-authority rejection, or
+  retry safety.
+- A readable manual-review artifact is not current authority after drift.
+  It only counts if the audit shows the preserved remote, the rejection point,
+  and the fresh retry scope on the same live write boundary.
+- "Manual resolution later" is not a success claim unless the remote was
+  preserved for audit, the stale artifact was rejected before mutation, and
+  the retry rebuilt scope from fresh live evidence without widening to a new
+  row, file, relationship-bearing record, or plugin-owned surface.
+- A matching upstream feature family is not current proof. Reprint,
+  ZS-Sync, and ForkPress stay historical context until the exact upstream
+  revision or worktree state is named and reverified at the same live
+  mutation boundary in this branch.
+
 Production-grade wording requires the claim to name all of the following, or
 it stays non-production regardless of route shape, package mount, or
 `finalMatchesLocal`:
