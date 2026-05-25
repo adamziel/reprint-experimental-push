@@ -1002,6 +1002,11 @@ under load:
   after-pause is rejected because planning evidence and cached file hashes can
   trim duplicate hashing, but they cannot prove which chunk acknowledgements
   survived the pause or restore the guarded publish barrier.
+- compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-
+  backpressure is rejected because planning evidence and bounded fan-out can
+  reduce duplicate work, but they cannot prove the sender kept bounded queue
+  order, the surviving chunk acknowledgements, or the guarded publish barrier
+  after a pause or crash.
 - compressed-remote-index-and-cached-chunk-hashes-skips-large-upload-chunk-
   upload-after-pause is rejected because planning evidence and cached chunk
   hashes can trim duplicate hashing, but they cannot prove which chunk

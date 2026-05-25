@@ -2521,7 +2521,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     proposal: 'use a compressed remote index to justify unbounded row-batch parallelism for plugin updates once staging has begun',
     rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded row-batch parallelism can still erase the per-row preconditions and update barrier needed to recover a partial failure',
     rejectedGate: 'group',
-    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'parallelism-limits', 'backpressure', 'durable-progress'],
   },
   {
     id: 'compressed-remote-index-and-unbounded-row-batch-parallelism-skips-plugin-update-recovery',
