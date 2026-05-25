@@ -2490,7 +2490,8 @@ Additional production-readiness blockers that still need explicit proof:
 - False reliability claims must be barred from release wording, including any
   statement that route shape, package mount, fixture replay, or
   `finalMatchesLocal` proves production safety; those are compatibility checks
-  only.
+  only and never evidence that the live mutation executor failed closed on a
+  drifted remote.
 - Any comparison to Reprint, ZS-Sync, or ForkPress must stay conservative:
   it may describe design context, but it does not become current proof unless
   the exact upstream revision or worktree state and the exact live mutation
@@ -2513,7 +2514,8 @@ Additional production-readiness blockers that still need explicit proof:
 - A release gate that only checks lab route shape, fixture replay, or
   `finalMatchesLocal` is not a production gate. It must show the preserved
   remote, the stale rejection point, and the fresh retry scope for each failed
-  case above.
+  case above, plus the exact plugin-owned surfaces that were discovered or
+  hard-blocked.
 
 Before this project can claim production-grade push support, it still needs
 these explicit proofs:
@@ -2539,6 +2541,10 @@ these explicit proofs:
    package shape, or `finalMatchesLocal`; it must also name the exact live
    write boundary and the stale-remote case that was reverified on this
    branch.
+8. Any manual-resolution claim must prove the remote stayed preserved for
+   audit, the stale artifact was rejected before mutation, and the retry scope
+   was rebuilt from fresh live evidence rather than inherited from the old
+   review token.
 
 Production-readiness wording stays blocked unless all of the above are true
 on the same live write path. If the evidence only shows a production-shaped
