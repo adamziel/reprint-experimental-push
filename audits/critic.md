@@ -679,6 +679,9 @@ Use this as the minimum bar before any doc, PR, branch, or status note says
 - A stale manual-review artifact must be rejected before write even when the
   route shape matches, the plugin package mounts cleanly, or a fixture replay
   returns `finalMatchesLocal`; those signals remain lab evidence only.
+- The first live-hash mismatch must invalidate the approval before any write,
+  even if route-shape smoke, packaged-plugin mounting, or fixture replay still
+  looks healthy.
 - A stale manual-review artifact may stay readable for audit, but once the
   live remote hash or snapshot timestamp changes it is no longer current
   authority and cannot be widened to a different row, file, or plugin-owned
@@ -1098,6 +1101,9 @@ would reasonably read as equivalent.
   the same route or package name is reused; the next retry must reject the old
   approval before write, preserve the remote for audit, and re-plan from a
   fresh live snapshot.
+- A stale manual-review artifact must fail closed on the first live-hash
+  mismatch even when the same request path still returns the expected route
+  shape or a fixture-level `finalMatchesLocal` result.
 
 ## Reliability Language Gate
 
