@@ -4,8 +4,54 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-25 - Public Status Refresh 02:30:09
+## 2026-05-25 - Public Status Refresh 02:32:01
 
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:32:01 CEST`) and kept the visible last-updated stamp current.
+- Kept the first screen concise and conservative: 89 Node tests still pass, the
+  current gate stays production auth plus durable journaling, and the pending
+  proof is named once instead of repeated.
+- Public status remains conservative: 89 Node tests pass, production auth plus
+  durable journaling is still the gate, and executor/auth, recovery journal,
+  Docker/Playground integration, graph identity, and plugin-driver proof stay
+  pending.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
+## 2026-05-24 - Core Evidence Recheck
+
+- `npm test` passed in this lane with `55` Node scenarios. Evidence:
+  [package.json](../package.json),
+  [test/push-planner.test.js](../test/push-planner.test.js),
+  [test/recovery-journal.test.js](../test/recovery-journal.test.js), and
+  [test/performance-model.test.js](../test/performance-model.test.js).
+- `npm run test:playground` passed in this lane. The plan leg reported
+  conflict status with five expected conflicts across row, file, and
+  plugin-data classes; the guarded apply leg verified eight fixture mutations;
+  the protocol leg verified missing/tampered receipt refusal, stale
+  precondition refusal, conflict refusal, and eight verified ready mutations.
+  Evidence:
+  [scripts/playground/plan-from-blueprints.mjs](../scripts/playground/plan-from-blueprints.mjs),
+  [scripts/playground/apply-ready-plan.mjs](../scripts/playground/apply-ready-plan.mjs),
+  [scripts/playground/push-protocol-smoke.mjs](../scripts/playground/push-protocol-smoke.mjs), and
+## 2026-05-25 - Public Status Refresh 02:30:42
+
+- Refreshed [progress.html](../progress.html) to the live `date` output
+  (`2026-05-25 02:30:42 CEST`) and kept the visible last-updated stamp current.
+- Collapsed the first-screen pending-proof language into one concise line so
+  the current gate and blocker are easier to audit at a glance.
+- Public status remains conservative: 89 Node tests pass, and production auth
+  plus durable journaling is still the gate while executor/auth, recovery
+  journal, Docker/Playground integration, graph identity, and plugin drivers
+  stay pending.
+- Evidence trail: [progress.html](../progress.html), [docs/progress-log.md](progress-log.md),
+  [docs/executor.md](executor.md), [docs/recovery/apply-journal.md](recovery/apply-journal.md),
+  [docs/playground-topology.md](playground-topology.md), [docs/protocol.md](protocol.md), and
+  [docs/supervisor-feedback.md](supervisor-feedback.md).
+
+## 2026-05-25 - Public Status Refresh 02:30:09
 - Refreshed [progress.html](../progress.html) to the live `date` output
   (`2026-05-25 02:30:09 CEST`) and kept the visible last-updated stamp current.
 - Tightened the first screen so the lead says the pending proof once and the
