@@ -30,7 +30,8 @@ pipeline does not prove this branch rejects stale remote drift before the first
 write, preserves the remote for audit, classifies later-discovered plugin-owned
 surfaces, handles create-time identity remap at apply time, or reruns the same
 live boundary here with preserved-remote, rejection-point, and fresh live-hash
-retry evidence.
+retry evidence. A copied or fixture-backed executor that shares the same route
+family still does not count as live push proof.
 
 ## ZS-Sync
 
@@ -53,7 +54,9 @@ mutation and conflict policy. The scanner is input to planning, not the whole
 push solution. It does not prove stale-authority rejection, live remote-drift
 handling, create-time remap safety, plugin-owned surface enumeration,
 partial-side-effect classification, or a rerun of the same live boundary here
-with preserved-remote, rejection-point, and fresh live-hash retry evidence.
+with preserved-remote, rejection-point, and fresh live-hash retry evidence. A
+matching change-detection path is still only discovery evidence, not retry
+authority.
 
 ## ForkPress
 
@@ -81,7 +84,8 @@ still historical unless the exact upstream state and the live mutation
 boundary were reverified here. It does not prove the live executor, preserved
 remote retention after rejection, stale-review rejection, manual-resolution
 safety for a later boundary on this branch, or a fresh retry scope rebuilt
-from live hashes on this branch.
+from live hashes on this branch. A readable review artifact from ForkPress is
+still audit evidence, not current retry authority.
 
 ## Comparison Boundaries
 
