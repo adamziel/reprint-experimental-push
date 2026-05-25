@@ -2345,8 +2345,8 @@ Production-readiness checklist:
   write boundary is reverified in this repo.
 - Show that any Reprint, ZS-Sync, or ForkPress comparison was reverified at
   the cited upstream revision or worktree, at the same live mutation
-  boundary; otherwise the note remains historical context only and cannot
-  support any production wording.
+  boundary, on the same live mutation executor; otherwise the note remains
+  historical context only and cannot support any production wording.
 - Show a release gate that fails closed when any of the above is missing and
   that records the exact rejection reason for audit and retry. A gate that
   only logs "manual resolution" or "comparison passed" without the preserved
@@ -2359,7 +2359,8 @@ False reliability claims to avoid:
   packaged mount, or `finalMatchesLocal` hash.
 - "The compare note proves it" when the Reprint, ZS-Sync, or ForkPress
   source note was not reverified against the exact upstream revision or
-  worktree state at the live write boundary.
+  worktree state at the live write boundary, or when it only describes a
+  historical upstream shape without the same live mutation executor.
 - "The route or hash proves it" when the evidence only shows route shape,
   package shape, a copied-lab mount, or `finalMatchesLocal` without the live
   drift rejection boundary and preserved remote proof.
@@ -2398,4 +2399,5 @@ Additional production-readiness blockers that still need explicit proof:
 - Any comparison to Reprint, ZS-Sync, or ForkPress must stay conservative:
   it may describe design context, but it does not become current proof unless
   the exact upstream revision or worktree state and the exact live mutation
-  boundary were both reverified for this repo's claim.
+  boundary were both reverified for this repo's claim on the same live
+  mutation executor.
