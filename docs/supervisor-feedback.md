@@ -1,9 +1,17 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 09:38:54 CEST
+Last updated: 2026-05-25 09:43:49 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-25 09:43:49 CEST
+
+- Going well: the newest decision keeps the blocked snapshot compact and ties the gate to one checked live-source proof.
+- Not going well: the checked missing-live-source gate is still not attached to a real live URL/topology, so the release state does not move.
+- Progress change: a small executor gate increment landed, but it is still only a checked proof stub until a real endpoint run exists.
+- Next nudge: integration owns the next real-site release command; invariants/recovery should align their next proof to that same command, and reliable-executor should keep the gate bound to a real URL/topology.
+- Audit note: [audits/supervisor-note-20260525-094349.md](../audits/supervisor-note-20260525-094349.md) records this decision in one screen.
 
 ## 2026-05-25 09:38:54 CEST
 

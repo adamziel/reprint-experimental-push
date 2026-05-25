@@ -508,7 +508,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Blocked until a production-backed proof gap closes. The linked docs hold the proof trail.</p>
-        <time class="update-stamp" datetime="2026-05-25T09:34:09+02:00">Last updated: May 25, 2026, 09:34:09 CEST</time>
+        <time class="update-stamp" datetime="2026-05-25T09:43:49+02:00">Last updated: May 25, 2026, 09:43:49 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Blocked on missing production evidence</span>
           <span class="pill">GitHub Pages updates after merge to main</span>
@@ -518,7 +518,7 @@
       <div class="header-actions" aria-label="Progress evidence">
         <a class="log-link" href="docs/supervisor-feedback.md">Open supervisor feedback</a>
         <a class="log-link" href="docs/progress-log.md">Open progress log</a>
-        <a class="log-link" href="audits/supervisor-note-20260525-093409.md">Open latest audit note</a>
+        <a class="log-link" href="audits/supervisor-note-20260525-094349.md">Open latest audit note</a>
         <p>Scan view only. Detailed evidence and lane nudges stay in linked docs.</p>
       </div>
     </header>
@@ -530,7 +530,7 @@
       </div>
       <div class="metric">
         <strong>Live copy</strong>
-        <span>Last updated 2026-05-25 09:34:09 CEST. This lane-local page becomes live after merge to <code>main</code>.</span>
+        <span>Last updated 2026-05-25 09:43:49 CEST. This lane-local page becomes live after merge to <code>main</code>.</span>
       </div>
       <div class="metric">
         <strong>Linked trail</strong>
@@ -545,17 +545,17 @@
       </div>
       <div class="panel">
         <ul class="compact-list" aria-label="Supervisor snapshot">
-          <li><strong>Going well</strong><span>Page, log, and linked note still agree on the blocked snapshot.</span></li>
-          <li><strong>Not going well</strong><span>The same proof gaps remain open, so no lane has production-backed evidence yet.</span></li>
-          <li><strong>Progress change</strong><span>None; this pass kept the scan surface terse and current.</span></li>
-          <li><strong>Next nudge</strong><span>Keep one owner per proof gap and require one production-backed test before any readiness claim.</span></li>
+          <li><strong>Going well</strong><span>The newest decision keeps the blocked snapshot compact and ties the gate to one checked live-source proof.</span></li>
+          <li><strong>Not going well</strong><span>The checked live-source gate still lacks a real live URL/topology, so the release state does not move.</span></li>
+          <li><strong>Progress change</strong><span>A small executor gate increment landed, but it is still only a checked proof stub until a real endpoint run exists.</span></li>
+          <li><strong>Next nudge</strong><span>Integration owns the next real-site release command; invariants/recovery should align to that same command, and reliable-executor should keep the gate bound to a real URL/topology.</span></li>
         </ul>
         <details class="lane-nudges">
           <summary>Lane nudges</summary>
           <ul class="compact-list" aria-label="Lane nudges">
-            <li><strong>No data loss invariants</strong><span>Owner: lane. Gap: graph identity on a real site. Next test: prove it against live content.</span></li>
-            <li><strong>No data loss recovery</strong><span>Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill mid-write and inspect restart state.</span></li>
-            <li><strong>Reliable executor</strong><span>Owner: lane. Gap: auth, session, and lease behavior in production. Next test: prove the auth/session path on a real endpoint.</span></li>
+            <li><strong>No data loss invariants</strong><span>Owner: lane. Gap: align the next proof to the same real-site release command. Next test: prove graph identity against live content on that command.</span></li>
+            <li><strong>No data loss recovery</strong><span>Owner: lane. Gap: durable journal writes across a crash boundary. Next test: kill mid-write and inspect restart state on the same command.</span></li>
+            <li><strong>Reliable executor</strong><span>Owner: lane. Gap: bind the checked live-source gate to a real URL/topology. Next test: run the auth/session path on a real endpoint and keep the retained output.</span></li>
             <li><strong>Fast paths</strong><span>Owner: lane. Gap: benchmark a real large site before rollout claims. Next test: run the benchmark and record the bound.</span></li>
             <li><strong>Independent auditor</strong><span>Owner: lane. Gap: re-audit the next production-backed slice. Next test: review the newest evidence before the next claim.</span></li>
             <li><strong>Critic</strong><span>Owner: lane. Gap: challenge the weakest proof link. Next test: call out the missing production check before the next readiness claim.</span></li>
@@ -575,7 +575,7 @@
       <ul class="link-list">
         <li><a href="docs/supervisor-feedback.md">Supervisor feedback</a></li>
         <li><a href="docs/progress-log.md">Progress log</a></li>
-        <li><a href="audits/supervisor-note-20260525-093409.md">Latest audit note</a></li>
+        <li><a href="audits/supervisor-note-20260525-094349.md">Latest audit note</a></li>
         <li><a href="audits/objective-audit.md">Objective audit</a></li>
         <li><a href="audits/critic.md">Critic audit</a></li>
         <li><a href="docs/supervised-lanes.md">Supervised lane audit</a></li>
