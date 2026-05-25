@@ -236,7 +236,9 @@ The strongest current runnable evidence still falls into the following classes:
 
 ## Test Audit
 
-The current tests are useful, but they are not proof of no data loss, reliability, or speed at the production boundary. They mostly prove that the lab harness is internally consistent and that unsafe claims are refused. That is necessary guardrail coverage, not release evidence. The suite still stops short of proving the live-source loop, so every positive interpretation must stay limited to lab scope. In particular, `node --test` passing is still compatible with a release that would lose data, fail under a crash, or miss a throughput threshold on the live boundary, because the suite never forces that boundary or a production storage backend. Passing tests here are best read as "the release should not be trusted yet", not as "the release is safe". For the claim audit: no data loss is unproven, reliability is unproven, and speed is explicitly unclaimed.
+The current tests are useful, but they are not proof of no data loss, reliability, or speed at the production boundary. They mostly prove that the lab harness is internally consistent and that unsafe claims are refused. That is necessary guardrail coverage, not release evidence. The suite still stops short of proving the live-source loop, so every positive interpretation must stay limited to lab scope. In particular, `node --test` passing is still compatible with a release that would lose data, fail under a crash, or miss a throughput threshold on the live boundary, because the suite never forces that boundary or a production storage backend. Passing tests here are best read as "the release should not be trusted yet", not as "the release is safe".
+
+The strongest remaining claim the suite can make is narrower: it can show that unsupported production claims are rejected. It cannot show that a production claim is true. For the claim audit, that means no data loss remains unproven, reliability remains unproven, and speed is still explicitly unclaimed.
 
 That means the current test suite can support a blocker note, but it cannot serve as the release gate itself. Any green run that only exercises these tests still leaves the live-source verdict open.
 
@@ -386,4 +388,4 @@ The current weak point is not another missing assertion inside the existing suit
 
 Until that command exists, the repo has a blocker, not a release path. The next audit step should be to keep the verdict terse and binary: either a measured live-path threshold, or an explicit `speed unclaimed` refusal, in a command that is mandatory for release.
 
-Until that command exists, the repo has blocker evidence only. It does not have release proof, and no passing `node --test` or optional smoke can be promoted into one because the live-source verdict itself is still missing.
+Until that command exists, the repo has blocker evidence only. It does not have release proof, and no passing `node --test` or optional smoke can be promoted into one because the live-source verdict itself is still missing. Optional smokes and refusal-only benchmarks can strengthen the audit, but they cannot substitute for the required live-source release gate.
