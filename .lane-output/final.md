@@ -1,4 +1,4 @@
-Rechecked the constrained release-candidate slice. The release verdict stays closed because the current remote heads still do not provide executable proof for the unsupported boundaries, and the repo still lacks an enforced `verify`/`verify:release`/`release` command.
+Rechecked the constrained release-candidate slice. The release verdict stays closed because the current remote heads still do not provide executable proof for the unsupported boundaries, and the repo still lacks an enforced `verify`/`verify:release`/`release` command that fails closed at the live-source boundary.
 
 - [`audits/objective-audit.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/audits/objective-audit.md)
 - [`.lane-output/final.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/independent-auditor/.lane-output/final.md)
@@ -21,12 +21,14 @@ Evidence checked:
 - `origin/lane/feedback-supervisor` -> `f386dfa6`
 - `origin/lane/independent-auditor` -> `33b839f0`
 - `origin/lane/cycle-20260526-mainwindows-2349/no-data-loss-invariants-integration` -> `e717f61c`
+- `package.json` scripts still omit `verify`, `verify:release`, and `release`
 
 Why no change was warranted:
 - The constrained release-candidate gap is still the same unsupported boundary proof gap.
 - No executable proof appeared for `menu/navigation`, `serialized block references`, `comments/users`, or `plugin-owned custom tables`.
 - The fresh remote heads remain lane evidence refreshes, not release-grade proof.
 - The repo script surface still lacks an enforced release gate command, so there is no executable verifier to promote yet.
+- The exact missing command is a checked entrypoint that runs the live-source preflight and fails closed on the unsupported boundary set.
 
 Push result:
 - No push this turn
