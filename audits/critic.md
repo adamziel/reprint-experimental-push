@@ -19,7 +19,7 @@ The following should not be described as production-grade until they are proven 
 - graph identity claims without create-time remap coverage and late-discovered relationship-bearing records; and
 - plugin support claims without coverage for late plugin-owned surfaces that fall outside the initial allowlist.
 
-The presence of `verify:release` on the supervised remote lane is accepted as real lab progress, so command shape is no longer the blocker. The blocker is that the same rerunnable live boundary has not yet demonstrated production WordPress auth/session lifecycle, preserved-remote retention after rejection, durable journal lease/fencing on production-like storage, graph identity under create-time remap, and plugin-driver coverage together.
+The presence of `verify:release` on the supervised remote lane is accepted as real lab progress, so command shape is no longer the blocker. Do not regress to "no release command exists" wording on this branch; the blocker is that the same rerunnable live boundary has not yet demonstrated production WordPress auth/session lifecycle, preserved-remote retention after rejection, durable journal lease/fencing on production-like storage, graph identity under create-time remap, and plugin-driver coverage together.
 
 The next proof has to be a real rerunnable live boundary, not another retained-source milestone: the same rejected remote must stay preserved and inspectable, the same source URL must re-enter with fresh live hashes at apply time, and the same boundary must show auth/session expiry, refresh, operator re-entry, journal lease/fencing, graph identity, and plugin-driver coverage together.
 
