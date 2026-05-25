@@ -1,32 +1,48 @@
-# Recovery states for atomic apply
+# Acceptable Post-Failure States
 
-Atomic apply has three acceptable post-failure outcomes:
+The apply contract accepts exactly three post-failure outcomes:
 
-1. `old-remote`
-   - Nothing visible changed on the remote.
-   - Recovery evidence may exist, but the remote content still matches the pre-apply state.
+- `old-remote`
+- `fully-updated-remote`
+- `blocked-recovery`
 
-2. `fully-updated-remote`
-   - Every planned mutation is already visible on the remote.
-   - Replay must be inert and must not duplicate inserts or reapply stale local data.
+These states are a safety contract, not just a test label.
 
-3. `blocked-recovery`
-   - The remote cannot be classified safely from the journal alone.
-   - Recovery must carry artifacts, including the journal and the observed remote snapshot.
+## `old-remote`
 
-The boundary rule is strict:
+No remote mutation was committed.
 
-- A partial remote mutation without a recovery artifact is a release blocker.
-- Retries must never treat partial writes as safe.
-- Retries must never resurrect stale local data or duplicate inserts.
+Required artifact:
 
-Durable journals should carry the evidence needed to inspect or resume after a crash:
+- the recovery journal that proves the plan can be retried after revalidation
 
-- journal row or file state
-- mutation target records
-- completion or blocked markers
-- enough metadata to classify the remote as old, fully updated, or blocked
+This state is valid after failures before mutation, after staging, or after
+dependency validation, as long as the remote remains unchanged.
 
-JSON test fixtures and lab-only evidence are useful for proving the model, but they are not a substitute for durable journal storage with crash-safe writes, fsync or equivalent persistence, and recovery inspection on restart.
+## `fully-updated-remote`
 
-For production recovery, the journal itself is the source of truth for replay and inspection. A JSON snapshot can document the model, but it does not satisfy the no-data-loss contract unless the persisted journal records the boundary and recovery artifacts that classify the remote state.
+Every planned mutation is already present on the remote.
+
+Required artifact:
+
+- the completed recovery journal
+
+Replay must not reapply inserts, rewrite already committed data, or resurrect
+stale local state.
+
+## `blocked-recovery`
+
+The remote is partial, drifted, or otherwise ambiguous.
+
+Required artifacts:
+
+- the recovery journal
+- the observed remote evidence needed to explain why retry is unsafe
+
+This is the only acceptable state for a partial remote mutation. A partial
+remote mutation without inspectable recovery artifacts is a release blocker.
+
+## Operational Rule
+
+If a retry cannot prove `old-remote` or `fully-updated-remote`, it must stop
+in `blocked-recovery` with artifacts rather than treating the mutation as safe.
