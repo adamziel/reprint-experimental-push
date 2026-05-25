@@ -12,6 +12,9 @@ This note summarizes the planner's no-overwrite contract.
   precondition.
 - Remote-only plugin metadata, plugin files, activation state, and removals
   stay preserved while unrelated safe mutations apply.
+- Matching independent file deletions, edits, and file type swaps may also
+  coexist with a live-preconditioned delete while remote-only plugin drift or
+  removals stay preserved.
 
 ## Must Preserve
 
@@ -19,6 +22,9 @@ This note summarizes the planner's no-overwrite contract.
 - Remote descendants that would be hidden by a local delete or file type swap.
 - Even when an unrelated change is safe to apply, topology-sensitive deletes and
   file type swaps must stop if they would hide a live remote descendant.
+- The planner must keep matching independent resources `already-in-sync` even
+  when a separate delete is live-preconditioned and remote-only plugin drift is
+  present.
 - If the matching descendant is also deleted locally, the planner may only
   proceed when that descendant still matches the live remote hash; any remote
   drift on the descendant keeps the parent delete or type swap blocked.
