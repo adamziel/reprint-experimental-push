@@ -6,6 +6,8 @@ This design still cannot claim production-grade push support.
 
 The supervised reliable-executor lane now has material retained-source evidence: remote `verify:release` lineage, `authSessionType`, minted session shape, `applyCommitted`, `durableJournal.rows: 17`, the `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` verdict, the `7e0f27f2` production-shaped apply-revalidation proof bound to the supplied source URL, and remote head `0c703230` surfacing snapshot hashes. That is real progress, but it is still retained-source lab evidence. It does not yet prove a live WordPress auth/session lifecycle that survives rejection and retry on the same source URL, durable journal storage with lease/fencing on production-like storage, graph identity under create-time remap, plugin-driver coverage for late plugin-owned surfaces, or preserved-remote retention after rejection.
 
+The single blocker is still one rerunnable live mutation boundary on one exact source URL. Until that boundary preserves the rejected remote, re-derives authority from fresh live hashes at apply time, and re-enters the same WordPress auth/session after rejection, production wording stays false.
+
 The missing production proof is one rerunnable live mutation boundary on one exact source URL. That boundary must preserve the rejected remote, re-derive authority from fresh live hashes at apply time, and classify every touched row, file, relationship-bearing record, and plugin-owned surface before the first write. Until that exists, the retained-source proofs remain useful but non-production evidence. A wording change on this branch does not close the gap unless the remote lane shows the preserved rejected remote surviving refusal on that same live boundary, with the rejected source still inspectable after refusal and the auth/session state re-entered on that same rerunnable boundary.
 
 What must happen before production wording is defensible:
@@ -190,6 +192,8 @@ The next acceptable proof is one rerunnable live WordPress mutation on one exact
 - classifies late plugin-owned surfaces outside the initial allowlist on that same boundary.
 
 Until that boundary exists, `verify:release`, retained-source verdicts, and the current release-boundary head remain useful lab evidence only.
+
+If the next worker can only produce wording, local fixture output, or a manual-resolution artifact, that is not enough. The proof must leave the rejected remote preserved for audit and retry.
 
 ## Strongest blocker
 
