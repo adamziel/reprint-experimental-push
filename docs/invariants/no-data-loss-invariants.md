@@ -37,6 +37,8 @@ It must preserve:
 - a live-preconditioned delete can still stop cleanly when another resource
   conflicts, while unrelated matching edits and file type swaps remain
   preserved
+- a same-file delete conflict can stop while unrelated matching deletes,
+  restores, edits, type swaps, and remote-only plugin removals remain preserved
 - a file type swap that would hide a live remote descendant must stop even if
   matching independent deletes and edits remain already-in-sync and unrelated
   plugin drift is preserved
