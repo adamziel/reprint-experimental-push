@@ -77,6 +77,9 @@ This note captures the planner boundary in plain language.
   matching independent edit and a matching plugin-owned resource while
   remote-only plugin drift remains `keep-remote` and late drift is refused
   on re-apply.
+- A ready delete plan at the live release boundary may still preserve a
+  matching independent edit and remote-only plugin removals while late
+  drift is refused on re-apply.
 - A ready delete plan at the live release boundary may still preserve same-
   remote graph identity and remote-only plugin removals after apply
   revalidation while a matching independent edit stays `already-in-sync`.
