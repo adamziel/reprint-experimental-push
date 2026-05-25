@@ -42,6 +42,27 @@ specific missing proofs:
   just because it returns current-looking hashes, names the right endpoint, or
   matches `finalMatchesLocal`.
 
+The failure scenarios that still need explicit proof are:
+
+- A dry-run approval goes stale because the live remote changed before apply;
+  the missing proof is the exact rejection point on the live mutation boundary
+  and an audit trail showing the preserved remote was still inspectable after
+  the reject.
+- A create request maps to a different live identity than the local plan
+  expected; the missing proof is either a safe remap with preserved identity
+  audit or a hard block before mutation.
+- A plugin owns data outside the allowlist, such as options, custom tables,
+  generated files, activation hooks, cron rows, cache entries, or runtime
+  registries; the missing proof is explicit discovery or hard failure at apply
+  time, not inference from a single representative record.
+- A partial apply writes one store but not another, or writes plugin-owned
+  state that the core row audit does not mention; the missing proof is durable
+  old/new/blocked classification for each touched store and a retry rebuilt
+  from fresh live evidence.
+- A manual-review artifact stays readable after drift; the missing proof is
+  that it becomes audit-only and cannot authorize retry, widen to a different
+  row or file, or target a relationship-bearing or plugin-owned surface.
+
 Source-note comparison boundary:
 
 - Reprint at `27c5f25` proves a staged transport rhythm and resumable
@@ -138,23 +159,37 @@ Release-grade checklist:
   looked production-shaped.
 - The live remote drifted between dry-run and apply, and the write failed
   closed before mutation.
+- If the live remote drifted, the stale approval was rejected before any
+  mutation and the preserved remote remained auditable for retry review.
 - The stale approval stayed auditable but could not authorize a retry, a
   different row, a different file, a relationship-bearing record, or a
   plugin-owned surface.
+- A readable manual-review artifact was demoted to audit-only and could not be
+  reused as current write authority after drift.
 - Manual resolution stayed audit-visible but could not be reused as current
   write authority after drift, and the preserved remote remained inspectable
   for retry review.
 - Create-time identity remapping was either proven safe at the live boundary
   or blocked before any write.
+- If create-time identity could rename, alias, or renumber the target, the
+  proof named the reservation or remap decision on the live remote rather than
+  assuming local IDs remained stable.
 - Every plugin-owned surface in scope was explicitly enumerated or hard-
   blocked, including options, custom tables, generated files, activation
   hooks, cron, caches, and runtime registries.
+- Any plugin-owned surface discovered late at apply time caused a hard failure
+  rather than being inherited from stale metadata or a fixture-only map.
 - Partial file, DB, or plugin side effects were durably classified, and the
   retry rebuilt scope from fresh live evidence instead of inheriting the old
   approval.
+- If one store committed and another did not, the proof labeled the result
+  partial rather than claiming recovery success.
 - Any Reprint, ZS-Sync, or ForkPress comparison names the exact upstream
   revision or worktree state that was reverified; otherwise it is historical
   context only.
+- If a comparison note was not rechecked at the same live mutation boundary,
+  it stayed historical even if the endpoint, package mount, or hash looked
+  current.
 
 Release-go/no-go scenarios:
 
