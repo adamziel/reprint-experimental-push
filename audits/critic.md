@@ -2938,7 +2938,11 @@ all of these in the same branch-local proof:
 
 If any one of those is missing, the claim is still lab-backed or historical
 context, even if the route shape, packaged mount, fixture replay, or
-`finalMatchesLocal` hash looks production-shaped.
+`finalMatchesLocal` hash looks production-shaped. In particular, "manual
+resolution later" is not a success label unless the preserved remote is still
+auditable, the stale artifact cannot authorize retry for any other row, file,
+relationship-bearing record, or plugin-owned surface, and the fresh retry
+artifact is recorded separately from the stale review artifact.
 
 Source-note proof boundary, restated:
 
@@ -2951,6 +2955,6 @@ Source-note proof boundary, restated:
 - Production-grade wording must also fail closed when the only remaining
   evidence is a readable stale manual-review artifact or a route-shaped
   smoke. Readability is audit value only; it does not prove the stale record
-  was rejected before mutation, cannot widen to another row or plugin-owned
-  surface, or was separated from fresh retry authority backed by new live
-  hashes.
+  was rejected before mutation, cannot widen to another row, file,
+  relationship-bearing record, plugin-owned surface, or hidden side effect,
+  or was separated from fresh retry authority backed by new live hashes.
