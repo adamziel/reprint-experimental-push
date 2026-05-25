@@ -16,14 +16,14 @@ The push design should borrow those pieces, but it still needs its own mutation-
 
 Latest supervision evidence narrows the remaining gap, but does not close it:
 `origin/lane/reliable-executor` is at `0c4fd10f`,
-`origin/lane/no-data-loss-invariants` is at `fa0ce3ea`,
+`origin/lane/no-data-loss-invariants` is at `5b25867b`,
 `origin/lane/no-data-loss-recovery` is at `47b675c0`,
 `origin/lane/fast-paths` is at `b54f1b34`,
 `origin/lane/independent-auditor` is at `33b839f0`,
 `origin/lane/feedback-supervisor` is at `f386dfa6`,
 `origin/lane/progress-publisher` is at `7695e1f9`,
 and `origin/lane/same-plan-wordpress-graph-create` is at `24c58564`,
-while the critic branch now matches `HEAD` at `efacccfb` and is aligned with
+while the critic branch now matches `HEAD` at `e02a31ac` and is aligned with
 `origin/lane/critic`.
 These moves refresh the audit snapshot but do not change the underlying
 verdict: production auth/session lifecycle, durable journal ownership with
