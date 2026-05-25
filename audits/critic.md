@@ -7,11 +7,14 @@ branch also proves the live production WordPress auth/session boundary,
 durable journal semantics, graph identity, and plugin-driver coverage on a
 real-site rerun. The canonical release-gate checklist lives in
 [`audits/critic-release-gate.md`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/critic/audits/critic-release-gate.md).
+The old critique that no `verify:release` command exists is retired; the
+current blocker is the lack of a rerunnable live boundary on a real local,
+Playground, or Docker `REPRINT_PUSH_SOURCE_URL` that preserves the rejected
+remote for audit.
 That means the next acceptable proof must move off retained-source lab
 evidence and into a production WordPress auth/session lifecycle, with durable
 journal semantics plus explicit graph-identity, plugin-driver, and plugin-
-owned surface coverage on the live boundary. The older critique that no
-`verify:release` command exists is retired; the current blocker is that no
+owned surface coverage on the live boundary. The current blocker is that no
 available command yet proves preserved-remote safety, apply-time
 revalidation, production auth/session lifecycle, graph identity, or
 plugin-driver coverage on a real-site boundary. A wrapper, comparison note,

@@ -5,18 +5,17 @@ this branch.
 
 Primary finding:
 
-- the primary blocker is still the absence of a single branch-local,
-  executable real-site preflight/release command. The repo only exposes
-  `plan`, `apply`, and `test:playground:*` entry points, so the current
-  production-shaped smoke remains lab or compatibility evidence only and the
-  current `labBacked: true` signal cannot be promoted into production proof.
-  Until a named real-site release command exists, can be rerun on an actual
-  remote with a real `REPRINT_PUSH_SOURCE_URL` target, records the exact
-  executable command string, and captures the first real
-  executor/auth/preserved-remote boundary plus apply-time revalidation and
-  journal/recovery inspection, any production-grade push wording is false
-  reliability and must fail closed; docs-only or lab-only success claims are
-  not enough;
+- the current baseline is reliable-executor commit `3089aee2`, and
+  `npm run verify:release` is material retained-source evidence only. It is
+  still lab evidence until a rerunnable real-site command proves the live
+  WordPress auth/session boundary, preserved-remote auditability, apply-time
+  revalidation, and journal/recovery inspection on a real local, Playground,
+  or Docker `REPRINT_PUSH_SOURCE_URL`. The blocker is no longer "there is no
+  verify:release command"; the blocker is that no available command yet
+  proves the live boundary on an actual remote. Until one exact executable
+  release command can be rerun on demand and capture the first real
+  executor/auth/preserved-remote boundary, any production-grade push wording
+  is false reliability and must fail closed;
 
 Supporting failures:
 
@@ -24,6 +23,11 @@ Supporting failures:
   can support compatibility or audit claims, but they do not prove preserved
   remote retention, stale-drift rejection before the first write, or retry
   scope rebuilt from live hashes;
+- a completed `npm run verify:release` run is still not production proof
+  unless the same rerun also shows the live WordPress auth/session lifecycle,
+  durable journal semantics, graph identity, plugin-driver coverage, and the
+  preserved remote on a real local, Playground, or Docker
+  `REPRINT_PUSH_SOURCE_URL`;
 - stale manual-review artifacts and older comparison notes stay audit evidence
   only unless the same live boundary was rerun here and the artifact names the
   preserved remote, rejection point, and fresh retry scope for that exact
