@@ -1442,6 +1442,9 @@ evidence must be attached or directly referenced:
 11. The claim does not treat Reprint, ZS-Sync, or ForkPress source notes as
     current upstream proof unless the same upstream revision or worktree state
     was reverified and the live write boundary was exercised in this repo.
+12. The claim does not use a source-note comparison to backfill any missing
+    live proof for drift rejection, create remap, plugin ownership, partial
+    side-effect classification, or stale approval expiry.
 
 ## Minimum Production Claim Gates
 
