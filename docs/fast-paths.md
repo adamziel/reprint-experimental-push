@@ -687,6 +687,21 @@ under load:
 - remote-index-plus-compressed-row-batch-completes-plugin-install is rejected
   for the same reason, because install row batches still need per-row
   preconditions, dependency checks, and the atomic-group commit barrier.
+- compressed-row-batch-skips-live-compare is rejected because compression can
+  reduce replay cost, but it cannot replace the live per-row compare that
+  guards mutation time.
+- compressed-row-batch-skips-group-finalize is rejected because a compressed
+  batch still cannot prove the dependency checks held or that the atomic-group
+  finalize ran.
+- compressed-row-summary-skips-live-batch-preconditions is rejected because a
+  summary can shrink recovery data, but it cannot replace the live per-row
+  preconditions required at apply time.
+- index-and-compressed-row-batch-completes-plugin-install is rejected because a
+  fresh remote index and compressed batch can reduce lookup work, but they
+  cannot prove the dependency checks, row receipts, or atomic-group commit.
+- index-and-compressed-row-batch-completes-plugin-update is rejected for the
+  same reason, because compressed planning evidence cannot prove per-row
+  preconditions or the atomic-group commit survived failure.
 - compressed-remote-index-and-cached-row-receipts-skips-plugin-install is
   rejected because planning evidence and cached row receipts can reduce replay
   work, but they cannot prove the dependency checks, metadata writes, or

@@ -189,6 +189,30 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'recovery',
   );
   assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'index-and-compressed-row-batch-completes-plugin-install')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'index-and-compressed-row-batch-completes-plugin-update')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-row-batch-skips-group-finalize')?.rejectedGate,
+    'group',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-row-batch-skips-live-compare')?.rejectedGate,
+    'live',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-row-summary-skips-live-batch-preconditions')?.rejectedGate,
+    'live',
+  );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-paused-upload-queue-skips-plugin-install-writeback')?.rejectedGate,
+    'recovery',
+  );
+  assert.equal(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-file-digest-skips-large-upload-resume-after-pause')?.rejectedGate,
     'recovery',
   );
