@@ -14210,12 +14210,15 @@ test('completed replay keeps the durable journal replay-only and does not emit m
   const afterReplayMutationObservations = persisted.records.filter(
     (record) => record.type === 'mutation-observed',
   ).length;
+  const replayStates = persisted.records.filter((record) => record.type === 'recovery-state');
 
   assert.equal(replay.appliedMutations, 0);
   assert.equal(replay.recoveryState.status, 'fully-updated-remote');
   assert.ok(eventTypes.includes('journal-completed'));
   assert.ok(eventTypes.includes('journal-replayed'));
   assert.equal(eventTypes.filter((type) => type === 'journal-replayed').length, 1);
+  assert.equal(replayStates.filter((record) => record.state === 'fully-updated-remote').length, 1);
+  assert.equal(replayStates.some((record) => record.state === 'blocked-recovery'), false);
   assert.equal(afterReplayMutationObservations, beforeReplayMutationObservations);
 });
 
