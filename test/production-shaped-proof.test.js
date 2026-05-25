@@ -209,6 +209,16 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.equal(releaseVerify.topology.networking.proxy_policy, 'local-only');
   assert.equal(releaseVerify.topology.networking.tunnels, 'disallowed');
   assert.ok(releaseVerify.required_invariants.includes('apply must revalidate the live remote before every batch and at the storage boundary'));
+  assert.equal(releaseVerify.proof.durableJournal.rows, 17);
+  assert.equal(releaseVerify.proof.durableJournal.applyCommitted, true);
+  assert.equal(releaseVerify.proof.durableJournal.mutationApplied, 7);
+  assert.equal(releaseVerify.proof.durableJournal.idempotencyOpened, 1);
+  assert.equal(releaseVerify.releaseProof.preflight.sessionType, 'application-password-basic');
+  assert.equal(releaseVerify.releaseProof.dryRun.sessionType, 'application-password-basic');
+  assert.equal(releaseVerify.releaseProof.apply.sessionType, 'application-password-basic');
+  assert.equal(releaseVerify.releaseProof.apply.idempotency.replayed, false);
+  assert.equal(releaseVerify.releaseProof.apply.idempotency.freshMutationWork, true);
+  assert.equal(releaseVerify.releaseProof.apply.idempotency.conflict, false);
 });
 
 test('production-shaped live topology proof runs preflight against a local Playground source and reports the topology', () => {
