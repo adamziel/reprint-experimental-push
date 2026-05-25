@@ -291,7 +291,10 @@ fresh retry scope rebuilt from live hashes on this worktree:
   separately enumerated or blocked, including late-discovered surfaces that
   appear only after the first write; and
 - "comparison passed" when the comparison only matches upstream route family,
-  package layout, or reviewer wording without a branch-local live rerun.
+  package layout, or reviewer wording without a branch-local live rerun; and
+- "manual resolution later" when a readable artifact is merely preserved for
+  audit, because preservation alone does not prove the remote stayed valid
+  for retry or that the same boundary was rerun from fresh live hashes.
 
 Release-gate checklist:
 
@@ -305,6 +308,10 @@ Release-gate checklist:
   surface has its own preserve / reject / retry evidence on this branch,
   even if the later boundary reuses the same route family, package mount, or
   reviewer wording, and even if the earlier remote was preserved for audit;
+- show that preserving a readable review artifact never widens its scope to a
+  later-discovered plugin-owned surface, because that later surface still
+  needs its own preserve / reject / retry cycle even if the earlier artifact
+  survives drift;
 - show the stale approval, review artifact, or source-note comparison cannot
   authorize a later row, file, relationship-bearing record, remapped create
   target, or plugin-owned surface, and cannot be widened just because the
