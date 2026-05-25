@@ -19,6 +19,26 @@ The executor follows the same production ladder the protocol defines:
 8. `push_recover auto|finish|rollback` mutates only after inspect proves the
    branch safe.
 
+The executor runs that ladder against one persisted pull base package and one
+fixed remote identity:
+
+1. exporter discovers the merge base and coverage evidence.
+2. importer persists the base package as immutable provenance.
+3. `persisted_pull_base_package` is the only pull-derived input the executor
+   may consume.
+4. `push_preflight` creates the first live binding after importer
+   persistence.
+5. `push_snapshot_hashes` stays planning-only.
+6. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt.
+7. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+8. `push_journal` is read-only durable evidence.
+9. `push_recover inspect` classifies finish, rollback, retry, or block before
+   any mutating repair.
+10. `push_recover auto|finish|rollback` mutates only after inspect proves the
+    branch safe.
+
 The executor is therefore not a general remote write loop:
 
 - dry-run and apply remain separate remote operations
@@ -36,6 +56,20 @@ The topology is fixed for both Docker and Playground:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+
+Docker and Playground differ only in how they provision the same proof:
+
+- Docker uses one private network and three WordPress site roles plus the
+  runner.
+- Playground uses separate disposable blueprints for the same roles.
+- In both cases, `remote-base` seeds the persisted pull base package,
+  `local-edited` carries imported local changes, and `remote-changed` is the
+  same remote identity observed later after drift.
+- The runner is the only caller that may preflight, list hashes, dry-run,
+  apply, inspect the journal, or recover.
+- Browser-visible inspection stays behind the sandbox-provided `8080` ingress
+  through a local-only proxy.
+- Remote tunnels stay disallowed.
 
 ## Production Shape
 
@@ -162,6 +196,22 @@ The pull-to-push bridge is one-way:
 | Canonical pull manifest | `push_batch_apply` | Revalidate fresh live evidence before every batch and at the storage boundary. |
 | Persisted provenance checksum | `push_journal` | Read durable evidence only. |
 | Coverage and lineage replay | `push_recover inspect` | Classify recovery before any mutating repair. |
+
+The executor-specific mapping is:
+
+- exporter/importer are the immutable provenance source.
+- `push_preflight` mints the short-lived push session after the importer has
+  persisted the base package.
+- `push_snapshot_hashes` is the remote hash listing phase and cannot grant
+  write authority.
+- `push_plan_dry_run` uploads the canonical plan and returns a receipt, not a
+  lease.
+- `push_batch_apply` must revalidate fresh live evidence before every batch
+  and again at the storage boundary.
+- `push_journal` records durable evidence and stays read-only.
+- `push_recover inspect` must run before any mutating recovery branch.
+- `push_recover auto|finish|rollback` only runs after inspect proves the
+  branch safe and the auth floor still holds.
 
 The persisted pull base package is the concrete handoff object used by push:
 

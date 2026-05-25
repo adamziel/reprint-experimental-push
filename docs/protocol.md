@@ -22,6 +22,26 @@ The production push extension is the same ladder the fixtures prove:
 8. `push_recover auto|finish|rollback` may mutate only after inspect proves
    the branch safe.
 
+In implementation terms, the push executor is a strict request ladder over a
+single persisted pull base package:
+
+1. exporter discovers the merge base and coverage evidence.
+2. importer persists the base package as immutable provenance.
+3. `persisted_pull_base_package` becomes the only pull-derived object push may
+   consume.
+4. `push_preflight` binds that immutable package to one live remote identity
+   and one short-lived push session.
+5. `push_snapshot_hashes` lists live remote hashes for planning only.
+6. `push_plan_dry_run` uploads the canonical plan and returns an eligibility
+   receipt, not a lock.
+7. `push_batch_apply` revalidates fresh live evidence before every batch and
+   again at the storage boundary.
+8. `push_journal` records durable evidence and never authorizes mutation.
+9. `push_recover inspect` reads the journal and fresh live hashes before any
+   mutating repair.
+10. `push_recover auto|finish|rollback` mutates only after inspect proves the
+    branch safe with the same auth floor as the write path.
+
 That ladder is one-way:
 
 - pull exporter/importer remain the only source of immutable push provenance
@@ -178,7 +198,20 @@ executor runs it:
 9. `push_recover inspect` reads the journal and fresh live hashes before any
    mutating branch.
 10. `push_recover auto|finish|rollback` may mutate only after inspect proves
-   the branch safe with the same auth floor as the write path.
+    the branch safe with the same auth floor as the write path.
+
+The pull pipeline stays authoritative and push only consumes its immutable
+output:
+
+| Pull pipeline artifact | Push use | Boundary rule |
+| --- | --- | --- |
+| Merge base discovery | `push_preflight` | First live binding after importer persistence. |
+| Coverage evidence | `push_snapshot_hashes` | Planning evidence only. |
+| Persisted base package | `push_plan_dry_run` | Canonical plan upload, not a lock. |
+| Persisted provenance checksum | `push_batch_apply` | Fresh live revalidation before every batch and at storage boundary. |
+| Immutable importer record | `push_journal` | Durable evidence only. |
+| Replayable lineage evidence | `push_recover inspect` | Read-only inspection before any mutating repair. |
+| Pull-derived provenance | `push_recover auto|finish|rollback` | Mutate only after inspect proves the branch safe. |
 
 The production topology is fixed to one remote source, one imported local
 site, and one drift witness:
@@ -193,6 +226,25 @@ site, and one drift witness:
 - browser-visible inspection stays on the sandbox-provided `8080` ingress
   through a local-only proxy
 - remote tunnels are disallowed
+
+In Docker, the topology is a single private network with three site roles and
+one runner:
+
+- `remote-base` is the source WordPress site that seeds the persisted pull
+  base package.
+- `local-edited` is the imported local site that carries candidate edits.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only actor that may preflight, list hashes, dry-run, apply,
+  inspect the journal, or recover.
+
+In Playground, the same roles run as separate disposable blueprints:
+
+- the remote source blueprint exports the base package
+- the local blueprint holds the imported edit state
+- the later remote blueprint reuses the same remote identity to expose drift
+- browser-visible inspection stays on the sandbox-provided `8080` ingress
+  through a local-only proxy
+- remote tunnels remain disallowed
 - the same one-remote, one-local, one-drift shape is used in both Docker and
   Playground when validating dry-run/apply separation and inspect-first
   recovery
