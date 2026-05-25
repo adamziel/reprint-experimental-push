@@ -2664,3 +2664,21 @@ Production-readiness release gate checklist:
    above. A readable manual-review artifact is not enough unless the claim
    also shows the preserved remote, the stale rejection point, and the fresh
    retry scope on the same live write path.
+
+Minimum proof artifacts before any production-grade push wording:
+
+1. A live-boundary trace that names the exact request path, the exact stale
+   remote hash set, and the exact rejection point before mutation.
+2. A preserved-remote audit trail that stays readable after drift but cannot
+   authorize retry, widen scope, or stand in for fresh live hashes.
+3. A fresh retry artifact that is recorded separately from the stale review
+   artifact and rebuilt from current live evidence, not inherited approval.
+4. A create-time identity decision that is either a durable remap proof or a
+   hard block before write, including any rename, alias, or renumber case.
+5. A complete plugin-owned surface inventory for the claim, with unknown or
+   late-discovered surfaces hard-blocked at apply time.
+6. A durable old/new/blocked classification for every touched file, DB, or
+   plugin side effect, so partial writes cannot be relabeled as success.
+7. A source-note comparison record that names the exact upstream revision or
+   worktree state and says whether it was reverified at the same live write
+   boundary; otherwise the comparison remains historical context only.
