@@ -577,6 +577,14 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     'file-hash ledger plus guarded file-publish record',
   );
   assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing')?.visibilityBoundary,
+    'plan-staging-window-resume-only',
+  );
+  assert.equal(
+    model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing')?.failureEvidence,
+    'plan-scoped chunk receipts plus guarded file-publish record',
+  );
+  assert.equal(
     model.safeFastPaths.find((fastPath) => fastPath.allowedShortcut === 'reuse-remote-index-cursor-to-size-bounded-chunk-windows')?.failureEvidence,
     'planning cursor plus bounded chunk receipt ledger',
   );
@@ -1928,6 +1936,12 @@ test('safe fast paths retain all gate proofs and stay non-rejectable', () => {
     model.safeFastPaths.some((fastPath) =>
       fastPath.allowedShortcut === 'compress-chunk-transit-frames-with-canonical-chunk-digests' &&
       fastPath.gateProofs.recovery.includes('durable chunk receipts')
+    ),
+  );
+  assert.ok(
+    model.safeFastPaths.some((fastPath) =>
+      fastPath.allowedShortcut === 'reuse-plan-scoped-chunk-receipts-to-resume-bounded-windowing' &&
+      fastPath.gateProofs.group.includes('atomic group')
     ),
   );
   assert.ok(
