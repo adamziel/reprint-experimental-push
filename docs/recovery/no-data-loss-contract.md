@@ -17,6 +17,14 @@ The last state is only acceptable when it carries both:
 Anything else is a release blocker because a partial mutation without recovery
 artifacts cannot be safely retried.
 
+In practice, the durable journal must be able to explain one of only three
+post-failure outcomes:
+
+* `old-remote` when the apply stopped before a remote mutation became durable.
+* `fully-updated-remote` when a completed plan is replayed inertly.
+* `blocked-recovery` when the remote is partial, ambiguous, or stale and the
+  journal cannot prove the replay is safe.
+
 The tests in `test/push-planner.test.js` pin this contract across:
 
 * failure before mutation,
