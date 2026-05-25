@@ -1410,17 +1410,20 @@ boundary, plus stale-approval rejection and auditable retry behavior under drift
   is historical context only and cannot support production wording.
 - A route that only proves endpoint shape, packaged-plugin mounting, or
   copied-lab route wiring must fail the release gate unless the same live
-  remote mutation path was reproduced with a drifted remote and the stale
-  approval was rejected before any write.
+  remote mutation path was reproduced with a drifted remote, the stale
+  approval was rejected before any write, and the preserved remote snapshot
+  can still be audited and retried safely.
 - A mounted route that returns live-looking hashes still has to prove how
   partial file, DB, or plugin side effects are classified and retried; the
-  hash alone never proves the write executor or plugin-owned boundary.
+  hash alone never proves the write executor, the plugin-owned boundary, or
+  that the route is anything more than a fixture-backed stand-in.
 - Manual resolution is not a success state unless the remote is preserved for
   audit, the stale artifact is rejected before write, and the retry starts
   from fresh live evidence with no scope widening.
 - A stale manual-review artifact remains readable for audit but must become
   unusable as authority as soon as the live hashes change; readability alone
-  is not a success condition.
+  is not a success condition, and the retry must rebuild scope from fresh
+  live evidence rather than inheriting the old approval.
 - Reprint, ZS-Sync, and ForkPress notes are comparison evidence only; they do
   not prove current upstream behavior today, and they do not prove this repo's
   live mutation boundary unless the same upstream revision or worktree was
