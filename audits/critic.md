@@ -10,6 +10,7 @@ What still has to change before any production-grade claim is credible:
 - the rejected remote must stay inspectable for audit and retry, not merely be mentioned in a readable note;
 - every touched file, DB row, relationship-bearing record, and plugin-owned surface must be classified old, new, or blocked before retry starts, including mixed file/DB/plugin side effects;
 - any later-discovered plugin-owned surface or remapped create target must become a new live boundary unless it was already enumerated before write and separately blocked or classified;
+- any readable manual-resolution note or comparison summary must not be allowed to retroactively authorize a later-discovered plugin-owned surface, remapped create target, or relationship-bearing record, even if the route family, package layout, or reviewer wording stays identical;
 - any "manual resolution" or "comparison passed" wording must stay audit-only unless it names the preserved remote, the upstream source-note state, and the same live boundary rerun on this branch; and
 - route shape, package layout, fixture replay, readable review output, and `finalMatchesLocal` remain compatibility evidence only.
 
@@ -267,6 +268,10 @@ not just wording that sounds conservative:
   become retry authority for a later row, file, relationship-bearing record,
   remapped create target, or plugin-owned surface unless that later boundary
   also has its own preserve / reject / retry cycle.
+- a readable manual-resolution note that only covers the first boundary cannot
+  be widened to cover a later-discovered plugin-owned surface or remapped
+  create target, even when the later boundary reuses the same route family or
+  reviewer wording.
 
 Comparison bottom line: the Reprint note only supports staged transport and
 resumability vocabulary, the ZS-Sync note only supports bounded discovery and
