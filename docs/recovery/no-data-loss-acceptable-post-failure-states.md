@@ -22,6 +22,7 @@ The atomic apply flow has only three acceptable outcomes after a failure or repl
 - `old-remote` and `fully-updated-remote` must carry journal artifacts.
 - `blocked-recovery` must carry both journal artifacts and remote artifacts.
 - A partial remote mutation without recovery artifacts is a release blocker.
+- A completed replay should remain read-only even when retried against the same completed journal.
 - JSON fixtures and lab-only journal files are evidence, not the production
   contract; production recovery still needs durable journal rows or files with
   crash-safe persistence before a partial write can be treated as recoverable.

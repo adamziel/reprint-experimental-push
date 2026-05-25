@@ -11949,6 +11949,22 @@ test('durable recovery replays a completed plan as fully-updated-remote without 
     persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'blocked-recovery'),
     false,
   );
+
+  const secondReplayJournal = openRecoveryJournal(journalPath, { now: fixedNow });
+  const secondReplay = applyPlan(replayRemote, plan, {
+    durableJournal: secondReplayJournal,
+    journal: replay.journal,
+  });
+  secondReplayJournal.close();
+
+  assert.equal(secondReplay.appliedMutations, 0);
+  assert.equal(secondReplay.site.db.wp_posts['ID:2'].post_title, 'Inserted locally');
+  assert.equal(Object.keys(secondReplay.site.db.wp_posts).filter((key) => key === 'ID:2').length, 1);
+  assert.equal(secondReplay.site.files['index.php'], '<?php echo "local";');
+  assertAcceptableRecoveryState(secondReplay.recoveryState);
+  assertRecoveryStateArtifacts(secondReplay.recoveryState, 'fully-updated-remote');
+  assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
+  assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
 });
 
 test('durable mid-apply failures stay blocked with recovery artifacts and never become a safe replay', () => {
