@@ -781,6 +781,10 @@ under load:
   writeback is rejected because planning evidence and cached chunk receipts
   can reduce replay work, but they cannot prove dependency checks, staged
   metadata, or the atomic-group writeback survived failure.
+- compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-
+  writeback-after-pause is rejected because planning evidence and cached
+  chunk receipts can reduce replay work, but they cannot prove dependency
+  checks, staged metadata, or the atomic-group writeback survived the pause.
 - compressed-remote-index-and-cached-file-hash-skips-plugin-activation is
   rejected because a compressed index and cached file hash can reduce lookup
   work, but they cannot prove the activation state, dependency checks, or the

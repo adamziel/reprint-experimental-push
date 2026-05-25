@@ -2104,6 +2104,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+    proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip plugin install writeback after a pause',
+    rejectedBecause: 'planning evidence and chunk receipts can reduce replay work, but they cannot prove dependency checks, staged metadata, or the atomic-group writeback survived the pause',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-paused-row-queue-skips-plugin-install-finalize',
     proposal: 'treat a compressed remote index plus a paused row queue as enough proof to skip plugin install finalize',
     rejectedBecause: 'planning evidence and a paused queue can reduce replay work, but they cannot prove dependency checks, per-row preconditions, or the atomic-group finalize survived failure',
