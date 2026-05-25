@@ -5806,6 +5806,7 @@ Release-gate language checklist:
 - no production-grade claim is allowed unless the branch-local live boundary rerun is named together with preserved-remote evidence, stale-authority rejection, and a fresh retry scope from live hashes;
 - any later-discovered row, file, relationship-bearing record, remapped create target, or plugin-owned surface is treated as a new boundary unless it is separately preserved, rejected, and retried; and
 - any later-discovered plugin-owned surface or remapped create target is treated as a new boundary even when it is found inside the same route family or package mount, because the earlier preserved remote only covers the boundary that was actually rerun; and
+- the gate fails closed if the proof is not branch-local, because a copied route, a copied reviewer note, or an upstream comparison cannot authorize current retry authority on this worktree; and
 - if any of the above is missing, the wording stays audit-only and cannot claim production-grade push support.
 
 Missing-proof matrix for the current design:
