@@ -20,6 +20,10 @@ support.
   for audit.
 - The claim says whether any comparison to Reprint, ZS-Sync, or ForkPress
   was re-verified against the current upstream commit or worktree state.
+- If the comparison was not re-verified at the exact live write boundary, or
+  if the branch cannot name the exact upstream revision or worktree state,
+  the comparison is historical context only and cannot support production
+  wording.
 - If the comparison was not re-verified at the exact live write boundary, it
   stays historical context only, even when the route name or package layout
   matches the production path.
@@ -69,6 +73,9 @@ support.
 - The claim shows the same live write path rejected stale authority before
   mutation; a route-shaped smoke or packaged-plugin mount is only relevant
   if it exercised that exact boundary against the drifted remote.
+- The claim explicitly says that stale manual-review artifacts remain
+  auditable but are unusable as authority after drift, and that a retry
+  starts from fresh live evidence rather than inheriting the old approval.
 - The claim shows a manual-resolution artifact remains readable for audit but
   cannot authorize a widened retry after the live snapshot changes.
 - The claim includes the exact live hashes, the rejected stale approval, the
@@ -105,6 +112,8 @@ support.
 - The claim does not treat a stale manual-review artifact as current
   authority, even if it is still readable; readability alone is not a
   production guarantee.
+- The claim does not let a stale approval be widened to a different row,
+  file, relationship-bearing record, or plugin-owned surface on retry.
 - Manual resolution is not a production proof if the approval can be reused
   after drift, if the remote was not preserved for audit, or if the retry
   inherits scope from the stale snapshot instead of re-reading the live one.
