@@ -1036,13 +1036,20 @@ test('fast-path fixture isolates the release-safety benchmark shape', () => {
   const workloadKinds = fixture.fixture.workloads.map((workload) => workload.kind);
   const rejectedAreas = new Set(fixture.rejectedFastPaths.map((fastPath) => fastPath.violates).flat());
 
-  assert.deepEqual(workloadKinds.sort(), ['large-upload', 'plugin-install', 'plugin-update']);
+  assert.deepEqual(workloadKinds.sort(), ['large-upload', 'plugin-install', 'plugin-update', 'release-bundle']);
   assert.ok(fixture.fixture.totals.uploadBytes >= 1024 * MIB);
   assert.ok(fixture.fixture.totals.dbRows >= 10_000);
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'remote-index-probe')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'compression-decision')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'backpressure-pause')));
   assert.ok(fixture.fixture.schedules.some((schedule) => schedule.actions.some((action) => action.type === 'atomic-group-commit')));
+  assert.ok(
+    fixture.rejectedFastPaths.some((fastPath) =>
+      fastPath.id === 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit' &&
+      fastPath.rejectedGate === 'group' &&
+      fastPath.violates.includes('plugin-preconditions')
+    ),
+  );
   for (const area of [
     'file-hashing',
     'chunk-upload',

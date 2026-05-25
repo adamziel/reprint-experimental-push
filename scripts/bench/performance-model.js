@@ -2601,6 +2601,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
+    proposal: 'treat a compressed remote index plus a cached release manifest as enough proof to skip the release-bundle commit barrier',
+    rejectedBecause: 'planning evidence and a cached manifest can reduce scans, but they cannot prove the dependent plugin files, row batches, and atomic-group commit survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'atomic-groups', 'plugin-preconditions', 'row-preconditions', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-unbounded-hash-fanout-skips-large-upload-backpressure',
     proposal: 'use a compressed remote index to justify unbounded hash fanout and skip large-upload backpressure during a resume',
     rejectedBecause: 'planning evidence can reduce lookup cost, but unbounded hashing can still outrun the bounded queue order and journal evidence needed to recover after a pause or crash',
@@ -2718,7 +2725,7 @@ export function buildBenchmarkModel(overrides = {}) {
 export function buildFastPathFixture(overrides = {}) {
   const model = buildBenchmarkModel(overrides);
   const scheduleByKind = new Map(model.schedules.map((schedule) => [schedule.kind, schedule]));
-  const fixtureKinds = ['large-upload', 'plugin-install', 'plugin-update'];
+  const fixtureKinds = ['large-upload', 'plugin-install', 'plugin-update', 'release-bundle'];
   const schedules = fixtureKinds.map((kind) => scheduleByKind.get(kind)).filter(Boolean);
 
   return {
