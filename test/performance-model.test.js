@@ -56,6 +56,18 @@ test('benchmark model covers large uploads and plugin installs', () => {
     pluginUpdate.actions.some((action) => action.type === 'backpressure-pause'),
     'plugin update models backpressure pauses',
   );
+  assert.ok(
+    largeUpload.actions.some((action) => action.type === 'chunk-upload' && action.durableEvidence),
+    'large upload exposes durable chunk receipts',
+  );
+  assert.ok(
+    pluginInstall.actions.some((action) => action.type === 'db-row-batch' && action.durableEvidence),
+    'plugin install exposes durable row receipts',
+  );
+  assert.ok(
+    pluginUpdate.actions.some((action) => action.type === 'group-staging-finalize'),
+    'plugin update exposes group finalize records',
+  );
 });
 
 test('safety contract covers required speedup areas and terminal states', () => {

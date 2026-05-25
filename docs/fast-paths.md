@@ -744,7 +744,9 @@ The model exposes three contract lists that tests should keep current:
   splits stay visible in benchmark review.
 - The workload list includes a large upload, a dependency-heavy plugin install,
   and a dependency-heavy plugin update so the model covers both first-time
-  installs and subsequent coupled changes.
+  installs and subsequent coupled changes. Those workloads must expose chunk
+  receipts, row receipts, and group-finalize records directly so recovery can
+  classify old, new, or blocked without guessing from throughput alone.
 - `failureInjectionBoundaries` names the durable transitions that benchmarks
   must exercise: chunk ack, database batch commit, group staging finalize, and
   atomic group commit.
