@@ -258,6 +258,27 @@ The failure scenarios that still need explicit proof are:
   registries, or serialized blobs hidden behind a single row; the missing
   proof is explicit discovery or hard failure at apply time, not inference
   from a single representative record.
+
+Claims that must still be rejected as false reliability:
+
+- "The route passed, so push is production-safe" when the only evidence is a
+  lab route, packaged mount, fixture replay, or `finalMatchesLocal`; the
+  missing proof is the live mutation boundary rejecting stale authority on a
+  drifted remote before mutation, with the preserved remote still auditable
+  after the reject.
+- "The review artifact was readable, so retry was safe" when the artifact is
+  stale manual-review output; the missing proof is that the artifact stayed
+  audit-only, could not authorize retry, and could not widen into another
+  row, file, relationship-bearing record, or plugin-owned surface.
+- "The plugin surface was covered" when only one row or one plugin sample was
+  checked; the missing proof is a complete live inventory of plugin-owned
+  surfaces or a hard block for unknown surfaces, including late-discovered
+  options, cron rows, cache entries, custom tables, generated files, runtime
+  registries, serialized blobs, hooks, and external side effects.
+- "The comparison passed" when Reprint, ZS-Sync, or ForkPress are cited by
+  commit alone; the missing proof is a branch-local recheck of the same live
+  mutation boundary and the same drift or retry case, not just provenance for
+  a matching route family or mount shape.
 - A partial apply writes one store but not another, or writes plugin-owned
   state that the core row audit does not mention; the missing proof is durable
   old/new/blocked classification for each touched store, plus a retry rebuilt
