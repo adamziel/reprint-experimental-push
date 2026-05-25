@@ -21,6 +21,8 @@ It may apply automatically when:
   restores and file type swaps converge on the same hash
 - a remote-only change is unrelated to the local mutation set and can be
   preserved as `keep-remote`
+- a supported plugin-owned delete has a live remote precondition and unrelated
+  deletes, restores, edits, or file type swaps still converge safely
 
 It must preserve:
 
@@ -30,6 +32,7 @@ It must preserve:
   not own
 - matching independent edits, deletes, restores, and file type swaps that land
   on the same hash on both sides
+- remote-only plugin drift while a plugin-owned delete is safely preconditioned
 - bounded conflict evidence that explains why a resource stopped without
   leaking raw payloads
 
@@ -43,4 +46,6 @@ It must stop when:
 - a file or directory topology change would hide a live remote descendant
 - plugin-owned data lacks the ownership context needed to prove the mutation is
   safe
+- a plugin-owned delete cannot prove the live remote state and its owner context
+  are still safe to mutate
 - planner evidence would need to expose more than the bounded audit context

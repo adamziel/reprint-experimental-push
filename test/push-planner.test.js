@@ -10111,6 +10111,78 @@ test('applies plugin-owned deletes when a matching independent edit, file type s
   assert.equal(result.site.files['wp-content/plugins/seo/seo.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks plugin-owned deletes when matching independent delete, restore, and file type swap are present', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/archive'] = { type: 'directory' };
+  base.files['wp-content/uploads/archive/keep.txt'] = 'base archive bytes';
+  base.db.wp_options['option_name:forms_settings'] = {
+    option_name: 'forms_settings',
+    option_value: { mode: 'base' },
+    __pluginOwner: 'forms',
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/archive'] = 'shared replacement file';
+  local.files['wp-content/uploads/archive/keep.txt'] = 'restored archive bytes';
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+      driver: 'wp-option',
+      allowDelete: true,
+    }),
+  };
+
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/archive'] = 'shared replacement file';
+  remote.files['wp-content/uploads/archive/keep.txt'] = 'restored archive bytes';
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/archive');
+  const matchingRestore = decisionFor(plan, 'file:wp-content/uploads/archive/keep.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutation, undefined);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(planJson.includes('remote-only plugin drift'), false);
+  assert.equal(planJson.includes('shared about'), false);
+  assert.equal(planJson.includes('restored archive bytes'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(Object.hasOwn(remote.db.wp_options, 'option_name:forms_settings'), true);
+  assert.equal(remote.files['about.php'], '<?php echo "shared about";');
+  assert.equal(remote.files['wp-content/uploads/archive'], 'shared replacement file');
+  assert.equal(remote.files['wp-content/uploads/archive/keep.txt'], 'restored archive bytes');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks plugin-owned updates when the owner plugin was removed remotely while preserving unrelated safe edits and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
