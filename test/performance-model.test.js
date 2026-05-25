@@ -298,6 +298,10 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-update-finalize')?.rejectedGate,
     'group',
   );
+  assert.equal(
+    model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize')?.rejectedGate,
+    'group',
+  );
 });
 
 test('file hashing and compression decisions preserve canonical hashes', () => {
@@ -1173,6 +1177,12 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('plugin-preconditions'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize').violates.includes('durable-progress'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize').violates.includes('remote-index-planning-only'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize').violates.includes('row-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize').violates.includes('plugin-preconditions'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize').violates.includes('atomic-groups'));
+  assert.ok(rejectedById.get('compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize').violates.includes('durable-progress'));
   assert.equal(
     rejectedById.get('compressed-remote-index-and-unbounded-chunk-parallelism-skips-guarded-publish').rejectedGate,
     'recovery',

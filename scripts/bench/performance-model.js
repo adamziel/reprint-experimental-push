@@ -1629,6 +1629,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-db-batch-receipts-skips-plugin-install-finalize',
+    proposal: 'treat a compressed remote index plus cached database batch receipts as enough proof to skip plugin install finalize',
+    rejectedBecause: 'planning evidence and cached database receipts can trim replay work, but they cannot prove the dependency checks, staged files, or the atomic-group finalize survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-parallel-row-batch-skips-plugin-install-barrier',
     proposal: 'treat a compressed remote index plus parallel row batches as enough proof to skip the plugin-install atomic-group barrier',
     rejectedBecause: 'parallel row batches can reduce wait time, but they cannot prove which owner owns a partial row result or that the atomic-group barrier survived failure',
