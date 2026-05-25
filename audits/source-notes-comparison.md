@@ -191,6 +191,9 @@ Release-barrier summary:
 
 - Reprint, ZS-Sync, and ForkPress notes are comparison evidence only unless
   the exact upstream revision or worktree state is named and reverified.
+- A matching feature family, route shape, or package mount is still only
+  compatibility evidence unless this branch reran the same drifted live
+  boundary.
 - Route shape, package mount shape, and `finalMatchesLocal` are compatibility
   evidence only unless the same live mutation boundary was exercised against a
   drifted remote.
@@ -204,3 +207,7 @@ Release-barrier summary:
 - Reprint, ZS-Sync, and ForkPress notes never become current proof just
   because their feature names match the current design; the cited upstream
   state must be reverified at the same live mutation boundary.
+- A late-discovered plugin-owned surface is a separate boundary; a source note
+  for the first write cannot authorize it unless this branch preserved the
+  remote, classified the later surface, and rebuilt retry scope from fresh
+  live hashes.

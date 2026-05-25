@@ -3554,6 +3554,10 @@ Production release gate checklist:
   later write must keep the stale note audit-only unless the branch shows the
   exact live boundary, preserved remote, rejection point, and fresh retry
   scope for that later surface on this worktree.
+- Any source-note comparison that only proves the same feature family, route
+  shape, or package mount must stay historical unless it also shows the same
+  drifted live boundary on this branch; matching vocabulary is not enough to
+  authorize a new write.
 - Any Reprint, ZS-Sync, or ForkPress citation must name the exact upstream
   revision or worktree state and show branch-local revalidation of the same
   live boundary; otherwise it is historical context only and cannot become
@@ -3572,6 +3576,10 @@ Production release gate checklist:
   `finalMatchesLocal` must fail closed until it also shows branch-local live
   drift rejection and a preserved remote that can still be audited after
   reject.
+- A release gate that reaches a late-discovered plugin-owned surface must
+  still show a separate classification or rejection point for that surface
+  plus preserved-remote evidence; a clean first write does not prove the
+  later boundary.
 
 Production-grade push wording remains blocked until the same live boundary
 proves all of the following:
