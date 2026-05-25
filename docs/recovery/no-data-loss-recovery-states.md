@@ -16,6 +16,8 @@ it does not replace production durability.
 ## Failure boundaries
 
 - Failure before mutation must keep the remote on `old-remote`.
+- Durable journal failure before mutation must also remain `old-remote` and
+  preserve the journal artifact that explains the blocked retry boundary.
 - Failure after staging must keep the remote on `old-remote`.
 - Failure after dependency validation must keep the remote on `old-remote`.
 - Replaying a completed plan against a matching remote must remain

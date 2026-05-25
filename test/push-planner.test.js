@@ -9570,3 +9570,39 @@ test('completed replay remains idempotent across repeated recovery journal repla
   assert.equal(secondReplay.recoveryState.artifacts.remote, undefined);
   assert.equal(secondReplay.recoveryState.artifacts.journal.status, 'completed');
 });
+
+test('durable pre-mutation journal failure keeps the remote old and preserves inspectable artifacts', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+
+  const plan = planFor(base, local, baseSite());
+  const journalPath = tempRecoveryJournalPath();
+  const durableJournal = openRecoveryJournal(journalPath, { truncate: true, now: fixedNow });
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      failBeforeMutation: true,
+    }),
+  );
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(journalPath);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assert.equal(JSON.stringify(remote), before);
+  assertAcceptableRecoveryState(error.details.recovery);
+  assertRecoveryStateArtifacts(error.details.recovery, 'old-remote');
+  assert.equal(error.details.recovery.artifacts.remote, undefined);
+  assert.equal(error.details.recovery.artifacts.journal.planId, plan.id);
+  assert.equal(error.details.recovery.artifacts.journal.status, 'opened');
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state' && record.state === 'old-remote'),
+    true,
+  );
+});
