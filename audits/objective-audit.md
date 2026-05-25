@@ -54,6 +54,7 @@ Current state:
 - The strongest push smoke still labels its route `labBacked: true`.
 - The suite can therefore prove local invariants and lab refusal, but it cannot yet force a release-safe decision.
 - A green default run can still stop at `npm test` or a standalone smoke and never exercise the full release matrix.
+- The only top-level automation surface in [`package.json`](/home/claude/reprint-experimental-push-lanes/cycle-20260525-keep-busy-loop-2/independent-auditor/package.json) is still opt-in test and smoke commands, so release approval remains a manual command-choice problem rather than an enforced gate.
 
 The exact missing proof bucket is now clear enough to act on:
 
@@ -105,6 +106,7 @@ For this audit:
 - `Lab/fixture proof` means the check is useful but still scoped to fixtures, local Playground, or a temporary package route.
 - `Docs-only proof` means the claim appears in prose, script names, or diagrams, but not in a required executable gate.
 - `Release blocker` means the objective still fails closed until stronger proof exists.
+- `No release workflow` means there is no checked-in CI path to force the release matrix, so a green casual run can still bypass the missing proof.
 
 ## Evidence Table
 
