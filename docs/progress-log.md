@@ -4,6 +4,21 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-25 - Public Status Audit 13:17:48
+
+<a id="2026-05-25-public-status-audit-131748"></a>
+
+- Refreshed [progress.html](../progress.html) to the current `date` output
+  (`2026-05-25 13:17:48 CEST`) and kept the runtime anchor on
+  `npm run verify:release` from commit `3089aee2`.
+- Recovery evidence in `d3d04595` tightens the lab/model envelope so
+  `old-remote` and `fully-updated-remote` require journal artifacts, while
+  `blocked-recovery` requires both journal and remote artifacts; this is not
+  production durable journal storage/lease/fencing proof.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 ## 2026-05-25 - Public Status Audit 13:16:02
 
 <a id="2026-05-25-public-status-audit-131602"></a>
