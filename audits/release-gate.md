@@ -56,6 +56,9 @@ or comparison-only.
 - The claim does not rely on route shape, packaged-plugin mounting,
   `finalMatchesLocal`, benchmark models, or source-note comparison language as
   production proof.
+- The claim does not treat a fixture-backed or copied-lab mount as production
+  proof, even if it returns live-looking hashes through a production-shaped
+  route.
 - The claim does not let a route-shape smoke, packaged-plugin mount, or
   `finalMatchesLocal` result stand in for live remote drift rejection, stale
   approval expiry, create-time remap handling, plugin-owned allowlist
