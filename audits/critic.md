@@ -41,6 +41,29 @@ Current critic bar for this baseline:
   the exact upstream state, states what each note proves here, states what it
   does not prove here, and reruns the same live boundary on this worktree.
 
+What still must be proved before production wording is allowed:
+
+- a real-site release command exists and is rerunnable against a real local,
+  Playground, or Docker `REPRINT_PUSH_SOURCE_URL`;
+- the same command proves the live WordPress auth/session lifecycle on the
+  write boundary, not just login or request authorization;
+- the preserved remote stays inspectable after rejection, so audit and retry
+  are both possible without losing the original remote state;
+- every touched row, file, relationship-bearing record, and plugin-owned
+  surface is classified old, new, or blocked before retry starts, including
+  partial file, DB, and plugin side effects;
+- create-time identity remaps are either proven live at apply time or blocked
+  before mutation;
+- hidden plugin-owned data traps outside the allowlist are explicitly
+  enumerated or blocked, including cron rows, runtime registries, generated
+  files, caches, serialized blobs, and plugin-owned files;
+- later-discovered plugin-owned surfaces and remapped create targets each get
+  their own preserve / reject / retry cycle instead of inheriting the first
+  approval; and
+- Reprint, ZS-Sync, and ForkPress are treated as provenance only unless the
+  branch names the exact upstream state, states what each note proves here,
+  states what it does not prove here, and reruns the same live boundary.
+
 Source-note comparison stays provenance only:
 
 - Reprint proves staged transport vocabulary and resumable delivery framing,
@@ -165,6 +188,10 @@ False reliability traps that must fail closed:
   live hashes. Missing proof: the artifact is only historical context, not
   retry authority, and it can hide a partial write or a widened follow-up
   mutation.
+- Scenario: a partial file, DB, or plugin side effect is present but the
+  branch never classified which surfaces were old, new, or blocked before
+  retry. Missing proof: the user still cannot audit whether the partial write
+  touched an unbounded set of files, rows, or plugin-owned state.
 - Scenario: a review cites Reprint, ZS-Sync, or ForkPress because the route
   family or wording looks similar. Missing proof: the exact upstream state,
   the exact live boundary on this branch, and a branch-local rerun that says
@@ -189,6 +216,9 @@ following must be true on the same rerunnable live boundary:
 - hidden plugin-owned data traps outside the allowlist, including cron rows,
   runtime registries, generated files, caches, serialized blobs, and plugin-
   owned files, must be enumerated or blocked before write; and
+- stale manual-review artifacts must remain audit-only unless the preserved
+  remote stayed inspectable after rejection and the retry scope was rebuilt
+  from live hashes on this branch; and
 - any later-discovered plugin-owned surface or remapped create target must
   get its own preserve / reject / retry cycle instead of inheriting the
   earlier approval.
