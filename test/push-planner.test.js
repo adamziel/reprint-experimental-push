@@ -1605,6 +1605,48 @@ test('keeps remote-only plugin removals while a live-preconditioned delete, matc
   assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('keeps remote-only plugin removals while a live-preconditioned delete, matching edit, and matching type swap stay safe with apply verification', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/gallery'] = { type: 'directory' };
+  base.files['about.php'] = '<?php echo "base about";';
+  const local = baseSite();
+  delete local.files['about.php'];
+  local.files['index.php'] = '<?php echo "shared edit";';
+  local.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.files['index.php'] = '<?php echo "shared edit";';
+  remote.files['wp-content/uploads/gallery'] = 'shared replacement file';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const deleteMutation = mutationFor(plan, 'file:about.php');
+  const editDecision = decisionFor(plan, 'file:index.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/gallery');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(deleteMutation.action, 'delete');
+  assert.equal(deleteMutation.changeKind, 'delete');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.change.localChange, 'type-change');
+  assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(Object.hasOwn(result.site.files, 'about.php'), false);
+  assert.equal(result.site.files['index.php'], '<?php echo "shared edit";');
+  assert.equal(result.site.files['wp-content/uploads/gallery'], 'shared replacement file');
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('keeps remote-only plugin changes while allowing unrelated local deletions', () => {
   const base = baseSite();
   const local = baseSite();
