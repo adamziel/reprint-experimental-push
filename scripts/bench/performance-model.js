@@ -2474,6 +2474,13 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'file-hashing', 'durable-progress'],
   },
+  {
+    id: 'compressed-remote-index-and-bounded-chunk-parallelism-skips-large-upload-backpressure',
+    proposal: 'use a compressed remote index plus bounded chunk parallelism to skip large-upload backpressure after a pause',
+    rejectedBecause: 'planning evidence and bounded chunk fan-out can reduce duplicate work, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier',
+    rejectedGate: 'recovery',
+    violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
+  },
 ]);
 
 export function buildBenchmarkModel(overrides = {}) {
