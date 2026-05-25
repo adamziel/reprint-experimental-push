@@ -1,16 +1,16 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-25 10:58:09 CEST
+Last updated: 2026-05-25 10:59:39 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-25 10:58:09 CEST
+## 2026-05-25 10:59:39 CEST
 
-- Going well: the blocked snapshot stays compact, and the linked evidence trail is still easy to scan.
-- Not going well: `integration` still has not returned the real-site release command, so the retained endpoint proof is still missing.
-- Progress delta: no release-state change; this note only refreshes the decision surface and evidence links.
-- Next nudge: `integration` owns the next real-site release command; `reliable-executor` should keep the gate tied to a real URL/topology; `invariants` and `recovery` should wait for the same retained run.
+- Going well: the blocked snapshot still stays compact, and the linked evidence trail is easy to scan.
+- Not going well: `reliable-executor` is still drifting because the gate is not tied to a real endpoint, and `integration` has not returned the real-site release command.
+- Progress delta: no release-state change; this is a decision refresh only.
+- Next nudge: `integration` owns the next real-site release command; `reliable-executor` must bind the gate to a real URL/topology; `invariants` and `recovery` should wait for the same retained run.
 - Evidence needed: one retained real-endpoint run with preserved auth/session plus recovery output.
 - Note: this lane-local `progress.html` copy becomes live on GitHub Pages only after the lane merges to `main`.
 
