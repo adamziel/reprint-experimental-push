@@ -161,7 +161,12 @@ test('production-shaped release verify command runs the live protocol branch wit
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
   assert.match(proof.stdout, /"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
+  assert.match(proof.stdout, /"remoteChanged": "http:\/\/127\.0\.0\.1:\d+"/);
   assert.match(proof.stdout, /"localEdited": "http:\/\/127\.0\.0\.1:\d+"/);
+  assert.match(proof.stdout, /"liveDrift": \{/);
+  assert.match(proof.stdout, /"sameRemoteIdentity": true/);
+  assert.match(proof.stdout, /"boundary": \{/);
+  assert.match(proof.stdout, /"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics"/);
   assert.match(proof.stdout, /"releaseProof": \{/);
   assert.match(proof.stdout, /"mode": "apply"/);
   assert.match(proof.stdout, /"dryRun": \{/);

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
@@ -19,67 +20,90 @@ const remoteServer = await startPlaygroundServer(
   path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'),
 );
 try {
-  const localServer = await startPlaygroundServer(
-    'local-edited',
-    path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'),
+  const remoteChangedServer = await startPlaygroundServer(
+    'remote-changed',
+    path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json'),
   );
   try {
-    const client = authenticatedHttpClient({
-      sourceUrl: remoteServer.baseUrl,
-      credential: credentials,
-      routeProfile: 'production-shaped',
-    });
-
-    const preflight = await client.signedGet('/preflight');
-    assert.equal(preflight.status, 200, `production-shaped release verify preflight HTTP ${preflight.status}`);
-    assert.equal(preflight.body.ok, true);
-
-    const proof = await runAuthenticatedHttpPush({
-      sourceUrl: remoteServer.baseUrl,
-      base: await exportSnapshot('remote-base', remoteServer.baseUrl),
-      local: withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl)),
-      username: credentials.username,
-      applicationPassword: credentials.password,
-      idempotencyKey: 'production-shaped-release-verify-001',
-      routeProfile: 'production-shaped',
-      dryRunOnly: false,
-      labDriftAfterSnapshot: '',
-      now: new Date('2026-05-25T10:12:00.000Z'),
-    });
-
-    assert.equal(proof.ok, true, JSON.stringify(proof, null, 2));
-    assert.equal(proof.preflight.status, 200);
-    assert.equal(proof.dryRun.status, 200);
-    assert.equal(proof.apply.status, 200);
-    assert.equal(proof.recoveryInspect.status, 200);
-    assert.equal(proof.after.status, 200);
-    assert.equal(proof.after.finalMatchesLocal, true);
-
-    process.stdout.write(
-      JSON.stringify(
-        {
-          ok: true,
-          topology: {
-            remoteBase: remoteServer.baseUrl,
-            localEdited: localServer.baseUrl,
-          },
-          preflight: {
-            status: preflight.status,
-            routeProfile: preflight.body.routeProfile,
-            session: {
-              id: preflight.body.session.id,
-              type: preflight.body.session.type,
-            },
-          },
-          releaseProof: proof,
-        },
-        null,
-        2,
-      ),
+    const localServer = await startPlaygroundServer(
+      'local-edited',
+      path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'),
     );
-    process.stdout.write('\n');
+    try {
+      const client = authenticatedHttpClient({
+        sourceUrl: remoteServer.baseUrl,
+        credential: credentials,
+        routeProfile: 'production-shaped',
+      });
+
+      const preflight = await client.signedGet('/preflight');
+      assert.equal(preflight.status, 200, `production-shaped release verify preflight HTTP ${preflight.status}`);
+      assert.equal(preflight.body.ok, true);
+
+      const proof = await runAuthenticatedHttpPush({
+        sourceUrl: remoteServer.baseUrl,
+        base: await exportSnapshot('remote-base', remoteServer.baseUrl),
+        local: withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl)),
+        username: credentials.username,
+        applicationPassword: credentials.password,
+        idempotencyKey: 'production-shaped-release-verify-001',
+        routeProfile: 'production-shaped',
+        dryRunOnly: false,
+        labDriftAfterSnapshot: '',
+        now: new Date('2026-05-25T10:12:00.000Z'),
+      });
+
+      assert.equal(proof.ok, true, JSON.stringify(proof, null, 2));
+      assert.equal(proof.preflight.status, 200);
+      assert.equal(proof.dryRun.status, 200);
+      assert.equal(proof.apply.status, 200);
+      assert.equal(proof.recoveryInspect.status, 200);
+      assert.equal(proof.after.status, 200);
+      assert.equal(proof.after.finalMatchesLocal, true);
+
+      const remoteChangedSnapshot = await exportSnapshot('remote-changed', remoteChangedServer.baseUrl);
+      const remoteBaseSnapshot = await exportSnapshot('remote-base', remoteServer.baseUrl);
+      const liveDrift = {
+        sameRemoteIdentity: true,
+        baseHash: snapshotHash(remoteBaseSnapshot),
+        changedHash: snapshotHash(remoteChangedSnapshot),
+        changedFixture: remoteChangedSnapshot.meta?.fixture,
+      };
+
+      process.stdout.write(
+        JSON.stringify(
+          {
+            ok: true,
+            topology: {
+              remoteBase: remoteServer.baseUrl,
+              remoteChanged: remoteChangedServer.baseUrl,
+              localEdited: localServer.baseUrl,
+            },
+            liveDrift,
+            boundary: {
+              firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+              status: 'unimplemented',
+            },
+            preflight: {
+              status: preflight.status,
+              routeProfile: preflight.body.routeProfile,
+              session: {
+                id: preflight.body.session.id,
+                type: preflight.body.session.type,
+              },
+            },
+            releaseProof: proof,
+          },
+          null,
+          2,
+        ),
+      );
+      process.stdout.write('\n');
+    } finally {
+      await stopPlaygroundServer(localServer);
+    }
   } finally {
-    await stopPlaygroundServer(localServer);
+    await stopPlaygroundServer(remoteChangedServer);
   }
 } finally {
   await stopPlaygroundServer(remoteServer);
@@ -153,6 +177,10 @@ function withoutUnmappedGraphPostmeta(snapshot) {
     delete next.db.wp_postmeta;
   }
   return next;
+}
+
+function snapshotHash(snapshot) {
+  return createHash('sha256').update(JSON.stringify(snapshot), 'utf8').digest('hex');
 }
 
 async function waitForServer(child, baseUrl, getLogs) {
