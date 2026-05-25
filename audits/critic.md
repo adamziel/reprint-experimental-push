@@ -8323,6 +8323,14 @@ identity plus plugin-driver coverage in the same rerun. Until that happens,
 the branch cannot convert a source-note comparison into retry authority or
 production wording.
 
+The sharpest remaining blocker is not command availability; it is the missing
+branch-local live rerun that preserves the rejected remote and proves the same
+boundary on an actual local, Playground, or Docker `REPRINT_PUSH_SOURCE_URL`.
+The remote reliable-executor lane is still only retained-source evidence for
+this audit. It can inform wording about the harness, but it does not transfer
+retry authority to this branch unless the same live boundary is rerun here and
+the remote remains inspectable for audit and retry.
+
 The missing proof is not abstract. A release claim still fails if a later
 plugin-owned table, cron row, serialized blob, generated file, or remapped
 create target only appears after the first write and is then folded into the
@@ -8373,6 +8381,24 @@ Release-gate checklist for production wording:
 - give any later-discovered plugin-owned surface or remapped create target
   its own preserve / reject / retry cycle instead of inheriting the first
   approval.
+
+Production-grade wording remains blocked until the branch can prove all of
+the following on one rerunnable live boundary:
+
+- live WordPress auth/session lifecycle on a real local, Playground, or
+  Docker source;
+- preserved-remote auditability after rejection, including the exact rejection
+  point before the first write;
+- apply-time revalidation plus journal/recovery inspection on that same
+  boundary;
+- graph identity and plugin-driver coverage in the same rerun;
+- old/new/blocked classification for every touched row, file,
+  relationship-bearing record, and plugin-owned surface before retry starts;
+- explicit handling of hidden plugin-owned data traps outside the allowlist,
+  including cron rows, runtime registries, generated files, caches,
+  serialized blobs, and plugin-owned files; and
+- a separate preserve / reject / retry cycle for any later-discovered
+  plugin-owned surface or remapped create target.
 
 Source-note comparisons remain provenance only unless this branch reran the
 same live boundary:
