@@ -10,6 +10,12 @@ failure:
 These are the only acceptable post-failure states for this lane. A retry must
 never duplicate inserts or resurrect stale local data.
 
+The recovery boundary is intentionally narrow:
+
+- pre-commit failures stay `old-remote`
+- completed-plan replay stays `fully-updated-remote`
+- any partial or drifted replay becomes `blocked-recovery` with artifacts
+
 ## Required artifacts
 
 - `old-remote`: the journal must explain why no remote mutation is committed.
@@ -26,6 +32,10 @@ The following boundaries must remain `old-remote`:
 
 Completed-plan replay must remain `fully-updated-remote`, and stale replay must
 block if the current remote no longer matches the completed journal envelope.
+
+`blocked-recovery` is only acceptable when the journal and remote artifacts are
+both preserved for inspection. That is what distinguishes a safe retry from a
+release blocker.
 
 Any partial remote mutation without recovery artifacts is a blocker, not a
 safe retry target.
