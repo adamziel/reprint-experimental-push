@@ -56,6 +56,10 @@ The same pull-to-push bridge applies here:
 - inspect-first recovery is the only safe starting point for mutating
   recovery.
 
+This keeps the exporter/importer pipeline authoritative for the base package
+while making push a separate production write path that can only consume that
+persisted provenance.
+
 The production test topology is the same in Docker and Playground:
 
 - one remote source site (`remote-base`)
@@ -65,6 +69,12 @@ The production test topology is the same in Docker and Playground:
 - one runner process that owns all push protocol calls
 - browser-visible inspection only through the sandbox-provided `8080` ingress
   and a local-only proxy
+
+The minimal site split is always the same:
+
+- `remote-base` seeds the persisted pull base package.
+- `local-edited` holds the imported local changes.
+- `remote-changed` is the same remote identity observed later after drift.
 
 That gives the minimal remote/local pair the task asks for:
 

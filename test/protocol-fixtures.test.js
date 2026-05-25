@@ -169,6 +169,31 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(contract.topology.networking.ingress_port, 8080);
   assert.equal(contract.topology.networking.proxy_policy, 'local-only');
   assert.equal(contract.topology.networking.tunnels, 'disallowed');
+  assert.equal(topologyMatrix.topology_matrix_id, 'push-topology-docker-playground-matrix');
+  assert.equal(topologyMatrix.test_topology.topology_id, 'one-remote-one-local-one-drift');
+  assert.equal(
+    topologyMatrix.test_topology.remote_base,
+    'one source site that seeds the persisted pull base',
+  );
+  assert.equal(
+    topologyMatrix.test_topology.local_edited,
+    'one imported local site with user edits',
+  );
+  assert.equal(
+    topologyMatrix.test_topology.remote_changed,
+    'the same remote site after independent drift',
+  );
+  assert.deepEqual(topologyMatrix.test_topology.proof_order, [
+    'preflight',
+    'snapshot-hashes',
+    'dry-run',
+    'apply',
+    'journal',
+    'recovery-inspect',
+    'recovery-mutate',
+  ]);
+  assert.equal(topologyMatrix.test_topology.harness.docker.ingress, 8080);
+  assert.equal(topologyMatrix.test_topology.harness.playground.proxy_policy, 'local-only');
   assert.equal(contract.topology.docker.proof[0], 'one private network');
   assert.ok(
     contract.topology.docker.proof.includes(

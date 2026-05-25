@@ -44,6 +44,10 @@ The ladder maps directly to the pull pipeline:
 - recovery starts with inspect and only mutates when journal evidence and
   fresh live hashes still prove the branch safe
 
+That bridge is one-way. Exporter/importer provenance is the immutable base
+that push consumes; push does not turn the base package back into a mutable
+snapshot cache.
+
 For the harness shape, keep the topology pair together:
 
 - `push-deployment-topology-contract.json` is the smallest topology-only proof
@@ -76,6 +80,14 @@ The machine-readable bridge is split across the fixtures:
   `push-remote-liveness-topology-contract.json` define the Docker and
   Playground test topology with one remote source, one imported local site,
   one drift witness, and the sandbox-provided `8080` ingress rule.
+
+The topology model is deliberately minimal:
+
+- `remote-base` is the source site that seeds the persisted pull base.
+- `local-edited` is the imported local site that carries the candidate edits.
+- `remote-changed` is the same remote identity observed later after drift.
+- `runner` is the only actor that may preflight, list hashes, dry-run,
+  apply, inspect the journal, or recover.
 
 ## Stage Semantics
 
